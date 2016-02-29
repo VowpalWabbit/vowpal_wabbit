@@ -116,6 +116,7 @@
     <Compile Include="TestPooling.cs" />
     <Compile Include="TestWrapper.cs" />
     <Compile Include="TrainSet0002Dat.cs" />
+    <Compile Include="VowpalWabbitStdErrPerformanceStatistics.cs" />
     <Compile Include="VWTestHelper.cs" />
   </ItemGroup>
   <ItemGroup>

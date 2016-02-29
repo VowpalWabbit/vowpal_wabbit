@@ -1,0 +1,16 @@
+parsed 3 named labels
+experience replay level=c, buffer=100, replay count=1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/test_named_csoaa
+num sources = 1
+Regressor contains 18 values
+example      values         total   
+counter      audited        progress
+1                    6           33%
+2                    9           50%
+4                   12           66%
+6                   18          100%

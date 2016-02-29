@@ -1384,3 +1384,18 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
+
+# Test 116: MWT test
+{VW} train-sets/cb_eval --multiworld_test f -p cb_eval.preds
+    train-sets/ref/cb_eval.stderr
+    pred-sets/ref/cb_eval.preds
+
+# Test 117: Audit regressor of ftrl model (from test #107)
+{VW} -d train-sets/0001.dat -i models/0001_ftrl.model  --audit_regressor ftrl.audit_regr
+    train-sets/ref/ftrl_audit_regr.stderr
+    train-sets/ref/ftrl.audit_regr
+
+# Test 118: Audit regressor of csoaa model (from test #95)
+{VW} -d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr
+    train-sets/ref/csoaa_audit_regr.stderr
+    train-sets/ref/csoaa.audit_regr
