@@ -142,12 +142,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="json\test_array.json">
+    <Content Include="json\test_array.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="json\test_newline.json">
+    </Content>
+    <Content Include="json\test_newline.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
