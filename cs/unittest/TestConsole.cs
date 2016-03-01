@@ -10,19 +10,18 @@ using VW;
 namespace cs_unittest
 {
     [TestClass]
-    public class TestConsoleClass
+    public class TestConsoleClass : TestBase
     {
         [TestMethod]
-        [DeploymentItem("json/test_array.json")]
-        [DeploymentItem("json/test_newline.json")]
         public void TestConsole()
         {
             var arrayModelPath = Path.GetTempFileName();
             var newlineModelPath = Path.GetTempFileName();
             var nativeModelPath = Path.GetTempFileName();
 
-            cs_vw.Program.Main(new[] { "test_array.json", "-f", arrayModelPath });
-            cs_vw.Program.Main(new[] { "test_newline.json", "-f", newlineModelPath });
+            // Note: deployment item is not working on build server
+            cs_vw.Program.Main(new[] { @"..\cs\unittest\json\test_array.json", "-f", arrayModelPath });
+            cs_vw.Program.Main(new[] { @"..\cs\unittest\json\test_newline.json", "-f", newlineModelPath });
 
             // compare model
             using (var vw = new VowpalWabbit("-f " + nativeModelPath))
