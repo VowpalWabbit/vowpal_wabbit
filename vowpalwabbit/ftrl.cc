@@ -84,7 +84,7 @@ void output_example(vw& all, example& ec)
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   for (int sink : all.final_prediction_sink)
-	  print_result(sink, ec.partial_prediction, ec.confidence);
+	  print_result(sink, ec.pred.scalar, ec.confidence);
 
   print_update(all, ec);
 }

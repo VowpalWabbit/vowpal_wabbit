@@ -64,6 +64,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   size_t which = ec.example_counter;
   float first_prediction = 0;
   float first_loss = 0;
+  float first_uncertainty = 0;
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
 
   bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
@@ -137,10 +138,12 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
     if (iter == 0)
       { first_prediction = ec.pred.scalar;
         first_loss = ec.loss;
+        first_uncertainty = ec.confidence;
       }
     else
       { ec.pred.scalar = first_prediction;
         ec.loss = first_loss;
+        ec.confidence = first_uncertainty;
       }
 
     for (string const& i : lrq.lrpairs)
