@@ -1,11 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitConstants.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Constants used throughout C# wrapper.
+    /// </summary>
     internal static class VowpalWabbitConstants
     {
         /// <summary>
@@ -33,6 +38,11 @@ namespace VW.Serializer
         /// </summary>
         internal const string MultiProperty = "_multi";
 
+        /// <summary>
+        /// True if <paramref name="property"/> is considered a special property and thus should not be skipped.
+        /// </summary>
+        /// <param name="property">The JSON property name.</param>
+        /// <returns>True if <paramref name="property"/> is a special property, false otherwise.</returns>
         internal static bool IsSpecialProperty(string property)
         {
             return property == TextProperty ||

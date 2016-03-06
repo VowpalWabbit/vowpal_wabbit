@@ -1,10 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="AnnotationJsonInspector.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using VW.Interfaces;
 
 namespace VW.Serializer
@@ -132,7 +138,7 @@ namespace VW.Serializer
                     name == VowpalWabbitConstants.MultiProperty ||
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
-                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType is string))
+                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
