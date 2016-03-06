@@ -24,6 +24,9 @@ namespace MWT {
     CB::cb_class* observation;
     v_array<uint64_t> policies;
     double total;
+
+    v_array<namespace_index> indices;// excluded namespaces
+    features feature_space[256]; 
     vw* all;
   }; 
   
@@ -59,13 +62,18 @@ namespace MWT {
     c.evals[new_index].action = value;
   }
   
-  template <bool is_learn>
+  template <class T> inline void swap(T a, T b)
+  {
+    T temp = a;
+    a = b;
+    b = temp;
+  }
+
+  template <bool learn, bool exclude, bool is_learn>
   void predict_or_learn(mwt& c, base_learner& base, example& ec)
   {
-    v_array<float> preds = ec.pred.scalars;
-
     c.observation = get_observed_cost(ec.l.cb);
-
+    
     if (c.observation != nullptr)
       {
 	c.total++;
@@ -79,9 +87,39 @@ namespace MWT {
 	    c.evals[policy].action = 0;
 	  }
       }
+    if (exclude)
+      {
+	c.indices.erase();
+	for (unsigned char ns : ec.indices)
+	  if (c.namespaces[ns])
+	    {
+	      c.indices.push_back(ns);
+	      swap(c.feature_space[ns], ec.feature_space[ns]);
+	    }
+	
+      }
+
+    v_array<float> preds = ec.pred.scalars;
+    
+    if (learn)
+      {
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
+      }    
+
+    if (exclude)
+      while (c.indices.size() > 0)
+	{
+	  unsigned char ns = c.indices.pop();
+	  swap(c.feature_space[ns], ec.feature_space[ns]);
+	}
     
     //modify the predictions to use a vector with a score for each evaluated feature.
     preds.erase();
+    if (learn)
+      preds.push_back(ec.pred.multiclass);
     for(uint64_t index : c.policies)
       preds.push_back(c.evals[index].cost / c.total);
     
@@ -135,6 +173,10 @@ void delete_scalars(void* v)
 base_learner* mwt_setup(vw& all)
 { if (missing_option<string, true>(all, "multiworld_test", "Evaluate features as a policies"))
     return nullptr;
+  new_options(all, "MWT options")
+    ("learn", "Do Contextual Bandit learning on all features.")
+    ("exclude", "Discard mwt policy features before learning");
+  add_options(all);
   
   mwt& c = calloc_or_throw<mwt>();
   
@@ -148,8 +190,16 @@ base_learner* mwt_setup(vw& all)
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
 
-  learner<mwt>& l = init_learner(&c, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1);
-  l.set_finish_example(finish_example);
-  l.set_finish(finish);
-  return make_base(l);
+  learner<mwt>* l;
+  if (all.vm.count("learn"))
+    if (all.vm.count("exclude"))
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1);
+    else
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1);
+  else
+    l = &init_learner(&c, setup_base(all), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1);
+
+  l->set_finish_example(finish_example);
+  l->set_finish(finish);
+  return make_base(*l);
 }
