@@ -44,4 +44,10 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 }
 
 float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, uint32_t action);
+inline float get_unbiased_cost(CB::cb_class* observation, uint32_t action, float offset = 0.) 
+{
+  if (action == observation->action)
+    return (observation->cost - offset) / observation->probability;
+  return 0.;
+}
 

@@ -52,8 +52,10 @@ namespace cs_unittest
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();
 
-            var stringSerializerCompiled = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
-            var stringSerializerAdfCompiled = VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
+            var stringSerializerCompiler = (VowpalWabbitSingleExampleSerializerCompiler<CbAdfShared>)
+                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
+            var stringSerializerAdfCompiler = (VowpalWabbitSingleExampleSerializerCompiler<CbAdfAction>)
+                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
 
             var stringData = new List<List<string>>();
 
@@ -65,8 +67,8 @@ namespace cs_unittest
                 using (var vw1 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
                 using (var vw2 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
                 {
-                    var stringSerializer = stringSerializerCompiled.Func(vw1);
-                    var stringSerializerAdf = stringSerializerAdfCompiled.Func(vw1);
+                    var stringSerializer = stringSerializerCompiler.Func(vw1);
+                    var stringSerializerAdf = stringSerializerAdfCompiler.Func(vw1);
 
                     // serialize
                     foreach (var d in data)

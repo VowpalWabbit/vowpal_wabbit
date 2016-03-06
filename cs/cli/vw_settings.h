@@ -42,7 +42,16 @@ namespace VW
 		/// <summary>
 		/// All properties are used as features.
 		/// </summary>
-		All
+		All,
+
+    /// <summary>
+    /// Use JSON.NET's JsonProperty annotation for feature annotation.
+    /// </summary>
+    /// <remarks>
+    /// This serialization produces equivalent results as if the object would be
+    /// serialized using JSON.NET and then ingested be VowpalWabbitJsonSerializer.
+    /// </remarks>
+    Json
 	};
 
     public ref class VowpalWabbitSettings
@@ -313,9 +322,10 @@ namespace VW
             [System::Runtime::InteropServices::Optional] VowpalWabbit^ root,
             [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringFloatCompact,
             [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
-			[System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
-			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
+			      [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
+			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
         {
             auto copy = gcnew VowpalWabbitSettings();
 
@@ -341,9 +351,10 @@ namespace VW
             copy->m_root = root == nullptr ? Root : root;
             copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
             copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
+            copy->m_enableStringFloatCompact = enableStringFloatCompact.HasValue ? enableStringFloatCompact.Value : EnableStringFloatCompact;
             copy->m_allFeatures = allFeatures == nullptr ? AllFeatures : allFeatures;
             copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
-			copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
+			      copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
 
             return copy;
         }

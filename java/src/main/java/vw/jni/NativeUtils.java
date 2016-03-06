@@ -3,6 +3,10 @@ package vw.jni;
 import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Simple library class for working with JNI (Java Native Interface),
@@ -19,40 +23,32 @@ public class NativeUtils {
     private NativeUtils() {
     }
 
-    /**
-     * This will read from /proc/version to attempt to find the Linux distribution.
-     * @return The Linux distribution or null if the version cannot be found.
-     * @throws IOException If an I/O error occurs
-     */
-    public static String getDistroName() throws IOException {
-        Pattern distroRegex = Pattern.compile("[^(]+\\([^(]+\\([^(]+\\(([A-Za-z\\s]+).*");
-        BufferedReader reader = new BufferedReader(new FileReader("/proc/version"));
-        String distro;
-        try {
-            Matcher line = distroRegex.matcher(reader.readLine());
-            distro = line.matches() ? line.group(1) : null;
-        }
-        finally {
-            reader.close();
-        }
-        return distro;
+    // Identifies which OS distributions can share binaries
+    private static final Map<String, List<String>> identicalOSs = new HashMap<String, List<String>>();
+    static {
+        // RedHat binaries
+        List<String> redHatAlternatives = new ArrayList<String>();
+        redHatAlternatives.add("Red_Hat.6");
+        identicalOSs.put("Scientific.6", redHatAlternatives);
     }
 
     /**
-     * This will attempt to find the Linux version by making use of {@code lsb_release -r}
-     * @return The Linux version or null if the version cannot be determined.
-     * @throws IOException If an I/O error occurs
+     * Shell call to lsb_release to get OS info
+     * @param lsb_args parameters to lsb_release.  EX: "-i" or "-a"
+     * @param regexp a regular expression pattern used to parse the response from lsb_release
+     *   For example:  lsb_args = "-i", regexp = "Distributor ID: *(.*)$"
+     * @return A system dependent string identifying the OS.
+     * @throws IOException If an error occurs while running shell command
      */
-    public static String getLinuxVersion() throws IOException {
+    public static String lsbRelease(String lsb_args, Pattern regexp) throws IOException {
         BufferedReader reader = null;
         try {
-            Process process = Runtime.getRuntime().exec("lsb_release -r");
+            Process process = Runtime.getRuntime().exec("lsb_release " + lsb_args);
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            Pattern releasePattern = Pattern.compile("Release:\\s*(\\d+).*");
             Matcher matcher;
             while ((line = reader.readLine()) != null) {
-                matcher = releasePattern.matcher(line);
+                matcher = regexp.matcher(line);
                 if (matcher.matches()) {
                     return matcher.group(1);
                 }
@@ -65,32 +61,62 @@ public class NativeUtils {
     }
 
     /**
+     * Attempt to find the Linux distribution ID.
+     * @return The Linux distribution or null if the version cannot be found.
+     * @throws IOException If an I/O error occurs
+     */
+    public static String getDistroName() throws IOException {
+        return lsbRelease("-i", Pattern.compile("Distributor ID:\\s*(.*)\\s*$"));
+    }
+
+    /**
+     * This will attempt to find the Linux version by making use of {@code lsb_release -r}
+     * @return The Linux version or null if the version cannot be determined.
+     * @throws IOException If an I/O error occurs
+     */
+    public static String getLinuxVersion() throws IOException {
+        return lsbRelease("-r", Pattern.compile("Release:\\s*(.*)\\s*$"));
+    }
+
+   /**
      * Returns the system dependent OS family.  In the case of a Linux OS it will combine
      * {@link NativeUtils#getDistroName()} and {@link NativeUtils#getLinuxVersion()}.
-     * @return A system dependent string identifying the OS.
+     * @return A list system dependent string identifying the OS.  This is a list because there are some OSs which are
+     * functionally identical to the one returned by lsbRelease.
      * @throws UnsupportedEncodingException If an error occurs while determining the Linux specific
      *          information.
      * @throws IOException If an I/O error occurs
      * @throws IllegalStateException If the os.name property returns an unsupported OS.
      */
-    public static String getOsFamily() throws IOException {
+    public static List<String> getOsFamilies() throws IOException {
         final String osName = System.getProperty("os.name");
+        final String primaryName;
         if (osName.toLowerCase().contains("mac")) {
-            return "Darwin";
+            primaryName = "Darwin";
         }
         else if (osName.toLowerCase().contains("linux")) {
             String distro = getDistroName();
             if (distro == null) {
                 throw new UnsupportedEncodingException("Cannot determine linux distribution");
             }
-
             String version = getLinuxVersion();
             if (version == null) {
                 throw new UnsupportedOperationException("Cannot determine linux version");
             }
-            return distro.trim().replaceAll(" ", "_") + "." + version;
+            // get the major version.
+            // don't expect a period because linux version might not have one
+            primaryName = distro + "." + version.split("\\.")[0];
         }
-        throw new IllegalStateException("Unsupported operating system " + osName);
+        else {
+            throw new IllegalStateException("Unsupported operating system " + osName);
+        }
+
+        List<String> viableFamilies = new ArrayList<String>();
+        viableFamilies.add(primaryName);
+        if (identicalOSs.containsKey(primaryName)) {
+            viableFamilies.addAll(identicalOSs.get(primaryName));
+        }
+        return viableFamilies;
     }
 
     /**
@@ -102,9 +128,16 @@ public class NativeUtils {
      * @throws IOException If temporary file creation or read/write operation fails
      */
     public static void loadOSDependentLibrary(String path, String suffix) throws IOException {
-        String osFamily = getOsFamily();
-        String osDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
-        if (NativeUtils.class.getResource(osDependentLib) != null) {
+        List<String> osFamilies = getOsFamilies();
+        String osDependentLib = null;
+        for (String osFamily : osFamilies) {
+            String currentOsDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
+            if (NativeUtils.class.getResource(currentOsDependentLib) != null) {
+                osDependentLib = currentOsDependentLib;
+                break;
+            }
+        }
+        if (osDependentLib != null) {
             loadLibraryFromJar(osDependentLib);
         }
         else {

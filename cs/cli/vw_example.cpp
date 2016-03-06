@@ -68,12 +68,12 @@ namespace VW
 
     void FormatIndices(example* a, System::Text::StringBuilder^ sb)
     {
-        for (auto i = a->indices.begin; i != a->indices.end; i++)
+        for (auto ns : a->indices)
         {
-            if (*i == 0)
+            if (ns == 0)
                 sb->Append("NULL:0,");
             else
-                sb->AppendFormat("'{0}':{1},", gcnew System::Char(*i), (int)*i);
+                sb->AppendFormat("'{0}':{1},", gcnew System::Char(ns), (int)ns);
         }
     }
 
@@ -96,23 +96,23 @@ namespace VW
         return sb->ToString();
     }
 
-    System::String^ FormatFeature(vw* vw, feature* f1)
+    System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1)
     {
-        auto masked_weight_index1 = f1->weight_index & vw->reg.weight_mask;
+        uint64_t masked_weight_index1 = i1 & vw->reg.weight_mask;
 
         return System::String::Format(
             "weight_index = {0}/{1}, x = {2}",
             masked_weight_index1,
-            f1->weight_index,
-            gcnew System::Single(f1->x));
+            i1,
+            gcnew System::Single(f1));
     }
 
-    System::String^ FormatFeature(vw* vw, feature* f1, feature* f2)
+    System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1, feature_value& f2, feature_index& i2)
     {
         return System::String::Format(
             "Feature differ: this({0}) vs other({1})",
-            FormatFeature(vw, f1),
-            FormatFeature(vw, f2));
+            FormatFeature(vw, f1, i1),
+            FormatFeature(vw, f2, i2));
     }
 
     bool FloatEqual(float a, float b)
@@ -126,39 +126,41 @@ namespace VW
         return abs(a - b) / max(a, b) < 1e-6;
     }
 
-    System::String^ FormatFeatures(vw* vw, v_array<feature>& arr)
+    System::String^ FormatFeatures(vw* vw, features& arr)
     {
         auto sb = gcnew System::Text::StringBuilder();
-        for (auto f = arr.begin; f != arr.end; f++)
-            sb->Append(FormatFeature(vw, f))->Append(" ");
+        for (size_t i = 0; i < arr.values.size(); i++)
+        {
+            sb->Append(FormatFeature(vw, arr.values[i], arr.indicies[i]))->Append(" ");
+        }
 
         return sb->ToString();
     }
 
-    System::String^ CompareFeatures(vw* vw, v_array<feature>& fa, v_array<feature>& fb)
+    System::String^ CompareFeatures(vw* vw, features& fa, features& fb)
     {
-        vector<feature*> fa_missing;
-        for (auto k = fa.begin, l = fb.begin; k != fa.end; k++)
+        vector<size_t> fa_missing;
+        for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
         {
-            auto masked_weight_index = k->weight_index & vw->reg.weight_mask;
+            uint64_t masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
 
-            auto other_masked_weight_index = l->weight_index & vw->reg.weight_mask;
-            if (masked_weight_index == other_masked_weight_index && FloatEqual(k->x, l->x))
-                l++;
+            auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+            if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
+                ib++;
             else
             {
                 // fallback to search
-                auto l_old = l;
+                size_t ib_old = ib;
                 bool found = false;
-                for (l = fb.begin; l != fb.end; l++)
+                for (ib = 0; ib < fb.values.size(); ib++)
                 {
-                    auto other_masked_weight_index = l->weight_index & vw->reg.weight_mask;
+                    uint64_t other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
 
                     if (masked_weight_index == other_masked_weight_index)
                     {
-                        if (!FloatEqual(k->x, l->x))
+                        if (!FloatEqual(fa.values[ia], fb.values[ib]))
                         {
-                            return FormatFeature(vw, k, l);
+                            return FormatFeature(vw, fa.values[ia], fa.indicies[ia], fb.values[ib], fb.indicies[ib]);
                         }
                         else
                         {
@@ -170,21 +172,21 @@ namespace VW
 
                 if (!found)
                 {
-                    fa_missing.push_back(&*k);
+                    fa_missing.push_back(ia);
                 }
 
-                l = l_old + 1;
+                ib = ib_old + 1;
             }
         }
 
         if (!fa_missing.empty())
         {
             auto diff = gcnew System::Text::StringBuilder("missing: ");
-            for each (feature* k in fa_missing)
+            for each (size_t ia in fa_missing)
             {
                 diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                    k->weight_index & vw->reg.weight_mask,
-                    k->x);
+                    fa.indicies[ia] & vw->reg.weight_mask,
+                    fa.values[ia]);
             }
 
             return diff->ToString();
@@ -203,7 +205,7 @@ namespace VW
             return FormatIndices(a, b);
         }
 
-        for (auto i = a->indices.begin, j = b->indices.begin; i != a->indices.end; i++)
+        for (auto i = a->indices.begin(), j = b->indices.begin(); i != a->indices.end(); i++)
         {
             if (*i == *j)
                 j++;
@@ -212,9 +214,9 @@ namespace VW
                 // fall back on search
                 auto j_old = j;
 
-                j = b->indices.begin;
+                j = b->indices.begin();
                 bool found = false;
-                for (; j != b->indices.end; j++)
+                for (; j != b->indices.end(); j++)
                 {
                     if (*i == *j)
                     {
@@ -230,8 +232,8 @@ namespace VW
             }
 
             // compare features
-            auto fa = a->atomics[*i];
-            auto fb = b->atomics[*i];
+            features& fa = a->feature_space[*i];
+            features& fb = b->feature_space[*i];
 
             if (fa.size() != fb.size())
                 return System::String::Format("Feature length differ {0} vs {1}. this({2}) vs other({3})",

@@ -168,7 +168,6 @@ public:
   ~namedlabels()
   { if (id2name.size()>0)
       free(id2name[0].begin);
-    cout << "in namedlabels delete" << endl;
     name2id.iter(deleter);
     name2id.delete_v();
     id2name.delete_v();
@@ -482,7 +481,7 @@ struct vw
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
 
-  bool multilabel_prediction;
+  void (*delete_prediction)(void*);
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?

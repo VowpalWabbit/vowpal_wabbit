@@ -97,7 +97,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   ec.num_features -= f1.size();
   ec.num_features -= f2.size();
 
-  copy(in.feat_store, f1);
+  in.feat_store.deep_copy_from(f1);
 
   multiply(f1, f2, in);
   ec.total_sum_feat_sq += f1.sum_feat_sq;
@@ -127,7 +127,7 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   memmove(&ec.indices[n2_i + 1], &ec.indices[n2_i], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
   ec.indices[n2_i] = in.n2;
 
-  copy(f1,in.feat_store);
+  f1.deep_copy_from(in.feat_store);
   ec.total_sum_feat_sq = in.total_sum_feat_sq;
   ec.num_features = in.num_features;
 }
@@ -139,9 +139,9 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2)
-  { cerr<<"Need two namespace arguments to interact!! EXITING\n";
+    { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
-  }
+    }
 
   interact& data = calloc_or_throw<interact>();
 

@@ -38,8 +38,8 @@ bool know_all_cost_example(CB::label& ld)
 
   //if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all actions are specified
   //than check if all actions have a specified cost
-  for (cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++)
-    if (cl->cost == FLT_MAX)
+  for (auto& cl : ld.costs)
+    if (cl.cost == FLT_MAX)
       return false;
 
   return true;
@@ -60,9 +60,9 @@ inline bool observed_cost(cb_class* cl)
 }
 
 cb_class* get_observed_cost(CB::label& ld)
-{ for (cb_class *cl = ld.costs.begin; cl != ld.costs.end; cl++)
-    if( observed_cost(cl) )
-      return cl;
+{ for (auto& cl : ld.costs)
+    if( observed_cost(&cl) )
+      return &cl;
   return nullptr;
 }
 
@@ -94,14 +94,14 @@ void gen_cs_example_ips(cb& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
   }
   else   //this is an example where we can only perform a subset of the actions
   { //in this case generate cost-sensitive example with only allowed actions
-    for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++ )
+    for (auto& cl : ld.costs)
     { COST_SENSITIVE::wclass wc;
       wc.wap_value = 0.;
       wc.x = 0.;
-      wc.class_index = cl->action;
+      wc.class_index = cl.action;
       wc.partial_prediction = 0.;
       wc.wap_value = 0.;
-      if( c.known_cost != nullptr && cl->action == c.known_cost->action )
+      if( c.known_cost != nullptr && cl.action == c.known_cost->action )
       { wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise
 
         //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
@@ -160,24 +160,24 @@ void gen_cs_example_dm(cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
   }
   else   //this is an example where we can only perform a subset of the actions
   { //in this case generate cost-sensitive example with only allowed actions
-    for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++ )
+    for (auto& cl : ld.costs)
     { COST_SENSITIVE::wclass wc;
       wc.wap_value = 0.;
 
       //get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl->action, 0);
-      if (wc.x < min || (wc.x == min && cl->action < argmin))
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
+      if (wc.x < min || (wc.x == min && cl.action < argmin))
       { min = wc.x;
-        argmin = cl->action;
+        argmin = cl.action;
       }
 
-      wc.class_index = cl->action;
+      wc.class_index = cl.action;
       wc.partial_prediction = 0.;
       wc.wap_value = 0.;
 
       c.pred_scores.costs.push_back(wc);
 
-      if( c.known_cost != nullptr && c.known_cost->action == cl->action )
+      if( c.known_cost != nullptr && c.known_cost->action == cl.action )
       { c.nb_ex_regressors++;
         c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
         c.last_pred_reg = wc.x;
@@ -234,8 +234,8 @@ void gen_cs_example_dr(cb& c, example& ec, CB::label& ld, COST_SENSITIVE::label&
       gen_cs_label<is_learn>(c, ec, cs_ld, i);
   else  //this is an example where we can only perform a subset of the actions
     //in this case generate cost-sensitive example with only allowed actions
-    for( cb_class* cl = ld.costs.begin; cl != ld.costs.end; cl++ )
-      gen_cs_label<is_learn>(c, ec, cs_ld, cl->action);
+    for (auto& cl : ld.costs)
+      gen_cs_label<is_learn>(c, ec, cs_ld, cl.action);
   //cout<<endl;
 }
 
@@ -295,17 +295,12 @@ void learn_eval(cb& c, base_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& scores, uint32_t action)
-{ float loss = 0.;
-
-  for (COST_SENSITIVE::wclass *cl = scores.costs.begin; cl != scores.costs.end; cl++)
-    if (cl->class_index == action)
-      loss = cl->x;
-
-  if (known_cost->action == action)
-    loss += (known_cost->cost - loss) / known_cost->probability;
-
-  return loss;
+float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
+{ 
+  for (auto& cl : scores.costs)
+    if (cl.class_index == action)
+      return get_unbiased_cost(observation, action, cl.x) + cl.x;
+  return get_unbiased_cost(observation, action);
 }
 
 void output_example(vw& all, cb& c, example& ec, CB::label& ld)
@@ -315,8 +310,8 @@ void output_example(vw& all, cb& c, example& ec, CB::label& ld)
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
 
   if (all.raw_prediction > 0)
   { stringstream outputStringStream;

@@ -13,20 +13,20 @@ void dispatch_example(vw& all, example& ec)
 namespace LEARNER
 {
 void process_example(vw& all, example* ec)
-{ 
+{
   if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
     dispatch_example(all, *ec);
   else if (ec->end_pass)
   { all.l->end_pass();
     VW::finish_example(all, ec);
   }
-  else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
+  else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin(), "save", 4))
   { // save state command
 
     string final_regressor_name = all.final_regressor_name;
 
     if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
-      final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
+      final_regressor_name = string(ec->tag.begin()+5, (ec->tag).size()-5);
 
     if (!all.quiet)
       cerr << "saving regressor to " << final_regressor_name << endl;
@@ -41,32 +41,21 @@ void process_example(vw& all, example* ec)
 template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context)
 { example* ec = nullptr;
 
-  all.l->init_driver();
   while ( all.early_terminate == false )
-  { if ((ec = VW::get_example(all.p)) != nullptr)//semiblocking operation.
-    { f(context, ec);
-    }
-    else if (parser_done(all.p))
-    { all.l->end_examples();
-      return;
-    }
-  }
-  if (all.early_terminate) //drain any extra examples from parser and call end_examples
-  { while ((ec = VW::get_example(all.p)) != nullptr) //semiblocking operation.
+    if ((ec = VW::get_example(all.p)) != nullptr)
+      f(context, ec);
+    else 
+      break;
+  if (all.early_terminate) //drain any extra examples from parser.
+    while ((ec = VW::get_example(all.p)) != nullptr) 
       VW::finish_example(all, ec);
-
-    if (parser_done(all.p))
-    { all.l->end_examples();
-      return;
-    }
-  }
+  all.l->end_examples();
 }
 
 void process_multiple(vector<vw*> alls, example* ec)
 { // start with last as the first instance will free the example as it is the owner
   for (auto it = alls.rbegin(); it != alls.rend(); ++it)
-  { process_example(**it, ec);
-  }
+    process_example(**it, ec);
 }
 
 void generic_driver(vector<vw*> alls)
@@ -79,6 +68,5 @@ void generic_driver(vector<vw*> alls)
 }
 
 void generic_driver(vw& all)
-{ generic_driver<vw&, process_example>(all, all);
-}
+{ generic_driver<vw&, process_example>(all, all); }
 }

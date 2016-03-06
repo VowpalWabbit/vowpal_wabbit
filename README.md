@@ -18,6 +18,7 @@ These prerequisites are usually pre-installed on many platforms. However, you ma
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 - [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
+- lsb-release  (RedHat/CentOS: redhat-lsb-core, Debian: lsb-release, Ubuntu: you're all set, OSX: not required)
 - GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
@@ -133,13 +134,16 @@ brew install vowpal-wabbit
 ```
 [The homebrew formula for VW is located on github](https://github.com/Homebrew/homebrew/blob/master/Library/Formula/vowpal-wabbit.rb).
 
-### brew install dependencies + manual install of vowpal wabbit
+### Manual install ov Vowpal Wabbit
+#### OSX Dependencies (if using Brew): 
 ```
 brew install libtool
+brew install autoconf
+brew install automake
 brew install boost --with-python
 ```
 
-### MacPorts
+#### OSX Dependencies (if using MacPorts):
 ```
 ## Install glibtool and other GNU autotool friends:
 $ port install libtool autoconf automake
@@ -151,6 +155,7 @@ $ port install boost +no_single +no_static +openmpi +python27 configure.cxx_stdl
 $ port install boost +no_single +no_static +openmpi +python27
 ```
 
+#### OSX Manual compile:
 *Mac OS X 10.8 and below*: ``configure.cxx_stdlib=libc++`` and ``configure.cxx=clang++`` ensure that ``clang++`` uses
 the correct C++11 functionality while building Boost. Ordinarily, ``clang++`` relies on the older GNU ``g++`` 4.2 series
 header files and ``stdc++`` library; ``libc++`` is the ``clang`` replacement that provides newer C++11 functionality. If

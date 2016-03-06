@@ -84,8 +84,8 @@ namespace VW
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
             ILabel label = null,
-            VowpalWabbitSerializer<TExample> serializer = null,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
+            IVowpalWabbitSerializer<TExample> serializer = null,
+            IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
             Dictionary<string, string> dictionary = null,
             Dictionary<object, string> fastDictionary = null)
         {
@@ -112,7 +112,7 @@ namespace VW
 
             var stringExample = new StringBuilder();
 
-            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, dictionary, fastDictionary);
+            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, null, dictionary, fastDictionary);
 
             // check if we have shared features
             if (!string.IsNullOrWhiteSpace(sharedExample))
@@ -124,7 +124,7 @@ namespace VW
             foreach (var actionDependentFeature in actionDependentFeatures)
             {
                 var adfExample = actionDependentFeatureSerializer.SerializeToString(actionDependentFeature,
-                    index != null && i == index ? label : null, dictionary, fastDictionary);
+                    index != null && i == index ? label : null, null, dictionary, fastDictionary);
 
                 if (!string.IsNullOrWhiteSpace(adfExample))
                 {
@@ -164,8 +164,8 @@ namespace VW
         /// <param name="label">The optional label to be used for learning or evaluation.</param>
         public static void Execute<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             LearnOrPredictAction<TActionDependentFeature> predictOrLearn,
@@ -173,7 +173,6 @@ namespace VW
             ILabel label = null)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -183,18 +182,23 @@ namespace VW
             var validActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
             var emptyActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
 
+            VowpalWabbitExample emptyExample = null;
+
             try
             {
                 // contains prediction results
-                var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
-                // check if we have shared features
-                if (sharedExample != null)
+                if (serializer != null)
                 {
-                    examples.Add(sharedExample);
-
-                    if (!sharedExample.IsNewLine)
+                    var sharedExample = serializer.Serialize(example, SharedLabel.Instance);
+                    // check if we have shared features
+                    if (sharedExample != null)
                     {
-                        validExamples.Add(sharedExample);
+                        examples.Add(sharedExample);
+
+                        if (!sharedExample.IsNewLine)
+                        {
+                            validExamples.Add(sharedExample);
+                        }
                     }
                 }
 
@@ -221,27 +225,25 @@ namespace VW
                 }
 
                 if (validActionDependentFeatures.Count == 0)
-                {
                     return;
-                }
 
                 // signal we're finished using an empty example
-                var empty = vw.GetOrCreateEmptyExample();
-                examples.Add(empty);
-                validExamples.Add(empty);
+                emptyExample = vw.GetOrCreateEmptyExample();
+                validExamples.Add(emptyExample);
 
                 predictOrLearn(validExamples, validActionDependentFeatures, emptyActionDependentFeatures);
             }
             finally
             {
+                if (emptyExample != null)
+                    emptyExample.Dispose();
+
                 // dispose examples
                 // Note: must not dispose examples before final example
                 // as the learning algorithm (such as cbf) keeps a reference
                 // to the example
                 foreach (var e in examples)
-                {
                     e.Dispose();
-                }
             }
         }
 
@@ -250,15 +252,14 @@ namespace VW
         /// </summary>
         public static void Learn<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
             ILabel label)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -297,15 +298,14 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
             ILabel label)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
@@ -351,15 +351,14 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
             ILabel label = null)
         {
             Contract.Requires(vw != null);
-            Contract.Requires(serializer != null);
             Contract.Requires(actionDependentFeatureSerializer != null);
             Contract.Requires(example != null);
             Contract.Requires(actionDependentFeatures != null);
