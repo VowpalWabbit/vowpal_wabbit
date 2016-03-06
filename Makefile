@@ -133,7 +133,7 @@ install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install
 
 doc:
-	doxygen Doxyfile
+	(cd doc && doxygen Doxyfile)
 
 clean:
 	cd vowpalwabbit && $(MAKE) clean
@@ -144,4 +144,4 @@ ifneq ($(JAVA_HOME),)
 	cd java    && $(MAKE) clean
 endif
 
-.PHONY: all clean install
+.PHONY: all clean install doc
