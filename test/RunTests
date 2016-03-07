@@ -1401,11 +1401,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/csoaa.audit_regr
 
 # Test 119: MWT learn test
-{VW} train-sets/cb_eval --multiworld_test f --learn --cb 2 -p mwt_learn.preds
+{VW} train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
     train-sets/ref/mwt_learn.stderr
     pred-sets/ref/mwt_learn.preds
 
 # Test 120: MWT learn exclude test
-{VW} train-sets/cb_eval --multiworld_test f --learn --exclude --cb 2 -p mwt_learn_exclude.preds
+{VW} train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
     train-sets/ref/mwt_learn_exclude.stderr
     pred-sets/ref/mwt_learn_exclude.preds
