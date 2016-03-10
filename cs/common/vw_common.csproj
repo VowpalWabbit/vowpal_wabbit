@@ -105,7 +105,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflection\InspectionHelper.cs" />
     <Compile Include="Reflection\ReflectionHelper.cs" />
+    <Compile Include="Serializer\LabelExpression.cs" />
     <Compile Include="Serializer\StringProcessing.cs" />
+    <Compile Include="Serializer\Schema.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\vw_key.snk" />

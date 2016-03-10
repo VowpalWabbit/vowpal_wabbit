@@ -147,7 +147,7 @@ namespace VW.Reflection
                 method = method.MakeGenericMethod(actualTypes);
                 //Debug.WriteLine("\t specializing: " + method);
             }
-            //Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
+            // Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
 
             return method;
         }

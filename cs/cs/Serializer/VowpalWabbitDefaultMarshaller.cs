@@ -22,36 +22,6 @@ namespace VW.Serializer
     public partial class VowpalWabbitDefaultMarshaller
     {
         /// <summary>
-        /// Marshals the given value <paramref name="value"/> into native VW by
-        ///
-        /// <list type="number">
-        /// <item><description>string concatenating the feature name and the value.</description></item>
-        /// <item><description>Hashing of the resulting string.</description></item>
-        /// </list>
-        ///
-        /// e.g. feature name = "Age", value = 25 yields "Age25:1" in VW native string format.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <param name="context">The marshalling context.</param>
-        /// <param name="ns">The namespace description.</param>
-        /// <param name="feature">The feature description.</param>
-        /// <param name="value">The actual feature value.</param>
-        /// <remarks>This is a fallback method if no other types match.</remarks>
-        public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
-        {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
-
-            var featureString = feature.Name + Convert.ToString(value);
-            var featureHash = context.VW.HashFeature(featureString, ns.NamespaceHash);
-
-            context.NamespaceBuilder.AddFeature(featureHash, 1f);
-
-            context.AppendStringExample(feature.Dictify, " {0}", featureString);
-        }
-
-        /// <summary>
         /// Marshals a boolean value into native VW.
         ///
         /// e.g. loggedIn = true yields "loggedIn" in VW native string format.
@@ -378,6 +348,23 @@ namespace VW.Serializer
             // prefix with label
             if (context.StringExample != null)
                 context.StringExample.Insert(0, labelString);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="label"></param>
+        public void MarshalLabel(VowpalWabbitMarshalContext context, string label)
+        {
+            if (label == null)
+                return;
+
+            context.ExampleBuilder.ParseLabel(label);
+
+            // prefix with label
+            if (context.StringExample != null)
+                context.StringExample.Insert(0, label);
         }
     }
 }

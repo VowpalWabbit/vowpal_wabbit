@@ -56,7 +56,7 @@ namespace VW
         /// The method only enqueues the example for learning and returns immediately.
         /// You must not re-use the example.
         /// </remarks>
-        public void Learn(TExample example, ILabel label)
+        public void Learn(TExample example, ILabel label = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(label != null);
