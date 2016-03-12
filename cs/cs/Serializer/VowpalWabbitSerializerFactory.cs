@@ -63,7 +63,7 @@ namespace VW.Serializer
 
                 if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
                 {
-                    schema = AnnotationJsonInspector.ExtractFeatures(typeof(TExample));
+                    schema = AnnotationJsonInspector.CreateSchema(typeof(TExample));
 
                     var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, schema);
                     if (multiExampleSerializerCompiler != null)
@@ -88,7 +88,7 @@ namespace VW.Serializer
                             break;
                     }
 
-                    schema = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate, labelPredicate);
+                    schema = AnnotationInspector.CreateSchema(typeof(TExample), propertyPredicate, labelPredicate);
                 }
             }
 

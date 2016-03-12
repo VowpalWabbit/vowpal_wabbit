@@ -23,7 +23,7 @@ namespace VW.Serializer
     /// </summary>
     internal static class AnnotationInspector
     {
-        internal static Schema ExtractFeatures(Type type,
+        internal static Schema CreateSchema(Type type,
             Func<PropertyInfo, FeatureAttribute, bool> featurePropertyPredicate,
             Func<PropertyInfo, LabelAttribute, bool> labelPropertyPredicate)
         {
@@ -36,7 +36,7 @@ namespace VW.Serializer
             // CODE example != null
             validExpressions.Push(valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)));
 
-            return ExtractFeatures(
+            return CreateSchema(
                 type,
                 null,
                 null,
@@ -48,7 +48,7 @@ namespace VW.Serializer
                 labelPropertyPredicate);
         }
 
-        private static Schema ExtractFeatures(
+        private static Schema CreateSchema(
             Type type,
             string parentNamespace,
             char? parentFeatureGroup,
@@ -102,7 +102,7 @@ namespace VW.Serializer
                 {
                     // CODE example.Prop1.Prop2 != null
                     valueValidExpressionFactories.Push(valueExpression => Expression.NotEqual(f.ValueExpressionFactory(valueExpression), Expression.Constant(null)));
-                    var subSchema = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, featurePropertyPredicate, labelPropertyPredicate);
+                    var subSchema = CreateSchema(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, featurePropertyPredicate, labelPropertyPredicate);
                     valueValidExpressionFactories.Pop();
 
                     return subSchema;

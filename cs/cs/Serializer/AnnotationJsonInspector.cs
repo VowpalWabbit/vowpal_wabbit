@@ -72,7 +72,7 @@ namespace VW.Serializer
         ///   feature2: true    // Top-level primitive property becomes feature in default namespace.
         /// }
         /// </summary>
-        internal static Schema ExtractFeatures(Type type)
+        internal static Schema CreateSchema(Type type)
         {
             var exampleMemberSerialization = GetMemberSerialiation(type);
 

@@ -371,7 +371,8 @@ namespace VW
                     "{0} maps to a multiline example. Use VowpalWabbit<{0}> instead.",
                         typeof(TExample)));
 
-            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(vw.Settings).Create(vw) as VowpalWabbitSingleExampleSerializer<TActionDependentFeature>;
+            var adfSettings = vw.Settings.ShallowCopy(schema: vw.Settings.ActionDependentSchema);
+            this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(adfSettings).Create(vw) as VowpalWabbitSingleExampleSerializer<TActionDependentFeature>;
             if (this.actionDependentFeatureSerializer == null)
                 throw new ArgumentException(string.Format(
                     "{0} maps to a multiline example. Use VowpalWabbit<{0}> instead.",

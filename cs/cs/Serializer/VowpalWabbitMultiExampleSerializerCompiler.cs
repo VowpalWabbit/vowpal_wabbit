@@ -51,7 +51,7 @@ namespace VW.Serializer
                         !settings.EnableStringExampleGeneration);
 
                 this.adfSerializerComputer = new VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>(
-                    AnnotationJsonInspector.ExtractFeatures(typeof(TActionDependentFeature)),
+                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature)),
                     settings == null ? null : settings.CustomFeaturizer,
                     !settings.EnableStringExampleGeneration);
 

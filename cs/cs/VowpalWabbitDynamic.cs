@@ -50,7 +50,7 @@ namespace VW
             IVowpalWabbitSerializer<object> serializer;
             if (!this.serializers.TryGetValue(type, out serializer))
             {
-                var schema = AnnotationInspector.ExtractFeatures(type, (_,__) => true, (_,__) => true);
+                var schema = AnnotationInspector.CreateSchema(type, (_,__) => true, (_,__) => true);
                 foreach (var feature in schema.Features)
                 {
                     // inject type cast to the actual type (always works)
