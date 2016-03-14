@@ -121,6 +121,7 @@
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
+    <Compile Include="Labels\MulticlassLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
