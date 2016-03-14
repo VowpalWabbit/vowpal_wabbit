@@ -11,9 +11,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VW.Interfaces;
 using VW.Serializer.Intermediate;
 
@@ -24,36 +21,6 @@ namespace VW.Serializer
     /// </summary>
     public partial class VowpalWabbitDefaultMarshaller
     {
-        /// <summary>
-        /// Marshals the given value <paramref name="value"/> into native VW by
-        ///
-        /// <list type="number">
-        /// <item><description>string concatenating the feature name and the value.</description></item>
-        /// <item><description>Hashing of the resulting string.</description></item>
-        /// </list>
-        ///
-        /// e.g. feature name = "Age", value = 25 yields "Age25:1" in VW native string format.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <param name="context">The marshalling context.</param>
-        /// <param name="ns">The namespace description.</param>
-        /// <param name="feature">The feature description.</param>
-        /// <param name="value">The actual feature value.</param>
-        /// <remarks>This is a fallback method if no other types match.</remarks>
-        public void MarshalFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
-        {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
-
-            var featureString = feature.Name + Convert.ToString(value);
-            var featureHash = context.VW.HashFeature(featureString, ns.NamespaceHash);
-
-            context.NamespaceBuilder.AddFeature(featureHash, 1f);
-
-            context.AppendStringExample(feature.Dictify, " {0}", featureString);
-        }
-
         /// <summary>
         /// Marshals a boolean value into native VW.
         ///
@@ -82,14 +49,13 @@ namespace VW.Serializer
 
         /// <summary>
         /// Marshals an enum value into native VW.
-        ///
-        /// e.g. Gender = Male yields "GenderMale" in VW native string format.
         /// </summary>
         /// <typeparam name="T">The enum type.</typeparam>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        /// <example>Gender = Male yields "GenderMale" in VW native string format.</example>
         public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
             Contract.Requires(context != null);
@@ -102,13 +68,16 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        ///
+        /// Marshals any type into native VW, by constructing a 1-hot encoding using <see cref="object.ToString()"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type to be enumerized.</typeparam>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        /// <example><typeparamref name="T"/> is <see cref="System.Int32"/>, actual value '25' and <see cref="Feature.Name"/> is 'Age'.
+        /// The result is equivalent to 'Age25'.
+        /// </example>
         public void MarshalEnumerizeFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
         {
             Contract.Requires(context != null);
@@ -122,12 +91,14 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        ///
+        /// Marshals the supplied string into VW native space. Spaces are escaped using '_'. 
+        /// Only <paramref name="value"/> is serialized, <paramref name="feature"/> Name is ignored.
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        /// <example><paramref name="value"/> is "New York". Result is "New_York".</example>
         public void MarshalFeatureStringEscape(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             Contract.Requires(context != null);
@@ -147,12 +118,13 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        ///
+        /// Marshals the supplied string into VW native space. Spaces are escaped using '_'. Includes the <see cref="Feature.Name"/> in the 1-hot encoded feature.
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        /// <example><paramref name="value"/> is "New York". <paramref name="feature"/> Name is "Location". Result is "LocationNew_York".</example>
         public void MarshalFeatureStringEscapeAndIncludeName(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             Contract.Requires(context != null);
@@ -172,12 +144,13 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        ///
+        /// Marshals the supplied string into VW native space, by splitting the word by white space.
         /// </summary>
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The actual feature value.</param>
+        /// <example><paramref name="value"/> is "New York". Result is "New York", corresponding to 2 featuers in VW native space.</example>
         public void MarshalFeatureStringSplit(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -375,6 +348,23 @@ namespace VW.Serializer
             // prefix with label
             if (context.StringExample != null)
                 context.StringExample.Insert(0, labelString);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="label"></param>
+        public void MarshalLabel(VowpalWabbitMarshalContext context, string label)
+        {
+            if (label == null)
+                return;
+
+            context.ExampleBuilder.ParseLabel(label);
+
+            // prefix with label
+            if (context.StringExample != null)
+                context.StringExample.Insert(0, label);
         }
     }
 }

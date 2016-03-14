@@ -120,7 +120,7 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<ExampleCustomType>(string.Empty))
             {
-                vw.Validate("| Custom2", new ExampleCustomType { Custom = new CustomType { value = 2 } });
+                vw.Validate("| value:2", new ExampleCustomType { Custom = new CustomType { value = 2 } });
             }
         }
 
@@ -324,12 +324,8 @@ namespace cs_unittest
 
     public class CustomType
     {
-        public int value;
-
-        public override string ToString()
-        {
-            return value.ToString();
-        }
+        [Feature]
+        public int value { get; set; }
     }
 
     public class ExampleCustomType

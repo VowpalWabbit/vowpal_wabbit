@@ -70,7 +70,8 @@ namespace VW
         VowpalWabbitExampleDistribution m_exampleDistribution;
         bool m_enableStringExampleGeneration;
         bool m_enableStringFloatCompact;
-        List<FeatureExpression^>^ m_allFeatures;
+        Schema^ m_schema;
+        Schema^ m_actionDependentSchema;
         List<Type^>^ m_customFeaturizer;
 		VowpalWabbitFeatureDiscovery m_featureDiscovery;
 
@@ -109,7 +110,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringFloatCompact,
-            [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
+            [System::Runtime::InteropServices::Optional] Schema^ schema,
+            [System::Runtime::InteropServices::Optional] Schema^ actionDependentSchema,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			[System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
             : VowpalWabbitSettings()
@@ -121,7 +123,8 @@ namespace VW
             m_modelStream = modelStream;
             m_parallelOptions = parallelOptions;
             m_root = root;
-            m_allFeatures = allFeatures;
+            m_schema = schema;
+            m_actionDependentSchema = actionDependentSchema;
             m_customFeaturizer = customFeaturizer;
 
             if (enableExampleCaching.HasValue)
@@ -285,12 +288,20 @@ namespace VW
             }
         }
 
-        property List<FeatureExpression^>^ AllFeatures
+        property VW::Serializer::Schema^ Schema
         {
-            List<FeatureExpression^>^ get()
+            VW::Serializer::Schema^ get()
             {
-                return m_allFeatures;
+                return m_schema;
             }
+        }
+
+        property VW::Serializer::Schema^ ActionDependentSchema
+        {
+          VW::Serializer::Schema^ get()
+          {
+            return m_actionDependentSchema;
+          }
         }
 
         property List<Type^>^ CustomFeaturizer
@@ -301,13 +312,13 @@ namespace VW
             }
         }
 
-		property VowpalWabbitFeatureDiscovery FeatureDiscovery
-		{
-			VowpalWabbitFeatureDiscovery get()
-			{
-				return m_featureDiscovery;
-			}
-		}
+		    property VowpalWabbitFeatureDiscovery FeatureDiscovery
+		    {
+			      VowpalWabbitFeatureDiscovery get()
+			      {
+				        return m_featureDiscovery;
+			      }
+		    }
 
         VowpalWabbitSettings^ ShallowCopy(
             [System::Runtime::InteropServices::Optional] String^ arguments,
@@ -323,8 +334,9 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitExampleDistribution> exampleDistribution,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringExampleGeneration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableStringFloatCompact,
-            [System::Runtime::InteropServices::Optional] List<FeatureExpression^>^ allFeatures,
-			      [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
+            [System::Runtime::InteropServices::Optional] VW::Serializer::Schema^ schema,
+            [System::Runtime::InteropServices::Optional] VW::Serializer::Schema^ actionDependentSchema,
+            [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery)
         {
             auto copy = gcnew VowpalWabbitSettings();
@@ -352,7 +364,8 @@ namespace VW
             copy->m_exampleDistribution = exampleDistribution.HasValue ? exampleDistribution.Value : ExampleDistribution;
             copy->m_enableStringExampleGeneration = enableStringExampleGeneration.HasValue ? enableStringExampleGeneration.Value : EnableStringExampleGeneration;
             copy->m_enableStringFloatCompact = enableStringFloatCompact.HasValue ? enableStringFloatCompact.Value : EnableStringFloatCompact;
-            copy->m_allFeatures = allFeatures == nullptr ? AllFeatures : allFeatures;
+            copy->m_schema = schema == nullptr ? Schema : schema;
+            copy->m_actionDependentSchema = actionDependentSchema == nullptr ? ActionDependentSchema : actionDependentSchema;
             copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
 			      copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
 

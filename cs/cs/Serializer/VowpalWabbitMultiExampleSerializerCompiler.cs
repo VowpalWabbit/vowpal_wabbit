@@ -11,10 +11,10 @@ namespace VW.Serializer
 {
     internal static class VowpalWabbitMultiExampleSerializerCompiler
     {
-        internal static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, List<FeatureExpression> allFeatures)
+        internal static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
         {
             // check for _multi
-            var multiFeature = allFeatures.FirstOrDefault(fe => fe.Name == VowpalWabbitConstants.MultiProperty);
+            var multiFeature = schema.Features.FirstOrDefault(fe => fe.Name == VowpalWabbitConstants.MultiProperty);
             if (multiFeature == null)
                 return null;
 
@@ -25,7 +25,7 @@ namespace VW.Serializer
                 throw new ArgumentException("_multi property must be array or IEnumerable<>. Actual type: " + multiFeature.FeatureType);
 
             var compilerType = typeof(VowpalWabbitMultiExampleSerializerCompilerImpl<,>).MakeGenericType(typeof(TExample), adfType);
-            return (IVowpalWabbitSerializerCompiler<TExample>)Activator.CreateInstance(compilerType, settings, allFeatures, multiFeature);
+            return (IVowpalWabbitSerializerCompiler<TExample>)Activator.CreateInstance(compilerType, settings, schema, multiFeature);
         }
 
         private sealed class VowpalWabbitMultiExampleSerializerCompilerImpl<TExample, TActionDependentFeature> : IVowpalWabbitSerializerCompiler<TExample>
@@ -36,22 +36,22 @@ namespace VW.Serializer
 
             private readonly Func<TExample, IEnumerable<TActionDependentFeature>> adfAccessor;
 
-            public VowpalWabbitMultiExampleSerializerCompilerImpl(VowpalWabbitSettings settings, List<FeatureExpression> allFeatures, FeatureExpression multiFeature)
+            public VowpalWabbitMultiExampleSerializerCompilerImpl(VowpalWabbitSettings settings, Schema schema, FeatureExpression multiFeature)
             {
                 Contract.Requires(settings != null);
-                Contract.Requires(allFeatures != null);
+                Contract.Requires(schema != null);
                 Contract.Requires(multiFeature != null);
 
-                var nonMultiFeatures = allFeatures.Where(fe => fe != multiFeature).ToList();
+                var nonMultiFeatures = schema.Features.Where(fe => fe != multiFeature).ToList();
 
                 this.sharedSerializerCompiler = nonMultiFeatures.Count == 0 ? null :
                     new VowpalWabbitSingleExampleSerializerCompiler<TExample>(
-                        nonMultiFeatures,
+                        new Schema { Features = nonMultiFeatures },
                         settings == null ? null : settings.CustomFeaturizer,
                         !settings.EnableStringExampleGeneration);
 
                 this.adfSerializerComputer = new VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>(
-                    AnnotationJsonInspector.ExtractFeatures(typeof(TActionDependentFeature)),
+                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature)),
                     settings == null ? null : settings.CustomFeaturizer,
                     !settings.EnableStringExampleGeneration);
 

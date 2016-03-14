@@ -1,10 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="AnnotationJsonInspector.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 using VW.Interfaces;
 
 namespace VW.Serializer
@@ -66,7 +72,7 @@ namespace VW.Serializer
         ///   feature2: true    // Top-level primitive property becomes feature in default namespace.
         /// }
         /// </summary>
-        internal static List<FeatureExpression> ExtractFeatures(Type type)
+        internal static Schema CreateSchema(Type type)
         {
             var exampleMemberSerialization = GetMemberSerialiation(type);
 
@@ -132,7 +138,7 @@ namespace VW.Serializer
                     name == VowpalWabbitConstants.MultiProperty ||
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
-                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType is string))
+                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
@@ -144,7 +150,38 @@ namespace VW.Serializer
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     featureGroup: VowpalWabbitConstants.DefaultNamespace);
 
-            return namespaceFeatures.Union(defaultNamespaceFeatures).ToList();
+            // find label
+            var labelProperties =
+                from p in type.GetProperties()
+                // removing any JsonIgnore properties
+                where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
+                let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
+                where
+                    // model OptIn/OptOut
+                    (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
+                let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
+                // filterint labels for now
+                where name == VowpalWabbitConstants.LabelProperty
+                where 
+                    // labels must be ILabel or string
+                    // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
+                    (name == VowpalWabbitConstants.LabelProperty && 
+                    (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
+                select new LabelExpression
+                {
+                    LabelType = p.PropertyType,
+                    Name = name,
+                    // CODE example.Label
+                    ValueExpressionFactory = valueExpression => Expression.Property(valueExpression, p),
+                    // CODE example != null
+                    ValueValidExpressionFactories = new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) }
+                };
+
+            return new Schema
+            {
+                Label = labelProperties.FirstOrDefault(),
+                Features = namespaceFeatures.Union(defaultNamespaceFeatures).ToList()
+            };
         }
     }
 }

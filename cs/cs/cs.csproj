@@ -130,6 +130,8 @@
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
+    <Compile Include="Serializer\Attributes\LabelAttribute.cs" />
+    <Compile Include="Serializer\ConfigInspector.cs" />
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />

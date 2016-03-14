@@ -84,11 +84,13 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="TestAllReduce.cs" />
+    <Compile Include="TestConfigInspector.cs" />
     <Compile Include="TestConsole.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
     <Compile Include="TestJson.cs" />
     <Compile Include="TestJsonDirect.cs" />
+    <Compile Include="TestLabels.cs" />
     <Compile Include="TestLeak.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />

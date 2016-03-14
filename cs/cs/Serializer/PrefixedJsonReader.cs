@@ -21,12 +21,21 @@ namespace VW.Serializer
         private JsonReader reader;
         private Queue<Tuple<JsonToken, object>> prefix;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="PrefixedJsonReader"/>.
+        /// </summary>
+        /// <param name="reader">The reader to be wrapped.</param>
+        /// <param name="prefix">The JsonTokens to be injected at the beginning of the stream.</param>
         internal PrefixedJsonReader(JsonReader reader, params Tuple<JsonToken, object>[] prefix)
         {
             this.reader = reader;
             this.prefix = new Queue<Tuple<JsonToken, object>>(prefix);
         }
 
+        /// <summary>
+        /// Injects the supplied prefix into the stream.
+        /// </summary>
+        /// <returns>True if another token is available, false otherwise.</returns>
         public override bool Read()
         {
             if (this.prefix.Count > 0)
