@@ -76,64 +76,51 @@ namespace cs_vw
                     switch (fileMode)
                     {
                         case FileMode.JsonArray:
-                            LearnJsonArray(vw, json);
+                            using (var reader = new JsonTextReader(new StreamReader(json)))
+                            {
+                                if (!reader.Read())
+                                    return;
+
+                                if (reader.TokenType != JsonToken.StartArray)
+                                    return;
+
+                                while (reader.Read())
+                                {
+                                    switch (reader.TokenType)
+                                    {
+                                        case JsonToken.StartObject:
+                                            vw.Learn(reader);
+                                            break;
+                                        case JsonToken.EndObject:
+                                            // skip
+                                            break;
+                                        case JsonToken.EndArray:
+                                            // end reading
+                                            return;
+                                    }
+                                }
+                            }
                             break;
                         case FileMode.JsonNewLine:
-                            LearnJsonNewLine(vw, json);
+                            using (var reader = new StreamReader(json))
+                            {
+                                string line;
+
+                                while ((line = reader.ReadLine()) != null)
+                                {
+                                    if (string.IsNullOrWhiteSpace(line))
+                                        continue;
+
+                                    vw.Learn(line);
+                                }
+                            }
                             break;
                     }
-
-                    if (vw.Native.Arguments.NumPasses > 1)
-                        vw.Native.RunMultiPass();
                 }
             }
             catch (Exception e)
             {
                 Console.Error.WriteLine("Exception: {0}.\n{1}", e.Message, e.StackTrace);
-            }
-        }
-
-        private static void LearnJsonNewLine(VowpalWabbitJson vw, string json)
-        {
-            using (var reader = new StreamReader(json))
-            {
-                string line;
-
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    vw.Learn(line);
-                }
-            }
-        }
-
-        private static void LearnJsonArray(VowpalWabbitJson vw, string json)
-        {
-            using (var reader = new JsonTextReader(new StreamReader(json)))
-            {
-                if (!reader.Read())
-                    return;
-
-                if (reader.TokenType != JsonToken.StartArray)
-                    return;
-
-                while (reader.Read())
-                {
-                    switch (reader.TokenType)
-                    {
-                        case JsonToken.StartObject:
-                            vw.Learn(reader);
-                            break;
-                        case JsonToken.EndObject:
-                            // skip
-                            break;
-                        case JsonToken.EndArray:
-                            // end reading
-                            return;
-                    }
-                }
             }
         }
     }
