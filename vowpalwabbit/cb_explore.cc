@@ -17,10 +17,10 @@ struct cb_explore;
 
 struct vw_context
 {
-	cb_explore& data;
-	base_learner& l;
-	example& e;
-	bool recorded;
+  cb_explore& data;
+  base_learner& l;
+  example& e;
+  bool recorded;
 };
 
 void safety(v_array<float>& distribution, float min_prob);
@@ -62,10 +62,10 @@ public:
 
   v_array<float>& Get_Probabilities()
   {
-	  probabilities.erase();
-	  for (size_t i = 0; i < num_actions; i++)
-		  probabilities.push_back(0);
-	  return probabilities;
+    probabilities.erase();
+    for (size_t i = 0; i < num_actions; i++)
+      probabilities.push_back(0);
+    return probabilities;
   };
 
   vector<float> Score_Actions(vw_context& ctx);
@@ -93,40 +93,41 @@ struct vw_recorder : public IRecorder<vw_context>
 
 struct cb_explore
 {
-	cb_to_cs& cbcs;
+  cb_to_cs* cbcs;
+  v_array<float> preds;
 
-	CB::label cb_label;
-	COST_SENSITIVE::label cs_label;
-	COST_SENSITIVE::label second_cs_label;
+  CB::label cb_label;
+  COST_SENSITIVE::label cs_label;
+  COST_SENSITIVE::label second_cs_label;
 
-	base_learner* cs;
+  base_learner* cs;
 
-	vw_policy* policy;
-	TauFirstExplorer<vw_context>* tau_explorer;
-	vw_recorder* recorder;
-	MwtExplorer<vw_context>* mwt_explorer;
-	EpsilonGreedyExplorer<vw_context>* greedy_explorer;
+  vw_policy* policy;
+  TauFirstExplorer<vw_context>* tau_explorer;
+  vw_recorder* recorder;
+  MwtExplorer<vw_context>* mwt_explorer;
+  EpsilonGreedyExplorer<vw_context>* greedy_explorer;
 
-	BootstrapExplorer<vw_context>* bootstrap_explorer;
-	vector<unique_ptr<IPolicy<vw_context>>> policies;
+  BootstrapExplorer<vw_context>* bootstrap_explorer;
+  vector<unique_ptr<IPolicy<vw_context>>> policies;
 
-	vw_cover* cover;
-	GenericExplorer<vw_context>* generic_explorer;
+  vw_cover* cover;
+  GenericExplorer<vw_context>* generic_explorer;
 };
 
 vector<float> vw_cover::Score_Actions(vw_context& ctx)
 { float additive_probability = 1.f / (float)size;
   for (size_t i = 0; i < size; i++)
-  { //get predicted cost-sensitive predictions
-    if (i == 0)
-      ctx.data.cs->predict(ctx.e, i);
-    else
-      ctx.data.cs->predict(ctx.e, i + 1);
-    uint32_t pred = ctx.e.pred.multiclass;
-    probabilities[pred - 1] += additive_probability;
-    predictions[i] = (uint32_t)pred;
-  }
-  uint32_t num_actions = ctx.data.cbcs.num_actions;
+    { //get predicted cost-sensitive predictions
+      if (i == 0)
+	ctx.data.cs->predict(ctx.e, i);
+      else
+	ctx.data.cs->predict(ctx.e, i + 1);
+      uint32_t pred = ctx.e.pred.multiclass;
+      probabilities[pred - 1] += additive_probability;
+      predictions[i] = (uint32_t)pred;
+    }
+  uint32_t num_actions = ctx.data.cbcs->num_actions;
   float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
   safety(probabilities, min_prob);
@@ -140,20 +141,31 @@ vector<float> vw_cover::Score_Actions(vw_context& ctx)
   return probs_vec;
 }
 
+void v_array_set(v_array<float>& vec, uint32_t len, uint32_t idx, float val)
+{
+  vec.erase();
+  //  vec.resize(len);
+  for(uint32_t i = 0; i < len;i++)
+    vec.push_back(0.);
+  vec[idx] = val;
+}
+
 template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 { //Explore tau times, then act according to optimal.
 
   vw_context vwc = {data, base, ec};
   uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
-
-  if (vwc.recorded && is_learn)
+  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
+  ec.pred.scalars = data.preds;
+  
+  cout<<"Probability = "<<data.recorder->probability<<" recorded = "<<vwc.recorded<<endl;
+  
+  if (is_learn)
     base.learn(ec);
 
+
   //ec.pred.multiclass = action;
-  ec.pred.scalars.erase();
-  ec.pred.scalars.resize(data.cbcs.num_actions);
-  ec.pred.scalars[action] = data.recorder->probability;
 }
 
 template <bool is_learn>
@@ -167,9 +179,10 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
     base.learn(ec);
 
   //ec.pred.multiclass = action;
-  ec.pred.scalars.erase();
-  ec.pred.scalars.resize(data.cbcs.num_actions);
-  ec.pred.scalars[action] = data.recorder->probability;
+  //ec.pred.scalars.erase();
+  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
+  ec.pred.scalars = data.preds;
+  //  cout<<"Size = "<<ec.pred.scalars.size()<<" "<<preds.size()<<" "<<data.cbcs->num_actions<<" "<<data.recorder->probability<<" "<<ec.pred.scalars[action]<<endl;
 }
 
 template <bool is_learn>
@@ -181,32 +194,31 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 
   if (is_learn)  
     for (size_t i = 0; i < data.policies.size(); i++)
-    { uint32_t count = BS::weight_gen();
-      for (uint32_t j = 0; j < count; j++)
-        base.learn(ec,i);
-    }
+      { uint32_t count = BS::weight_gen();
+	for (uint32_t j = 0; j < count; j++)
+	  base.learn(ec,i);
+      }
 
   //ec.pred.multiclass = action;
-  ec.pred.scalars.erase();
-  ec.pred.scalars.resize(data.cbcs.num_actions);
-  ec.pred.scalars[action] = data.recorder->probability;
+  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
+  ec.pred.scalars = data.preds;
 }
 
 void safety(v_array<float>& distribution, float min_prob)
 { float added_mass = 0.;
   for (uint32_t i = 0; i < distribution.size(); i++)
     if (distribution[i] > 0 && distribution[i] <= min_prob)
-    { added_mass += min_prob - distribution[i];
-      distribution[i] = min_prob;
-    }
+      { added_mass += min_prob - distribution[i];
+	distribution[i] = min_prob;
+      }
 
   float ratio = 1.f / (1.f + added_mass);
   if (ratio < 0.999)
-  { for (uint32_t i = 0; i < distribution.size(); i++)
-      if (distribution[i] > min_prob)
-        distribution[i] = distribution[i] * ratio;
-    safety(distribution, min_prob);
-  }
+    { for (uint32_t i = 0; i < distribution.size(); i++)
+	if (distribution[i] > min_prob)
+	  distribution[i] = distribution[i] * ratio;
+      safety(distribution, min_prob);
+    }
 }
 
 
@@ -215,20 +227,19 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
 
-  uint32_t num_actions = data.cbcs.num_actions;
-  cb_to_cs&c = data.cbcs;
+  uint32_t num_actions = data.cbcs->num_actions;
 
   data.cs_label.costs.erase();
   for (uint32_t j = 0; j < num_actions; j++)
-  { COST_SENSITIVE::wclass wc;
+    { COST_SENSITIVE::wclass wc;
 
-    //get cost prediction for this label
-    wc.x = FLT_MAX;
-    wc.class_index = j+1;
-    wc.partial_prediction = 0.;
-    wc.wap_value = 0.;
-    data.cs_label.costs.push_back(wc);
-  }
+      //get cost prediction for this label
+      wc.x = FLT_MAX;
+      wc.class_index = j+1;
+      wc.partial_prediction = 0.;
+      wc.wap_value = 0.;
+      data.cs_label.costs.push_back(wc);
+    }
 
   float epsilon = data.cover->epsilon;
   size_t cover_size = data.cover->size;
@@ -253,41 +264,38 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     //1. Compute loss vector
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
-    gen_cs_example<false>(data.cbcs, ec, ld, data.cs_label);
+    gen_cs_example<false>(*data.cbcs, ec, ld, data.cs_label);
 
     ec.l.cs = data.second_cs_label;
     //2. Update functions
     for (size_t i = 0; i < cover_size; i++)
-    { //Create costs of each action based on online cover
-      for (uint32_t j = 0; j < num_actions; j++)
-      { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
-        data.second_cs_label.costs[j].class_index = j+1;
-        data.second_cs_label.costs[j].x = pseudo_cost;
+      { //Create costs of each action based on online cover
+	for (uint32_t j = 0; j < num_actions; j++)
+	  { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
+	    data.second_cs_label.costs[j].class_index = j+1;
+	    data.second_cs_label.costs[j].x = pseudo_cost;
+	  }
+	if (i != 0)
+	  data.cs->learn(ec,i+1);
+	if (probabilities[predictions[i] - 1] < min_prob)
+	  norm += max(0, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
+	else
+	  norm += additive_probability;
+	probabilities[predictions[i] - 1] += additive_probability;
       }
-      if (i != 0)
-        data.cs->learn(ec,i+1);
-      if (probabilities[predictions[i] - 1] < min_prob)
-        norm += max(0, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
-      else
-        norm += additive_probability;
-      probabilities[predictions[i] - 1] += additive_probability;
-    }
   }
 
   ec.l.cb = ld;
-  ec.pred.scalars.erase();
-  ec.pred.scalars.resize(data.cbcs.num_actions);
-  ec.pred.scalars[action] = data.recorder->probability;
-  //ALEKH: FIX ME!!
-  for (uint32_t i = 0; i < num_actions; i++)
-	  ec.pred.scalars.push_back(probabilities[i]);
+  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
+  ec.pred.scalars = data.preds;
 }
 
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
 void finish(cb_explore& data)
-{ 
-  cb_to_cs& c = data.cbcs;
+{
+  data.preds.delete_v();
+  cb_to_cs& c = *data.cbcs;
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
   free(&c);
   CB::cb_label.delete_label(&data.cb_label);
@@ -301,9 +309,9 @@ void finish(cb_explore& data)
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
   if (data.cover != nullptr)
-  { data.cover->predictions.delete_v();
-    data.cover->probabilities.delete_v();
-  }
+    { data.cover->predictions.delete_v();
+      data.cover->probabilities.delete_v();
+    }
   delete_it(data.cover);
   if (data.policies.size() > 0)
     data.policies.~vector();
@@ -311,34 +319,38 @@ void finish(cb_explore& data)
 
 base_learner* cb_explore_setup(vw& all)
 { //parse and set arguments
+  cout<<"Setting up cb_explore\n";
   if (missing_option<size_t, true>(all, "cb_explore", "Online explore-exploit for a <k> action contextual bandit problem"))
     return nullptr;
+  cout<<"Still Setting up cb_explore\n";
   new_options(all, "CB_EXPLORE options")
-  ("first", po::value<size_t>(), "tau-first exploration")
-  ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
-  ("bag",po::value<size_t>() ,"bagging-based exploration")
-  ("cover",po::value<size_t>() ,"bagging-based exploration");
+    ("first", po::value<size_t>(), "tau-first exploration")
+    ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
+    ("bag",po::value<size_t>() ,"bagging-based exploration")
+    ("cover",po::value<size_t>() ,"bagging-based exploration");
   add_options(all);
 
   po::variables_map& vm = all.vm;
   cb_explore& data = calloc_or_throw<cb_explore>();
-  data.cbcs = calloc_or_throw<cb_to_cs>();
-  data.cbcs.num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
-  uint32_t num_actions = data.cbcs.num_actions;
+  data.cbcs = &(calloc_or_throw<cb_to_cs>());
+  data.cbcs->num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
+  uint32_t num_actions = data.cbcs->num_actions;
 
-  //ALEKH: All of the allocations need fixing
+  data.preds = v_init<float>();
 
   if (count(all.args.begin(), all.args.end(),"--cb") == 0)
-  { all.args.push_back("--cb");
-    stringstream ss;
-    ss << vm["cb_explore"].as<size_t>();
-    all.args.push_back(ss.str());
-  }
+    { all.args.push_back("--cb");
+      stringstream ss;
+      ss << vm["cb_explore"].as<size_t>();
+      all.args.push_back(ss.str());
+    }
 
-  if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
-	data.cbcs.cb_type = CB_TYPE_DR;
-  else
-	data.cbcs.cb_type = (size_t)vm["cb_type"].as<size_t>();
+  data.cbcs->cb_type = CB_TYPE_DR;
+  //ALEKH: Others TBD later
+  // if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
+  //   data.cbcs->cb_type = CB_TYPE_DR;
+  // else
+  //   data.cbcs->cb_type = (size_t)vm["cb_type"].as<size_t>();
 
   base_learner* base = setup_base(all);
 
@@ -346,43 +358,43 @@ base_learner* cb_explore_setup(vw& all)
   data.recorder = new vw_recorder();
   data.mwt_explorer = new MwtExplorer<vw_context>("vw", *data.recorder);
   if (vm.count("cover"))
-  { size_t cover = (uint32_t)vm["cover"].as<size_t>();
-    data.cs = all.cost_sensitive;
-    data.second_cs_label.costs.resize(num_actions);
-    data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
-    float epsilon = 0.05f;
-    if (vm.count("epsilon"))
-      epsilon = vm["epsilon"].as<float>();
-    data.cover = new vw_cover(epsilon, cover, (u32)num_actions);
-    data.generic_explorer = new GenericExplorer<vw_context>(*data.cover, (u32)num_actions);
-    l = &init_multiclass_learner(&data, base, predict_or_learn_cover<true>,
-                                 predict_or_learn_cover<false>, all.p, cover + 1);
-  }
+    { size_t cover = (uint32_t)vm["cover"].as<size_t>();
+      data.cs = all.cost_sensitive;
+      data.second_cs_label.costs.resize(num_actions);
+      data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
+      float epsilon = 0.05f;
+      if (vm.count("epsilon"))
+	epsilon = vm["epsilon"].as<float>();
+      data.cover = new vw_cover(epsilon, cover, (u32)num_actions);
+      data.generic_explorer = new GenericExplorer<vw_context>(*data.cover, (u32)num_actions);
+      l = &init_multiclass_learner(&data, base, predict_or_learn_cover<true>,
+				   predict_or_learn_cover<false>, all.p, cover + 1);
+    }
   else if (vm.count("bag"))
-  { size_t bags = (uint32_t)vm["bag"].as<size_t>();
-    for (size_t i = 0; i < bags; i++)
-      data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
-    data.bootstrap_explorer = new BootstrapExplorer<vw_context>(data.policies, (u32)num_actions);
-    l = &init_multiclass_learner(&data, base, predict_or_learn_bag<true>,
-                                 predict_or_learn_bag<false>, all.p, bags);
-  }
+    { size_t bags = (uint32_t)vm["bag"].as<size_t>();
+      for (size_t i = 0; i < bags; i++)
+	data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
+      data.bootstrap_explorer = new BootstrapExplorer<vw_context>(data.policies, (u32)num_actions);
+      l = &init_multiclass_learner(&data, base, predict_or_learn_bag<true>,
+				   predict_or_learn_bag<false>, all.p, bags);
+    }
   else if (vm.count("first") )
-  { uint32_t tau = (uint32_t)vm["first"].as<size_t>();
-    data.policy = new vw_policy(0);
-    data.tau_explorer = new TauFirstExplorer<vw_context>(*data.policy, (u32)tau, (u32)num_actions);
-    l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>,
-                                 predict_or_learn_first<false>, all.p, 1);
-  }
+    { uint32_t tau = (uint32_t)vm["first"].as<size_t>();
+      data.policy = new vw_policy(0);
+      data.tau_explorer = new TauFirstExplorer<vw_context>(*data.policy, (u32)tau, (u32)num_actions);
+      l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>,
+				   predict_or_learn_first<false>, all.p, 1);
+    }
   else
-  { float epsilon = 0.05f;
-    if (vm.count("epsilon"))
-      epsilon = vm["epsilon"].as<float>();
-    data.policy = new vw_policy(0);
-    data.greedy_explorer = new EpsilonGreedyExplorer<vw_context>(*data.policy, epsilon, (u32)num_actions);
-    l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>,
-                                 predict_or_learn_greedy<false>, all.p, 1);
-  }
-  data.cbcs.scorer = all.scorer;
+    { float epsilon = 0.05f;
+      if (vm.count("epsilon"))
+	epsilon = vm["epsilon"].as<float>();
+      data.policy = new vw_policy(0);
+      data.greedy_explorer = new EpsilonGreedyExplorer<vw_context>(*data.policy, epsilon, (u32)num_actions);
+      l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>,
+				   predict_or_learn_greedy<false>, all.p, 1);
+    }
+  data.cbcs->scorer = all.scorer;
   l->set_finish(finish);
 
   return make_base(*l);

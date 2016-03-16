@@ -21,15 +21,15 @@ struct vw_context
 
 struct cbify
 {
-	CB::label cb_label;
+  CB::label cb_label;
 };
 
 float loss(uint32_t label, uint32_t final_prediction)
 {
-	if (label != final_prediction)
-		return 1.;
-	else
-		return 0.;
+  if (label != final_prediction)
+    return 1.;
+  else
+    return 0.;
 }
 
 
@@ -40,33 +40,38 @@ void finish(cbify& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(cbify& c, base_learner& base, example& ec) 
+void predict_or_learn(cbify& data, base_learner& base, example& ec) 
 {
 
-	//ALEKH: Ideally, we will be able to return the probability from base.predict, perhaps using the probs field in ec.pred.
-	//Store the multiclass input label
-	MULTICLASS::label_t ld = ec.l.multi;
+  //ALEKH: Ideally, we will be able to return the probability from base.predict, perhaps using the probs field in ec.pred.
+  //Store the multiclass input label
+  MULTICLASS::label_t ld = ec.l.multi;
+  //Create a new cb label
+  data.cb_label.costs.erase();
+  ec.l.cb = data.cb_label;
+  
+  //Call the cb_explore algorithm. It returns a vector with one non-zero entry denoting the probability of the chosen action
+  base.predict(ec);
+  v_array<float> pred = ec.pred.scalars;
 
-	//Call the cb_explore algorithm. It returns a vector with one non-zero entry denoting the probability of the chosen action
-	v_array<float> pred = base.predict(ec);
+  CB::cb_class cl;
+  for (uint32_t i = 0; i < pred.size();i++)  {
+    if (pred[i] > 0.)
+      {
+	cl.action = i+1;
+	cl.probability = pred[i];
+      }
+  }
 
-	//Create a new cb label
-	data.cb_label.costs.erase();
-	ec.l.cb = data.cb_label;
-
-	CB::cb_class cl;
-	uin32_t action = 0;
-	for (uint32_t i = 0; i < pred.size;i++) 
-		if (pred[i] > 0.)
-		{
-			cl.action = i;
-			cl.probability = pred[i];
-		}
-	cl.cost = loss(ld.label, cl.action);
-	data.cb_label.costs.push_back(cl);
-	ec.l.cb = data.cb_label;
-	base.learn(ec);
-	ec.l.multi = ld;
+  if(!cl.action)
+    THROW("No action with non-zero probability found!");
+  uint32_t action = cl.action;
+  cl.cost = loss(ld.label, cl.action);
+  data.cb_label.costs.push_back(cl);
+  ec.l.cb = data.cb_label;
+  base.learn(ec);
+  ec.l.multi = ld;
+  ec.pred.multiclass = action;
 }
 
 base_learner* cbify_setup(vw& all)
@@ -86,6 +91,7 @@ base_learner* cbify_setup(vw& all)
   base_learner* base = setup_base(all);
 
   learner<cbify>* l;
+  l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>);
   l->set_finish(finish);
 
   return make_base(*l);
