@@ -354,6 +354,7 @@
     <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="cb_adf.h" />
+    <ClInclude Include="cb_explore.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -364,6 +365,7 @@
     <ClInclude Include="example.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="interactions.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
@@ -453,8 +455,10 @@
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
     <ClCompile Include="cb_algs.cc" />
+    <ClCompile Include="cb_explore.cc" />
     <ClCompile Include="mwt.cc" />
     <ClCompile Include="mf.cc" />
+    <ClCompile Include="gen_cs_example.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
