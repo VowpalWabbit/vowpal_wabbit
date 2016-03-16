@@ -50,8 +50,11 @@ void predict_or_learn(cb& data, base_learner& base, example& ec)
 
   cb_to_cs& c = *data.cbcs;
   c.known_cost = get_observed_cost(ld);
-  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
+  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions)) 
     cerr << "invalid action: " << c.known_cost->action << endl;
+  else if(c.known_cost != nullptr)
+    cout<<"In CB_ALGS "<<c.known_cost->probability<<endl;
+  
   //generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
 

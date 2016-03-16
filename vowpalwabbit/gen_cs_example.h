@@ -122,7 +122,7 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
   wc.wap_value = 0.;
 
   c.pred_scores.costs.push_back(wc);
-  cout<<"Prediction = "<<wc.x<<" ";
+  //cout<<"Prediction = "<<wc.x<<" ";
   //add correction if we observed cost for this action and regressor is wrong
   if (c.known_cost != nullptr && c.known_cost->action == label)
     {
@@ -142,8 +142,9 @@ void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
 { //this implements the doubly robust method
   cs_ld.costs.erase();
   c.pred_scores.costs.erase();
-  if(c.known_cost)
-    cout<<"Learn = "<<is_learn<<" known = "<<c.known_cost->cost<<" "<<c.known_cost->action<<" "<<c.known_cost->probability<<endl;
+  cout<<"Dize = "<<ld.costs.size()<<endl;
+  //if(c.known_cost)
+    //cout<<"Learn = "<<is_learn<<" known = "<<c.known_cost->cost<<" "<<c.known_cost->action<<" "<<c.known_cost->probability<<endl;
   if (ld.costs.size() == 0)//a test example
     for (uint32_t i = 1; i <= c.num_actions; i++)
       { //Explicit declaration for a weak compiler.
@@ -154,7 +155,10 @@ void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
     //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++) {
       gen_cs_label<is_learn>(c, ec, cs_ld, i);
-      cout<<cs_ld.costs[i-1].x<<" ";
+      if(c.known_cost)
+	cout<<cs_ld.costs[i-1].x<<":"<<c.known_cost->action<<":"<<i<<":"<<c.known_cost->probability<<" ";
+      else
+	cout<<cs_ld.costs[i-1].x<<" ";
     }
   else  //this is an example where we can only perform a subset of the actions
     //in this case generate cost-sensitive example with only allowed actions

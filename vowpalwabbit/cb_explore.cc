@@ -251,12 +251,30 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 
   float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
-  CB::label ld = ec.l.cb;
+  cout<<"Before erase\n";
+  data.cb_label.costs.erase();
+
+  if(ec.l.cb.costs.size() > 0) {
+    CB::cb_class cl;
+    cl.cost = ec.l.cb.costs[0].cost;
+    cl.action = ec.l.cb.costs[0].action;
+    cl.probability = ec.l.cb.costs[0].probability;
+    data.cb_label.costs.push_back(cl);
+    cout<<"Before:CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<" "<<data.recorder->probability<<endl;
+  }
 
   vw_context cp = {data, base, ec};
   uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
 
+  if(data.cb_label.costs.size() > 0)
+    cout<<"After:CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<" "<<data.recorder->probability<<endl;
+
+  cout<<"Learn = "<<is_learn<<" Action = "<<action<<endl;
+
   if (is_learn) {  
+    cout<<"Starting learn\n";
+    cout<<"CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<endl;
+    ec.l.cb = data.cb_label;
     base.learn(ec);
 
     //Now update oracles
@@ -264,17 +282,25 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     //1. Compute loss vector
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
-    gen_cs_example<false>(*data.cbcs, ec, ld, data.cs_label);
+    ec.l.cb = data.cb_label;
+    cout<<"Generating CS example for later: "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<endl;
+    data.cbcs->known_cost = get_observed_cost(data.cb_label);
+    gen_cs_example<false>(*data.cbcs, ec, data.cb_label, data.cs_label);
+    for(uint32_t i = 0;i < num_actions;i++)
+      probabilities[i] = 0;
 
     ec.l.cs = data.second_cs_label;
     //2. Update functions
     for (size_t i = 0; i < cover_size; i++)
       { //Create costs of each action based on online cover
+	cout<<"Costs for "<<i<<": ";
 	for (uint32_t j = 0; j < num_actions; j++)
 	  { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
 	    data.second_cs_label.costs[j].class_index = j+1;
 	    data.second_cs_label.costs[j].x = pseudo_cost;
+	    cout<<pseudo_cost<<":"<<data.cs_label.costs[j].x<<":"<<epsilon<<":"<<probabilities[j]<<":"<<min_prob<<" ";
 	  }
+	cout<<endl;
 	if (i != 0)
 	  data.cs->learn(ec,i+1);
 	if (probabilities[predictions[i] - 1] < min_prob)
@@ -285,7 +311,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
       }
   }
 
-  ec.l.cb = ld;
+  ec.l.cb = data.cb_label;
   v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
   ec.pred.scalars = data.preds;
 }
