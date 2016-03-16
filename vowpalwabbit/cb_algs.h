@@ -29,7 +29,10 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 
   if (is_learn && simple_temp.label != FLT_MAX)
   { float old_weight = ec.weight;
-    ec.weight = 1.f;
+    if (known_cost != nullptr && index == known_cost->action)
+      ec.weight = 1.f / known_cost->probability;
+    else
+      ec.weight = 1.f;
     scorer->learn(ec, index-1+base);
     ec.weight = old_weight;
   }
