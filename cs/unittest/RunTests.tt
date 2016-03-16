@@ -120,9 +120,12 @@ namespace cs_unittest
     [TestClass]
     public partial class RunTests : TestBase
     {
-<# foreach (var mainTestcase in testcases.Values) { #>
+<# foreach (var mainTestcase in testcases.Values) {
+	if (mainTestcase.Invalid)
+		continue;
+#>
         [TestMethod]
-        [Description("<#=mainTestcase.Comment.Trim()#>")]
+        [Description("<#=(mainTestcase.Comment ?? "").Trim()#>")]
         [TestCategory("Command Line")]
         public void CommandLine_Test<#=mainTestcase.Id#>()
         {
@@ -197,6 +200,15 @@ class TestCase
         tests.Reverse();
         return tests;
     }
+
+	public bool Invalid
+	{
+		get
+		{
+			return Arguments == null ||
+				InputData == null;
+		}
+	}
 }
 
 TestCase testcase;

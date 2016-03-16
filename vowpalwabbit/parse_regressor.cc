@@ -120,7 +120,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                                                   "", read, msg, text);
           all.id = buff2;
 
-          if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+          if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end() && !all.id.empty())
             { all.args.push_back("--id");
               all.args.push_back(all.id);
             }

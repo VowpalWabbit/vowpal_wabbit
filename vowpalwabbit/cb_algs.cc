@@ -295,17 +295,12 @@ void learn_eval(cb& c, base_learner&, example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& scores, uint32_t action)
-{ float loss = 0.;
-
+float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
+{ 
   for (auto& cl : scores.costs)
     if (cl.class_index == action)
-      loss = cl.x;
-
-  if (known_cost->action == action)
-    loss += (known_cost->cost - loss) / known_cost->probability;
-
-  return loss;
+      return get_unbiased_cost(observation, action, cl.x) + cl.x;
+  return get_unbiased_cost(observation, action);
 }
 
 void output_example(vw& all, cb& c, example& ec, CB::label& ld)

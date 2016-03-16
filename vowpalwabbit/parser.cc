@@ -1012,9 +1012,8 @@ void initialize_parser_datastructures(vw& all)
 
 namespace VW
 {
-void start_parser(vw& all, bool init_structures)
-{ if (init_structures)
-    initialize_parser_datastructures(all);
+void start_parser(vw& all)
+{ 
 #ifndef _WIN32
   pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
 #else
@@ -1031,12 +1030,9 @@ void free_parser(vw& all)
     all.p->gram_mask.delete_v();
 
   if (all.p->examples != nullptr)
-  { if (all.multilabel_prediction)
-      for (size_t i = 0; i < all.p->ring_size; i++)
-        VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], MULTILABEL::multilabel.delete_label);
-    else
-      for (size_t i = 0; i < all.p->ring_size; i++)
-        VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
+  { 
+    for (size_t i = 0; i < all.p->ring_size; i++)
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], all.delete_prediction);
     free(all.p->examples);
   }
 

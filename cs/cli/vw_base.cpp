@@ -48,7 +48,9 @@ namespace VW
                     else
                     {
                         clr_io_buf model(settings->ModelStream);
-                        InitializeFromModel(string, model);
+                        if (!settings->Arguments->Contains("--no_stdin"))
+                          string += " --no_stdin";
+                        m_vw = VW::initialize(string, &model);
                         settings->ModelStream->Close();
                     }
                 }
@@ -61,39 +63,6 @@ namespace VW
             }
         }
         CATCHRETHROW
-    }
-
-    void VowpalWabbitBase::InitializeFromModel(string args, io_buf& model)
-    {
-        char** argv = nullptr;
-        int argc = 0;
-
-        args.append(" --no_stdin");
-        argv = VW::get_argv_from_string(args, argc);
-
-        m_vw = &parse_args(argc, argv);
-
-        try
-        {
-            parse_modules(*m_vw, model);
-            parse_sources(*m_vw, model);
-            initialize_parser_datastructures(*m_vw);
-        }
-        catch (...)
-        {
-            VW::finish(*m_vw);
-            m_vw = nullptr;
-            throw;
-        }
-        finally
-        {
-            if (argv != nullptr)
-            {
-                for (int i = 0; i < argc; i++)
-                    free(argv[i]);
-                free(argv);
-            }
-        }
     }
 
     VowpalWabbitBase::~VowpalWabbitBase()
@@ -129,22 +98,14 @@ namespace VW
         if (m_vw != nullptr)
         {
             // de-allocate example pools that are managed for each even shared instances
-            auto multilabel_prediction = m_vw->multilabel_prediction;
+            auto delete_prediction = m_vw->delete_prediction;
             auto delete_label = m_vw->p->lp.delete_label;
 
             if (m_examples != nullptr)
             {
                 for each (auto ex in m_examples)
                 {
-                    if (multilabel_prediction)
-                    {
-                        VW::dealloc_example(delete_label, *ex->m_example, MULTILABEL::multilabel.delete_label);
-                    }
-                    else
-                    {
-                        VW::dealloc_example(delete_label, *ex->m_example);
-                    }
-
+                    VW::dealloc_example(delete_label, *ex->m_example, delete_prediction);
                     ::free_it(ex->m_example);
 
                     // cleanup pointers in example chain
@@ -302,7 +263,7 @@ namespace VW
             // reload from model
             // seek to beginning
             mem_buf.reset_file(0);
-            InitializeFromModel(stringArgs.c_str(), mem_buf);
+            m_vw = VW::initialize(stringArgs.c_str(), &mem_buf);
         }
         CATCHRETHROW
     }
