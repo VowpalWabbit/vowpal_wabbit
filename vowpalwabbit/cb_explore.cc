@@ -96,6 +96,8 @@ struct cb_explore
   cb_to_cs* cbcs;
   v_array<float> preds;
 
+  bool learn_only;
+
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
   COST_SENSITIVE::label second_cs_label;
@@ -155,17 +157,16 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 { //Explore tau times, then act according to optimal.
 
   vw_context vwc = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
+  uint32_t action = 1;
+  if(!is_learn || !data.learn_only)
+    action = data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
+
   v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
-  ec.pred.scalars = data.preds;
-  
-  cout<<"Probability = "<<data.recorder->probability<<" recorded = "<<vwc.recorded<<endl;
   
   if (is_learn)
     base.learn(ec);
 
-
-  //ec.pred.multiclass = action;
+  ec.pred.scalars = data.preds;
 }
 
 template <bool is_learn>
@@ -173,16 +174,15 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 { //Explore uniform random an epsilon fraction of the time.
 
   vw_context vwc = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
+  uint32_t action = 1;
+  if(!is_learn || !data.learn_only)
+    action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
   if (is_learn)
     base.learn(ec);
 
-  //ec.pred.multiclass = action;
-  //ec.pred.scalars.erase();
   v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
   ec.pred.scalars = data.preds;
-  //  cout<<"Size = "<<ec.pred.scalars.size()<<" "<<preds.size()<<" "<<data.cbcs->num_actions<<" "<<data.recorder->probability<<" "<<ec.pred.scalars[action]<<endl;
 }
 
 template <bool is_learn>
@@ -190,7 +190,9 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
 
   vw_context context = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
+  uint32_t action = 1;
+  if(!is_learn || !data.learn_only)
+    action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
 
   if (is_learn)  
     for (size_t i = 0; i < data.policies.size(); i++)
@@ -199,7 +201,6 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 	  base.learn(ec,i);
       }
 
-  //ec.pred.multiclass = action;
   v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
   ec.pred.scalars = data.preds;
 }
@@ -251,7 +252,6 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 
   float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
-  cout<<"Before erase\n";
   data.cb_label.costs.erase();
 
   if(ec.l.cb.costs.size() > 0) {
@@ -260,20 +260,15 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     cl.action = ec.l.cb.costs[0].action;
     cl.probability = ec.l.cb.costs[0].probability;
     data.cb_label.costs.push_back(cl);
-    cout<<"Before:CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<" "<<data.recorder->probability<<endl;
   }
 
   vw_context cp = {data, base, ec};
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
+  uint32_t action = 1;
+  if(!data.learn_only || !is_learn)
+    action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
 
-  if(data.cb_label.costs.size() > 0)
-    cout<<"After:CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<" "<<data.recorder->probability<<endl;
-
-  cout<<"Learn = "<<is_learn<<" Action = "<<action<<endl;
 
   if (is_learn) {  
-    cout<<"Starting learn\n";
-    cout<<"CB label "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<endl;
     ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -283,7 +278,6 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    cout<<"Generating CS example for later: "<<data.cb_label.costs[0].action<<" "<<data.cb_label.costs[0].probability<<endl;
     data.cbcs->known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(*data.cbcs, ec, data.cb_label, data.cs_label);
     for(uint32_t i = 0;i < num_actions;i++)
@@ -293,14 +287,11 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     //2. Update functions
     for (size_t i = 0; i < cover_size; i++)
       { //Create costs of each action based on online cover
-	cout<<"Costs for "<<i<<": ";
 	for (uint32_t j = 0; j < num_actions; j++)
 	  { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
 	    data.second_cs_label.costs[j].class_index = j+1;
 	    data.second_cs_label.costs[j].x = pseudo_cost;
-	    cout<<pseudo_cost<<":"<<data.cs_label.costs[j].x<<":"<<epsilon<<":"<<probabilities[j]<<":"<<min_prob<<" ";
 	  }
-	cout<<endl;
 	if (i != 0)
 	  data.cs->learn(ec,i+1);
 	if (probabilities[predictions[i] - 1] < min_prob)
@@ -345,15 +336,14 @@ void finish(cb_explore& data)
 
 base_learner* cb_explore_setup(vw& all)
 { //parse and set arguments
-  cout<<"Setting up cb_explore\n";
   if (missing_option<size_t, true>(all, "cb_explore", "Online explore-exploit for a <k> action contextual bandit problem"))
     return nullptr;
-  cout<<"Still Setting up cb_explore\n";
   new_options(all, "CB_EXPLORE options")
     ("first", po::value<size_t>(), "tau-first exploration")
     ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
     ("bag",po::value<size_t>() ,"bagging-based exploration")
-    ("cover",po::value<size_t>() ,"bagging-based exploration");
+    ("cover",po::value<size_t>() ,"bagging-based exploration")
+    ("learn_only","for not calling predict when learn is true");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -370,6 +360,11 @@ base_learner* cb_explore_setup(vw& all)
       ss << vm["cb_explore"].as<size_t>();
       all.args.push_back(ss.str());
     }
+
+  if(vm.count("learn_only"))
+    data.learn_only = true;
+  else
+    data.learn_only = false;
 
   data.cbcs->cb_type = CB_TYPE_DR;
   //ALEKH: Others TBD later

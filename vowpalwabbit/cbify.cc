@@ -55,9 +55,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   v_array<float> pred = ec.pred.scalars;
 
   CB::cb_class cl;
-  cout<<"Predicted: ";
   for (uint32_t i = 0; i < pred.size();i++)  {
-    cout<<i<<":"<<pred[i]<<" ";
     if (pred[i] > 0.)
       {
 	cl.action = i+1;
@@ -65,7 +63,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	//break;
       }
   }
-  cout<<endl;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -73,7 +70,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   cl.cost = loss(ld.label, cl.action);
   ec.l.cb = data.cb_label;
   ec.l.cb.costs.push_back(cl);
-  cout<<"CB label in cbify "<<ec.l.cb.costs[0].action<<" "<<ec.l.cb.costs[0].probability<<endl;
   base.learn(ec);
   ec.l.multi = ld;
   ec.pred.multiclass = action;
@@ -92,6 +88,7 @@ base_learner* cbify_setup(vw& all)
     stringstream ss;
     ss << vm["cbify"].as<size_t>();
     all.args.push_back(ss.str());
+    all.args.push_back("--learn_only");
   }
   base_learner* base = setup_base(all);
 
