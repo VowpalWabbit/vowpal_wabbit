@@ -132,7 +132,8 @@ namespace vw_explore_tests_single_action
 
             // tau = 0 means no randomization and no logging
             vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-            this->Test_Interactions(interactions, 0, nullptr);
+            float expected_prob[1] = { 1.f };
+            this->Test_Interactions(interactions, 1, expected_prob);
         }
 
         TEST_METHOD(Tau_First_Random)
@@ -197,8 +198,17 @@ namespace vw_explore_tests_single_action
 
             // Only 2 interactions logged, 3rd one should not be stored
             vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-            float expected_probs[2] = { .1f, .1f };
-            this->Test_Interactions(interactions, 2, expected_probs);
+            float* expected_probs = new float[times_choose + 3];
+            for (size_t i = 0; i < times_choose; i++)
+            {
+                expected_probs[i] = 1.f;
+            }
+            expected_probs[times_choose] = .1f;
+            expected_probs[times_choose + 1] = .1f;
+            expected_probs[times_choose + 2] = 1.f;
+
+            this->Test_Interactions(interactions, times_choose + 3, expected_probs);
+            delete[] expected_probs;
         }
 
         TEST_METHOD(Bootstrap)
@@ -808,10 +818,10 @@ namespace vw_explore_tests_single_action
             chosen_action = mwt.Choose_Action(explorer, this->Get_Unique_Key(3), my_context);
             Assert::AreEqual((u32)10, chosen_action);
 
-            // Only 2 interactions logged, 3rd one should not be stored
+            // All interactions should be logged regardless of tau
             vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
-            float expected_probs[2] = { .1f, .1f };
-            this->Test_Interactions(interactions, 2, expected_probs);
+            float expected_probs[3] = { .1f, .1f, 1.f };
+            this->Test_Interactions(interactions, 3, expected_probs);
         }
 
         template <class TContext>

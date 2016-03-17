@@ -783,7 +783,7 @@ private:
             }
 
             action_probability = 1.f;
-            log_action = false;
+            log_action = true;
         }
 
         return std::tuple<u32, float, bool>(chosen_action, action_probability, log_action);
@@ -1740,7 +1740,7 @@ private:
         else
         {
             action_probability = 1.f;
-            log_action = false;
+            log_action = true;
         }
 
         return std::tuple<float, bool>(action_probability, log_action);

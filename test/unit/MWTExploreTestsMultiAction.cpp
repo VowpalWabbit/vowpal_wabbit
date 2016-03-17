@@ -140,9 +140,10 @@ namespace vw_explore_tests_multi_action
 
             Assert::AreEqual(expected_actions[0], chosen_actions[0]);
 
-            // tau = 0 means no randomization and no logging
+            // tau = 0 so action should have prob = 1
+            float expected_probs[1] = { 1.f };
             vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-            this->Test_Interactions(interactions, 0, nullptr);
+            this->Test_Interactions(interactions, 1, expected_probs);
         }
 
         TEST_METHOD(Multi_Action_Tau_First_Random)
@@ -213,8 +214,17 @@ namespace vw_explore_tests_multi_action
 
             // Only 2 interactions logged, 3rd one should not be stored
             vector<TestInteraction<TestContext>> interactions = my_recorder.Get_All_Interactions();
-            float expected_probs[2] = { .1f, .1f };
-            this->Test_Interactions(interactions, 2, expected_probs);
+            float* expected_probs = new float[times_choose + 3];
+            for (size_t i = 0; i < times_choose; i++)
+            {
+                expected_probs[i] = 1.f;
+            }
+            expected_probs[times_choose] = .1f;
+            expected_probs[times_choose + 1] = .1f;
+            expected_probs[times_choose + 2] = 1.f;
+            this->Test_Interactions(interactions, times_choose + 3, expected_probs);
+            
+            delete[] expected_probs;
         }
 
         TEST_METHOD(Multi_Action_Bootstrap)
@@ -876,8 +886,8 @@ namespace vw_explore_tests_multi_action
 
             // Only 2 interactions logged, 3rd one should not be stored
             vector<TestInteraction<TContext>> interactions = my_recorder.Get_All_Interactions();
-            float expected_probs[2] = { .1f, .1f };
-            this->Test_Interactions(interactions, 2, expected_probs);
+            float expected_probs[3] = { .1f, .1f, 1.f };
+            this->Test_Interactions(interactions, 3, expected_probs);
         }
 
         template <class TContext>
