@@ -15,9 +15,9 @@ using namespace LEARNER;
 
 using namespace CB;
 
-struct cb 
-{ 
-  cb_to_cs* cbcs;
+struct cb
+{
+  cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
 };
 
@@ -48,11 +48,11 @@ template <bool is_learn>
 void predict_or_learn(cb& data, base_learner& base, example& ec)
 { CB::label ld = ec.l.cb;
 
-  cb_to_cs& c = *data.cbcs;
+  cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
-  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions)) 
+  if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
     cerr << "invalid action: " << c.known_cost->action << endl;
-  
+
   //generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ld, data.cb_cs_ld);
 
@@ -77,7 +77,7 @@ void predict_eval(cb&, base_learner&, example&)
 void learn_eval(cb& data, base_learner&, example& ec)
 { CB_EVAL::label ld = ec.l.cb_eval;
 
-  cb_to_cs& c = *data.cbcs;
+  cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld.event);
   gen_cs_example<true>(c, ec, ld.event, data.cb_cs_ld);
 
@@ -88,7 +88,7 @@ void learn_eval(cb& data, base_learner&, example& ec)
 }
 
 float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
-{ 
+{
   for (auto& cl : scores.costs)
     if (cl.class_index == action)
       return get_unbiased_cost(observation, action, cl.x) + cl.x;
@@ -98,7 +98,7 @@ float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 { float loss = 0.;
 
-  cb_to_cs& c = *data.cbcs;
+  cb_to_cs& c = data.cbcs;
   if(!is_test_label(ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
@@ -121,10 +121,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 }
 
 void finish(cb& data)
-{ 
-  cb_to_cs& c = *data.cbcs;
-  data.cb_cs_ld.costs.delete_v(); 
-  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores); 
+{
+  cb_to_cs& c = data.cbcs;
+  data.cb_cs_ld.costs.delete_v();
+  COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
   free(&c);
 }
 
@@ -147,8 +147,7 @@ base_learner* cb_algs_setup(vw& all)
   add_options(all);
 
   cb& data = calloc_or_throw<cb>();
-  data.cbcs = &calloc_or_throw<cb_to_cs>();
-  cb_to_cs& c = *data.cbcs;
+  cb_to_cs& c = data.cbcs;
   c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
 
   bool eval = false;
@@ -166,7 +165,7 @@ base_learner* cb_algs_setup(vw& all)
       c.cb_type = CB_TYPE_DR;
     else if (type_string.compare("dm") == 0)
     { if (eval)
-      { free(&c);
+      { free(&data);
         THROW( "direct method can not be used for evaluation --- it is biased.");
       }
 

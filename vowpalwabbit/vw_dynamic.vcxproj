@@ -440,7 +440,7 @@
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="cb_explore.cc" />
-    <ClCompile="gen_cs_example.cc" />
+    <ClCompile Include="gen_cs_example.cc" />
     <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="comp_io.cc" />
     <ClCompile Include="confidence.cc" />

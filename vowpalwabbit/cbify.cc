@@ -40,7 +40,7 @@ void finish(cbify& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(cbify& data, base_learner& base, example& ec) 
+void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
 
   //ALEKH: Ideally, we will be able to return the probability from base.predict, perhaps using the probs field in ec.pred.
@@ -49,20 +49,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   //Create a new cb label
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
-  
+
   //Call the cb_explore algorithm. It returns a vector with one non-zero entry denoting the probability of the chosen action
   base.predict(ec);
-  v_array<float> pred = ec.pred.scalars;
+
 
   CB::cb_class cl;
-  for (uint32_t i = 0; i < pred.size();i++)  {
-    if (pred[i] > 0.)
-      {
-	cl.action = i+1;
-	cl.probability = pred[i];
-	//break;
-      }
-  }
+  cl.action = ec.pred.action_prob.action;
+  cl.probability = ec.pred.action_prob.probability;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -78,7 +72,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 base_learner* cbify_setup(vw& all)
 { //parse and set arguments
   if (missing_option<size_t, true>(all, "cbify", "Convert multiclass on <k> classes into a contextual bandit problem"))
-    return nullptr;  
+    return nullptr;
 
   po::variables_map& vm = all.vm;
   cbify& data = calloc_or_throw<cbify>();

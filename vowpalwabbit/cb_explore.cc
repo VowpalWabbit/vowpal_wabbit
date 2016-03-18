@@ -80,12 +80,12 @@ public:
 
 struct vw_recorder : public IRecorder<vw_context>
 { void Record(vw_context& context, u32 a, float p, string /*unique_key*/)
-  { action = a;
-    probability = p;
+  { pred.action = a;
+    pred.probability = p;
     context.recorded = true;
   }
-  u32 action;
-  float probability;
+
+  cb_explore_pred pred;
 
   virtual ~vw_recorder()
   { }
@@ -93,7 +93,7 @@ struct vw_recorder : public IRecorder<vw_context>
 
 struct cb_explore
 {
-  cb_to_cs* cbcs;
+  cb_to_cs cbcs;
   v_array<float> preds;
 
   bool learn_only;
@@ -129,7 +129,7 @@ vector<float> vw_cover::Score_Actions(vw_context& ctx)
       probabilities[pred - 1] += additive_probability;
       predictions[i] = (uint32_t)pred;
     }
-  uint32_t num_actions = ctx.data.cbcs->num_actions;
+  uint32_t num_actions = ctx.data.cbcs.num_actions;
   float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
   safety(probabilities, min_prob);
@@ -143,15 +143,6 @@ vector<float> vw_cover::Score_Actions(vw_context& ctx)
   return probs_vec;
 }
 
-void v_array_set(v_array<float>& vec, uint32_t len, uint32_t idx, float val)
-{
-  vec.erase();
-  //  vec.resize(len);
-  for(uint32_t i = 0; i < len;i++)
-    vec.push_back(0.);
-  vec[idx] = val;
-}
-
 template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 { //Explore tau times, then act according to optimal.
@@ -159,14 +150,12 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
   vw_context vwc = {data, base, ec};
   uint32_t action = 1;
   if(!is_learn || !data.learn_only)
-    action = data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
+    data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
-  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
-  
   if (is_learn)
     base.learn(ec);
 
-  ec.pred.scalars = data.preds;
+  ec.pred.action_prob = data.recorder->pred;
 }
 
 template <bool is_learn>
@@ -176,13 +165,12 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
   vw_context vwc = {data, base, ec};
   uint32_t action = 1;
   if(!is_learn || !data.learn_only)
-    action = data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
+    data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
   if (is_learn)
     base.learn(ec);
 
-  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
-  ec.pred.scalars = data.preds;
+  ec.pred.action_prob = data.recorder->pred;
 }
 
 template <bool is_learn>
@@ -192,17 +180,16 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
   vw_context context = {data, base, ec};
   uint32_t action = 1;
   if(!is_learn || !data.learn_only)
-    action = data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
+    data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
 
-  if (is_learn)  
+  if (is_learn)
     for (size_t i = 0; i < data.policies.size(); i++)
       { uint32_t count = BS::weight_gen();
 	for (uint32_t j = 0; j < count; j++)
 	  base.learn(ec,i);
       }
 
-  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
-  ec.pred.scalars = data.preds;
+  ec.pred.action_prob = data.recorder->pred;
 }
 
 void safety(v_array<float>& distribution, float min_prob)
@@ -228,7 +215,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
 
-  uint32_t num_actions = data.cbcs->num_actions;
+  uint32_t num_actions = data.cbcs.num_actions;
 
   data.cs_label.costs.erase();
   for (uint32_t j = 0; j < num_actions; j++)
@@ -263,12 +250,10 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
   }
 
   vw_context cp = {data, base, ec};
-  uint32_t action = 1;
   if(!data.learn_only || !is_learn)
-    action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
+    data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), cp);
 
-
-  if (is_learn) {  
+  if (is_learn) {
     ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -278,8 +263,8 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-    data.cbcs->known_cost = get_observed_cost(data.cb_label);
-    gen_cs_example<false>(*data.cbcs, ec, data.cb_label, data.cs_label);
+    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for(uint32_t i = 0;i < num_actions;i++)
       probabilities[i] = 0;
 
@@ -303,8 +288,8 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
   }
 
   ec.l.cb = data.cb_label;
-  v_array_set(data.preds, data.cbcs->num_actions, action-1, data.recorder->probability);
-  ec.pred.scalars = data.preds;
+
+  ec.pred.action_prob = data.recorder->pred;
 }
 
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
@@ -312,9 +297,8 @@ template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 void finish(cb_explore& data)
 {
   data.preds.delete_v();
-  cb_to_cs& c = *data.cbcs;
+  cb_to_cs& c = data.cbcs;
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
-  free(&c);
   CB::cb_label.delete_label(&data.cb_label);
   COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
   COST_SENSITIVE::cs_label.delete_label(&data.second_cs_label);
@@ -348,9 +332,8 @@ base_learner* cb_explore_setup(vw& all)
 
   po::variables_map& vm = all.vm;
   cb_explore& data = calloc_or_throw<cb_explore>();
-  data.cbcs = &(calloc_or_throw<cb_to_cs>());
-  data.cbcs->num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
-  uint32_t num_actions = data.cbcs->num_actions;
+  data.cbcs.num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
+  uint32_t num_actions = data.cbcs.num_actions;
 
   data.preds = v_init<float>();
 
@@ -366,7 +349,7 @@ base_learner* cb_explore_setup(vw& all)
   else
     data.learn_only = false;
 
-  data.cbcs->cb_type = CB_TYPE_DR;
+  data.cbcs.cb_type = CB_TYPE_DR;
   //ALEKH: Others TBD later
   // if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
   //   data.cbcs->cb_type = CB_TYPE_DR;
@@ -415,7 +398,7 @@ base_learner* cb_explore_setup(vw& all)
       l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>,
 				   predict_or_learn_greedy<false>, all.p, 1);
     }
-  data.cbcs->scorer = all.scorer;
+  data.cbcs.scorer = all.scorer;
   l->set_finish(finish);
 
   return make_base(*l);
