@@ -150,7 +150,7 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
   if(!is_learn || !data.learn_only)
     data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
-  if (is_learn && data.recorder->pred.probability < 1) 
+  if (is_learn && ec.l.cb.costs[0].probability < 1) 
     base.learn(ec);
 
   ec.pred.action_prob = data.recorder->pred;
