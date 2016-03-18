@@ -125,7 +125,6 @@ void finish(cb& data)
   cb_to_cs& c = data.cbcs;
   data.cb_cs_ld.costs.delete_v();
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
-  free(&c);
 }
 
 void finish_example(vw& all, cb& c, example& ec)

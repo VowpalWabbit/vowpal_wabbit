@@ -10,18 +10,8 @@ using namespace LEARNER;
 using namespace MultiWorldTesting;
 using namespace MultiWorldTesting::SingleAction;
 
-struct cbify;
-
-struct vw_context
-{ cbify& data;
-  base_learner& l;
-  example& e;
-  bool recorded;
-};
-
 struct cbify
-{
-  CB::label cb_label;
+{ CB::label cb_label;
 };
 
 float loss(uint32_t label, uint32_t final_prediction)
@@ -32,7 +22,6 @@ float loss(uint32_t label, uint32_t final_prediction)
     return 0.;
 }
 
-
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
 void finish(cbify& data)
@@ -41,18 +30,14 @@ void finish(cbify& data)
 
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
-{
-
-  //ALEKH: Ideally, we will be able to return the probability from base.predict, perhaps using the probs field in ec.pred.
+{ //ALEKH: Ideally, we will be able to return the probability from base.predict, perhaps using the probs field in ec.pred.
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
-  //Create a new cb label
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
 
   //Call the cb_explore algorithm. It returns a vector with one non-zero entry denoting the probability of the chosen action
   base.predict(ec);
-
 
   CB::cb_class cl;
   cl.action = ec.pred.action_prob.action;
@@ -62,8 +47,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
     THROW("No action with non-zero probability found!");
   uint32_t action = cl.action;
   cl.cost = loss(ld.label, cl.action);
+
+  //Create a new cb label
+  data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
-  ec.l.cb.costs.push_back(cl);
   base.learn(ec);
   ec.l.multi = ld;
   ec.pred.multiclass = action;

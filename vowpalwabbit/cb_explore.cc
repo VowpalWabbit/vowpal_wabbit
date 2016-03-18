@@ -16,8 +16,7 @@ using namespace MultiWorldTesting::SingleAction;
 struct cb_explore;
 
 struct vw_context
-{
-  cb_explore& data;
+{ cb_explore& data;
   base_learner& l;
   example& e;
   bool recorded;
@@ -148,7 +147,6 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 { //Explore tau times, then act according to optimal.
 
   vw_context vwc = {data, base, ec};
-  uint32_t action = 1;
   if(!is_learn || !data.learn_only)
     data.mwt_explorer->Choose_Action(*data.tau_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
@@ -161,9 +159,8 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 { //Explore uniform random an epsilon fraction of the time.
-
   vw_context vwc = {data, base, ec};
-  uint32_t action = 1;
+
   if(!is_learn || !data.learn_only)
     data.mwt_explorer->Choose_Action(*data.greedy_explorer, StringUtils::to_string(ec.example_counter), vwc);
 
@@ -178,7 +175,6 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
 
   vw_context context = {data, base, ec};
-  uint32_t action = 1;
   if(!is_learn || !data.learn_only)
     data.mwt_explorer->Choose_Action(*data.bootstrap_explorer, StringUtils::to_string(ec.example_counter), context);
 
@@ -288,15 +284,13 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
   }
 
   ec.l.cb = data.cb_label;
-
   ec.pred.action_prob = data.recorder->pred;
 }
 
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
 void finish(cb_explore& data)
-{
-  data.preds.delete_v();
+{ data.preds.delete_v();
   cb_to_cs& c = data.cbcs;
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
   CB::cb_label.delete_label(&data.cb_label);
@@ -310,9 +304,9 @@ void finish(cb_explore& data)
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
   if (data.cover != nullptr)
-    { data.cover->predictions.delete_v();
-      data.cover->probabilities.delete_v();
-    }
+  { data.cover->predictions.delete_v();
+    data.cover->probabilities.delete_v();
+  }
   delete_it(data.cover);
   if (data.policies.size() > 0)
     data.policies.~vector();
