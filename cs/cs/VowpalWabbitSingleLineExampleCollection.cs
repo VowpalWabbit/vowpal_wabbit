@@ -39,9 +39,9 @@ namespace VW
         /// <summary>
         /// Learns from this example.
         /// </summary>
-        public override void Learn()
+        protected override void LearnInternal(VowpalWabbit vw)
         {
-            this.vw.Learn(this.Example);
+            vw.Learn(this.Example);
         }
 
         /// <summary>
@@ -50,17 +50,17 @@ namespace VW
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <returns>The prediction for the this example.</returns>
-        public override TPrediction Learn<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        protected override TPrediction LearnInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
-            return this.vw.Learn<TPrediction>(this.Example, predictionFactory);
+            return vw.Learn<TPrediction>(this.Example, predictionFactory);
         }
 
         /// <summary>
         /// Predicts for this example.
         /// </summary>
-        public override void Predict()
+        protected override void PredictInternal(VowpalWabbit vw)
         {
-            this.vw.Predict(this.Example);
+            vw.Predict(this.Example);
         }
 
         /// <summary>
@@ -69,9 +69,9 @@ namespace VW
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <returns>The prediction for the this example.</returns>
-        public override TPrediction Predict<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        protected override TPrediction PredictInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
-            return this.vw.Predict<TPrediction>(this.Example, predictionFactory);
+            return vw.Predict<TPrediction>(this.Example, predictionFactory);
         }
 
         /// <summary>

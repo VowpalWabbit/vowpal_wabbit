@@ -45,7 +45,7 @@ namespace VW
         /// <summary>
         /// Calls learn or predict for the set of examples. Does required filtering of potential new line examples.
         /// </summary>
-        private TPrediction Execute<TPrediction>(Action<VowpalWabbitExample> predictOrLearn, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory = null)
+        private TPrediction Execute<TPrediction>(VowpalWabbit vw, Action<VowpalWabbitExample> predictOrLearn, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory = null)
         {
             Contract.Requires(predictOrLearn != null);
 
@@ -87,10 +87,10 @@ namespace VW
         /// <summary>
         /// Learns from these examples.
         /// </summary>
-        public override void Learn()
+        protected override void LearnInternal(VowpalWabbit vw)
         {
             // unfortunately can't specify <void>
-            this.Execute<int>(ex => this.vw.Learn(ex));
+            this.Execute<int>(vw, ex => vw.Learn(ex));
         }
 
         /// <summary>
@@ -99,18 +99,18 @@ namespace VW
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <returns>The prediction for the this example.</returns>
-        public override TPrediction Learn<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        protected override TPrediction LearnInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
-            return this.Execute(ex => this.vw.Learn(ex), predictionFactory);
+            return this.Execute(vw, ex => vw.Learn(ex), predictionFactory);
         }
 
         /// <summary>
         /// Predicts for these examples.
         /// </summary>
-        public override void Predict()
+        protected override void PredictInternal(VowpalWabbit vw)
         {
             // unfortunately can't specify <void>
-            this.Execute<int>(ex => this.vw.Predict(ex));
+            this.Execute<int>(vw, ex => vw.Predict(ex));
         }
 
         /// <summary>
@@ -119,9 +119,9 @@ namespace VW
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
         /// <returns>The prediction for the this example.</returns>
-        public override TPrediction Predict<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
+        protected override TPrediction PredictInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
-            return this.Execute(ex => this.vw.Predict(ex), predictionFactory);
+            return this.Execute(vw, ex => vw.Predict(ex), predictionFactory);
         }
 
         /// <summary>
