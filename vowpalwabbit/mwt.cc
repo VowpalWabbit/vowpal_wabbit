@@ -174,7 +174,13 @@ namespace MWT {
     VW::finish_example(all, &ec);
   }
   
-  void finish(mwt& c){ c.evals.delete_v(); c.policies.delete_v(); }
+  void finish(mwt& c)
+  { c.evals.delete_v(); 
+    c.policies.delete_v(); 
+    for (size_t i = 0; i < 256; i++)
+      c.feature_space[i].delete_v();
+    c.indices.delete_v();
+  }
 }
 using namespace MWT;
 
