@@ -205,7 +205,7 @@ public:
 /// the core definition of a set of features.
 struct features {
   v_array<feature_value> values; // Always needed.
-  v_array<feature_index> indicies; //Optional for dense data.
+  v_array<feature_index> indicies; //Optional for sparse data.
   v_array<audit_strings_ptr> space_names; //Optional for audit mode.
 
   float sum_feat_sq;
