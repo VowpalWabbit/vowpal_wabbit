@@ -34,16 +34,6 @@ bool know_all_cost_example(CB::label& ld)
   return true;
 }
 
-bool is_test_label(CB::label& ld)
-{ if (ld.costs.size() == 0)
-    return true;
-  for (size_t i=0; i<ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
-      return false;
-  return true;
-}
-
-
 template <bool is_learn>
 void predict_or_learn(cb& data, base_learner& base, example& ec)
 { CB::label ld = ec.l.cb;
@@ -85,14 +75,6 @@ void learn_eval(cb& data, base_learner&, example& ec)
     ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
 
   ec.pred.multiclass = ec.l.cb_eval.action;
-}
-
-float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
-{
-  for (auto& cl : scores.costs)
-    if (cl.class_index == action)
-      return get_unbiased_cost(observation, action, cl.x) + cl.x;
-  return get_unbiased_cost(observation, action);
 }
 
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)

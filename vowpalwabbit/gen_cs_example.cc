@@ -28,6 +28,14 @@ cb_class* get_observed_cost(CB::label& ld)
   return nullptr;
 }
 
+float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
+{
+  for (auto& cl : scores.costs)
+    if (cl.class_index == action)
+      return get_unbiased_cost(observation, action, cl.x) + cl.x;
+  return get_unbiased_cost(observation, action);
+}
+
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 { //this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
   //generate cost-sensitive example

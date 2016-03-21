@@ -205,7 +205,6 @@ void safety(v_array<float>& distribution, float min_prob)
     }
 }
 
-
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
@@ -310,6 +309,26 @@ void finish(cb_explore& data)
   delete_it(data.cover);
   if (data.policies.size() > 0)
     data.policies.~vector();
+}
+
+void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
+{ float loss = 0.;
+
+  cb_to_cs& c = data.cbcs;
+  if(!is_test_label(ld))
+    loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.action_prob.action);
+
+  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+
+  for (int sink : all.final_prediction_sink)
+    all.print(sink, (float)ec.pred.action_prob.action, 0, ec.tag);
+
+  print_update(all, is_test_label(ld), ec, nullptr, false);
+}
+
+void finish_example(vw& all, cb_explore& c, example& ec)
+{ output_example(all, c, ec, ec.l.cb);
+  VW::finish_example(all, &ec);
 }
 
 base_learner* cb_explore_setup(vw& all)
