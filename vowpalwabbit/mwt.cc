@@ -53,7 +53,7 @@ namespace MWT {
     
     uint32_t value = (uint32_t) val;
     uint64_t new_index = ((index & c.all->reg.weight_mask) >> c.all->reg.stride_shift);
-
+    
     if (!c.evals[new_index].seen)
       {
 	c.evals[new_index].seen = true;
@@ -88,26 +88,23 @@ namespace MWT {
 	    c.evals[policy].action = 0;
 	  }
       }
-    if (exclude)
+    if (exclude || learn)
       {
 	c.indices.erase();
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
 	    {
 	      c.indices.push_back(ns);
-	      swap(c.feature_space[ns], ec.feature_space[ns]);
-	    }
-	
-      }
-    else if (learn)
-      {
-	c.indices.erase();
-	for (unsigned char ns : ec.indices)
-	  if (c.namespaces[ns])
-	    {
-	      c.indices.push_back(ns);
-	      for ( features::iterator& f : ec.feature_space[ns])
-		c.feature_space[ns].push_back(f.index()*c.num_classes + f.value(), 1);
+	      if (learn)
+		{
+		  c.feature_space[ns].erase();
+		  uint32_t stride_shift = c.all->reg.stride_shift;
+		  for ( features::iterator& f : ec.feature_space[ns])
+		    {
+		      uint64_t new_index=((f.index()& c.all->reg.weight_mask) >> stride_shift)*c.num_classes +f.value();
+		      c.feature_space[ns].push_back(new_index << stride_shift, 1);
+		    }
+		}
 	      swap(c.feature_space[ns], ec.feature_space[ns]);
 	    }
       }
@@ -122,7 +119,7 @@ namespace MWT {
 	  base.predict(ec);
       }    
 
-    if (exclude)
+    if (exclude || learn)
       while (c.indices.size() > 0)
 	{
 	  unsigned char ns = c.indices.pop();
@@ -174,7 +171,13 @@ namespace MWT {
     VW::finish_example(all, &ec);
   }
   
-  void finish(mwt& c){ c.evals.delete_v(); c.policies.delete_v(); }
+  void finish(mwt& c)
+  { c.evals.delete_v(); 
+    c.policies.delete_v(); 
+    for (size_t i = 0; i < 256; i++)
+      c.feature_space[i].delete_v();
+    c.indices.delete_v();
+  }
 }
 using namespace MWT;
 
