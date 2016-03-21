@@ -74,7 +74,7 @@ base_learner* cbify_setup(vw& all)
   base_learner* base = setup_base(all);
 
   learner<cbify>* l;
-  l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>);
+  l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
   l->set_finish(finish);
 
   return make_base(*l);
