@@ -157,5 +157,24 @@ namespace VW
         /// Null if compatible, otherwise the difference
         /// </returns>
         String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
+
+
+        /// <summary>
+        /// Persist model to file specified by -i.
+        /// </summary>
+        void SaveModel();
+
+        /// <summary>
+        /// Persist model to <paramref name="filename"/>.
+        /// </summary>
+        /// <param name="filename">The destination filename for the model.</param>
+        void SaveModel(String^ filename);
+
+        /// <summary>
+        /// Persist model to <paramref name="stream"/>.
+        /// </summary>
+        /// <param name="stream">The destination stream for the model.</param>
+        /// <remarks>The stream is not closed to support embedded schemes.</remarks>
+        void SaveModel(Stream^ stream);
     };
 }

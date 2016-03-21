@@ -4,7 +4,7 @@
     <title>Vowpal Wabbit</title>
     <id>VowpalWabbit</id>
     <tags>vw vowpal wabbit langford ml machine learning</tags>
-    <version>8.0.0.38</version>
+    <version>8.0.0.39</version>
     <authors>John Langford et al</authors>
     <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>

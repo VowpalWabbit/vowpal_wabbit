@@ -284,4 +284,51 @@ namespace VW
     {
         m_vw->id = msclr::interop::marshal_as<std::string>(value);
     }
+
+    void VowpalWabbitBase::SaveModel()
+    {
+      string name = m_vw->final_regressor_name;
+      if (name.empty())
+      {
+        return;
+      }
+
+      // this results in extra marshaling but should be fine here
+      this->SaveModel(gcnew String(name.c_str()));
+    }
+
+    void VowpalWabbitBase::SaveModel(String^ filename)
+    {
+      if (String::IsNullOrEmpty(filename))
+        throw gcnew ArgumentException("Filename must not be null or empty");
+
+      String^ directoryName = System::IO::Path::GetDirectoryName(filename);
+
+      if (!String::IsNullOrEmpty(directoryName))
+      {
+        System::IO::Directory::CreateDirectory(directoryName);
+      }
+
+      auto name = msclr::interop::marshal_as<std::string>(filename);
+
+      try
+      {
+        VW::save_predictor(*m_vw, name);
+      }
+      CATCHRETHROW
+    }
+
+    void VowpalWabbitBase::SaveModel(Stream^ stream)
+    {
+      if (stream == nullptr)
+        throw gcnew ArgumentException("stream");
+
+      try
+      {
+        VW::clr_io_buf buf(stream);
+
+        VW::save_predictor(*m_vw, buf);
+      }
+      CATCHRETHROW
+    }
 }
