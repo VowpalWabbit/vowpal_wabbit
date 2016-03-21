@@ -365,23 +365,20 @@ base_learner* cb_explore_setup(vw& all)
 	epsilon = vm["epsilon"].as<float>();
       data.cover = new vw_cover(epsilon, cover, (u32)num_actions);
       data.generic_explorer = new GenericExplorer<vw_context>(*data.cover, (u32)num_actions);
-      l = &init_multiclass_learner(&data, base, predict_or_learn_cover<true>,
-				   predict_or_learn_cover<false>, all.p, cover + 1);
+      l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, cover + 1);
     }
   else if (vm.count("bag"))
     { size_t bags = (uint32_t)vm["bag"].as<size_t>();
       for (size_t i = 0; i < bags; i++)
 	data.policies.push_back(unique_ptr<IPolicy<vw_context>>(new vw_policy(i)));
       data.bootstrap_explorer = new BootstrapExplorer<vw_context>(data.policies, (u32)num_actions);
-      l = &init_multiclass_learner(&data, base, predict_or_learn_bag<true>,
-				   predict_or_learn_bag<false>, all.p, bags);
+      l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, bags);
     }
   else if (vm.count("first") )
     { uint32_t tau = (uint32_t)vm["first"].as<size_t>();
       data.policy = new vw_policy(0);
       data.tau_explorer = new TauFirstExplorer<vw_context>(*data.policy, (u32)tau, (u32)num_actions);
-      l = &init_multiclass_learner(&data, base, predict_or_learn_first<true>,
-				   predict_or_learn_first<false>, all.p, 1);
+      l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1);
     }
   else
     { float epsilon = 0.05f;
@@ -389,8 +386,7 @@ base_learner* cb_explore_setup(vw& all)
 	epsilon = vm["epsilon"].as<float>();
       data.policy = new vw_policy(0);
       data.greedy_explorer = new EpsilonGreedyExplorer<vw_context>(*data.policy, epsilon, (u32)num_actions);
-      l = &init_multiclass_learner(&data, base, predict_or_learn_greedy<true>,
-				   predict_or_learn_greedy<false>, all.p, 1);
+      l = &init_learner(&data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1);
     }
   data.cbcs.scorer = all.scorer;
   l->set_finish(finish);
