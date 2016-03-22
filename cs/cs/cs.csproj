@@ -172,6 +172,7 @@
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
     <Compile Include="VowpalWabbitThreadedPredictionBase.cs" />
+    <Compile Include="VowpalWabbitThreadSafeExamplePool.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">

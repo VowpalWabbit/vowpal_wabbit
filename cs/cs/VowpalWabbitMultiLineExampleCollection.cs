@@ -72,7 +72,8 @@ namespace VW
                 }
 
                 // signal end-of-block
-                empty = vw.GetOrCreateEmptyExample();
+                empty = vw.GetOrCreateNativeExample();
+                empty.MakeEmpty(vw);
                 predictOrLearn(empty);
 
                 return predictionFactory != null ? firstExample.GetPrediction(vw, predictionFactory) : default(TPrediction);

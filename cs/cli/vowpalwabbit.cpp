@@ -394,8 +394,9 @@ namespace VW
         Learn(ex);
       }
 
-      auto empty = GetOrCreateEmptyExample();
+      auto empty = GetOrCreateNativeExample();
       examples->Add(empty);
+      empty->MakeEmpty(this);
       Learn(empty);
     }
     finally
@@ -426,8 +427,9 @@ namespace VW
         Predict(ex);
       }
 
-      auto empty = GetOrCreateEmptyExample();
+      auto empty = GetOrCreateNativeExample();
       examples->Add(empty);
+      empty->MakeEmpty(this);
       Predict(empty);
     }
     finally
@@ -457,8 +459,9 @@ namespace VW
         Learn(ex);
       }
 
-      auto empty = GetOrCreateEmptyExample();
+      auto empty = GetOrCreateNativeExample();
       examples->Add(empty);
+      empty->MakeEmpty(this);
       Learn(empty);
 
       return examples[0]->GetPrediction(this, predictionFactory);
@@ -490,8 +493,9 @@ namespace VW
         Predict(ex);
       }
 
-      auto empty = GetOrCreateEmptyExample();
+      auto empty = GetOrCreateNativeExample();
       examples->Add(empty);
+      empty->MakeEmpty(this);
       Predict(empty);
 
       return examples[0]->GetPrediction(this, predictionFactory);
@@ -635,5 +639,57 @@ namespace VW
     {
       THROW("Unsupported hash function: " << hash_function);
     }
+  }
+
+  VowpalWabbit^ VowpalWabbit::Native::get()
+  {
+    return this;
+  }
+
+
+  VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
+  {
+    if (m_examples->Count == 0)
+    {
+      try
+      {
+        auto ex = VW::alloc_examples(0, 1);
+        m_vw->p->lp.default_label(&ex->l);
+        return gcnew VowpalWabbitExample(this, ex);
+      }
+      CATCHRETHROW
+    }
+
+    auto ex = m_examples->Pop();
+
+    try
+    {
+      VW::empty_example(*m_vw, *ex->m_example);
+      m_vw->p->lp.default_label(&ex->m_example->l);
+
+      return ex;
+    }
+    CATCHRETHROW
+  }
+
+  void VowpalWabbit::ReturnExampleToPool(VowpalWabbitExample^ ex)
+  {
+#if _DEBUG
+    if (m_vw == nullptr)
+      throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
+
+    if (ex == nullptr)
+      throw gcnew ArgumentNullException("ex");
+#endif
+
+    // make sure we're not a ring based example
+    assert(!VW::is_ring_example(*m_vw, ex->m_example));
+
+    if (m_examples != nullptr)
+      m_examples->Push(ex);
+#if _DEBUG
+    else // this should not happen as m_vw is already set to null
+      throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");
+#endif
   }
 }

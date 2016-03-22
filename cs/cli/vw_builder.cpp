@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-    VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(VowpalWabbit^ vw) :
+    VowpalWabbitExampleBuilder::VowpalWabbitExampleBuilder(IVowpalWabbitExamplePool^ vw) :
         m_vw(vw), m_example(nullptr)
     {
         if (vw == nullptr)
@@ -43,8 +43,8 @@ namespace VW
         try
         {
             // finalize example
-            VW::parse_atomic_example(*m_vw->m_vw, m_example->m_example, false);
-            VW::setup_example(*m_vw->m_vw, m_example->m_example);
+            VW::parse_atomic_example(*m_vw->Native->m_vw, m_example->m_example, false);
+            VW::setup_example(*m_vw->Native->m_vw, m_example->m_example);
         }
         CATCHRETHROW
 
@@ -65,7 +65,7 @@ namespace VW
 
         try
         {
-            VW::parse_example_label(*m_vw->m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+            VW::parse_example_label(*m_vw->Native->m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
         }
         CATCHRETHROW
         finally

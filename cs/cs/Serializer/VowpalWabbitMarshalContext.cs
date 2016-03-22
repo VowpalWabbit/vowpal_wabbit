@@ -32,8 +32,8 @@ namespace VW.Serializer
         /// <param name="vw">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
-        public VowpalWabbitMarshalContext(VowpalWabbit vw, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
-            : this(vw, new VowpalWabbitExampleBuilder(vw), dictionary, fastDictionary)
+        public VowpalWabbitMarshalContext(IVowpalWabbitExamplePool vwPool, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
+            : this(vwPool.Native, new VowpalWabbitExampleBuilder(vwPool), dictionary, fastDictionary)
         {
             disposeExampleBuilder = true;
         }

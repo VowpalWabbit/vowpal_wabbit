@@ -56,17 +56,17 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
         /// </summary>
-        public VowpalWabbitJsonBuilder(VowpalWabbit vw, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
+        public VowpalWabbitJsonBuilder(IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
         {
             Contract.Requires(vw != null);
             Contract.Requires(defaultMarshaller != null);
             Contract.Requires(jsonSerializer != null);
 
-            this.vw = vw;
+            this.vw = vwPool.Native;
             this.defaultMarshaller = new VowpalWabbitDefaultMarshaller();
             this.jsonSerializer = new JsonSerializer();
 
-            this.Context = new VowpalWabbitMarshalContext(this.vw);
+            this.Context = new VowpalWabbitMarshalContext(vwPool);
             this.DefaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw, this.Context.ExampleBuilder);
         }
 

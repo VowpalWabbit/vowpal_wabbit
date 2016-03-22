@@ -111,5 +111,7 @@ namespace VW
         }
 
         String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, IVowpalWabbitLabelComparator^ labelComparator);
+
+        void MakeEmpty(VowpalWabbit^ vw);
     };
 }

@@ -197,7 +197,7 @@ namespace VW.Serializer
 
                 try
                 {
-                    using (var context = new VowpalWabbitMarshalContext(vw))
+                    using (var context = new VowpalWabbitMarshalContext(this))
                     {
                         this.serializerFunc(context, example, label);
                         nativeExample = context.ExampleBuilder.CreateExample();
@@ -205,7 +205,7 @@ namespace VW.Serializer
 
                     result = new CacheEntry
                     {
-                        Example = new VowpalWabbitExample(owner: this, example: nativeExample),
+                        Example = nativeExample,
                         LastRecentUse = DateTime.UtcNow
                     };
 
@@ -218,9 +218,7 @@ namespace VW.Serializer
                 catch(Exception e)
                 {
                     if (nativeExample != null)
-                    {
                         nativeExample.Dispose();
-                    }
 
                     throw e;
                 }
@@ -257,6 +255,19 @@ namespace VW.Serializer
                     this.exampleCache = null;
                 }
             }
+        }
+
+        public VowpalWabbit Native
+        {
+            get
+            {
+                return this.vw;
+            }
+        }
+
+        public VowpalWabbitExample GetOrCreateNativeExample()
+        {
+            return new VowpalWabbitExample(owner: this, example: this.vw.GetOrCreateNativeExample());
         }
 
         /// <summary>
