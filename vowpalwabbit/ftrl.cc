@@ -6,7 +6,6 @@
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -34,76 +33,34 @@ struct ftrl
   size_t early_stop_thres;
 };
 
-struct etas
+struct uncertainty
 { float pred;
-  float ub;
+  float score;
   ftrl& b;
-  etas(ftrl& ftrlb) : b(ftrlb)
+  uncertainty(ftrl& ftrlb) : b(ftrlb)
   { pred = 0;
-  	ub = 0;
+    score = 0;
   }
 };
 
 inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
 
-inline void pred_confidence(etas& d, const float fx, float& fw)
+inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 { float* w = &fw;
   d.pred += w[W_XT] * fx;
   float sqrtf_ng2 = sqrtf(w[W_G2]);
-  float eta = ( (d.b.data.ftrl_beta+sqrtf_ng2)/d.b.data.ftrl_alpha +d.b.data.l2_lambda);
-  if(fx < 0)
-    d.ub += (1/eta)*fx*(-1);
-  else
-    d.ub += (1/eta)*fx;
+  float uncertain = ( (d.b.data.ftrl_beta+sqrtf_ng2)/d.b.data.ftrl_alpha +d.b.data.l2_lambda);
+  d.score += (1/uncertain)*sign(fx);
 }
 
-void print_result(int f, float pred, float ub)
-{ if (f >= 0)
-  { char temp[30];
-    std::stringstream ss;
-	sprintf(temp, "%f", pred);
-	ss << temp;
-	ss << ' ';
-	sprintf(temp, "%f", ub);
-	ss << temp;
-	ss << '\n';
-	ssize_t len = ss.str().size();
-	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-	if (t != len)
-	  cerr << "write error: " << strerror(errno) << endl;
-  }
-}
-
-void output_example(vw& all, example& ec)
-{
-  label_data& ld = ec.l.simple;
-
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
-
-  for (int sink : all.final_prediction_sink)
-	  print_result(sink, ec.pred.scalar, ec.confidence);
-
-  print_update(all, ec);
-}
-
-void finish_example(vw& all, ftrl& b, example& ec)
-{ output_example(all, ec);
-  VW::finish_example(all, &ec);
+float sensitivity(ftrl& b, base_learner& base, example& ec)
+{ 	uncertainty uncetain(b);
+	GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
+	return uncetain.score;
 }
 
 void predict(ftrl& b, base_learner&, example& ec)
 { ec.partial_prediction = GD::inline_predict(*b.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
-}
-
-void predict_with_confidence(ftrl& b, base_learner&, example& ec)
-{ etas eta(b);
-  GD::foreach_feature<etas, pred_confidence>(*(b.all), ec, eta);
-  ec.confidence = eta.ub;
-  ec.partial_prediction = eta.pred;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
@@ -190,7 +147,7 @@ void learn_proximal(ftrl& a, base_learner& base, example& ec)
 { assert(ec.in_use);
 
   // predict with confidence
-  predict_with_confidence(a, base, ec);
+  predict(a, base, ec);
 
   //update state based on the prediction
   update_after_prediction_proximal(a,ec);
@@ -258,7 +215,6 @@ base_learner* ftrl_setup(vw& all)
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
-
   string algorithm_name;
   if (vm.count("ftrl"))
   { algorithm_name = "Proximal-FTRL";
@@ -283,6 +239,7 @@ base_learner* ftrl_setup(vw& all)
       b.ftrl_beta = vm["ftrl_beta"].as<float>();
     else
       b.ftrl_beta = 0.5f;
+
   }
   b.data.ftrl_alpha = b.ftrl_alpha;
   b.data.ftrl_beta = b.ftrl_beta;
@@ -305,14 +262,8 @@ base_learner* ftrl_setup(vw& all)
   }
 
   learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
-
-  if (vm.count("ftrl_confidence")){
-	  l.set_predict(predict_with_confidence);
-	  l.set_finish_example(finish_example);
-  }else{
-	  l.set_predict(predict);
-  }
-
+  l.set_predict(predict);
+  l.set_sensitivity(sensitivity);
   l.set_multipredict(multipredict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
