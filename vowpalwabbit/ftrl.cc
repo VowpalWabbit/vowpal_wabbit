@@ -202,8 +202,8 @@ base_learner* ftrl_setup(vw& all)
 
   new_options(all, "FTRL options")
   ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
-  ("ftrl_beta", po::value<float>(), "FTRL beta parameter")
-  ("ftrl_confidence", "FTRL Confidnece Estimate");
+  ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+
   add_options(all);
 
   po::variables_map& vm = all.vm;
