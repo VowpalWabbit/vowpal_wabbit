@@ -27,8 +27,6 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/multilabel.h \
 	vowpalwabbit/constant.h \
 	vowpalwabbit/ezexample.h \
-
-
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
 	vowpalwabbit/bfgs.h \
