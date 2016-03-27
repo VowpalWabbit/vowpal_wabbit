@@ -143,7 +143,12 @@ class TestVWRegressor:
         model.fit(data.x, data.y)
 
         assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+        # ensure model can make multiple calls to predict
+        assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
 
+    def test_delete(self):
+        raw_model = VW()
+        del raw_model
 
 def test_tovw():
     x = np.array([[1.2, 3.4, 5.6, 1.0, 10], [7.8, 9.10, 11, 0, 20]])

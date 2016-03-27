@@ -307,19 +307,7 @@ class VW(BaseEstimator):
         for idx, x in enumerate(X):
             if self.convert_to_vw_:
                 x = tovw(x)[0]
-            ex = self.get_vw().example(x)
-            # need to set test bit to skip learning
-            ex.set_test_only(True)
-            ex.learn()
-
-            # check if oaa classifier
-            if 'oaa' in self.params:
-                y[idx] = ex.get_multiclass_prediction()
-            else:
-                y[idx] = ex.get_simplelabel_prediction()
-            ex.finish()
-
-        self.get_vw().finish()
+            y[idx] = self.get_vw().predict(x)
         return y
 
     def score(self, X, y=None):
@@ -353,6 +341,9 @@ class VW(BaseEstimator):
 
     def __repr__(self):
         return self.__str__()
+
+    def __del__(self):
+        self.get_vw().__del__()
 
     def get_params(self, deep=True):
         out = dict()
