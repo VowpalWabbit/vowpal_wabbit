@@ -129,7 +129,9 @@ namespace VW.Serializer
                 return;
 
             if (reader.TokenType != JsonToken.StartObject)
-                throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
+                throw new VowpalWabbitJsonException(reader.Path,
+                    string.Format("Expected start object. Found '{0}' and value '{1}'",
+                    reader.TokenType, reader.Value));
 
             Namespace defaultNamespace = new Namespace(this.vw);
             using (this.DefaultNamespaceContext.NamespaceBuilder = this.DefaultNamespaceContext.ExampleBuilder.AddNamespace(VowpalWabbitConstants.DefaultNamespace))
