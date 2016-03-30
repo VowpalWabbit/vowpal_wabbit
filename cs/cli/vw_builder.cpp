@@ -6,7 +6,6 @@ license as described in the file LICENSE.
 
 #include "vw_builder.h"
 #include "parser.h"
-// #include "primitives.h"
 
 namespace VW
 {
@@ -118,7 +117,6 @@ namespace VW
             }
             weight_index_base++;
         }
-
     }
 
     void VowpalWabbitNamespaceBuilder::AddFeature(uint64_t weight_index, float x)

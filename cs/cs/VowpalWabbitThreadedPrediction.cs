@@ -17,7 +17,7 @@ namespace VW
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
         /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model = null)
             : base(model)
         {
         }
@@ -42,7 +42,7 @@ namespace VW
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample}"/>.
         /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model = null)
             : base(model)
         {
         }
@@ -51,7 +51,7 @@ namespace VW
         /// Creates a new instance of <see cref="VowpalWabbit{TExample}"/>.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
+        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw = null)
         {
             return new VowpalWabbit<TExample>(vw);
         }

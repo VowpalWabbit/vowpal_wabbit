@@ -88,6 +88,7 @@
     <Compile Include="TestConsole.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
+    <Compile Include="TestFeatureExtraction.cs" />
     <Compile Include="TestJson.cs" />
     <Compile Include="TestJsonDirect.cs" />
     <Compile Include="TestLabels.cs" />
