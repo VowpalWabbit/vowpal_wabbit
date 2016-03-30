@@ -185,7 +185,7 @@ $(stageDir)/%.dir/done:	$(EXEC)
 	oFile=$$dir/out ;\
 	eFile=$$dir/err ;\
 	echo "$$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
-	$$exec $($*.params) $(EP) > $$roFile 2> $$reFile \
+	$$exec $($*.params) $(EP) > $$roFile 2> $$reFile ;\
 	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
 	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
 	echo "$(GREP) \"$$out_compar\" $$roFile | tee $$oFile" ;\
