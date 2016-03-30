@@ -205,7 +205,7 @@ public:
 /// the core definition of a set of features.
 struct features {
   v_array<feature_value> values; // Always needed.
-  v_array<feature_index> indicies; //Optional for dense data.
+  v_array<feature_index> indicies; //Optional for sparse data.
   v_array<audit_strings_ptr> space_names; //Optional for audit mode.
 
   float sum_feat_sq;
@@ -322,14 +322,12 @@ struct features {
     return true;
   }
 
-  features& operator=(const features& rhs)
-  { copy_array(values, rhs.values);
-    copy_array(indicies, rhs.indicies);
+  void deep_copy_from(const features& src)
+  { copy_array(values, src.values);
+    copy_array(indicies, src.indicies);
     free_space_names(0);
-    copy_array(space_names, rhs.space_names);
-    sum_feat_sq = rhs.sum_feat_sq;
-
-    return *this;
+    copy_array(space_names, src.space_names);
+    sum_feat_sq = src.sum_feat_sq;
   }
 };
 

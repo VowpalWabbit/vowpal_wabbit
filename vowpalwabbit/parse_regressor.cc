@@ -34,7 +34,7 @@ void initialize_regressor(vw& all)
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   try
-    { all.reg.weight_vector = calloc_or_throw<weight>(length << all.reg.stride_shift);
+    { all.reg.weight_vector = calloc_mergable_or_throw<weight>(length << all.reg.stride_shift);
     }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
@@ -120,7 +120,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                                                   "", read, msg, text);
           all.id = buff2;
 
-          if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
+          if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end() && !all.id.empty())
             { all.args.push_back("--id");
               all.args.push_back(all.id);
             }

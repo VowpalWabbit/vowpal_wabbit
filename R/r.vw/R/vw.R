@@ -39,6 +39,7 @@
 #'is NULL, the validation labels file is deleted before exiting the function. If validation_labels is not
 #'NULL, it indicates the path where validation labels should be stored.
 #'@param verbose mostly used to debug but shows AUC and the vw command used to train the model
+#'@param keep_preds TRUE (default) to return a vector of the predictions
 #'@param do_evaluation TRUE to compute auc on validation_data. Use FALSE, to just score data
 #'@param use_perf use perf to compute auc. Otherwise, auc_roc() from the R package pROC is used.
 #'@examples
@@ -61,7 +62,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
                out_probs= NULL, validation_labels= NULL,
                loss='logistic', b=25,
                learning_rate=0.5, passes=1, l1=NULL, l2=NULL, early_terminate=NULL,
-               link_function='--link=logistic', extra=NULL,
+               link_function='--link=logistic', extra=NULL, keep_preds = TRUE,
                do_evaluation=TRUE, use_perf=TRUE, plot_roc=TRUE, verbose=TRUE){
 
 
@@ -157,6 +158,9 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
     print(verbose_log)
   }
 
+  if(keep_preds)
+    probs = fread(out_probs)[['V1']]
+  
   ## delete temporary files
   for(i in 1:2)
     if("data.frame" %in% class(data_args[[i]]))
@@ -166,7 +170,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
   if(exists("del_val") && del_val)
     file.remove(validation_labels)
 
-  return(auc)
+  return(list(auc=auc, preds=probs))
 }
 
 # Reads labels file (from the validation dataset)
