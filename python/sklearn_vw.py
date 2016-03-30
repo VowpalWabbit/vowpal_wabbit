@@ -40,6 +40,9 @@ class VW(BaseEstimator):
                  convert_to_vw=None,
                  bfgs=None,
                  mem=None,
+                 ftrl=None,
+                 ftrl_alpha=None,
+                 ftrl_beta=None,
                  learning_rate=None,
                  l=None,
                  power_t=None,
@@ -98,7 +101,10 @@ class VW(BaseEstimator):
                  save_resume=None,
                  output_feature_regularizer_binary=None,
                  output_feature_regularizer_text=None,
-                 oaa=None):
+                 oaa=None,
+                 ect=None,
+                 csoaa=None,
+                 wap=None):
         """ VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
@@ -109,8 +115,11 @@ class VW(BaseEstimator):
         convert_to_vw (bool): flag to convert X input to vw format
 
         Update options
-        bfgs
-        mem
+        bfgs: use L-BFGS optimization algorithm
+        mem: set the rank of the inverse hessian approximation used by bfgs
+        ftrl: use FTRL-Proximal optimization algorithm
+        frtl_alpha: ftrl alpha parameter
+        frtl_beta: ftrl beta parameter
         learning_rate,l (float): Set learning rate
         power_t (float): t power value
         decay_learning_rate (float): Set Decay factor for learning_rate between passes
@@ -180,7 +189,14 @@ class VW(BaseEstimator):
         output_feature_regularizer_text (str): Per feature regularization output file, in text
 
         Multiclass options
-        oaa (int): Use one-against-all multiclass learning with  labels
+        oaa (int): Use one-against-all multiclass learning with labels
+        ect (int): Use error correcting tournament multiclass learning
+        csoaa (int): Use cost sensitive one-against-all multiclass learning
+        wap (int): Use weighted all pairs multiclass learning
+
+        Contextual Bandit Optimization
+        cb (int): Use contextual bandit learning with specified costs
+        cbify (int): Convert multiclass bandit learning on K classes to contextual bandit optimization
 
         Returns
         -------
@@ -197,6 +213,8 @@ class VW(BaseEstimator):
             del self.convert_to_vw_
         if hasattr(self, 'vw_'):
             del self.vw_
+        if hasattr(self, 'label_type_'):
+            del self.label_type_
 
         # reset params and quiet models by default
         self.params = {'quiet':  True}
@@ -211,6 +229,17 @@ class VW(BaseEstimator):
         self.passes_ = self.params.pop('passes', 1)
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
+
+        # check for label type to use
+        if 'oaa' in self.params or 'ect' in self.params:
+            self.label_type_ = vw.lMulticlass
+        elif 'csoaa' in self.params or 'wap' in self.params:
+            self.label_type_ = vw.lCostSensitive
+        elif 'cb' in self.params or 'cbify' in self.params:
+            self.label_type_ = vw.lContextualBandit
+        else:
+            self.label_type_ = vw.lBinary
+
         self.vw_ = None
 
         super(VW, self).__init__()
@@ -307,7 +336,8 @@ class VW(BaseEstimator):
         for idx, x in enumerate(X):
             if self.convert_to_vw_:
                 x = tovw(x)[0]
-            y[idx] = self.get_vw().predict(x)
+            y[idx] = self.get_vw().predict(ec=x, labelType=self.label_type_)
+
         return y
 
     def score(self, X, y=None):
@@ -343,7 +373,8 @@ class VW(BaseEstimator):
         return self.__str__()
 
     def __del__(self):
-        self.get_vw().__del__()
+        if self.vw_ is not None:
+            self.vw_.__del__()
 
     def get_params(self, deep=True):
         out = dict()
@@ -433,7 +464,6 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
         return self.classes_[indices]
 
 
-# class VWClassifier(SparseCoefMixin, LinearClassifierMixin, VW):
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     """ Vowpal Wabbit Classifier model
     Only supports binary classification currently.
@@ -469,9 +499,6 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
         """
 
         return VW.predict(self, X=X)
-
-    def __del__(self):
-        VW.__del__(self)
 
 
 class VWRegressor(VW, RegressorMixin):
