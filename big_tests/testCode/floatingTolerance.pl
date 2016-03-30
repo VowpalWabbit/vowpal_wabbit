@@ -2,7 +2,8 @@
 
 ####################################################################################################
 # Author:  I. Dan Melamed
-# Purpose:	for each pair of floating point numbers (x,y), +ive relative tolerance r, and +ive absolute tolerance a, fail if (x / y - 1 > r) AND (x - y > a)
+# Purpose:	for each pair of floating point numbers (x,y), +ive relative tolerance r, and +ive absolute tolerance a, fail if
+#               (x > a OR y > a) AND (x / y - 1 > r) AND (x - y > a)
 # Streams:	2 files of numbers; the numbers that we want to be smaller should come first
 # N.B.:		tolerance is evaluated in only one direction, unless one of the numbers is zero
 # N.B.2:    return code is > 0 iff tolerance test fails
@@ -39,7 +40,7 @@ LINE: while (<F>) {
 		};
 		$ftok = shift @ftok;
 		$gtok = shift @gtok;
-		if ($ftok == 0 && $gtok == 0) {
+		if ($ftok <= $atolerance && $gtok <= $atolerance) {
 			next;
 		};
 		if (

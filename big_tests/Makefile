@@ -39,7 +39,6 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
 TIME ?= env time -f "%U"
-TIMING ?= n
 ACC_DIFF_TOLERANCE_REL ?= 0.001
 ACC_DIFF_TOLERANCE_ABS ?= 0.001
 TIME_DIFF_TOLERANCE_REL ?= 0.05
@@ -48,6 +47,10 @@ DIFF ?= $(testCodeDir)/floatingTolerance.pl
 GREP ?= grep
 DEFAULT_STDOUT_COMPARATOR_REGEXP ?= "."
 DEFAULT_STDERR_COMPARATOR_REGEXP ?= "average loss"
+
+ifdef TIMING
+TIMING_SUFFIX = WithTiming
+endif
 
 all:	valid ;
 
@@ -67,6 +70,7 @@ include testGroups.mk
 
 # for debugging
 stub:	
+	echo $(TIMING)
 	echo $(MAKE_VERSION)
 	echo $(ARCH)
 	echo $(MAKEFLAGS)
@@ -78,27 +82,26 @@ help:
 	cat $(TOP_MK_DIR)/README.txt
 
 validTargets := $(addsuffix .valid,$(allTests))
-valid:	$(validTargets)
+valid:	$(validTargets) timingSummary
 	@echo "test suite finished"
 
 # use this target to run without doing any diffs
 runTargets := $(addsuffix .run,$(allTests))
-run:	prepData startTimer $(runTargets)
-	if [ "$(TIMING)" = "y" ] ; then \
-		startTime=`cat startTime` ;\
-		endTime=`date +%s` ;\
-		elapsedTime=$$(($$endTime - $$startTime)) ;\
-		echo "Total test time = $$elapsedTime" ;\
-		rm startTime ;\
-	fi
+run:	prepData $(runTargets) timingSummary
 	@echo "'make run' finished"
 
-startTimer:
+timingSummary:
 	if [ "$(TIMING)" = "y" ] ; then \
-		date +%s > startTime ;\
+		totalTime=0 ;\
+		for dir in $(allTests) ; do \
+			timeFile=$(stageDir)/$$dir.dir/$(ARCH)/rc ;\
+			currTime=`cat $$timeFile` ;\
+			totalTime=`echo "$$totalTime + $$currTime" | bc -l` ;\
+		done ;\
+		echo "Total test time = $$totalTime" ;\
 	fi
 
-compareTargets := $(addsuffix .compare,$(allTests))
+mcompareTargets := $(addsuffix .compare,$(allTests))
 compare:	$(compareTargets)
 	@echo "'make compare' finished"
 
@@ -121,9 +124,9 @@ clean:
 
 # dependency tracking doesn't work in make < 4 due to a bug in how SECONDEXPANSION is done
 ifeq ($(findstring 4.,$(MAKE_VERSION)),4.)
-%.run:	 $$(%.inData) %.depsWrapper $(stageDir)/%.dir/done ;
+%.run:	 $$(%.inData) %.depsWrapper $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
 else
-%.run:	 $$(%.inData) $(stageDir)/%.dir/done ;
+%.run:	 $$(%.inData) $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
 endif
 
 $(dataDir) $(stageDir):
@@ -143,6 +146,34 @@ $(dataDir) $(stageDir):
 
 # Don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp.
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir
+$(stageDir)/%.dir/doneWithTiming:	$(EXEC)
+	@echo "Starting to run test $*"
+	dir=`dirname $@` ;\
+	mkdir -p $$dir ;\
+	exec=$(EXEC) ;\
+	if [ -n "$($*.exec)" ] ; then exec="$($*.exec)" ; fi ;\
+	roFile=$$dir/raw_out ;\
+	reFile=$$dir/raw_err ;\
+	oFile=$$dir/out ;\
+	eFile=$$dir/err ;\
+	mkdir -p $$dir/$(ARCH) ;\
+	timeFile=$$dir/$(ARCH)/rc ;\
+	echo "$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
+	$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile ;\
+	uTime=`cat $$timeFile` ;\
+	echo "run time of test $* = $$uTime" ;\
+	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
+	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
+	echo "$(GREP) \"$$out_compar\" $$roFile | tee $$oFile" ;\
+	$(GREP) "$$out_compar" $$roFile | tee $$oFile ;\
+	err_compar=$(DEFAULT_STDERR_COMPARATOR_REGEXP) ;\
+	if [ -n "$($*.STDERR_COMPARATOR_REGEXP)" ] ; then err_compar="$($*.STDERR_COMPARATOR_REGEXP)" ; fi ;\
+	echo "$(GREP) \"$$err_compar\" $$reFile | tee $$eFile" ;\
+	$(GREP) "$$err_compar" $$reFile | tee $$eFile ;\
+	touch $$dir/done
+	touch $@
+	@echo "Finished running test $*"
+
 $(stageDir)/%.dir/done:	$(EXEC)
 	@echo "Starting to run test $*"
 	dir=`dirname $@` ;\
@@ -153,19 +184,8 @@ $(stageDir)/%.dir/done:	$(EXEC)
 	reFile=$$dir/raw_err ;\
 	oFile=$$dir/out ;\
 	eFile=$$dir/err ;\
-	if [ "$(TIMING)" = "y" ] ; then (\
-		mkdir -p $$dir/$(ARCH) ;\
-		timeFile=$$dir/$(ARCH)/rc ;\
-		echo "$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
-		$(TIME) -o $$timeFile $$exec $($*.params) $(EP) > $$roFile 2> $$reFile ;\
-		uTime=`cat $$timeFile` ;\
-		echo "timing of test $* = $$uTime" \
-	) ;\
-	else (\
-		echo "$$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
-		$$exec $($*.params) $(EP) > $$roFile 2> $$reFile \
-	) ; \
-	fi ;\
+	echo "$$exec $($*.params) $(EP) > $$roFile 2> $$reFile" ;\
+	$$exec $($*.params) $(EP) > $$roFile 2> $$reFile \
 	out_compar=$(DEFAULT_STDOUT_COMPARATOR_REGEXP) ;\
 	if [ -n "$($*.STDOUT_COMPARATOR_REGEXP)" ] ; then out_compar="$($*.STDOUT_COMPARATOR_REGEXP)" ; fi ;\
 	echo "$(GREP) \"$$out_compar\" $$roFile | tee $$oFile" ;\
@@ -190,11 +210,20 @@ $(stageDir)/%.dir/done:	$(EXEC)
 		exit 1 ;\
 	fi ;\
 	if [ "$(TIMING)" = "y" ] ; then \
-		echo "$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc" ;\
-		$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$dir/$(ARCH)/rc $(expDir)/$*/$(ARCH)/rc |& tee -a $$dir/diffs ;\
-		if [ -s $$dir/diffs ] ; then \
-			echo "Test $* failed due to speed diffs." ;\
-			exit 1 ;\
+		timeFile=$$dir/$(ARCH)/rc ;\
+		uTime=`cat $$timeFile` ;\
+		echo "run time of test $* = $$uTime" ;\
+		if [ -s $(expDir)/$*/$(ARCH)/rc ] ; then (\
+			echo "$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$timeFile $(expDir)/$*/$(ARCH)/rc" ;\
+			$(DIFF) $(TIME_DIFF_TOLERANCE_REL) $(TIME_DIFF_TOLERANCE_ABS) $$timeFile $(expDir)/$*/$(ARCH)/rc |& tee -a $$dir/diffs ;\
+			if [ -s $$dir/diffs ] ; then \
+				echo "Test $* failed due to speed diffs." ;\
+				exit 1 ;\
+			fi ;\
+		) ;\
+		else (\
+			echo "WARNING: Missing expected timing file.  You might want to create it with 'make TIMING=y expected'.  Timing validation skipped." \
+		) ; \
 		fi ;\
 	fi
 
