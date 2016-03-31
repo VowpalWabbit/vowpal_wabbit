@@ -47,6 +47,9 @@ DIFF ?= $(testCodeDir)/floatingTolerance.pl
 GREP ?= grep
 DEFAULT_STDOUT_COMPARATOR_REGEXP ?= "."
 DEFAULT_STDERR_COMPARATOR_REGEXP ?= "average loss"
+ARF ?= vwBigtests.tz2
+# you can uncomment the next line to get the data from a cache by default, but we don't recommend it
+# URL ?= https://vowpalwabbitdata.blob.core.windows.net/bigtests/vwBigtests.tz2
 
 ifdef TIMING
 TIMING_SUFFIX = WithTiming

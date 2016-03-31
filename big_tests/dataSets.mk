@@ -5,12 +5,28 @@ allData := mnist covtype URLRep ER movielens
 ################ begin generic stuff #########
 
 VPATH+=$(testCodeDir)
-WGET ?= wget -N --no-use-server-timestamps
+WGET ?= wget -nv -N --no-use-server-timestamps
 
 .PHONY:	prepData eraseData %.prep
 
+# archive file name can be specified on the command line as ARF=<filename>
+archive:
+	cd $(dataDir)
+	find . -name '*prep' -print0 | tar -cjhv --null -f $(ARF) -T -
+
+getData:	$(dataDir)
+	cd $(dataDir)
+	$(WGET) $(URL) -O - | tar xjv
+
+# If a URL is specified, then simply download all the data
+# pre-prepped.  Checked-in check-sums should be used to guard against
+# something missing or corrupted in the archive.
 allDataTargets := $(addsuffix .prep,$(allData))
+ifdef URL
+prepData:	getData
+else
 prepData:	$(allDataTargets)
+endif
 	@echo "finished preparing all data"
 
 %.prep:	$(dataDir)/%.dir/prep ;
@@ -34,13 +50,13 @@ $(dataDir)/OCR.dir/letter.data.gz:
 	dir=$(dir $@) ;\
 	mkdir -p $$dir ;\
 	cd $$dir ;\
-	wget http://ai.stanford.edu/~btaskar/ocr/letter.data.gz
+	$(WGET) http://ai.stanford.edu/~btaskar/ocr/letter.data.gz
 
 $(dataDir)/OCR.dir/letter.names:
 	dir=$(dir $@) ;\
 	mkdir -p $$dir ;\
 	cd $$dir ;\
-	wget http://ai.stanford.edu/~btaskar/ocr/letter.names
+	$(WGET) http://ai.stanford.edu/~btaskar/ocr/letter.names
 
 
 #movielens

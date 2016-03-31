@@ -24,7 +24,7 @@ Be sure to use := and not = to set these variables.  All variables are optional.
 1a.inData := $(dataDir)/mnist.dir/train.prep
 1a.params := --oaa 10 -d $(1a.inData) -f $(stageDir)/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file $(stageDir)/1a.dir/mnist.cache
 
-The file that *.inData refers to is always treated as a prerequisite for running a test.  So if it's not there, an attempt will be made to prepare it, which might also involve downloading it.
+The file that *.inData refers to is always treated as a prerequisite for running a test.  So if the file doesn't exist, an attempt will be made to prepare it, which might also involve downloading it.
 
 By default, STDOUT will be saved in the file 'out'.  STDERR will be filtered through `grep "average loss"`, and the results will be saved in the file 'err'.  Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
 
