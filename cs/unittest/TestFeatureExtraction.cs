@@ -32,6 +32,16 @@ namespace cs_unittest
                 var singleExample = example as VowpalWabbitSingleLineExampleCollection;
                 Assert.IsNotNull(singleExample);
 
+                foreach (var ns in singleExample.Example)
+                {
+                    Console.WriteLine(ns.Index);
+
+                    foreach (var feature in ns)
+                    {
+                        Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                    }
+                }
+
                 var namespaces = singleExample.Example.ToArray();
 
                 Assert.AreEqual((byte)' ', namespaces[0].Index);
@@ -48,6 +58,61 @@ namespace cs_unittest
                         new VowpalWabbitFeature(1, 380324),
                     },
                     namespaces[1].ToArray());
+            }
+        }
+
+        [TestMethod]
+        public void TestJsonFeatureExtraction()
+        {
+            string json = "{\"ns1\":{\"location\":\"New York\", \"f2\":3.4}}";
+
+            using (var vw = new VowpalWabbit("-b 3 --noconstant"))
+            using (var serializer = new VowpalWabbitJsonSerializer(vw))
+            using (var result = serializer.ParseAndCreate(json))
+            {
+                var singleExample = result as VowpalWabbitSingleLineExampleCollection;
+                Assert.IsNotNull(singleExample);
+                if (singleExample != null)
+                {
+                    foreach (var ns in singleExample.Example)
+                    {
+                        Console.WriteLine(ns.Index);
+
+                        foreach (var feature in ns)
+                        {
+                            Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                        }
+                    }
+
+                    var ns1 = singleExample.Example.ToArray();
+                    Assert.AreEqual(1, ns1.Length);
+                    Assert.AreEqual((byte)'n', ns1[0].Index);
+                    CollectionAssert.AreEqual(
+                            new[] {
+                                new VowpalWabbitFeature(1, 12),
+                                new VowpalWabbitFeature(3.4f, 28)
+                            },
+                            ns1[0].ToArray());
+                }
+
+                // for documentation purpose only
+                var multiExample = result as VowpalWabbitMultiLineExampleCollection;
+                Assert.IsNull(multiExample);
+                if (multiExample != null)
+                {
+                    foreach (var example in multiExample.Examples)
+                    {
+                        foreach (var ns in example)
+                        {
+                            Console.WriteLine(ns.Index);
+
+                            foreach (var feature in ns)
+                            {
+                                Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                            }
+                        }                        
+                    }
+                }
             }
         }
     }
