@@ -16,8 +16,16 @@ namespace VW
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
         /// </summary>
+        /// <remarks>Decision Service client library needs default constructor.</remarks>
+        public VowpalWabbitThreadedPrediction()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model = null)
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
         {
         }
@@ -39,10 +47,18 @@ namespace VW
     public sealed class VowpalWabbitThreadedPrediction<TExample> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample>>
     {
         /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <remarks>Decision Service client library needs default constructor.</remarks>
+        public VowpalWabbitThreadedPrediction()
+        {
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample}"/>.
         /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model = null)
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
         {
         }
@@ -64,6 +80,14 @@ namespace VW
     /// <typeparam name="TActionDependentFeature">The type use for providing action dependent data to VW using the serializer infrastructure.</typeparam>
     public sealed class VowpalWabbitThreadedPrediction<TExample, TActionDependentFeature> : VowpalWabbitThreadedPredictionBase<VowpalWabbit<TExample, TActionDependentFeature>>
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <remarks>Decision Service client library needs default constructor.</remarks>
+        public VowpalWabbitThreadedPrediction()
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample,TActionDependentFeature}"/>.
         /// </summary>
