@@ -102,6 +102,7 @@
       <DependentUpon>TestMarshalNumeric.tt</DependentUpon>
     </Compile>
     <Compile Include="TestModelLoading.cs" />
+    <Compile Include="TestMultiworldTesting.cs" />
     <Compile Include="TestNull.cs" />
     <Compile Include="TestRunner.cs" />
     <Compile Include="TestSerializer.cs" />

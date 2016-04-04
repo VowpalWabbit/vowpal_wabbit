@@ -166,6 +166,7 @@
     <Compile Include="VowpalWabbitJson.cs" />
     <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
+    <Compile Include="VowpalWabbitMultiworldTesting.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
