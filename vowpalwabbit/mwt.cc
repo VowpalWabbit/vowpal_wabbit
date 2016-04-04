@@ -198,7 +198,7 @@ namespace MWT {
         msg << policy << " ";
     }
 
-    bin_text_read_write_fixed_validated(model_file, (char*)c.policies.begin(), sizeof(policies_size) * sizeof(feature_index),
+    bin_text_read_write_fixed_validated(model_file, (char*)c.policies.begin(), policies_size * sizeof(feature_index),
       "", read, msg, text);
 
     // c.evals is already initialized nicely to the same size as the regressor.
