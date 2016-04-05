@@ -129,7 +129,7 @@ test_gcov: .FORCE vw_gcov library_example_gcov
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
 
 bigtests:	.FORCE vw
-	(cd big_tests && $(MAKE))
+	(cd big_tests && $(MAKE) $(MAKEFLAGS))
 
 install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install

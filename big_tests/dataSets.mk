@@ -16,7 +16,8 @@ archive:
 
 getData:	$(dataDir)
 	cd $(dataDir)
-	$(WGET) $(URL) -O - | tar xjv
+	$(WGET) $(URL)
+	fName=`basename $(URL)` ; tar xjvf $$fName
 
 # If a URL is specified, then simply download all the data
 # pre-prepped.  Checked-in check-sums should be used to guard against

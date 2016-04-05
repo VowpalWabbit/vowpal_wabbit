@@ -127,9 +127,9 @@ clean:
 
 # dependency tracking doesn't work in make < 4 due to a bug in how SECONDEXPANSION is done
 ifeq ($(findstring 4.,$(MAKE_VERSION)),4.)
-%.run:	 $$(%.inData) %.depsWrapper $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
+%.run:	 %.depsWrapper $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
 else
-%.run:	 $$(%.inData) $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
+%.run:	 $(stageDir)/%.dir/done$(TIMING_SUFFIX) ;
 endif
 
 $(dataDir) $(stageDir):
@@ -149,7 +149,7 @@ $(dataDir) $(stageDir):
 
 # Don't do like on the following line, because making the dir a dependency of the file that's in it will result in the file always getting remade, cuz the dir will always have a newer timestamp.
 # $(stageDir)/%.dir/done:	$(stageDir)/%.dir
-$(stageDir)/%.dir/doneWithTiming:	$(EXEC)
+$(stageDir)/%.dir/doneWithTiming:	$(EXEC) $$(%.inData)
 	@echo "Starting to run test $*"
 	dir=`dirname $@` ;\
 	mkdir -p $$dir ;\
@@ -177,7 +177,7 @@ $(stageDir)/%.dir/doneWithTiming:	$(EXEC)
 	touch $@
 	@echo "Finished running test $*"
 
-$(stageDir)/%.dir/done:	$(EXEC)
+$(stageDir)/%.dir/done:	$(EXEC) $$(%.inData)
 	@echo "Starting to run test $*"
 	dir=`dirname $@` ;\
 	mkdir -p $$dir ;\
