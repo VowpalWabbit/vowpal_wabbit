@@ -81,11 +81,11 @@ base_learner* confidence_setup(vw& all)
   void (*predict_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
 
   if(vm.count("confidence_after_training")){
-	  learn_with_confidence_ptr = predict_or_learn_with_confidence<true, false>;
-	  predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
-  }else{
 	  learn_with_confidence_ptr = predict_or_learn_with_confidence<true, true>;
 	  predict_with_confidence_ptr = predict_or_learn_with_confidence<false, true>;
+  }else{
+	  learn_with_confidence_ptr = predict_or_learn_with_confidence<true, false>;
+	  predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
   //Create new learner

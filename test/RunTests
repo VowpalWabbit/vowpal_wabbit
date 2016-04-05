@@ -1373,7 +1373,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/search_dep_parser_cost_to_go.stderr
 
 # Test 113: Predictions with confidences
-{VW} --confidence -d ./train-sets/rcv1_micro.dat -p confidence.preds
+{VW} --confidence --confidence_after_training -d ./train-sets/rcv1_micro.dat -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
 
