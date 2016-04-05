@@ -234,6 +234,7 @@ base_learner* mwt_setup(vw& all)
   c.all = &all;
 
   calloc_reserve(c.evals, all.length());
+  c.evals.end() = c.evals.begin() + all.length();
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
