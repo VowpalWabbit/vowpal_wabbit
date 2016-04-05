@@ -25,8 +25,6 @@ void predict_or_learn_with_confidence(confidence& c, base_learner& base, example
   }
 
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
-  cout << "confidence = " << ec.confidence << " pred = " << ec.pred.scalar << " threshold = " << threshold << " sensitivity = " << base.sensitivity(ec) << endl;
-  
 }
 
 void confidence_print_result(int f, float res, float confidence, v_array<char> tag)

@@ -1376,16 +1376,15 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --confidence -d ./train-sets/rcv1_micro.dat -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
-    
-# Test 114: Predictions with confidences after training
-{VW} --confidence --confidence_after_training -d ./train-sets/rcv1_micro.dat -p confidence_after_training.preds
-    train-sets/ref/confidence_after_training.stderr
-    pred-sets/ref/confidence_after_training.preds    
-
-# Test 115: Over size example test
+     
+# Test 114: Over size example test
 {VW} train-sets/x.txt
     train-sets/ref/oversize.stderr
 
-# Test 116: Long Line test
+# Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
+    
+# Test 116: Predictions with confidences after training
+{VW} --confidence --confidence_after_training -d ./train-sets/rcv1_micro.dat -p confidence_after_training.preds
+    pred-sets/ref/confidence_after_training.preds   
