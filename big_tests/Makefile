@@ -60,7 +60,7 @@ all:	valid ;
 .DEFAULT:
 	@echo "No rules found for $@ in $(MAKEFILE_LIST)"
 
-# details of individual tests come from here
+# details of individual tests and test groups come from here
 include dataSets.mk
 include testDetails.mk
 include testGroups.mk

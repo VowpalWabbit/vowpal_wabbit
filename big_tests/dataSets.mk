@@ -7,7 +7,7 @@ allData := mnist covtype URLRep ER movielens
 VPATH+=$(testCodeDir)
 WGET ?= wget -nv -N --no-use-server-timestamps
 
-.PHONY:	prepData eraseData %.prep
+.PHONY:	getData prepData archive eraseData
 
 # archive file name can be specified on the command line as ARF=<filename>
 archive:
