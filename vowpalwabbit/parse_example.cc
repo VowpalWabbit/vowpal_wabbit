@@ -14,14 +14,6 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-char* copy(char* base)
-{ size_t len = 0;
-  while (base[len++] != '\0');
-  char* ret = calloc_or_throw<char>(len);
-  memcpy(ret,base,len);
-  return ret;
-}
-
 template<bool audit>
 class TC_parser
 {
@@ -33,7 +25,7 @@ public:
   float cur_channel_v;
   bool  new_index;
   size_t anon;
-  size_t channel_hash;
+  uint64_t channel_hash;
   char* base;
   unsigned char index;
   float v;
@@ -41,7 +33,7 @@ public:
   unsigned char (*redefine)[256];
   parser* p;
   example* ae;
-  uint32_t* affix_features;
+  char* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
 
@@ -92,67 +84,66 @@ public:
 
   inline void maybeFeature()
   { if(*reading_head == ' ' || *reading_head == '\t' || *reading_head == '|'|| reading_head == endLine || *reading_head == '\r' )
-    { // maybeFeature --> ø
-    }
+      { // maybeFeature --> ø
+      }
     else
-    { // maybeFeature --> 'String' FeatureValue
-      substring feature_name=read_name();
-      v = cur_channel_v * featureValue();
-      size_t word_hash;
-      if (feature_name.end != feature_name.begin)
-        word_hash = (p->hasher(feature_name,(uint32_t)channel_hash));
-      else
-        word_hash = channel_hash + anon++;
-      if(v == 0) return; //dont add 0 valued features to list of features
-      feature f = {v,(uint32_t)word_hash };
-      ae->sum_feat_sq[index] += v*v;
-      ae->atomics[index].push_back(f);
-      if(audit)
-      { v_array<char> feature_v = v_init<char>();
-        push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
-        feature_v.push_back('\0');
-        audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
-        ae->audit_features[index].push_back(ad);
-      }
-      if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
-      { if (ae->atomics[affix_namespace].size() == 0)
-          ae->indices.push_back(affix_namespace);
-        uint32_t affix = affix_features[index];
-        while (affix > 0)
-        { bool is_prefix = affix & 0x1;
-          uint32_t len   = (affix >> 1) & 0x7;
-          substring affix_name = { feature_name.begin, feature_name.end };
-          if (affix_name.end > affix_name.begin + len)
-          { if (is_prefix)
-              affix_name.end = affix_name.begin + len;
-            else
-              affix_name.begin = affix_name.end - len;
+      { // maybeFeature --> 'String' FeatureValue
+        substring feature_name=read_name();
+        v = cur_channel_v * featureValue();
+        uint64_t word_hash;
+        if (feature_name.end != feature_name.begin)
+          word_hash = (p->hasher(feature_name, channel_hash));
+        else
+          word_hash = channel_hash + anon++;
+        if(v == 0) return; //dont add 0 valued features to list of features
+        features& fs = ae->feature_space[index];
+        fs.push_back(v, word_hash);
+        if(audit)
+          { v_array<char> feature_v = v_init<char>();
+            push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
+            feature_v.push_back('\0');
+            fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
+	    feature_v.delete_v();
           }
-          word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
-          feature f2 = { v, (uint32_t) word_hash };
-          ae->sum_feat_sq[affix_namespace] += v*v;
-          ae->atomics[affix_namespace].push_back(f2);
-          if (audit)
-          { v_array<char> affix_v = v_init<char>();
-            if (index != ' ') affix_v.push_back(index);
-            affix_v.push_back(is_prefix ? '+' : '-');
-            affix_v.push_back('0' + len);
-            affix_v.push_back('=');
-            push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
-            affix_v.push_back('\0');
-            audit_data ad = {copy((char*)"affix"),affix_v.begin,word_hash,v,true};
-            ae->audit_features[affix_namespace].push_back(ad);
+        if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
+          {
+            features& affix_fs = ae->feature_space[affix_namespace];
+            if (affix_fs.size() == 0)
+              ae->indices.push_back(affix_namespace);
+            char affix = affix_features[index];
+            while (affix > 0)
+              { bool is_prefix = affix & 0x1;
+                char len   = (affix >> 1) & 0x7;
+                substring affix_name = { feature_name.begin, feature_name.end };
+                if (affix_name.end > affix_name.begin + len)
+                  { if (is_prefix)
+                      affix_name.end = affix_name.begin + len;
+                    else
+                      affix_name.begin = affix_name.end - len;
+                  }
+                 word_hash = p->hasher(affix_name,(uint64_t)channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
+                 affix_fs.push_back(v, word_hash);
+                 if (audit)
+                   { v_array<char> affix_v = v_init<char>();
+                     if (index != ' ') affix_v.push_back(index);
+                     affix_v.push_back(is_prefix ? '+' : '-');
+                     affix_v.push_back('0' + len);
+                     affix_v.push_back('=');
+                     push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
+                     affix_v.push_back('\0');
+                     fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix",affix_v.begin())));
+                   }
+                 affix >>= 4;
+              }
           }
-
-          affix >>= 4;
-        }
-      }
-      if (spelling_features[index])
-      { if (ae->atomics[spelling_namespace].size() == 0)
-          ae->indices.push_back(spelling_namespace);
-        //v_array<char> spelling;
-        spelling.erase();
-        for (char*c = feature_name.begin; c!=feature_name.end; ++c)
+  if (spelling_features[index])
+    {
+      features& spell_fs = ae->feature_space[spelling_namespace];
+      if (spell_fs.size() == 0)
+        ae->indices.push_back(spelling_namespace);
+      //v_array<char> spelling;
+      spelling.erase();
+      for (char*c = feature_name.begin; c!=feature_name.end; ++c)
         { char d = 0;
           if      ((*c >= '0') && (*c <= '9')) d = '0';
           else if ((*c >= 'a') && (*c <= 'z')) d = 'a';
@@ -162,50 +153,42 @@ public:
           //if ((spelling.size() == 0) || (spelling.last() != d))
           spelling.push_back(d);
         }
-        substring spelling_ss = { spelling.begin, spelling.end };
-        size_t word_hash = hashstring(spelling_ss, (uint32_t)channel_hash);
-        feature f2 = { v, (uint32_t) word_hash };
-        ae->sum_feat_sq[spelling_namespace] += v*v;
-        ae->atomics[spelling_namespace].push_back(f2);
+        substring spelling_ss = { spelling.begin(), spelling.end() };
+        uint64_t word_hash = hashstring(spelling_ss, (uint64_t)channel_hash);
+        spell_fs.push_back(v, word_hash);
         if (audit)
         { v_array<char> spelling_v = v_init<char>();
           if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
           push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
           spelling_v.push_back('\0');
-          audit_data ad = {copy((char*)"spelling"),spelling_v.begin,word_hash,v,true};
-          ae->audit_features[spelling_namespace].push_back(ad);
+          spell_fs.space_names.push_back(audit_strings_ptr(new audit_strings("spelling",spelling_v.begin())));
         }
       }
       if (namespace_dictionaries[index].size() > 0)
       { for (size_t dict=0; dict<namespace_dictionaries[index].size(); dict++)
         { feature_dict* map = namespace_dictionaries[index][dict];
-          uint32_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
-          v_array<feature>* feats = map->get(feature_name, hash);
-          if ((feats != nullptr) && (feats->size() > 0))
-          { if (ae->atomics[dictionary_namespace].size() == 0)
-              ae->indices.push_back(dictionary_namespace);
-            push_many(ae->atomics[dictionary_namespace], feats->begin, feats->size());
-            for (feature*f = feats->begin; f != feats->end; ++f)
-              ae->sum_feat_sq[dictionary_namespace] += f->x * f->x;
-            if (audit)
-            { for (feature*f = feats->begin; f != feats->end; ++f)
-              { uint32_t id = f->weight_index;
-                size_t len = 2 + (feature_name.end-feature_name.begin) + 1 + (size_t)ceil(log10(id)) + 1;
-                char* str = calloc_or_throw<char>(len);
-                str[0] = index;
-                str[1] = '_';
-                char *c = str+2;
-                for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) *(c++) = *fc;
-                *(c++) = '=';
-                sprintf(c, "%d", id);
-                audit_data ad = { copy((char*)"dictionary"), str, f->weight_index, f->x, true };
-                ae->audit_features[dictionary_namespace].push_back(ad);
-              }
+          uint64_t hash = uniform_hash(feature_name.begin, feature_name.end-feature_name.begin, quadratic_constant);
+          features* feats = map->get(feature_name, hash);
+          if ((feats != nullptr) && (feats->values.size() > 0))
+            { features& dict_fs = ae->feature_space[dictionary_namespace];
+              if (dict_fs.size() == 0)
+                ae->indices.push_back(dictionary_namespace);
+              push_many(dict_fs.values, feats->values.begin(), feats->values.size());
+              push_many(dict_fs.indicies, feats->indicies.begin(), feats->indicies.size());
+              dict_fs.sum_feat_sq += feats->sum_feat_sq;
+              if (audit)
+                for (size_t i = 0; i < feats->indicies.size(); ++i)
+                  { uint64_t id = feats->indicies[i];
+                    stringstream ss;
+                    ss << index << '_';
+                    for (char* fc=feature_name.begin; fc!=feature_name.end; ++fc) ss << *fc;
+                    ss << '=' << id;
+                    dict_fs.space_names.push_back(audit_strings_ptr(new audit_strings("dictionary", ss.str())));
+                  }
             }
-          }
         }
       }
-    }
+      }
   }
 
   inline void nameSpaceInfoValue()
@@ -241,7 +224,7 @@ public:
     { // NameSpaceInfo --> 'String' NameSpaceInfoValue
       index = (unsigned char)(*reading_head);
       if (redefine_some) index = (*redefine)[index]; //redefine index
-      if(ae->atomics[index].begin == ae->atomics[index].end)
+      if(ae->feature_space[index].size() == 0)
         new_index = true;
       substring name = read_name();
       if(audit)
@@ -250,7 +233,7 @@ public:
         base_v_array.push_back('\0');
         if (base != nullptr)
           free(base);
-        base = base_v_array.begin;
+        base = base_v_array.begin();
       }
       channel_hash = p->hasher(name, hash_base);
       nameSpaceInfoValue();
@@ -277,7 +260,7 @@ public:
     if(*reading_head == ' ' || *reading_head == '\t' || reading_head == endLine || *reading_head == '|' || *reading_head == '\r' )
     { // NameSpace --> ListFeatures
       index = (unsigned char)' ';
-      if(ae->atomics[index].begin == ae->atomics[index].end)
+      if(ae->feature_space[index].size() == 0)
         new_index = true;
       if(audit)
       { if (base != nullptr)
@@ -298,7 +281,7 @@ public:
     { // syntax error
       parserWarning("malformed example! '|',String,space, or EOL expected after : \"", beginLine, reading_head, "\"");
     }
-    if(new_index && ae->atomics[index].begin != ae->atomics[index].end)
+    if(new_index && ae->feature_space[index].size() > 0)
       ae->indices.push_back(index);
   }
 

@@ -39,10 +39,10 @@ void send_features(io_buf *b, example& ec, uint32_t mask)
 { // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec.indices.size()-1));
 
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-  { if (*i == constant_namespace)
+  for (namespace_index ns : ec.indices)
+  { if (ns == constant_namespace)
       continue;
-    output_features(*b, *i, ec.atomics[*i].begin, ec.atomics[*i].end, mask);
+    output_features(*b, ns, ec.feature_space[ns], mask);
   }
   b->flush();
 }

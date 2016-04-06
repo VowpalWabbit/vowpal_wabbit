@@ -17,6 +17,9 @@ using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Utility class analyzing compile-time <see cref="FeatureAttribute"/> annotation.
+    /// </summary>
     internal static class AnnotationInspector
     {
         internal static List<FeatureExpression> ExtractFeatures(Type type, Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate)

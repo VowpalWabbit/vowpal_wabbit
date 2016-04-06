@@ -14,6 +14,15 @@ using namespace LEARNER;
 
 namespace CB
 {
+  bool is_test_label(CB::label& ld)
+  { if (ld.costs.size() == 0)
+      return true;
+    for (size_t i=0; i<ld.costs.size(); i++)
+      if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
+	return false;
+    return true;
+  }
+
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 { size_t num = *(size_t *)c;
   ld->costs.erase();
@@ -90,7 +99,6 @@ bool substring_eq(substring ss, const char* str)
 
 void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 { CB::label* ld = (CB::label*)v;
-
   for (size_t i = 0; i < words.size(); i++)
   { cb_class f;
     tokenize(':', words[i], p->parse_name);
@@ -237,11 +245,11 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 
   ld->action = (uint32_t)hashstring(words[0], 0);
 
-  words.begin++;
+  words.begin()++;
 
   CB::parse_label(p, sd, &(ld->event), words);
 
-  words.begin--;
+  words.begin()--;
 }
 
 label_parser cb_eval = {default_label, parse_label,

@@ -23,9 +23,7 @@ namespace cs_test
             NIPS2015Tutorial.AnnotationExample();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
-            //ExploreClock.Clock();
             //LabDemo.Run();
-            ExploreOnlySample.Run();
             RunFeaturesTest();
             RunParserTest();
             RunSpeedTest();

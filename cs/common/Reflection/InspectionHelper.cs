@@ -40,33 +40,19 @@ namespace VW.Reflection
                     || elemType == typeof(Int64);
         }
 
-        public static Type GetDenseFeatureValueElementType(Type type)
+        public static Type GetEnumerableElementType(Type type)
         {
             Contract.Requires(type != null);
 
             if (type.IsArray)
-            {
-                var elemType = type.GetElementType();
+                return type.GetElementType();
 
-                // numeric types
-                if (IsNumericType(elemType))
-                {
-                    return elemType;
-                }
-            }
+            var enumerableType = type.GetInterfaces().Union(new[] { type })
+                    .FirstOrDefault(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>));
 
-            if (typeof(IEnumerable<object>).IsAssignableFrom(type))
-            {
-                // let's get T of IEnumerable<T>
-                var elemType = type.GetInterfaces().Union(new[] { type })
-                    .First(it => it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    .GetGenericArguments()[0];
-
-                if (IsNumericType(elemType))
-                {
-                    return elemType;
-                }
-            }
+            // let's get T of IEnumerable<T>
+            if (enumerableType != null)
+                return enumerableType.GetGenericArguments()[0];
 
             return null;
         }

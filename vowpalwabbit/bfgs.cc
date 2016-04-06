@@ -461,13 +461,30 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
       THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
     for(uint32_t i = 0; i < length; i++)
-      b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
+    { b.regularizers[2*i] = regularization;
+      if (weights[stride*i+W_COND] > 0.f)
+        b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
+    }
   }
   else
     for(uint32_t i = 0; i < length; i++)
-      b.regularizers[2*i] = weights[stride*i+W_COND] + b.regularizers[2*i];
+    { if (weights[stride*i+W_COND] > 0.f)
+        b.regularizers[2*i] += 1.f / weights[stride*i+W_COND];
+    }
   for(uint32_t i = 0; i < length; i++)
     b.regularizers[2*i+1] = weights[stride*i];
+}
+
+void regularizer_to_weight(vw& all, bfgs& b)
+{ uint32_t length = 1 << all.num_bits;
+  size_t stride = 1 << all.reg.stride_shift;
+  weight* weights = all.reg.weight_vector;
+  if (b.regularizers != nullptr)
+  { for(uint32_t i = 0; i < length; i++)
+    { weights[stride*i+W_COND] = b.regularizers[2*i];
+      weights[stride*i] = b.regularizers[2*i+1];
+    }
+  }
 }
 
 void zero_state(vw& all)
@@ -504,21 +521,22 @@ void update_weight(vw& all, float step_size)
 int process_pass(vw& all, bfgs& b)
 { int status = LEARN_OK;
 
+    finalize_preconditioner(all, b, all.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
-  if (b.first_pass)
-  { if(all.all_reduce != nullptr)
-    { accumulate(all, all.reg, W_COND); //Accumulate preconditioner
-      float temp = (float)b.importance_weight_sum;
-      b.importance_weight_sum = accumulate_scalar(all, temp);
-    }
-    finalize_preconditioner(all, b, all.l2_lambda);
-    if(all.all_reduce != nullptr)
-    { float temp = (float)b.loss_sum;
-      b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
-      accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
-    }
+    if (b.first_pass) 
+    { if(all.all_reduce != nullptr)
+      { accumulate(all, all.reg, W_COND); //Accumulate preconditioner
+        float temp = (float)b.importance_weight_sum;
+        b.importance_weight_sum = accumulate_scalar(all, temp);
+      }
+      //finalize_preconditioner(all, b, all.l2_lambda);
+      if(all.all_reduce != nullptr) 
+      {	float temp = (float)b.loss_sum;
+	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
+	accumulate(all, all.reg, 1); //Accumulate gradients from all nodes
+      }
     if (all.l2_lambda > 0.)
       b.loss_sum += add_regularization(all, b, all.l2_lambda);
     if (!all.quiet)
@@ -746,12 +764,11 @@ void end_pass(bfgs& b)
       if (status != LEARN_OK && b.final_pass > b.current_pass)
       { b.final_pass = b.current_pass;
       }
-
-      if (b.output_regularizer && b.final_pass == b.current_pass)
-      { zero_preconditioner(*all);
-        b.preconditioner_pass = true;
+      else
+      { // Not converged yet.
+        // Reset preconditioner to zero so that it is correctly recomputed in the next pass
+        zero_preconditioner(*all);
       }
-
       if(!all->holdout_set_off)
       { if(summarize_holdout_set(*all, b.no_win_counter))
           finalize_regressor(*all, all->final_regressor_name);
@@ -796,7 +813,7 @@ void finish(bfgs& b)
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
-{ char buff[512];
+{
   int c = 0;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
@@ -822,19 +839,23 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     { v = &(b.regularizers[i]);
       if (*v != 0.)
       { c++;
-        int text_len = sprintf(buff, "%d", i);
+        stringstream msg;
+        msg << i;
         brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
-                                   buff, text_len, text);
+                                   msg, text);
 
-        text_len = sprintf(buff, ":%f\n", *v);
+        msg << ":"<< *v << "\n";
         brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
-                                   buff, text_len, text);
+                                   msg, text);
       }
     }
     if (!read)
       i++;
   }
   while ((!read && i < length) || (read && brw >0));
+  
+  if (read)
+    regularizer_to_weight(all, b);
 }
 
 
@@ -881,11 +902,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.files.size() > 0)
-  { char buff[512];
-    uint32_t text_len = sprintf(buff, ":%d\n", reg_vector);
-    bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
-                              "", read,
-                              buff, text_len, text);
+    { stringstream msg;
+      msg << ":"<< reg_vector <<"\n";
+      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+                                "", read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);
@@ -945,7 +965,7 @@ base_learner* bfgs_setup(vw& all)
       cerr << "**without** curvature calculation" << endl;
   }
 
-  if (all.numpasses < 2)
+  if (all.numpasses < 2 && all.training)
   { free(&b);
     THROW("you must make at least 2 passes to use BFGS");
   }
@@ -962,4 +982,3 @@ base_learner* bfgs_setup(vw& all)
 
   return make_base(l);
 }
-

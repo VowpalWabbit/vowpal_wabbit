@@ -10,5 +10,12 @@ namespace cs_unittest
             VowpalWabbitLeakTest.Leak();
 #endif
         }
+
+        public void NoLeak()
+        {
+#if DEBUG
+            VowpalWabbitLeakTest.NoLeak();
+#endif
+        }
     }
 }

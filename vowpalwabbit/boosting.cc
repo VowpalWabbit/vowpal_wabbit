@@ -253,8 +253,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
-  const char* buff = os.str().c_str();
-  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, (uint32_t)strlen(buff), text);
+  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, os, text);
 
   if (read)
   { o.alpha.resize(o.N);
@@ -270,8 +269,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     else
     { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, (uint32_t)strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), os2, text);
     }
 
   for (int i = 0; i < o.N; i++)
@@ -283,8 +281,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     else
     { stringstream os2;
       os2 << "v " << o.v[i] << endl;
-      const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.v[i]),  sizeof(o.v[i]), buff2, (uint32_t)strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.v[i]),  sizeof(o.v[i]), os2, text);
     }
 
   if (read)
@@ -315,12 +312,11 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
-  const char* buff = os.str().c_str();
-  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, buff, (uint32_t)strlen(buff), text);
+  bin_text_read_write_fixed(model_file, (char *) &(o.N),  sizeof(o.N), "", read, os, text);
 
   if (read)
-  { o.alpha.resize(o.N);
-  }
+    o.alpha.resize(o.N);
+
 
   for (int i = 0; i < o.N; i++)
     if (read)
@@ -331,8 +327,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
     else
     { stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      const char* buff2 = os.str().c_str();
-      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), buff2, (uint32_t)strlen(buff2), text);
+      bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), os2, text);
     }
 
   if (read)

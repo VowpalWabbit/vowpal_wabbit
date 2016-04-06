@@ -20,14 +20,9 @@ namespace VW
     {
     private:
         /// <summary>
-        /// Sum of squares.
-        /// </summary>
-        float* m_sum_feat_sq;
-
-        /// <summary>
         /// Features.
         /// </summary>
-        v_array<feature>* m_atomic;
+        features* m_features;
 
         /// <summary>
         /// The namespace index.
@@ -47,11 +42,10 @@ namespace VW
         /// <summary>
         /// Initializes a new <see cref="VowpalWabbitNamespaceBuilder"/> instance.
         /// </summary>
-        /// <param name="sum_feat_sq">Pointer into sum squares array owned by <see cref="VowpalWabbitExample"/>.</param>
-        /// <param name="atomic">Pointer into atomics owned by <see cref="VowpalWabbitExample"/>.</param>
+        /// <param name="features">Pointer into features owned by <see cref="VowpalWabbitExample"/>.</param>
         /// <param name="index">The namespace index.</param>
         /// <param name="example">The native example to build up.</param>
-        VowpalWabbitNamespaceBuilder(float* sum_feat_sq, v_array<feature>* atomic, unsigned char index, example* example);
+        VowpalWabbitNamespaceBuilder(features* features, unsigned char index, example* example);
 
     public:
         ~VowpalWabbitNamespaceBuilder();
@@ -61,7 +55,7 @@ namespace VW
         /// </summary>
         /// <param name="weight_index">The weight index.</param>
         /// <param name="x">The value.</param>
-        void AddFeature(uint32_t weight_index, float x);
+        void AddFeature(uint64_t weight_index, float x);
 
         /// <summary>
         /// Adds a dense array to the example.
@@ -69,7 +63,7 @@ namespace VW
         /// <param name="weight_index_base">The base weight index. Each element is then placed relative to this index.</param>
         /// <param name="begin">The start pointer of the float array.</param>
         /// <param name="end">The end pointer of the float array.</param>
-        void AddFeaturesUnchecked(uint32_t weight_index_base, float* begin, float* end);
+        void AddFeaturesUnchecked(uint64_t weight_index_base, float* begin, float* end);
 
         /// <summary>
         /// Pre-allocate features of <paramref name="size"/>.

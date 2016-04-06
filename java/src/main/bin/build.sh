@@ -8,10 +8,10 @@ __brew_not_installed=2
 
 make_base="cd /vowpal_wabbit;
 make clean;
-make;"
+make vw java;"
 
 ubuntu_base="apt-get update -qq;
-apt-get install -qq software-properties-common g++ make libboost-all-dev default-jdk;"
+apt-get install -qq software-properties-common g++ make libboost-program-options-dev zlib1g-dev default-jdk;"
 
 ubuntu_12="$ubuntu_base
 export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64;
@@ -29,7 +29,7 @@ $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Ubuntu.14.amd64.lib"
 
 early_red_hat="yum update -q -y
-yum install -q -y wget which zlib-devel java-1.7.0-openjdk-devel perl;
+yum install -q -y wget which zlib-devel java-1.7.0-openjdk-devel perl redhat-lsb-core;
 cd /etc/yum.repos.d;
 wget http://people.centos.org/tru/devtools-2/devtools-2.repo;
 yum clean all;
@@ -44,18 +44,19 @@ yum install -q -y make epel-release;
 yum install -q -y boost141-devel;
 make clean;
 cat Makefile.permissive | sed 's/BOOST_LIBRARY = -L \/usr\/lib/BOOST_LIBRARY = -L \/usr\/lib64\/boost141/g' | sed 's/BOOST_INCLUDE = -I \/usr\/include/BOOST_INCLUDE = -I \/usr\/include\/boost141/g' > Makefile.permissive.boost141;
-make -f Makefile.permissive.boost141;
+make -f Makefile.permissive.boost141 vw java;
 rm -f Makefile.permissive Makefile.permissive.boost141;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.5.amd64.lib"
 
 red_hat_6="$early_red_hat
 yum install -q -y boost-devel;
 make clean;
-make -f Makefile.permissive;
+make -f Makefile.permissive vw java;
 rm -f Makefile.permissive;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.6.amd64.lib"
 
-red_hat_7="yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl;
+red_hat_7="yum update -q -y;
+yum install -q -y gcc-c++ make boost-devel zlib-devel java-1.7.0-openjdk-devel perl clang redhat-lsb-core;
 export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk;
 $make_base
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.7.amd64.lib"
@@ -131,7 +132,7 @@ install_cask_app() {
 run_docker() {
   local machine=$1
   local script=$2
-  docker run -v $(pwd):/vowpal_wabbit $machine /bin/bash -c "$script"
+  docker run --rm -v $(pwd):/vowpal_wabbit $machine /bin/bash -c "$script"
 }
 
 # =============================================================================
@@ -145,8 +146,12 @@ install_brew_app "docker-machine"
 install_brew_app "docker"
 
 docker-machine create --driver virtualbox default
+docker-machine start default
 eval "$(docker-machine env default)"
 
+set -e
+set -u
+set -x
 run_docker "ubuntu:12.04" "$ubuntu_12"
 run_docker "32bit/ubuntu:14.04" "$ubuntu_14_32"
 run_docker "ubuntu:14.04" "$ubuntu_14"
@@ -162,5 +167,5 @@ run_docker "centos:6" "$red_hat_6"
 run_docker "centos:7" "$red_hat_7"
 
 make clean
-make
+make vw java
 mv java/target/vw_jni.lib java/target/vw_jni.$(uname -s).$(uname -m).lib

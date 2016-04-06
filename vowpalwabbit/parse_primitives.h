@@ -43,9 +43,9 @@ inline void print_substring(substring s)
 { std::cout.write(s.begin,s.end - s.begin);
 }
 
-size_t hashstring (substring s, uint32_t h);
+uint64_t hashstring (substring s, uint64_t h);
 
-typedef size_t (*hash_func_t)(substring, uint32_t);
+typedef uint64_t (*hash_func_t)(substring, uint64_t);
 
 hash_func_t getHasher(const std::string& s);
 

@@ -19,7 +19,7 @@ var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
 var skipList = new[] { 9, 10, 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34, 43, 44, 45, 46, 47, 48, 49,
     50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70,
     42, 71, 77, 84, 85, 86, 87, 92, 93, 96, 98, 99, 100, 101, 102, 103, 104, 105, 106,
-    110, 111, 112};
+    110, 111, 112, 114};
 
 var outputModels = new Dictionary<string, TestCase>();
 
@@ -120,9 +120,12 @@ namespace cs_unittest
     [TestClass]
     public partial class RunTests : TestBase
     {
-<# foreach (var mainTestcase in testcases.Values) { #>
+<# foreach (var mainTestcase in testcases.Values) {
+	if (mainTestcase.Invalid)
+		continue;
+#>
         [TestMethod]
-        [Description("<#=mainTestcase.Comment.Trim()#>")]
+        [Description("<#=(mainTestcase.Comment ?? "").Trim()#>")]
         [TestCategory("Command Line")]
         public void CommandLine_Test<#=mainTestcase.Id#>()
         {
@@ -197,6 +200,15 @@ class TestCase
         tests.Reverse();
         return tests;
     }
+
+	public bool Invalid
+	{
+		get
+		{
+			return Arguments == null ||
+				InputData == null;
+		}
+	}
 }
 
 TestCase testcase;

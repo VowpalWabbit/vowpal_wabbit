@@ -18,6 +18,7 @@ using VW.Interfaces;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;
+using VW.Reflection;
 
 namespace VW.Serializer
 {
@@ -37,7 +38,7 @@ namespace VW.Serializer
         /// <typeparam name="TExample">The user type to serialize.</typeparam>
         /// <param name="settings"></param>
         /// <returns></returns>
-        public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
+        public static IVowpalWabbitSerializerCompiler<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
         {
             List<FeatureExpression> allFeatures = null;
 
@@ -56,25 +57,38 @@ namespace VW.Serializer
 
                     if (SerializerCache.TryGetValue(cacheKey, out serializer))
                     {
-                        return (VowpalWabbitSerializerCompiled<TExample>)serializer;
+                        return (IVowpalWabbitSerializerCompiler<TExample>)serializer;
                     }
                 }
 
-                // TOOD: enhance caching based on feature list & featurizer set
-                // if no feature mapping is provided, use [Feature] annotation on provided type.
-
-                Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate = null;
-                switch (settings.FeatureDiscovery)
+                if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
                 {
-                    case VowpalWabbitFeatureDiscovery.Default:
-                        propertyPredicate = (_, attr) => attr != null;
-                        break;
-                    case VowpalWabbitFeatureDiscovery.All:
-                        propertyPredicate = (_, __) => true;
-                        break;
-                }
+                    allFeatures = AnnotationJsonInspector.ExtractFeatures(typeof(TExample));
 
-                allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate).ToList();
+                    var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, allFeatures);
+                    if (multiExampleSerializerCompiler != null)
+                        return multiExampleSerializerCompiler;
+
+                    // TODO: label
+                }
+                else
+                {
+                    // TODO: enhance caching based on feature list & featurizer set
+                    // if no feature mapping is provided, use [Feature] annotation on provided type.
+
+                    Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate = null;
+                    switch (settings.FeatureDiscovery)
+                    {
+                        case VowpalWabbitFeatureDiscovery.Default:
+                            propertyPredicate = (_, attr) => attr != null;
+                            break;
+                        case VowpalWabbitFeatureDiscovery.All:
+                            propertyPredicate = (_, __) => true;
+                            break;
+                    }
+
+                    allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate);
+                }
             }
 
             // need at least a single feature to do something sensible
@@ -83,7 +97,7 @@ namespace VW.Serializer
                 return null;
             }
 
-            var newSerializer = new VowpalWabbitSerializerCompiled<TExample>(
+            var newSerializer = new VowpalWabbitSingleExampleSerializerCompiler<TExample>(
                 allFeatures,
                 settings == null ? null : settings.CustomFeaturizer,
                 !settings.EnableStringExampleGeneration);

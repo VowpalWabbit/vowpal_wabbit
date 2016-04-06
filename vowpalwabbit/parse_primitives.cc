@@ -39,7 +39,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty
   }
 }
 
-size_t hashstring (substring s, uint32_t h)
+uint64_t hashstring (substring s, uint64_t h)
 { //trim leading whitespace but not UTF-8
   for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin)>= 0; s.begin++);
   //trim trailing white space but not UTF-8
@@ -56,7 +56,7 @@ size_t hashstring (substring s, uint32_t h)
   return ret + h;
 }
 
-size_t hashall (substring s, uint32_t h)
+uint64_t hashall (substring s, uint64_t h)
 { return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
 
 hash_func_t getHasher(const std::string& s)
@@ -74,15 +74,15 @@ std::ostream& operator<<(std::ostream& os, const substring& ss)
 }
 
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
-{ auto it = ss.begin;
+{ substring* it = ss.cbegin();
 
-  if (it == ss.end)
+  if (it == ss.cend())
   { return os;
   }
 
   os << *it;
 
-  for (it++; it != ss.end; it++)
+  for (it++; it != ss.cend(); it++)
   { os << ",";
     os << *it;
   }

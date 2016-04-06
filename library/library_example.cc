@@ -12,7 +12,7 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
 }
 
 int main(int argc, char *argv[])
-{ vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw");
+{ vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(vec2);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   VW::finish(*model);
 
-  vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw");
+  vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw --no_stdin");
   vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model2->learn(vec2);
   cerr << "p4 = " << vec2->pred.scalar << endl;
@@ -63,4 +63,3 @@ int main(int argc, char *argv[])
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);
 }
-

@@ -4,7 +4,11 @@ namespace VLD
 {
   int VldReportHook(int reportType, wchar_t *message, int *returnValue)
   {
-    VisualLeakDetector::Instance->ReportInternal(reportType, message);
+    auto msg = gcnew String(message);
+    System::Diagnostics::Debug::Write(msg);
+
+    if (VisualLeakDetector::Instance)
+      VisualLeakDetector::Instance->ReportInternal(reportType, msg);
 
     *returnValue = 0; /* don't debug break */
     return 1; /* handled */
@@ -33,11 +37,8 @@ namespace VLD
     Instance = nullptr;
   }
 
-  void VisualLeakDetector::ReportInternal(int reportType, wchar_t *message)
+  void VisualLeakDetector::ReportInternal(int reportType, String^ msg)
   {
-    auto msg = gcnew String(message);
-
-    System::Diagnostics::Debug::Write(msg);
     m_messages->Add(Tuple::Create(reportType, msg));
   }
 

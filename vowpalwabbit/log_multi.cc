@@ -360,91 +360,93 @@ void finish(log_multi& b)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
-  { char buff[512];
+    { stringstream msg;
+      msg << "k = " << b.k;
+      bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
 
-    uint32_t text_len = sprintf(buff, "k = %d ",b.k);
-    bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.k), "", read, buff, text_len, text);
-    uint32_t temp = (uint32_t)b.nodes.size();
-    text_len = sprintf(buff, "nodes = %d ",temp);
-    bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, buff, text_len, text);
+      msg << "nodes = " << b.nodes.size() << " ";
+      uint32_t temp = (uint32_t)b.nodes.size();
+      bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, msg, text);
     if (read)
       for (uint32_t j = 1; j < temp; j++)
         b.nodes.push_back(init_node());
-    text_len = sprintf(buff, "max_predictors = %llud ",b.max_predictors);
-    bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, buff, text_len, text);
 
-    text_len = sprintf(buff, "predictors_used = %llud ",b.predictors_used);
-    bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, buff, text_len, text);
+    msg << "max predictors = " << b.max_predictors << " ";
+    bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.max_predictors), "", read, msg, text);
 
-    text_len = sprintf(buff, "progress = %d ",b.progress);
-    bin_text_read_write_fixed(model_file,(char*)&b.progress, sizeof(b.progress), "", read, buff, text_len, text);
+    msg << "predictors_used = " << b.predictors_used << " ";
+    bin_text_read_write_fixed(model_file,(char*)&b.predictors_used, sizeof(b.predictors_used), "", read, msg, text);
 
-    text_len = sprintf(buff, "swap_resist = %d\n",b.swap_resist);
-    bin_text_read_write_fixed(model_file,(char*)&b.swap_resist, sizeof(b.swap_resist), "", read, buff, text_len, text);
+    msg << "progress = " << b.progress << " ";
+    bin_text_read_write_fixed(model_file,(char*)&b.progress, sizeof(b.progress), "", read, msg, text);
+
+    msg << "swap_resist = " << b.swap_resist << "\n";
+    bin_text_read_write_fixed(model_file,(char*)&b.swap_resist, sizeof(b.swap_resist), "", read, msg, text);
 
     for (size_t j = 0; j < b.nodes.size(); j++)
     { //Need to read or write nodes.
       node& n = b.nodes[j];
-      text_len = sprintf(buff, " parent = %d",n.parent);
-      bin_text_read_write_fixed(model_file,(char*)&n.parent, sizeof(n.parent), "", read, buff, text_len, text);
+
+      msg << " parent = " << n.parent;
+      bin_text_read_write_fixed(model_file,(char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
       uint32_t temp = (uint32_t)n.preds.size();
-      text_len = sprintf(buff, " preds = %d",temp);
-      bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, buff, text_len, text);
+
+      msg << " preds = " << temp;
+      bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, msg, text);
       if (read)
         for (uint32_t k = 0; k < temp; k++)
           n.preds.push_back(node_pred(1));
 
-      text_len = sprintf(buff, " min_count = %d",n.min_count);
-      bin_text_read_write_fixed(model_file,(char*)&n.min_count, sizeof(n.min_count), "", read, buff, text_len, text);
+      msg << " min_count = " << n.min_count;
+      bin_text_read_write_fixed(model_file,(char*)&n.min_count, sizeof(n.min_count), "", read, msg, text);
 
-      uint32_t text_len = sprintf(buff, " internal = %d",n.internal);
-      bin_text_read_write_fixed(model_file,(char*)&n.internal, sizeof(n.internal), "", read, buff, text_len, text)
-      ;
+      msg << " internal = " << n.internal;
+      bin_text_read_write_fixed(model_file,(char*)&n.internal, sizeof(n.internal), "", read, msg, text);
 
       if (n.internal)
-      { text_len = sprintf(buff, " base_predictor = %d",n.base_predictor);
-        bin_text_read_write_fixed(model_file,(char*)&n.base_predictor, sizeof(n.base_predictor), "", read, buff, text_len, text);
+        { msg << " base_predictor = " << n.base_predictor;
+        bin_text_read_write_fixed(model_file,(char*)&n.base_predictor, sizeof(n.base_predictor), "", read, msg, text);
 
-        text_len = sprintf(buff, " left = %d",n.left);
-        bin_text_read_write_fixed(model_file,(char*)&n.left, sizeof(n.left), "", read, buff, text_len, text);
+        msg << " left = " << n.left;
+        bin_text_read_write_fixed(model_file,(char*)&n.left, sizeof(n.left), "", read, msg, text);
 
-        text_len = sprintf(buff, " right = %d",n.right);
-        bin_text_read_write_fixed(model_file,(char*)&n.right, sizeof(n.right), "", read, buff, text_len, text);
+        msg << " right = " << n.right;
+        bin_text_read_write_fixed(model_file,(char*)&n.right, sizeof(n.right), "", read, msg, text);
 
-        text_len = sprintf(buff, " norm_Eh = %f",n.norm_Eh);
-        bin_text_read_write_fixed(model_file,(char*)&n.norm_Eh, sizeof(n.norm_Eh), "", read, buff, text_len, text);
+        msg << " norm_Eh = " << n.norm_Eh;
+        bin_text_read_write_fixed(model_file,(char*)&n.norm_Eh, sizeof(n.norm_Eh), "", read, msg, text);
 
-        text_len = sprintf(buff, " Eh = %f",n.Eh);
-        bin_text_read_write_fixed(model_file,(char*)&n.Eh, sizeof(n.Eh), "", read, buff, text_len, text);
+        msg << " Eh = " << n.Eh;
+        bin_text_read_write_fixed(model_file,(char*)&n.Eh, sizeof(n.Eh), "", read, msg, text);
 
-        text_len = sprintf(buff, " n = %d\n",n.n);
-        bin_text_read_write_fixed(model_file,(char*)&n.n, sizeof(n.n), "", read, buff, text_len, text);
+        msg << " n = "<< n.n << "\n";
+        bin_text_read_write_fixed(model_file,(char*)&n.n, sizeof(n.n), "", read, msg, text);
       }
       else
-      { text_len = sprintf(buff, " max_count = %d",n.max_count);
-        bin_text_read_write_fixed(model_file,(char*)&n.max_count, sizeof(n.max_count), "", read, buff, text_len, text);
-        text_len = sprintf(buff, " max_count_label = %d\n",n.max_count_label);
-        bin_text_read_write_fixed(model_file,(char*)&n.max_count_label, sizeof(n.max_count_label), "", read, buff, text_len, text);
-      }
+        { msg << " max_count = " << n.max_count;
+          bin_text_read_write_fixed(model_file,(char*)&n.max_count, sizeof(n.max_count), "", read, msg, text);
+          msg << " max_count_label = "<< n.max_count_label <<"\n";
+          bin_text_read_write_fixed(model_file,(char*)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
+        }
 
       for (size_t k = 0; k < n.preds.size(); k++)
       { node_pred& p = n.preds[k];
 
-        text_len = sprintf(buff, "  Ehk = %f",p.Ehk);
-        bin_text_read_write_fixed(model_file,(char*)&p.Ehk, sizeof(p.Ehk), "", read, buff, text_len, text);
+        msg << "  Ehk = " << p.Ehk;
+        bin_text_read_write_fixed(model_file,(char*)&p.Ehk, sizeof(p.Ehk), "", read, msg, text);
 
-        text_len = sprintf(buff, " norm_Ehk = %f",p.norm_Ehk);
-        bin_text_read_write_fixed(model_file,(char*)&p.norm_Ehk, sizeof(p.norm_Ehk), "", read, buff, text_len, text);
+        msg << " norm_Ehk = " << p.norm_Ehk;
+        bin_text_read_write_fixed(model_file,(char*)&p.norm_Ehk, sizeof(p.norm_Ehk), "", read, msg, text);
 
-        text_len = sprintf(buff, " nk = %d",p.nk);
-        bin_text_read_write_fixed(model_file,(char*)&p.nk, sizeof(p.nk), "", read, buff, text_len, text);
+        msg << " nk = " << p.nk;
+        bin_text_read_write_fixed(model_file,(char*)&p.nk, sizeof(p.nk), "", read, msg, text);
 
-        text_len = sprintf(buff, " label = %d",p.label);
-        bin_text_read_write_fixed(model_file,(char*)&p.label, sizeof(p.label), "", read, buff, text_len, text);
+        msg << " label = " << p.label;
+        bin_text_read_write_fixed(model_file,(char*)&p.label, sizeof(p.label), "", read, msg, text);
 
-        text_len = sprintf(buff, " label_count = %d\n",p.label_count);
-        bin_text_read_write_fixed(model_file,(char*)&p.label_count, sizeof(p.label_count), "", read, buff, text_len, text);
+        msg << " label_count = "<< p.label_count << "\n";
+        bin_text_read_write_fixed(model_file,(char*)&p.label_count, sizeof(p.label_count), "", read, msg, text);
       }
     }
   }

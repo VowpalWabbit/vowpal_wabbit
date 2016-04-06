@@ -25,8 +25,6 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
     cout << "label " << ld.label << " is not in {1,"<< o.k << "} This won't work right." << endl;
 
-  stringstream outputStringStream;
-
   ec.l.simple = { 1., 0.f, 0.f }; // truth
   base.learn(ec, ld.label-1);
 
@@ -159,8 +157,8 @@ void finish_example_probabilities(vw& all, oaa& o, example& ec)
     sprintf(temp_str, "%f", ec.pred.probs[i]); // 0.123 -> 0.123000
     outputStringStream << ':' << temp_str;
   }
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-    all.print_text(*sink, outputStringStream.str(), ec.tag);
+  for (int sink : all.final_prediction_sink)
+    all.print_text(sink, outputStringStream.str(), ec.tag);
 
   // === Report updates using zero-one loss
   all.sd->update(ec.test_only, zero_one_loss, ec.l.multi.weight, ec.num_features);

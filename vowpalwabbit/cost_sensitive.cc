@@ -115,22 +115,31 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   ld->costs.erase();
 
   // handle shared and label first
-  if (words.size() == 1)
-  { float fx;
+  if (words.size() == 1) {
+    float fx;
     name_value(words[0], p->parse_name, fx);
     bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
     bool eq_label  = substring_eq(p->parse_name[0], "***label***");
-    if (! sd->ldict)
-    { eq_shared |= substring_eq(p->parse_name[0], "shared");
+    if (! sd->ldict) {
+      eq_shared |= substring_eq(p->parse_name[0], "shared");
       eq_label  |= substring_eq(p->parse_name[0], "label");
     }
-    if (eq_shared || eq_label)
-    { if (p->parse_name.size() != 1) cerr << "shared feature vectors and label feature vectors should not have costs on: " << words[0] << endl;
-      else
-      { wclass f = { eq_shared ? -FLT_MAX : 0.f, 0, 0., 0.};
-        ld->costs.push_back(f);
-        return;
+    if (eq_shared || eq_label) {
+      if (eq_shared) {
+        if (p->parse_name.size() != 1) cerr << "shared feature vectors should not have costs on: " << words[0] << endl;
+        else {
+          wclass f = { -FLT_MAX, 0, 0., 0.};
+          ld->costs.push_back(f);
+        }
       }
+      if (eq_label) {
+        if (p->parse_name.size() != 2) cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
+        else {
+          wclass f = { float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          ld->costs.push_back(f);
+        }
+      }
+      return;
     }
   }
 
@@ -143,7 +152,7 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
       THROW(" invalid cost: specification -- no names on: " << words[i]);
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
-    { f.class_index = sd->ldict ? sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+    { f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -171,13 +180,13 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       // If the first example is "shared", don't include its features.
       // These should be already included in each example (TODO: including quadratic and cubic).
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc=ec_seq->begin;
-      example& first_ex = **ecc;
+      example** ecc = ec_seq->cbegin();
+      const example& first_ex = **ecc;
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
 
-      for (; ecc!=ec_seq->end; ecc++)
+      for (; ecc!=ec_seq->cend(); ecc++)
         num_current_features += (*ecc)->num_features;
     }
 
@@ -216,11 +225,11 @@ void output_example(vw& all, example& ec)
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
-    for (wclass *cl = ld.costs.begin; cl != ld.costs.end; cl ++)
-    { if (cl->class_index == pred)
-        chosen_loss = cl->x;
-      if (cl->x < min)
-        min = cl->x;
+    for (auto& cl : ld.costs)
+    { if (cl.class_index == pred)
+        chosen_loss = cl.x;
+      if (cl.x < min)
+        min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
       cerr << "warning: csoaa predicted an invalid class" << endl;
@@ -230,12 +239,12 @@ void output_example(vw& all, example& ec)
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
-  for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+  for (int sink : all.final_prediction_sink)
     if (! all.sd->ldict)
-      all.print(*sink, (float)ec.pred.multiclass, 0, ec.tag);
+      all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     { substring ss_pred = all.sd->ldict->get(ec.pred.multiclass);
-      all.print_text(*sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
+      all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
   if (all.raw_prediction > 0)
