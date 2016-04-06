@@ -22,7 +22,7 @@ namespace VW.Serializer
     /// A serializer from a user type (TExample) to a native Vowpal Wabbit example type.
     /// </summary>
     /// <typeparam name="TExample">The source example type.</typeparam>
-    public sealed class VowpalWabbitSerializer<TExample> : IDisposable, IVowpalWabbitExamplePool
+    public sealed class VowpalWabbitSingleExampleSerializer<TExample> : IVowpalWabbitSerializer<TExample>, IVowpalWabbitExamplePool
     {
         private class CacheEntry
         {
@@ -35,7 +35,7 @@ namespace VW.Serializer
 #endif
         }
 
-        private readonly VowpalWabbitSerializerCompiled<TExample> serializer;
+        private readonly VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler;
 
         private Dictionary<TExample, CacheEntry> exampleCache;
 
@@ -53,19 +53,19 @@ namespace VW.Serializer
 
         private readonly Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerFunc;
 
-        internal VowpalWabbitSerializer(VowpalWabbitSerializerCompiled<TExample> serializer, VowpalWabbit vw)
+        internal VowpalWabbitSingleExampleSerializer(VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler, VowpalWabbit vw)
         {
-            if (serializer == null)
+            if (compiler == null)
             {
-                throw new ArgumentNullException("serializer");
+                throw new ArgumentNullException("compiler");
             }
             Contract.Ensures(vw != null);
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.serializer = serializer;
+            this.compiler = compiler;
 
-            this.serializerFunc = serializer.Func(vw);
+            this.serializerFunc = compiler.Func(vw);
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
@@ -114,7 +114,7 @@ namespace VW.Serializer
         /// </summary>
         public bool EnableStringExampleGeneration
         {
-            get { return !this.serializer.DisableStringExampleGeneration; }
+            get { return !this.compiler.DisableStringExampleGeneration; }
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace VW.Serializer
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         /// <returns>The resulting VW string.</returns>
-        public string SerializeToString(TExample example, ILabel label = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
+        public string SerializeToString(TExample example, ILabel label = null, int? index = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             Contract.Requires(example != null);
 
@@ -136,6 +136,13 @@ namespace VW.Serializer
             }
         }
 
+
+        VowpalWabbitExampleCollection IVowpalWabbitSerializer<TExample>.Serialize(TExample example, ILabel label, int? index)
+        {
+            // dispatch
+            return new VowpalWabbitSingleLineExampleCollection(vw, Serialize(example, label, index));
+        }
+
         /// <summary>
         /// Serialize the example.
         /// </summary>
@@ -143,9 +150,10 @@ namespace VW.Serializer
         /// <param name="label">The label to be serialized.</param>
         /// <returns>The serialized example.</returns>
         /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
-        public VowpalWabbitExample Serialize(TExample example, ILabel label = null)
+        public VowpalWabbitExample Serialize(TExample example, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
+            Contract.Requires(index == null);
 
             if (this.exampleCache == null || label != null)
             {
@@ -204,6 +212,7 @@ namespace VW.Serializer
                     {
                         nativeExample.Dispose();
                     }
+
                     throw e;
                 }
             }

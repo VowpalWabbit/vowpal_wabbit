@@ -6,7 +6,6 @@ Num weight bits = 20
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-decay_learning_rate = 1
 creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
 Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
@@ -14,12 +13,10 @@ average    since      instance            current true      current predicted   
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 89.000000  89.000000         1  [43:1 5:2 5:2 5:2 1..] [20:9 20:9 20:9 20:..]     0     0       96        0       96  0.000950
 48.500000  8.000000          2  [2:2 3:5 0:8 3:7 3:4 ] [0:8 1:2 2:2 3:2 4:2 ]     0     0      104        0      104  0.001029
-39.000000  29.500000         4  [4:2 4:2 4:2 7:5 6:..] [0:8 1:2 2:2 3:2 4:..]     0     0      164        0      164  0.001629
-42.625000  46.250000         8  [4:2 4:2 4:2 5:5 0:..] [0:8 1:2 2:2 3:2 4:..]     1     0      362        0      362  0.003604
 
 finished run
-number of examples = 10
-weighted example sum = 10
+number of examples = 2
+weighted example sum = 2
 weighted label sum = 0
-average loss = 41.7
-total feature number = 119131
+average loss = 48.5
+total feature number = 29203

@@ -1,7 +1,6 @@
 from collections import namedtuple
 import numpy as np
 import pytest
-from sklearn.utils.estimator_checks import check_estimator
 
 from sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
@@ -110,6 +109,16 @@ class TestVW:
         intercept = model.get_intercept()
         assert isinstance(intercept, float)
 
+    def test_oaa(self):
+        X = ['1 | feature1:2.5',
+             '2 | feature1:0.11 feature2:-0.0741',
+             '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
+             '1 | feature2:-0.028 feature1:4.43',
+             '2 | feature5:1.532 feature6:-3.2']
+        model = VW(convert_to_vw=False, oaa=3)
+        model.fit(X)
+        assert np.allclose(model.predict(X), [ 1.,  2.,  3.,  1.,  2.])
+
 
 class TestVWClassifier:
 
@@ -143,6 +152,12 @@ class TestVWRegressor:
         model.fit(data.x, data.y)
 
         assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+        # ensure model can make multiple calls to predict
+        assert np.allclose(raw_model.predict(data.x), model.predict(data.x))
+
+    def test_delete(self):
+        raw_model = VW()
+        del raw_model
 
 
 def test_tovw():

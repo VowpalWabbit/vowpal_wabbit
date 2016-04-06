@@ -66,6 +66,8 @@ NULL, it indicates the path where validation labels should be stored.}
 
 \item{extra}{These is where more VW commands can be passed as text}
 
+\item{keep_preds}{TRUE (default) to return a vector of the predictions}
+
 \item{do_evaluation}{TRUE to compute auc on validation_data. Use FALSE, to just score data}
 
 \item{use_perf}{use perf to compute auc. Otherwise, auc_roc() from the R package pROC is used.}

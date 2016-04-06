@@ -103,6 +103,7 @@ public:
             push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
             feature_v.push_back('\0');
             fs.space_names.push_back(audit_strings_ptr(new audit_strings(base, feature_v.begin())));
+	    feature_v.delete_v();
           }
         if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
           {

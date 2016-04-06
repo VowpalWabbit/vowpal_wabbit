@@ -31,7 +31,7 @@ namespace VW
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TExample>[] serializers;
+        private IVowpalWabbitSerializer<TExample>[] serializers;
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
@@ -65,7 +65,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
-                    vw.Learn(ex);
+                    ex.Learn();
                 }
             });
         }
@@ -86,7 +86,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
-                    vw.Predict(ex);
+                    ex.Predict();
                 }
             });
         }
@@ -112,7 +112,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example, label))
                 {
-                    return vw.Learn(ex, predictionFactory);
+                    return ex.Learn(predictionFactory);
                 }
             });
         }
@@ -136,7 +136,7 @@ namespace VW
             {
                 using (var ex = this.serializers[vw.Settings.Node].Serialize(example))
                 {
-                    return vw.Predict(ex, predictionFactory);
+                    return ex.Predict(predictionFactory);
                 }
             });
         }
@@ -184,34 +184,26 @@ namespace VW
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TExample>[] serializers;
+        private VowpalWabbitSingleExampleSerializer<TExample>[] serializers;
 
         /// <summary>
         /// The serializers are not thread-safe. Thus we need to allocate one for each VW instance.
         /// </summary>
-        private VowpalWabbitSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
+        private VowpalWabbitSingleExampleSerializer<TActionDependentFeature>[] actionDependentFeatureSerializers;
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
             if (manager == null)
-            {
                 throw new ArgumentNullException("manager");
-            }
 
             if (manager.Settings == null)
-            {
                 throw new ArgumentNullException("manager.Settings");
-            }
 
             if (manager.Settings.ParallelOptions == null)
-            {
                 throw new ArgumentNullException("manager.Settings.ParallelOptions");
-            }
 
             if (manager.Settings.ParallelOptions.MaxDegreeOfParallelism <= 0)
-            {
                 throw new ArgumentOutOfRangeException("MaxDegreeOfParallelism must be greater than zero.");
-            }
 
             Contract.Ensures(this.serializers != null);
             Contract.Ensures(this.actionDependentFeatureSerializers != null);
@@ -220,12 +212,22 @@ namespace VW
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
-            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings);
+            var serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(manager.Settings) as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
+            if (serializer == null)
+                throw new ArgumentException(string.Format(
+                "{0} maps to a multiline example. Use VowpalWabbitAsync<{0}> instead.",
+                    typeof(TExample)));
+
+            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings) as VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>;
+            if (adfSerializer == null)
+                throw new ArgumentException(string.Format(
+                "{0} maps to a multiline example. Use VowpalWabbitAsync<{0}> instead.",
+                    typeof(TActionDependentFeature)));
+
             this.serializers = this.manager.VowpalWabbits
                 .Select(vw => serializer.Create(vw))
                 .ToArray();
 
-            var adfSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(manager.Settings);
             this.actionDependentFeatureSerializers = this.manager.VowpalWabbits
                 .Select(vw => adfSerializer.Create(vw))
                 .ToArray();

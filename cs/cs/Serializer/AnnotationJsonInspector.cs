@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Interfaces;
 
 namespace VW.Serializer
 {
@@ -80,7 +81,7 @@ namespace VW.Serializer
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
                 let namespaceRawValue = nsAttr != null && nsAttr.PropertyName != null ? nsAttr.PropertyName : ns.Name
                 // filter all aux properties
-                where !namespaceRawValue.StartsWith("_")
+                where !namespaceRawValue.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
                 let featureGroup = namespaceRawValue[0]
                 let namespaceValue = namespaceRawValue.Length > 1 ? namespaceRawValue.Substring(1) : null
                 let namespaceMemberSerialization = GetMemberSerialiation(ns.PropertyType)
@@ -92,15 +93,16 @@ namespace VW.Serializer
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
+                let isTextProperty = name == VowpalWabbitConstants.TextProperty
                 // filter all aux properties
-                where !name.StartsWith("_")
+                where isTextProperty || !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
                     // CODE example.NamespaceProperty.FeatureProperty
                     valueExpressionFactory: valueExpression => Expression.Property(Expression.Property(valueExpression, ns), p),
                     // Note: default to string escaping
-                    stringProcessing: StringProcessing.Escape,
+                    stringProcessing: isTextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     // CODE example.NamespaceProperty != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{
@@ -116,17 +118,28 @@ namespace VW.Serializer
                 // removing any JsonIgnore properties
                 where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
-                where IsFeatureTypeSupported(p.PropertyType) &&
+                where
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
-                // filter all aux properties
-                where !name.StartsWith("_")
+                // filter all aux properties, except for special props
+                where VowpalWabbitConstants.IsSpecialProperty(name) ||
+                   !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
+                // filterint labels for now
+                where name != VowpalWabbitConstants.LabelProperty
+                where IsFeatureTypeSupported(p.PropertyType) ||
+                    // _multi can be any list type that JSON.NET supports
+                    name == VowpalWabbitConstants.MultiProperty ||
+                    // labels must be ILabel or string
+                    // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
+                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType is string))
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
                     // CODE example.FeatureProperty
                     valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
+                    // Note: default to string escaping
+                    stringProcessing: name == VowpalWabbitConstants.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     featureGroup: VowpalWabbitConstants.DefaultNamespace);

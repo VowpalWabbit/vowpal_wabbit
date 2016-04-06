@@ -703,14 +703,12 @@ private:
 
     u32 chosen_action = 0;
     float action_probability = 0.f;
-    bool log_action;
 
     if (m_tau && m_explore)
     { m_tau--;
       u32 actionId = random_generator.Uniform_Int(1, num_actions);
       action_probability = 1.f / num_actions;
       chosen_action = actionId;
-      log_action = true;
     }
     else
     { // Invoke the default policy function to get the action
@@ -721,10 +719,9 @@ private:
       }
 
       action_probability = 1.f;
-      log_action = false;
     }
 
-    return std::tuple<u32, float, bool>(chosen_action, action_probability, log_action);
+    return std::tuple<u32, float, bool>(chosen_action, action_probability, true);
   }
 
 private:
@@ -1552,7 +1549,6 @@ private:
   { PRG::prg random_generator(salted_seed);
 
     float action_probability = 0.f;
-    bool log_action;
 
     // Invoke the default policy function to get the action
     m_default_policy.Choose_Action(context, actions, num_actions);
@@ -1582,14 +1578,12 @@ private:
 
       MultiWorldTesting::MultiAction::Put_Action_To_List(actionId, actions, num_actions);
 
-      log_action = true;
     }
     else
     { action_probability = 1.f;
-      log_action = false;
     }
 
-    return std::tuple<float, bool>(action_probability, log_action);
+    return std::tuple<float, bool>(action_probability, true);
   }
 
 private:
