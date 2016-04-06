@@ -107,7 +107,6 @@ class vw(pylibvw.vw):
             ec.setup_example()
         pylibvw.vw.predict(self, ec)
 
-        pred = None
         if   labelType == pylibvw.vw.lBinary:           pred = simple_label(ec)
         elif labelType == pylibvw.vw.lMulticlass:       pred = multiclass_label(ec)
         elif labelType == pylibvw.vw.lCostSensitive:    pred = cost_sensitive_label(ec)

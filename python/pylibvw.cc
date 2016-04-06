@@ -60,6 +60,21 @@ label_parser* get_label_parser(vw*all, size_t labelType)
   }
 }
 
+size_t my_get_label_type(vw*all)
+{ label_parser* lp = &all->p->lp;
+  if (lp->parse_label == simple_label.parse_label)
+  { return lBINARY;
+  } else if (lp->parse_label == MULTICLASS::mc_label.parse_label) {
+    return lMULTICLASS;
+  } else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label) {
+    return lCOST_SENSITIVE;
+  } else if (lp->parse_label == CB::cb_label.parse_label) {
+    return lCONTEXTUAL_BANDIT;
+  } else {
+    cerr << "unsupported label parser used" << endl; throw exception();
+  }
+}
+
 void my_delete_example(void*voidec)
 { example* ec = (example*) voidec;
   size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
@@ -587,6 +602,8 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_weight", &VW::get_weight, "get the weight for a particular index")
   .def("set_weight", &VW::set_weight, "set the weight for a particular index")
   .def("get_stride", &VW::get_stride, "return the internal stride")
+
+  .def("get_label_type", &my_get_label_type, "return parse label type")
 
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")

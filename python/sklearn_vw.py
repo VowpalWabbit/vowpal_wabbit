@@ -20,8 +20,9 @@ DEFAULT_NS = ''
 CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
 
+
 class VW(BaseEstimator):
-    """ Vowpal Wabbit Scikit-learn Base Estimator wrapper
+    """Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
         Attributes
         ----------
@@ -105,7 +106,7 @@ class VW(BaseEstimator):
                  ect=None,
                  csoaa=None,
                  wap=None):
-        """ VW model constructor, exposing all supported parameters to keep sklearn happy
+        """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
         ----------
@@ -118,8 +119,8 @@ class VW(BaseEstimator):
         bfgs: use L-BFGS optimization algorithm
         mem: set the rank of the inverse hessian approximation used by bfgs
         ftrl: use FTRL-Proximal optimization algorithm
-        frtl_alpha: ftrl alpha parameter
-        frtl_beta: ftrl beta parameter
+        ftrl_alpha: ftrl alpha parameter
+        ftrl_beta: ftrl beta parameter
         learning_rate,l (float): Set learning rate
         power_t (float): t power value
         decay_learning_rate (float): Set Decay factor for learning_rate between passes
@@ -205,6 +206,8 @@ class VW(BaseEstimator):
         """
 
         # clear estimator attributes
+        if hasattr(self, 'label_type_'):
+            del self.label_type_
         if hasattr(self, 'fit_'):
             del self.fit_
         if hasattr(self, 'passes_'):
@@ -213,8 +216,6 @@ class VW(BaseEstimator):
             del self.convert_to_vw_
         if hasattr(self, 'vw_'):
             del self.vw_
-        if hasattr(self, 'label_type_'):
-            del self.label_type_
 
         # reset params and quiet models by default
         self.params = {'quiet':  True}
@@ -230,23 +231,11 @@ class VW(BaseEstimator):
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
 
-        # check for label type to use
-        if 'oaa' in self.params or 'ect' in self.params:
-            self.label_type_ = vw.lMulticlass
-        elif 'csoaa' in self.params or 'wap' in self.params:
-            self.label_type_ = vw.lCostSensitive
-        elif 'cb' in self.params or 'cbify' in self.params:
-            self.label_type_ = vw.lContextualBandit
-        else:
-            self.label_type_ = vw.lBinary
-
         self.vw_ = None
-
         super(VW, self).__init__()
 
     def get_vw(self):
-        """
-        Factory to create a vw instance on demand
+        """Factory to create a vw instance on demand
 
         Returns
         -------
@@ -254,10 +243,13 @@ class VW(BaseEstimator):
         """
         if self.vw_ is None:
             self.vw_ = vw(**self.params)
+
+            # set label type
+            self.label_type_ = self.vw_.get_label_type()
         return self.vw_
 
     def fit(self, X, y=None, sample_weight=None):
-        """ Fit the model according to the given training data
+        """Fit the model according to the given training data
 
         TODO: for first pass create and store example objects.
                 for N-1 passes use example objects directly (simulate cache file...but in memory for faster processing)
@@ -288,7 +280,7 @@ class VW(BaseEstimator):
         return self
 
     def transform(self, X, y=None):
-        """ Transform does nothing by default besides closing the model. Transform is required for any estimator
+        """Transform does nothing by default besides closing the model. Transform is required for any estimator
          in a sklearn pipeline that isn't the final estimator
 
         Parameters
@@ -309,7 +301,7 @@ class VW(BaseEstimator):
         return X
 
     def predict(self, X):
-        """ Predict with Vowpal Wabbit model
+        """Predict with Vowpal Wabbit model
 
         Parameters
         ----------
@@ -386,7 +378,7 @@ class VW(BaseEstimator):
         return out
 
     def set_params(self, **params):
-        """ This destroys and recreates the Vowpal Wabbit model with updated parameters
+        """This destroys and recreates the Vowpal Wabbit model with updated parameters
             any parameters not provided will remain as they were initialized to at construction
 
         Parameters
@@ -407,7 +399,7 @@ class VW(BaseEstimator):
         return self
 
     def get_coefs(self):
-        """ Returns coefficient weights as ordered sparse matrix
+        """Returns coefficient weights as ordered sparse matrix
 
         Returns
         -------
@@ -427,10 +419,8 @@ class VW(BaseEstimator):
         return self.get_vw().get_weight(CONSTANT_HASH)
 
 
-
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
-    """
-    Mixin for linear classifiers.  A threshold is used to specify the positive
+    """Mixin for linear classifiers.  A threshold is used to specify the positive
     class cutoff
 
     Handles prediction for sparse and dense X.
@@ -465,8 +455,8 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
 
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
-    """ Vowpal Wabbit Classifier model
-    Only supports binary classification currently.
+    """Vowpal Wabbit Classifier model
+    Only supports binary classification currently. Use VW directly for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
 
@@ -502,13 +492,13 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
 
 
 class VWRegressor(VW, RegressorMixin):
-    """ Vowpal Wabbit Regressor model """
+    """Vowpal Wabbit Regressor model """
 
     pass
 
 
 def tovw(x, y=None, sample_weight=None):
-    """ Convert array or sparse matrix to Vowpal Wabbit format
+    """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
     ----------
