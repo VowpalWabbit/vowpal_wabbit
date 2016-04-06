@@ -481,7 +481,7 @@ struct vw
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
 
-  bool multilabel_prediction;
+  void (*delete_prediction)(void*);
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?

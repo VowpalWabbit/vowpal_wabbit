@@ -170,14 +170,10 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
 
   bool shared = CB::ec_is_example_header(*examples[0]);
 
-  for (CB::cb_class& cl : ld.costs)
-  { mydata.known_cost = ld.costs[0];
-    mydata.known_cost.action = index;
-
-    // take care of shared example
-    if(shared)
-      mydata.known_cost.action--;
-  }
+  mydata.known_cost = ld.costs[0];
+  mydata.known_cost.action = index;
+  if(shared)  // take care of shared example
+    mydata.known_cost.action--;
 }
 
 template<bool is_learn>
@@ -576,7 +572,7 @@ base_learner* cb_adf_setup(vw& all)
 
   if (all.vm.count("rank_all"))
   { ld.rank_all = true;
-    all.multilabel_prediction = true;
+    all.delete_prediction = MULTILABEL::multilabel.delete_label;
     *all.file_options << " --rank_all";
   }
 

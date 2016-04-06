@@ -84,6 +84,7 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="TestAllReduce.cs" />
+    <Compile Include="TestConsole.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
     <Compile Include="TestJson.cs" />
@@ -115,12 +116,17 @@
     <Compile Include="TestPooling.cs" />
     <Compile Include="TestWrapper.cs" />
     <Compile Include="TrainSet0002Dat.cs" />
+    <Compile Include="VowpalWabbitStdErrPerformanceStatistics.cs" />
     <Compile Include="VWTestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cs\cs.csproj">
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cs_console\cs_console.csproj">
+      <Project>{01a85382-c3e9-480a-86bf-fafe4ad107a7}</Project>
+      <Name>cs_console</Name>
     </ProjectReference>
     <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
@@ -136,6 +142,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="json\test_array.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="json\test_newline.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

@@ -25,6 +25,8 @@ license as described in the file LICENSE.
 #include <map>
 #include "memory.h"
 #include "vw_allreduce.h"
+#include "rand48.h"
+#include "floatbits.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -257,7 +259,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
                             "", read, msg, text);
   //cerr<<"Read num support "<<model->num_support<<endl;
 
-  flat_example* fec;
+  flat_example* fec = nullptr;
   if(read)
     model->support_vec.resize(model->num_support);
 
@@ -515,7 +517,7 @@ void sync_queries(vw& all, svm_params& params, bool* train_pool)
 { io_buf* b = new io_buf();
 
   char* queries;
-  flat_example* fec;
+  flat_example* fec = nullptr;
 
   for(size_t i = 0; i < params.pool_pos; i++)
   { if(!train_pool[i])
@@ -622,7 +624,7 @@ void train(svm_params& params)
 
       for(size_t i = 0; i < params.pool_pos; i++)
       { float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
-        if(rand() < queryp)
+        if(frand48() < queryp)
         { svm_example* fec = params.pool[i];
           fec->ex.l.simple.weight *= 1/queryp;
           train_pool[i] = 1;
@@ -668,7 +670,9 @@ void train(svm_params& params)
         for(size_t j = 0; j < params.reprocess; j++)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
-          int randi = 1;//rand()%2;
+          int randi = 1;
+	  if (frand48() < 0.5)
+	    randi = 0;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
@@ -682,9 +686,9 @@ void train(svm_params& params)
             }
           }
           else
-          { size_t rand_pos = rand()%model->num_support;
-            update(params, rand_pos);
-          }
+	    { size_t rand_pos = (size_t)floorf(frand48() * model->num_support);
+	      update(params, rand_pos);
+	    }
         }
         //cerr<<endl;
         // cerr<<params.model->support_vec[0]->example_counter<<endl;
