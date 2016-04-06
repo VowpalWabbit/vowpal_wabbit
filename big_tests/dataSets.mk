@@ -17,8 +17,7 @@ archive:
 getData:	$(dataDir)
 	cd $(dataDir)
 	$(WGET) $(URL)
-	fName=`basename $(URL)` ; tar xjvf $$fName
-	find . -name '*prep' | xargs touch
+	fName=`basename $(URL)` ; tar xjvmf $$fName
 
 # If a URL is specified, then simply download all the data
 # pre-prepped.  Checked-in check-sums should be used to guard against
