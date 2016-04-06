@@ -84,6 +84,7 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="TestAllReduce.cs" />
+    <Compile Include="TestArguments.cs" />
     <Compile Include="TestConfigInspector.cs" />
     <Compile Include="TestConsole.cs" />
     <Compile Include="TestExampleCache.cs" />
