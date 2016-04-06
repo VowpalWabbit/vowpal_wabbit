@@ -1,5 +1,6 @@
 #include "reductions.h"
 #include "vw.h"
+#include "math.h"
 
 using namespace LEARNER;
 
@@ -24,7 +25,13 @@ void predict_or_learn_with_confidence(confidence& c, base_learner& base, example
 	  sensitivity = base.sensitivity(ec);
   }
 
-  ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
+  cout << "sensitivity " << sensitivity << endl;
+  cout << "isinf(sensitivity) " << isinf(sensitivity) << endl;
+  if(isnan(sensitivity)){
+	  ec.confidence = 0;
+  }else{
+	  ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
+  }
 }
 
 void confidence_print_result(int f, float res, float confidence, v_array<char> tag)
