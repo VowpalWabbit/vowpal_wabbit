@@ -136,6 +136,7 @@
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\PrefixedJsonReader.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />

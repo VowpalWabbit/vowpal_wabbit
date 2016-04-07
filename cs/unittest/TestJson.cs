@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VW;
 using VW.Labels;
+using VW.Serializer;
+using VW.Serializer.Attributes;
 
 namespace cs_unittest
 {
@@ -132,14 +134,14 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator("--cb 2 --cb_type dr"))
             {
-                validator.Validate(new[] { 
+                validator.Validate(new[] {
                      "shared | Age:25",
                      " | w1 w2 |a x:1",
                      " | w2 w3"
                     },
                     "{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\"}]}");
 
-                validator.Validate(new[] { 
+                validator.Validate(new[] {
                      "shared | Age:25",
                      " | w1 w2 |a x:1",
                      "2:-1:.3 | w2 w3"
@@ -157,6 +159,52 @@ namespace cs_unittest
             {
                 validator.Validate("| a b c |a d e f", "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"}}");
             }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonNumADFs()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator(""))
+            {
+                Assert.AreEqual(2,
+                    VowpalWabbitJsonSerializer.GetNumberOfActionDependentExamples(
+                    "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"},_multi:[{\"a\":1},{\"b\":2,\"c\":3}]}"));
+
+                Assert.AreEqual(0,
+                    VowpalWabbitJsonSerializer.GetNumberOfActionDependentExamples(
+                    "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"},_multi:[]}"));
+
+                Assert.AreEqual(0,
+                    VowpalWabbitJsonSerializer.GetNumberOfActionDependentExamples(
+                    "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"}}"));
+            }
+        }
+
+        public class MyContext
+        {
+            [Feature]
+            public int Feature { get; set; }
+
+            [JsonProperty("_multi")]
+            public IEnumerable<MyADF> Multi { get; set; }
+        }
+
+        public class MyADF
+        {
+            [Feature]
+            public int Foo { get; set; }
+        }
+
+        [TestMethod]
+        public void TestNumADFs()
+        {
+            var jsonDirectSerializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json))
+                as IVowpalWabbitMultiExampleSerializerCompiler<MyContext>;
+
+            Assert.IsNotNull(jsonDirectSerializer);
+            Assert.AreEqual(3,
+                jsonDirectSerializer.GetNumberOfActionDependentExamples(new MyContext { Multi = new MyADF[3] }));
         }
     }
 }

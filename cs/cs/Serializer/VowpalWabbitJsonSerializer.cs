@@ -102,6 +102,47 @@ namespace VW.Serializer
             }
         }
 
+        public static int GetNumberOfActionDependentExamples(string json)
+        {
+            using (var textReader = new JsonTextReader(new StringReader(json)))
+            {
+                return GetNumberOfActionDependentExamples(textReader);
+            }
+        }
+
+        public static int GetNumberOfActionDependentExamples(JsonReader reader)
+        {
+            // handle the case when the reader is already positioned at JsonToken.StartObject
+            if (reader.TokenType == JsonToken.None && !reader.Read())
+                throw new VowpalWabbitJsonException(reader.Path, "Expected non-empty JSON");
+
+            if (reader.TokenType != JsonToken.StartObject)
+                throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
+
+            while (reader.Read())
+            {
+                if (!(reader.TokenType == JsonToken.PropertyName && (string)reader.Value == "_multi"))
+                {
+                    reader.Skip();
+                    continue;
+                }
+
+                if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
+                    throw new VowpalWabbitJsonException(reader.Path, "Expected start arrray");
+
+                var exampleCount = 0;
+                while(reader.Read() && reader.TokenType != JsonToken.EndArray)
+                {
+                    exampleCount++;
+                    reader.Skip();
+                }
+
+                return exampleCount;
+            }
+
+            return 0;
+        }
+
         /// <summary>
         /// Parses the example.
         /// </summary>

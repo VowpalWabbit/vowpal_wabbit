@@ -44,6 +44,12 @@ namespace VW.Serializer
             get { return (this.sharedSerializer != null && this.sharedSerializer.CachesExamples) || this.adfSerializer.CachesExamples; }
         }
 
+        public int GetNumberOfActionDependentExamples(TExample example)
+        {
+            var adfs = this.adfAccessor(example);
+            return adfs == null ? 0 : adfs.Count();
+        }
+
         /// <summary>
         /// Serializes the given <paramref name="example"/> to VW string format.
         /// </summary>
@@ -60,7 +66,7 @@ namespace VW.Serializer
             if (this.sharedSerializer != null)
                 sb.AppendLine(this.sharedSerializer.SerializeToString(example, SharedLabel.Instance, null, dictionary, fastDictionary));
 
-            var adfCollection  =this.adfAccessor(example);
+            var adfCollection = this.adfAccessor(example);
             if (adfCollection != null)
             {
                 var i = 0;

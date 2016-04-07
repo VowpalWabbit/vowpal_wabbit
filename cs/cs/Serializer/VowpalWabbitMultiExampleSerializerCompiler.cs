@@ -28,7 +28,7 @@ namespace VW.Serializer
             return (IVowpalWabbitSerializerCompiler<TExample>)Activator.CreateInstance(compilerType, settings, schema, multiFeature);
         }
 
-        private sealed class VowpalWabbitMultiExampleSerializerCompilerImpl<TExample, TActionDependentFeature> : IVowpalWabbitSerializerCompiler<TExample>
+        private sealed class VowpalWabbitMultiExampleSerializerCompilerImpl<TExample, TActionDependentFeature> : IVowpalWabbitSerializerCompiler<TExample>, IVowpalWabbitMultiExampleSerializerCompiler<TExample>
         {
             private readonly VowpalWabbitSingleExampleSerializerCompiler<TExample> sharedSerializerCompiler;
 
@@ -76,6 +76,12 @@ namespace VW.Serializer
                     exampleParameter);
 
                 this.adfAccessor = (Func<TExample, IEnumerable<TActionDependentFeature>>)expr.CompileToFunc();
+            }
+
+            public int GetNumberOfActionDependentExamples(TExample example)
+            {
+                var adfs = this.adfAccessor(example);
+                return adfs == null ? 0 : adfs.Count();
             }
 
             public IVowpalWabbitSerializer<TExample> Create(VowpalWabbit vw)
