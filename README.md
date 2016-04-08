@@ -87,8 +87,8 @@ On Ubuntu/Debian/Mint and similar the following sequence should work
 for building the latest from github:
 
 ```
-# -- Get libboost program-options:
-apt-get install libboost-program-options-dev
+# -- Get libboost program-options and zlib:
+apt-get install libboost-program-options-dev zlib1g-dev
 
 # -- Get the python libboost bindings (python subdir) - optional:
 apt-get install libboost-python-dev
