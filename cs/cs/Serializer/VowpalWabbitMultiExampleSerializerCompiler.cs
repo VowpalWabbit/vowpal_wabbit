@@ -14,7 +14,7 @@ namespace VW.Serializer
         internal static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
         {
             // check for _multi
-            var multiFeature = schema.Features.FirstOrDefault(fe => fe.Name == VowpalWabbitConstants.MultiProperty);
+            var multiFeature = schema.Features.FirstOrDefault(fe => fe.Name == settings.PropertyConfiguration.MultiProperty);
             if (multiFeature == null)
                 return null;
 
@@ -22,7 +22,7 @@ namespace VW.Serializer
             // IEnumerable<> or Array
             var adfType = InspectionHelper.GetEnumerableElementType(multiFeature.FeatureType);
             if (adfType == null)
-                throw new ArgumentException("_multi property must be array or IEnumerable<>. Actual type: " + multiFeature.FeatureType);
+                throw new ArgumentException(settings.PropertyConfiguration.MultiProperty + " property must be array or IEnumerable<>. Actual type: " + multiFeature.FeatureType);
 
             var compilerType = typeof(VowpalWabbitMultiExampleSerializerCompilerImpl<,>).MakeGenericType(typeof(TExample), adfType);
             return (IVowpalWabbitSerializerCompiler<TExample>)Activator.CreateInstance(compilerType, settings, schema, multiFeature);
@@ -51,7 +51,7 @@ namespace VW.Serializer
                         !settings.EnableStringExampleGeneration);
 
                 this.adfSerializerComputer = new VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>(
-                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature)),
+                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature), settings.PropertyConfiguration),
                     settings == null ? null : settings.CustomFeaturizer,
                     !settings.EnableStringExampleGeneration);
 

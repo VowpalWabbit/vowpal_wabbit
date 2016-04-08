@@ -63,7 +63,7 @@ namespace VW.Serializer
 
                 if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
                 {
-                    schema = AnnotationJsonInspector.CreateSchema(typeof(TExample));
+                    schema = AnnotationJsonInspector.CreateSchema(typeof(TExample), settings.PropertyConfiguration);
 
                     var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, schema);
                     if (multiExampleSerializerCompiler != null)

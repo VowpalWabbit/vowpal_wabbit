@@ -110,7 +110,7 @@ namespace VW.Serializer
             }
         }
 
-        public static int GetNumberOfActionDependentExamples(JsonReader reader)
+        public static int GetNumberOfActionDependentExamples(JsonReader reader, string multiProperty = PropertyConfiguration.MultiPropertyDefault)
         {
             // handle the case when the reader is already positioned at JsonToken.StartObject
             if (reader.TokenType == JsonToken.None && !reader.Read())
@@ -154,15 +154,17 @@ namespace VW.Serializer
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Parse(JsonReader reader, ILabel label = null, int? index = null)
         {
+            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+
             // only pass the label if it's not targeted at a particular index
             this.ExampleBuilder.Parse(reader, index == null ? label : null,
                 propertyName =>
                 {
-                    if (propertyName != "_multi")
+                    if (propertyName != multiPropertyName)
                         return false;
 
                     if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                        throw new VowpalWabbitJsonException(reader.Path, "Expected start array for _multi");
+                        throw new VowpalWabbitJsonException(reader.Path, "Expected start array for '" + multiPropertyName + "'");
 
                     if (this.ExampleBuilders == null)
                         this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();

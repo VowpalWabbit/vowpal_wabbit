@@ -136,13 +136,14 @@ namespace VW.Serializer
             Namespace defaultNamespace = new Namespace(this.vw);
             using (this.DefaultNamespaceContext.NamespaceBuilder = this.DefaultNamespaceContext.ExampleBuilder.AddNamespace(VowpalWabbitConstants.DefaultNamespace))
             {
+                var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
                     {
                         case JsonToken.PropertyName:
                             var propertyName = (string)reader.Value;
-                            if (propertyName.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix))
+                            if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) || propertyConfiguration.IsSpecialProperty(propertyName))
                                 this.ParseSpecialProperty(this.DefaultNamespaceContext, defaultNamespace, propertyName);
                             else
                             {
@@ -173,31 +174,33 @@ namespace VW.Serializer
 
         private void ParseSpecialProperty(VowpalWabbitMarshalContext context, Namespace ns, string propertyName)
         {
+            var propertyConfiguration = context.VW.Settings.PropertyConfiguration;
+
             // special fields
-            switch (propertyName)
+            if (propertyName == propertyConfiguration.LabelProperty)
             {
-                case VowpalWabbitConstants.LabelProperty:
-                    // passed in label has precedence
-                    if (label == null)
-                        this.ParseLabel();
-                    else
-                        reader.Skip();
-                    break;
-                case VowpalWabbitConstants.TextProperty:
-                    // parse text segment feature
-                    this.defaultMarshaller.MarshalFeatureStringSplit(
-                        context,
-                        ns,
-                        new Feature(propertyName),
-                        reader.ReadAsString());
-                    break;
-                default:
-                    // forward to handler
-                    if (specialPropertyAction == null || !specialPropertyAction(propertyName))
-                        reader.Skip(); // if not handled, skip it
-                    break;
+                // passed in label has precedence
+                if (label == null)
+                    this.ParseLabel();
+                else
+                    reader.Skip();
             }
-        }
+            else if (propertyName == propertyConfiguration.TextProperty)
+            {
+                // parse text segment feature
+                this.defaultMarshaller.MarshalFeatureStringSplit(
+                    context,
+                    ns,
+                    new Feature(propertyName),
+                    reader.ReadAsString());
+            }
+            else
+            {
+                // forward to handler
+                if (specialPropertyAction == null || !specialPropertyAction(propertyName))
+                    reader.Skip(); // if not handled, skip it
+            }
+         }
 
         private void ParseLabel()
         {
@@ -338,6 +341,7 @@ namespace VW.Serializer
         private void ParseNamespaceAndFeatures(VowpalWabbitMarshalContext context, string namespaceValue)
         {
             var ns = new Namespace(this.vw, namespaceValue);
+            var propertyConfiguration = context.VW.Settings.PropertyConfiguration;
             this.defaultMarshaller.MarshalNamespace(context, ns, () =>
             {
                 while (reader.Read())
@@ -347,7 +351,7 @@ namespace VW.Serializer
                         case JsonToken.PropertyName:
                             var propertyName = (string)reader.Value;
 
-                            if (propertyName.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix))
+                            if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) || propertyConfiguration.IsSpecialProperty(propertyName))
                             {
                                 this.ParseSpecialProperty(context, ns, propertyName);
                                 continue;

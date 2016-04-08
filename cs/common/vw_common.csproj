@@ -108,6 +108,7 @@
     <Compile Include="Serializer\LabelExpression.cs" />
     <Compile Include="Serializer\StringProcessing.cs" />
     <Compile Include="Serializer\Schema.cs" />
+    <Compile Include="Serializer\PropertyConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\vw_key.snk" />

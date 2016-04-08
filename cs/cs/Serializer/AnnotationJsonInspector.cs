@@ -72,7 +72,7 @@ namespace VW.Serializer
         ///   feature2: true    // Top-level primitive property becomes feature in default namespace.
         /// }
         /// </summary>
-        internal static Schema CreateSchema(Type type)
+        internal static Schema CreateSchema(Type type, PropertyConfiguration propertyConfiguration)
         {
             var exampleMemberSerialization = GetMemberSerialiation(type);
 
@@ -87,7 +87,7 @@ namespace VW.Serializer
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
                 let namespaceRawValue = nsAttr != null && nsAttr.PropertyName != null ? nsAttr.PropertyName : ns.Name
                 // filter all aux properties
-                where !namespaceRawValue.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
+                where !namespaceRawValue.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
                 let featureGroup = namespaceRawValue[0]
                 let namespaceValue = namespaceRawValue.Length > 1 ? namespaceRawValue.Substring(1) : null
                 let namespaceMemberSerialization = GetMemberSerialiation(ns.PropertyType)
@@ -99,9 +99,9 @@ namespace VW.Serializer
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
-                let isTextProperty = name == VowpalWabbitConstants.TextProperty
+                let isTextProperty = name == propertyConfiguration.TextProperty
                 // filter all aux properties
-                where isTextProperty || !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
+                where isTextProperty || !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
@@ -129,23 +129,23 @@ namespace VW.Serializer
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
                 // filter all aux properties, except for special props
-                where VowpalWabbitConstants.IsSpecialProperty(name) ||
-                   !name.StartsWith(VowpalWabbitConstants.FeatureIgnorePrefix)
+                where propertyConfiguration.IsSpecialProperty(name) ||
+                   !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
                 // filterint labels for now
-                where name != VowpalWabbitConstants.LabelProperty
+                where name != propertyConfiguration.LabelProperty
                 where IsFeatureTypeSupported(p.PropertyType) ||
                     // _multi can be any list type that JSON.NET supports
-                    name == VowpalWabbitConstants.MultiProperty ||
+                    name == propertyConfiguration.MultiProperty ||
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
-                    (name == VowpalWabbitConstants.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
+                    (name == propertyConfiguration.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
                     // CODE example.FeatureProperty
                     valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
                     // Note: default to string escaping
-                    stringProcessing: name == VowpalWabbitConstants.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
+                    stringProcessing: name == propertyConfiguration.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     featureGroup: VowpalWabbitConstants.DefaultNamespace);
@@ -161,11 +161,11 @@ namespace VW.Serializer
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
                 // filterint labels for now
-                where name == VowpalWabbitConstants.LabelProperty
-                where 
+                where name == propertyConfiguration.LabelProperty
+                where
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
-                    (name == VowpalWabbitConstants.LabelProperty && 
+                    (name == propertyConfiguration.LabelProperty &&
                     (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
                 select new LabelExpression
                 {

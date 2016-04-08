@@ -149,6 +149,24 @@ namespace cs_unittest
                     "{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\",\"_label\":\"2:-1:.3\"}]}",
                     VowpalWabbitLabelComparator.ContextualBandit);
             }
+
+            using (var validator = new VowpalWabbitExampleJsonValidator(
+                new VowpalWabbitSettings(
+                    "--cb 2 --cb_type dr",
+                    propertyConfiguration: new PropertyConfiguration(
+                        multiProperty: "adf",
+                        textProperty: "someText",
+                        labelProperty: "theLabel",
+                        featureIgnorePrefix: "xxx"))))
+            {
+                validator.Validate(new[] {
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     "2:-1:.3 | w2 w3"
+                    },
+                    "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\",\"theLabel\":\"2:-1:.3\"}]}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+            }
         }
 
         [TestMethod]
