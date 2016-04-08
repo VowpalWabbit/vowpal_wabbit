@@ -20,8 +20,9 @@ DEFAULT_NS = ''
 CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
 
+
 class VW(BaseEstimator):
-    """ Vowpal Wabbit Scikit-learn Base Estimator wrapper
+    """Vowpal Wabbit Scikit-learn Base Estimator wrapper
 
         Attributes
         ----------
@@ -40,6 +41,9 @@ class VW(BaseEstimator):
                  convert_to_vw=None,
                  bfgs=None,
                  mem=None,
+                 ftrl=None,
+                 ftrl_alpha=None,
+                 ftrl_beta=None,
                  learning_rate=None,
                  l=None,
                  power_t=None,
@@ -98,8 +102,11 @@ class VW(BaseEstimator):
                  save_resume=None,
                  output_feature_regularizer_binary=None,
                  output_feature_regularizer_text=None,
-                 oaa=None):
-        """ VW model constructor, exposing all supported parameters to keep sklearn happy
+                 oaa=None,
+                 ect=None,
+                 csoaa=None,
+                 wap=None):
+        """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
         ----------
@@ -109,8 +116,11 @@ class VW(BaseEstimator):
         convert_to_vw (bool): flag to convert X input to vw format
 
         Update options
-        bfgs
-        mem
+        bfgs: use L-BFGS optimization algorithm
+        mem: set the rank of the inverse hessian approximation used by bfgs
+        ftrl: use FTRL-Proximal optimization algorithm
+        ftrl_alpha: ftrl alpha parameter
+        ftrl_beta: ftrl beta parameter
         learning_rate,l (float): Set learning rate
         power_t (float): t power value
         decay_learning_rate (float): Set Decay factor for learning_rate between passes
@@ -180,7 +190,14 @@ class VW(BaseEstimator):
         output_feature_regularizer_text (str): Per feature regularization output file, in text
 
         Multiclass options
-        oaa (int): Use one-against-all multiclass learning with  labels
+        oaa (int): Use one-against-all multiclass learning with labels
+        ect (int): Use error correcting tournament multiclass learning
+        csoaa (int): Use cost sensitive one-against-all multiclass learning
+        wap (int): Use weighted all pairs multiclass learning
+
+        Contextual Bandit Optimization
+        cb (int): Use contextual bandit learning with specified costs
+        cbify (int): Convert multiclass bandit learning on K classes to contextual bandit optimization
 
         Returns
         -------
@@ -189,6 +206,8 @@ class VW(BaseEstimator):
         """
 
         # clear estimator attributes
+        if hasattr(self, 'label_type_'):
+            del self.label_type_
         if hasattr(self, 'fit_'):
             del self.fit_
         if hasattr(self, 'passes_'):
@@ -211,13 +230,12 @@ class VW(BaseEstimator):
         self.passes_ = self.params.pop('passes', 1)
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
-        self.vw_ = None
 
+        self.vw_ = None
         super(VW, self).__init__()
 
     def get_vw(self):
-        """
-        Factory to create a vw instance on demand
+        """Factory to create a vw instance on demand
 
         Returns
         -------
@@ -225,10 +243,13 @@ class VW(BaseEstimator):
         """
         if self.vw_ is None:
             self.vw_ = vw(**self.params)
+
+            # set label type
+            self.label_type_ = self.vw_.get_label_type()
         return self.vw_
 
     def fit(self, X, y=None, sample_weight=None):
-        """ Fit the model according to the given training data
+        """Fit the model according to the given training data
 
         TODO: for first pass create and store example objects.
                 for N-1 passes use example objects directly (simulate cache file...but in memory for faster processing)
@@ -259,7 +280,7 @@ class VW(BaseEstimator):
         return self
 
     def transform(self, X, y=None):
-        """ Transform does nothing by default besides closing the model. Transform is required for any estimator
+        """Transform does nothing by default besides closing the model. Transform is required for any estimator
          in a sklearn pipeline that isn't the final estimator
 
         Parameters
@@ -280,7 +301,7 @@ class VW(BaseEstimator):
         return X
 
     def predict(self, X):
-        """ Predict with Vowpal Wabbit model
+        """Predict with Vowpal Wabbit model
 
         Parameters
         ----------
@@ -307,19 +328,8 @@ class VW(BaseEstimator):
         for idx, x in enumerate(X):
             if self.convert_to_vw_:
                 x = tovw(x)[0]
-            ex = self.get_vw().example(x)
-            # need to set test bit to skip learning
-            ex.set_test_only(True)
-            ex.learn()
+            y[idx] = self.get_vw().predict(ec=x, labelType=self.label_type_)
 
-            # check if oaa classifier
-            if 'oaa' in self.params:
-                y[idx] = ex.get_multiclass_prediction()
-            else:
-                y[idx] = ex.get_simplelabel_prediction()
-            ex.finish()
-
-        self.get_vw().finish()
         return y
 
     def score(self, X, y=None):
@@ -354,6 +364,10 @@ class VW(BaseEstimator):
     def __repr__(self):
         return self.__str__()
 
+    def __del__(self):
+        if self.vw_ is not None:
+            self.vw_.__del__()
+
     def get_params(self, deep=True):
         out = dict()
         # add in the vw params
@@ -364,7 +378,7 @@ class VW(BaseEstimator):
         return out
 
     def set_params(self, **params):
-        """ This destroys and recreates the Vowpal Wabbit model with updated parameters
+        """This destroys and recreates the Vowpal Wabbit model with updated parameters
             any parameters not provided will remain as they were initialized to at construction
 
         Parameters
@@ -385,7 +399,7 @@ class VW(BaseEstimator):
         return self
 
     def get_coefs(self):
-        """ Returns coefficient weights as ordered sparse matrix
+        """Returns coefficient weights as ordered sparse matrix
 
         Returns
         -------
@@ -405,10 +419,8 @@ class VW(BaseEstimator):
         return self.get_vw().get_weight(CONSTANT_HASH)
 
 
-
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
-    """
-    Mixin for linear classifiers.  A threshold is used to specify the positive
+    """Mixin for linear classifiers.  A threshold is used to specify the positive
     class cutoff
 
     Handles prediction for sparse and dense X.
@@ -442,10 +454,9 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
         return self.classes_[indices]
 
 
-# class VWClassifier(SparseCoefMixin, LinearClassifierMixin, VW):
 class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
-    """ Vowpal Wabbit Classifier model
-    Only supports binary classification currently.
+    """Vowpal Wabbit Classifier model
+    Only supports binary classification currently. Use VW directly for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
 
@@ -479,18 +490,15 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
 
         return VW.predict(self, X=X)
 
-    def __del__(self):
-        VW.__del__(self)
-
 
 class VWRegressor(VW, RegressorMixin):
-    """ Vowpal Wabbit Regressor model """
+    """Vowpal Wabbit Regressor model """
 
     pass
 
 
 def tovw(x, y=None, sample_weight=None):
-    """ Convert array or sparse matrix to Vowpal Wabbit format
+    """Convert array or sparse matrix to Vowpal Wabbit format
 
     Parameters
     ----------
