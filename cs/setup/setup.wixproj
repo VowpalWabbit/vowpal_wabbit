@@ -31,6 +31,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>..\..\vowpalwabbit\x64\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <SuppressValidation>True</SuppressValidation>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />

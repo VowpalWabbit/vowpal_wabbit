@@ -1414,3 +1414,13 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds
     train-sets/ref/rcv1_raw_cb_explore.stderr
     pred-sets/ref/rcv1_raw_cb_explore.preds
+
+# Test 122: cb_eval save/load #1
+{VW} train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
+    train-sets/ref/cb_eval1.stderr
+    pred-sets/ref/cb_eval1.preds
+
+# Test 123: cb_eval save/load #2
+{VW} train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
+    train-sets/ref/cb_eval2.stderr
+    pred-sets/ref/cb_eval2.preds

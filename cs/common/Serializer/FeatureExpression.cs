@@ -94,7 +94,7 @@ namespace VW.Serializer
         internal Type IntermediateFeatureType { get; set; }
 
         /// <summary>
-        /// The Name of the feature.
+        /// The name of the feature.
         /// </summary>
         public string Name { get; set; }
 
