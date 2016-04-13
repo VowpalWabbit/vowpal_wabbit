@@ -111,7 +111,7 @@
     <Compile Include="Serializer\PropertyConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\vw_key.snk" />
+    <EmbeddedResource Include="..\vw_key.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

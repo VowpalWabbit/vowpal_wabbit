@@ -8,8 +8,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using VW.Interfaces;
@@ -24,7 +26,8 @@ namespace VW
     /// <remarks>For each call to <see cref="Learn"/> there is additional overhead as the type is looked up in a dictionary compared to <see cref="VowpalWabbit{T}"/>.</remarks>
     public class VowpalWabbitDynamic : IDisposable
     {
-        private Dictionary<Type, IVowpalWabbitSerializer<object>> serializers;
+        private Dictionary<Type, IDisposable> serializers;
+        private Dictionary<Type, MethodInfo> serializeMethods;
 
         private VowpalWabbit vw;
 
@@ -43,29 +46,42 @@ namespace VW
         public VowpalWabbitDynamic(VowpalWabbitSettings settings)
         {
             this.vw = new VowpalWabbit(settings);
+            this.serializers = new Dictionary<Type, IDisposable>();
+            this.serializeMethods = new Dictionary<Type, MethodInfo>();
         }
 
-        private IVowpalWabbitSerializer<object> GetOrCreateSerializer(Type type)
+        private VowpalWabbitExampleCollection SerializeTyped<T>(T example, ILabel label, int? index)
         {
-            IVowpalWabbitSerializer<object> serializer;
-            if (!this.serializers.TryGetValue(type, out serializer))
+            IDisposable serializer;
+            if (!this.serializers.TryGetValue(typeof(T), out serializer))
             {
-                var schema = AnnotationInspector.CreateSchema(type, (_,__) => true, (_,__) => true);
-                foreach (var feature in schema.Features)
-                {
-                    // inject type cast to the actual type (always works)
-                    // needed since the serializer is generated for "type", not for "object"
-                    feature.ValueExpressionFactory = expr => feature.ValueExpressionFactory(Expression.Convert(expr, type));
-                }
+                var serializerCompiler = VowpalWabbitSerializerFactory.CreateSerializer<T>(this.vw.Settings);
 
-                serializer = VowpalWabbitSerializerFactory
-                    .CreateSerializer<object>(this.vw.Settings.ShallowCopy(schema: schema))
-                    .Create(this.vw);
+                if (serializerCompiler == null)
+                    throw new ArgumentException("No feature discovered for type: " + typeof(T));
 
-                this.serializers.Add(type, serializer);
+                serializer = serializerCompiler.Create(this.vw);
+
+                this.serializers.Add(typeof(T), serializer);
             }
 
-            return serializer;
+            return ((IVowpalWabbitSerializer<T>)serializer).Serialize(example, label, index);
+        }
+
+        private VowpalWabbitExampleCollection Serialize(object example, ILabel label = null, int? index = null)
+        {
+            var type = example.GetType();
+            MethodInfo method;
+            if (!this.serializeMethods.TryGetValue(type, out method))
+            {
+                method = typeof(VowpalWabbitDynamic)
+                    .GetMethod("SerializeTyped", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .MakeGenericMethod(type);
+
+                this.serializeMethods.Add(type, method);
+            }
+
+            return (VowpalWabbitExampleCollection)method.Invoke(this, new[] { example, label, index });
         }
 
         /// <summary>
@@ -76,9 +92,33 @@ namespace VW
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         public void Learn(object example, ILabel label = null, int? index = null)
         {
-            using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label, index))
+            Contract.Requires(example != null);
+
+            using (var ex = this.Serialize(example, label, index))
             {
                 ex.Learn();
+            }
+        }
+
+        public TPrediction Learn<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
+        {
+            Contract.Requires(example != null);
+            Contract.Requires(predictionFactory != null);
+
+            using (var ex = this.Serialize(example, label, index))
+            {
+                return ex.Learn(predictionFactory);
+            }
+        }
+
+        public TPrediction Predict<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
+        {
+            Contract.Requires(example != null);
+            Contract.Requires(predictionFactory != null);
+
+            using (var ex = this.Serialize(example, label, index))
+            {
+                return ex.Predict(predictionFactory);
             }
         }
 
@@ -103,9 +143,8 @@ namespace VW
                 if (this.serializers != null)
                 {
                     foreach (var serializer in this.serializers)
-                    {
                         serializer.Value.Dispose();
-                    }
+                    
                     this.serializers = null;
                 }
 

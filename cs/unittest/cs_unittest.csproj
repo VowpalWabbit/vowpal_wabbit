@@ -87,6 +87,7 @@
     <Compile Include="TestArguments.cs" />
     <Compile Include="TestConfigInspector.cs" />
     <Compile Include="TestConsole.cs" />
+    <Compile Include="TestDynamic.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
     <Compile Include="TestFeatureExtraction.cs" />

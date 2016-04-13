@@ -18,6 +18,17 @@ namespace VW.Labels
     /// </summary>
     public sealed class ContextualBanditLabel : ILabel
     {
+        public ContextualBanditLabel()
+        {
+        }
+
+        public ContextualBanditLabel(uint action, float cost, float probability)
+        {
+            this.Action = action;
+            this.Cost = cost;
+            this.Probability = probability;
+        }
+
         /// <summary>
         /// Gets or sets the action.
         /// </summary>
