@@ -92,11 +92,16 @@ std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a
 
 struct action_repr
 { action a;
-  features repr;
-  action_repr(action _a, features& _repr) : a(_a), repr()
-  { repr.deep_copy_from(_repr);
+  features *repr;
+  action_repr(action _a, features* _repr) : a(_a)
+  { if(_repr!=NULL)
+    { repr = new features(); 
+	  repr->deep_copy_from(*_repr);
+	}
+	else
+	  repr = NULL;
   }
-  action_repr(action _a) : a(_a), repr() {}
+  action_repr(action _a) : a(_a), repr(NULL) {}
 };
 
 struct action_cache
@@ -544,10 +549,12 @@ void reset_search_structure(search_private& priv)
     if (priv.beta > 1) priv.beta = 1;
   }
   for (Search::action_repr& ar : priv.ptag_to_action)
-  { ar.repr.values.delete_v();
-    ar.repr.indicies.delete_v();
-    ar.repr.space_names.delete_v();
-    cdbg << "delete_v" << endl;
+  { if(ar.repr !=NULL)
+	{  ar.repr->values.delete_v();
+      ar.repr->indicies.delete_v();
+      ar.repr->space_names.delete_v();
+      cdbg << "delete_v" << endl;
+	}
   }
   priv.ptag_to_action.erase();
 
@@ -635,7 +642,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   if (priv.acset.use_passthrough_repr)
     for (size_t i=0; i<I; i++)
       {
-        features& fs = condition_on_actions[i].repr;
+        features& fs = *(condition_on_actions[i].repr);
         char name = condition_on_names[i];
         for (size_t k=0; k<fs.size(); k++)
           if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
@@ -1961,7 +1968,8 @@ void search_finish(search& sch)
 
   priv.train_trajectory.delete_v();
   for (Search::action_repr& ar : priv.ptag_to_action)
-    ar.repr.delete_v();
+    if(ar.repr != NULL)
+	  ar.repr->delete_v();
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
   priv.memo_foreach_action.delete_v();
@@ -2381,10 +2389,14 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
   if (mytag != 0)
   { if (mytag < priv->ptag_to_action.size())
     { cdbg << "delete_v at " << mytag << endl;
-      priv->ptag_to_action[mytag].repr.delete_v();
+      if(priv->ptag_to_action[mytag].repr != NULL)
+        priv->ptag_to_action[mytag].repr->delete_v();
     }
-    push_at(priv->ptag_to_action, action_repr(a, priv->last_action_repr), mytag);
-    cdbg << "push_at " << mytag << endl;
+    if (priv->acset.use_passthrough_repr)
+      push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
+    else
+      push_at(priv->ptag_to_action, action_repr(a, (features*)NULL), mytag);
+      cdbg << "push_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss( priv->use_action_costs
@@ -2402,9 +2414,10 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
   { if (mytag < priv->ptag_to_action.size())
     { cdbg << "delete_v at " << mytag << endl;
-      priv->ptag_to_action[mytag].repr.delete_v();
+	  if(priv->ptag_to_action[mytag].repr != NULL)
+        priv->ptag_to_action[mytag].repr->delete_v();
     }
-    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, priv->last_action_repr), mytag);
+    push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss)
     loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt)); // TODO: action costs
