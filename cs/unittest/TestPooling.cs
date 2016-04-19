@@ -93,6 +93,26 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        public void ThreadPoolNull()
+        {
+            using (var pool = new VowpalWabbitThreadedPrediction())
+            {
+                using (var vw = pool.GetOrCreate())
+                {
+                    Assert.IsNull(vw.Value);
+                }
+
+                pool.UpdateModel(new VowpalWabbitModel(string.Empty));
+
+                using (var vw = pool.GetOrCreate())
+                {
+                    Assert.IsNotNull(vw.Value);
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("ObjectPool")]
         public void ObjectPoolTestConcurrency()
         {
             var factories = new List<Disposable> { new Disposable() };

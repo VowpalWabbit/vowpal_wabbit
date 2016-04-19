@@ -55,7 +55,9 @@ namespace VW.Serializer
         /// <summary>
         /// All discovered features.
         /// </summary>
-        private readonly FeatureExpressionInternal[] allFeatures;
+        private FeatureExpressionInternal[] allFeatures;
+
+        private readonly Schema schema;
 
         /// <summary>
         /// Ordered list of featurizer types. Marshalling methods are resolved in order of this list.
@@ -118,21 +120,22 @@ namespace VW.Serializer
         /// </summary>
         private readonly bool disableStringExampleGeneration;
 
-        internal VowpalWabbitSingleExampleSerializerCompiler(IReadOnlyList<FeatureExpression> allFeatures, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
         {
-            if (allFeatures == null || allFeatures.Count == 0)
-                throw new ArgumentException("allFeatures");
+            if (schema == null || schema.Features.Count == 0)
+                throw new ArgumentException("schema");
             Contract.EndContractBlock();
 
+            this.schema = schema;
             this.disableStringExampleGeneration = disableStringExampleGeneration;
 
-            this.allFeatures = allFeatures.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
+            this.allFeatures = schema.Features.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
             // collect the types used for marshalling
             this.marshallerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
 
             // extract types from overrides defined on particular features
-            var overrideFeaturizerTypes = allFeatures
+            var overrideFeaturizerTypes = schema.Features
                 .Select(f => f.OverrideSerializeMethod)
                 .Where(o => o != null)
                 .Select(o => o.DeclaringType);
@@ -153,13 +156,11 @@ namespace VW.Serializer
             this.ResolveFeatureMarshallingMethods();
             this.CreateParameters();
 
-            // CODE MarshalLabel(...)
-            this.CreateMarshallerCall("MarshalLabel", this.contextParameter, this.labelParameter);
+            this.CreateLabel();
 
             this.CreateNamespacesAndFeatures();
 
             this.CreateLambdas();
-            // this.CreateLambda();
 
             this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)this.SourceExpression.CompileToFunc();
         }
@@ -179,6 +180,36 @@ namespace VW.Serializer
         public VowpalWabbitSingleExampleSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSingleExampleSerializer<TExample>(this, vw);
+        }
+
+        private void CreateLabel()
+        {
+            // CODE if (labelParameter == null) 
+            this.perExampleBody.Add(Expression.IfThen(
+                Expression.NotEqual(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
+                this.CreateMarshallerCall("MarshalLabel", this.contextParameter, this.labelParameter)));
+
+            var label = this.schema.Label;
+            if (label != null)
+            {
+                // CODE condition1 && condition2 && condition3 ...
+                var condition = label.ValueValidExpressionFactories
+                    .Skip(1)
+                    .Aggregate(
+                        label.ValueValidExpressionFactories.First()(this.exampleParameter),
+                        (cond, factory) => Expression.AndAlso(cond, factory(this.exampleParameter)));
+
+                // CODE if (labelParameter != null && example.Label != null && ...)
+                this.perExampleBody.Add(
+                    Expression.IfThen(
+                        Expression.AndAlso(
+                            Expression.Equal(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
+                            condition),
+                        // CODE MarshalLabel(context, example.Label) 
+                        this.CreateMarshallerCall("MarshalLabel", 
+                            this.contextParameter, 
+                            label.ValueExpressionFactory(this.exampleParameter))));
+            }
         }
 
         /// <summary>
@@ -256,17 +287,25 @@ namespace VW.Serializer
                 metaFeatureTypeCandidates = new [] { typeof(PreHashedFeature), typeof(Feature) };
             }
 
+            // remove Nullable<> from feature type
+            var featureType = feature.FeatureType;
+            if(featureType.IsGenericType &&
+               featureType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                featureType = featureType.GetGenericArguments()[0];
+            }
+
             foreach (var metaFeatureType in metaFeatureTypeCandidates)
             {
                 // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
-                var method = this.marshallerTypes.Select(visitor =>
-                    ReflectionHelper.FindMethod(
+                var method = this.marshallerTypes
+                    .Select(visitor => ReflectionHelper.FindMethod(
                             visitor,
                             methodName,
                             typeof(VowpalWabbitMarshalContext),
                             typeof(Namespace),
                             metaFeatureType,
-                            feature.FeatureType))
+                            featureType))
                     .FirstOrDefault(m => m != null);
 
                 if (method != null)
@@ -279,8 +318,7 @@ namespace VW.Serializer
                 }
             }
 
-            // TODO: implement ToString
-            throw new ArgumentException("Unable to find featurize method for " + feature);
+            return null;
         }
 
         /// <summary>
@@ -288,10 +326,16 @@ namespace VW.Serializer
         /// </summary>
         private void ResolveFeatureMarshallingMethods()
         {
+            var validFeature = new List<FeatureExpressionInternal>(this.allFeatures.Length);
             foreach (var feature in this.allFeatures)
             {
                 feature.MarshalMethod = this.ResolveFeatureMarshalMethod(feature.Source);
+
+                if (feature.MarshalMethod != null)
+                    validFeature.Add(feature);
             }
+
+            this.allFeatures = validFeature.ToArray();
         }
 
         /// <summary>
@@ -482,7 +526,7 @@ namespace VW.Serializer
                 var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
 
                 // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
-                this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda);
+                this.perExampleBody.Add(this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda));
             }
         }
 
@@ -491,7 +535,7 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="methodName">The marshalling method to invoke.</param>
         /// <param name="parameters">The parameters for this method.</param>
-        private void CreateMarshallerCall(string methodName, params Expression[] parameters)
+        private MethodCallExpression CreateMarshallerCall(string methodName, params Expression[] parameters)
         {
             var parameterTypes = parameters.Select(p => p.Type).ToArray();
             foreach (var marshaller in this.marshallers)
@@ -500,8 +544,7 @@ namespace VW.Serializer
 
                 if (method != null)
                 {
-                    this.perExampleBody.Add(Expression.Call(marshaller, method, parameters));
-                    return;
+                    return Expression.Call(marshaller, method, parameters);
                 }
 	        }
 

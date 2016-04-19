@@ -78,7 +78,7 @@ namespace VW
     public ref class VowpalWabbitExampleBuilder
     {
     private:
-        initonly VowpalWabbit^ m_vw;
+        IVowpalWabbitExamplePool^ m_vw;
 
         /// <summary>
         /// The produced CLR example data structure.
@@ -96,7 +96,7 @@ namespace VW
         /// Initializes a new <see cref="VowpalWabbitExampleBuilder"/> instance.
         /// </summary>
         /// <param name="vw">The parent vowpal wabbit instance.</param>
-        VowpalWabbitExampleBuilder(VowpalWabbit^ vw);
+        VowpalWabbitExampleBuilder(IVowpalWabbitExamplePool^ vw);
 
         /// <summary>
         /// Cleanup.

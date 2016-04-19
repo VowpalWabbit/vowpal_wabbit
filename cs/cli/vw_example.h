@@ -12,6 +12,91 @@ license as described in the file LICENSE.
 
 namespace VW
 {
+    using namespace System::Collections::Generic;
+
+    [System::Diagnostics::DebuggerDisplay("{m_weight_index}:{m_x}")]
+    public ref struct VowpalWabbitFeature
+    {
+    private:
+      feature_value m_x;
+      uint64_t m_weight_index;
+
+    public:
+      VowpalWabbitFeature(feature_value x, uint64_t weight_index);
+
+      property feature_value X
+      {
+        float get();
+      }
+
+      property uint64_t WeightIndex
+      {
+        uint64_t get();
+      }
+
+      virtual bool Equals(Object^ o) override;
+
+      virtual int GetHashCode() override;
+    };
+
+    template <typename T>
+    struct Holder
+    {
+      T value;
+    };
+
+    [System::Diagnostics::DebuggerDisplay("{Index} = '{(char)Index}'")]
+    public ref struct VowpalWabbitNamespace : public IEnumerable<VowpalWabbitFeature^>
+    {
+    private:
+      ref class FeatureEnumerator : public IEnumerator<VowpalWabbitFeature^>
+      {
+      private:
+        features* m_features;
+        Holder<features::iterator>* m_iterator;
+        Holder<features::iterator>* m_end;
+
+      internal:
+        FeatureEnumerator(features* features);
+        ~FeatureEnumerator();
+
+        property System::Object^ IEnumeratorCurrent
+        {
+          virtual System::Object^ get() sealed = System::Collections::IEnumerator::Current::get;
+        }
+
+      public:
+        virtual bool MoveNext();
+
+        virtual void Reset();
+
+        property VowpalWabbitFeature^ Current
+        {
+          virtual VowpalWabbitFeature^ get();
+        }
+      };
+
+      namespace_index m_ns;
+      features* m_features;
+
+      property System::Collections::IEnumerator^ EnumerableGetEnumerator
+      {
+        virtual System::Collections::IEnumerator^ get() sealed = System::Collections::IEnumerable::GetEnumerator;
+      }
+
+    public:
+      VowpalWabbitNamespace(namespace_index ns, features* features);
+      ~VowpalWabbitNamespace();
+
+      property namespace_index Index
+      {
+        namespace_index get();
+      }
+
+
+      virtual IEnumerator<VowpalWabbitFeature^>^ GetEnumerator();
+    };
+
     /// <summary>
     /// A CLR representation of a vowpal wabbit example.
     /// </summary>
@@ -19,7 +104,7 @@ namespace VW
     /// Underlying memory is allocated by native code, but examples are not part of the ring.
     /// </remarks>
     [System::Diagnostics::DebuggerDisplay("{m_string}")]
-    public ref class VowpalWabbitExample
+    public ref class VowpalWabbitExample : public IEnumerable<VowpalWabbitNamespace^>
     {
     private:
         /// <summary>
@@ -27,6 +112,32 @@ namespace VW
         /// </summary>
         /// <remarks>If this instance owns <see name="m_example"/> this is null.</remarks>
         initonly VowpalWabbitExample^ m_innerExample;
+
+        ref class NamespaceEnumerator : public IEnumerator<VowpalWabbitNamespace^>
+        {
+        private:
+          example* m_example;
+          namespace_index* m_current;
+
+        internal:
+          NamespaceEnumerator(example* example);
+          ~NamespaceEnumerator();
+
+          property System::Object^ IEnumeratorCurrent
+          {
+            virtual System::Object^ get() sealed = System::Collections::IEnumerator::Current::get;
+          }
+
+        public:
+          virtual bool MoveNext();
+
+          virtual void Reset();
+
+          property VowpalWabbitNamespace^ Current
+          {
+            virtual VowpalWabbitNamespace^ get();
+          }
+        };
 
     protected:
         /// <summary>
@@ -111,5 +222,14 @@ namespace VW
         }
 
         String^ Diff(VowpalWabbit^ vw, VowpalWabbitExample^ other, IVowpalWabbitLabelComparator^ labelComparator);
+
+        void MakeEmpty(VowpalWabbit^ vw);
+
+        property System::Collections::IEnumerator^ EnumerableGetEnumerator
+        {
+          virtual System::Collections::IEnumerator^ get() sealed = System::Collections::IEnumerable::GetEnumerator;
+        }
+
+        virtual IEnumerator<VowpalWabbitNamespace^>^ GetEnumerator();
     };
 }

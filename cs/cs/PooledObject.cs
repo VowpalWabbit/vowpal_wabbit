@@ -16,8 +16,8 @@ namespace VW
     /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
     /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
     public sealed class PooledObject<TSource, TObject> : IDisposable
-        where TSource : IDisposable
-        where TObject : IDisposable
+        where TSource : class, IDisposable
+        where TObject : class, IDisposable
     {
         /// <summary>
         /// The parent pool.
@@ -52,7 +52,9 @@ namespace VW
         /// </summary>
         public void Dispose()
         {
-            this.pool.ReturnObject(this);
+            // don't keep empty objects in pool
+            if (this.Value != null)
+                this.pool.ReturnObject(this);
         }
     }
 }
