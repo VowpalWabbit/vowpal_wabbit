@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "constant.h"
 #include "feature_group.h"
+#include "cb_explore.h"
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
@@ -36,10 +37,12 @@ typedef union
 
 typedef union
 { float scalar;
+  v_array<float> scalars;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float* probs; // for --probabilities --oaa
   float prob; // for --probabilities --csoaa_ldf=mc
+  cb_explore_pred action_prob; // for --cb_explore
 } polyprediction;
 
 typedef unsigned char namespace_index;

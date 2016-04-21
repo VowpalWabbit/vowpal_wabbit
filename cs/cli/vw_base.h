@@ -26,7 +26,7 @@ namespace VW
     /// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
     /// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
     /// </remarks>
-    public ref class VowpalWabbitBase abstract : IVowpalWabbitExamplePool
+    public ref class VowpalWabbitBase abstract
     {
     private:
         /// <summary>
@@ -40,19 +40,9 @@ namespace VW
         VowpalWabbitModel^ m_model;
 
         /// <summary>
-        /// Example pool.
-        /// </summary>
-        Stack<VowpalWabbitExample^>^ m_examples;
-
-        /// <summary>
         /// Extracted command line arguments.
         /// </summary>
         VowpalWabbitArguments^ m_arguments;
-
-        /// <summary>
-        /// Initialize from passed model.
-        /// </summary>
-        void InitializeFromModel(string args, io_buf& model);
 
         /// <summary>
         /// Reference count to native data structure.
@@ -64,12 +54,6 @@ namespace VW
         /// The native vowpal wabbit data structure.
         /// </summary>
         vw* m_vw;
-
-        /// <summary>
-        /// Gets or creates a native example from a CLR maintained, but natively allocated pool.
-        /// </summary>
-        /// <returns>A ready to use cleared native example data structure.</returns>
-        VowpalWabbitExample^ GetOrCreateNativeExample();
 
         /// <summary>
         /// Thread-safe increment of reference count.
@@ -86,6 +70,11 @@ namespace VW
         /// True if all nativedata structures are disposed.
         /// </summary>
         bool m_isDisposed;
+
+        /// <summary>
+        /// Example pool. Kept in base to simplify deallocation.
+        /// </summary>
+        Stack<VowpalWabbitExample^>^ m_examples;
 
         /// <summary>
         /// Initializes a new <see cref="VowpalWabbitBase"/> instance.
@@ -135,18 +124,6 @@ namespace VW
         }
 
         /// <summary>
-        /// Gets or creates an empty example.
-        /// </summary>
-        /// <returns>An initialized and empty example</returns>
-        VowpalWabbitExample^ GetOrCreateEmptyExample();
-
-        /// <summary>
-        /// Puts a native example data structure back into the pool.
-        /// </summary>
-        /// <param name="example">The example to be returned.</param>
-        virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
-
-        /// <summary>
         /// Performs the following steps to reset the learning state:
         ///
         /// - Save model to in-memory buffer
@@ -162,5 +139,24 @@ namespace VW
         /// Null if compatible, otherwise the difference
         /// </returns>
         String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
+
+
+        /// <summary>
+        /// Persist model to file specified by -i.
+        /// </summary>
+        void SaveModel();
+
+        /// <summary>
+        /// Persist model to <paramref name="filename"/>.
+        /// </summary>
+        /// <param name="filename">The destination filename for the model.</param>
+        void SaveModel(String^ filename);
+
+        /// <summary>
+        /// Persist model to <paramref name="stream"/>.
+        /// </summary>
+        /// <param name="stream">The destination stream for the model.</param>
+        /// <remarks>The stream is not closed to support embedded schemes.</remarks>
+        void SaveModel(Stream^ stream);
     };
 }

@@ -18,6 +18,7 @@ using VW.Interfaces;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;
+using VW.Reflection;
 
 namespace VW.Serializer
 {
@@ -37,14 +38,14 @@ namespace VW.Serializer
         /// <typeparam name="TExample">The user type to serialize.</typeparam>
         /// <param name="settings"></param>
         /// <returns></returns>
-        public static VowpalWabbitSerializerCompiled<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
+        public static IVowpalWabbitSerializerCompiler<TExample> CreateSerializer<TExample>(VowpalWabbitSettings settings = null)
         {
-            List<FeatureExpression> allFeatures = null;
+            Schema schema = null;
 
             Type cacheKey = null;
-            if (settings != null && settings.AllFeatures != null)
+            if (settings != null && settings.Schema != null)
             {
-                allFeatures = settings.AllFeatures;
+                schema = settings.Schema;
             }
             else
             {
@@ -56,13 +57,17 @@ namespace VW.Serializer
 
                     if (SerializerCache.TryGetValue(cacheKey, out serializer))
                     {
-                        return (VowpalWabbitSerializerCompiled<TExample>)serializer;
+                        return (IVowpalWabbitSerializerCompiler<TExample>)serializer;
                     }
                 }
 
                 if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
                 {
-                    allFeatures = AnnotationJsonInspector.ExtractFeatures(typeof(TExample));
+                    schema = AnnotationJsonInspector.CreateSchema(typeof(TExample), settings.PropertyConfiguration);
+
+                    var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, schema);
+                    if (multiExampleSerializerCompiler != null)
+                        return multiExampleSerializerCompiler;
                 }
                 else
                 {
@@ -70,28 +75,31 @@ namespace VW.Serializer
                     // if no feature mapping is provided, use [Feature] annotation on provided type.
 
                     Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate = null;
+                    Func<PropertyInfo, LabelAttribute, bool> labelPredicate = null;
                     switch (settings.FeatureDiscovery)
                     {
                         case VowpalWabbitFeatureDiscovery.Default:
                             propertyPredicate = (_, attr) => attr != null;
+                            labelPredicate = (_, attr) => attr != null;
                             break;
                         case VowpalWabbitFeatureDiscovery.All:
                             propertyPredicate = (_, __) => true;
+                            labelPredicate = (_, __) => true;
                             break;
                     }
 
-                    allFeatures = AnnotationInspector.ExtractFeatures(typeof(TExample), propertyPredicate);
+                    schema = AnnotationInspector.CreateSchema(typeof(TExample), propertyPredicate, labelPredicate);
                 }
             }
 
             // need at least a single feature to do something sensible
-            if (allFeatures == null || allFeatures.Count == 0)
+            if (schema == null || schema.Features.Count == 0)
             {
                 return null;
             }
 
-            var newSerializer = new VowpalWabbitSerializerCompiled<TExample>(
-                allFeatures,
+            var newSerializer = new VowpalWabbitSingleExampleSerializerCompiler<TExample>(
+                schema,
                 settings == null ? null : settings.CustomFeaturizer,
                 !settings.EnableStringExampleGeneration);
 

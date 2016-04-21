@@ -26,7 +26,8 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-vw* initialize(string s);
+vw* initialize(string s, io_buf* model=nullptr);
+vw* initialize(int argc, char* argv[], io_buf* model=nullptr);
 vw* seed_vw_model(vw* vw_model, string extra_args);
 
 void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
@@ -40,7 +41,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2);
 void finish(vw& all, bool delete_all=true);
 void sync_stats(vw& all);
 
-void start_parser(vw& all, bool do_init = true);
+void start_parser(vw& all);
 void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
 bool parse_atomic_example(vw& all, example* ae, bool do_read);

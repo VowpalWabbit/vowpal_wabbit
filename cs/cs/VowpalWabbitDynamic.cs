@@ -24,7 +24,7 @@ namespace VW
     /// <remarks>For each call to <see cref="Learn"/> there is additional overhead as the type is looked up in a dictionary compared to <see cref="VowpalWabbit{T}"/>.</remarks>
     public class VowpalWabbitDynamic : IDisposable
     {
-        private Dictionary<Type, VowpalWabbitSerializer<object>> serializers;
+        private Dictionary<Type, IVowpalWabbitSerializer<object>> serializers;
 
         private VowpalWabbit vw;
 
@@ -45,13 +45,13 @@ namespace VW
             this.vw = new VowpalWabbit(settings);
         }
 
-        private VowpalWabbitSerializer<object> GetOrCreateSerializer(Type type)
+        private IVowpalWabbitSerializer<object> GetOrCreateSerializer(Type type)
         {
-            VowpalWabbitSerializer<object> serializer;
+            IVowpalWabbitSerializer<object> serializer;
             if (!this.serializers.TryGetValue(type, out serializer))
             {
-                var allFeatures = AnnotationInspector.ExtractFeatures(type, (_,__) => true);
-                foreach (var feature in allFeatures)
+                var schema = AnnotationInspector.CreateSchema(type, (_,__) => true, (_,__) => true);
+                foreach (var feature in schema.Features)
                 {
                     // inject type cast to the actual type (always works)
                     // needed since the serializer is generated for "type", not for "object"
@@ -59,7 +59,7 @@ namespace VW
                 }
 
                 serializer = VowpalWabbitSerializerFactory
-                    .CreateSerializer<object>(this.vw.Settings.ShallowCopy(allFeatures: allFeatures))
+                    .CreateSerializer<object>(this.vw.Settings.ShallowCopy(schema: schema))
                     .Create(this.vw);
 
                 this.serializers.Add(type, serializer);
@@ -72,12 +72,13 @@ namespace VW
         /// Learns from the given example.
         /// </summary>
         /// <param name="example">The example to learn.</param>
-        /// <param name="label">The label for this <paramref name="example"/>.</param>
-        public void Learn(object example, ILabel label)
+        /// <param name="label">The optional label for this <paramref name="example"/>.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
+        public void Learn(object example, ILabel label = null, int? index = null)
         {
-            using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label))
+            using (var ex = GetOrCreateSerializer(example.GetType()).Serialize(example, label, index))
             {
-                this.vw.Learn(ex);
+                ex.Learn();
             }
         }
 

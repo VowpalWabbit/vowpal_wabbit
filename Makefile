@@ -131,6 +131,9 @@ test_gcov: .FORCE vw_gcov library_example_gcov
 install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install
 
+doc:
+	(cd doc && doxygen Doxyfile)
+
 clean:
 	cd vowpalwabbit && $(MAKE) clean
 	cd cluster && $(MAKE) clean
@@ -140,4 +143,4 @@ ifneq ($(JAVA_HOME),)
 	cd java    && $(MAKE) clean
 endif
 
-.PHONY: all clean install
+.PHONY: all clean install doc

@@ -84,8 +84,8 @@ namespace VW
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,
             ILabel label = null,
-            VowpalWabbitSerializer<TExample> serializer = null,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
+            IVowpalWabbitSerializer<TExample> serializer = null,
+            IVowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer = null,
             Dictionary<string, string> dictionary = null,
             Dictionary<object, string> fastDictionary = null)
         {
@@ -112,7 +112,7 @@ namespace VW
 
             var stringExample = new StringBuilder();
 
-            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, dictionary, fastDictionary);
+            var sharedExample = serializer.SerializeToString(example, SharedLabel.Instance, null, dictionary, fastDictionary);
 
             // check if we have shared features
             if (!string.IsNullOrWhiteSpace(sharedExample))
@@ -124,7 +124,7 @@ namespace VW
             foreach (var actionDependentFeature in actionDependentFeatures)
             {
                 var adfExample = actionDependentFeatureSerializer.SerializeToString(actionDependentFeature,
-                    index != null && i == index ? label : null, dictionary, fastDictionary);
+                    index != null && i == index ? label : null, null, dictionary, fastDictionary);
 
                 if (!string.IsNullOrWhiteSpace(adfExample))
                 {
@@ -164,8 +164,8 @@ namespace VW
         /// <param name="label">The optional label to be used for learning or evaluation.</param>
         public static void Execute<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             LearnOrPredictAction<TActionDependentFeature> predictOrLearn,
@@ -181,6 +181,8 @@ namespace VW
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
             var emptyActionDependentFeatures = new List<ActionDependentFeature<TActionDependentFeature>>(actionDependentFeatures.Count + 1);
+
+            VowpalWabbitExample emptyExample = null;
 
             try
             {
@@ -223,27 +225,26 @@ namespace VW
                 }
 
                 if (validActionDependentFeatures.Count == 0)
-                {
                     return;
-                }
 
                 // signal we're finished using an empty example
-                var empty = vw.GetOrCreateEmptyExample();
-                examples.Add(empty);
-                validExamples.Add(empty);
+                emptyExample = vw.GetOrCreateNativeExample();
+                validExamples.Add(emptyExample);
+                emptyExample.MakeEmpty(vw);
 
                 predictOrLearn(validExamples, validActionDependentFeatures, emptyActionDependentFeatures);
             }
             finally
             {
+                if (emptyExample != null)
+                    emptyExample.Dispose();
+
                 // dispose examples
                 // Note: must not dispose examples before final example
                 // as the learning algorithm (such as cbf) keeps a reference
                 // to the example
                 foreach (var e in examples)
-                {
                     e.Dispose();
-                }
             }
         }
 
@@ -252,8 +253,8 @@ namespace VW
         /// </summary>
         public static void Learn<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
@@ -298,8 +299,8 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int index,
@@ -351,8 +352,8 @@ namespace VW
         /// <returns>An ranked subset of predicted actions.</returns>
         public static ActionDependentFeature<TActionDependentFeature>[] Predict<TExample, TActionDependentFeature>(
             VowpalWabbit vw,
-            VowpalWabbitSerializer<TExample> serializer,
-            VowpalWabbitSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
+            VowpalWabbitSingleExampleSerializer<TExample> serializer,
+            VowpalWabbitSingleExampleSerializer<TActionDependentFeature> actionDependentFeatureSerializer,
             TExample example,
             IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures,
             int? index = null,

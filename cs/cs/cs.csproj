@@ -121,6 +121,7 @@
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
+    <Compile Include="Labels\MulticlassLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -129,10 +130,14 @@
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
+    <Compile Include="Serializer\Attributes\LabelAttribute.cs" />
+    <Compile Include="Serializer\ConfigInspector.cs" />
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
+    <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\PrefixedJsonReader.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
@@ -145,11 +150,14 @@
     <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializer.cs" />
-    <Compile Include="Serializer\VowpalWabbitSerializerCompiled.cs" />
+    <Compile Include="Serializer\VowpalWabbitMultiExampleSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitMultiExampleSerializerCompiler.cs" />
+    <Compile Include="Serializer\VowpalWabbitSingleExampleSerializer.cs" />
+    <Compile Include="Serializer\IVowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
     <Compile Include="Labels\SharedLabel.cs" />
     <Compile Include="Labels\SimpleLabel.cs" />
+    <Compile Include="Serializer\VowpalWabbitSingleExampleSerializerCompiler.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitAsync.cs" />
@@ -159,12 +167,14 @@
     <Compile Include="VowpalWabbitJson.cs" />
     <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
+    <Compile Include="VowpalWabbitMultiworldTesting.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
     <Compile Include="VowpalWabbitThreadedPredictionBase.cs" />
+    <Compile Include="VowpalWabbitThreadSafeExamplePool.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">

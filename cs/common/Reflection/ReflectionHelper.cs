@@ -13,6 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace VW.Reflection
 {
@@ -21,6 +22,57 @@ namespace VW.Reflection
     /// </summary>
     public static class ReflectionHelper
     {
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="?"></param>
+        /// <returns></returns>
+        /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
+        public static System.Delegate CompileToFunc<T>(this Expression<T> sourceExpression)
+        {
+            // inspect T to be Func<...>
+            var funcType = typeof(T);
+
+            if (!funcType.Name.StartsWith("Func`"))
+                throw new ArgumentException("T must be one of the System.Func<...> type.");
+
+            var genericArguments = funcType.GetGenericArguments();
+            var returnType = genericArguments.Last();
+            var paramTypes = genericArguments.Take(genericArguments.Length - 1);
+
+            var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(T).Name);
+            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
+
+            // Create a dynamic module and type
+            //#if !DEBUG
+            //var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
+            //#else
+            var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule");
+
+            var typeBuilder = moduleBuilder.DefineType("VowpalWabbitSerializer" + Guid.NewGuid().ToString().Replace('-', '_'));
+
+            // Create our method builder for this type builder
+            const string methodName = "Method";
+            var methodBuilder = typeBuilder.DefineMethod(
+                methodName,
+                MethodAttributes.Public | MethodAttributes.Static,
+                returnType,
+                paramTypes.ToArray());
+
+            // compared to Compile this looks rather ugly, but there is a feature-bug
+            // that adds a security check to every call of the Serialize method
+            //#if !DEBUG
+            //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
+            //visit.CompileToMethod(methodBuilder, debugInfoGenerator);
+            //#else
+            sourceExpression.CompileToMethod(methodBuilder);
+            //#endif
+
+            var dynType = typeBuilder.CreateType();
+
+            return Delegate.CreateDelegate(typeof(T), dynType.GetMethod(methodName));
+        }
+
         /// <summary>
         /// TODO: replace me with Roslyn once it's released and just generate string code. This way the overload resolution is properly done.
         /// </summary>
@@ -95,7 +147,7 @@ namespace VW.Reflection
                 method = method.MakeGenericMethod(actualTypes);
                 //Debug.WriteLine("\t specializing: " + method);
             }
-            //Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
+            // Debug.WriteLine("Method: {0} for {1} {2}", method, name, string.Join(",", parameterTypes.Select(t => t.ToString())));
 
             return method;
         }
