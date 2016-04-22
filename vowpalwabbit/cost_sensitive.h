@@ -17,6 +17,7 @@ struct wclass
   float partial_prediction;  // a partial prediction: new!
   float wap_value;  // used for wap to store values derived from costs
   bool operator==(wclass j) {return class_index == j.class_index;}
+  bool pred_is_certain; // used by cost-sensitive active learning to indicate whether this cost prediction was made with confidence
 };
 /* if class_index > 0, then this is a "normal" example
    if class_index == 0, then:
