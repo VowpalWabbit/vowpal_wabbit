@@ -22,9 +22,10 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ for (size_t i=0; i<ec.size(); i++)
+{ Search::predictor P(sch, (ptag)0);
+  for (size_t i=0; i<ec.size(); i++)
   { action oracle     = ec[i]->l.multi.label;
-    size_t prediction = Search::predictor(sch, (ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
+    size_t prediction = P.set_tag((ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
 
     if (sch.output().good())
       sch.output() << sch.pretty_label((uint32_t)prediction) << ' ';
@@ -164,13 +165,13 @@ void takedown(Search::search& sch, vector<example*>& ec)
 void run(Search::search& sch, vector<example*>& ec)
 { task_data& D = *sch.get_task_data<task_data>();
   v_array<action> * y_allowed = &(D.allowed_actions);
-
+  Search::predictor P(sch, (ptag)0);
   for (size_t pass=1; pass<=D.multipass; pass++)
   { action last_prediction = 1;
     for (size_t i=0; i<ec.size(); i++)
     { action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
-      Search::predictor P(sch, (ptag)i+1);
+      P.set_tag((ptag)i+1);
       P.set_learner_id(pass-1);
       if (D.encoding == BIO)
       { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin(), len-1);
@@ -221,12 +222,13 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*v
 void run(Search::search& sch, vector<example*>& ec)
 { size_t K = * sch.get_task_data<size_t>();
   float*costs = calloc_or_throw<float>(K);
+  Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
   { action oracle     = ec[i]->l.multi.label;
     for (size_t k=0; k<K; k++) costs[k] = 1.;
     costs[oracle-1] = 0.;
     size_t prediction =
-      Search::predictor(sch, (ptag)i+1)
+      P.set_tag((ptag)i+1)
       .set_input(*ec[i])
       .set_allowed(nullptr, costs, K)
       .set_condition_range((ptag)i, sch.get_history_length(), 'p')
@@ -347,6 +349,7 @@ void my_update_example_indicies(Search::search& sch, bool audit, example* ec, ui
 
 void run(Search::search& sch, vector<example*>& ec)
 { task_data *data = sch.get_task_data<task_data>();
+  Search::predictor P(sch, (ptag)0);
   for (ptag i=0; i<ec.size(); i++)
   { for (size_t a=0; a<data->num_actions; a++)
     { if (sch.predictNeedsExample())   // we can skip this work if `predict` won't actually use the example data
@@ -365,7 +368,7 @@ void run(Search::search& sch, vector<example*>& ec)
     }
 
     action oracle  = ec[i]->l.multi.label - 1;
-    action pred_id = Search::predictor(sch, i+1).set_input(data->ldf_examples, data->num_actions).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
+    action pred_id = P.set_tag((ptag)(i+1)).set_input(data->ldf_examples, data->num_actions).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
     action prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
 
     if (sch.output().good())

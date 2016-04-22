@@ -96,10 +96,10 @@ struct action_repr
   action_repr(action _a, features* _repr) : a(_a)
   { if(_repr!=NULL)
     { repr = new features(); 
-	  repr->deep_copy_from(*_repr);
-	}
-	else
-	  repr = NULL;
+      repr->deep_copy_from(*_repr);
+    }
+    else
+      repr = NULL;
   }
   action_repr(action _a) : a(_a), repr(NULL) {}
 };
@@ -459,7 +459,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   if (priv.all->audit)
   {
     stringstream temp;
-	temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
+    temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
     fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
   }
 }
@@ -550,11 +550,11 @@ void reset_search_structure(search_private& priv)
   }
   for (Search::action_repr& ar : priv.ptag_to_action)
   { if(ar.repr !=NULL)
-	{  ar.repr->values.delete_v();
+    { ar.repr->values.delete_v();
       ar.repr->indicies.delete_v();
       ar.repr->space_names.delete_v();
       cdbg << "delete_v" << endl;
-	}
+    }
   }
   priv.ptag_to_action.erase();
 
@@ -1969,7 +1969,7 @@ void search_finish(search& sch)
   priv.train_trajectory.delete_v();
   for (Search::action_repr& ar : priv.ptag_to_action)
     if(ar.repr != NULL)
-	  ar.repr->delete_v();
+      ar.repr->delete_v();
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
   priv.memo_foreach_action.delete_v();
@@ -2414,7 +2414,7 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
   { if (mytag < priv->ptag_to_action.size())
     { cdbg << "delete_v at " << mytag << endl;
-	  if(priv->ptag_to_action[mytag].repr != NULL)
+      if(priv->ptag_to_action[mytag].repr != NULL)
         priv->ptag_to_action[mytag].repr->delete_v();
     }
     push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
@@ -2516,6 +2516,14 @@ predictor::~predictor()
   condition_on_tags.delete_v();
   condition_on_names.delete_v();
 }
+predictor& predictor::reset()
+{ this->erase_oracles();
+  this->erase_alloweds();
+  condition_on_tags.erase();
+  condition_on_names.erase();
+  free_ec();
+  return *this;
+}
 
 predictor& predictor::set_input(example&input_example)
 { free_ec();
@@ -2597,11 +2605,11 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
       size_t new_size = old_size + count;
       make_new_pointer<T>(A, new_size);
       A_is_ptr = false;
-      memcpy(A.begin() + old_size, a, count * sizeof(T));
+      if (a != nullptr) memcpy(A.begin() + old_size, a, count * sizeof(T));
     }
     else     // we already have our own memory
     { if (clear_first) A.erase();
-      push_many<T>(A, a, count);
+      if (a != nullptr) push_many<T>(A, a, count);
     }
   }
   else     // old_size == 0, clear_first is irrelevant
@@ -2609,7 +2617,10 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
       A.delete_v(); // avoid memory leak
 
     A.begin() = a;
-    A.end()   = a + count;
+    if (a != nullptr) // a is not nullptr
+      A.end() = a + count;
+    else
+      A.end() = a;
     A.end_array = A.end();
     A_is_ptr = true;
   }

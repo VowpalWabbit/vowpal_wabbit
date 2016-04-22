@@ -242,6 +242,8 @@ public:
   // between calling add/set_oracle and calling predict()
   predictor& erase_oracles();
 
+  predictor& reset();
+
   predictor& add_oracle(action a);
   predictor& add_oracle(action*a, size_t action_count);
   predictor& add_oracle(v_array<action>& a);
