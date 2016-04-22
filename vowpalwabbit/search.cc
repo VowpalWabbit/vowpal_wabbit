@@ -219,6 +219,8 @@ struct search_private
   polylabel learn_losses;
   polylabel gte_label;
   v_array< pair<float,size_t> > active_uncertainty;
+  v_array< v_array<float> > active_known;
+  bool active_csoaa;
 
   LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
@@ -948,6 +950,21 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       priv.active_uncertainty.push_back( make_pair(min_cost2 - min_cost, priv.t+priv.meta_t) );
   }
 
+  if ((priv.state == INIT_TRAIN) && priv.active_csoaa)
+  { if (priv.cb_learner)
+      THROW("cannot use active_csoaa with cb learning");
+    size_t cur_t = priv.t + priv.meta_t;
+    while (priv.active_known.size() <= cur_t)
+    { priv.active_known.push_back( v_array<float>() );
+      priv.active_known[priv.active_known.size()-1] = v_init<float>();
+    }
+    priv.active_known[cur_t].erase();
+    for (size_t k = 0; k < ec.l.cs.costs.size(); k++)
+      priv.active_known[cur_t].push_back( ec.l.cs.costs[k].is_confident
+                                          ? ec.l.cs.costs[k].x
+                                          : FLT_MAX );
+  }
+
   // generate raw predictions if necessary
   if ((priv.state == INIT_TEST) && (all.raw_prediction > 0))
   { priv.rawOutputStringStream->str("");
@@ -1294,6 +1311,15 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
 
     cdbg << "LEARN " << t << " = priv.learn_t ==> a=" << a << endl;
 
+    if (priv.active_csoaa && (t < priv.active_known.size()) && (priv.active_known[t].size() > 0))
+    { while ((priv.learn_a_idx < priv.active_known[t].size()) && (priv.active_known[t][priv.learn_a_idx] < FLT_MAX))
+        // skip known costs in active learning mode
+        priv.learn_a_idx++;
+      // check to see if there's anything left to do
+      size_t learn_a_idx = priv.learn_a_idx + 1;
+      while ((learn_a_idx < priv.active_known[t].size()) && (priv.active_known[t][learn_a_idx] < FLT_MAX)) learn_a_idx++;
+      if (learn_a_idx >= valid_action_cnt) priv.done_with_all_actions = true;
+    }
     priv.learn_a_idx++;
 
     // check to see if we're done with available actions
@@ -1880,6 +1906,7 @@ void search_initialize(vw* all, search& sch)
 { search_private& priv = *sch.priv;//priv is zero initialized by default
   priv.all = all;
 
+  priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
 
   priv.A = 1;
@@ -1916,6 +1943,9 @@ void search_initialize(vw* all, search& sch)
 
   sch.task_data = nullptr;
 
+  priv.active_uncertainty = v_init< pair<float,size_t> >();
+  priv.active_known = v_init< v_array<float> >();
+  
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
   CS::cs_label.default_label(&priv.empty_example->l.cs);
   priv.empty_example->in_use = true;
@@ -1953,6 +1983,10 @@ void search_finish(search& sch)
   priv.learn_allowed_actions.delete_v();
   priv.ldf_test_label.costs.delete_v();
   priv.last_action_repr.delete_v();
+  priv.active_uncertainty.delete_v();
+  for (size_t i=0; i<priv.active_known.size(); i++)
+    priv.active_known[i].delete_v();
+  priv.active_known.delete_v();
 
   if (priv.cb_learner)
     priv.allowed_actions_cache->cb.costs.delete_v();
