@@ -35,7 +35,8 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   float cost_pred_capped = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
 
   // Compute the minimum weight required to change prediction by eta
-  float w = eta / base.sensitivity(ec, i-1); 
+  float sens = base.sensitivity(ec, i-1);
+  float w = eta / sens; 
 
   // Compute upper bound on the empirical loss difference
   // Assume squared loss is used
@@ -43,6 +44,8 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
 
   bool result = (loss_delta_upper_bnd <= delta);
 
+  cerr << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " cost_pred_capped=" << cost_pred_capped << " base.sensitivity=" << sens << " w=" << w << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
+  
   return result;
 }
 
@@ -71,7 +74,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
   }
   else if (!is_simulation) //reduction mode, need to tell upper layer whether this prediction was made with confidence
     pred_is_certain = (!is_range_large(cs_a,base,ec,i));
-         
+
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
   { score = ec.partial_prediction;
@@ -88,13 +91,17 @@ void predict_or_learn(cs_active& data, base_learner& base, example& ec)
   float score = FLT_MAX;
   ec.l.simple = { 0., 0., 0. };
   if (ld.costs.size() > 0)
-  { for (auto& cl : ld.costs)
+  { for (COST_SENSITIVE::wclass& cl : ld.costs) {
       inner_loop<is_learn,is_simulation>(data, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, cl.pred_is_certain);
+      cl.pred_is_certain = frand48() * 100 < ec.example_t;
+      cerr << "cl.pred_is_certain=" << cl.pred_is_certain << endl;
+    }
     ec.partial_prediction = score;
   }
   else
   { float temp;
     bool temp2;
+    assert(false);
     for (uint32_t i = 1; i <= data.num_classes; i++)
       inner_loop<false,is_simulation>(data, base, ec, i, FLT_MAX, prediction, score, temp, temp2);
   }
