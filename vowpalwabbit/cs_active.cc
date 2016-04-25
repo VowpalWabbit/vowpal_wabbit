@@ -28,7 +28,7 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
 { float t = (float)ec.example_t;  // current round  
 
   if (t == 1)
-	return true;
+    return true;
 
   float t_prev = (float)ec.example_t - ec.weight; // last round
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t); // threshold on cost range
@@ -46,7 +46,7 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   // Assume squared loss is used
   float loss_delta_upper_bnd = w * max(pow(cost_pred_capped-cost_pred_u,2),pow(cost_pred_capped-cost_pred_l,2));
 
-  // cout << "t = " << t << ", i = " << i << ", eta = " << eta << ", delta = " << delta << ", w = " << w << ", sensitivity = " << sensitivity << ", loss_delta_upper_bnd = " << loss_delta_upper_bnd;
+  cout << "t = " << t << ", i = " << i << ", eta = " << eta << ", delta = " << delta << ", w = " << w << ", sensitivity = " << sensitivity << ", loss_delta_upper_bnd = " << loss_delta_upper_bnd;
   bool result = (loss_delta_upper_bnd <= delta);
 
   return result;
@@ -68,12 +68,12 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
       if(is_range_large(cs_a,base,ec,i))
       { ec.l.simple.label = cost;
         all.sd->queries += 1;
-	//cout << ", query " << all.sd->queries << endl;
+	cout << ", query " << all.sd->queries << ", real cost = " << cost << endl;
       }
       else
       { 
         ec.l.simple.label = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
-        //cout << ", predicted cost = " << ec.l.simple.label << endl;
+        cout << ", predicted cost = " << ec.l.simple.label << ", real cost = " << cost << endl;
       }
     }
     else // in reduction mode, always given a cost
