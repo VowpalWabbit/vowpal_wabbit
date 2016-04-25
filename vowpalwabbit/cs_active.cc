@@ -93,8 +93,10 @@ void predict_or_learn(cs_active& data, base_learner& base, example& ec)
     ec.partial_prediction = score;
   }
   else
-  { free(&data);
-    THROW("error: cost array has zero element");
+  { float temp;
+    bool temp2;
+    for (uint32_t i = 1; i <= data.num_classes; i++)
+      inner_loop<false,is_simulation>(data, base, ec, i, FLT_MAX, prediction, score, temp, temp2);
   }
 
   ec.pred.multiclass = prediction;

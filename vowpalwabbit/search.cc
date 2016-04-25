@@ -221,6 +221,7 @@ struct search_private
   v_array< pair<float,size_t> > active_uncertainty;
   v_array< v_array<float> > active_known;
   bool active_csoaa;
+  float active_csoaa_verify;
 
   LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
@@ -454,9 +455,8 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
-  {
-    stringstream temp;
-	temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
+  { stringstream temp;
+    temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
     fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
   }
 }
@@ -891,7 +891,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
 action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost, float& a_cost, action override_action)    // if override_action != -1, then we return it as the action and a_cost is set to the appropriate cost for that action
 { vw& all = *priv.all;
   polylabel old_label = ec.l;
-  bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
+  bool need_partial_predictions = need_memo_foreach_action(priv) || (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1) || priv.active_csoaa;
   if ((allowed_actions_cnt > 0) || need_partial_predictions)
     ec.l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
   else
@@ -953,16 +953,20 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
   if ((priv.state == INIT_TRAIN) && priv.active_csoaa)
   { if (priv.cb_learner)
       THROW("cannot use active_csoaa with cb learning");
-    size_t cur_t = priv.t + priv.meta_t;
+    size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     { priv.active_known.push_back( v_array<float>() );
       priv.active_known[priv.active_known.size()-1] = v_init<float>();
+      cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].erase();
+    assert(ec.l.cs.costs.size() > 0);
     for (size_t k = 0; k < ec.l.cs.costs.size(); k++)
-      priv.active_known[cur_t].push_back( ec.l.cs.costs[k].is_confident
+    { priv.active_known[cur_t].push_back( ec.l.cs.costs[k].pred_is_certain
                                           ? ec.l.cs.costs[k].x
                                           : FLT_MAX );
+      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = { " << ec.l.cs.costs[k].pred_is_certain << ", " << ec.l.cs.costs[k].x << "}" << endl;
+    }
   }
 
   // generate raw predictions if necessary
@@ -1310,15 +1314,32 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
     priv.loss_declared_cnt = 0;
 
     cdbg << "LEARN " << t << " = priv.learn_t ==> a=" << a << endl;
+    cdbg << "active_known[" << t << "] = "; cdbg_print_array("", priv.active_known[t]);
 
-    if (priv.active_csoaa && (t < priv.active_known.size()) && (priv.active_known[t].size() > 0))
+    if (priv.active_csoaa && (!priv.active_csoaa_verify) && (t < priv.active_known.size()) && (priv.active_known[t].size() > 0))
     { while ((priv.learn_a_idx < priv.active_known[t].size()) && (priv.active_known[t][priv.learn_a_idx] < FLT_MAX))
         // skip known costs in active learning mode
+      { cs_cost_push_back(priv.cb_learner,
+                          priv.learn_losses,
+                          priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx,
+                          priv.active_known[t][priv.learn_a_idx]);
         priv.learn_a_idx++;
+      }
       // check to see if there's anything left to do
-      size_t learn_a_idx = priv.learn_a_idx + 1;
-      while ((learn_a_idx < priv.active_known[t].size()) && (priv.active_known[t][learn_a_idx] < FLT_MAX)) learn_a_idx++;
-      if (learn_a_idx >= valid_action_cnt) priv.done_with_all_actions = true;
+      size_t learn_a_idx2 = priv.learn_a_idx + 1;
+      while ((learn_a_idx2 < priv.active_known[t].size()) && (priv.active_known[t][learn_a_idx2] < FLT_MAX))
+      { learn_a_idx2++;
+      }
+      if (learn_a_idx2 >= valid_action_cnt)
+      { priv.done_with_all_actions = true;
+        while (priv.learn_a_idx < learn_a_idx2)
+        { cs_cost_push_back(priv.cb_learner,
+                            priv.learn_losses,
+                            priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx,
+                            priv.active_known[t][priv.learn_a_idx]);
+          priv.learn_a_idx++;
+        }
+      }
     }
     priv.learn_a_idx++;
 
@@ -1644,6 +1665,24 @@ void run_task(search& sch, vector<example*>& ec)
     priv.task->run(sch, ec);
 }
 
+  void verify_active_csoaa(COST_SENSITIVE::label& losses, v_array<float>& known, size_t t, float multiplier) {
+  float threshold = multiplier / sqrt((float)t);
+  cdbg << "verify_active_csoaa, losses = [";
+  for (COST_SENSITIVE::wclass& wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
+  cdbg << " ]" << endl;
+  cdbg_print_array("verify_active_csoaa,  known", known);
+  for (COST_SENSITIVE::wclass& wc : losses.costs)
+  { uint32_t i = wc.class_index;
+    assert(i > 0);
+    if (known[i-1] < FLT_MAX)
+    { float err = pow(known[i-1] - wc.x, 2);
+      if (err > threshold)
+      { cerr << "verify_active_csoaa failed: truth " << i << ":" << wc.x << ", prediction=" << known[i-1] << ", error=" << err << " vs threshold " << threshold << endl;
+      }
+    }
+  }
+}
+  
 template <bool is_learn>
 void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
 { search_private& priv = *sch.priv;
@@ -1754,6 +1793,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
       //                           priv.learn_loss);
     }
+    if (priv.active_csoaa_verify > 0.) verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], priv.ec_seq[0]->example_t, priv.active_csoaa_verify);
+    
     // now we can make a training example
     if (priv.learn_allowed_actions.size() > 0)
     { for (size_t i=0; i<priv.learn_allowed_actions.size(); i++)
@@ -2172,6 +2213,7 @@ base_learner* setup(vw&all)
   ("search_xv",                                     "train two separate policies, alternating prediction/learning")
   ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
   ("search_linear_ordering",                        "insist on generating examples in linear order (def: hoopla permutation)")
+  ("search_active_verify",     po::value<float>(),  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
   ;
   add_options(all);
   po::variables_map& vm = all.vm;
@@ -2345,14 +2387,25 @@ base_learner* setup(vw&all)
   all.p->emptylines_separate_examples = true;
 
   if (count(all.args.begin(), all.args.end(),"--csoaa") == 0
+      && count(all.args.begin(), all.args.end(),"--cs_active") == 0
       && count(all.args.begin(), all.args.end(),"--csoaa_ldf") == 0
       && count(all.args.begin(), all.args.end(),"--wap_ldf") == 0
-      &&  count(all.args.begin(), all.args.end(),"--cb") == 0)
+      && count(all.args.begin(), all.args.end(),"--cb") == 0)
   { all.args.push_back("--csoaa");
     stringstream ss;
     ss << vm["search"].as<size_t>();
     all.args.push_back(ss.str());
   }
+  priv.active_csoaa = count(all.args.begin(), all.args.end(), "--cs_active") > 0;
+  priv.active_csoaa_verify = -1.;
+  if (count(all.args.begin(), all.args.end(), "--search_active_verify") > 0)
+  { if (!priv.active_csoaa)
+    { free(&all);
+      THROW("cannot use --search_active_verify without using --cs_active");
+    }
+    priv.active_csoaa_verify = vm["search_active_verify"].as<float>();
+  }
+
   base_learner* base = setup_base(all);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
