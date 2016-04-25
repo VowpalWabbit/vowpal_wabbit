@@ -26,21 +26,27 @@ struct cs_active
 // test if the cost range for label i is large
 bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i)
 { float t = (float)ec.example_t;  // current round  
+
+  if (t == 1)
+    return true;
+
   float t_prev = (float)ec.example_t - ec.weight; // last round
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t); // threshold on cost range
-  float delta = cs_a.c0 * ((float)cs_a.num_classes) * log(t_prev) * pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
+  float delta = cs_a.c0 * ((float)cs_a.num_classes) * log(max(t_prev,1)) * pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
 	
   float cost_pred_u = min(ec.pred.scalar + eta, cs_a.cost_max);
   float cost_pred_l = max(ec.pred.scalar - eta, cs_a.cost_min);
   float cost_pred_capped = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
 
   // Compute the minimum weight required to change prediction by eta
-  float w = eta / base.sensitivity(ec, i-1); 
+  float sensitivity = base.sensitivity(ec, i-1);
+  float w = eta / sensitivity; 
 
   // Compute upper bound on the empirical loss difference
   // Assume squared loss is used
   float loss_delta_upper_bnd = w * max(pow(cost_pred_capped-cost_pred_u,2),pow(cost_pred_capped-cost_pred_l,2));
 
+  cout << "t = " << t << ", i = " << i << ", eta = " << eta << ", delta = " << delta << ", w = " << w << ", sensitivity = " << sensitivity << ", loss_delta_upper_bnd = " << loss_delta_upper_bnd;
   bool result = (loss_delta_upper_bnd <= delta);
 
   return result;
@@ -50,18 +56,25 @@ template<bool is_learn, bool is_simulation>
 inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction, bool& pred_is_certain)
 { base.predict(ec, i-1);
+  
 
   if (is_learn)
   { vw& all = *cs_a.all;
      
     if (is_simulation)
     { // in simulation mode, query if cost range for this label is large, and use predicted cost otherwise.
+
+     
       if(is_range_large(cs_a,base,ec,i))
       { ec.l.simple.label = cost;
         all.sd->queries += 1;
+	cout << ", query " << all.sd->queries << ", real cost = " << cost << endl;
       }
-      else 
+      else
+      { 
         ec.l.simple.label = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
+        cout << ", predicted cost = " << ec.l.simple.label << ", real cost = " << cost << endl;
+      }
     }
     else // in reduction mode, always given a cost
       ec.l.simple.label = cost;
@@ -120,7 +133,7 @@ base_learner* cs_active_setup(vw& all)
   cs_active& data = calloc_or_throw<cs_active>();
   
   data.num_classes = (uint32_t)all.vm["cs_active"].as<size_t>();
-  data.c0 = 8.f;
+  data.c0 = 0.1;
   data.c1 = 0.5;
   data.all = &all;
   data.cost_max = 1.f;
