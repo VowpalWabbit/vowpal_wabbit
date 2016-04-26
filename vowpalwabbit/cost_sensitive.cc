@@ -175,6 +175,26 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
   { size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
+    std::string label_buf;
+    if (is_test)
+      label_buf = " unknown";
+    else {
+      label_buf = " known";
+      uint32_t best_i = 0;
+      float    best_x = FLT_MAX;
+      for (COST_SENSITIVE::wclass& wc : ec.l.cs.costs)
+      { if ((wc.x < best_x) && (wc.class_index > 0))
+        { best_x = wc.x;
+          best_i = wc.class_index;
+        }
+      }
+      if (best_x < FLT_MAX)
+      { stringstream ss;
+        ss << best_i << ':' << best_x << " ..";
+        label_buf = ss.str();
+      }
+    }
+    
     if (ec_seq != nullptr)
     { num_current_features = 0;
       // If the first example is "shared", don't include its features.
@@ -185,16 +205,7 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
-
-      for (; ecc!=ec_seq->cend(); ecc++)
-        num_current_features += (*ecc)->num_features;
     }
-
-    std::string label_buf;
-    if (is_test)
-      label_buf = " unknown";
-    else
-      label_buf = " known";
 
     if (multilabel || all.sd->ldict)
     { std::ostringstream pred_buf;
