@@ -57,18 +57,15 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
                        uint32_t& prediction, float& score, float& partial_prediction, bool& pred_is_certain)
 { base.predict(ec, i-1);
   
-
   if (is_learn)
   { vw& all = *cs_a.all;
      
     if (is_simulation)
     { // in simulation mode, query if cost range for this label is large, and use predicted cost otherwise.
-
-     
       if(is_range_large(cs_a,base,ec,i))
       { ec.l.simple.label = cost;
         all.sd->queries += 1;
-	cout << ", query " << all.sd->queries << ", real cost = " << cost << endl;
+        cout << ", query " << all.sd->queries << ", real cost = " << cost << endl;
       }
       else
       { 
