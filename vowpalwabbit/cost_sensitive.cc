@@ -170,32 +170,46 @@ label_parser cs_label = {default_label, parse_label,
                          sizeof(label)
                         };
 
+void get_example_print_info(example& ec, uint32_t& best_class, float& best_cost, size_t& num_features) {
+  num_features += ec.num_features;
+  for (COST_SENSITIVE::wclass& wc : ec.l.cs.costs)
+    if ((wc.class_index > 0) && (wc.x < best_cost))
+    { best_cost  = wc.x;
+      best_class = wc.class_index;
+    }
+}
+  
+void get_example_seq_print_info(const v_array<example*>& ecs, uint32_t& best_class, float& best_cost, size_t& num_features) {
+  for (example** ec = ecs._begin; ec != ecs._end; ++ec)
+    get_example_print_info(**ec, best_class, best_cost, num_features);
+}
+  
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool multilabel, uint32_t prediction)
 { if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  { size_t num_current_features = ec.num_features;
-    // for csoaa_ldf we want features from the whole (multiline example),
+  { // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
+    size_t num_features = 0;
+    uint32_t best_class = 0;
+    float    best_cost  = FLT_MAX;
+    get_example_print_info(ec, best_class, best_cost, num_features);
     if (ec_seq != nullptr)
-    { num_current_features = 0;
-      // If the first example is "shared", don't include its features.
-      // These should be already included in each example (TODO: including quadratic and cubic).
-      // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc = ec_seq->cbegin();
-      const example& first_ex = **ecc;
-
-      v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
-      if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
-
-      for (; ecc!=ec_seq->cend(); ecc++)
-        num_current_features += (*ecc)->num_features;
+    { num_features = 0;
+      get_example_seq_print_info(*ec_seq, best_class, best_cost, num_features);
     }
-
+    
     std::string label_buf;
     if (is_test)
       label_buf = " unknown";
-    else
-      label_buf = " known";
-
+    else {
+      if (best_cost < FLT_MAX)
+      { stringstream ss;
+        ss << best_class << ':' << best_cost << " ..";
+        label_buf = ss.str();
+      }
+      else
+        label_buf = " known";
+    }
+    
     if (multilabel || all.sd->ldict)
     { std::ostringstream pred_buf;
 
@@ -207,11 +221,11 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       else            pred_buf << ec.pred.multilabels.label_v[0];
       if (multilabel) pred_buf <<".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                           num_current_features, all.progress_add, all.progress_arg);;
+                           num_features, all.progress_add, all.progress_arg);;
     }
     else
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction,
-                           num_current_features, all.progress_add, all.progress_arg);
+                           num_features, all.progress_add, all.progress_arg);
   }
 }
 
