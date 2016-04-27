@@ -1,0 +1,53 @@
+HOWTO write new tests for the big_tests test suite
+==================================================
+
+There are 3 steps in writing a new test.
+1. Add code to dataSets.mk for obtaining and preparing relevant data, if it's not already there for other tests.
+2. Add some variable settings to the file testDetails.mk.
+3. Create the "expected" files.  Note that your new tests WILL NOT EVEN RUN unless at least the 'out' and 'err' expected files exist in the right place.
+Read on for details.
+
+
+Step 1: dataSets.mk
+-------------------
+
+The data will typically live under dataSets/ .  Look at dataSets.mk for examples of how to add new datasets, and to see what data sets are already there.
+
+Whenever you add a new data set, don't forget to add its name to the 'allData' target at the top of dataSets.mk .
+
+
+Step 2: testDetails.mk
+----------------------
+
+Be sure to use := and not = to set these variables.  All variables are optional.  For most tests, you will want to set the variables *.params and *.inData, but it's possible to have tests without them.  Here's an example of a complete test specification:
+
+1a.inData := $(dataDir)/mnist.dir/train.prep
+1a.params := --oaa 10 -d $(1a.inData) -f $(stageDir)/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file $(stageDir)/1a.dir/mnist.cache
+
+The file that *.inData refers to is always treated as a prerequisite for running a test.  So if the file doesn't exist, an attempt will be made to prepare it, which might also involve downloading it.
+
+By default, STDOUT will be saved in the file 'out'.  STDERR will be filtered through `grep "average loss"`, and the results will be saved in the file 'err'.  Other created files that should be compared to "expected" files should be captured by the *.otherOutputs variable.  For example:
+
+myTest.otherOutputs := 0001_ftrl.model
+
+If you want to capture different parts of STDOUT and STDERR, you can set the variables *.STDOUT_COMPARATOR_REGEXP and *.STDERR_COMPARATOR_REGEXP, respectively.  For example, to save all of STDERR without filtering, set
+
+myTest.STDERR_COMPARATOR_REGEXP := "."
+
+To use a non-standard executable (e.g. library_example), give its path to the *.exec variable, relative to the directory of the top level Makefile.  For example:
+
+myTest.exec := $(TOP_MK_DIR)/../vowpalwabbit/library_example
+
+A test can have any set of targets as prerequisites, in addition to the value of *.inData, including those that merely run other tests (*.run targets) and those that check whether another test passed (*.valid targets).  List inter-test dependencies like this:
+
+myTest.deps:	test2.run test4.valid
+
+Unfortunatley, tracking of inter-test dependencies as above doesn't work for older versions of gnu make (< 4.0), due to bugs in those older versions.  Upgrade if you can.
+
+Groups of tests are defined in testGroups.mk.  You can add your tests to these groups or create new groups.
+
+
+Step 3: expected files
+----------------------
+
+Every test will create files named 'out' and 'err' (even if they are empty), and possibly others.  When you run `make $testName.compare` (which is the 2nd part of running `make $testName.valid`) these files are compared to the expected files with the same names in the directory expected/$testName/ .  The $testName.compare target WILL NOT RUN unless the expected files exist in that directory.  So, the first time you create a test, you should `make $testName.run` and `make $testName.expected`. Only then will you be able to `make $testName.valid`.  If you want to share you test with others, don't forget to `git add expected/$testName/`.
