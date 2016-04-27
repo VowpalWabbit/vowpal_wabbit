@@ -121,6 +121,7 @@
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Labels\ContextualBanditLabel.cs" />
+    <Compile Include="Labels\MulticlassLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -129,10 +130,13 @@
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
     <Compile Include="Interfaces\ILabel.cs" />
+    <Compile Include="Serializer\Attributes\LabelAttribute.cs" />
+    <Compile Include="Serializer\ConfigInspector.cs" />
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\PrefixedJsonReader.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
@@ -163,12 +167,14 @@
     <Compile Include="VowpalWabbitJson.cs" />
     <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
+    <Compile Include="VowpalWabbitMultiworldTesting.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
     <Compile Include="VowpalWabbitThreadedPredictionBase.cs" />
+    <Compile Include="VowpalWabbitThreadSafeExamplePool.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">

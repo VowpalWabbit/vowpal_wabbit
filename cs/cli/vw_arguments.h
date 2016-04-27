@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace System;
+using namespace System::Text;
 using namespace System::Collections::Generic;
 
 namespace VW
@@ -27,6 +28,7 @@ namespace VW
         const bool m_testonly;
         const int m_passes;
         List<String^>^ m_regressors;
+        String^ m_commandLine;
 
     internal:
         VowpalWabbitArguments(vw* vw) :
@@ -44,6 +46,12 @@ namespace VW
                 for (auto& r : regs)
                     m_regressors->Add(gcnew String(r.c_str()));
             }
+
+            StringBuilder^ sb = gcnew StringBuilder();
+            for (auto& s : vw->args)
+              sb->AppendFormat("{0} ", gcnew String(s.c_str()));
+
+            m_commandLine = sb->ToString()->TrimEnd();
         }
 
     public:
@@ -99,6 +107,14 @@ namespace VW
             List<String^>^ get()
             {
                 return m_regressors;
+            }
+        }
+
+        property String^ CommandLine
+        {
+            String^ get()
+            {
+                return m_commandLine;
             }
         }
     };

@@ -20,7 +20,7 @@ namespace VW
     /// Simple string example based wrapper for vowpal wabbit.
     /// </summary>
     /// <remarks>If possible use VowpalWabbit{T} types as this wrapper suffers from marshalling performance wise.</remarks>
-    public ref class VowpalWabbit : VowpalWabbitBase
+    public ref class VowpalWabbit : VowpalWabbitBase, IVowpalWabbitExamplePool
     {
     private:
         /// <summary>
@@ -53,24 +53,6 @@ namespace VW
         /// Run multi-passe training.
         /// </summary>
         void RunMultiPass();
-
-        /// <summary>
-        /// Persist model to file specified by -i.
-        /// </summary>
-        void SaveModel();
-
-        /// <summary>
-        /// Persist model to <paramref name="filename"/>.
-        /// </summary>
-        /// <param name="filename">The destination filename for the model.</param>
-        void SaveModel(String^ filename);
-
-        /// <summary>
-        /// Persist model to <paramref name="stream"/>.
-        /// </summary>
-        /// <param name="stream">The destination stream for the model.</param>
-        /// <remarks>The stream is not closed to support embedded schemes.</remarks>
-        void SaveModel(Stream^ stream);
 
         /// <summary>
         /// Gets Collected performance statistics.
@@ -219,5 +201,22 @@ namespace VW
         /// Invokes the driver.
         /// </summary>
         void Driver();
+
+        virtual property VowpalWabbit^ Native
+        {
+          virtual VowpalWabbit^ get() sealed;
+        }
+
+        /// <summary>
+        /// Gets or creates a native example from a CLR maintained, but natively allocated pool.
+        /// </summary>
+        /// <returns>A ready to use cleared native example data structure.</returns>
+        virtual VowpalWabbitExample^ GetOrCreateNativeExample() sealed;
+
+        /// <summary>
+        /// Puts a native example data structure back into the pool.
+        /// </summary>
+        /// <param name="example">The example to be returned.</param>
+        virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
     };
 }

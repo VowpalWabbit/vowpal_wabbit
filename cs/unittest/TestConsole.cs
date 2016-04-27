@@ -10,7 +10,7 @@ using VW;
 namespace cs_unittest
 {
     [TestClass]
-    public class TestConsoleClass
+    public class TestConsoleClass : TestBase
     {
         [TestMethod]
         public void TestConsole()

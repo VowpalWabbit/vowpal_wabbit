@@ -84,11 +84,15 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="TestAllReduce.cs" />
+    <Compile Include="TestArguments.cs" />
+    <Compile Include="TestConfigInspector.cs" />
     <Compile Include="TestConsole.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
+    <Compile Include="TestFeatureExtraction.cs" />
     <Compile Include="TestJson.cs" />
     <Compile Include="TestJsonDirect.cs" />
+    <Compile Include="TestLabels.cs" />
     <Compile Include="TestLeak.cs" />
     <Compile Include="TestManagedHash.cs" />
     <Compile Include="TestMarshalling.cs" />
@@ -99,6 +103,7 @@
       <DependentUpon>TestMarshalNumeric.tt</DependentUpon>
     </Compile>
     <Compile Include="TestModelLoading.cs" />
+    <Compile Include="TestMultiworldTesting.cs" />
     <Compile Include="TestNull.cs" />
     <Compile Include="TestRunner.cs" />
     <Compile Include="TestSerializer.cs" />
@@ -142,12 +147,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="json\test_array.json">
+    <Content Include="json\test_array.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="json\test_newline.json">
+    </Content>
+    <Content Include="json\test_newline.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
