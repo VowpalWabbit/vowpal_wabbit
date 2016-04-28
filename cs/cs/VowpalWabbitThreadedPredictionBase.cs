@@ -16,7 +16,7 @@ namespace VW
     /// </summary>
     /// <typeparam name="TVowpalWabbit">The VowpalWabbit wrapper type used.</typeparam>
     public abstract class VowpalWabbitThreadedPredictionBase<TVowpalWabbit> : IDisposable
-        where TVowpalWabbit : IDisposable
+        where TVowpalWabbit : class, IDisposable
     {
         /// <summary>
         /// The pool of potentially wrapped VW instances.
@@ -27,12 +27,12 @@ namespace VW
         /// Initializes a new instance of the <see cref="VowpalWabbitThreadedPredictionBase{TVowpalWabbit}"/> class.
         /// </summary>
         /// <param name="model">The initial model to use.</param>
-        protected VowpalWabbitThreadedPredictionBase(VowpalWabbitModel model)
+        protected VowpalWabbitThreadedPredictionBase(VowpalWabbitModel model = null)
         {
             this.vwPool = new ObjectPool<VowpalWabbitModel, TVowpalWabbit>(
                 ObjectFactory.Create(
                     model,
-                    m => this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m)))));
+                    m => m != null ? this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m))) : default(TVowpalWabbit)));
         }
 
         /// <summary>
@@ -56,7 +56,8 @@ namespace VW
         /// <summary>
         /// Gets or creates a new VW wrapper instance.
         /// </summary>
-        /// <returns>A ready to use VW wrapper instance</returns>
+        /// <returns>A ready to use VW wrapper instance.</returns>
+        /// <remarks><see cref="PooledObject{TModel, TVowpalWabbit}.Value"/> can be null if no model was supplied yet.</remarks>
         public PooledObject<VowpalWabbitModel, TVowpalWabbit> GetOrCreate()
         {
             Contract.Ensures(Contract.Result<PooledObject<VowpalWabbitModel, TVowpalWabbit>>() != null);

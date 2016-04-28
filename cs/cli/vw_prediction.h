@@ -41,6 +41,18 @@ namespace VW
         };
 
         /// <summary>
+        /// A scalar prediction result.
+        /// </summary>
+        public ref class VowpalWabbitScalarsPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float>^>
+        {
+        public:
+          /// <summary>
+          /// Extracts prediction results from example.
+          /// </summary>
+          virtual cli::array<float>^ Create(vw* vw, example* ex) sealed;
+        };
+
+        /// <summary>
         /// A cost sensitive prediction result.
         /// </summary>
         public ref class VowpalWabbitCostSensitivePredictionFactory sealed : IVowpalWabbitPredictionFactory<float>
@@ -86,6 +98,11 @@ namespace VW
             /// Use for scalar predictions.
             /// </summary>
             static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
+
+            /// <summary>
+            /// Use for scalar predictions.
+            /// </summary>
+            static initonly VowpalWabbitScalarsPredictionFactory^ Scalars = gcnew VowpalWabbitScalarsPredictionFactory;
 
             /// <summary>
             /// Use for cost sensitive predictions.

@@ -122,6 +122,7 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to serialize.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         /// <returns>The resulting VW string.</returns>
@@ -136,7 +137,14 @@ namespace VW.Serializer
             }
         }
 
-
+        /// <summary>
+        /// Serialize the example.
+        /// </summary>
+        /// <param name="example">The example to serialize.</param>
+        /// <param name="label">The label to be serialized.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
+        /// <returns>The serialized example.</returns>
+        /// <remarks>If <typeparamref name="TExample"/> is annotated using the Cachable attribute, examples are returned from cache.</remarks>
         VowpalWabbitExampleCollection IVowpalWabbitSerializer<TExample>.Serialize(TExample example, ILabel label, int? index)
         {
             // dispatch
@@ -148,8 +156,9 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="example">The example to serialize.</param>
         /// <param name="label">The label to be serialized.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         /// <returns>The serialized example.</returns>
-        /// <remarks>If TExample is annotated using the Cachable attribute, examples are returned from cache.</remarks>
+        /// <remarks>If <typeparamref name="TExample"/> is annotated using the Cachable attribute, examples are returned from cache.</remarks>
         public VowpalWabbitExample Serialize(TExample example, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
@@ -188,7 +197,7 @@ namespace VW.Serializer
 
                 try
                 {
-                    using (var context = new VowpalWabbitMarshalContext(vw))
+                    using (var context = new VowpalWabbitMarshalContext(this))
                     {
                         this.serializerFunc(context, example, label);
                         nativeExample = context.ExampleBuilder.CreateExample();
@@ -196,7 +205,7 @@ namespace VW.Serializer
 
                     result = new CacheEntry
                     {
-                        Example = new VowpalWabbitExample(owner: this, example: nativeExample),
+                        Example = nativeExample,
                         LastRecentUse = DateTime.UtcNow
                     };
 
@@ -209,9 +218,7 @@ namespace VW.Serializer
                 catch(Exception e)
                 {
                     if (nativeExample != null)
-                    {
                         nativeExample.Dispose();
-                    }
 
                     throw e;
                 }
@@ -248,6 +255,19 @@ namespace VW.Serializer
                     this.exampleCache = null;
                 }
             }
+        }
+
+        public VowpalWabbit Native
+        {
+            get
+            {
+                return this.vw;
+            }
+        }
+
+        public VowpalWabbitExample GetOrCreateNativeExample()
+        {
+            return new VowpalWabbitExample(owner: this, example: this.vw.GetOrCreateNativeExample());
         }
 
         /// <summary>

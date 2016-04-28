@@ -44,6 +44,21 @@ namespace VW.Serializer
             get { return (this.sharedSerializer != null && this.sharedSerializer.CachesExamples) || this.adfSerializer.CachesExamples; }
         }
 
+        public int GetNumberOfActionDependentExamples(TExample example)
+        {
+            var adfs = this.adfAccessor(example);
+            return adfs == null ? 0 : adfs.Count();
+        }
+
+        /// <summary>
+        /// Serializes the given <paramref name="example"/> to VW string format.
+        /// </summary>
+        /// <param name="example">The example to serialize.</param>
+        /// <param name="label">The label to serialize.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
+        /// <param name="dictionary">Dictionary used for dictify operation.</param>
+        /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
+        /// <returns>The resulting VW string.</returns>
         public string SerializeToString(TExample example, Interfaces.ILabel label = null, int? index = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             var sb = new StringBuilder();
@@ -51,7 +66,7 @@ namespace VW.Serializer
             if (this.sharedSerializer != null)
                 sb.AppendLine(this.sharedSerializer.SerializeToString(example, SharedLabel.Instance, null, dictionary, fastDictionary));
 
-            var adfCollection  =this.adfAccessor(example);
+            var adfCollection = this.adfAccessor(example);
             if (adfCollection != null)
             {
                 var i = 0;

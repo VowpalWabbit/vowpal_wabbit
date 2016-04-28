@@ -25,6 +25,25 @@ namespace VW
         CATCHRETHROW
     }
 
+    cli::array<float>^ VowpalWabbitScalarsPredictionFactory::Create(vw* vw, example* ex)
+    {
+#if _DEBUG
+      if (ex == nullptr)
+        throw gcnew ArgumentNullException("ex");
+#endif
+
+      try
+      {
+        auto values = gcnew cli::array<float>((int)ex->pred.scalars.size());
+        int index = 0;
+        for (float s : ex->pred.scalars)
+          values[index++] = s;
+
+        return values;
+      }
+      CATCHRETHROW
+    }
+
     float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
     {
 #if _DEBUG

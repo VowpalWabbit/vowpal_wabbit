@@ -24,7 +24,7 @@ namespace VW.Serializer
     /// </summary>
     public sealed class VowpalWabbitJsonSerializer : IDisposable
     {
-        private readonly VowpalWabbit vw;
+        private readonly IVowpalWabbitExamplePool vwPool;
         private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
 
@@ -32,15 +32,15 @@ namespace VW.Serializer
         /// Initializes a new instance of the <see cref="VowpalWabbitJson"/> class.
         /// </summary>
         /// <param name="vw">The VW native instance.</param>
-        public VowpalWabbitJsonSerializer(VowpalWabbit vw)
+        public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool)
         {
-            Contract.Requires(vw != null);
+            Contract.Requires(vwPool != null);
 
-            this.vw = vw;
+            this.vwPool = vwPool;
             this.defaultMarshaller = new VowpalWabbitDefaultMarshaller();
             this.jsonSerializer = new JsonSerializer();
 
-            this.ExampleBuilder = new VowpalWabbitJsonBuilder(vw, this.defaultMarshaller, this.jsonSerializer);
+            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this.vwPool, this.defaultMarshaller, this.jsonSerializer);
         }
 
         /// <summary>
@@ -102,6 +102,47 @@ namespace VW.Serializer
             }
         }
 
+        public static int GetNumberOfActionDependentExamples(string json)
+        {
+            using (var textReader = new JsonTextReader(new StringReader(json)))
+            {
+                return GetNumberOfActionDependentExamples(textReader);
+            }
+        }
+
+        public static int GetNumberOfActionDependentExamples(JsonReader reader, string multiProperty = PropertyConfiguration.MultiPropertyDefault)
+        {
+            // handle the case when the reader is already positioned at JsonToken.StartObject
+            if (reader.TokenType == JsonToken.None && !reader.Read())
+                throw new VowpalWabbitJsonException(reader.Path, "Expected non-empty JSON");
+
+            if (reader.TokenType != JsonToken.StartObject)
+                throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
+
+            while (reader.Read())
+            {
+                if (!(reader.TokenType == JsonToken.PropertyName && (string)reader.Value == "_multi"))
+                {
+                    reader.Skip();
+                    continue;
+                }
+
+                if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
+                    throw new VowpalWabbitJsonException(reader.Path, "Expected start arrray");
+
+                var exampleCount = 0;
+                while(reader.Read() && reader.TokenType != JsonToken.EndArray)
+                {
+                    exampleCount++;
+                    reader.Skip();
+                }
+
+                return exampleCount;
+            }
+
+            return 0;
+        }
+
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -113,15 +154,17 @@ namespace VW.Serializer
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Parse(JsonReader reader, ILabel label = null, int? index = null)
         {
+            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+
             // only pass the label if it's not targeted at a particular index
             this.ExampleBuilder.Parse(reader, index == null ? label : null,
                 propertyName =>
                 {
-                    if (propertyName != "_multi")
+                    if (propertyName != multiPropertyName)
                         return false;
 
                     if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                        throw new VowpalWabbitJsonException(reader.Path, "Expected start array for _multi");
+                        throw new VowpalWabbitJsonException(reader.Path, "Expected start array for '" + multiPropertyName + "'");
 
                     if (this.ExampleBuilders == null)
                         this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
@@ -135,7 +178,7 @@ namespace VW.Serializer
 
                                 try
                                 {
-                                    builder = new VowpalWabbitJsonBuilder(this.vw, this.defaultMarshaller, this.jsonSerializer);
+                                    builder = new VowpalWabbitJsonBuilder(this.vwPool, this.defaultMarshaller, this.jsonSerializer);
                                     this.ExampleBuilders.Add(builder);
                                 }
                                 catch (Exception)
@@ -167,7 +210,7 @@ namespace VW.Serializer
             {
                 if (this.ExampleBuilders == null)
                 {
-                    return new VowpalWabbitSingleLineExampleCollection(this.vw, this.ExampleBuilder.CreateExample());
+                    return new VowpalWabbitSingleLineExampleCollection(this.vwPool.Native, this.ExampleBuilder.CreateExample());
                 }
                 else
                 {
@@ -184,7 +227,7 @@ namespace VW.Serializer
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)
 			                examples[i] = this.ExampleBuilders[i].CreateExample();
 
-                        return new VowpalWabbitMultiLineExampleCollection(this.vw, sharedExample, examples);
+                        return new VowpalWabbitMultiLineExampleCollection(this.vwPool.Native, sharedExample, examples);
                     }
                     catch (Exception)
                     {

@@ -232,7 +232,7 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
   uint64_t additional_offset = val_namespace*offset_const;
   for(size_t j=0; j< 10; j++)
   {
-	additional_offset += j* 1023;
+    additional_offset += j* 1023;
     add_feature(ex, temp[j]+ additional_offset , val_namespace, mask, multiplier);
   }
   size_t count=0;
@@ -420,6 +420,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
   int count=1;
   size_t idx = ((data->root_label==0)?1:2);
+  Search::predictor P(sch, (ptag) 0);
   while(stack.size()>1 || idx <= n)
   { if(sch.predictNeedsExample())
       extract_features(sch, idx, ec);
@@ -432,7 +433,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
       if(cost_to_go)
       { get_cost_to_go_losses(sch, idx, n, gold_action_losses);
-        a_id= Search::predictor(sch, (ptag) count)
+        a_id= P.set_tag((ptag) count)
               .set_input(*(data->ex))
               .set_allowed(gold_action_losses)
               .set_condition_range(count-1, sch.get_history_length(), 'p')
@@ -460,7 +461,7 @@ void run(Search::search& sch, vector<example*>& ec)
             if(i!=data->root_label-1)
               valid_action_temp.push_back(i+2+num_label);
 
-        a_id = Search::predictor(sch, (ptag) count)
+        a_id = P.set_tag((ptag) count)
                .set_input(*(data->ex))
                .set_oracle(gold_action_temp)
                .set_allowed(valid_action_temp)
@@ -483,7 +484,7 @@ void run(Search::search& sch, vector<example*>& ec)
     else
     { if(cost_to_go)
       { get_cost_to_go_losses(sch, idx, n, gold_action_losses);
-        a_id= Search::predictor(sch, (ptag) count)
+        a_id= P.set_tag((ptag) count)
               .set_input(*(data->ex))
               .set_allowed(gold_action_losses)
               .set_condition_range(count-1, sch.get_history_length(), 'p')
@@ -492,7 +493,7 @@ void run(Search::search& sch, vector<example*>& ec)
       }
       else
       { get_gold_actions(sch, idx, n, gold_actions);
-        a_id= Search::predictor(sch, (ptag) count)
+        a_id= P.set_tag((ptag) count)
               .set_input(*(data->ex))
               .set_oracle(gold_actions)
               .set_allowed(valid_actions)
@@ -510,7 +511,7 @@ void run(Search::search& sch, vector<example*>& ec)
         { gold_action_losses.erase();
           for(size_t i=1; i<= data->num_label; i++)
             gold_action_losses.push_back(make_pair((action)i, i != gold_label));
-          t_id = Search::predictor(sch, (ptag) count)
+            t_id = Search::predictor(sch, (ptag) count)
                  .set_input(*(data->ex))
                  .set_allowed(gold_action_losses)
                  .set_condition_range(count-1, sch.get_history_length(), 'p')
@@ -518,9 +519,10 @@ void run(Search::search& sch, vector<example*>& ec)
                  .predict();
         }
         else
-        { t_id = Search::predictor(sch, (ptag) count)
+        { t_id = P.set_tag((ptag) count)
                  .set_input(*(data->ex))
                  .set_oracle(gold_label)
+                 .erase_alloweds()
                  .set_condition_range(count-1, sch.get_history_length(), 'p')
                  .set_learner_id(a_id-1)
                  .predict();

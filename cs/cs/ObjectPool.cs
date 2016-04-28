@@ -20,8 +20,8 @@ namespace VW
     /// <typeparam name="TSource">The disposable context needed to create objects of <typeparamref name="TObject"/>.</typeparam>
     /// <typeparam name="TObject">The type of the objects to be created.</typeparam>
     public class ObjectPool<TSource, TObject> : IDisposable
-        where TObject : IDisposable
-        where TSource : IDisposable
+        where TSource : class, IDisposable
+        where TObject : class, IDisposable
     {
         /// <summary>
         /// Lock resources

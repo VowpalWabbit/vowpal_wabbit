@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using VW.Interfaces;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
 
@@ -22,17 +23,20 @@ namespace VW.Serializer
     /// </summary>
     internal static class AnnotationInspector
     {
-        internal static List<FeatureExpression> ExtractFeatures(Type type, Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate)
+        internal static Schema CreateSchema(Type type,
+            Func<PropertyInfo, FeatureAttribute, bool> featurePropertyPredicate,
+            Func<PropertyInfo, LabelAttribute, bool> labelPropertyPredicate)
         {
             Contract.Requires(type != null);
-            Contract.Requires(propertyPredicate != null);
+            Contract.Requires(featurePropertyPredicate != null);
+            Contract.Requires(labelPropertyPredicate != null);
 
             var validExpressions = new Stack<Func<Expression,Expression>>();
 
             // CODE example != null
             validExpressions.Push(valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)));
 
-            return ExtractFeatures(
+            return CreateSchema(
                 type,
                 null,
                 null,
@@ -40,23 +44,25 @@ namespace VW.Serializer
                 // CODE example
                 valueExpression => valueExpression,
                 validExpressions,
-                propertyPredicate);
+                featurePropertyPredicate,
+                labelPropertyPredicate);
         }
 
-        private static List<FeatureExpression> ExtractFeatures(
+        private static Schema CreateSchema(
             Type type,
             string parentNamespace,
             char? parentFeatureGroup,
             bool? parentDictify,
             Func<Expression, Expression> valueExpressionFactory,
             Stack<Func<Expression, Expression>> valueValidExpressionFactories,
-            Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate)
+            Func<PropertyInfo, FeatureAttribute, bool> featurePropertyPredicate,
+            Func<PropertyInfo, LabelAttribute, bool> labelPropertyPredicate)
         {
             var props = type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
 
             var localFeatures = from p in props
                                 let declaredAttr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
-                                where propertyPredicate(p, declaredAttr)
+                                where featurePropertyPredicate(p, declaredAttr)
                                 let attr = declaredAttr ?? new FeatureAttribute()
                                 select new FeatureExpression(
                                     featureType: p.PropertyType,
@@ -74,18 +80,40 @@ namespace VW.Serializer
                                     stringProcessing: attr.StringProcessing,
                                     dictify: attr.InternalDictify ?? parentDictify);
 
+            var localLabels = from p in props
+                              let declaredAttr = (LabelAttribute)p.GetCustomAttributes(typeof(LabelAttribute), true).FirstOrDefault()
+                              where labelPropertyPredicate(p, declaredAttr) || typeof(ILabel).IsAssignableFrom(p.PropertyType)
+                              let attr = declaredAttr ?? new LabelAttribute()
+                              let labelType = p.PropertyType
+                              where typeof(ILabel).IsAssignableFrom(labelType) || p.PropertyType == typeof(string)
+                              select new LabelExpression
+                              {
+                                    Name = p.Name,
+                                    LabelType = p.PropertyType,
+                                    // CODE example.Property
+                                    ValueExpressionFactory = valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
+                                    // @Reverse: make sure conditions are specified in the right order
+                                    ValueValidExpressionFactories = valueValidExpressionFactories.Reverse().ToList()
+                              };
+
             // Recurse
-            return localFeatures
-                .SelectMany(f =>
+            var schemas = localFeatures
+                .Select(f =>
                 {
                     // CODE example.Prop1.Prop2 != null
                     valueValidExpressionFactories.Push(valueExpression => Expression.NotEqual(f.ValueExpressionFactory(valueExpression), Expression.Constant(null)));
-                    var subFeatures = ExtractFeatures(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, propertyPredicate);
+                    var subSchema = CreateSchema(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, featurePropertyPredicate, labelPropertyPredicate);
                     valueValidExpressionFactories.Pop();
 
-                    return subFeatures.Count == 0 ? new List<FeatureExpression>{ f } : subFeatures;
+                    return subSchema;
                 })
                 .ToList();
+
+            return new Schema 
+            { 
+                Features = localFeatures.Union(schemas.SelectMany(s => s.Features)).ToList(), 
+                Label = localLabels.Union(schemas.Select(s => s.Label)).FirstOrDefault(l => l != null)
+            };
         }
     }
 }
