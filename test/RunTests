@@ -1365,7 +1365,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    pred-sets/ref/csoaa_ldf_probabilities.predict
 
 # Test 111: Train a depenency parser with neural network and one_learner approach (lols)
-{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --passes 2 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --holdout_off --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8
     train-sets/ref/search_dep_parser_one_learner.stderr
 
 # Test 112: Train a depenency parser with cost_to_go
@@ -1384,3 +1384,33 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
+
+# Test 116: MWT test
+{VW} train-sets/cb_eval --multiworld_test f -p cb_eval.preds
+    train-sets/ref/cb_eval.stderr
+    pred-sets/ref/cb_eval.preds
+
+# Test 117: Audit regressor of ftrl model (from test #107)
+{VW} -d train-sets/0001.dat -i models/0001_ftrl.model  --audit_regressor ftrl.audit_regr
+    train-sets/ref/ftrl_audit_regr.stderr
+    train-sets/ref/ftrl.audit_regr
+
+# Test 118: Audit regressor of csoaa model (from test #95)
+{VW} -d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr
+    train-sets/ref/csoaa_audit_regr.stderr
+    train-sets/ref/csoaa.audit_regr
+
+# Test 119: MWT learn test
+{VW} train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
+    train-sets/ref/mwt_learn.stderr
+    pred-sets/ref/mwt_learn.preds
+
+# Test 120: MWT learn exclude test
+{VW} train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
+    train-sets/ref/mwt_learn_exclude.stderr
+    pred-sets/ref/mwt_learn_exclude.preds
+
+# Test 121: cb_explore
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb_explore 2 --ngram 2 --skips 4 -b 24 -l 0.25 -p rcv1_raw_cb_explore.preds
+    train-sets/ref/rcv1_raw_cb_explore.stderr
+    pred-sets/ref/rcv1_raw_cb_explore.preds

@@ -32,6 +32,8 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
+#include "cb_explore.h"
+#include "mwt.h"
 #include "confidence.h"
 #include "scorer.h"
 #include "expreplay.h"
@@ -62,6 +64,7 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
+#include "audit_regressor.h"
 
 using namespace std;
 //
@@ -220,7 +223,7 @@ void parse_dictionary_argument(vw&all, string str)
       continue;
     }
     features* arr = new features;
-    *arr = ec->feature_space[def];
+    arr->deep_copy_from(ec->feature_space[def]);
     map->put(ss, hash, arr);
 
     // clear up ec
@@ -1077,11 +1080,15 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
   all.reduction_stack.push_back(cb_adf_setup);
+  all.reduction_stack.push_back(mwt_setup);
+  all.reduction_stack.push_back(cb_explore_setup);
   all.reduction_stack.push_back(cbify_setup);
 
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(bs_setup);
+
+  all.reduction_stack.push_back(audit_regressor_setup);
 
   all.l = setup_base(all);
 }
@@ -1309,25 +1316,45 @@ char** get_argv_from_string(string s, int& argc)
   return argv;
 }
 
-vw* initialize(string s)
-{ int argc = 0;
-  s += " --no_stdin";
-  char** argv = get_argv_from_string(s,argc);
-
-  vw& all = parse_args(argc, argv);
-
-  // if parse_args ever throws, this will leak.
-  for (int i = 0; i < argc; i++)
+void free_args(int argc, char* argv[])
+{ for (int i = 0; i < argc; i++)
     free(argv[i]);
   free(argv);
+}
+
+vw* initialize(string s, io_buf* model)
+{
+  int argc = 0;
+  char** argv = get_argv_from_string(s,argc);
 
   try
-  { io_buf model;
-    parse_regressor_args(all, model);
-    parse_modules(all, model);
-    parse_sources(all, model);
+  { return initialize(argc, argv, model);
+  }
+  catch(...)
+  { free_args(argc, argv);
+    throw;
+  }
+
+  free_args(argc, argv);
+}
+
+vw* initialize(int argc, char* argv[], io_buf* model)
+{ vw& all = parse_args(argc, argv);
+
+  try
+  { // if user doesn't pass in a model, read from arguments
+    io_buf localModel;
+    if (!model)
+    { parse_regressor_args(all, localModel);
+      model = &localModel;
+    }
+
+    parse_modules(all, *model);
+    parse_sources(all, *model);
 
     initialize_parser_datastructures(all);
+
+    all.l->init_driver();
 
     return &all;
   }
@@ -1391,7 +1418,7 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet)
+{ if (!all.quiet && !all.vm.count("audit_regressor"))
   { cerr.precision(6);
     cerr << endl << "finished run";
     if(all.current_pass == 0)

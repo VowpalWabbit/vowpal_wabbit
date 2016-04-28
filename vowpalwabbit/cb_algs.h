@@ -7,6 +7,10 @@ license as described in the file LICENSE.
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
 LEARNER::base_learner* cb_algs_setup(vw& all);
 
+#define CB_TYPE_DR 0
+#define CB_TYPE_DM 1
+#define CB_TYPE_IPS 2
+
 namespace CB_ALGS
 {
 template <bool is_learn>
@@ -25,7 +29,10 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 
   if (is_learn && simple_temp.label != FLT_MAX)
   { float old_weight = ec.weight;
-    ec.weight = 1.f;
+    if (known_cost != nullptr && index == known_cost->action)
+      ec.weight = 1.f / known_cost->probability;
+    else
+      ec.weight = 1.f;
     scorer->learn(ec, index-1+base);
     ec.weight = old_weight;
   }
@@ -44,4 +51,10 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 }
 
 float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, uint32_t action);
+inline float get_unbiased_cost(CB::cb_class* observation, uint32_t action, float offset = 0.) 
+{
+  if (action == observation->action)
+    return (observation->cost - offset) / observation->probability;
+  return 0.;
+}
 
