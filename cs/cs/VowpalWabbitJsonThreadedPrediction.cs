@@ -17,7 +17,7 @@ namespace VW
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample}"/>.
         /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitJsonThreadedPrediction(VowpalWabbitModel model)
+        public VowpalWabbitJsonThreadedPrediction(VowpalWabbitModel model = null)
             : base(model)
         {
         }

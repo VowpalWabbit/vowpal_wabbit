@@ -1420,3 +1420,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/confidence_after_training.stderr
     pred-sets/ref/confidence_after_training.preds   
 
+# Test 123: cb_eval save/load #1
+{VW} train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
+    train-sets/ref/cb_eval1.stderr
+    pred-sets/ref/cb_eval1.preds
+
+# Test 124: cb_eval save/load #2
+{VW} train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
+    train-sets/ref/cb_eval2.stderr
+    pred-sets/ref/cb_eval2.preds

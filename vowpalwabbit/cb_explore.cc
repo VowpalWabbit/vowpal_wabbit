@@ -13,6 +13,8 @@ using namespace LEARNER;
 using namespace MultiWorldTesting;
 using namespace MultiWorldTesting::SingleAction;
 
+namespace CB_EXPLORE{
+
 struct cb_explore;
 
 struct vw_context
@@ -315,9 +317,10 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 { float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if(!is_test_label(ld))
+  
+  if ((c.known_cost = get_observed_cost(ld)) != nullptr)
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.action_prob.action);
-
+  
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
@@ -330,6 +333,8 @@ void finish_example(vw& all, cb_explore& c, example& ec)
 { output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, &ec);
 }
+}
+using namespace CB_EXPLORE;
 
 base_learner* cb_explore_setup(vw& all)
 { //parse and set arguments
@@ -409,6 +414,8 @@ base_learner* cb_explore_setup(vw& all)
     }
   data.cbcs.scorer = all.scorer;
   l->set_finish(finish);
+  l->set_finish_example(finish_example);
 
   return make_base(*l);
 }
+

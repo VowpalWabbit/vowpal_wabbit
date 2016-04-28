@@ -100,6 +100,23 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        public void TestEmptyID()
+        {
+            using (var vw = new VowpalWabbit("-l 1"))
+            {
+                Assert.AreEqual(string.Empty, vw.ID);
+
+                vw.SaveModel("model");
+            }
+
+            using (var vw = new VowpalWabbit("-f model"))
+            {
+                Assert.AreEqual(string.Empty, vw.ID);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Model Loading")]
         public void TestReload()
         {
             using (var vw = new VowpalWabbit(""))
