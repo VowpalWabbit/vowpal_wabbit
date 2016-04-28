@@ -1373,10 +1373,10 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/search_dep_parser_cost_to_go.stderr
 
 # Test 113: Predictions with confidences
-{VW} --confidence -d ./train-sets/rcv1_micro.dat -p confidence.preds
+{VW} --confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
-
+     
 # Test 114: Over size example test
 {VW} train-sets/x.txt
     train-sets/ref/oversize.stderr
@@ -1384,7 +1384,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
-
+    
 # Test 116: MWT test
 {VW} train-sets/cb_eval --multiworld_test f -p cb_eval.preds
     train-sets/ref/cb_eval.stderr
@@ -1415,12 +1415,17 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/rcv1_raw_cb_explore.stderr
     pred-sets/ref/rcv1_raw_cb_explore.preds
 
-# Test 122: cb_eval save/load #1
+# Test 122: Predictions with confidences after training
+{VW} --confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds
+    train-sets/ref/confidence_after_training.stderr
+    pred-sets/ref/confidence_after_training.preds   
+
+# Test 123: cb_eval save/load #1
 {VW} train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
     train-sets/ref/cb_eval1.stderr
     pred-sets/ref/cb_eval1.preds
 
-# Test 123: cb_eval save/load #2
+# Test 124: cb_eval save/load #2
 {VW} train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
     train-sets/ref/cb_eval2.stderr
     pred-sets/ref/cb_eval2.preds
