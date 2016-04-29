@@ -18,9 +18,6 @@
     <ClInclude Include="vw_clr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="clr_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
