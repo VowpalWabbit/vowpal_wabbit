@@ -99,6 +99,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bag.cs" />
     <Compile Include="Reflection\TypeDistance.cs" />
     <Compile Include="Reflection\TypeMatch.cs" />
     <Compile Include="Serializer\FeatureExpression.cs" />

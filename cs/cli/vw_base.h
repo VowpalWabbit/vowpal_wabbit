@@ -74,7 +74,7 @@ namespace VW
         /// <summary>
         /// Example pool. Kept in base to simplify deallocation.
         /// </summary>
-        Stack<VowpalWabbitExample^>^ m_examples;
+        IBag<VowpalWabbitExample^>^ m_examples;
 
         /// <summary>
         /// Initializes a new <see cref="VowpalWabbitBase"/> instance.

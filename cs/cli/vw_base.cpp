@@ -25,7 +25,9 @@ namespace VW
     VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
     {
-        m_examples = gcnew Stack<VowpalWabbitExample^>;
+        m_examples = gcnew Bag<VowpalWabbitExample^>();
+        if (m_settings->EnableThreadSafeExamplePooling)
+            m_examples = Bag::Synchronized(m_examples);
 
         try
         {
@@ -103,7 +105,7 @@ namespace VW
 
             if (m_examples != nullptr)
             {
-                for each (auto ex in m_examples)
+                for each (auto ex in m_examples->RemoveAll())
                 {
                     VW::dealloc_example(delete_label, *ex->m_example, delete_prediction);
                     ::free_it(ex->m_example);

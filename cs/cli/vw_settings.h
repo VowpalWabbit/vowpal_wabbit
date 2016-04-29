@@ -75,6 +75,7 @@ namespace VW
         List<Type^>^ m_customFeaturizer;
 		    VowpalWabbitFeatureDiscovery m_featureDiscovery;
         PropertyConfiguration^ m_propertyConfiguration;
+        bool m_enableThreadSafeExamplePooling;
     public:
         VowpalWabbitSettings() :
             m_arguments(String::Empty),
@@ -87,7 +88,8 @@ namespace VW
             m_enableStringExampleGeneration(false),
             m_enableStringFloatCompact(false),
 			      m_featureDiscovery(VowpalWabbitFeatureDiscovery::Default),
-            m_propertyConfiguration(::PropertyConfiguration::Default)
+            m_propertyConfiguration(::PropertyConfiguration::Default),
+            m_enableThreadSafeExamplePooling(false)
         {
         }
 
@@ -115,7 +117,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Schema^ actionDependentSchema,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
-            [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration)
+            [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling)
             : VowpalWabbitSettings()
         {
             if (arguments != nullptr)
@@ -158,6 +161,9 @@ namespace VW
 
             if (propertyConfiguration != nullptr)
               m_propertyConfiguration = propertyConfiguration;
+
+            if (enableThreadSafeExamplePooling.HasValue)
+              m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.Value;
         }
 
         /// <summary>
@@ -333,6 +339,14 @@ namespace VW
             }
         }
 
+        property bool EnableThreadSafeExamplePooling
+        {
+            bool get()
+            {
+                return m_enableThreadSafeExamplePooling;
+            }
+        }
+
         VowpalWabbitSettings^ ShallowCopy(
             [System::Runtime::InteropServices::Optional] String^ arguments,
             [System::Runtime::InteropServices::Optional] Stream^ modelStream,
@@ -351,7 +365,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] VW::Serializer::Schema^ actionDependentSchema,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
-            [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration)
+            [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling)
         {
             auto copy = gcnew VowpalWabbitSettings();
 
@@ -383,6 +398,7 @@ namespace VW
             copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
 			      copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
             copy->m_propertyConfiguration = propertyConfiguration == nullptr ? PropertyConfiguration : propertyConfiguration;
+            copy->m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.HasValue ? enableThreadSafeExamplePooling.Value : EnableThreadSafeExamplePooling;
 
             return copy;
         }

@@ -649,7 +649,9 @@ namespace VW
 
   VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   {
-    if (m_examples->Count == 0)
+    auto ex = m_examples->Remove();
+
+    if (ex == nullptr)
     {
       try
       {
@@ -659,8 +661,6 @@ namespace VW
       }
       CATCHRETHROW
     }
-
-    auto ex = m_examples->Pop();
 
     try
     {
@@ -677,16 +677,16 @@ namespace VW
 #if _DEBUG
     if (m_vw == nullptr)
       throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
+#endif
 
     if (ex == nullptr)
       throw gcnew ArgumentNullException("ex");
-#endif
 
     // make sure we're not a ring based example
     assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
     if (m_examples != nullptr)
-      m_examples->Push(ex);
+      m_examples->Add(ex);
 #if _DEBUG
     else // this should not happen as m_vw is already set to null
       throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");
