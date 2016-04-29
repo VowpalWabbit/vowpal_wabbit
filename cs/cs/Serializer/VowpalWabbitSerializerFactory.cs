@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
-using VW.Interfaces;
+using VW.Labels;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;

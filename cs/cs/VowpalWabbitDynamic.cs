@@ -14,7 +14,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 
 namespace VW

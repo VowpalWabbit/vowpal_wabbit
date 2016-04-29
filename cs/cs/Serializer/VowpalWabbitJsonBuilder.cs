@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 
@@ -238,7 +238,8 @@ namespace VW.Serializer
                         // pass label directly to VW
                         var labelString = reader.Value.ToString();
 
-                        this.Context.ExampleBuilder.ParseLabel(labelString);
+                        this.Context.ExampleBuilder.ApplyLabel(new StringLabel(labelString));
+
                         // prefix with label
                         this.Context.AppendStringExample(false, "{0}", labelString);
                     }

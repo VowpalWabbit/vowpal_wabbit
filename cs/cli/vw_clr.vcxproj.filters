@@ -57,6 +57,9 @@
     <ClInclude Include="vw_labelcomparator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vw_label.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="vw_example.cpp">

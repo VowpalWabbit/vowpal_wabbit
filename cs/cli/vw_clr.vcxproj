@@ -269,6 +269,9 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\vowpalwabbit\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
@@ -282,6 +285,7 @@
     <ClInclude Include="vw_builder.h" />
     <ClInclude Include="vw_clr.h" />
     <ClInclude Include="vw_example.h" />
+    <ClInclude Include="vw_label.h" />
     <ClInclude Include="vw_labelcomparator.h" />
     <ClInclude Include="vw_model.h" />
     <ClInclude Include="vw_prediction.h" />

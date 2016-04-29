@@ -11,7 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
@@ -91,7 +91,7 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// Marshals the supplied string into VW native space. Spaces are escaped using '_'. 
+        /// Marshals the supplied string into VW native space. Spaces are escaped using '_'.
         /// Only <paramref name="value"/> is serialized, <paramref name="feature"/> Name is ignored.
         /// </summary>
         /// <param name="context">The marshalling context.</param>
@@ -341,13 +341,11 @@ namespace VW.Serializer
             if (label == null)
                 return;
 
-            var labelString = label.ToVowpalWabbitFormat();
-
-            context.ExampleBuilder.ParseLabel(labelString);
+            context.ExampleBuilder.ApplyLabel(label);
 
             // prefix with label
             if (context.StringExample != null)
-                context.StringExample.Insert(0, labelString);
+                context.StringExample.Insert(0, label.ToString());
         }
 
         /// <summary>
@@ -360,7 +358,7 @@ namespace VW.Serializer
             if (label == null)
                 return;
 
-            context.ExampleBuilder.ParseLabel(label);
+            context.ExampleBuilder.ApplyLabel(new StringLabel(label));
 
             // prefix with label
             if (context.StringExample != null)

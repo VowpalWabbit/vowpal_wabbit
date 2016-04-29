@@ -13,7 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 

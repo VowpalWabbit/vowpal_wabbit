@@ -13,7 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Attributes;
 
 namespace VW.Serializer

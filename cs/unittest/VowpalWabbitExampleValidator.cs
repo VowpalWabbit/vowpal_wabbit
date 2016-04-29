@@ -7,7 +7,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 

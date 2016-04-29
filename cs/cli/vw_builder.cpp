@@ -54,22 +54,12 @@ namespace VW
         return ret;
     }
 
-    void VowpalWabbitExampleBuilder::ParseLabel(String^ value)
+    void VowpalWabbitExampleBuilder::ApplyLabel(ILabel^ label)
     {
-        if (value == nullptr)
+        if (label == nullptr)
             return;
 
-        auto bytes = System::Text::Encoding::UTF8->GetBytes(value);
-        auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
-
-        try
-        {
-            VW::parse_example_label(*m_vw->Native->m_vw, *m_example->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
-        }
-        CATCHRETHROW
-        finally
-        { valueHandle.Free();
-        }
+        label->UpdateExample(m_vw->Native->m_vw, m_example->m_example);
     }
 
     VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char featureGroup)

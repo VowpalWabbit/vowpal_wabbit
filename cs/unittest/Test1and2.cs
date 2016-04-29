@@ -6,7 +6,6 @@ using System.Linq;
 using cs_unittest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 using System.Threading;

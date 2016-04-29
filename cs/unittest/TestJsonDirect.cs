@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 
@@ -138,7 +137,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectMulti()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings("--cb_adf", featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
             {
                 vw.Validate(new[]
                 {
@@ -162,7 +161,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectMultiList()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings("--cb_adf", featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
             {
                 vw.Validate(new[]
                 {

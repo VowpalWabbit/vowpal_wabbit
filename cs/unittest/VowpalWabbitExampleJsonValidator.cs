@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VW;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 
 namespace cs_unittest

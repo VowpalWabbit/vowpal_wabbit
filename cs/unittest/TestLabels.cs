@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 
@@ -20,9 +19,9 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleContext>(string.Empty))
             {
-                vw.Validate("3.2 | Feature:25", 
+                vw.Validate("3.2 | Feature:25",
                     new SimpleContext
-                    { 
+                    {
                         Feature = 25,
                         Label = new SimpleLabel { Label = 3.2f }
                     });
@@ -86,14 +85,14 @@ namespace cs_unittest
         public int Feature { get; set; }
 
         [Label]
-        public ILabel Label { get; set; } 
+        public ILabel Label { get; set; }
     }
 
     public class SimpleContextNoAnnotation
     {
         public int Feature { get; set; }
 
-        public ILabel Label { get; set; } 
+        public ILabel Label { get; set; }
     }
     public class SimpleStringContext
     {

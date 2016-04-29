@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using VW.Interfaces;
+using VW.Labels;
 
 namespace VW.Serializer
 {

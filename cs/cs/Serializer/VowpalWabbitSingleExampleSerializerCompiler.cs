@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Reflection;
 using VW.Serializer.Intermediate;
 

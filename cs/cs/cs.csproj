@@ -124,8 +124,6 @@
   <ItemGroup>
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="Labels\ContextualBanditLabel.cs" />
-    <Compile Include="Labels\MulticlassLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -133,7 +131,6 @@
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
-    <Compile Include="Interfaces\ILabel.cs" />
     <Compile Include="Serializer\Attributes\LabelAttribute.cs" />
     <Compile Include="Serializer\ConfigInspector.cs" />
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
@@ -159,8 +156,6 @@
     <Compile Include="Serializer\VowpalWabbitSingleExampleSerializer.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
-    <Compile Include="Labels\SharedLabel.cs" />
-    <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="Serializer\VowpalWabbitSingleExampleSerializerCompiler.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />

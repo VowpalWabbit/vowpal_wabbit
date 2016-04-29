@@ -12,7 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
 
@@ -109,9 +109,9 @@ namespace VW.Serializer
                 })
                 .ToList();
 
-            return new Schema 
-            { 
-                Features = localFeatures.Union(schemas.SelectMany(s => s.Features)).ToList(), 
+            return new Schema
+            {
+                Features = localFeatures.Union(schemas.SelectMany(s => s.Features)).ToList(),
                 Label = localLabels.Union(schemas.Select(s => s.Label)).FirstOrDefault(l => l != null)
             };
         }

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Labels;
 using VW.Serializer;
 
