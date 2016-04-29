@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # convert letter.data to letter.vw
 
 def read_letter_names (fn):
