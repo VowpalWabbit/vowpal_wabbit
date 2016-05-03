@@ -64,6 +64,9 @@ namespace VW.Serializer
         /// <param name="value">The feature value.</param>
         public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value)
 		{
+		    if (value == null)
+                return;
+
 			this.MarshalFeature(context, ns, feature, value, 0, value.Length);
 		}
 
@@ -77,9 +80,7 @@ namespace VW.Serializer
         public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value, int offset, int length)
         {
             if (value == null)
-            {
                 return;
-            }
 
             ulong i = 0;
 

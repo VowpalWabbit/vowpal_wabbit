@@ -77,11 +77,6 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// The marshalling context. Can be modified until <see cref="CreateExample"/>.
-        /// </summary>
-        public VowpalWabbitMarshalContext Context { get; private set; }
-
-        /// <summary>
         /// The marshalling context for the default namespace. Can be modified until <see cref="CreateExample"/>.
         /// </summary>
         public VowpalWabbitMarshalContext DefaultNamespaceContext { get; private set; }
