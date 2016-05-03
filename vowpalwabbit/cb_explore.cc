@@ -7,6 +7,7 @@
 #include "cb_explore.h"
 #include "gen_cs_example.h"
 #include "learner.h"
+#include "mwt.h"
 
 using namespace LEARNER;
 
@@ -22,7 +23,6 @@ namespace CB_EXPLORE{
   struct cb_explore
   {
     cb_to_cs cbcs;
-    v_array<float> probs;
     v_array<uint32_t> preds;
     v_array<float> cover_probs;
 
@@ -48,66 +48,69 @@ namespace CB_EXPLORE{
   void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
   { //Explore tau times, then act according to optimal.
     
-    data.probs.erase();
+    v_array<float> probs = ec.pred.scalars;
+    probs.erase();
 
     if(!is_learn || !data.learn_only) {      
       if(data.tau) {
 	float prob = 1.0/(float)data.cbcs.num_actions;
 	for(int i = 0;i < data.cbcs.num_actions;i++)
-	  data.probs.push_back(prob);
+	  probs.push_back(prob);
 	data.tau--;
       }
       else {
 	base.predict(ec);
 	uint32_t chosen = ec.pred.multiclass-1;
 	for(int i = 0;i < data.cbcs.num_actions;i++)
-	  data.probs.push_back(0.);
-	data.probs[chosen] = 1.0;
+	  probs.push_back(0.);
+	probs[chosen] = 1.0;
       }    
     }
     
     if (is_learn && ec.l.cb.costs[0].probability < 1) 
       base.learn(ec);
 
-    ec.pred.scalars = data.probs;
+    ec.pred.scalars = probs;
   }
 
   template <bool is_learn>
   void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
   { //Explore uniform random an epsilon fraction of the time.
 
-    data.probs.erase();
+    v_array<float> probs = ec.pred.scalars;
+    probs.erase();
 
     if(!is_learn || !data.learn_only) {
       float prob = data.epsilon/(float)data.cbcs.num_actions;
       for(int i = 0;i < data.cbcs.num_actions;i++)
-	data.probs.push_back(prob);
+	probs.push_back(prob);
       base.predict(ec);
       uint32_t chosen = ec.pred.multiclass-1;
-      data.probs[chosen] += (1-data.epsilon);
+      probs[chosen] += (1-data.epsilon);
     }
         
     
     if (is_learn)
       base.learn(ec);
     
-    ec.pred.scalars = data.probs;    
+    ec.pred.scalars = probs;    
   }
 
   template <bool is_learn>
   void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
   { //Randomize over predictions from a base set of predictors
 
-    data.probs.erase();
+    v_array<float> probs = ec.pred.scalars;
+    probs.erase();
 
     if(!is_learn || !data.learn_only) {
       for(int i = 0;i < data.cbcs.num_actions;i++)
-	data.probs.push_back(0.);
+	probs.push_back(0.);
       float prob = 1.0/(float)data.bag_size;
       for(int i = 0;i < data.bag_size;i++) {
 	base.predict(ec, i);
 	uint32_t chosen = ec.pred.multiclass-1;
-	data.probs[chosen] += prob;
+	probs[chosen] += prob;
       }
     }
 
@@ -118,7 +121,7 @@ namespace CB_EXPLORE{
 	    base.learn(ec,i);
 	}
     
-    ec.pred.scalars = data.probs;
+    ec.pred.scalars = probs;
   }
 
   void safety(v_array<float>& distribution, float min_prob)
@@ -138,14 +141,13 @@ namespace CB_EXPLORE{
       }
   }
 
-  void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec)
+  void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, v_array<float>& probs)
   { 
     float additive_probability = 1.f / (float)data.cover_size;
-    data.probs.erase();
     data.preds.erase();
 
-    for(int i = 0;i < data.cbcs.num_actions;i++) 
-      data.probs.push_back(0.);
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+      probs.push_back(0.);
 
     for (size_t i = 0; i < data.cover_size; i++)
       { //get predicted cost-sensitive predictions
@@ -154,7 +156,7 @@ namespace CB_EXPLORE{
 	else
 	  data.cs->predict(ec, i + 1);
 	uint32_t pred = ec.pred.multiclass;
-	data.probs[pred - 1] += additive_probability;
+	probs[pred - 1] += additive_probability;
 	data.preds.push_back((uint32_t)pred);
       }
     uint32_t num_actions = data.cbcs.num_actions;
@@ -162,7 +164,7 @@ namespace CB_EXPLORE{
     
     float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
     
-    safety(data.probs, min_prob);
+    safety(probs, min_prob);
     
     data.counter++;
   }
@@ -174,46 +176,36 @@ namespace CB_EXPLORE{
 
     uint32_t num_actions = data.cbcs.num_actions;
 
+    v_array<float> probs = ec.pred.scalars;
+    probs.erase();
     data.cs_label.costs.erase();
+
     for (uint32_t j = 0; j < num_actions; j++)
       { COST_SENSITIVE::wclass wc;
-
-	//get cost prediction for this label
-	wc.x = FLT_MAX;
-	wc.class_index = j+1;
-	wc.partial_prediction = 0.;
-	wc.wap_value = 0.;
-	data.cs_label.costs.push_back(wc);
+	
+    	//get cost prediction for this label
+    	wc.x = FLT_MAX;
+    	wc.class_index = j+1;
+    	wc.partial_prediction = 0.;
+    	wc.wap_value = 0.;
+    	data.cs_label.costs.push_back(wc);
       }
 
     float epsilon = data.epsilon;
     size_t cover_size = data.cover_size;
     size_t counter = data.counter;
-    get_cover_probabilities(data, base, ec);
     v_array<float>& probabilities = data.cover_probs;
     v_array<uint32_t>& predictions = data.preds;
-
-    // cout<<"Probabilities created: ";
-    // for(int i = 0;i < data.probs.size();i++)
-    //   cout<<data.probs[i]<<" ";
-    // cout<<endl;
-    
 
     float additive_probability = 1.f / (float)cover_size;
 
     float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
-    data.cb_label.costs.erase();
+    data.cb_label = ec.l.cb;
 
-    if(ec.l.cb.costs.size() > 0) {
-      CB::cb_class cl;
-      cl.cost = ec.l.cb.costs[0].cost;
-      cl.action = ec.l.cb.costs[0].action;
-      cl.probability = ec.l.cb.costs[0].probability;
-      data.cb_label.costs.push_back(cl);
-    }
-
-
+    ec.l.cs = data.cs_label;
+    get_cover_probabilities(data, base, ec, probs);
+	
     if (is_learn) {
       ec.l.cb = data.cb_label;
       base.learn(ec);
@@ -237,7 +229,9 @@ namespace CB_EXPLORE{
 	    { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
 	      data.second_cs_label.costs[j].class_index = j+1;
 	      data.second_cs_label.costs[j].x = pseudo_cost;
+	      //cout<<pseudo_cost<<" ";
 	    }
+	  //cout<<epsilon<<" "<<endl;
 	  if (i != 0)
 	    data.cs->learn(ec,i+1);
 	  if (probabilities[predictions[i] - 1] < min_prob)
@@ -249,22 +243,16 @@ namespace CB_EXPLORE{
     }
 
     ec.l.cb = data.cb_label;
-    ec.pred.scalars = data.probs;
-    // cout<<"Probabilities sent: ";
-    // for(int i = 0;i < data.probs.size();i++)
-    //   cout<<data.probs[i]<<":"<<ec.pred.scalars[i]<<" ";
-    // cout<<endl;
+    ec.pred.scalars = probs;
   }
 
   template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
   void finish(cb_explore& data)
   { data.preds.delete_v();
-    data.probs.delete_v();
     data.cover_probs.delete_v();
     cb_to_cs& c = data.cbcs;
     COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
-    CB::cb_label.delete_label(&data.cb_label);
     COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
     COST_SENSITIVE::cs_label.delete_label(&data.second_cs_label);
   }
@@ -288,30 +276,44 @@ namespace CB_EXPLORE{
   
     if ((c.known_cost = get_observed_cost(ld)) != nullptr)
       for(uint32_t i = 0;i < ec.pred.scalars.size();i++)
-	loss += get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.scalars[i]);
+	loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.scalars[i];
   
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     
-    char temp_str[10];
-    stringstream ss;
+    char temp_str[20];
+    stringstream ss, sso;
+    float maxprob = 0.;
+    uint32_t maxid;
+    //cout<<ec.pred.scalars.size()<<endl;
     for(uint32_t i = 0;i < ec.pred.scalars.size();i++) {
       sprintf(temp_str,"%f ", ec.pred.scalars[i]);
       ss << temp_str;
+      if(ec.pred.scalars[i] > maxprob) {
+	maxprob = ec.pred.scalars[i];
+	maxid = i;
+      }
     }
+
+    sprintf(temp_str, "%d:%f", maxid, maxprob);
+    sso << temp_str;
+    //cout<<sso.str()<<endl;
     
     for (int sink : all.final_prediction_sink)
       all.print_text(sink, ss.str(), ec.tag);
-    //cout<<"Will print "<<ss.str()<<" "<<ec.pred.scalars.size()<<endl;
 
-    print_update_cb_explore(all, is_test_label(ld), ec, ss);
+    print_update_cb_explore(all, is_test_label(ld), ec, sso);
   }
 
   void finish_example(vw& all, cb_explore& c, example& ec)
-  { output_example(all, c, ec, ec.l.cb);
+  {   
+    v_array<float> temp = ec.pred.scalars;
+    output_example(all, c, ec, ec.l.cb);
+    ec.pred.scalars = temp;
     VW::finish_example(all, &ec);
   }
 }
 using namespace CB_EXPLORE;
+
 
 base_learner* cb_explore_setup(vw& all)
 { //parse and set arguments
@@ -330,9 +332,6 @@ base_learner* cb_explore_setup(vw& all)
   data.cbcs.num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
   uint32_t num_actions = data.cbcs.num_actions;
 
-  data.probs = v_init<float>();
-  data.probs.resize(num_actions);
-
   if (count(all.args.begin(), all.args.end(),"--cb") == 0)
     { all.args.push_back("--cb");
       stringstream ss;
@@ -346,6 +345,7 @@ base_learner* cb_explore_setup(vw& all)
     data.learn_only = false;
 
   data.cbcs.cb_type = CB_TYPE_DR;
+  all.delete_prediction = delete_scalars;
   //ALEKH: Others TBD later
   // if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
   //   data.cbcs->cb_type = CB_TYPE_DR;
@@ -386,7 +386,6 @@ base_learner* cb_explore_setup(vw& all)
   data.cbcs.scorer = all.scorer;
   l->set_finish(finish);
   l->set_finish_example(finish_example);
-
   return make_base(*l);
 }
 

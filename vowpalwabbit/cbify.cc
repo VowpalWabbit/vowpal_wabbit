@@ -38,6 +38,7 @@ struct cbify
   vw_scorer* scorer;
   MwtExplorer<example>* mwt_explorer;
   vw_recorder* recorder;
+  v_array<float> scalars;
 };
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
@@ -66,6 +67,7 @@ void finish(cbify& data)
   delete_it(data.generic_explorer);
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
+  data.scalars.delete_v();
 }
 
 template <bool is_learn>
@@ -75,6 +77,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   MULTICLASS::label_t ld = ec.l.multi;
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
+  ec.pred.scalars = data.scalars;
 
   //Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -99,6 +102,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
   base.learn(ec);
+  data.scalars.erase();
+  data.scalars = ec.pred.scalars;
   ec.l.multi = ld;
   ec.pred.multiclass = action;
 }
@@ -115,8 +120,9 @@ base_learner* cbify_setup(vw& all)
   data.recorder = new vw_recorder();
   data.mwt_explorer = new MwtExplorer<example>("vw",*data.recorder);
   data.scorer = new vw_scorer();
+  data.scalars = v_init<float>();
   //data.probs = v_init<float>();
-  data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);
+  data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);  
 
   if (count(all.args.begin(), all.args.end(),"--cb_explore") == 0)
   { all.args.push_back("--cb_explore");
@@ -127,6 +133,7 @@ base_learner* cbify_setup(vw& all)
   }
   base_learner* base = setup_base(all);
 
+  all.delete_prediction = nullptr;
   learner<cbify>* l;
   l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
   l->set_finish(finish);
