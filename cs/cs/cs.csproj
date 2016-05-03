@@ -149,7 +149,9 @@
     </Compile>
     <Compile Include="Serializer\VowpalWabbitJsonBuilder.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
+    <Compile Include="Serializer\VowpalWabbitJsonReferenceResolver.cs" />
     <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
+    <Compile Include="Serializer\VowpalWabbitMarshalAction.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializerCompiler.cs" />

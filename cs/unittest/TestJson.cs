@@ -89,9 +89,9 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator("--cb 2 --cb_type dr"))
             {
-                validator.Validate("1:-2:.3 |a foo:1",
-                    "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":.3},\"a\":{\"foo\":1}}",
-                    VowpalWabbitLabelComparator.ContextualBandit);
+                //validator.Validate("1:-2:.3 |a foo:1",
+                //    "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":.3},\"a\":{\"foo\":1}}",
+                //    VowpalWabbitLabelComparator.ContextualBandit);
                 validator.Validate("1:2:.5 |a foo:1", "{\"_label\":\"1:2:.5\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.ContextualBandit);
             }
         }

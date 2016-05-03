@@ -92,6 +92,7 @@
     <Compile Include="TestExpansion.cs" />
     <Compile Include="TestFeatureExtraction.cs" />
     <Compile Include="TestJson.cs" />
+    <Compile Include="TestJsonDict.cs" />
     <Compile Include="TestJsonDirect.cs" />
     <Compile Include="TestLabels.cs" />
     <Compile Include="TestLeak.cs" />

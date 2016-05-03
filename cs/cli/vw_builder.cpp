@@ -91,6 +91,14 @@ namespace VW
         if (m_features->size() > 0)
         {
             unsigned char temp = m_index;
+
+            // avoid duplicate insertion
+            // can't check at the beginning, because multiple builders can be open
+            // at the same time
+            for (unsigned char ns : m_example->indices)
+                if (ns == temp)
+                    return;
+
             m_example->indices.push_back(temp);
         }
     }

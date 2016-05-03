@@ -345,7 +345,7 @@ namespace VW.Serializer
 
             // prefix with label
             if (context.StringExample != null)
-                context.StringExample.Insert(0, label.ToString());
+                context.StringLabel = label.ToString();
         }
 
         /// <summary>
@@ -360,9 +360,7 @@ namespace VW.Serializer
 
             context.ExampleBuilder.ApplyLabel(new StringLabel(label));
 
-            // prefix with label
-            if (context.StringExample != null)
-                context.StringExample.Insert(0, label);
+            context.StringLabel = label;
         }
     }
 }

@@ -84,12 +84,12 @@ namespace cs_unittest
                 // (1) natively build example
                 // (2) string serialized & natively parsed string example
                 using (var strExample = this.vw.Native.ParseLine(line))
-                using (var strConvertedExample = this.vw.Native.ParseLine(context.StringExample.ToString()))
+                using (var strConvertedExample = this.vw.Native.ParseLine(context.ToString()))
                 using (var nativeExample = contextNative.ExampleBuilder.CreateExample())
                 using (var nativeExampleWithString = this.factorySerializer.Serialize(example, label))
                 {
                     var diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
-                    Assert.IsNull(diff, diff + " generated string: '" + context.StringExample + "'");
+                    Assert.IsNull(diff, diff + " generated string: '" + context.ToString() + "'");
 
                     diff = strExample.Diff(this.vw.Native, nativeExample, comparator);
                     Assert.IsNull(diff, diff);

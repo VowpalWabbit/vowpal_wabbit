@@ -78,7 +78,7 @@ namespace cs_unittest
                         using (var context = new VowpalWabbitMarshalContext(vw1))
                         {
                             stringSerializer(context, d.Item1, SharedLabel.Instance);
-                            block.Add(context.StringExample.ToString());
+                            block.Add(context.ToString());
                         }
 
                         block.AddRange(d.Item2.Select((a, i) =>
@@ -86,7 +86,7 @@ namespace cs_unittest
                                 using (var context = new VowpalWabbitMarshalContext(vw1))
                                 {
                                     stringSerializerAdf(context, a, i == d.Item3.Action ? d.Item3 : null);
-                                    return context.StringExample.ToString();
+                                    return context.ToString();
                                 }
                             }));
 

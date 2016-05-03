@@ -82,7 +82,8 @@ namespace VW.Reflection
 
             var dynType = typeBuilder.CreateType();
 
-            dynAsm.Save(@"my.dll");
+            // for debugging only
+            // dynAsm.Save(@"my.dll");
 
             return Delegate.CreateDelegate(typeof(T), dynType.GetMethod(methodName));
         }

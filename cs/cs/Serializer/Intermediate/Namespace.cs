@@ -52,14 +52,11 @@ namespace VW.Serializer.Intermediate
         public Namespace(VowpalWabbit vw, string name = null)
         {
             if (string.IsNullOrWhiteSpace(name))
-            {
-                name = " ";
-            }
+                name = VowpalWabbitConstants.DefaultNamespace.ToString();
 
             if (name.Length > 1)
-            {
                 this.Name = name.Substring(1);
-            }
+
             this.FeatureGroup = name[0];
 
             this.NamespaceHash = vw.HashSpace(name);

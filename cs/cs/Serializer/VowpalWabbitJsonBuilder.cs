@@ -31,6 +31,9 @@ namespace VW.Serializer
         private readonly VowpalWabbit vw;
         private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
+        private readonly VowpalWabbitJsonSerializer serializer;
+        private readonly VowpalWabbitJsonReferenceResolver referenceResolver;
+        private readonly List<string> namespaceStrings;
 
         private JsonReader reader;
         private ILabel label;
@@ -56,18 +59,21 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
         /// </summary>
-        public VowpalWabbitJsonBuilder(IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
+        public VowpalWabbitJsonBuilder(VowpalWabbitJsonSerializer serializer, IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
         {
+            Contract.Requires(serializer != null);
             Contract.Requires(vw != null);
             Contract.Requires(defaultMarshaller != null);
             Contract.Requires(jsonSerializer != null);
 
+            this.namespaceStrings = new List<string>();
+            this.referenceResolver = serializer.ReferenceResolver;
+            this.serializer = serializer;
             this.vw = vwPool.Native;
-            this.defaultMarshaller = new VowpalWabbitDefaultMarshaller();
-            this.jsonSerializer = new JsonSerializer();
+            this.defaultMarshaller = defaultMarshaller;
+            this.jsonSerializer = jsonSerializer;
 
-            this.Context = new VowpalWabbitMarshalContext(vwPool);
-            this.DefaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw, this.Context.ExampleBuilder);
+            this.DefaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw);
         }
 
         /// <summary>
@@ -88,10 +94,16 @@ namespace VW.Serializer
         {
             try
             {
-                var vwExample = this.Context.ExampleBuilder.CreateExample();
+                var vwExample = this.DefaultNamespaceContext.ExampleBuilder.CreateExample();
 
                 if (this.vw.Settings.EnableStringExampleGeneration)
-                    vwExample.VowpalWabbitString = this.Context.StringExample.ToString();
+                {
+                    var str = this.DefaultNamespaceContext.ToString();
+                    if (str.Length > 0)
+                        this.namespaceStrings.Insert(0, str);
+
+                    vwExample.VowpalWabbitString = string.Join(" ", this.namespaceStrings);
+                }
 
                 return vwExample;
             }
@@ -99,8 +111,6 @@ namespace VW.Serializer
             {
                 this.DefaultNamespaceContext.Dispose();
                 this.DefaultNamespaceContext = null;
-                this.Context.Dispose();
-                this.Context = null;
             }
         }
 
@@ -122,7 +132,7 @@ namespace VW.Serializer
             this.specialPropertyAction = specialPropertyAction;
 
             if (label != null)
-                this.defaultMarshaller.MarshalLabel(this.Context, label);
+                this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, label);
 
             // handle the case when the reader is already positioned at JsonToken.StartObject
             if (reader.TokenType == JsonToken.None && !reader.Read())
@@ -133,48 +143,23 @@ namespace VW.Serializer
                     string.Format("Expected start object. Found '{0}' and value '{1}'",
                     reader.TokenType, reader.Value));
 
-            Namespace defaultNamespace = new Namespace(this.vw);
-            using (this.DefaultNamespaceContext.NamespaceBuilder = this.DefaultNamespaceContext.ExampleBuilder.AddNamespace(VowpalWabbitConstants.DefaultNamespace))
-            {
-                var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
-                while (reader.Read())
+            var ns = new Namespace(this.vw);
+            var path = new List<LocalContext>
                 {
-                    switch (reader.TokenType)
+                    new LocalContext
                     {
-                        case JsonToken.PropertyName:
-                            var propertyName = (string)reader.Value;
-                            if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) || propertyConfiguration.IsSpecialProperty(propertyName))
-                                this.ParseSpecialProperty(this.DefaultNamespaceContext, defaultNamespace, propertyName);
-                            else
-                            {
-                                if (!reader.Read())
-                                    throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
-
-                                if (reader.TokenType == JsonToken.StartObject)
-                                    this.ParseNamespaceAndFeatures(this.Context, propertyName);
-                                else
-                                    this.ParseFeature(this.DefaultNamespaceContext, defaultNamespace, propertyName);
-
-                            }
-                            break;
-                        case JsonToken.EndObject:
-                            goto done;
+                        Namespace = ns,
+                        Context = this.DefaultNamespaceContext,
+                        JsonProperty = string.Empty
                     }
-                }
-            done:
+                };
 
-                // append default namespaces features if we found some
-                if (this.DefaultNamespaceContext.StringExample != null && this.DefaultNamespaceContext.StringExample.Length > 0)
-                {
-                    this.Context.StringExample.AppendFormat(CultureInfo.InvariantCulture,
-                        " | {0}", this.DefaultNamespaceContext.StringExample);
-                }
-            }
+            this.defaultMarshaller.MarshalNamespace(this.DefaultNamespaceContext, ns, () => this.ParseProperties(path));
         }
 
-        private void ParseSpecialProperty(VowpalWabbitMarshalContext context, Namespace ns, string propertyName)
+        private void ParseSpecialProperty(LocalContext context, string propertyName)
         {
-            var propertyConfiguration = context.VW.Settings.PropertyConfiguration;
+            var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
 
             // special fields
             if (propertyName == propertyConfiguration.LabelProperty)
@@ -189,8 +174,8 @@ namespace VW.Serializer
             {
                 // parse text segment feature
                 this.defaultMarshaller.MarshalFeatureStringSplit(
-                    context,
-                    ns,
+                    context.Context,
+                    context.Namespace,
                     new Feature(propertyName),
                     reader.ReadAsString());
             }
@@ -228,7 +213,7 @@ namespace VW.Serializer
 
                         var label = (ILabel)jsonSerializer.Deserialize(prefixReader, labelType);
 
-                        this.defaultMarshaller.MarshalLabel(this.Context, label);
+                        this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, label);
                     }
                     break;
                 case JsonToken.Integer:
@@ -238,10 +223,7 @@ namespace VW.Serializer
                         // pass label directly to VW
                         var labelString = reader.Value.ToString();
 
-                        this.Context.ExampleBuilder.ApplyLabel(new StringLabel(labelString));
-
-                        // prefix with label
-                        this.Context.AppendStringExample(false, "{0}", labelString);
+                        this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, new StringLabel(labelString));
                     }
                     break;
                 case JsonToken.Null:
@@ -249,6 +231,169 @@ namespace VW.Serializer
                     break;
                 default:
                     throw new VowpalWabbitJsonException(reader.Path, "Expected label object");
+            }
+        }
+
+        /// <summary>
+        /// Expects that actual feature value.
+        /// </summary>
+        private void ParseFeature(List<LocalContext> path, string featureName)
+        {
+            switch (featureName)
+            {
+                case "$id":
+                    {
+                        var id = (string)reader.Value;
+
+                        if (!reader.Read() ||
+                            reader.TokenType != JsonToken.PropertyName ||
+                            (string)reader.Value != "$values")
+                            throw new VowpalWabbitJsonException(reader.Path, "Expecting '$values' property");
+
+                        // read $values
+                        if (!reader.Read())
+                            throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
+
+                        // create re-useable marshalling call
+                        var marshalAction = this.ParseFeatureReUsable();
+
+                        // keep action for re-use
+                        this.referenceResolver.AddReference(id, marshalAction);
+
+                        // go up 2 levels to find actual namespace, the last one is actually the property we want to serialize
+                        featureName = path.Last().JsonProperty;
+                        var context = path[path.Count - 2];
+                        marshalAction.Marshal(this.defaultMarshaller, context.Context, context.Namespace, featureName);
+                    }
+                    return;
+                case "$ref":
+                    {
+                        var id = (string)reader.Value;
+
+                        // go up 2 levels to find actual namespace, the last one is actually the property we want to serialize
+                        featureName = path.Last().JsonProperty;
+                        var ns = path[path.Count - 2].Namespace;
+
+                        this.referenceResolver.Resolve(
+                            this.serializer,
+                            id,
+                            marshalAction =>
+                            {
+                                // setup fresh context
+                                using (var context = new VowpalWabbitMarshalContext(this.vw, this.DefaultNamespaceContext.ExampleBuilder))
+                                {
+                                    this.defaultMarshaller.MarshalNamespace(
+                                        context,
+                                        ns,
+                                        () => marshalAction.Marshal(this.defaultMarshaller, context, ns, featureName));
+
+                                    // append default namespaces features if we found some
+                                    if (this.vw.Settings.EnableStringExampleGeneration)
+                                    {
+                                        var str = context.ToString();
+                                        if (str.Length > 0)
+                                            this.namespaceStrings.Add(str);
+                                    }
+                                }
+                            });
+                    }
+                    return;
+            }
+
+            var localContext = path.Last();
+            this.ParseFeature(localContext.Context, localContext.Namespace, featureName);
+        }
+
+        private IVowpalWabbitMarshalAction ParseFeatureReUsable()
+        {
+            // make sure the returned action is independent of the current parsing context, so we can ship it
+            switch (reader.TokenType)
+            {
+                case JsonToken.Float:
+                    return VowpalWabbitMarshalActions.Create((double)reader.Value);
+                case JsonToken.Integer:
+                    return VowpalWabbitMarshalActions.Create((long)reader.Value);
+                case JsonToken.String:
+                    return VowpalWabbitMarshalActions.Create((string)reader.Value);
+                case JsonToken.Boolean:
+                    return VowpalWabbitMarshalActions.Create((bool)reader.Value);
+                case JsonToken.Comment:
+                case JsonToken.Null:
+                    // probably best to ignore?
+                    break;
+                case JsonToken.StartArray:
+                    return this.ParseFeatureArrayReUsable();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Expects: "1,2.2,3]" (excluding the leading [)
+        /// </summary>
+        private IVowpalWabbitMarshalAction ParseFeatureArrayReUsable()
+        {
+            var values = new float[16];
+            var index = 0;
+            while (reader.Read())
+            {
+                float val;
+                switch (reader.TokenType)
+                {
+                    case JsonToken.Integer:
+                        val = (float)(long)reader.Value;
+                        break;
+                    case JsonToken.Float:
+                        val = (float)(double)reader.Value;
+                        break;
+                    case JsonToken.EndArray:
+                        goto done;
+                    default:
+                        throw new VowpalWabbitJsonException(reader.Path, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
+                }
+
+                if (index == values.Length)
+                {
+                    var newValues = new float[values.Length * 2];
+                    Array.Copy(values, newValues, values.Length);
+                    values = newValues;
+                }
+
+                values[index++] = val;
+            }
+        done:
+
+            return VowpalWabbitMarshalActions.Create(values, index);
+        }
+
+        /// <summary>
+        /// Expects that actual feature value.
+        /// </summary>
+        private void ParseFeature(VowpalWabbitMarshalContext context, Namespace ns, string featureName)
+        {
+            switch (reader.TokenType)
+            {
+                case JsonToken.Float:
+                    VowpalWabbitMarshalActions.Marshal(this.defaultMarshaller, context, ns, featureName, (double)reader.Value);
+                    break;
+                case JsonToken.Integer:
+                    VowpalWabbitMarshalActions.Marshal(this.defaultMarshaller, context, ns, featureName, (long)reader.Value);
+                    break;
+                case JsonToken.String:
+                    VowpalWabbitMarshalActions.Marshal(this.defaultMarshaller, context, ns, featureName, (string)reader.Value);
+                    break;
+                case JsonToken.Boolean:
+                    VowpalWabbitMarshalActions.Marshal(this.defaultMarshaller, context, ns, featureName, (bool)reader.Value);
+                    break;
+                case JsonToken.Comment:
+                case JsonToken.Null:
+                    // probably best to ignore?
+                    break;
+                case JsonToken.StartArray:
+                    this.ParseFeatureArray(context, ns);
+                    break;
+                default:
+                    throw new VowpalWabbitJsonException(reader.Path, "Unexpected token " + reader.TokenType + " while deserializing primitive feature");
             }
         }
 
@@ -293,81 +438,74 @@ namespace VW.Serializer
         }
 
         /// <summary>
-        /// Expects that actual feature value.
-        /// </summary>
-        private void ParseFeature(VowpalWabbitMarshalContext context, Namespace ns, string featureName)
-        {
-            switch (reader.TokenType)
-            {
-                case JsonToken.Float:
-                    {
-                        var feature = new PreHashedFeature(this.vw, ns, featureName);
-                        this.defaultMarshaller.MarshalFeature(context, ns, feature, (double)reader.Value);
-                    }
-                    break;
-                case JsonToken.Integer:
-                    {
-                        var feature = new PreHashedFeature(this.vw, ns, featureName);
-                        this.defaultMarshaller.MarshalFeature(context, ns, feature, (long)reader.Value);
-                    }
-                    break;
-                case JsonToken.String:
-                    {
-                        var feature = new Feature(featureName);
-                        this.defaultMarshaller.MarshalFeatureStringEscapeAndIncludeName(context, ns, feature, (string)reader.Value);
-                    }
-                    break;
-                case JsonToken.Boolean:
-                    {
-                        var feature = new PreHashedFeature(this.vw, ns, featureName);
-                        this.defaultMarshaller.MarshalFeature(context, ns, feature, (bool)reader.Value);
-                    }
-                    break;
-                case JsonToken.Comment:
-                case JsonToken.Null:
-                    // probably best to ignore?
-                    break;
-                case JsonToken.StartArray:
-                    this.ParseFeatureArray(context, ns);
-                    break;
-                default:
-                    throw new VowpalWabbitJsonException(reader.Path, "Unexpected token " + reader.TokenType + " while deserializing primitive feature");
-            }
-
-        }
-
-        /// <summary>
         /// Parses { "feature1":1, "feature2":true, .... }
         /// </summary>
-        private void ParseNamespaceAndFeatures(VowpalWabbitMarshalContext context, string namespaceValue)
+        private void ParseNamespaceAndFeatures(List<LocalContext> path, string namespaceValue)
         {
-            var ns = new Namespace(this.vw, namespaceValue);
-            var propertyConfiguration = context.VW.Settings.PropertyConfiguration;
-            this.defaultMarshaller.MarshalNamespace(context, ns, () =>
+            LocalContext localContext = null;
+
+            try
             {
-                while (reader.Read())
+                var ns = new Namespace(this.vw, namespaceValue);
+                localContext = new LocalContext
                 {
-                    switch (reader.TokenType)
-                    {
-                        case JsonToken.PropertyName:
-                            var propertyName = (string)reader.Value;
+                    Namespace = ns,
+                    Context = new VowpalWabbitMarshalContext(this.vw, this.DefaultNamespaceContext.ExampleBuilder),
+                    JsonProperty = namespaceValue
+                };
 
-                            if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) || propertyConfiguration.IsSpecialProperty(propertyName))
-                            {
-                                this.ParseSpecialProperty(context, ns, propertyName);
-                                continue;
-                            }
+                path.Add(localContext);
 
-                            if (!reader.Read())
-                                throw new VowpalWabbitJsonException(reader.Path, "Unexpected end while parsing namespace");
+                var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
+                this.defaultMarshaller.MarshalNamespace(localContext.Context, ns, () => this.ParseProperties(path));
 
-                            this.ParseFeature(context, ns, propertyName);
-                            break;
-                        case JsonToken.EndObject:
-                            return;
-                    }
+                path.RemoveAt(path.Count - 1);
+
+                // append default namespaces features if we found some
+                if (this.vw.Settings.EnableStringExampleGeneration)
+                {
+                    var str = localContext.Context.ToString();
+                    if (str.Length > 0)
+                        this.namespaceStrings.Add(str);
                 }
-            });
+            }
+            finally
+            {
+                if (localContext != null && localContext.Context != null)
+                    localContext.Context.Dispose();
+            }
+        }
+
+        private void ParseProperties(List<LocalContext> path)
+        {
+            var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
+
+            while (reader.Read())
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.PropertyName:
+                        var propertyName = (string)reader.Value;
+                        if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) ||
+                            propertyConfiguration.IsSpecialProperty(propertyName))
+                        {
+                            this.ParseSpecialProperty(path.Last(), propertyName);
+                            continue;
+                        }
+
+                        if (!reader.Read())
+                            throw new VowpalWabbitJsonException(reader.Path, "Unexpected end while parsing namespace");
+
+                        // TODO: this.Context might have to be a stack...
+                        if (reader.TokenType == JsonToken.StartObject)
+                            this.ParseNamespaceAndFeatures(path, propertyName);
+                        else
+                            this.ParseFeature(path, propertyName);
+                        break;
+                    case JsonToken.EndObject:
+                        return;
+                }
+            }
         }
 
         /// <summary>
@@ -388,13 +526,16 @@ namespace VW.Serializer
                     this.DefaultNamespaceContext.Dispose();
                     this.DefaultNamespaceContext = null;
                 }
-
-                if (this.Context != null)
-                {
-                    this.Context.Dispose();
-                    this.Context = null;
-                }
             }
+        }
+
+        private sealed class LocalContext
+        {
+            internal VowpalWabbitMarshalContext Context { get; set; }
+
+            internal Namespace Namespace { get; set; }
+
+            internal string JsonProperty { get; set; }
         }
     }
 }

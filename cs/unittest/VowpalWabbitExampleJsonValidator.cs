@@ -23,11 +23,14 @@ namespace cs_unittest
             this.vw = new VowpalWabbit(settings.ShallowCopy(enableStringExampleGeneration: true));
         }
 
-        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
+        public void Validate(string line, VowpalWabbitExampleCollection example, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
         {
+            Assert.IsNotNull(example);
+
+            var jsonExample = example as VowpalWabbitSingleLineExampleCollection;
+            Assert.IsNotNull(jsonExample);
+
             using (var strExample = this.vw.ParseLine(line))
-            using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
-            using (var jsonExample = (VowpalWabbitSingleLineExampleCollection)jsonSerializer.ParseAndCreate(json, label))
             using (var strJsonExample = this.vw.ParseLine(jsonExample.Example.VowpalWabbitString))
             {
                 var diff = strExample.Diff(this.vw, jsonExample.Example, labelComparator);
@@ -35,6 +38,15 @@ namespace cs_unittest
 
                 diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
                 Assert.IsNull(diff, diff);
+            }
+        }
+
+        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
+        {
+            using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
+            using (var jsonExample = jsonSerializer.ParseAndCreate(json, label))
+            {
+                this.Validate(line, jsonExample, labelComparator, label);
             }
         }
 
