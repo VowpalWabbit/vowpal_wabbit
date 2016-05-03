@@ -30,8 +30,9 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
 { if (cs_a.t == 1) return true;
   float t = (float)cs_a.t; // ec.example_t;  // current round
   float t_prev = t - 1.; // ec.weight; // last round
+
   float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t); // threshold on cost range
-  float delta = cs_a.c0 * ((float)cs_a.num_classes) * log(t_prev) * pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
+  float delta = cs_a.c0 * log((float)cs_a.num_classes) * log(t_prev) * pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
   
   float cost_pred_u = min(ec.pred.scalar + eta, cs_a.cost_max);
   float cost_pred_l = max(ec.pred.scalar - eta, cs_a.cost_min);
@@ -47,7 +48,8 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
 
   bool result = (loss_delta_upper_bnd <= delta) || isinf(sensitivity) || isnan(sensitivity);
 
-  //cerr << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " cost_pred_capped=" << cost_pred_capped << " base.sensitivity=" << sens << " w=" << w << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
+  //if (i == 1)
+  //   cerr << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " cost_pred_capped=" << cost_pred_capped << " base.sensitivity=" << sensitivity << " w=" << w << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
   
   return result;
 }
@@ -56,7 +58,6 @@ template<bool is_learn, bool is_simulation>
 inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction, bool& pred_is_certain)
 { base.predict(ec, i-1);
-  
   if (is_learn)
   { vw& all = *cs_a.all;
      
@@ -71,7 +72,8 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
       }
       //cerr << "\t[" << i << ":" << ec.l.simple.label << " (truth=" << cost << ")]" << endl;
     }
-    else { // in reduction mode, always given a cost
+    else
+    { // in reduction mode, always given a cost
       if (pred_is_certain)
         ec.l.simple.label = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
       else
@@ -79,12 +81,14 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
       //cerr << "\t[" << i << ":" << ec.l.simple.label << " (truth=" << cost << ")]" << (pred_is_certain ? '*' : ' ') << endl;
     }
 
+    all.set_minmax(all.sd, ec.l.simple.label);
+
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
-    cs_a.t ++;
+    //cs_a.t ++;
     base.learn(ec, i-1);
   }
-  else if (!is_simulation) //reduction mode, need to tell upper layer whether this prediction was made with confidence
-  { //ec.partial_prediction = max(min(ec.partial_prediction,cs_a.cost_max),cs_a.cost_min);
+  else if (!is_simulation) 
+  {//reduction mode, need to tell upper layer whether this prediction was made with confidence
     pred_is_certain = (!is_range_large(cs_a,base,ec,i));
   }
   
@@ -110,6 +114,8 @@ void predict_or_learn(cs_active& data, base_learner& base, example& ec)
       //cerr << "cl.pred_is_certain=" << cl.pred_is_certain << endl;
     }
     ec.partial_prediction = score;
+    if(is_learn)
+      data.t++;    
   }
   else
   { float temp;
