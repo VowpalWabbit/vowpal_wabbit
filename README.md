@@ -165,6 +165,7 @@ error messages generally contain complaints about ``std::to_string`` and ``std::
 To compile:
 ```
 $ sh autogen.sh --enable-libc++
+$ ./configure --enable-libc++ CXX=clang++
 $ make
 $ make test    # (optional)
 ```
