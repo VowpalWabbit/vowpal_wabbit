@@ -51,6 +51,11 @@ namespace VW.Serializer
         }
 
         /// <summary>
+        /// Userful if this deserializer is published through VowpalWabbitJsonReferenceResolver.
+        /// </summary>
+        public object UserContext { get; set; }
+
+        /// <summary>
         /// Single line example or shared example.
         /// </summary>
         public VowpalWabbitJsonBuilder ExampleBuilder { get; private set; }
