@@ -38,17 +38,13 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   float cost_pred_l = max(ec.pred.scalar-eta, cs_a.cost_min);
 
   // Compute the minimum weights required to increase/decrease prediction by eta
-  ec.l.simple.label = cs_a.cost_max;
-  float sensitivity_u = base.sensitivity(ec, i-1);
-  float w_u = (cost_pred_u-ec.pred.scalar)/sensitivity_u;
- 
-  ec.l.simple.label = cs_a.cost_min;
-  float sensitivity_l = base.sensitivity(ec, i-1);
-  float w_l = (ec.pred.scalar-cost_pred_l)/sensitivity_l; 
+  float sensitivity = base.sensitivity(ec, i-1);
+  float w_u = (cost_pred_u-ec.pred.scalar)/sensitivity;
+  float w_l = (ec.pred.scalar-cost_pred_l)/sensitivity; 
 
   // Compute upper bound on the empirical loss difference
   // Assume squared loss is used
-  float loss_delta_upper_bnd = max(w_u*pow(ec.pred.scalar-cs_a.cost_max,2),w_l*pow(ec.pred.scalar-cs_a.cost_min,2));
+  float loss_delta_upper_bnd = max(w_u*(pow(ec.pred.scalar-cs_a.cost_max,2)-pow(cost_pred_u-cs_a.cost_max,2)),w_l*(pow(ec.pred.scalar-cs_a.cost_min,2)-pow(cost_pred_l-cs_a.cost_min,2)));
   if (isnan(loss_delta_upper_bnd))
      cerr << "Warning: loss_delta_upper_bnd is nan!" << endl;
 
