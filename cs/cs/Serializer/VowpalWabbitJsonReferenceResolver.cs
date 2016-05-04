@@ -12,12 +12,20 @@ namespace VW.Serializer
 {
     public sealed class VowpalWabbitJsonReferenceResolver : IDisposable
     {
+        public sealed class Stats
+        {
+            public long ItemCount { get; internal set; }
+
+            public long NumberOfOpenRequests { get; internal set; }
+        }
+
         private readonly Action<VowpalWabbitJsonSerializer> exampleComplete;
         private readonly object lockObject;
         private MemoryCache cache;
         private MemoryCache cacheRequests;
         private readonly Func<string, CacheItemPolicy> cacheItemPolicyFactory;
         private readonly Func<string, CacheItemPolicy> cacheRequestItemPolicyFactory;
+        private int numberOfOpenRequests;
 
         public VowpalWabbitJsonReferenceResolver(
             Action<VowpalWabbitJsonSerializer> exampleComplete,
@@ -44,6 +52,21 @@ namespace VW.Serializer
             this.cacheRequests = new MemoryCache(cacheName + "Requests");
         }
 
+        public Stats Statistics
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return new Stats
+                    {
+                        ItemCount = this.cache.GetCount(),
+                        NumberOfOpenRequests = this.numberOfOpenRequests
+                    };
+                }
+            }
+        }
+
         internal void AddReference(string id, IVowpalWabbitMarshalAction marshalAction)
         {
             List<IncompleteReferenceRequest> requests = null;
@@ -65,6 +88,8 @@ namespace VW.Serializer
                         req.DontDispose = true;
 
                     this.cacheRequests.Remove(id);
+
+                    this.numberOfOpenRequests -= requests.Count;
                 }
             }
 
@@ -114,6 +139,7 @@ namespace VW.Serializer
                             Serializer = serializer,
                             Marshal = resolveAction
                         });
+                    this.numberOfOpenRequests++;
 
                     serializer.IncreaseUnresolved();
 

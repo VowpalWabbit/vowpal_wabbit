@@ -76,6 +76,9 @@ namespace VW.Serializer
             this.DefaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw);
         }
 
+        // useful for tracking down bugs
+        // private string DefaultNamespaceContextStackTrace;
+
         /// <summary>
         /// The marshalling context for the default namespace. Can be modified until <see cref="CreateExample"/>.
         /// </summary>
@@ -104,6 +107,8 @@ namespace VW.Serializer
             }
             finally
             {
+                // useful for tracking down bugs
+                // this.DefaultNamespaceContextStackTrace = "Create Example" + Environment.StackTrace;
                 this.DefaultNamespaceContext.Dispose();
                 this.DefaultNamespaceContext = null;
             }
@@ -518,6 +523,8 @@ namespace VW.Serializer
             {
                 if (this.DefaultNamespaceContext != null)
                 {
+                    // useful for tracking down bugs
+                    // this.DefaultNamespaceContextStackTrace = "Dispose" + Environment.StackTrace;
                     this.DefaultNamespaceContext.Dispose();
                     this.DefaultNamespaceContext = null;
                 }

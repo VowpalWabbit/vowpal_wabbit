@@ -12,6 +12,19 @@ using VW.Serializer;
 
 namespace cs_unittest
 {
+    internal static class VowpalWabbitExampleValidator
+    {
+        internal static void Validate(string line, VowpalWabbitExample ex, IVowpalWabbitLabelComparator comparator, string args = null)
+        {
+            using (var vw = new VowpalWabbit(args))
+            using (var strExample = vw.ParseLine(line))
+            {
+                var diff = strExample.Diff(vw, ex, comparator);
+                Assert.IsNull(diff, diff + " generated string: '" + ex.VowpalWabbitString + "'");
+            }
+        }
+    }
+
     internal sealed class VowpalWabbitExampleValidator<TExample> : IDisposable
     {
         private VowpalWabbit<TExample> vw;

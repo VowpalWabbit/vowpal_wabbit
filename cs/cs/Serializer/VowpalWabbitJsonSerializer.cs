@@ -72,6 +72,7 @@ namespace VW.Serializer
 
         internal void IncreaseUnresolved()
         {
+            // only called during the initial parsing run
             this.unresolved++;
         }
 
@@ -79,19 +80,27 @@ namespace VW.Serializer
         {
             lock (this.lockObject)
             {
+                // ready is false until the initial parsing run is complete
                 if (this.ready)
                 {
                     // the object doesn't get anymore unresolved marshal requests
                     if (this.marshalRequests != null)
+                    {
                         foreach (var req in this.marshalRequests)
                             req();
 
+                        this.unresolved -= this.marshalRequests.Count;
+
+                        this.marshalRequests = null;
+                    }
+
                     marshal();
+                    this.unresolved--;
 
-                    this.unresolved = 0;
+                    if (this.unresolved < 0)
+                        throw new InvalidOperationException("Number of unresolved requested must not be negative");
 
-                    // finalize
-                    return true;
+                    return this.unresolved == 0;
                 }
                 else
                 {

@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
+    <Compile Include="TestWiki.cs" />
     <Compile Include="RunTests.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
