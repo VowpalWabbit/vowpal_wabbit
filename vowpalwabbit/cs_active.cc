@@ -29,26 +29,33 @@ struct cs_active
 bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i)
 { if (cs_a.t == 1) return true;
   float t = (float)cs_a.t; // ec.example_t;  // current round
-  float t_prev = t - 1.; // ec.weight; // last round
+  float t_prev = t-1.; // ec.weight; // last round
 
-  float eta = cs_a.c1 * (cs_a.cost_max - cs_a.cost_min) / sqrt(t); // threshold on cost range
-  float delta = cs_a.c0 * log((float)cs_a.num_classes) * log(t_prev) * pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
+  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/sqrt(t); // threshold on cost range
+  float delta = cs_a.c0*log((float)cs_a.num_classes)*log(t_prev)*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
   
-  float cost_pred_u = min(ec.pred.scalar + eta, cs_a.cost_max);
-  float cost_pred_l = max(ec.pred.scalar - eta, cs_a.cost_min);
+  float cost_pred_u = min(ec.pred.scalar+eta, cs_a.cost_max);
+  float cost_pred_l = max(ec.pred.scalar-eta, cs_a.cost_min);
 
-  // Compute the minimum weight required to change prediction by eta
-  float sensitivity = base.sensitivity(ec, i-1);
-  float w = eta / sensitivity; 
+  // Compute the minimum weights required to increase/decrease prediction by eta
+  ec.l.simple.label = cs_a.cost_max;
+  float sensitivity_u = base.sensitivity(ec, i-1);
+  float w_u = (cost_pred_u-ec.pred.scalar)/sensitivity_u;
+ 
+  ec.l.simple.label = cs_a.cost_min;
+  float sensitivity_l = base.sensitivity(ec, i-1);
+  float w_l = (ec.pred.scalar-cost_pred_l)/sensitivity_l; 
 
   // Compute upper bound on the empirical loss difference
   // Assume squared loss is used
-  float loss_delta_upper_bnd = w * max(pow(ec.pred.scalar-cost_pred_u,2),pow(ec.pred.scalar-cost_pred_l,2));
+  float loss_delta_upper_bnd = max(w_u*pow(ec.pred.scalar-cs_a.cost_max,2),w_l*pow(ec.pred.scalar-cs_a.cost_min,2));
+  if (isnan(loss_delta_upper_bnd))
+     cerr << "Warning: loss_delta_upper_bnd is nan!" << endl;
 
-  bool result = (loss_delta_upper_bnd <= delta) || isinf(sensitivity) || isnan(sensitivity);
+  bool result = (loss_delta_upper_bnd <= delta) || isnan(loss_delta_upper_bnd);
 
   //if (i == 1)
-  //   cerr << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " cost_pred_capped=" << cost_pred_capped << " base.sensitivity=" << sensitivity << " w=" << w << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
+  //   cout << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " sensitivity_u=" << sensitivity_u << " w_u=" << w_u << " sensitivity_l=" << sensitivity_l << " w_l=" << w_l << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
   
   return result;
 }

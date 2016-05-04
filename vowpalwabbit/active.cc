@@ -45,9 +45,12 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 
     float k = ec.example_t - ec.weight;
     float threshold = 0.f;
+    float ec_input_label = ec.l.simple.label;
 
+    ec.l.simple.label = 2.f*((float)(ec.pred.scalar>0))-1.f;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
     float importance = query_decision(a, ec.confidence, k);
+    ec.l.simple.label = ec_input_label;
 
     if(importance > 0)
     { all.sd->queries += 1;
@@ -68,6 +71,7 @@ void predict_or_learn_active(active& a, base_learner& base, example& ec)
 
   if (ec.l.simple.label == FLT_MAX)
   { float threshold = (a.all->sd->max_label + a.all->sd->min_label) * 0.5f;
+    ec.l.simple.label = 2.f*((float)(ec.pred.scalar>0))-1.f;
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
   }
 }
