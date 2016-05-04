@@ -197,7 +197,7 @@ class VW(BaseEstimator):
 
         Contextual Bandit Optimization
         cb (int): Use contextual bandit learning with specified costs
-        cbify (int): Convert multiclass bandit learning on K classes to contextual bandit optimization
+        cbify (int): Convert multiclass on <k> classes into a contextual bandit problem
 
         Returns
         -------
