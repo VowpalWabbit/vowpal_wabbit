@@ -36,7 +36,6 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   
   float cost_pred_u = min(ec.pred.scalar + eta, cs_a.cost_max);
   float cost_pred_l = max(ec.pred.scalar - eta, cs_a.cost_min);
-  float cost_pred_capped = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
 
   // Compute the minimum weight required to change prediction by eta
   float sensitivity = base.sensitivity(ec, i-1);
@@ -44,7 +43,7 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
 
   // Compute upper bound on the empirical loss difference
   // Assume squared loss is used
-  float loss_delta_upper_bnd = w * max(pow(cost_pred_capped-cost_pred_u,2),pow(cost_pred_capped-cost_pred_l,2));
+  float loss_delta_upper_bnd = w * max(pow(ec.pred.scalar-cost_pred_u,2),pow(ec.pred.scalar-cost_pred_l,2));
 
   bool result = (loss_delta_upper_bnd <= delta) || isinf(sensitivity) || isnan(sensitivity);
 
@@ -68,20 +67,20 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
         all.sd->queries += 1;
       }
       else 
-      { ec.l.simple.label = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
+      { ec.l.simple.label = ec.pred.scalar;
       }
       //cerr << "\t[" << i << ":" << ec.l.simple.label << " (truth=" << cost << ")]" << endl;
     }
     else
     { // in reduction mode, always given a cost
       if (pred_is_certain)
-        ec.l.simple.label = max(min(ec.pred.scalar,cs_a.cost_max),cs_a.cost_min);
+        ec.l.simple.label = ec.pred.scalar;
       else
         ec.l.simple.label = cost;
       //cerr << "\t[" << i << ":" << ec.l.simple.label << " (truth=" << cost << ")]" << (pred_is_certain ? '*' : ' ') << endl;
     }
 
-    all.set_minmax(all.sd, ec.l.simple.label);
+    //all.set_minmax(all.sd, ec.l.simple.label);
 
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     //cs_a.t ++;
@@ -205,6 +204,9 @@ base_learner* cs_active_setup(vw& all)
      l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
   else
      l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+
+  all.set_minmax(all.sd,data.cost_max);
+  all.set_minmax(all.sd,data.cost_min);
 
   all.p->lp = cs_label; // assigning the label parser
   l->set_finish_example(finish_example);
