@@ -41,6 +41,11 @@ namespace VW
         return m_owner;
     }
 
+    size_t VowpalWabbitExample::NumberOfFeatures::get()
+    {
+        return m_example->num_features;
+    }
+
     generic<typename T> T VowpalWabbitExample::GetPrediction(VowpalWabbit^ vw, IVowpalWabbitPredictionFactory<T>^ factory)
     {
 #ifdef _DEBUG

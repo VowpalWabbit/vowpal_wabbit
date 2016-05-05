@@ -685,8 +685,12 @@ namespace VW
     // make sure we're not a ring based example
     assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
+    // the bag might have reached it's limit
     if (m_examples != nullptr)
-      m_examples->Add(ex);
+    {
+      if (!m_examples->TryAdd(ex))
+        DisposeExample(ex);
+    }
 #if _DEBUG
     else // this should not happen as m_vw is already set to null
       throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");

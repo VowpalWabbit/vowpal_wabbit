@@ -92,6 +92,8 @@ namespace VW
         /// </summary>
         void InternalDispose();
 
+        void DisposeExample(VowpalWabbitExample^ ex);
+
     public:
         /// <summary>
         /// Cleanup.

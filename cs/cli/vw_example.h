@@ -231,5 +231,10 @@ namespace VW
         }
 
         virtual IEnumerator<VowpalWabbitNamespace^>^ GetEnumerator();
+
+        property size_t NumberOfFeatures
+        {
+            size_t get();
+        }
     };
 }

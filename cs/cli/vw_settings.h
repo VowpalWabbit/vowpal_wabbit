@@ -76,6 +76,7 @@ namespace VW
 		    VowpalWabbitFeatureDiscovery m_featureDiscovery;
         PropertyConfiguration^ m_propertyConfiguration;
         bool m_enableThreadSafeExamplePooling;
+        int m_maxExamples;
     public:
         VowpalWabbitSettings() :
             m_arguments(String::Empty),
@@ -89,7 +90,8 @@ namespace VW
             m_enableStringFloatCompact(false),
 			      m_featureDiscovery(VowpalWabbitFeatureDiscovery::Default),
             m_propertyConfiguration(::PropertyConfiguration::Default),
-            m_enableThreadSafeExamplePooling(false)
+            m_enableThreadSafeExamplePooling(false),
+            m_maxExamples(INT32_MAX)
         {
         }
 
@@ -118,7 +120,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
-            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling)
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
+            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples)
             : VowpalWabbitSettings()
         {
             if (arguments != nullptr)
@@ -164,6 +167,9 @@ namespace VW
 
             if (enableThreadSafeExamplePooling.HasValue)
               m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.Value;
+
+            if (maxExamples.HasValue)
+              m_maxExamples = maxExamples.Value;
         }
 
         /// <summary>
@@ -347,6 +353,14 @@ namespace VW
             }
         }
 
+        property int MaxExamples
+        {
+            int get()
+            {
+                return m_maxExamples;
+            }
+        }
+
         VowpalWabbitSettings^ ShallowCopy(
             [System::Runtime::InteropServices::Optional] String^ arguments,
             [System::Runtime::InteropServices::Optional] Stream^ modelStream,
@@ -366,7 +380,8 @@ namespace VW
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
-            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling)
+            [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
+            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples)
         {
             auto copy = gcnew VowpalWabbitSettings();
 
@@ -399,6 +414,7 @@ namespace VW
 			      copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
             copy->m_propertyConfiguration = propertyConfiguration == nullptr ? PropertyConfiguration : propertyConfiguration;
             copy->m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.HasValue ? enableThreadSafeExamplePooling.Value : EnableThreadSafeExamplePooling;
+            copy->m_maxExamples = maxExamples.HasValue ? maxExamples.Value : MaxExamples;
 
             return copy;
         }
