@@ -8,9 +8,8 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
-PYTHON_VERSION = 2.7
-PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
-PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
+PYTHON_INCLUDE = $(shell python-config --includes)
+PYTHON_LDFLAGS = $(shell python-config --ldflags)
 
 PYTHON_LIBS = -l boost_python
 ifeq (,$(wildcard ../vowpalwabbit/vw.so))

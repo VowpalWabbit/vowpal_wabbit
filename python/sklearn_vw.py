@@ -13,8 +13,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
-import StringIO
-
+import io
 
 DEFAULT_NS = ''
 CONSTANT_HASH = 116060
@@ -222,8 +221,8 @@ class VW(BaseEstimator):
 
         # assign all valid args to params dict
         args = dict(locals())
-        for k, v in args.iteritems():
-            if k != 'self' and v is not None:
+        for k, v in args.items():
+            if k != 'self' and k != '__class__' and v is not None:
                 self.params[k] = v
 
         # store passes separately to be used in fit
@@ -232,6 +231,7 @@ class VW(BaseEstimator):
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
 
         self.vw_ = None
+
         super(VW, self).__init__()
 
     def get_vw(self):
@@ -271,7 +271,7 @@ class VW(BaseEstimator):
         """
 
         # add examples to model
-        for _ in xrange(self.passes_):
+        for _ in range(self.passes_):
             for idx, x in enumerate(X):
                 if self.convert_to_vw_:
                     x = tovw(x=x, y=y[idx], sample_weight=sample_weight)[0]
@@ -406,7 +406,7 @@ class VW(BaseEstimator):
         {sparse matrix} coefficient weights for model
         """
 
-        return csr_matrix([self.get_vw().get_weight(i) for i in xrange(self.get_vw().num_weights())])
+        return csr_matrix([self.get_vw().get_weight(i) for i in range(self.get_vw().num_weights())])
 
     def get_intercept(self):
         """ Returns intercept weight for model
@@ -540,11 +540,11 @@ def tovw(x, y=None, sample_weight=None):
                 x[row, col] = INVALID_CHARS.sub('.', x[row, col])
 
     # convert input to svmlight format
-    s = StringIO.StringIO()
+    s = io.BytesIO()
     dump_svmlight_file(x, np.zeros(rows), s)
 
     # parse entries to construct VW format
-    rows = s.getvalue().split('\n')[:-1]
+    rows = s.getvalue().decode('ascii').split('\n')[:-1]
     out = []
     for idx, row in enumerate(rows):
         truth = y[idx] if use_truth else 1
