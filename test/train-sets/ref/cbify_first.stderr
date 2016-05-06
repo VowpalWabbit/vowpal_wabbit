@@ -8,14 +8,14 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0        1        5        2
-1.000000 1.000000            2            2.0        2        1        2
-1.000000 1.000000            4            4.0        4        2        2
-1.000000 1.000000            8            8.0        8        3        2
+1.000000 1.000000            2            2.0        2        9        2
+0.750000 0.500000            4            4.0        4        7        2
+0.875000 1.000000            8            8.0        8        2        2
 
 finished run
 number of examples per pass = 10
 passes used = 1
 weighted example sum = 10.000000
 weighted label sum = 0.000000
-average loss = 1.000000
+average loss = 0.900000
 total feature number = 20
