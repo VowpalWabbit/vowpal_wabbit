@@ -26,11 +26,8 @@ class SearchTask():
         if callable(getattr(self, "_takedown", None)): takedown = lambda: self._takedown(my_example)
         self.sch.set_structured_predict_hook(run, setup, takedown)
         self.sch.set_force_oracle(useOracle)
-        print('learning bogus')
         self.vw.learn(self.bogus_example)
-        print('learning blank')
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
-        print('done!')
 
     def learn(self, data_iterator):
         for my_example in data_iterator.__iter__():
@@ -87,7 +84,6 @@ class vw(pylibvw.vw):
         else:
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
-            print(ec)
             pylibvw.vw.learn(self, ec)
 
     def predict(self, ec, labelType=pylibvw.vw.lBinary):
@@ -495,7 +491,7 @@ class example(pylibvw.example):
         ns = self.get_ns(ns)  # guaranteed to be a single character
         f = pylibvw.example.feature(self, ns.ord_ns, i)
         if self.setup_done:
-            f = (f - self.get_ft_offset()) / self.stride
+            f = int((f - self.get_ft_offset()) / self.stride)
         return f
 
     def feature_weight(self, ns, i):

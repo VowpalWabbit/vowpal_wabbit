@@ -104,7 +104,8 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str)
-{ example*ec = my_empty_example0(all, labelType);
+{
+  example*ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
@@ -173,7 +174,8 @@ uint32_t ex_num_features(example_ptr ec, unsigned char ns)
 }
 
 uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
-{ return ec->feature_space[ns].indicies[i];
+{
+  return ec->feature_space[ns].indicies[i];
 }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i)

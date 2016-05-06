@@ -26,11 +26,11 @@ my_dataset = [ (1, (-1, -1)),
 vw = pyvw.vw("--search 2 --search_task hook --ring_size 1024 --search_alpha 1e-2")
 lv = vw.init_search_task(LatentVariableClassifier)
 
-print 'training'
+print('training')
 for i in range(100):
     lv.learn(my_dataset)
 
-print 'testing'
+print('testing')
 for (y,x) in my_dataset:
-    print 'pred =', lv.predict( (0,x) )
+    print('pred =', lv.predict( (0,x) ))
     
