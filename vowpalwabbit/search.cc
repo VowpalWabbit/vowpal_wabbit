@@ -94,14 +94,14 @@ struct action_repr
 { action a;
   features *repr;
   action_repr(action _a, features* _repr) : a(_a)
-  { if(_repr!=NULL)
+  { if(_repr!=nullptr)
     { repr = new features(); 
       repr->deep_copy_from(*_repr);
     }
     else
-      repr = NULL;
+      repr = nullptr;
   }
-  action_repr(action _a) : a(_a), repr(NULL) {}
+  action_repr(action _a) : a(_a), repr(nullptr) {}
 };
 
 struct action_cache
@@ -549,11 +549,9 @@ void reset_search_structure(search_private& priv)
     if (priv.beta > 1) priv.beta = 1;
   }
   for (Search::action_repr& ar : priv.ptag_to_action)
-  { if(ar.repr !=NULL)
-    { ar.repr->values.delete_v();
-      ar.repr->indicies.delete_v();
-      ar.repr->space_names.delete_v();
-      cdbg << "delete_v" << endl;
+  { if(ar.repr !=nullptr)
+    { ar.repr->delete_v();
+      delete ar.repr;
     }
   }
   priv.ptag_to_action.erase();
@@ -640,26 +638,29 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
   }
 
   if (priv.acset.use_passthrough_repr)
+  { cdbg << "BEGIN adding passthrough features" << endl;
     for (size_t i=0; i<I; i++)
-      {
-        features& fs = *(condition_on_actions[i].repr);
-        char name = condition_on_names[i];
-        for (size_t k=0; k<fs.size(); k++)
-          if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
-            { uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
-              if (priv.all->audit)
-                { priv.dat_new_feature_audit_ss.str("");
-                  priv.dat_new_feature_audit_ss.clear();
-                  priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
-                }
-
-              priv.dat_new_feature_ec  = &ec;
-              priv.dat_new_feature_idx = fid;
-              priv.dat_new_feature_namespace = conditioning_namespace;
-              priv.dat_new_feature_value = fs.values[k];
-              add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
-            }
-      }
+    { if (condition_on_actions[i].repr == nullptr) continue;
+      features& fs = *(condition_on_actions[i].repr);
+      char name = condition_on_names[i];
+      for (size_t k=0; k<fs.size(); k++)
+        if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
+        { uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indicies[k]);
+          if (priv.all->audit)
+          { priv.dat_new_feature_audit_ss.str("");
+            priv.dat_new_feature_audit_ss.clear();
+            priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
+          }
+          
+          priv.dat_new_feature_ec  = &ec;
+          priv.dat_new_feature_idx = fid;
+          priv.dat_new_feature_namespace = conditioning_namespace;
+          priv.dat_new_feature_value = fs.values[k];
+          add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
+        }
+    }
+    cdbg << "END adding passthrough features" << endl;
+  }
 
   features& con_fs = ec.feature_space[conditioning_namespace];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
@@ -785,7 +786,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
     }
   }
   else     // non-LDF, no action costs
-  { if ((allowed_actions == NULL) || (allowed_actions_cnt == 0))   // any action is allowed
+  { if ((allowed_actions == nullptr) || (allowed_actions_cnt == 0))   // any action is allowed
     { bool set_to_one = false;
       if (cs_get_costs_size(isCB, lab) != priv.A)
       { cs_costs_erase(isCB, lab);
@@ -830,6 +831,7 @@ template<class T> void push_at(v_array<T>& v, T item, size_t pos)
   else
   { if (v.end_array > v.begin() + pos)
     { // there's enough memory, just not enough filler
+      memset(v.end(), 0, sizeof(T) * (pos - v.size()));
       v.begin()[pos] = item;
       v.end() = v.begin() + pos + 1;
     }
@@ -1968,8 +1970,12 @@ void search_finish(search& sch)
 
   priv.train_trajectory.delete_v();
   for (Search::action_repr& ar : priv.ptag_to_action)
-    if(ar.repr != NULL)
-      ar.repr->delete_v();
+  { if(ar.repr !=nullptr)
+    { ar.repr->delete_v();
+      delete ar.repr;
+      cdbg << "delete_v" << endl;
+    }
+  }
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
   priv.memo_foreach_action.delete_v();
@@ -2389,14 +2395,17 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
   if (mytag != 0)
   { if (mytag < priv->ptag_to_action.size())
     { cdbg << "delete_v at " << mytag << endl;
-      if(priv->ptag_to_action[mytag].repr != NULL)
-        priv->ptag_to_action[mytag].repr->delete_v();
+      if(priv->ptag_to_action[mytag].repr != nullptr)
+      { priv->ptag_to_action[mytag].repr->delete_v();
+        delete priv->ptag_to_action[mytag].repr;
+      }
     }
     if (priv->acset.use_passthrough_repr)
+    { assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr ==  nullptr));
       push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
-    else
-      push_at(priv->ptag_to_action, action_repr(a, (features*)NULL), mytag);
-      cdbg << "push_at " << mytag << endl;
+    } else
+      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
+    cdbg << "push_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
     loss( priv->use_action_costs
@@ -2414,8 +2423,10 @@ action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action*
   if ((mytag != 0) && ecs[a].l.cs.costs.size() > 0)
   { if (mytag < priv->ptag_to_action.size())
     { cdbg << "delete_v at " << mytag << endl;
-      if(priv->ptag_to_action[mytag].repr != NULL)
-        priv->ptag_to_action[mytag].repr->delete_v();
+      if(priv->ptag_to_action[mytag].repr != nullptr)
+      { priv->ptag_to_action[mytag].repr->delete_v();
+        delete priv->ptag_to_action[mytag].repr;
+      }
     }
     push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
