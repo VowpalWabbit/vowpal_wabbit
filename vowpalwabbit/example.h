@@ -127,6 +127,7 @@ void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example& ec)
 { // if only index is constant namespace or no index
+  if (ec.tag.size() > 0) return false;
   return ((ec.indices.size() == 0) ||
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));
