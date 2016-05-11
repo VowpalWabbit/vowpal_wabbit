@@ -15,6 +15,7 @@ struct cs_active
 { // active learning algorithm parameters
   float c0; // mellowness controlling the width of the set of good functions
   float c1; // multiplier on the threshold for the cost range test
+  float alpha; // noise parameter
   float cost_max; // max cost
   float cost_min; // min cost
 
@@ -31,7 +32,7 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   float t = (float)cs_a.t; // ec.example_t;  // current round
   float t_prev = t-1.; // ec.weight; // last round
 
-  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/sqrt(t); // threshold on cost range
+  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/pow(t,1.f/(cs_a.alpha+2.f)); // threshold on cost range
   float delta = cs_a.c0*log((float)cs_a.num_classes)*log(t_prev)*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
   
   float cost_pred_u = min(ec.pred.scalar+eta, cs_a.cost_max);
@@ -51,7 +52,7 @@ bool is_range_large(cs_active& cs_a, base_learner& base, example& ec, uint32_t i
   bool result = (loss_delta_upper_bnd <= delta) || isnan(loss_delta_upper_bnd);
 
   //if (i == 1)
-  //   cout << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " sensitivity_u=" << sensitivity_u << " w_u=" << w_u << " sensitivity_l=" << sensitivity_l << " w_l=" << w_l << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
+  //   cout << "is_range_large | t=" << t << " t_prev=" << t_prev << " eta=" << eta << " delta=" << delta << " pred=" << ec.pred.scalar << " cost_pred_u=" << cost_pred_u << " cost_pred_l=" << cost_pred_l << " sensitivity=" << sensitivity << " w_u=" << w_u << " sensitivity=" << sensitivity << " w_l=" << w_l << " loss_delta_upper_bnd=" << loss_delta_upper_bnd << " result=" << result << endl;
   
   return result;
 }
@@ -70,7 +71,8 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
         all.sd->queries += 1;
       }
       else 
-      { ec.l.simple.label = ec.pred.scalar;
+      { //ec.l.simple.label = ec.pred.scalar;
+        cost = FLT_MAX;
       }
       //cerr << "\t[" << i << ":" << ec.l.simple.label << " (truth=" << cost << ")]" << endl;
     }
@@ -143,6 +145,7 @@ base_learner* cs_active_setup(vw& all)
   ("simulation", "cost-sensitive active learning simulation mode")
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 8.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
+  ("alpha", po::value<float>(),"Non-negative noise condition parameter. Larger value means less noise. Default 0.")
   ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
   ("cost_min",po::value<float>(),"cost lower bound. Default 0.");
   add_options(all);
@@ -152,6 +155,7 @@ base_learner* cs_active_setup(vw& all)
   data.num_classes = (uint32_t)all.vm["cs_active"].as<size_t>();
   data.c0 = 0.1;
   data.c1 = 0.5;
+  data.alpha = 0.f;
   data.all = &all;
   data.cost_max = 1.f;
   data.cost_min = 0.f;
@@ -164,6 +168,10 @@ base_learner* cs_active_setup(vw& all)
 
   if(all.vm.count("range_c"))
   { data.c1 = all.vm["range_c"].as<float>();
+  }
+  
+  if(all.vm.count("alpha"))
+  { data.alpha = all.vm["alpha"].as<float>();
   }
   
   if(all.vm.count("cost_max"))
