@@ -475,7 +475,7 @@ struct vw
   uint32_t skips[256];//skips in ngrams.
   std::vector<std::string> limit_strings; // descriptor of feature limits
   uint32_t limit[256];//count to limit features by
-  char affix_features[256]; // affixes to generate (up to 8 per namespace)
+  uint64_t affix_features[256]; // affixes to generate (up to 16 per namespace - 4 bits per affix)
   bool     spelling_features[256]; // generate spelling features for which namespace
   vector<string> dictionary_path;  // where to look for dictionaries
   vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
