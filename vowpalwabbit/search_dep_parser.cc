@@ -157,7 +157,7 @@ size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint3
   }
   else if (a_id == REDUCE_RIGHT)
   { uint32_t last   = stack.last();
-    uint32_t   hd     = stack[ stack.size() - 2 ];
+    uint32_t   hd   = stack[ stack.size() - 2 ];
     heads[last]     = hd;
     children[5][hd] = children[4][hd];
     children[4][hd] = last;
@@ -169,13 +169,13 @@ size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint3
     return idx;
   }
   else if (a_id == REDUCE_LEFT)
-  { size_t last    = stack.last();
-    uint32_t hd    = idx;
-    heads[last]    = hd;
+  { size_t last     = stack.last();
+    uint32_t hd     = idx;
+    heads[last]     = hd;
     children[3][hd] = children[2][hd];
     children[2][hd] = last;
     children[0][hd] ++;
-    tags[last]       = t_id;
+    tags[last]      = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     assert(! stack.empty());
     stack.pop();
@@ -189,7 +189,6 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
 { task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads, &gold_tags=data->gold_tags, &tags = data->tags;
   v_array<uint32_t> *children = data->children;
-  //fprintf(stderr,"action: %d\n",a_id);
   if (a_id == SHIFT)
   { stack.push_back(idx);
     return idx+1;
@@ -203,22 +202,20 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
     children[4][hd] = last;
     children[1][hd] ++;
     tags[last]      = t_id;
-//	fprintf(stderr,"makelink %d %d\n", last, hd);
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     return idx+1;
   }
   else if (a_id == REDUCE_LEFT)
-  { size_t last    = stack.last();
-    uint32_t hd    = (idx >n)? 0:idx;
-    heads[last]      = hd;
+  { size_t last     = stack.last();
+    uint32_t hd     = (idx >n)? 0:idx;
+    heads[last]     = hd;
     children[3][hd] = children[2][hd];
     children[2][hd] = last;
     children[0][hd] ++;
-    tags[last]       = t_id;
+    tags[last]      = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);	
     assert(! stack.empty());
     stack.pop();
-	//fprintf(stderr,"makelink %d %d\n", last, hd);
 	return idx;
   }
   else if (a_id == REDUCE)
@@ -343,13 +340,6 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
 		if(temp[i]) valid_action.push_back(i);
 	}
   }
-  /*fprintf(stderr, "%d %d %d", idx, state, stack_depth);
-  for(size_t i=0; i< valid_action.size(); i++)
-	  fprintf(stderr, "%d",valid_action[i]);
-  fprintf(stderr,"\n");
-  */
-
-
 }
 
 bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
@@ -361,7 +351,7 @@ bool is_valid(uint64_t action, v_array<uint32_t> valid_actions)
 
 void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 { task_data *data = sch.get_task_data<task_data>();
-  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &heads=data->heads;
+  v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, heads=data->heads;
   size_t size = stack.size();
   size_t last = (size==0) ? 0 : stack.last();
   for(size_t i = 1; i<= 4; i++)
@@ -377,23 +367,19 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
 		 if(stack[i]!=last) action_loss[REDUCE_RIGHT]+=1;		 
 	   }
 	}
-  for(size_t i = idx; i<=n; i++)
-  { if(gold_heads[i] == last)
+  for(size_t i = idx; i<=n+1; i++)
+  { if(i<=n && gold_heads[i] == last)
 	{ action_loss[REDUCE] +=1;
 	  action_loss[REDUCE_LEFT] +=1;
 	}
 	if(i!=idx && gold_heads[last] == i)
 	  action_loss[REDUCE_LEFT] +=1;
   }
-  if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0)
-    action_loss[REDUCE_LEFT] +=1;
+  //if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0) //should not fire
+  //  action_loss[REDUCE_LEFT] +=1;
 
-  if(gold_heads[idx] >= idx or (gold_heads[idx] == 0 and size > 0 and stack[0]!=0))
+  if(gold_heads[idx] > idx or (gold_heads[idx] == 0 and size > 0 and stack[0]!=0))
     action_loss[REDUCE_RIGHT] +=1;
-
- // for(size_t i = 1; i<= 4; i++)
-//	  if(is_valid(i,valid_actions))
-		  //fprintf(stderr," action_cost[%d] = %d\n",i,action_loss[i]);
 }
 
 void get_hybrid_action_cost(Search::search &sch, size_t idx, uint64_t n)
@@ -503,7 +489,7 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
   if(left_label!=my_null && is_valid(REDUCE_LEFT, actions)) actions_onelearner.push_back(1+left_label+num_label);  
   if(left_label==my_null && is_valid(REDUCE_RIGHT, actions))
      for(size_t i=0; i< num_label; i++)
-       if(sys==arc_eager || i!=data->root_label-1)
+       if(i!=data->root_label-1)
            actions_onelearner.push_back(i+2);  
   if(left_label==my_null && is_valid(REDUCE_LEFT, actions))
           for(size_t i=0; i<num_label; i++)
@@ -677,7 +663,6 @@ void run(Search::search& sch, vector<example*>& ec)
         }
       }
     }
-
     count++;
 	if(sys==arc_hybrid)
     	idx = transition_hybrid(sch, a_id, idx, t_id, n);
@@ -689,8 +674,6 @@ void run(Search::search& sch, vector<example*>& ec)
 	  tags[stack.last()] = (uint64_t)data->root_label;
 	  sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
   }
-//    for(size_t i=1; i<=n; i++)
-//		fprintf(stderr,"%d : %d: %d ::", i, heads[i], tags[i]);
   if (sch.output().good())
     for(size_t i=1; i<=n; i++)
       sch.output() << (heads[i])<<":"<<tags[i] << endl;
