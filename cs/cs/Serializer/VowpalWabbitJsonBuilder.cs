@@ -243,6 +243,9 @@ namespace VW.Serializer
             {
                 case "$id":
                     {
+                        if (this.referenceResolver == null)
+                            return;
+
                         var id = (string)reader.Value;
 
                         if (!reader.Read() ||
@@ -268,6 +271,9 @@ namespace VW.Serializer
                     return;
                 case "$ref":
                     {
+                        if (this.referenceResolver == null)
+                            return;
+
                         var id = (string)reader.Value;
 
                         // go up 2 levels to find actual namespace, the last one is actually the property we want to serialize
@@ -486,7 +492,7 @@ namespace VW.Serializer
                 {
                     case JsonToken.PropertyName:
                         var propertyName = (string)reader.Value;
-                        if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix) ||
+                        if (propertyName.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal) ||
                             propertyConfiguration.IsSpecialProperty(propertyName))
                         {
                             this.ParseSpecialProperty(path.Last(), propertyName);

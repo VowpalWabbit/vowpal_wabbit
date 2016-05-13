@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VW
@@ -25,9 +27,9 @@ namespace VW
                 (IBag<T>)new BagImpl<T>() : new BoundedBagImpl<T>(max);
         }
 
-        public static IBag<T> Synchronized<T>(IBag<T> bag)
+        public static IBag<T> CreateLockFree<T>()
         {
-            return new ThreadSafeBagImpl<T>(bag);
+            return new LockFreeBagImpl<T>();
         }
 
         private abstract class BaseBagImpl<T>
@@ -86,53 +88,39 @@ namespace VW
             }
         }
 
-        private sealed class ThreadSafeBagImpl<T> : IBag<T>
+        private sealed class LockFreeBagImpl<T> : IBag<T>
         {
-            private readonly object lockObj;
-            private readonly IBag<T> bag;
+            private ConcurrentQueue<T> queue;
 
-            internal ThreadSafeBagImpl(IBag<T> bag)
+            internal LockFreeBagImpl()
             {
-                if (bag == null)
-                    throw new ArgumentNullException("bag");
-
-                this.bag = bag;
-                this.lockObj = new object();
+                this.queue = new ConcurrentQueue<T>();
             }
 
             public bool TryAdd(T item)
             {
-                lock (this.lockObj)
-                {
-                    return this.bag.TryAdd(item);
-                }
+                this.queue.Enqueue(item);
+                return true;
             }
 
             public T Remove()
             {
-                lock (this.lockObj)
-                {
-                    return this.bag.Remove();
-                }
+                T result;
+                if (this.queue.TryDequeue(out result))
+                    return result;
+
+                return default(T);
             }
 
             public IEnumerable<T> RemoveAll()
             {
-                lock (this.lockObj)
-                {
-                    return this.bag.RemoveAll();
-                }
+                // TODO: violates the lock constraint. though this is just used at disposable time
+                return this.queue;
             }
 
             public int Count
             {
-                get
-                {
-                    lock (this.lockObj)
-                    {
-                        return this.bag.Count;
-                    }
-                }
+                get { return this.queue.Count; }
             }
         }
     }

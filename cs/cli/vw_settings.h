@@ -77,6 +77,7 @@ namespace VW
         PropertyConfiguration^ m_propertyConfiguration;
         bool m_enableThreadSafeExamplePooling;
         int m_maxExamples;
+        bool m_verbose;
     public:
         VowpalWabbitSettings() :
             m_arguments(String::Empty),
@@ -91,7 +92,8 @@ namespace VW
 			      m_featureDiscovery(VowpalWabbitFeatureDiscovery::Default),
             m_propertyConfiguration(::PropertyConfiguration::Default),
             m_enableThreadSafeExamplePooling(false),
-            m_maxExamples(INT32_MAX)
+            m_maxExamples(INT32_MAX),
+            m_verbose(false)
         {
         }
 
@@ -121,7 +123,8 @@ namespace VW
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
-            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples)
+            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> verbose)
             : VowpalWabbitSettings()
         {
             if (arguments != nullptr)
@@ -170,6 +173,9 @@ namespace VW
 
             if (maxExamples.HasValue)
               m_maxExamples = maxExamples.Value;
+
+            if (verbose.HasValue)
+              m_verbose = verbose.Value;
         }
 
         /// <summary>
@@ -179,6 +185,8 @@ namespace VW
         {
             String^ get()
             {
+                if (!m_verbose && !m_arguments->Contains("--quiet"))
+                  return m_arguments + " --quiet";
                 return m_arguments;
             }
         }
@@ -361,6 +369,14 @@ namespace VW
             }
         }
 
+        property bool Verbose
+        {
+          bool get()
+          {
+            return m_verbose;
+          }
+        }
+
         VowpalWabbitSettings^ ShallowCopy(
             [System::Runtime::InteropServices::Optional] String^ arguments,
             [System::Runtime::InteropServices::Optional] Stream^ modelStream,
@@ -381,7 +397,8 @@ namespace VW
 			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
-            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples)
+            [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples,
+            [System::Runtime::InteropServices::Optional] Nullable<bool> verbose)
         {
             auto copy = gcnew VowpalWabbitSettings();
 
@@ -415,6 +432,7 @@ namespace VW
             copy->m_propertyConfiguration = propertyConfiguration == nullptr ? PropertyConfiguration : propertyConfiguration;
             copy->m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.HasValue ? enableThreadSafeExamplePooling.Value : EnableThreadSafeExamplePooling;
             copy->m_maxExamples = maxExamples.HasValue ? maxExamples.Value : MaxExamples;
+            copy->m_verbose = verbose.HasValue ? verbose.Value : Verbose;
 
             return copy;
         }

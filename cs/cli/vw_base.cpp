@@ -25,9 +25,10 @@ namespace VW
     VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
     {
-        m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
         if (m_settings->EnableThreadSafeExamplePooling)
-            m_examples = Bag::Synchronized(m_examples);
+          m_examples = Bag::CreateLockFree<VowpalWabbitExample^>();
+        else
+          m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
 
         try
         {
