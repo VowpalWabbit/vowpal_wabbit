@@ -280,6 +280,7 @@
     <ClInclude Include="clr_io_memory.h" />
     <ClInclude Include="spanning_tree_clr.h" />
     <ClInclude Include="vw_arguments.h" />
+    <ClInclude Include="vw_cbutil.h" />
     <ClInclude Include="vw_interface.h" />
     <ClInclude Include="vowpalwabbit.h" />
     <ClInclude Include="vw_base.h" />
@@ -298,6 +299,7 @@
     <ClCompile Include="spanning_tree_clr.cpp" />
     <ClCompile Include="vw_base.cpp" />
     <ClCompile Include="vowpalwabbit.cpp" />
+    <ClCompile Include="vw_cbutil.cpp" />
     <ClCompile Include="vw_example.cpp" />
     <ClCompile Include="vw_builder.cpp" />
     <ClCompile Include="vw_exception.cpp" />
