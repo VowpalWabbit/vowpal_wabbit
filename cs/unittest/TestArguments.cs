@@ -15,7 +15,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestArguments()
         {
-            using (var vw = new VowpalWabbit("--cb_adf --rank_all --interact ud"))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--cb_adf --rank_all --interact ud", verbose: true)))
             {
                 Assert.AreEqual("--cb_adf --rank_all --interact ud --csoaa_ldf multiline --csoaa_rank", vw.Arguments.CommandLine);
 

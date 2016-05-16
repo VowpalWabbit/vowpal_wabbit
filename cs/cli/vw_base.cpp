@@ -46,6 +46,9 @@ namespace VW
                 {
                     if (settings->ModelStream == nullptr)
                     {
+						            if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
+							            string.append(" --quiet");
+
                         m_vw = VW::initialize(string);
                     }
                     else

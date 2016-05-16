@@ -55,7 +55,7 @@ namespace VW.Serializer
                 value);
         }
 
-		/// <summary>
+        /// <summary>
         /// Transfers feature data to native space.
         /// </summary>
         /// <param name="context">The marshalling context.</param>
@@ -63,12 +63,12 @@ namespace VW.Serializer
         /// <param name="feature">The feature description.</param>
         /// <param name="value">The feature value.</param>
         public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value)
-		{
-		    if (value == null)
+        {
+            if (value == null)
                 return;
 
-			this.MarshalFeature(context, ns, feature, value, 0, value.Length);
-		}
+            this.MarshalFeature(context, ns, feature, value, 0, value.Length);
+        }
 
         /// <summary>
         /// Transfers feature data to native space.
@@ -109,7 +109,7 @@ namespace VW.Serializer
 
             for (var j = offset;j<length;j++)
             {
-				var v = value[j];
+                var v = value[j];
 
                 <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(t)) {#>
                 #if DEBUG

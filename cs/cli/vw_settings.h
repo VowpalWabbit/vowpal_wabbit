@@ -185,8 +185,6 @@ namespace VW
         {
             String^ get()
             {
-                if (!m_verbose && !m_arguments->Contains("--quiet"))
-                  return m_arguments + " --quiet";
                 return m_arguments;
             }
         }

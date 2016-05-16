@@ -525,7 +525,7 @@ namespace VW
   /// <param name="u">Hash offset.</param>
   /// <returns>The resulting hash code.</returns>
   //template<bool replaceSpace>
-  size_t hashall(String^ s, size_t u)
+  uint64_t hashall(String^ s, uint64_t u)
   { // get raw bytes from string
     auto keys = Encoding::UTF8->GetBytes(s);
     int length = keys->Length;
@@ -552,7 +552,7 @@ namespace VW
     //  }
     //}
 
-    uint32_t h1 = u;
+    uint32_t h1 = (uint32_t)u;
     uint32_t k1 = 0;
 
     const uint32_t c1 = 0xcc9e2d51;

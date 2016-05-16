@@ -156,9 +156,14 @@ namespace VW
         vector<size_t> fa_missing;
         for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
         {
-            uint64_t masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
-
+            auto masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
             auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+
+            System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
+              fa.indicies[ia], masked_weight_index,
+              fb.indicies[ib], other_masked_weight_index
+              ));
+
             if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
                 ib++;
             else
@@ -168,8 +173,7 @@ namespace VW
                 bool found = false;
                 for (ib = 0; ib < fb.values.size(); ib++)
                 {
-                    uint64_t other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
-
+                    auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
                     if (masked_weight_index == other_masked_weight_index)
                     {
                         if (!FloatEqual(fa.values[ia], fb.values[ib]))
