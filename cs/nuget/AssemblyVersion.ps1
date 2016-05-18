@@ -3,7 +3,6 @@
 function PatchAssemblyInfo ($file)
 {
     $text = (Get-Content $file) -replace "Version\(""[0-9\.]+""\)", "Version(""$version"")"
-    echo $text
     Set-Content -Path $file -Value $text
 }
 
