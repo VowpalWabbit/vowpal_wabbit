@@ -8,7 +8,7 @@ $version = Get-Content version.txt
 ..\..\vowpalwabbit\.nuget\nuget pack cs-parallel.nuspec -Version $version -Prop "Configuration=Release;Platform=x64" -Prop SolutionDir=..\..\vowpalwabbit\ -OutputDirectory $outputDirectory
 
 
-if (not [string]::IsNullOrEmpty($apiKey))
+if (-not [string]::IsNullOrEmpty($apiKey))
 { 
     ..\..\vowpalwabbit\.nuget\nuget push ..\..\vowpalwabbit\x64\Release\VowpalWabbit.*.nupkg $apiKey
 }
