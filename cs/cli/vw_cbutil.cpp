@@ -9,10 +9,10 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-  float VowpalWabbitContextualBanditUtil::GetUnbiasedCost(uint32_t actionObservered, uint32_t actionTaken, float cost, float probability, float offset)
+  float VowpalWabbitContextualBanditUtil::GetUnbiasedCost(uint32_t actionObservered, uint32_t actionTaken, float cost, float probability)
   {
     CB::cb_class observation = { cost, actionObservered, probability };
 
-    return get_unbiased_cost(&observation, actionTaken, probability)
+    return get_unbiased_cost(&observation, actionTaken);
   }
 }
