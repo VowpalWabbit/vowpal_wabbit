@@ -1,5 +1,4 @@
-param([string]$apiKey="")
-param([string]$outputDirectory="..\..\vowpalwabbit\x64\Release")
+param([string]$apiKey="", [string]$outputDirectory="..\..\vowpalwabbit\x64\Release")
 
 $version = Get-Content version.txt
 
