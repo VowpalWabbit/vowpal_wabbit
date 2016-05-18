@@ -113,7 +113,7 @@ namespace cs_unittest
                         Assert.IsFalse(string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
                     }
 
-                    if (this.vw.Native.Settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
+                    if (this.vw.Native.Settings.TypeInspector == JsonTypeInspector.Default)
                     {
                         var jsonStr = JsonConvert.SerializeObject(example);
 

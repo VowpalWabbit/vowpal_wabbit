@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VW;
 using VW.Labels;
+using VW.Serializer;
 using VW.Serializer.Attributes;
 
 namespace cs_unittest
@@ -39,7 +40,7 @@ namespace cs_unittest
         public void TestLabelsNoAnnotation()
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleContextNoAnnotation>(
-                new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.All)))
+                new VowpalWabbitSettings(typeInspector: TypeInspector.All)))
             {
                 vw.Validate("3.2 | Feature:25",
                     new SimpleContextNoAnnotation

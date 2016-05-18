@@ -9,9 +9,9 @@ using VW.Reflection;
 
 namespace VW.Serializer
 {
-    internal static class VowpalWabbitMultiExampleSerializerCompiler
+    public static class VowpalWabbitMultiExampleSerializerCompiler
     {
-        internal static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
+        public static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
         {
             // check for _multi
             var multiFeature = schema.Features.FirstOrDefault(fe => fe.Name == settings.PropertyConfiguration.MultiProperty);
@@ -51,7 +51,7 @@ namespace VW.Serializer
                         !settings.EnableStringExampleGeneration);
 
                 this.adfSerializerComputer = new VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>(
-                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature), settings.PropertyConfiguration),
+                    settings.TypeInspector.CreateSchema(settings, typeof(TActionDependentFeature)),
                     settings == null ? null : settings.CustomFeaturizer,
                     !settings.EnableStringExampleGeneration);
 

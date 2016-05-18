@@ -217,7 +217,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestNumADFs()
         {
-            var jsonDirectSerializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json))
+            var jsonDirectSerializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(typeInspector: JsonTypeInspector.Default))
                 as IVowpalWabbitMultiExampleSerializerCompiler<MyContext>;
 
             Assert.IsNotNull(jsonDirectSerializer);

@@ -8,11 +8,11 @@
 
 namespace VW.Serializer
 {
-    internal static class VowpalWabbitConstants
+    public static class VowpalWabbitConstants
     {
         /// <summary>
         /// The VW default namespace is denoted by a blank.
         /// </summary>
-        internal const char DefaultNamespace = ' ';
+        public const char DefaultNamespace = ' ';
     }
 }

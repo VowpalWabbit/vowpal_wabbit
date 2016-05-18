@@ -16,8 +16,9 @@ using namespace VW::Serializer;
 
 namespace VW
 {
-    ref class VowpalWabbitModel;
     ref class VowpalWabbit;
+    ref class VowpalWabbitModel;
+    ref class VowpalWabbitSettings;
 
     public enum class VowpalWabbitExampleDistribution
     {
@@ -32,27 +33,11 @@ namespace VW
         RoundRobin = 1
     };
 
-	public enum class VowpalWabbitFeatureDiscovery
-	{
-		/// <summary>
-		/// Only properties annotated using Feature attribute are considered.
-		/// </summary>
-		Default,
-
-		/// <summary>
-		/// All properties are used as features.
-		/// </summary>
-		All,
-
-    /// <summary>
-    /// Use JSON.NET's JsonProperty annotation for feature annotation.
-    /// </summary>
-    /// <remarks>
-    /// This serialization produces equivalent results as if the object would be
-    /// serialized using JSON.NET and then ingested be VowpalWabbitJsonSerializer.
-    /// </remarks>
-    Json
-	};
+    public interface class ITypeInspector
+    {
+    public:
+        Schema^ CreateSchema(VowpalWabbitSettings^ settings, Type^ type);
+    };
 
     public ref class VowpalWabbitSettings
     {
@@ -73,7 +58,7 @@ namespace VW
         Schema^ m_schema;
         Schema^ m_actionDependentSchema;
         List<Type^>^ m_customFeaturizer;
-		    VowpalWabbitFeatureDiscovery m_featureDiscovery;
+        ITypeInspector^ m_typeInspector;
         PropertyConfiguration^ m_propertyConfiguration;
         bool m_enableThreadSafeExamplePooling;
         int m_maxExamples;
@@ -89,7 +74,6 @@ namespace VW
             m_exampleDistribution(VowpalWabbitExampleDistribution::UniformRandom),
             m_enableStringExampleGeneration(false),
             m_enableStringFloatCompact(false),
-			      m_featureDiscovery(VowpalWabbitFeatureDiscovery::Default),
             m_propertyConfiguration(::PropertyConfiguration::Default),
             m_enableThreadSafeExamplePooling(false),
             m_maxExamples(INT32_MAX),
@@ -120,7 +104,7 @@ namespace VW
             [System::Runtime::InteropServices::Optional] Schema^ schema,
             [System::Runtime::InteropServices::Optional] Schema^ actionDependentSchema,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
-			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
+			      [System::Runtime::InteropServices::Optional] ITypeInspector^ typeInspector,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
             [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples,
@@ -162,8 +146,8 @@ namespace VW
             if (enableStringFloatCompact.HasValue)
                 m_enableStringFloatCompact = enableStringFloatCompact.Value;
 
-			      if (featureDiscovery.HasValue)
-				      m_featureDiscovery = featureDiscovery.Value;
+			      if (typeInspector != nullptr)
+				      m_typeInspector = typeInspector;
 
             if (propertyConfiguration != nullptr)
               m_propertyConfiguration = propertyConfiguration;
@@ -335,11 +319,11 @@ namespace VW
             }
         }
 
-		    property VowpalWabbitFeatureDiscovery FeatureDiscovery
+		    property ITypeInspector^ TypeInspector
 		    {
-			      VowpalWabbitFeatureDiscovery get()
+            ITypeInspector^ get()
 			      {
-				        return m_featureDiscovery;
+				        return m_typeInspector;
 			      }
 		    }
 
@@ -392,7 +376,7 @@ namespace VW
             [System::Runtime::InteropServices::Optional] VW::Serializer::Schema^ schema,
             [System::Runtime::InteropServices::Optional] VW::Serializer::Schema^ actionDependentSchema,
             [System::Runtime::InteropServices::Optional] List<Type^>^ customFeaturizer,
-			      [System::Runtime::InteropServices::Optional] Nullable<VowpalWabbitFeatureDiscovery> featureDiscovery,
+            [System::Runtime::InteropServices::Optional] ITypeInspector^ typeInspector,
             [System::Runtime::InteropServices::Optional] ::PropertyConfiguration^ propertyConfiguration,
             [System::Runtime::InteropServices::Optional] Nullable<bool> enableThreadSafeExamplePooling,
             [System::Runtime::InteropServices::Optional] Nullable<uint32_t> maxExamples,
@@ -426,7 +410,7 @@ namespace VW
             copy->m_schema = schema == nullptr ? Schema : schema;
             copy->m_actionDependentSchema = actionDependentSchema == nullptr ? ActionDependentSchema : actionDependentSchema;
             copy->m_customFeaturizer = customFeaturizer == nullptr ? CustomFeaturizer : customFeaturizer;
-			      copy->m_featureDiscovery = featureDiscovery.HasValue ? featureDiscovery.Value : FeatureDiscovery;
+            copy->m_typeInspector = typeInspector == nullptr ? TypeInspector : typeInspector;
             copy->m_propertyConfiguration = propertyConfiguration == nullptr ? PropertyConfiguration : propertyConfiguration;
             copy->m_enableThreadSafeExamplePooling = enableThreadSafeExamplePooling.HasValue ? enableThreadSafeExamplePooling.Value : EnableThreadSafeExamplePooling;
             copy->m_maxExamples = maxExamples.HasValue ? maxExamples.Value : MaxExamples;

@@ -137,6 +137,14 @@
       <Project>{01a85382-c3e9-480a-86bf-fafe4ad107a7}</Project>
       <Name>cs_console</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cs_json\cs_json.csproj">
+      <Project>{9e27fa94-ab34-4736-8427-fb7a2ba90d52}</Project>
+      <Name>cs_json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cs_parallel\cs_parallel.csproj">
+      <Project>{08636f79-5577-4af2-8eed-ec8a5bc14ac4}</Project>
+      <Name>cs_parallel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>
       <Name>cs_testcommon</Name>

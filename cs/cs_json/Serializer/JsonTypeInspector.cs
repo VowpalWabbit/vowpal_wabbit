@@ -18,8 +18,23 @@ namespace VW.Serializer
     /// <summary>
     /// Utility class analyzing compile-time <see cref="JsonPropertyAttribute"/> annotation.
     /// </summary>
-    internal static class AnnotationJsonInspector
+    public static class JsonTypeInspector
     {
+        public static readonly ITypeInspector Default;
+
+        static JsonTypeInspector()
+        {
+            Default = new JsonTypeInspectorImpl();
+        }
+
+        private sealed class JsonTypeInspectorImpl : ITypeInspector
+        {
+            public Schema CreateSchema(VowpalWabbitSettings settings, Type type)
+            {
+                return JsonTypeInspector.CreateSchema(type, settings.PropertyConfiguration);
+            }
+        }
+
         private static bool IsFeatureTypeSupported(Type type)
         {
             return IsNumericType(type)
