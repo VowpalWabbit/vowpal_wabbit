@@ -224,7 +224,7 @@ namespace cs_unittest
         [TestCategory("Marshal")]
         public void TestFeatureDiscoveryAll()
         {
-            using (var vw = new VowpalWabbitExampleValidator<POCO>(new VowpalWabbitSettings(typeInspector: TypeInspector.All)))
+            using (var vw = new VowpalWabbitExampleValidator<POCO>(new VowpalWabbitSettings { TypeInspector = TypeInspector.All }))
             {
                 vw.Validate("| Feature1 Feature2:5", new POCO { Feature1 = true, Feature2 = 5 });
             }

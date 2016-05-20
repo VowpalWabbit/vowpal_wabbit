@@ -40,7 +40,7 @@ namespace cs_unittest
         public void TestLabelsNoAnnotation()
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleContextNoAnnotation>(
-                new VowpalWabbitSettings(typeInspector: TypeInspector.All)))
+                new VowpalWabbitSettings { TypeInspector = TypeInspector.All }))
             {
                 vw.Validate("3.2 | Feature:25",
                     new SimpleContextNoAnnotation

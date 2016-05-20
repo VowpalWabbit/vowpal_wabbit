@@ -18,7 +18,7 @@ namespace cs_unittest
         {
             try
             {
-                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = true }))
                 {
                     vw.Learn(new CachedData(), new SimpleLabel());
                 }
@@ -36,7 +36,7 @@ namespace cs_unittest
         {
             try
             {
-                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = true }))
                 {
                     vw.Learn(new CachedData(), new SimpleLabel());
                 }
@@ -52,7 +52,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestExampleCacheDisabledForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(enableExampleCaching: false)))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = false }))
             {
                 vw.Learn(new CachedData(), new SimpleLabel());
 
@@ -86,7 +86,7 @@ namespace cs_unittest
                 examples.Add(cachedData);
             }
 
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings("-k -c --passes 10", enableExampleCaching: false)))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings("-k -c --passes 10") { EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
                 {
@@ -97,9 +97,9 @@ namespace cs_unittest
                 vw.Native.SaveModel("models/model1");
             }
 
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("models/model1"))))
-            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: false )))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t") { ModelStream = File.OpenRead("models/model1") }))
+            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { Model = vwModel, EnableExampleCaching = true, MaxExampleCacheSize =  5 }))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { Model = vwModel, EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
                 {

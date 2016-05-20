@@ -34,7 +34,9 @@ namespace VW
         {
             try
             {
-                auto string = msclr::interop::marshal_as<std::string>(settings->Arguments);
+                std::string string;
+                if (settings->Arguments != nullptr)
+                    string = msclr::interop::marshal_as<std::string>(settings->Arguments);
 
                 if (settings->Model != nullptr)
                 {

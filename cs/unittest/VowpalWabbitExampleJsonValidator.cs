@@ -20,7 +20,9 @@ namespace cs_unittest
 
         internal VowpalWabbitExampleJsonValidator(VowpalWabbitSettings settings)
         {
-            this.vw = new VowpalWabbit(settings.ShallowCopy(enableStringExampleGeneration: true));
+            settings = (VowpalWabbitSettings)settings.Clone();
+            settings.EnableStringExampleGeneration = true;
+            this.vw = new VowpalWabbit(settings);
         }
 
         public void Validate(string line, VowpalWabbitExampleCollection example, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)

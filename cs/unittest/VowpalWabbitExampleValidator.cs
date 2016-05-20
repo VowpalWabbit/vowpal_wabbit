@@ -50,7 +50,10 @@ namespace cs_unittest
 
         internal VowpalWabbitExampleValidator(VowpalWabbitSettings settings)
         {
-            this.vw = new VowpalWabbit<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true));
+            var stringSettings = (VowpalWabbitSettings)settings.Clone();
+            stringSettings.EnableStringExampleGeneration = true;
+
+            this.vw = new VowpalWabbit<TExample>(stringSettings);
 
             var compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
             if (compiler != null)
@@ -62,7 +65,7 @@ namespace cs_unittest
             if (compiler != null)
                 this.serializerNative = compiler.Func(this.vwNative.Native);
 
-            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true)).Create(this.vw.Native);
+            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(stringSettings).Create(this.vw.Native);
         }
 
         public void Validate(string line, TExample example, ILabel label = null)

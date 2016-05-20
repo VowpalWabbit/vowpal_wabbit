@@ -28,7 +28,7 @@ namespace VW
         {
             var settings = vwModel == null ?
                 new VowpalWabbitSettings("--multiworld_test f") :
-                new VowpalWabbitSettings("", modelStream: vwModel);
+                new VowpalWabbitSettings { ModelStream = vwModel };
 
             this.vw = new VowpalWabbit<LearnedVsConstantPolicy>(settings);
         }

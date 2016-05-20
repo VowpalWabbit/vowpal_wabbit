@@ -53,9 +53,9 @@ namespace cs_unittest
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();
 
             var stringSerializerCompiler = (VowpalWabbitSingleExampleSerializerCompiler<CbAdfShared>)
-                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
+                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfShared>(new VowpalWabbitSettings { EnableStringExampleGeneration = true });
             var stringSerializerAdfCompiler = (VowpalWabbitSingleExampleSerializerCompiler<CbAdfAction>)
-                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction>(new VowpalWabbitSettings(enableStringExampleGeneration: true));
+                VowpalWabbitSerializerFactory.CreateSerializer<CbAdfAction>(new VowpalWabbitSettings { EnableStringExampleGeneration = true });
 
             var stringData = new List<List<string>>();
 
@@ -64,8 +64,8 @@ namespace cs_unittest
             {
                 spanningTree.Start();
 
-                using (var vw1 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
-                using (var vw2 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy", enableStringExampleGeneration: true)))
+                using (var vw1 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 1 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy") { EnableStringExampleGeneration = true }))
+                using (var vw2 = new VowpalWabbit(new VowpalWabbitSettings(@"--total 2 --node 0 --unique_id 0 --span_server localhost --cb_adf --rank_all --interact xy") { EnableStringExampleGeneration = true } ))
                 {
                     var stringSerializer = stringSerializerCompiler.Func(vw1);
                     var stringSerializerAdf = stringSerializerAdfCompiler.Func(vw1);
@@ -108,13 +108,15 @@ namespace cs_unittest
             var expected1Model = File.ReadAllBytes("expected.1.model").Skip(0x15).ToList();
             var expected2Model = File.ReadAllBytes("expected.2.model").Skip(0x15).ToList();
 
-            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy",
-                parallelOptions: new ParallelOptions
+            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy")
+            {
+                ParallelOptions = new ParallelOptions
                 {
                     MaxDegreeOfParallelism = 2
                 },
-                exampleCountPerRun: 2000,
-                exampleDistribution: VowpalWabbitExampleDistribution.RoundRobin);
+                ExampleCountPerRun = 2000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
 
             using (var vw = new VowpalWabbitThreadedLearning(settings))
             {

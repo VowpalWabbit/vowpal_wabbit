@@ -66,12 +66,12 @@ namespace cs_unittest
                 vw.Native.SaveModel(outModelFile);
             }
 
-            var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+            var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile)) { MaxExampleCacheSize = 1024 });
             var pool = new VowpalWabbitThreadedPrediction<DataString, DataStringADF>(vwModel);
 
             while (true)
             {
-                vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile), maxExampleCacheSize: 1024));
+                vwModel = new VowpalWabbitModel(new VowpalWabbitSettings(string.Format("--quiet -t -i {0}", outModelFile)) { MaxExampleCacheSize = 1024 });
                 pool.UpdateModel(vwModel);
             }
         }
@@ -148,9 +148,9 @@ namespace cs_unittest
             }
 
             // Test synchronous VW instances using shared model
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead(cbadfModelFile))))
-            using (var vwShared1 = new VowpalWabbit<DataString, DataStringADF>(new VowpalWabbitSettings(model: vwModel)))
-            using (var vwShared2 = new VowpalWabbit<DataString, DataStringADF>(new VowpalWabbitSettings(model: vwModel)))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t") { ModelStream = File.OpenRead(cbadfModelFile) }))
+            using (var vwShared1 = new VowpalWabbit<DataString, DataStringADF>(new VowpalWabbitSettings{ Model = vwModel }))
+            using (var vwShared2 = new VowpalWabbit<DataString, DataStringADF>(new VowpalWabbitSettings{ Model = vwModel }))
             {
                 for (int i = 0; i < sampleData.Length; i++)
                 {
@@ -164,7 +164,7 @@ namespace cs_unittest
             }
 
             // Test concurrent VW instances using shared model and model pool
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead(cbadfModelFile))))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t") { ModelStream = File.OpenRead(cbadfModelFile) }))
             using (var vwPool = new VowpalWabbitThreadedPrediction<DataString, DataStringADF>(vwModel))
             {
                 Parallel.For

@@ -18,7 +18,7 @@ namespace cs_unittest
         public void TestDynamic()
         {
             using (var vw = new VowpalWabbit("--cb_adf --rank_all"))
-            using (var vwDynamic = new VowpalWabbitDynamic(new VowpalWabbitSettings("--cb_adf --rank_all", typeInspector: JsonTypeInspector.Default)))
+            using (var vwDynamic = new VowpalWabbitDynamic(new VowpalWabbitSettings("--cb_adf --rank_all") { TypeInspector = JsonTypeInspector.Default }))
             {
                 var expected = vw.Learn(new[] { "| q:1", "2:-3:0.9 | q:2", "| q:3" }, VowpalWabbitPredictionType.Multilabel);
                 var actual = vwDynamic.Learn(

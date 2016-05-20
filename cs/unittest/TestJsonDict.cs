@@ -59,7 +59,7 @@ namespace cs_unittest
             var ctx1 = new Context(vec, 1, settings);
             var ctx2 = new Context(vec, 2, settings);
 
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true }))
             using (var resolver = new VowpalWabbitJsonReferenceResolver(serializer => Assert.Fail()))
             using (var serializer1 = new VowpalWabbitJsonSerializer(vw, resolver))
             using (var example1 = serializer1.ParseAndCreate(ctx1.JSON))
@@ -88,7 +88,7 @@ namespace cs_unittest
             VowpalWabbitJsonSerializer delayedSerializer = null;
 
             using (var validator = new VowpalWabbitExampleJsonValidator())
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true }))
             using (var resolver = new VowpalWabbitJsonReferenceResolver(serializer => delayedSerializer = serializer))
             {
                 var serializer2 = new VowpalWabbitJsonSerializer(vw, resolver);
@@ -142,7 +142,7 @@ namespace cs_unittest
                 for (int maxDegreeOfParallelism = 1; maxDegreeOfParallelism < 4; maxDegreeOfParallelism++)
 			    {
                     var examplesFound = 0;
-                    using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true, enableThreadSafeExamplePooling: true)))
+                    using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true, EnableThreadSafeExamplePooling = true }))
                     using (var resolver = new VowpalWabbitJsonReferenceResolver(serializer =>
                         {
                             using (var example = serializer.CreateExamples())
@@ -188,7 +188,7 @@ namespace cs_unittest
 
         public void ValidateExample(VowpalWabbitExampleCollection example, Context ctx)
         {
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true }))
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
                 var singleExample = (VowpalWabbitSingleLineExampleCollection)example;
