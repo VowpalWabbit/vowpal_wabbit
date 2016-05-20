@@ -59,6 +59,9 @@ struct cb_adf
 
 namespace CB_ADF
 {
+  bool example_is_newline_not_header(example& ec)
+  { return (example_is_newline(ec) && !CB::ec_is_example_header(ec)); }
+  
 void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { if (cs_labels.size() < examples.size())
   { cs_labels.resize(examples.size());
@@ -103,7 +106,7 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
   if (shared) startK = 1;
 
   for (size_t i = 0; i < examples.size(); i++)
-  { if (example_is_newline(*examples[i])) continue;
+  { if (example_is_newline_not_header(*examples[i])) continue;
 
     COST_SENSITIVE::wclass wc;
     wc.class_index = 0;
@@ -205,12 +208,12 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
     ec->l.cb = cb_labels[i++];
 
   if (!mydata.rank_all)
-  { uint32_t action = 0;
-    for (size_t i = 0; i < examples.size(); i++)
-      if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline(*examples[i]))
-        if (examples[i]->pred.multiclass != 0)
-          action = examples[i]->pred.multiclass;
-    examples[0]->pred.multiclass = action;
+    { uint32_t action = 0;
+      for (size_t i = 0; i < examples.size(); i++)
+	if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline_not_header(*examples[i]))
+	  if (examples[i]->pred.multiclass != 0)
+	    action = examples[i]->pred.multiclass;
+      examples[0]->pred.multiclass = action;
   }
 }
 
@@ -220,7 +223,8 @@ void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 }
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ gen_cs_example_dr(mydata, examples, mydata.cs_labels);
+{ 
+  gen_cs_example_dr(mydata, examples, mydata.cs_labels);
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
 }
 
@@ -362,8 +366,7 @@ void global_print_newline(vw& all)
 // how to
 
 void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
-{ if (example_is_newline(ec)) return;
-  // the shared example
+{ if (example_is_newline_not_header(ec)) return;
 
   size_t num_features = 0;
 
@@ -407,7 +410,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
 { label& ld = head_ec.l.cb;
   v_array<CB::cb_class> costs = ld.costs;
 
-  if (example_is_newline(head_ec)) return;
+  if (example_is_newline_not_header(head_ec)) return;
 
   size_t num_features = 0;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
@@ -508,7 +511,7 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
   bool is_test_ec = CB::example_is_test(ec);
   bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
-  if ((example_is_newline(ec) && is_test_ec) || need_to_break)
+  if ((example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
   { data.ec_seq.push_back(&ec);
     do_actual_learning<is_learn>(data, base);
     // using flag to clear, because ec_seq is used in finish_example
