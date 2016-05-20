@@ -575,6 +575,7 @@ void run(Search::search& sch, vector<example*>& ec)
 	left_label = stack.empty()?my_null:gold_tags[stack.last()];
 	if(sys==arc_hybrid) right_label = stack.empty()?my_null:gold_tags[stack.last()];
 	else if(sys==arc_eager) right_label = idx<=n? gold_tags[idx] : (uint32_t) data->root_label;
+	else THROW("unknown transition system");
 
     size_t a_id = 0, t_id = 0;
     if(one_learner)
