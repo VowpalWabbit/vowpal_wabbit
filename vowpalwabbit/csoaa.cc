@@ -5,7 +5,6 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <errno.h>
-#include <math.h>
 
 #include "reductions.h"
 #include "v_hashmap.h"
@@ -27,10 +26,10 @@ template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction)
 { if (is_learn)
-  { //ec.l.simple.label = cost;
-    //ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
-    ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
-    ec.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
+  { ec.l.simple.label = cost;
+    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+    //ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
+    //ec.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
     base.learn(ec, i-1);
   }
   else
@@ -41,7 +40,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
   { score = ec.partial_prediction;
     prediction = i;
   }
-  add_passthrough_feature(ec, i, tanh(ec.partial_prediction));
+  add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
 #define DO_MULTIPREDICT true

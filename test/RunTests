@@ -1164,7 +1164,7 @@ echo "" | {VW}
 
 # Test 68: Search for multiclass classification
 {VW} -k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off
-	train-sets/ref/search_multiclass.stderr
+    train-sets/ref/search_multiclass.stderr
 
 # Test 69: (see Test 43/Test 44): search sequence labeling, with selective branching
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.nonldf.beam.test.predict --search_metatask selective_branching --search_max_branch 10 --search_kbest 10
@@ -1429,3 +1429,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
     train-sets/ref/cb_eval2.stderr
     pred-sets/ref/cb_eval2.preds
+
+# Test 125: arc-eager trasition-based dependency parser
+{VW} -k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8
+    train-sets/ref/search_dep_parser_arceager.stderr
