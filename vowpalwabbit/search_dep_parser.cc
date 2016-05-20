@@ -378,7 +378,7 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
   //if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0) //should not fire
   //  action_loss[REDUCE_LEFT] +=1;
 
-  if(gold_heads[idx] > idx or (gold_heads[idx] == 0 and size > 0 and stack[0]!=0))
+  if(gold_heads[idx] > idx || (gold_heads[idx] == 0 && size > 0 && stack[0]!=0))
     action_loss[REDUCE_RIGHT] +=1;
 }
 
