@@ -195,8 +195,8 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
   }
   else if (a_id == REDUCE_RIGHT)
   { uint32_t hd   = stack.last();
-	stack.push_back(idx);
-	uint32_t last = idx;	
+    stack.push_back(idx);
+    uint32_t last = idx;    
     heads[last]     = hd;
     children[5][hd] = children[4][hd];
     children[4][hd] = last;
@@ -213,16 +213,16 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
     children[2][hd] = last;
     children[0][hd] ++;
     tags[last]      = t_id;
-    sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);	
+    sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
     assert(! stack.empty());
     stack.pop();
-	return idx;
+    return idx;
   }
   else if (a_id == REDUCE)
   {
     assert(! stack.empty());
     stack.pop();
-	return idx;
+    return idx;
   }
   THROW("transition_eager failed");
 }
@@ -304,12 +304,12 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
 
 void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, uint64_t idx, uint64_t n, uint64_t stack_depth, uint64_t state)
 { task_data *data = sch.get_task_data<task_data>();
-  uint32_t &sys = data->transition_system;	
+  uint32_t &sys = data->transition_system;
   v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
   valid_action.erase();
   if(sys == arc_hybrid)
   { if(idx<=n) // SHIFT
-   	  valid_action.push_back( SHIFT );
+      valid_action.push_back( SHIFT );
     if(stack_depth >=2) // RIGHT
       valid_action.push_back( REDUCE_RIGHT );  
     if(stack_depth >=1 && state!=0 && idx<=n) // LEFT
@@ -317,28 +317,28 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
   } 
   else if(sys == arc_eager) // assume root is in N+1
   { temp.erase();
-	for(size_t i=0; i<=4; i++)
-		temp.push_back(1);
-	if (idx>n) 
-	{ temp[SHIFT] = 0;
-	  temp[REDUCE_RIGHT] = 0;
-	}
+    for(size_t i=0; i<=4; i++)
+      temp.push_back(1);
+    if (idx>n) 
+    { temp[SHIFT] = 0;
+      temp[REDUCE_RIGHT] = 0;
+    }
 
-	if (stack_depth==0)
-		temp[REDUCE] = 0;
-	else if (idx<=n+1 && heads[stack.last()] == my_null)
-		temp[REDUCE] = 0;
+    if (stack_depth==0)
+      temp[REDUCE] = 0;
+    else if (idx<=n+1 && heads[stack.last()] == my_null)
+      temp[REDUCE] = 0;
 
-	if(stack_depth ==0)	
-	{	temp[REDUCE_LEFT] = 0;
-		temp[REDUCE_RIGHT] = 0;
-	} else
-	{ 	if(heads[stack.last()]!=my_null) temp[REDUCE_LEFT] = 0;
-		if(idx <=n && heads[idx] != my_null) temp[REDUCE_RIGHT] = 0;	 
-	}
-	for(size_t i=1; i<=4; i++){
-		if(temp[i]) valid_action.push_back(i);
-	}
+    if(stack_depth ==0)    
+    { temp[REDUCE_LEFT] = 0;
+      temp[REDUCE_RIGHT] = 0;
+    } else
+    { if(heads[stack.last()]!=my_null) temp[REDUCE_LEFT] = 0;
+      if(idx <=n && heads[idx] != my_null) temp[REDUCE_RIGHT] = 0;     
+    }
+    for(size_t i=1; i<=4; i++){
+      if(temp[i]) valid_action.push_back(i);
+    }
   }
 }
 
@@ -358,22 +358,22 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
     action_loss[i] = 0;
   if(!stack.empty())
     for(size_t i = 0; i<size; i++)
-	{  if(gold_heads[stack[i]] == idx && heads[stack[i]] == my_null)
-       { action_loss[SHIFT] += 1;
-		 action_loss[REDUCE_RIGHT] +=1;
-       }
-	   if(idx <=n && (gold_heads[idx] == stack[i]))
-       { if(stack[i]!=0) action_loss[SHIFT] += 1;
-		 if(stack[i]!=last) action_loss[REDUCE_RIGHT]+=1;		 
-	   }
-	}
+    { if(gold_heads[stack[i]] == idx && heads[stack[i]] == my_null)
+      { action_loss[SHIFT] += 1;
+        action_loss[REDUCE_RIGHT] +=1;
+      }
+      if(idx <=n && (gold_heads[idx] == stack[i]))
+      { if(stack[i]!=0) action_loss[SHIFT] += 1;
+        if(stack[i]!=last) action_loss[REDUCE_RIGHT]+=1;         
+      }
+    }
   for(size_t i = idx; i<=n+1; i++)
   { if(i<=n && gold_heads[i] == last)
-	{ action_loss[REDUCE] +=1;
-	  action_loss[REDUCE_LEFT] +=1;
-	}
-	if(i!=idx && gold_heads[last] == i)
-	  action_loss[REDUCE_LEFT] +=1;
+    { action_loss[REDUCE] +=1;
+      action_loss[REDUCE_LEFT] +=1;
+    }
+    if(i!=idx && gold_heads[last] == i)
+      action_loss[REDUCE_LEFT] +=1;
   }
   //if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0) //should not fire
   //  action_loss[REDUCE_LEFT] +=1;
@@ -427,18 +427,18 @@ void get_cost_to_go_losses(Search::search &sch, v_array<pair<action, float>>& go
       gold_action_losses.push_back(make_pair(SHIFT, action_loss[SHIFT]));
     for(size_t i=2; i<=3; i++)
       if(is_valid(i, valid_actions))
-	  { for(size_t j=1; j<=num_label; j++)
+      { for(size_t j=1; j<=num_label; j++)
           if(sys==arc_eager || j!=data->root_label)
-            gold_action_losses.push_back(make_pair((1+j+(i-2)*num_label), action_loss[i]+(float)(j != (i==REDUCE_LEFT? left_label:right_label))));		  
-	  }
-	if(sys==arc_eager && is_valid(REDUCE, valid_actions))
+            gold_action_losses.push_back(make_pair((1+j+(i-2)*num_label), action_loss[i]+(float)(j != (i==REDUCE_LEFT? left_label:right_label))));
+      }
+    if(sys==arc_eager && is_valid(REDUCE, valid_actions))
       gold_action_losses.push_back(make_pair(2+num_label*2, action_loss[REDUCE]));
   }
   else
   { for(size_t i=1; i<=3; i++)
       if(is_valid(i, valid_actions))
         gold_action_losses.push_back(make_pair(i, (float)action_loss[i]));
-	if(sys==arc_eager && is_valid(REDUCE, valid_actions))
+    if(sys==arc_eager && is_valid(REDUCE, valid_actions))
         gold_action_losses.push_back(make_pair(REDUCE, (float)action_loss[REDUCE]));
   }
 }
@@ -464,8 +464,8 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
   size_t count = 0;
   for(size_t i=1; i<=4; i++)
   { if(i==4 && sys==arc_hybrid)
-	  continue;
-	if(action_loss[i] < action_loss[best_action] && is_valid(i,valid_actions))
+      continue;
+    if(action_loss[i] < action_loss[best_action] && is_valid(i,valid_actions))
     { best_action= i;
       count = 1;
       gold_actions.erase();
@@ -539,7 +539,7 @@ void run(Search::search& sch, vector<example*>& ec)
   v_array<action> &gold_actions = data->gold_actions;
   bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t &num_label = data->num_label;
-  uint32_t &sys = data->transition_system;	
+  uint32_t &sys = data->transition_system;
   uint64_t n = (uint64_t) ec.size();
   uint32_t left_label, right_label;
   stack.erase();
@@ -549,33 +549,32 @@ void run(Search::search& sch, vector<example*>& ec)
       data->children[i][j] = 0;  
   for(size_t i=0; i<n; i++)  
   { heads[i+1] = my_null;
-    tags[i+1] = my_null;	
+    tags[i+1] = my_null;
   }
   size_t count=1;
   size_t idx = ((data->root_label==0&&sys==arc_hybrid)?1:2);
   Search::predictor P(sch, (ptag) 0);
-  while(true)	  
-  {   
-	if(sys==arc_hybrid && stack.size()<=1 && idx > n)
-		break;
-	else if (sys==arc_eager && stack.size()==0 && idx > n)
-		break;
+  while(true)
+  { if(sys==arc_hybrid && stack.size()<=1 && idx > n)
+      break;
+    else if (sys==arc_eager && stack.size()==0 && idx > n)
+      break;
     bool computedFeatures = false;
-	if(sch.predictNeedsExample())
-	{ extract_features(sch, idx, ec);
-  	  computedFeatures = true;
-	}
+    if(sch.predictNeedsExample())
+    { extract_features(sch, idx, ec);
+        computedFeatures = true;
+    }
     get_valid_actions(sch, valid_actions, idx, n, (uint64_t) stack.size(), stack.empty() ? 0 : stack.last());
-	if(sys == arc_hybrid)
+    if(sys == arc_hybrid)
       get_hybrid_action_cost(sch, idx, n);
-	else if(sys == arc_eager)
-	  get_eager_action_cost(sch,idx,n);
+    else if(sys == arc_eager)
+      get_eager_action_cost(sch,idx,n);
 
-	// get gold tag labels
-	left_label = stack.empty()?my_null:gold_tags[stack.last()];
-	if(sys==arc_hybrid) right_label = stack.empty()?my_null:gold_tags[stack.last()];
-	else if(sys==arc_eager) right_label = idx<=n? gold_tags[idx] : (uint32_t) data->root_label;
-	else THROW("unknown transition system");
+    // get gold tag labels
+    left_label = stack.empty()?my_null:gold_tags[stack.last()];
+    if(sys==arc_hybrid) right_label = stack.empty()?my_null:gold_tags[stack.last()];
+    else if(sys==arc_eager) right_label = idx<=n? gold_tags[idx] : (uint32_t) data->root_label;	
+    else THROW("unknown transition system");
 
     size_t a_id = 0, t_id = 0;
     if(one_learner)
@@ -601,10 +600,10 @@ void run(Search::search& sch, vector<example*>& ec)
                .predict();
       }
       if (a_id == SHIFT) t_id = 0;
-	  else if(a_id == 2*num_label+2)
-	  { t_id = 0;
-		a_id = REDUCE;
-	  }
+      else if(a_id == 2*num_label+2)
+      { t_id = 0;
+        a_id = REDUCE;
+      }
       else if(a_id>1 && a_id-1 <= num_label)
       { t_id = a_id-1;
         a_id = REDUCE_RIGHT;
@@ -642,7 +641,7 @@ void run(Search::search& sch, vector<example*>& ec)
       { if ((!computedFeatures) && sch.predictNeedsExample()) 
           extract_features(sch, idx, ec);
 
-		if(cost_to_go)
+        if(cost_to_go)
         { gold_action_losses.erase();
           for(size_t i=1; i<= data->num_label; i++)
             gold_action_losses.push_back(make_pair((action)i, i != (a_id==REDUCE_LEFT?left_label:right_label)));
@@ -660,20 +659,20 @@ void run(Search::search& sch, vector<example*>& ec)
                  .erase_alloweds()
                  .set_condition_range(count-1, sch.get_history_length(), 'p')
                  .set_learner_id(a_id-1)
-                 .predict();				 
+                 .predict();                 
         }
       }
     }
     count++;
-	if(sys==arc_hybrid)
-    	idx = transition_hybrid(sch, a_id, idx, t_id, n);
-	else if(sys==arc_eager)
-    	idx = transition_eager(sch, a_id, idx, t_id, n);
+    if(sys==arc_hybrid)
+        idx = transition_hybrid(sch, a_id, idx, t_id, n);
+    else if(sys==arc_eager)
+        idx = transition_eager(sch, a_id, idx, t_id, n);
   }
   if(sys==arc_hybrid)
-  {	  heads[stack.last()] = 0;
-	  tags[stack.last()] = (uint64_t)data->root_label;
-	  sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
+  {   heads[stack.last()] = 0;
+      tags[stack.last()] = (uint64_t)data->root_label;
+      sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
   }
   if (sch.output().good())
     for(size_t i=1; i<=n; i++)
