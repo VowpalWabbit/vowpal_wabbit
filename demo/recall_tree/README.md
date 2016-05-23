@@ -19,6 +19,10 @@ The demo targets are:
 - As indicated, if you have less than 10000 classes, you should probably be using OAA.  To accelerate training you can use negative gradient subsampling and multicore training via hogwild.
 - If you're still reading, you have more than 10000 classes.  Therefore you will need many bits in your predictor.  Use as many as you can afford computationally.  
   - If your features are all binary then try disabling normalized updates via `--adaptive --invariant`, which is like having an extra bit in your predictor without the memory cost.
+- Logistic loss always works better, as far as I can tell.
+- There are extra features, consisting of the identities of the nodes in the routing tree, which are added to the example before passing to the underlying binary classifier.
+  - These are located in namespace '\x88'.  So, for example, you can interact them with other namespaces as in this demo (see Makefile).
+  - For problems with lots of features, interacting with all the path features can be both a computational and statistical drag.  Enabling the option `--node_only` only generates a single feature corresponding to the identity of the leaf node in the routing tree, which can be better under these conditions.
 - Typically increasing the number of candidates per leaf `--max_candidates` from the default will improve accuracy at the cost of additional computation.
 - Computational overhead increases with deeper trees, but (test) accuracy does not necessarily increase.  Therefore you have to play around with `--max_depth` and `--bern_hyper`.
   - Increasing `--bern_hyper` discourages deeper trees, decreasing it encourages deeper trees.  
