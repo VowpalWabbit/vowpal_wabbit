@@ -20,3 +20,9 @@ aloi_test.vw.gz:
 
 aloi_train.vw.gz:
 	wget http://lowrank.net/nikos/aloi_train.vw.gz
+
+oaa: oaa.vw aloi_test.vw.gz
+	vw -t -i $^
+
+oaa.vw: aloi_train.vw.gz
+	vw -f $@ -k -c --passes $(passes) --oaa 1000 $< -b $(bits) -l 1.86
