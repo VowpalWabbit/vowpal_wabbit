@@ -21,18 +21,18 @@ namespace cs_unittest
             var str = @"
 f1
 ns1.f2(FeatureGroup = 'a')
-ns1.f3(Namespace = ""a"",Enumerize=true, FeatureGroup = 'g'  )                
-ns1.f4(Enumerize=true , FeatureGroup ='f', Order=3,AddAnchor=true)   
-ns1.ns2.f5       
+ns1.f3(Namespace = ""a"",Enumerize=true, FeatureGroup = 'g'  )
+ns1.f4(Enumerize=true , FeatureGroup ='f', Order=3,AddAnchor=true)
+ns1.ns2.f5
             ";
 
             var schema = ConfigInspector.CreateSchema(typeof(ConfigSample), str, msg => Assert.Fail(msg));
 
-            using (var vw = new VowpalWabbitExampleValidator<ConfigSample>(new VowpalWabbitSettings(schema: schema)))
+            using (var vw = new VowpalWabbitExampleValidator<ConfigSample>(new VowpalWabbitSettings { Schema = schema }))
             {
-                vw.Validate("| f1:1 f5:5 |a abc |ga f33 |f f44 ", 
-                    new ConfigSample 
-                    { 
+                vw.Validate("| f1:1 f5:5 |a abc |ga f33 |f f44 ",
+                    new ConfigSample
+                    {
                         f1 = 1,
                         ns1 = new ConfigSampleNamespace
                         {
@@ -54,20 +54,20 @@ ns1.ns2.f5
             var schemaShared = ConfigInspector.CreateSchema(typeof(ConfigShared), "f1", msg => Assert.Fail(msg));
             var schemaADF = ConfigInspector.CreateSchema(typeof(ConfigADF), "f2(Enumerize=true)", msg => Assert.Fail(msg));
 
-            using (var vw = new VowpalWabbit<ConfigShared, ConfigADF>(new VowpalWabbitSettings("--cb_adf", schema: schemaShared, actionDependentSchema: schemaADF)))
+            using (var vw = new VowpalWabbit<ConfigShared, ConfigADF>(new VowpalWabbitSettings("--cb_adf") { Schema = schemaShared, ActionDependentSchema = schemaADF }))
             using (var vwNative = new VowpalWabbit("--cb_adf"))
             {
                 vw.Learn(
                     new ConfigShared { f1 = 2, ignore_me = 3 },
-                    new[] 
-                    { 
+                    new[]
+                    {
                         new ConfigADF { f2 = 3 },
                         new ConfigADF { f2 = 4 },
                     }, 0, new ContextualBanditLabel { Action = 0, Cost = 1, Probability = .5f });
 
                 vwNative.Learn(
-                    new[] 
-                    { 
+                    new[]
+                    {
                         "shared | f1:2",
                         "0:1:.5 | f23",
                         " | f24"

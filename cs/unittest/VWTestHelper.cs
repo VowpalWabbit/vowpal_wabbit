@@ -85,7 +85,7 @@ namespace cs_unittest
             using (var vwRef = new VowpalWabbit(args))
             using (var vwModel = new VowpalWabbitModel(args))
             using (var vwValidate = new VowpalWabbit(args))
-            using (var vwInMemoryShared2 = new VowpalWabbit<TData>(new VowpalWabbitSettings(model: vwModel)))
+            using (var vwInMemoryShared2 = new VowpalWabbit<TData>(new VowpalWabbitSettings { Model = vwModel }))
             using (var validate = new VowpalWabbitExampleValidator<TData>(args))
             {
                 var listener = new TListener();

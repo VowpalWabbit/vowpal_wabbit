@@ -11,15 +11,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using VW.Interfaces;
+using VW.Labels;
 
 namespace VW.Serializer
 {
     /// <summary>
     /// Utility class analyzing compile-time <see cref="JsonPropertyAttribute"/> annotation.
     /// </summary>
-    internal static class AnnotationJsonInspector
+    public static class JsonTypeInspector
     {
+        public static readonly ITypeInspector Default;
+
+        static JsonTypeInspector()
+        {
+            Default = new JsonTypeInspectorImpl();
+        }
+
+        private sealed class JsonTypeInspectorImpl : ITypeInspector
+        {
+            public Schema CreateSchema(VowpalWabbitSettings settings, Type type)
+            {
+                return JsonTypeInspector.CreateSchema(type, settings.PropertyConfiguration);
+            }
+        }
+
         private static bool IsFeatureTypeSupported(Type type)
         {
             return IsNumericType(type)
@@ -87,7 +102,7 @@ namespace VW.Serializer
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
                 let namespaceRawValue = nsAttr != null && nsAttr.PropertyName != null ? nsAttr.PropertyName : ns.Name
                 // filter all aux properties
-                where !namespaceRawValue.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
+                where !namespaceRawValue.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
                 let featureGroup = namespaceRawValue[0]
                 let namespaceValue = namespaceRawValue.Length > 1 ? namespaceRawValue.Substring(1) : null
                 let namespaceMemberSerialization = GetMemberSerialiation(ns.PropertyType)
@@ -101,7 +116,7 @@ namespace VW.Serializer
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
                 let isTextProperty = name == propertyConfiguration.TextProperty
                 // filter all aux properties
-                where isTextProperty || !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
+                where isTextProperty || !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
                 select new FeatureExpression(
                     featureType: p.PropertyType,
                     name: name,
@@ -130,7 +145,7 @@ namespace VW.Serializer
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
                 // filter all aux properties, except for special props
                 where propertyConfiguration.IsSpecialProperty(name) ||
-                   !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix)
+                   !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
                 // filterint labels for now
                 where name != propertyConfiguration.LabelProperty
                 where IsFeatureTypeSupported(p.PropertyType) ||

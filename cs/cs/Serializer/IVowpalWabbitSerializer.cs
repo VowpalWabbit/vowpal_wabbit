@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using VW.Interfaces;
+using VW.Labels;
 
 namespace VW.Serializer
 {

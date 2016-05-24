@@ -40,6 +40,26 @@ namespace VW
             virtual float Create(vw* vw, example* ex) sealed;
         };
 
+        public value struct VowpalWabbitScalar
+        {
+        public:
+            float Value;
+
+            float Confidence;
+        };
+
+        /// <summary>
+        /// A scalar prediction result.
+        /// </summary>
+        public ref class VowpalWabbitScalarConfidencePredictionFactory sealed : IVowpalWabbitPredictionFactory<VowpalWabbitScalar>
+        {
+        public:
+          /// <summary>
+          /// Extracts prediction results from example.
+          /// </summary>
+          virtual VowpalWabbitScalar Create(vw* vw, example* ex) sealed;
+        };
+
         /// <summary>
         /// A scalar prediction result.
         /// </summary>
@@ -98,6 +118,11 @@ namespace VW
             /// Use for scalar predictions.
             /// </summary>
             static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
+
+			/// <summary>
+			/// Use for scalar predictions.
+			/// </summary>
+			static initonly VowpalWabbitScalarConfidencePredictionFactory^ ScalarConfidence = gcnew VowpalWabbitScalarConfidencePredictionFactory;
 
             /// <summary>
             /// Use for scalar predictions.

@@ -62,6 +62,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Runtime.Caching" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -78,6 +79,7 @@
   <ItemGroup>
     <Compile Include="BaseData.cs" />
     <Compile Include="CbAdfData.cs" />
+    <Compile Include="TestWiki.cs" />
     <Compile Include="RunTests.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -87,10 +89,12 @@
     <Compile Include="TestArguments.cs" />
     <Compile Include="TestConfigInspector.cs" />
     <Compile Include="TestConsole.cs" />
+    <Compile Include="TestDynamic.cs" />
     <Compile Include="TestExampleCache.cs" />
     <Compile Include="TestExpansion.cs" />
     <Compile Include="TestFeatureExtraction.cs" />
     <Compile Include="TestJson.cs" />
+    <Compile Include="TestJsonDict.cs" />
     <Compile Include="TestJsonDirect.cs" />
     <Compile Include="TestLabels.cs" />
     <Compile Include="TestLeak.cs" />
@@ -132,6 +136,14 @@
     <ProjectReference Include="..\cs_console\cs_console.csproj">
       <Project>{01a85382-c3e9-480a-86bf-fafe4ad107a7}</Project>
       <Name>cs_console</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cs_json\cs_json.csproj">
+      <Project>{9e27fa94-ab34-4736-8427-fb7a2ba90d52}</Project>
+      <Name>cs_json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cs_parallel\cs_parallel.csproj">
+      <Project>{08636f79-5577-4af2-8eed-ec8a5bc14ac4}</Project>
+      <Name>cs_parallel</Name>
     </ProjectReference>
     <ProjectReference Include="..\testcommon\cs_testcommon.csproj">
       <Project>{6a9cbeab-427f-4d8d-9559-b76b42b0895c}</Project>

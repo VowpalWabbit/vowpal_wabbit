@@ -13,7 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 
@@ -27,21 +27,33 @@ namespace VW.Serializer
         private readonly IVowpalWabbitExamplePool vwPool;
         private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
+        private readonly VowpalWabbitJsonReferenceResolver referenceResolver;
+
+        private int unresolved;
+        private readonly object lockObject = new object();
+        private bool ready = false;
+        private List<Action> marshalRequests;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJson"/> class.
         /// </summary>
         /// <param name="vw">The VW native instance.</param>
-        public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool)
+        public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool, VowpalWabbitJsonReferenceResolver referenceResolver = null)
         {
             Contract.Requires(vwPool != null);
 
             this.vwPool = vwPool;
+            this.referenceResolver = referenceResolver;
             this.defaultMarshaller = new VowpalWabbitDefaultMarshaller();
             this.jsonSerializer = new JsonSerializer();
 
-            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this.vwPool, this.defaultMarshaller, this.jsonSerializer);
+            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
         }
+
+        /// <summary>
+        /// Userful if this deserializer is published through VowpalWabbitJsonReferenceResolver.
+        /// </summary>
+        public object UserContext { get; set; }
 
         /// <summary>
         /// Single line example or shared example.
@@ -52,6 +64,75 @@ namespace VW.Serializer
         /// Multi-line examples.
         /// </summary>
         public List<VowpalWabbitJsonBuilder> ExampleBuilders { get; private set; }
+
+        internal VowpalWabbitJsonReferenceResolver ReferenceResolver
+        {
+            get { return this.referenceResolver; }
+        }
+
+        internal void IncreaseUnresolved()
+        {
+            // only called during the initial parsing run
+            this.unresolved++;
+        }
+
+        internal bool Resolve(Action marshal)
+        {
+            lock (this.lockObject)
+            {
+                // ready is false until the initial parsing run is complete
+                if (this.ready)
+                {
+                    // the object doesn't get anymore unresolved marshal requests
+                    if (this.marshalRequests != null)
+                    {
+                        foreach (var req in this.marshalRequests)
+                            req();
+
+                        this.unresolved -= this.marshalRequests.Count;
+
+                        this.marshalRequests = null;
+                    }
+
+                    marshal();
+                    this.unresolved--;
+
+                    if (this.unresolved < 0)
+                        throw new InvalidOperationException("Number of unresolved requested must not be negative");
+
+                    return this.unresolved == 0;
+                }
+                else
+                {
+                    // we need to track the requests and wait until the initial parsing is done
+                    if (this.marshalRequests == null)
+                        this.marshalRequests = new List<Action>();
+
+                    this.marshalRequests.Add(marshal);
+
+                    return false;
+                }
+            }
+        }
+
+        public VowpalWabbitExampleCollection CreateExamples()
+        {
+            lock (this.lockObject)
+            {
+                if (this.unresolved == 0)
+                    return this.CreateExamplesInternal();
+
+                if (this.marshalRequests != null && this.unresolved == this.marshalRequests.Count)
+                {
+                    return this.CreateExamplesInternal();
+                }
+
+                // wait for delayed completion
+                this.ready = true;
+
+                return null;
+            }
+        }
 
         /// <summary>
         /// Parses and creates the example.
@@ -121,7 +202,7 @@ namespace VW.Serializer
 
             while (reader.Read())
             {
-                if (!(reader.TokenType == JsonToken.PropertyName && (string)reader.Value == "_multi"))
+                if (!(reader.TokenType == JsonToken.PropertyName && (string)reader.Value == multiProperty))
                 {
                     reader.Skip();
                     continue;
@@ -178,7 +259,7 @@ namespace VW.Serializer
 
                                 try
                                 {
-                                    builder = new VowpalWabbitJsonBuilder(this.vwPool, this.defaultMarshaller, this.jsonSerializer);
+                                    builder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
                                     this.ExampleBuilders.Add(builder);
                                 }
                                 catch (Exception)
@@ -204,7 +285,7 @@ namespace VW.Serializer
         /// <summary>
         /// Creates the examples ready for learning or prediction.
         /// </summary>
-        public VowpalWabbitExampleCollection CreateExamples()
+        public VowpalWabbitExampleCollection CreateExamplesInternal()
         {
             try
             {
@@ -221,7 +302,7 @@ namespace VW.Serializer
                     try
                     {
                         // mark shared example as shared
-                        this.defaultMarshaller.MarshalLabel(this.ExampleBuilder.Context, SharedLabel.Instance);
+                        this.defaultMarshaller.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
 
                         sharedExample = this.ExampleBuilder.CreateExample();
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)
@@ -268,6 +349,7 @@ namespace VW.Serializer
 
         private void Dispose(bool disposing)
         {
+            // Remark: might be called multiple times from VowpalWabbitJsonReferenceResolver
             if (disposing)
             {
                 // cleanup in case CreateExample() wasn't called

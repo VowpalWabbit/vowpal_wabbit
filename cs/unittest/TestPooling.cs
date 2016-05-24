@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
-using VW.Interfaces;
+using VW.Labels;
 
 namespace cs_unittest
 {

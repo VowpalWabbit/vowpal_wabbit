@@ -101,7 +101,9 @@ namespace VW
             // setup AllReduce chain
             // root closure
             {
-                var vw = this.vws[0] = new VowpalWabbit(settings.ShallowCopy(node: 0));
+                var nodeSettings = (VowpalWabbitSettings)settings.Clone();
+                nodeSettings.Node = 0;
+                var vw = this.vws[0] = new VowpalWabbit(nodeSettings);
 
                 var actionBlock = this.actionBlocks[0] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),
@@ -117,7 +119,10 @@ namespace VW
             for (int i = 1; i < settings.ParallelOptions.MaxDegreeOfParallelism; i++)
             {
                 // closure vars
-                var vw = this.vws[i] = new VowpalWabbit(settings.ShallowCopy(root: this.vws[0], node: (uint)i));
+                var nodeSettings = (VowpalWabbitSettings)settings.Clone();
+                nodeSettings.Root = this.vws[0];
+                nodeSettings.Node = (uint)i;
+                var vw = this.vws[i] = new VowpalWabbit(nodeSettings);
 
                 var actionBlock = this.actionBlocks[i] = new ActionBlock<Action<VowpalWabbit>>(
                     action => action(vw),

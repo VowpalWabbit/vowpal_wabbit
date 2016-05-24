@@ -65,9 +65,22 @@ namespace VW.Serializer
         public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value)
         {
             if (value == null)
-            {
                 return;
-            }
+
+            this.MarshalFeature(context, ns, feature, value, 0, value.Length);
+        }
+
+        /// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value, int offset, int length)
+        {
+            if (value == null)
+                return;
 
             ulong i = 0;
 
@@ -88,13 +101,16 @@ namespace VW.Serializer
 
             fixed (float* begin = value)
             {
-                context.NamespaceBuilder.AddFeaturesUnchecked((ulong)(ns.NamespaceHash + i), begin, begin + value.Length);
+                var temp = begin + offset;
+                context.NamespaceBuilder.AddFeaturesUnchecked((ulong)(ns.NamespaceHash + i), temp, temp + length);
             }
 
             <# } else { #>
 
-            foreach (var v in value)
+            for (var j = offset;j<length;j++)
             {
+                var v = value[j];
+
                 <# if(new[]{ typeof(Int64), typeof(UInt64), typeof(double) }.Contains(t)) {#>
                 #if DEBUG
                 if (v > float.MaxValue || v < float.MinValue)
@@ -135,13 +151,13 @@ namespace VW.Serializer
             }
 
             var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
-            foreach (var v in value)
+            for (var j = offset;j<length;j++)
             {
                 featureBuilder.AppendFormat(
                     CultureInfo.InvariantCulture,
                     format,
                     i,
-                    v);
+                    value[j]);
                 i++;
             }
 

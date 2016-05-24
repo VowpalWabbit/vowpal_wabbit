@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using cs_unittest;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 
@@ -47,10 +46,8 @@ namespace TrainSet0002Dat
                 Label = context.value.value
             };
 
-            if (context.initial != null)
-            {
-                simpleLabel.Initial = context.initial.value;
-            }
+            if (context.weight != null)
+                simpleLabel.Weight = context.weight.value;
 
             this.example.Label = simpleLabel;
         }

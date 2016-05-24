@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Reflection;
 using VW.Serializer.Intermediate;
 
@@ -18,7 +18,7 @@ namespace VW.Serializer
     /// </summary>
     /// <typeparam name="TExample">The example user type.</typeparam>
     /// <returns>A serializer for the given user example type.</returns>
-    internal sealed class VowpalWabbitSingleExampleSerializerCompiler<TExample> : IVowpalWabbitSerializerCompiler<TExample>
+    public sealed class VowpalWabbitSingleExampleSerializerCompiler<TExample> : IVowpalWabbitSerializerCompiler<TExample>
     {
                 /// <summary>
         /// Internal structure collecting all itmes required to marshal a single feature.
@@ -184,7 +184,7 @@ namespace VW.Serializer
 
         private void CreateLabel()
         {
-            // CODE if (labelParameter == null) 
+            // CODE if (labelParameter == null)
             this.perExampleBody.Add(Expression.IfThen(
                 Expression.NotEqual(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
                 this.CreateMarshallerCall("MarshalLabel", this.contextParameter, this.labelParameter)));
@@ -205,9 +205,9 @@ namespace VW.Serializer
                         Expression.AndAlso(
                             Expression.Equal(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
                             condition),
-                        // CODE MarshalLabel(context, example.Label) 
-                        this.CreateMarshallerCall("MarshalLabel", 
-                            this.contextParameter, 
+                        // CODE MarshalLabel(context, example.Label)
+                        this.CreateMarshallerCall("MarshalLabel",
+                            this.contextParameter,
                             label.ValueExpressionFactory(this.exampleParameter))));
             }
         }

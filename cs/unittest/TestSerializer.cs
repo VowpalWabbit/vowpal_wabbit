@@ -60,7 +60,7 @@ namespace cs_unittest
             var context = new MyContext() { Feature = new CustomClass() { X = 5 }};
             using (var vw = new VowpalWabbit(""))
             {
-                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(customFeaturizer: new List<Type> { typeof(CustomFeaturizer) }))
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings { CustomFeaturizer = new List<Type> { typeof(CustomFeaturizer) } })
                     .Create(vw);
 
                 var example = serializer.Serialize(context);
@@ -79,16 +79,19 @@ namespace cs_unittest
             var context = new MyContext() { Feature = new CustomClass() { X = 5 } };
             using (var vw = new VowpalWabbit(""))
             {
-                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings(schema: new Schema
+                var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(new VowpalWabbitSettings
                 {
-                    Features = new List<FeatureExpression>
-                    {
-                        new FeatureExpression(typeof(CustomClass), "Feature",
-                            // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
-                            valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
-                            overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.MarshalFeature(null, null, null, null)))
-                    }
-                })).Create(vw);
+                    Schema = new Schema
+                        {
+                            Features = new List<FeatureExpression>
+                            {
+                                new FeatureExpression(typeof(CustomClass), "Feature",
+                                    // TODO: looks a bit awkward for an API. The compiler needs to know what property to access to copy the value into the Feature<T> object
+                                    valueExpression => Expression.Property(valueExpression, (PropertyInfo)ReflectionHelper.GetInfo((MyContext m) => m.Feature)),
+                                    overrideSerializeMethod: (MethodInfo)ReflectionHelper.GetInfo((CustomFeaturizer c) => c.MarshalFeature(null, null, null, null)))
+                            }
+                        }
+                }).Create(vw);
                 var example = serializer.Serialize(context);
 
                 Assert.IsNotNull(example);
@@ -102,7 +105,7 @@ namespace cs_unittest
         [TestMethod]
         public void TestDictify()
         {
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings(enableStringExampleGeneration: true, enableStringFloatCompact: true)))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true, EnableStringFloatCompact = true }))
             using (var serializer = VowpalWabbitSerializerFactory.CreateSerializer<MyDictifyContext>(vw.Settings).Create(vw))
             {
                 var dictionary = new Dictionary<string, string>();

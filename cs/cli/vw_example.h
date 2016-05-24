@@ -103,7 +103,7 @@ namespace VW
     /// <remarks>
     /// Underlying memory is allocated by native code, but examples are not part of the ring.
     /// </remarks>
-    [System::Diagnostics::DebuggerDisplay("{m_string}")]
+    [System::Diagnostics::DebuggerDisplay("{m_example}: '{m_string}'")]
     public ref class VowpalWabbitExample : public IEnumerable<VowpalWabbitNamespace^>
     {
     private:
@@ -231,5 +231,10 @@ namespace VW
         }
 
         virtual IEnumerator<VowpalWabbitNamespace^>^ GetEnumerator();
+
+        property size_t NumberOfFeatures
+        {
+            size_t get();
+        }
     };
 }

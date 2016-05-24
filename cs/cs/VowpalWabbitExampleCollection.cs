@@ -108,6 +108,8 @@ namespace VW
         /// </summary>
         public abstract string VowpalWabbitString { get; }
 
+        public abstract ulong NumberOfFeatures { get; }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
