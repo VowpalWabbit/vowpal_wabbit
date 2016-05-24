@@ -30,6 +30,8 @@ namespace VW
         List<String^>^ m_regressors;
         String^ m_commandLine;
 
+        int m_numberOfActions;
+
     internal:
         VowpalWabbitArguments(vw* vw) :
             m_data(gcnew String(vw->data_filename.c_str())),
@@ -49,9 +51,12 @@ namespace VW
 
             StringBuilder^ sb = gcnew StringBuilder();
             for (auto& s : vw->args)
-              sb->AppendFormat("{0} ", gcnew String(s.c_str()));
+                sb->AppendFormat("{0} ", gcnew String(s.c_str()));
 
             m_commandLine = sb->ToString()->TrimEnd();
+
+            if (vw->vm.count("cb"))
+                m_numberOfActions = vw->vm["cb"].as<size_t>();
         }
 
     public:
@@ -115,6 +120,14 @@ namespace VW
             String^ get()
             {
                 return m_commandLine;
+            }
+        }
+
+        property int ContextualBanditNumberOfActions
+        {
+            int get()
+            {
+                return m_numberOfActions;
             }
         }
     };

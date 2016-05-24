@@ -9,7 +9,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics.Contracts;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer;
 
 namespace VW

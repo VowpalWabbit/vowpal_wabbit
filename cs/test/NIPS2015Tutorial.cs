@@ -37,7 +37,7 @@ namespace cs_test
 
         public static void AnnotationExample()
         {
-            using (var vw = new VowpalWabbit<MyExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)))
+            using (var vw = new VowpalWabbit<MyExample>(new VowpalWabbitSettings { EnableStringExampleGeneration = true }))
             {
                 var ex = new MyExample { Income = 40, Age = 25 };
                 var label = new SimpleLabel { Label = 1 };
@@ -75,13 +75,15 @@ namespace cs_test
             var example = new MyExample { Income = 40, Age = 25 };
             var label = new SimpleLabel { Label = 1 };
 
-            var settings = new VowpalWabbitSettings(
-                parallelOptions: new ParallelOptions
+            var settings = new VowpalWabbitSettings
+            {
+                ParallelOptions = new ParallelOptions
                 {
                     MaxDegreeOfParallelism = 16
                 },
-                exampleCountPerRun: 2000,
-                exampleDistribution: VowpalWabbitExampleDistribution.RoundRobin);
+                ExampleCountPerRun = 2000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
 
             using (var vw = new VowpalWabbitThreadedLearning(settings))
             {

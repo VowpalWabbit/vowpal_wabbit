@@ -73,6 +73,10 @@
       <Project>{e4e962ae-7056-4eb0-a8c5-8dc824a4b068}</Project>
       <Name>cs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cs_json\cs_json.csproj">
+      <Project>{9e27fa94-ab34-4736-8427-fb7a2ba90d52}</Project>
+      <Name>cs_json</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

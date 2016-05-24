@@ -32,7 +32,17 @@ namespace VW
             this.vwPool = new ObjectPool<VowpalWabbitModel, TVowpalWabbit>(
                 ObjectFactory.Create(
                     model,
-                    m => m != null ? this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m))) : default(TVowpalWabbit)));
+                    m =>
+                    {
+                        if (m == null)
+                            return default(TVowpalWabbit);
+
+                        var settings = (VowpalWabbitSettings)m.Settings.Clone();
+                        settings.Model = m;
+                        // avoid duplicate arguments
+                        settings.Arguments = null;
+                        return this.InternalCreate(new VowpalWabbit(settings));
+                    }));
         }
 
         /// <summary>
@@ -50,7 +60,12 @@ namespace VW
         {
             this.vwPool.UpdateFactory(ObjectFactory.Create(
                 model,
-                m => this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m)))));
+                m =>
+                {
+                    var settings = (VowpalWabbitSettings)m.Settings.Clone();
+                    settings.Model = m;
+                    return this.InternalCreate(new VowpalWabbit(settings));
+                }));
         }
 
         /// <summary>

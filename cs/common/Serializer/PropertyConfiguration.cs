@@ -20,37 +20,33 @@ namespace VW.Serializer
 
         public static readonly PropertyConfiguration Default = new PropertyConfiguration();
 
-        public PropertyConfiguration(
-            string featureIgnorePrefix = FeatureIgnorePrefixDefault,
-            string textProperty = TextPropertyDefault,
-            string labelProperty = LabelPropertyDefault,
-            string multiProperty = MultiPropertyDefault)
+        public PropertyConfiguration()
         {
-            this.FeatureIgnorePrefix = featureIgnorePrefix;
-            this.TextProperty = textProperty;
-            this.LabelProperty = labelProperty;
-            this.MultiProperty = multiProperty;
+            this.FeatureIgnorePrefix = FeatureIgnorePrefixDefault;
+            this.TextProperty = TextPropertyDefault;
+            this.LabelProperty = LabelPropertyDefault;
+            this.MultiProperty = MultiPropertyDefault;
         }
-
+            
         /// <summary>
         /// JSON properties starting with underscore are ignored.
         /// </summary>
-        public string FeatureIgnorePrefix { get; private set; }
+        public string FeatureIgnorePrefix { get; set; }
 
         /// <summary>
         /// JSON property "_text" is marshalled using <see cref="VW.Serializer.StringProcessing.Split"/>.
         /// </summary>
-        public string TextProperty { get; private set; }
+        public string TextProperty { get; set; }
 
         /// <summary>
         /// JSON property "_label" is used as label.
         /// </summary>
-        public string LabelProperty { get; private set; }
+        public string LabelProperty { get; set; }
 
         /// <summary>
         /// JSON property "_multi" is used to signal multi-line examples.
         /// </summary>
-        public string MultiProperty { get; private set; }
+        public string MultiProperty { get; set; }
 
         /// <summary>
         /// True if <paramref name="property"/> is considered a special property and thus should not be skipped.

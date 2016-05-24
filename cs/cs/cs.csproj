@@ -25,7 +25,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(SolutionDir)\x64\Debug\VowpalWabbit.XML</DocumentationFile>
+    <DocumentationFile>..\..\vowpalwabbit\x64\Debug\VowpalWabbit.XML</DocumentationFile>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
     <CodeContractsRuntimeOnlyPublicSurface>False</CodeContractsRuntimeOnlyPublicSurface>
     <CodeContractsRuntimeThrowOnFailure>True</CodeContractsRuntimeThrowOnFailure>
@@ -79,7 +79,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(SolutionDir)\x64\Release\VowpalWabbit.XML</DocumentationFile>
+    <DocumentationFile>..\..\vowpalwabbit\x64\Release\VowpalWabbit.XML</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
@@ -100,16 +100,12 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\vowpalwabbit\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="GitLink, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.2.0\lib\net45\GitLink.exe</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -120,16 +116,12 @@
   <ItemGroup>
     <Compile Include="ActionDependentFeature.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="Labels\ContextualBanditLabel.cs" />
-    <Compile Include="Labels\MulticlassLabel.cs" />
     <Compile Include="ObjectFactory.cs" />
     <Compile Include="PooledObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Serializer\AnnotationJsonInspector.cs" />
     <Compile Include="Serializer\Attributes\CacheableAttribute.cs" />
     <Compile Include="Serializer\Attributes\FeatureAttribute.cs" />
     <Compile Include="Serializer\AnnotationInspector.cs" />
-    <Compile Include="Interfaces\ILabel.cs" />
     <Compile Include="Serializer\Attributes\LabelAttribute.cs" />
     <Compile Include="Serializer\ConfigInspector.cs" />
     <Compile Include="Serializer\Intermediate\EnumerizedFeature.cs" />
@@ -138,7 +130,6 @@
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
     <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
-    <Compile Include="Serializer\PrefixedJsonReader.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshaller.cs" />
     <Compile Include="Serializer\VowpalWabbitDefaultMarshallerExt.cs">
@@ -146,35 +137,25 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>VowpalWabbitDefaultMarshallerExt.tt</DependentUpon>
     </Compile>
-    <Compile Include="Serializer\VowpalWabbitJsonBuilder.cs" />
-    <Compile Include="Serializer\VowpalWabbitJsonException.cs" />
-    <Compile Include="Serializer\VowpalWabbitJsonSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMarshalContext.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSingleExampleSerializer.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializerCompiler.cs" />
     <Compile Include="Serializer\VowpalWabbitSerializerFactory.cs" />
-    <Compile Include="Labels\SharedLabel.cs" />
-    <Compile Include="Labels\SimpleLabel.cs" />
     <Compile Include="Serializer\VowpalWabbitSingleExampleSerializerCompiler.cs" />
     <Compile Include="VowpalWabbit.cs" />
     <Compile Include="ObjectPool.cs" />
-    <Compile Include="VowpalWabbitAsync.cs" />
     <Compile Include="VowpalWabbitDynamic.cs" />
     <Compile Include="VowpalWabbitExampleCollection.cs" />
     <Compile Include="VowpalWabbitHttpModule.cs" />
-    <Compile Include="VowpalWabbitJson.cs" />
-    <Compile Include="VowpalWabbitJsonThreadedPrediction.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitMultiworldTesting.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
-    <Compile Include="VowpalWabbitThreadedLearning.cs" />
     <Compile Include="VowpalWabbitMultiLine.cs" />
     <Compile Include="VowpalWabbitThreadedPredictionBase.cs" />
-    <Compile Include="VowpalWabbitThreadSafeExamplePool.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cli\vw_clr.vcxproj">
@@ -187,7 +168,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cs.nuspec" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

@@ -12,7 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
 
@@ -21,9 +21,45 @@ namespace VW.Serializer
     /// <summary>
     /// Utility class analyzing compile-time <see cref="FeatureAttribute"/> annotation.
     /// </summary>
-    internal static class AnnotationInspector
+    public static class TypeInspector
     {
-        internal static Schema CreateSchema(Type type,
+        /// <summary>
+        /// All properties are used as features.
+        /// </summary>
+        public static readonly ITypeInspector All;
+
+        /// <summary>
+        /// Only properties annotated using Feature attribute are considered.
+        /// </summary>
+        public static readonly ITypeInspector Default;
+
+        static TypeInspector()
+        {
+            All = new AnnotationInspectorAll();
+            Default = new AnnotationInspectorDefault();
+        }
+
+        private sealed class AnnotationInspectorDefault : ITypeInspector
+        {
+            public Schema CreateSchema(VowpalWabbitSettings settings, Type type)
+            {
+                return TypeInspector.CreateSchema(type,
+                    featurePropertyPredicate: (_, attr) => attr != null,
+                    labelPropertyPredicate: (_, attr) => attr != null);
+            }
+        }
+
+        private sealed class AnnotationInspectorAll : ITypeInspector
+        {
+            public Schema CreateSchema(VowpalWabbitSettings settings, Type type)
+            {
+                return TypeInspector.CreateSchema(type,
+                    featurePropertyPredicate: (_, __) => true,
+                    labelPropertyPredicate: (_, __) => true);
+            }
+        }
+
+        private static Schema CreateSchema(Type type,
             Func<PropertyInfo, FeatureAttribute, bool> featurePropertyPredicate,
             Func<PropertyInfo, LabelAttribute, bool> labelPropertyPredicate)
         {
@@ -109,9 +145,9 @@ namespace VW.Serializer
                 })
                 .ToList();
 
-            return new Schema 
-            { 
-                Features = localFeatures.Union(schemas.SelectMany(s => s.Features)).ToList(), 
+            return new Schema
+            {
+                Features = localFeatures.Union(schemas.SelectMany(s => s.Features)).ToList(),
                 Label = localLabels.Union(schemas.Select(s => s.Label)).FirstOrDefault(l => l != null)
             };
         }

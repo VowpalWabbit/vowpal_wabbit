@@ -20,6 +20,8 @@ namespace VW
     /// </summary>
     public sealed class VowpalWabbitMultiLineExampleCollection : VowpalWabbitExampleCollection
     {
+        private readonly ulong numberOfFeatures;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitMultiLineExampleCollection"/> class.
         /// </summary>
@@ -30,6 +32,12 @@ namespace VW
 
             this.SharedExample = shared;
             this.Examples = examples;
+
+            if (shared != null)
+                numberOfFeatures += shared.NumberOfFeatures;
+
+            foreach (var e in examples)
+                numberOfFeatures += e.NumberOfFeatures;
         }
 
         /// <summary>
@@ -41,6 +49,11 @@ namespace VW
         /// The multi-line examples
         /// </summary>
         public VowpalWabbitExample[] Examples { get; private set; }
+
+        public override ulong NumberOfFeatures
+        {
+            get { return this.numberOfFeatures; }
+        }
 
         /// <summary>
         /// Calls learn or predict for the set of examples. Does required filtering of potential new line examples.

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <title>Vowpal Wabbit JSON</title>
+    <id>VowpalWabbit.JSON</id>
+    <tags>vw vowpal wabbit langford ml machine learning</tags>
+    <authors>John Langford et al</authors>
+    <version>$version$</version>
+    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
+    <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Official Vowpal Wabbit library including C# interface</description>
+    <copyright>Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+    <dependencies>
+      <group>
+        <dependency id="VowpalWabbit" version="$version$" />
+        <dependency id="Newtonsoft.Json" version="8.0.2" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+	  <!-- despite warning this is still required -->
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.JSON.dll" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.JSON.pdb" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.JSON.xml" target="lib\net45" />
+  </files>
+</package>
+

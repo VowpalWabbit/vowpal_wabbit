@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 
@@ -16,7 +15,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirect()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings(featureDiscovery:VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("| Clicks:5 |a Bar:1 Age25_old |b Marker", new JsonContext()
                 {
@@ -49,7 +48,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectWithLabel()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonContext>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("13 | Clicks:5 MoreClicks:3", new JsonContext()
                 {
@@ -65,7 +64,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonOptIn()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonContextOptIn>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonContextOptIn>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("| Clicked |Ns2 Marker", new JsonContextOptIn()
                 {
@@ -95,7 +94,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonArray()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonContextArray>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonContextArray>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("1:2:.5 | :.1 :.2 :.3", new JsonContextArray()
                 {
@@ -109,7 +108,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonByte()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("| Feature:25", new JsonContextByte { Feature = 25 });
             }
@@ -119,7 +118,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectText()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonText>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonText>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate("| a b c |a d e f", new JsonText
                 {
@@ -138,7 +137,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectMulti()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonShared>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate(new[]
                 {
@@ -162,7 +161,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectMultiList()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonSharedList>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate(new[]
                 {
@@ -198,7 +197,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonDirectMultiEmpty()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonSharedEmpty>(new VowpalWabbitSettings(featureDiscovery: VowpalWabbitFeatureDiscovery.Json)))
+            using (var vw = new VowpalWabbitExampleValidator<JsonSharedEmpty>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
                 vw.Validate(new[]
                 {
