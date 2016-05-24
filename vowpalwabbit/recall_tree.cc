@@ -582,7 +582,7 @@ base_learner* recall_tree_setup(vw& all)
   tree.max_candidates =
     vm.count ("max_candidates") > 0
       ? vm["max_candidates"].as<uint32_t>() 
-      : std::min (tree.k, 4 * (uint32_t) (ceil (log (tree.k) / log (2.0))));
+      : (std::min) (tree.k, 4 * (uint32_t) (ceil (log (tree.k) / log (2.0))));
   *(all.file_options) << " --max_candidates " << tree.max_candidates;
   tree.max_depth =
     vm.count ("max_depth") > 0 
