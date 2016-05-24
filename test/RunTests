@@ -1435,7 +1435,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/search_dep_parser_arceager.stderr
 
 # Test 126: recall tree hello world
-{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 24 --loss_function logistic 
+{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic 
     train-sets/ref/nooutput.stderr
     train-sets/ref/nooutput.stdout
 

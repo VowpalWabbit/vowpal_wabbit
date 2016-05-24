@@ -1,6 +1,6 @@
 only testing
 recall_tree: node_only = 0 bern_hyper = 0 max_depth = 7 routing = n/a testonly
-Num weight bits = 24
+Num weight bits = 20
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
