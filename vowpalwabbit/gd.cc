@@ -968,6 +968,8 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
+  if (!all.training)
+    stride = 1;
   all.reg.stride_shift = (uint32_t)ceil_log_2(stride-1);
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));

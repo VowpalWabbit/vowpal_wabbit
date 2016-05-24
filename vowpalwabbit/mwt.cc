@@ -26,6 +26,7 @@ namespace MWT {
     v_array<uint64_t> policies;
     double total;
     uint32_t num_classes;
+    bool learn;
 
     v_array<namespace_index> indices;// excluded namespaces
     features feature_space[256];
@@ -149,19 +150,22 @@ namespace MWT {
 
   void finish_example(vw& all, mwt& c, example& ec)
   {
-    float loss = 0.;
-    if (c.observation != nullptr)
-      loss = get_unbiased_cost(c.observation, ec.pred.scalars[0]);
-
-    all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-
-    for (int sink : all.final_prediction_sink)
-      print_scalars(sink, ec.pred.scalars, ec.tag);
-
-    v_array<float> temp = ec.pred.scalars;
-    ec.pred.multiclass = (uint32_t)temp[0];
-    CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
-    ec.pred.scalars = temp;
+    if (c.learn)
+      {
+	float loss = 0.;
+	if (c.observation != nullptr)
+	  loss = get_unbiased_cost(c.observation, ec.pred.scalars[0]);
+	
+	all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+	
+	for (int sink : all.final_prediction_sink)
+	  print_scalars(sink, ec.pred.scalars, ec.tag);
+	
+	v_array<float> temp = ec.pred.scalars;
+	ec.pred.multiclass = (uint32_t)temp[0];
+	CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
+	ec.pred.scalars = temp;
+      }
     VW::finish_example(all, &ec);
   }
 
@@ -241,6 +245,7 @@ base_learner* mwt_setup(vw& all)
   if (all.vm.count("learn"))
     {
       c.num_classes = all.vm["learn"].as<uint32_t>();
+      c.learn = true;
 
       if (count(all.args.begin(), all.args.end(),"--cb") == 0)
 	{ all.args.push_back("--cb");
@@ -251,7 +256,7 @@ base_learner* mwt_setup(vw& all)
     }
 
   learner<mwt>* l;
-  if (all.vm.count("learn"))
+  if (c.learn)
     if (all.vm.count("exclude_eval"))
       l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1);
     else
