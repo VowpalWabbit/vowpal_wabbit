@@ -10,7 +10,7 @@ namespace cs_unittest
     public partial class RunTests : TestBase
     {
         [TestMethod]
-        [Description("")]
+        [Description(@"")]
         [TestCategory("Command Line")]
         public void CommandLine_Test1()
         {
@@ -22,10 +22,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/0001.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("checking predictions as well")]
+        [Description(@"checking predictions as well")]
         [TestCategory("Command Line")]
         public void CommandLine_Test2()
         {
@@ -36,7 +37,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -d train-sets/0001.dat -i models/0001.model -p 0001.predict --invariant"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -44,10 +46,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/0001.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("without -d, training only")]
+        [Description(@"without -d, training only")]
         [TestCategory("Command Line")]
         public void CommandLine_Test3()
         {
@@ -58,10 +61,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0002.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("same, with -d")]
+        [Description(@"same, with -d")]
         [TestCategory("Command Line")]
         public void CommandLine_Test4()
         {
@@ -72,10 +76,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0002.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("add -q .., adaptive, and more (same input, different outputs)")]
+        [Description(@"add -q .., adaptive, and more (same input, different outputs)")]
         [TestCategory("Command Line")]
         public void CommandLine_Test5()
         {
@@ -86,10 +91,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0002a.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("run predictions on Test 4 model")]
+        [Description(@"run predictions on Test 4 model")]
         [TestCategory("Command Line")]
         public void CommandLine_Test6()
         {
@@ -99,7 +105,8 @@ namespace cs_unittest
                 {
                     vw.Learn(dataLine);
                 }
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0002.dat"))
@@ -107,10 +114,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/0002b.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("using normalized adaptive updates and a low --power_t")]
+        [Description(@"using normalized adaptive updates and a low --power_t")]
         [TestCategory("Command Line")]
         public void CommandLine_Test7()
         {
@@ -121,10 +129,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0002c.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("predicts on test 7 model")]
+        [Description(@"predicts on test 7 model")]
         [TestCategory("Command Line")]
         public void CommandLine_Test8()
         {
@@ -134,7 +143,8 @@ namespace cs_unittest
                 {
                     vw.Learn(dataLine);
                 }
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0002.dat"))
@@ -142,10 +152,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/0002c.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("one-against-all")]
+        [Description(@"one-against-all")]
         [TestCategory("Command Line")]
         public void CommandLine_Test11()
         {
@@ -157,10 +168,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/oaa.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Error Correcting Tournament")]
+        [Description(@"Error Correcting Tournament")]
         [TestCategory("Command Line")]
         public void CommandLine_Test12()
         {
@@ -172,10 +184,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/multiclass.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("LBFGS on zero derivative input")]
+        [Description(@"LBFGS on zero derivative input")]
         [TestCategory("Command Line")]
         public void CommandLine_Test15()
         {
@@ -187,10 +200,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/zero.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cubic features -- on a parity test case")]
+        [Description(@"cubic features -- on a parity test case")]
         [TestCategory("Command Line")]
         public void CommandLine_Test21()
         {
@@ -202,10 +216,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/xxor.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("matrix factorization -- training")]
+        [Description(@"matrix factorization -- training")]
         [TestCategory("Command Line")]
         public void CommandLine_Test22()
         {
@@ -217,10 +232,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/ml100k_small.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("matrix factorization -- testing")]
+        [Description(@"matrix factorization -- testing")]
         [TestCategory("Command Line")]
         public void CommandLine_Test23()
         {
@@ -231,7 +247,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-i models/movielens.reg -t -d test-sets/ml100k_small_test"))
             {
                 foreach (var dataLine in File.ReadLines("test-sets/ml100k_small_test"))
@@ -239,10 +256,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/ml100k_small.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("bagging -- binary classifiers")]
+        [Description(@"bagging -- binary classifiers")]
         [TestCategory("Command Line")]
         public void CommandLine_Test27()
         {
@@ -253,10 +271,11 @@ namespace cs_unittest
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/bs.vote.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("bagging -- predict with bagged classifier")]
+        [Description(@"bagging -- predict with bagged classifier")]
         [TestCategory("Command Line")]
         public void CommandLine_Test28()
         {
@@ -266,7 +285,8 @@ namespace cs_unittest
                 {
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -274,10 +294,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/bs.prvote.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("affix features")]
+        [Description(@"affix features")]
         [TestCategory("Command Line")]
         public void CommandLine_Test29()
         {
@@ -289,10 +310,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/affix_test.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("train --l1 regularized model")]
+        [Description(@"train --l1 regularized model")]
         [TestCategory("Command Line")]
         public void CommandLine_Test30()
         {
@@ -303,10 +325,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/mask.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("non-centered data-set where constant >> 0")]
+        [Description(@"non-centered data-set where constant >> 0")]
         [TestCategory("Command Line")]
         public void CommandLine_Test35()
         {
@@ -318,10 +341,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/big-constant.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("new option: --progress w/ integer arg")]
+        [Description(@"new option: --progress w/ integer arg")]
         [TestCategory("Command Line")]
         public void CommandLine_Test36()
         {
@@ -332,10 +356,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/progress-10.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("new-option: --progress w/ floating-point arg")]
+        [Description(@"new-option: --progress w/ floating-point arg")]
         [TestCategory("Command Line")]
         public void CommandLine_Test37()
         {
@@ -346,10 +371,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/progress-0.5.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("--nn without --quiet to avoid nn regressions")]
+        [Description(@"--nn without --quiet to avoid nn regressions")]
         [TestCategory("Command Line")]
         public void CommandLine_Test38()
         {
@@ -360,10 +386,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/nn-1-noquiet.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cb with dr")]
+        [Description(@"cb with dr")]
         [TestCategory("Command Line")]
         public void CommandLine_Test39()
         {
@@ -374,10 +401,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/rcv1_raw_cb_dr.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cb with ips")]
+        [Description(@"cb with ips")]
         [TestCategory("Command Line")]
         public void CommandLine_Test40()
         {
@@ -388,10 +416,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/rcv1_raw_cb_ips.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cb with dm")]
+        [Description(@"cb with dm")]
         [TestCategory("Command Line")]
         public void CommandLine_Test41()
         {
@@ -402,10 +431,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/rcv1_raw_cb_dm.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("SVM linear kernel")]
+        [Description(@"SVM linear kernel")]
         [TestCategory("Command Line")]
         public void CommandLine_Test62()
         {
@@ -416,10 +446,11 @@ namespace cs_unittest
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/ksvm_train.linear.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("SVM polynomial kernel")]
+        [Description(@"SVM polynomial kernel")]
         [TestCategory("Command Line")]
         public void CommandLine_Test63()
         {
@@ -430,10 +461,11 @@ namespace cs_unittest
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/ksvm_train.poly.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("SVM rbf kernel")]
+        [Description(@"SVM rbf kernel")]
         [TestCategory("Command Line")]
         public void CommandLine_Test64()
         {
@@ -444,10 +476,11 @@ namespace cs_unittest
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/ksvm_train.rbf.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("train FTRL-Proximal")]
+        [Description(@"train FTRL-Proximal")]
         [TestCategory("Command Line")]
         public void CommandLine_Test72()
         {
@@ -459,10 +492,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/0001_ftrl.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("test FTRL-Proximal")]
+        [Description(@"test FTRL-Proximal")]
         [TestCategory("Command Line")]
         public void CommandLine_Test73()
         {
@@ -473,7 +507,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -481,10 +516,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/0001_ftrl.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cb evaluation")]
+        [Description(@"cb evaluation")]
         [TestCategory("Command Line")]
         public void CommandLine_Test74()
         {
@@ -495,10 +531,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/rcv1_cb_eval.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Log_multi")]
+        [Description(@"Log_multi")]
         [TestCategory("Command Line")]
         public void CommandLine_Test75()
         {
@@ -509,10 +546,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/log_multi.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cbify, epsilon-greedy")]
+        [Description(@"cbify, epsilon-greedy")]
         [TestCategory("Command Line")]
         public void CommandLine_Test76()
         {
@@ -523,10 +561,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/cbify_epsilon.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cbify, bag")]
+        [Description(@"cbify, bag")]
         [TestCategory("Command Line")]
         public void CommandLine_Test78()
         {
@@ -537,10 +576,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/cbify_bag.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("cbify, cover")]
+        [Description(@"cbify, cover")]
         [TestCategory("Command Line")]
         public void CommandLine_Test79()
         {
@@ -551,10 +591,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/cbify_cover.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("lrq empty namespace")]
+        [Description(@"lrq empty namespace")]
         [TestCategory("Command Line")]
         public void CommandLine_Test80()
         {
@@ -565,10 +606,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0080.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("train FTRL-PiSTOL")]
+        [Description(@"train FTRL-PiSTOL")]
         [TestCategory("Command Line")]
         public void CommandLine_Test81()
         {
@@ -580,10 +622,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/ftrl_pistol.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("test FTRL-PiSTOL")]
+        [Description(@"test FTRL-PiSTOL")]
         [TestCategory("Command Line")]
         public void CommandLine_Test82()
         {
@@ -594,7 +637,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -d train-sets/0001.dat -i models/ftrl_pistol.model -p ftrl_pistol.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -602,10 +646,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/ftrl_pistol.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("check redefine functionality")]
+        [Description(@"check redefine functionality")]
         [TestCategory("Command Line")]
         public void CommandLine_Test83()
         {
@@ -616,10 +661,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/redefine.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("named labels at training time")]
+        [Description(@"named labels at training time")]
         [TestCategory("Command Line")]
         public void CommandLine_Test88()
         {
@@ -631,10 +677,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/test_named_train.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("named labels at prediction")]
+        [Description(@"named labels at prediction")]
         [TestCategory("Command Line")]
         public void CommandLine_Test89()
         {
@@ -645,7 +692,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-i models/test_named.model -t -d train-sets/test_named -p test_named.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/test_named"))
@@ -653,10 +701,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/test_named_test.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("named labels at training time (csoaa)")]
+        [Description(@"named labels at training time (csoaa)")]
         [TestCategory("Command Line")]
         public void CommandLine_Test90()
         {
@@ -668,10 +717,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/test_named_csoaa_train.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("named labels at prediction (csoaa)")]
+        [Description(@"named labels at prediction (csoaa)")]
         [TestCategory("Command Line")]
         public void CommandLine_Test91()
         {
@@ -682,7 +732,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-i models/test_named_csoaa.model -t -d train-sets/test_named_csoaa -p test_named_csoaa.predict"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/test_named_csoaa"))
@@ -690,10 +741,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/test_named_csoaa_test.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("experience replay version of test 1")]
+        [Description(@"experience replay version of test 1")]
         [TestCategory("Command Line")]
         public void CommandLine_Test94()
         {
@@ -705,10 +757,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/0001-replay.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("named labels at training time (csoaa) with experience replay")]
+        [Description(@"named labels at training time (csoaa) with experience replay")]
         [TestCategory("Command Line")]
         public void CommandLine_Test95()
         {
@@ -720,10 +773,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/test_named_csoaa_train-replay.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("")]
+        [Description(@"")]
         [TestCategory("Command Line")]
         public void CommandLine_Test97()
         {
@@ -734,10 +788,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/0097.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("train FTRL-Proximal no early stopping")]
+        [Description(@"train FTRL-Proximal no early stopping")]
         [TestCategory("Command Line")]
         public void CommandLine_Test107()
         {
@@ -749,10 +804,11 @@ namespace cs_unittest
                 }
                                 vw.RunMultiPass();
                                                 VWTestHelper.AssertEqual("train-sets/ref/0001_ftrl_holdout_off.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("test FTRL-Proximal no early stopping")]
+        [Description(@"test FTRL-Proximal no early stopping")]
         [TestCategory("Command Line")]
         public void CommandLine_Test108()
         {
@@ -763,7 +819,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-k -t -d train-sets/0001.dat -i models/0001_ftrl.model -p 0001_ftrl_holdout_off.predict --holdout_off"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -771,10 +828,11 @@ namespace cs_unittest
                     var actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("test-sets/ref/0001_ftrl_holdout_off.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("--probabilities --oaa")]
+        [Description(@"--probabilities --oaa")]
         [TestCategory("Command Line")]
         public void CommandLine_Test109()
         {
@@ -785,10 +843,11 @@ namespace cs_unittest
                     var actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/oaa_probabilities.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Predictions with confidences")]
+        [Description(@"Predictions with confidences")]
         [TestCategory("Command Line")]
         public void CommandLine_Test113()
         {
@@ -799,10 +858,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/confidence.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Audit regressor of ftrl model (from test #107)")]
+        [Description(@"Audit regressor of ftrl model (from test #107)")]
         [TestCategory("Command Line")]
         public void CommandLine_Test117()
         {
@@ -813,7 +873,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-d train-sets/0001.dat -i models/0001_ftrl.model  --audit_regressor ftrl.audit_regr"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/0001.dat"))
@@ -821,10 +882,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/ftrl_audit_regr.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Audit regressor of csoaa model (from test #95)")]
+        [Description(@"Audit regressor of csoaa model (from test #95)")]
         [TestCategory("Command Line")]
         public void CommandLine_Test118()
         {
@@ -835,7 +897,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                 vw.RunMultiPass();
-                                            }
+                                
+			}
             using (var vw = new VowpalWabbit("-d train-sets/test_named_csoaa -i models/test_named_csoaa.model --audit_regressor csoaa.audit_regr"))
             {
                 foreach (var dataLine in File.ReadLines("train-sets/test_named_csoaa"))
@@ -843,10 +906,11 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/csoaa_audit_regr.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
         [TestMethod]
-        [Description("Predictions with confidences after training")]
+        [Description(@"Predictions with confidences after training")]
         [TestCategory("Command Line")]
         public void CommandLine_Test122()
         {
@@ -857,7 +921,8 @@ namespace cs_unittest
                     vw.Learn(dataLine);
                 }
                                                 VWTestHelper.AssertEqual("train-sets/ref/confidence_after_training.stderr", vw.PerformanceStatistics);
-                            }
+                
+			}
         }
     }
 }

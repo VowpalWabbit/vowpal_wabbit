@@ -19,7 +19,7 @@ var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
 var skipList = new[] { 9, 10, 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34, 43, 44, 45, 46, 47, 48, 49,
     50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70,
     42, 71, 77, 84, 85, 86, 87, 92, 93, 96, 98, 99, 100, 101, 102, 103, 104, 105, 106,
-    110, 111, 112, 114, 121};
+    110, 111, 112, 114, 121, 125, 126};
 
 var outputModels = new Dictionary<string, TestCase>();
 
@@ -56,7 +56,7 @@ for (var i = 0; i < lines.Count; i++)
     {
         var nr = int.Parse(match.Groups["nr"].Value);
         testcase.Id = nr;
-        testcase.Comment = match.Groups["comment"].Value;
+        testcase.Comment = match.Groups["comment"].Value.Replace("\"", "\"\"");
 
         if (skipList.Contains(nr))
         {
@@ -125,7 +125,7 @@ namespace cs_unittest
 		continue;
 #>
         [TestMethod]
-        [Description("<#=(mainTestcase.Comment ?? "").Trim()#>")]
+        [Description(@"<#=(mainTestcase.Comment ?? "").Trim()#>")]
         [TestCategory("Command Line")]
         public void CommandLine_Test<#=mainTestcase.Id#>()
         {
@@ -151,10 +151,10 @@ namespace cs_unittest
                 <# if (tc.NumPasses > 0) { #>
                 vw.RunMultiPass();
                 <# } #>
-                <# if (tc == mainTestcase) { #>
+                <# if (tc == mainTestcase && tc.Stderr != null) { #>
                 VWTestHelper.AssertEqual("<#=tc.Stderr#>", vw.PerformanceStatistics);
                 <# } #>
-            }
+			}
 <# } #>
         }
 <# } #>
