@@ -525,7 +525,7 @@ namespace VW
   /// <param name="u">Hash offset.</param>
   /// <returns>The resulting hash code.</returns>
   //template<bool replaceSpace>
-  size_t hashall(String^ s, size_t u)
+  uint64_t hashall(String^ s, uint64_t u)
   { // get raw bytes from string
     auto keys = Encoding::UTF8->GetBytes(s);
     int length = keys->Length;
@@ -552,7 +552,7 @@ namespace VW
     //  }
     //}
 
-    uint32_t h1 = u;
+    uint32_t h1 = (uint32_t)u;
     uint32_t k1 = 0;
 
     const uint32_t c1 = 0xcc9e2d51;
@@ -649,7 +649,9 @@ namespace VW
 
   VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   {
-    if (m_examples->Count == 0)
+    auto ex = m_examples->Remove();
+
+    if (ex == nullptr)
     {
       try
       {
@@ -659,8 +661,6 @@ namespace VW
       }
       CATCHRETHROW
     }
-
-    auto ex = m_examples->Pop();
 
     try
     {
@@ -677,16 +677,20 @@ namespace VW
 #if _DEBUG
     if (m_vw == nullptr)
       throw gcnew ObjectDisposedException("VowpalWabbitExample was not properly disposed as the owner is already disposed");
+#endif
 
     if (ex == nullptr)
       throw gcnew ArgumentNullException("ex");
-#endif
 
     // make sure we're not a ring based example
     assert(!VW::is_ring_example(*m_vw, ex->m_example));
 
+    // the bag might have reached it's limit
     if (m_examples != nullptr)
-      m_examples->Push(ex);
+    {
+      if (!m_examples->TryAdd(ex))
+        DisposeExample(ex);
+    }
 #if _DEBUG
     else // this should not happen as m_vw is already set to null
       throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");

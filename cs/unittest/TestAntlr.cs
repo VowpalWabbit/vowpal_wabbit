@@ -22,7 +22,7 @@ namespace cs_unittest
                 Assert.AreEqual("PFF", x.T);
                 var label = plabel as SimpleLabel;
                 Assert.AreEqual(0.521144, label.Label, 1e-5);
-                Assert.AreEqual(1, label.Initial);
+                Assert.AreEqual(1, label.Weight);
 
                 Assert.AreEqual(13, x.F.Count);
                 Assert.AreEqual("t1", x.F[0].Key);

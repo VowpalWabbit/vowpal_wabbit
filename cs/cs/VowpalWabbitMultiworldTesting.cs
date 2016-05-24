@@ -26,7 +26,11 @@ namespace VW
         /// <param name="vwModel">Optional model to see multiworld testing</param>
         public VowpalWabbitMultiworldTesting(Stream vwModel = null)
         {
-            this.vw = new VowpalWabbit<LearnedVsConstantPolicy>(new VowpalWabbitSettings("--multiworld_test f", modelStream: vwModel));
+            var settings = vwModel == null ?
+                new VowpalWabbitSettings("--multiworld_test f") :
+                new VowpalWabbitSettings { ModelStream = vwModel };
+
+            this.vw = new VowpalWabbit<LearnedVsConstantPolicy>(settings);
         }
 
         public PoliciesPerformance Evaluate(uint learnedAction, int numActions, ContextualBanditLabel label)

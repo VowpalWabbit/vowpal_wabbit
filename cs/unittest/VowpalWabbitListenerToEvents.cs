@@ -1,5 +1,5 @@
 ﻿using System;
-using VW.Interfaces;
+using VW.Labels;
 
 namespace cs_unittest
 {

@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using VW.Serializer.Attributes;
 using VW.Serializer.Intermediate;
-using VW.Interfaces;
+using VW.Labels;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;
@@ -61,35 +61,17 @@ namespace VW.Serializer
                     }
                 }
 
-                if (settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
-                {
-                    schema = AnnotationJsonInspector.CreateSchema(typeof(TExample), settings.PropertyConfiguration);
+                ITypeInspector typeInspector = settings.TypeInspector;
+                if (typeInspector == null)
+                    typeInspector = TypeInspector.Default;
 
-                    var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, schema);
-                    if (multiExampleSerializerCompiler != null)
-                        return multiExampleSerializerCompiler;
-                }
-                else
-                {
-                    // TODO: enhance caching based on feature list & featurizer set
-                    // if no feature mapping is provided, use [Feature] annotation on provided type.
+                // TODO: enhance caching based on feature list & featurizer set
+                // if no feature mapping is provided, use [Feature] annotation on provided type.
+                schema = typeInspector.CreateSchema(settings, typeof(TExample));
 
-                    Func<PropertyInfo, FeatureAttribute, bool> propertyPredicate = null;
-                    Func<PropertyInfo, LabelAttribute, bool> labelPredicate = null;
-                    switch (settings.FeatureDiscovery)
-                    {
-                        case VowpalWabbitFeatureDiscovery.Default:
-                            propertyPredicate = (_, attr) => attr != null;
-                            labelPredicate = (_, attr) => attr != null;
-                            break;
-                        case VowpalWabbitFeatureDiscovery.All:
-                            propertyPredicate = (_, __) => true;
-                            labelPredicate = (_, __) => true;
-                            break;
-                    }
-
-                    schema = AnnotationInspector.CreateSchema(typeof(TExample), propertyPredicate, labelPredicate);
-                }
+                var multiExampleSerializerCompiler = VowpalWabbitMultiExampleSerializerCompiler.TryCreate<TExample>(settings, schema);
+                if (multiExampleSerializerCompiler != null)
+                    return multiExampleSerializerCompiler;
             }
 
             // need at least a single feature to do something sensible

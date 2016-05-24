@@ -13,7 +13,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Serializer.Attributes;
 
 namespace VW.Serializer
@@ -133,7 +133,7 @@ namespace VW.Serializer
             using (var context = new VowpalWabbitMarshalContext(vw, dictionary, fastDictionary))
             {
                 this.serializerFunc(context, example, label);
-                return context.StringExample.ToString();
+                return context.ToString();
             }
         }
 
@@ -173,7 +173,7 @@ namespace VW.Serializer
                     var vwExample = context.ExampleBuilder.CreateExample();
 
                     if (this.EnableStringExampleGeneration)
-                        vwExample.VowpalWabbitString = context.StringExample.ToString();
+                        vwExample.VowpalWabbitString = context.ToString();
 
                     return vwExample;
                 }

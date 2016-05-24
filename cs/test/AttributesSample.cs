@@ -5,7 +5,6 @@ using System.Text;
 using VW.Serializer.Attributes;
 using VW.Serializer;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 
 namespace cs_test

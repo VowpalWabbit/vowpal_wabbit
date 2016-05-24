@@ -25,6 +25,25 @@ namespace VW
         CATCHRETHROW
     }
 
+    VowpalWabbitScalar VowpalWabbitScalarConfidencePredictionFactory::Create(vw* vw, example* ex)
+    {
+#if _DEBUG
+      if (ex == nullptr)
+        throw gcnew ArgumentNullException("ex");
+#endif
+
+      try
+      {
+        VowpalWabbitScalar ret;
+
+        ret.Value = VW::get_prediction(ex);
+        ret.Confidence = ex->confidence;
+
+        return ret;
+      }
+      CATCHRETHROW
+    }
+
     cli::array<float>^ VowpalWabbitScalarsPredictionFactory::Create(vw* vw, example* ex)
     {
 #if _DEBUG
