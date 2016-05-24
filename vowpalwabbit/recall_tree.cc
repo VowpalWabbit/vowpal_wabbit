@@ -3,9 +3,10 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved. Released under a BSD (revised)
 license as described in the file LICENSE.node
 */
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <float.h>
-#include <math.h>
-#include <stdio.h>
 #include <sstream>
 
 #include "reductions.h"
@@ -571,7 +572,7 @@ base_learner* recall_tree_setup(vw& all)
 
   po::variables_map& vm = all.vm;
 
-  recall_tree::recall_tree& tree = calloc_or_throw<recall_tree::recall_tree> ();
+  struct recall_tree::recall_tree& tree = calloc_or_throw<struct recall_tree::recall_tree> ();
   tree.all = &all;
   tree.k = vm["recall_tree"].as<size_t>();
   tree.node_only = vm["node_only"].as<bool> ();
@@ -601,7 +602,7 @@ base_learner* recall_tree_setup(vw& all)
               << (all.training ? (tree.randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
               << std::endl;
 
-  learner<recall_tree::recall_tree>& l = 
+  learner<struct recall_tree::recall_tree>& l = 
     init_multiclass_learner (&tree,
                              setup_base (all),
                              learn,
