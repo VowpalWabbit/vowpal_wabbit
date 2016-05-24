@@ -15,7 +15,7 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
-namespace recall_tree {
+namespace recall_tree_ns {
 
 struct node_pred {
   uint32_t label;
@@ -73,7 +73,8 @@ struct recall_tree {
 float to_prob (float x)
 {
   static const float alpha = 2.0f;
-  return std::max (0.f, std::min (1.f, 0.5f * (1.0f + alpha * x)));
+  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
+  return (std::max) (0.f, (std::min) (1.f, 0.5f * (1.0f + alpha * x)));
 }
 
 void init_tree (recall_tree& b,
@@ -156,9 +157,10 @@ void compute_recall_lbest (recall_tree& b, node* n)
   float stdf = sqrt (f * (1. - f) / n->n);
   float diamf = 15. / (sqrt (18.) * n->n);
 
-  n->recall_lbest = std::max (0.f,
-                              f - std::sqrt (b.bern_hyper) * stdf
-                                - b.bern_hyper * diamf);
+  // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
+  n->recall_lbest = (std::max) (0.f,
+                                f - sqrt (b.bern_hyper) * stdf
+                                  - b.bern_hyper * diamf);
 }
 
 double plogp (double c, double n)
@@ -555,7 +557,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
 base_learner* recall_tree_setup(vw& all)
 {
-  using namespace recall_tree;
+  using namespace recall_tree_ns;
 
   if (missing_option<size_t, true>(all,
                                    "recall_tree",
@@ -572,7 +574,7 @@ base_learner* recall_tree_setup(vw& all)
 
   po::variables_map& vm = all.vm;
 
-  struct recall_tree::recall_tree& tree = calloc_or_throw<struct recall_tree::recall_tree> ();
+  recall_tree& tree = calloc_or_throw<recall_tree> ();
   tree.all = &all;
   tree.k = vm["recall_tree"].as<size_t>();
   tree.node_only = vm["node_only"].as<bool> ();
@@ -580,8 +582,7 @@ base_learner* recall_tree_setup(vw& all)
   tree.max_candidates =
     vm.count ("max_candidates") > 0
       ? vm["max_candidates"].as<uint32_t>() 
-      : std::min (tree.k, 
-                  4 * (uint32_t) (std::ceil (std::log (tree.k) / std::log (2.0))));
+      : std::min (tree.k, 4 * (uint32_t) (ceil (log (tree.k) / log (2.0))));
   *(all.file_options) << " --max_candidates " << tree.max_candidates;
   tree.max_depth =
     vm.count ("max_depth") > 0 
@@ -602,7 +603,7 @@ base_learner* recall_tree_setup(vw& all)
               << (all.training ? (tree.randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
               << std::endl;
 
-  learner<struct recall_tree::recall_tree>& l = 
+  learner<recall_tree>& l = 
     init_multiclass_learner (&tree,
                              setup_base (all),
                              learn,
