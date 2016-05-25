@@ -124,10 +124,7 @@ base_learner* csoaa_setup(vw& all)
   return b;
 }
 
-struct score
-{ float val;
-  size_t idx;
-};
+using namespace ACTION_SCORE;
 
 // TODO: passthrough for ldf
 struct ldf
@@ -145,9 +142,9 @@ struct ldf
   vw* all;
 
   bool rank;
-  v_array<score> scores;
+  action_scores a_s;
 
-  v_array<MULTILABEL::labels> stored_preds;
+  v_array<action_scores > stored_preds;
   base_learner* base;
 };
 
@@ -158,8 +155,8 @@ int cmp(size_t a, size_t b)
 }
 
 int score_comp(const void* p1, const void* p2)
-{ score* s1 = (score*)p1;
-  score* s2 = (score*)p2;
+{ action_score* s1 = (action_score*)p1;
+  action_score* s2 = (action_score*)p2;
   // Most sorting algos do not guarantee the output order of elements that compare equal.
   // Tie-breaking on the index ensures that the result is deterministic across platforms.
   // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
@@ -407,22 +404,22 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// do prediction
   size_t predicted_K = start_K;
   if(data.rank)
-  { data.scores.erase();
+  { data.a_s.erase();
     data.stored_preds.erase();
     if (start_K > 0)
-      data.stored_preds.push_back(data.ec_seq[0]->pred.multilabels);
+      data.stored_preds.push_back(data.ec_seq[0]->pred.a_s);
 
     for (size_t k=start_K; k<K; k++)
-    { data.stored_preds.push_back(data.ec_seq[k]->pred.multilabels);
+    { data.stored_preds.push_back(data.ec_seq[k]->pred.a_s);
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
-      score s;
+      action_score s;
       s.val = ec->partial_prediction;
       s.idx = k - start_K;
-      data.scores.push_back(s);
+      data.a_s.push_back(s);
     }
 
-    qsort((void*) data.scores.begin(), data.scores.size(), sizeof(score), score_comp);
+    qsort((void*) data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
   }
   else
   { float  min_score = FLT_MAX;
@@ -436,22 +433,20 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
   }
 
-
   /////////////////////// learn
   if (is_learn && !isTest)
   { if (data.is_wap) do_actual_learning_wap(data, base, start_K);
     else             do_actual_learning_oaa(data, base, start_K);
   }
 
-
   if(data.rank)
-  { data.stored_preds[0].label_v.erase();
+  { data.stored_preds[0].erase();
     if (start_K > 0)
-    { data.ec_seq[0]->pred.multilabels = data.stored_preds[0];
+    { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
     }
     for (size_t k=start_K; k<K; k++)
-    { data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
-      data.ec_seq[0]->pred.multilabels.label_v.push_back((uint32_t)data.scores[k-start_K].idx);
+    { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
+      data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
   }
   else
@@ -573,14 +568,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   all.sd->total_features += head_ec.num_features;
 
   float loss = 0.;
-  v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
+  v_array<action_score> preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
     for (example* ex : *ec_seq)
     { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
-      if (preds[0] == idx)
+      if (preds[0].idx == idx)
       { loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }
@@ -592,7 +587,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   }
 
   for (int sink : all.final_prediction_sink)
-    MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
+    print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -700,7 +695,7 @@ void end_examples(ldf& data)
 void finish(ldf& data)
 { data.ec_seq.delete_v();
   LabelDict::free_label_features(data.label_features);
-  data.scores.delete_v();
+  data.a_s.delete_v();
   data.stored_preds.delete_v();
 }
 
@@ -770,7 +765,7 @@ base_learner* csldf_setup(vw& all)
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    all.delete_prediction = delete_action_scores;
   }
 
   all.p->lp = COST_SENSITIVE::cs_label;

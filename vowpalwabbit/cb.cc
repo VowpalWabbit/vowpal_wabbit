@@ -165,7 +165,7 @@ bool ec_is_example_header(example& ec)  // example headers just have "shared"
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool multilabel)
+void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool action_scores)
 { if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { size_t num_features = ec.num_features;
 
@@ -183,10 +183,10 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
     else
       label_buf = " known";
 
-    if (multilabel)
+    if (action_scores)
     { std::ostringstream pred_buf;
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
-               << ec.pred.multilabels.label_v[0]<<"...";
+               << ec.pred.a_s[0].idx <<"...";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
                            num_features, all.progress_add, all.progress_arg);;
     }
