@@ -345,6 +345,7 @@
       <FileType>CppHeader</FileType>
     </ClCompile>
     <ClInclude Include="active_cover.h" />
+    <ClInclude Include="action_score.h" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
@@ -431,6 +432,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
+    <ClCompile Include="action_score.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
