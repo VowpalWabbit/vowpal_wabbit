@@ -69,6 +69,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/parse_regressor.h \
 	vowpalwabbit/print.h \
 	vowpalwabbit/rand48.h \
+	vowpalwabbit/recall_tree.h \
 	vowpalwabbit/reductions.h \
 	vowpalwabbit/scorer.h \
 	vowpalwabbit/search.h \
