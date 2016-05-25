@@ -380,6 +380,7 @@
     <ClInclude Include="lrq.h" />
     <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
+    <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="interact.h" />
@@ -463,6 +464,7 @@
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
