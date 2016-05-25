@@ -95,6 +95,8 @@ namespace VW
         void DisposeExample(VowpalWabbitExample^ ex);
 
     public:
+        static VowpalWabbitBase();
+
         /// <summary>
         /// Cleanup.
         /// </summary>
