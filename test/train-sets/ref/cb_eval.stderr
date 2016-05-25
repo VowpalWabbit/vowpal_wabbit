@@ -10,9 +10,9 @@ average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 
 finished run
-number of examples per pass = 0
+number of examples per pass = 8
 passes used = 1
-weighted example sum = 0
+weighted example sum = 8
 weighted label sum = 0
-average loss = -nan
-total feature number = 0
+average loss = 0
+total feature number = 24
