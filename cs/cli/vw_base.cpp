@@ -22,6 +22,14 @@ using namespace System::Text;
 
 namespace VW
 {
+    static VowpalWabbitBase::VowpalWabbitBase()
+    {
+        // make sure zlib.dll is loaded before anybody changes the current directory and we can't load anymore...
+        auto str = System::IO::Path::Combine(System::IO::Path::GetDirectoryName(VowpalWabbitBase::typeid->Assembly->Location), "zlib.dll");
+        wstring path = msclr::interop::marshal_as<std::wstring>(str);
+        LoadLibrary(path.c_str());
+    }
+
     VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
     {

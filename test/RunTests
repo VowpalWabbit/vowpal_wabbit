@@ -1443,3 +1443,4 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
+

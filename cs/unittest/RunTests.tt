@@ -17,9 +17,9 @@ var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
     .ToList();
 
 var skipList = new[] { 9, 10, 13, 14, 18, 25, 26, 33, 16, 17, 19, 20, 24, 31, 32, 34, 43, 44, 45, 46, 47, 48, 49,
-    50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70,
+    50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 68, 69, 70,
     42, 71, 77, 84, 85, 86, 87, 92, 93, 96, 98, 99, 100, 101, 102, 103, 104, 105, 106,
-    110, 111, 112, 114, 121, 125, 126};
+    110, 111, 112, 114, 121, 125 };
 
 var outputModels = new Dictionary<string, TestCase>();
 
@@ -113,6 +113,7 @@ for (var i = 0; i < lines.Count; i++)
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
+using System.IO.Compression;
 using VW;
 
 namespace cs_unittest
@@ -132,7 +133,14 @@ namespace cs_unittest
 <# foreach (var tc in mainTestcase.InDependencyOrder()) { #>
             using (var vw = new VowpalWabbit("<#=tc.Arguments#>"))
             {
-                foreach (var dataLine in File.ReadLines("<#=tc.InputData#>"))
+				<# if (tc.InputData.EndsWith(".gz")) { #>
+				using (var sr = new StreamReader(new GZipStream(new FileStream(@"<#=tc.InputData#>", FileMode.Open), CompressionMode.Decompress)))
+				{
+				string dataLine;
+				while ((dataLine = sr.ReadLine()) != null)
+				<# } else { #>
+                foreach (var dataLine in File.ReadLines(@"<#=tc.InputData#>"))
+				<# } #>
                 {
                     <#
                     if (tc.Predict != null)
@@ -154,6 +162,7 @@ namespace cs_unittest
                 <# if (tc == mainTestcase && tc.Stderr != null) { #>
                 VWTestHelper.AssertEqual("<#=tc.Stderr#>", vw.PerformanceStatistics);
                 <# } #>
+				<# if (tc.InputData.EndsWith(".gz")) { #> } <# } #>
 			}
 <# } #>
         }
