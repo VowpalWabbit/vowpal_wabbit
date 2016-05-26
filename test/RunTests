@@ -1442,3 +1442,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
 
+# Test 129 train a poisson model
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson
+    train-sets/ref/poission.train.stderr
+
+# Train 130 test the possion model from the saved model
+{VW} -t -d train-sets/poisson.dat -i models/poisson.model -p poisson.preds
+    train-sets/ref/poisson.stderr
+    train-sets/ref/poisson.preds
