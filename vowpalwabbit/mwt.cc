@@ -150,17 +150,19 @@ namespace MWT {
 
   void finish_example(vw& all, mwt& c, example& ec)
   {
+    float loss = 0.;
     if (c.learn)
       {
-	float loss = 0.;
 	if (c.observation != nullptr)
 	  loss = get_unbiased_cost(c.observation, ec.pred.scalars[0]);
-	
-	all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-	
-	for (int sink : all.final_prediction_sink)
-	  print_scalars(sink, ec.pred.scalars, ec.tag);
-	
+      }
+    all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+    
+    for (int sink : all.final_prediction_sink)
+      print_scalars(sink, ec.pred.scalars, ec.tag);
+    
+    if (c.learn)
+      {
 	v_array<float> temp = ec.pred.scalars;
 	ec.pred.multiclass = (uint32_t)temp[0];
 	CB::print_update(all, c.observation != nullptr, ec, nullptr, false);

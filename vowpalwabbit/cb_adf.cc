@@ -16,6 +16,7 @@
 using namespace std;
 using namespace LEARNER;
 using namespace CB;
+using namespace ACTION_SCORE;
 
 // doubly robust
 #define CB_TYPE_DR 0
@@ -45,7 +46,7 @@ struct cb_adf
   uint32_t mtr_example;
   v_array<COST_SENSITIVE::label> mtr_cs_labels;
   v_array<example*> mtr_ec_seq;
-  MULTILABEL::labels mtr_multilabels;
+  action_scores a_s;
   uint64_t action_sum;
   uint64_t event_sum;
 
@@ -281,7 +282,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
     if (!mydata.rank_all) //preserve prediction
       action = examples[0]->pred.multiclass;
     else
-      swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+      swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
@@ -296,7 +297,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   if (!mydata.rank_all) //restore prediction
     examples[0]->pred.multiclass = action;
   else
-    swap(examples[0]->pred.multilabels, mydata.mtr_multilabels);
+    swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -420,11 +421,11 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   all.sd->total_features += num_features;
 
   float loss = 0.;
-  v_array<uint32_t>& preds = head_ec.pred.multilabels.label_v;
+  action_scores& preds = head_ec.pred.a_s;
   bool is_test = false;
 
   if (c.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0]);
+  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].idx);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }
@@ -432,7 +433,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
     is_test = true;
 
   for (int sink : all.final_prediction_sink)
-    MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
+    print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -500,7 +501,7 @@ void finish(cb_adf& data)
   for(size_t i = 0; i < data.mtr_cs_labels.size(); i++)
     data.mtr_cs_labels[i].costs.delete_v();
   data.mtr_cs_labels.delete_v();
-  data.mtr_multilabels.label_v.delete_v();
+  data.a_s.delete_v();
   data.pred_scores.costs.delete_v();
 }
 
@@ -575,7 +576,7 @@ base_learner* cb_adf_setup(vw& all)
 
   if (all.vm.count("rank_all"))
   { ld.rank_all = true;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    all.delete_prediction = ACTION_SCORE::delete_action_scores;
     *all.file_options << " --rank_all";
   }
 

@@ -83,11 +83,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   base.predict(ec);
   //data.probs = ec.pred.scalars;
 
-  // cout<<"Probabilities received: ";
-  // for(int i = 0;i < ec.pred.scalars.size();i++)
-  //   cout<<ec.pred.scalars[i]<<" ";
-  // cout<<endl;
-
   uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), ec);
 
   CB::cb_class cl;

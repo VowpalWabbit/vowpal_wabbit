@@ -170,7 +170,7 @@ label_parser cs_label = {default_label, parse_label,
                          sizeof(label)
                         };
 
-void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool multilabel, uint32_t prediction)
+void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
 { if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
@@ -196,16 +196,16 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
     else
       label_buf = " known";
 
-    if (multilabel || all.sd->ldict)
+    if (action_scores || all.sd->ldict)
     { std::ostringstream pred_buf;
 
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
-      { if (multilabel) pred_buf << all.sd->ldict->get(ec.pred.multilabels.label_v[0]);
+      { if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].idx);
         else            pred_buf << all.sd->ldict->get(prediction);
       }
-      else            pred_buf << ec.pred.multilabels.label_v[0];
-      if (multilabel) pred_buf <<".....";
+      else            pred_buf << ec.pred.a_s[0].idx;
+      if (action_scores) pred_buf <<".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
                            num_current_features, all.progress_add, all.progress_arg);;
     }
