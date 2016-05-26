@@ -1462,3 +1462,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_first.stderr
     pred-sets/ref/cbe_adf_first.predict
 
+# Test 132 train a poisson model
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson
+    train-sets/ref/poission.train.stderr
+
+# Test 133 test the possion model from the saved model
+{VW} -t -d train-sets/poisson.dat -i models/poisson.model -p poisson.preds
+    train-sets/ref/poisson.stderr
+    train-sets/ref/poisson.preds
