@@ -173,6 +173,6 @@ $ make test    # (optional)
 
 To browse the code more easily, do
 
-make doc
+`make doc`
 
-and then point your browser to doc/html/index.html .
+and then point your browser to `doc/html/index.html`.
