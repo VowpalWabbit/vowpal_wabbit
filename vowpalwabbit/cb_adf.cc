@@ -149,10 +149,11 @@ void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSI
   }
 }
 
-void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
+  CB::cb_class get_observed_cost(v_array<example*>& examples)
 { CB::label ld;
   ld.costs = v_init<cb_class>();
   int index = -1;
+  CB::cb_class known_cost;
 
   for (example*& ec : examples)
   { if (ec->l.cb.costs.size() == 1 &&
@@ -166,18 +167,19 @@ void get_observed_cost(cb_adf& mydata, v_array<example*>& examples)
 
   // handle -1 case.
   if (index == -1)
-  { mydata.known_cost.probability = -1;
-    return;
+  { known_cost.probability = -1;
+    return known_cost;
     //std::cerr << "None of the examples has known cost. Exiting." << endl;
     //throw exception();
   }
 
   bool shared = CB::ec_is_example_header(*examples[0]);
 
-  mydata.known_cost = ld.costs[0];
-  mydata.known_cost.action = index;
+  known_cost = ld.costs[0];
+  known_cost.action = index;
   if(shared)  // take care of shared example
-    mydata.known_cost.action--;
+    known_cost.action--;
+  return known_cost;
 }
 
 template<bool is_learn>
@@ -326,7 +328,7 @@ bool test_adf_sequence(cb_adf& data)
 template <bool is_learn>
 void do_actual_learning(cb_adf& data, base_learner& base)
 { bool isTest = test_adf_sequence(data);
-  get_observed_cost(data, data.ec_seq);
+  data.known_cost = get_observed_cost(data.ec_seq);
 
   if (isTest || !is_learn)
   { gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
