@@ -62,7 +62,7 @@ namespace CB_ADF
 {
   bool example_is_newline_not_header(example& ec)
   { return (example_is_newline(ec) && !CB::ec_is_example_header(ec)); }
-  
+
 void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { if (cs_labels.size() < examples.size())
   { cs_labels.resize(examples.size());
@@ -224,7 +224,7 @@ void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 }
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ 
+{
   gen_cs_example_dr(mydata, examples, mydata.cs_labels);
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
 }
@@ -267,12 +267,6 @@ void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example
   }
 }
 
-template<class T> void swap(T& ele1, T& ele2)
-{ T temp = ele2;
-  ele2 = ele1;
-  ele1 = temp;
-}
-
 template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { uint32_t action = 0;
@@ -282,7 +276,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
     if (!mydata.rank_all) //preserve prediction
       action = examples[0]->pred.multiclass;
     else
-      swap(examples[0]->pred.a_s, mydata.a_s);
+      std::swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
@@ -297,7 +291,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   if (!mydata.rank_all) //restore prediction
     examples[0]->pred.multiclass = action;
   else
-    swap(examples[0]->pred.a_s, mydata.a_s);
+    std::swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -425,7 +419,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   bool is_test = false;
 
   if (c.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].idx);
+  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].action);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }

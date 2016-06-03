@@ -200,7 +200,7 @@ namespace VW
         if (!fa_missing.empty())
         {
             auto diff = gcnew System::Text::StringBuilder("missing: ");
-            for each (size_t ia in fa_missing)
+            for (size_t& ia : fa_missing)
             {
                 diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
                     fa.indicies[ia] & vw->reg.weight_mask,

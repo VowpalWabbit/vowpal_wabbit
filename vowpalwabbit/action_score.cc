@@ -12,7 +12,7 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
     for (size_t i = 0; i < a_s.size(); i++)
     { if (i > 0)
         ss << ',';
-      ss << a_s[i].idx << ':' << a_s[i].val;
+      ss << a_s[i].action << ':' << a_s[i].score;
     }
     ss << '\n';
     ssize_t len = ss.str().size();
