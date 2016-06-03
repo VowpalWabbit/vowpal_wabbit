@@ -203,6 +203,36 @@ namespace cs_unittest
             }
         }
 
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonLabel()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator(""))
+            {
+                validator.Validate("1 | a:2 ", "{\"a\":2,\"_label_Label\":1}");
+            }
+
+            using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
+                {
+                    Arguments = "--cb_adf",
+                    PropertyConfiguration = new PropertyConfiguration
+                    {
+                        MultiProperty = "adf",
+                        TextProperty = "someText",
+                        FeatureIgnorePrefix = "xxx"
+                    }
+                }))
+            {
+                validator.Validate(new[] {
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     "0:-1:.3 | w2 w3"
+                    },
+                    "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+            }
+        }
+
         public class MyContext
         {
             [Feature]

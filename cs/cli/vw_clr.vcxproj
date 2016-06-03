@@ -278,6 +278,7 @@
   <ItemGroup>
     <ClInclude Include="clr_io.h" />
     <ClInclude Include="clr_io_memory.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="spanning_tree_clr.h" />
     <ClInclude Include="vw_arguments.h" />
     <ClInclude Include="vw_cbutil.h" />
@@ -294,6 +295,7 @@
     <ClInclude Include="vw_settings.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="clr_io.cpp" />
     <ClCompile Include="clr_io_memory.cpp" />
     <ClCompile Include="spanning_tree_clr.cpp" />
@@ -313,6 +315,9 @@
     <ProjectReference Include="..\common\vw_common.csproj">
       <Project>{e621e022-c1f8-433f-905a-ab9a3de072b7}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

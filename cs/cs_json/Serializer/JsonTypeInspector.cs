@@ -175,7 +175,7 @@ namespace VW.Serializer
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
-                // filterint labels for now
+                // filtering labels for now
                 where name == propertyConfiguration.LabelProperty
                 where
                     // labels must be ILabel or string
@@ -191,6 +191,8 @@ namespace VW.Serializer
                     // CODE example != null
                     ValueValidExpressionFactories = new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) }
                 };
+
+            // TODO: _label_ and _labelIndex is not supported
 
             return new Schema
             {

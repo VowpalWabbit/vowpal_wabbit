@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -36,6 +37,10 @@ namespace VW.Serializer
         private readonly List<string> namespaceStrings;
 
         private JsonReader reader;
+
+        private bool foundMulti;
+        private JObject labelObject;
+
         private ILabel label;
         private Func<string, bool> specialPropertyAction;
 
@@ -67,6 +72,7 @@ namespace VW.Serializer
             Contract.Requires(jsonSerializer != null);
 
             this.namespaceStrings = new List<string>();
+            this.foundMulti = false;
             this.referenceResolver = serializer.ReferenceResolver;
             this.serializer = serializer;
             this.vw = vwPool.Native;
@@ -83,6 +89,10 @@ namespace VW.Serializer
         /// The marshalling context for the default namespace. Can be modified until <see cref="CreateExample"/>.
         /// </summary>
         public VowpalWabbitMarshalContext DefaultNamespaceContext { get; private set; }
+
+        public int LabelIndex { get; private set; }
+
+        public ILabel Label { get; private set; }
 
         /// <summary>
         /// Creates the managed example representation.
@@ -139,7 +149,7 @@ namespace VW.Serializer
                 return;
 
             if (reader.TokenType != JsonToken.StartObject)
-                throw new VowpalWabbitJsonException(reader.Path,
+                throw new VowpalWabbitJsonException(this.reader,
                     string.Format("Expected start object. Found '{0}' and value '{1}'",
                     reader.TokenType, reader.Value));
 
@@ -155,6 +165,21 @@ namespace VW.Serializer
                 };
 
             this.defaultMarshaller.MarshalNamespace(this.DefaultNamespaceContext, ns, () => this.ParseProperties(path));
+
+            if (this.labelObject != null)
+            {
+                var propertyName = ((JProperty)this.labelObject.First).Name;
+                Type labelType;
+                if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
+                    throw new VowpalWabbitJsonException(this.reader, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
+
+                var labelObj = (ILabel)this.labelObject.ToObject(labelType);
+
+                if (this.foundMulti)
+                    this.Label = labelObj;
+                else
+                    this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, labelObj);
+            }
         }
 
         private void ParseSpecialProperty(LocalContext context, string propertyName)
@@ -162,7 +187,7 @@ namespace VW.Serializer
             var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
 
             // special fields
-            if (propertyName == propertyConfiguration.LabelProperty)
+            if (propertyName.Equals(propertyConfiguration.LabelProperty, StringComparison.Ordinal))
             {
                 // passed in label has precedence
                 if (label == null)
@@ -170,7 +195,7 @@ namespace VW.Serializer
                 else
                     reader.Skip();
             }
-            else if (propertyName == propertyConfiguration.TextProperty)
+            else if (propertyName.Equals(propertyConfiguration.TextProperty, StringComparison.Ordinal))
             {
                 // parse text segment feature
                 this.defaultMarshaller.MarshalFeatureStringSplit(
@@ -179,8 +204,29 @@ namespace VW.Serializer
                     new Feature(propertyName),
                     reader.ReadAsString());
             }
+            else if (propertyName.Equals(propertyConfiguration.LabelIndexProperty, StringComparison.Ordinal))
+            {
+                if (!this.reader.Read())
+                    throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
+
+                this.LabelIndex = (int)(long)this.reader.Value;
+            }
+            else if (propertyName.StartsWith(propertyConfiguration.LabelPropertyPrefix, StringComparison.Ordinal))
+            {
+                if (!this.reader.Read())
+                    throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
+
+                if (this.labelObject == null)
+                    this.labelObject = new JObject();
+
+                var targetPropertyName = propertyName.Substring(propertyConfiguration.LabelPropertyPrefix.Length);
+                this.labelObject.Add(targetPropertyName, new JValue(this.reader.Value));
+            }
             else
             {
+                if (propertyName.Equals(propertyConfiguration.MultiProperty, StringComparison.Ordinal))
+                    this.foundMulti = true;
+
                 // forward to handler
                 if (specialPropertyAction == null || !specialPropertyAction(propertyName))
                     reader.Skip(); // if not handled, skip it
@@ -190,8 +236,8 @@ namespace VW.Serializer
         private void ParseLabel()
         {
             // peak the first property name
-            if (!reader.Read())
-                throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
+            if (!this.reader.Read())
+                throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
 
             switch (reader.TokenType)
             {
@@ -199,7 +245,7 @@ namespace VW.Serializer
                     {
                         // parse complex object
                         if (!reader.Read() || reader.TokenType != JsonToken.PropertyName)
-                            throw new VowpalWabbitJsonException(reader.Path, "Expected at least a single property to determine the label object");
+                            throw new VowpalWabbitJsonException(this.reader, "Expected at least a single property to determine the label object");
 
                         var propertyName = (string)reader.Value;
 
@@ -209,7 +255,7 @@ namespace VW.Serializer
 
                         Type labelType;
                         if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
-                            throw new VowpalWabbitJsonException(reader.Path, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
+                            throw new VowpalWabbitJsonException(this.reader, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
 
                         var label = (ILabel)jsonSerializer.Deserialize(prefixReader, labelType);
 
@@ -230,7 +276,7 @@ namespace VW.Serializer
                     // ignore
                     break;
                 default:
-                    throw new VowpalWabbitJsonException(reader.Path, "Expected label object");
+                    throw new VowpalWabbitJsonException(this.reader, "Expected label object");
             }
         }
 
@@ -251,11 +297,11 @@ namespace VW.Serializer
                         if (!reader.Read() ||
                             reader.TokenType != JsonToken.PropertyName ||
                             (string)reader.Value != "$values")
-                            throw new VowpalWabbitJsonException(reader.Path, "Expecting '$values' property");
+                            throw new VowpalWabbitJsonException(this.reader, "Expecting '$values' property");
 
                         // read $values
                         if (!reader.Read())
-                            throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
+                            throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
 
                         // create re-useable marshalling call
                         var marshalAction = this.ParseFeatureReUsable();
@@ -355,7 +401,7 @@ namespace VW.Serializer
                     case JsonToken.EndArray:
                         goto done;
                     default:
-                        throw new VowpalWabbitJsonException(reader.Path, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
+                        throw new VowpalWabbitJsonException(this.reader, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
                 }
 
                 if (index == values.Length)
@@ -399,7 +445,7 @@ namespace VW.Serializer
                     this.ParseFeatureArray(context, ns);
                     break;
                 default:
-                    throw new VowpalWabbitJsonException(reader.Path, "Unexpected token " + reader.TokenType + " while deserializing primitive feature");
+                    throw new VowpalWabbitJsonException(this.reader, "Unexpected token " + reader.TokenType + " while deserializing primitive feature");
             }
         }
 
@@ -423,7 +469,7 @@ namespace VW.Serializer
                     case JsonToken.EndArray:
                         return;
                     default:
-                        throw new VowpalWabbitJsonException(reader.Path, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
+                        throw new VowpalWabbitJsonException(this.reader, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
                 }
                 index++;
             }
@@ -500,7 +546,7 @@ namespace VW.Serializer
                         }
 
                         if (!reader.Read())
-                            throw new VowpalWabbitJsonException(reader.Path, "Unexpected end while parsing namespace");
+                            throw new VowpalWabbitJsonException(this.reader, "Unexpected end while parsing namespace");
 
                         // TODO: this.Context might have to be a stack...
                         if (reader.TokenType == JsonToken.StartObject)

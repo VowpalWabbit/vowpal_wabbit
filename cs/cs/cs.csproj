@@ -148,7 +148,6 @@
     <Compile Include="ObjectPool.cs" />
     <Compile Include="VowpalWabbitDynamic.cs" />
     <Compile Include="VowpalWabbitExampleCollection.cs" />
-    <Compile Include="VowpalWabbitHttpModule.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitMultiworldTesting.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
