@@ -186,7 +186,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
     if (action_scores)
     { std::ostringstream pred_buf;
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ')
-               << ec.pred.a_s[0].idx <<"...";
+               << ec.pred.a_s[0].idx << ":" << ec.pred.a_s[0].val <<"...";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
                            num_features, all.progress_add, all.progress_arg);;
     }

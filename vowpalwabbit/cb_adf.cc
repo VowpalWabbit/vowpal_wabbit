@@ -210,14 +210,14 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   for (example* ec : examples)
     ec->l.cb = cb_labels[i++];
 
-  if (!mydata.rank_all)
-    { uint32_t action = 0;
-      for (size_t i = 0; i < examples.size(); i++)
-	if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline_not_header(*examples[i]))
-	  if (examples[i]->pred.multiclass != 0)
-	    action = examples[i]->pred.multiclass;
-      examples[0]->pred.multiclass = action;
-  }
+  // if (!mydata.rank_all)
+  //   { uint32_t action = 0;
+  //     for (size_t i = 0; i < examples.size(); i++)
+  // 	if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline_not_header(*examples[i]))
+  // 	  if (examples[i]->pred.multiclass != 0)
+  // 	    action = examples[i]->pred.multiclass;
+  //     examples[0]->pred.multiclass = action;
+  // }
 }
 
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
@@ -277,13 +277,13 @@ template<class T> void swap(T& ele1, T& ele2)
 
 template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
-{ uint32_t action = 0;
+{ //uint32_t action = 0;
   if (predict) //first get the prediction to return
   { gen_cs_example_ips(examples, mydata.cs_labels);
     call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
-    if (!mydata.rank_all) //preserve prediction
-      action = examples[0]->pred.multiclass;
-    else
+    //    if (!mydata.rank_all) //preserve prediction
+    //      action = examples[0]->pred.multiclass;
+    //    else
       swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
@@ -296,9 +296,9 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
   examples[mydata.mtr_example]->num_features = nf;
   examples[mydata.mtr_example]->weight = old_weight;
-  if (!mydata.rank_all) //restore prediction
-    examples[0]->pred.multiclass = action;
-  else
+  //  if (!mydata.rank_all) //restore prediction
+  //    examples[0]->pred.multiclass = action;
+  //  else
     swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
@@ -375,7 +375,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
 
   float loss = 0.;
 
-  uint32_t action = ec.pred.multiclass;
+  uint32_t action = ec.pred.a_s[0].idx;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
       num_features += (*ec_seq)[i]->num_features;
@@ -417,8 +417,11 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
 
   size_t num_features = 0;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+    if (!CB::ec_is_example_header(*(*ec_seq)[i])) {
       num_features += (*ec_seq)[i]->num_features;
+      cout<<(*ec_seq)[i]->num_features<<" ";
+    }
+  cout<<endl;
 
   all.sd->total_features += num_features;
 
@@ -578,9 +581,9 @@ base_learner* cb_adf_setup(vw& all)
 
   if (all.vm.count("rank_all"))
   { ld.rank_all = true;
-    all.delete_prediction = ACTION_SCORE::delete_action_scores;
     *all.file_options << " --rank_all";
   }
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   if (all.vm.count("no_predict"))
     ld.predict = false;
@@ -594,7 +597,7 @@ base_learner* cb_adf_setup(vw& all)
       all.args.push_back("--csoaa_ldf");
     if (count(all.args.begin(), all.args.end(), "multiline") == 0)
       all.args.push_back("multiline");
-    if (ld.rank_all && count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
+    if (count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
       all.args.push_back("--csoaa_rank");
   }
 
