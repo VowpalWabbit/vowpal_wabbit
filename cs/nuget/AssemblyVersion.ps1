@@ -10,7 +10,11 @@ PatchAssemblyInfo "..\cs\Properties\AssemblyInfo.cs"
 PatchAssemblyInfo "..\cs_json\Properties\AssemblyInfo.cs"
 PatchAssemblyInfo "..\cs_parallel\Properties\AssemblyInfo.cs"
 PatchAssemblyInfo "..\common\Properties\AssemblyInfo.cs"
-PatchAssemblyInfo "..\cli\AssemblyInfo.cpp"
+
+$cpp = Get-Content "..\cli\AssemblyInfo.cpp"
+$cpp = $cpp -replace "Version\(""[0-9\.]+""\)", "Version(""$version"")"
+$cpp = $cpp -replace "VersionAttribute\(""[0-9\.]+""\)", "VersionAttribute(""$version"")"
+Set-Content -Path "..\cli\AssemblyInfo.cpp" -Value $cpp
 
 $rc = Get-Content "..\cli\Resource.rc"
 $rc = $rc -replace "FileVersion"", ""[0-9,\.]+""", "FileVersion"", ""$version"""
