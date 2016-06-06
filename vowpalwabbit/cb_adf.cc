@@ -369,7 +369,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
 
   float loss = 0.;
 
-  uint32_t action = ec.pred.a_s[0].idx;
+  uint32_t action = ec.pred.a_s[0].action;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
       num_features += (*ec_seq)[i]->num_features;
@@ -424,7 +424,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   bool is_test = false;
 
   if (c.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].idx);
+  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].action);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }
