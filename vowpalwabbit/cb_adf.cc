@@ -406,7 +406,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, false);
+  CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
@@ -419,9 +419,9 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i])) {
       num_features += (*ec_seq)[i]->num_features;
-      cout<<(*ec_seq)[i]->num_features<<" ";
+      //cout<<(*ec_seq)[i]->num_features<<" ";
     }
-  cout<<endl;
+  //cout<<endl;
 
   all.sd->total_features += num_features;
 
@@ -431,6 +431,7 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
 
   if (c.known_cost.probability > 0)
   { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].idx);
+    //cout<<loss<<endl;
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }

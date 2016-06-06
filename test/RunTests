@@ -1442,3 +1442,22 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
 
+# Test 128: cb_explore_adf with epsilon-greedy exploration
+{VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
+    train-sets/ref/cbe_adf_epsilon.stderr
+    pred-sets/ref/cbe_adf_epsilon.predict
+
+# Test 129: cb_explore_adf with softmax exploration
+{VW} --cb_explore_adf --softmax 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
+    train-sets/ref/cbe_adf_softmax.stderr
+    pred-sets/ref/cbe_adf_softmax.predict
+
+# Test 128: cb_explore_adf with bagging exploration
+{VW} --cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict
+    train-sets/ref/cbe_adf_bag.stderr
+    pred-sets/ref/cbe_adf_bag.predict
+
+# Test 128: cb_explore_adf with explore-first exploration
+{VW} --cb_explore_adf --first 2 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_first.predict
+    train-sets/ref/cbe_adf_first.stderr
+    pred-sets/ref/cbe_adf_first.predict
