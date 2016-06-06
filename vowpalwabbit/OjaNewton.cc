@@ -118,7 +118,7 @@ struct OjaNewton {
             else {
                 ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
             }
-	    // printf("%d = %f\n", i, ev[i] / t);
+	    //printf("%d = %f\n", i, ev[i]);
         }
     }
 
@@ -209,6 +209,7 @@ struct OjaNewton {
             double tmp = 0;
             for (int i = j; i <= m; i++) {
                 tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
+		//printf("ev=%f, AZx=%f, A=%f\n", ev[i], data.AZx[i], A[i][j]);
             }
             b[j] += tmp * data.g;
         }
@@ -242,7 +243,7 @@ struct OjaNewton {
         if (max_norm < 1e7) return;
         
         // implicit -> explicit representation
-        printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
+        // printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
  
         double *tmp = calloc_or_die<double>(m+1);    
 
@@ -461,6 +462,7 @@ base_learner* OjaNewton_setup(vw& all) {
         ("sketch_size", po::value<int>(), "size of sketch")
         ("epoch_size", po::value<int>(), "size of epoch")
         ("alpha", po::value<double>(), "mutiplicative constant for indentiy")
+        ("alpha_inverse", po::value<double>(), "one over alpha, similar to learning rate")
         ("learning_rate_cnt", po::value<double>(), "constant for the learning rate 1/t")
         ("normalize", po::value<bool>(), "normalize the features or not")
 	("random_init", po::value<bool>(), "randomize initialization of Oja or not");
@@ -485,6 +487,9 @@ base_learner* OjaNewton_setup(vw& all) {
         ON.alpha = vm["alpha"].as<double>();
     else
         ON.alpha = 1.0;
+
+    if (vm.count("alpha_inverse"))
+        ON.alpha = 1.0 / vm["alpha_inverse"].as<double>();
 
     if (vm.count("learning_rate_cnt"))
         ON.learning_rate_cnt = vm["learning_rate_cnt"].as<double>();
