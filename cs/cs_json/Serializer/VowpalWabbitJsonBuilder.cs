@@ -42,7 +42,10 @@ namespace VW.Serializer
         private JObject labelObject;
 
         private ILabel label;
-        private Func<string, bool> specialPropertyAction;
+        private int featureCount;
+
+        private VowpalWabbitJsonParseState extensionState;
+        private List<VowpalWabbitJsonExtension> extensions;
 
         static VowpalWabbitJsonBuilder()
         {
@@ -58,7 +61,9 @@ namespace VW.Serializer
                         Property = p
                     };
 
-            labelPropertyMapping = q.ToDictionary(e => e.JsonProperty.PropertyName ?? e.Property.Name, e => e.Type);
+            labelPropertyMapping = q.ToDictionary(
+                e => (e.JsonProperty.PropertyName ?? e.Property.Name).ToLowerInvariant(),
+                e => e.Type);
         }
 
         /// <summary>
@@ -70,6 +75,12 @@ namespace VW.Serializer
             Contract.Requires(vw != null);
             Contract.Requires(defaultMarshaller != null);
             Contract.Requires(jsonSerializer != null);
+
+            this.extensionState = new VowpalWabbitJsonParseState
+            {
+                JsonBuilder = this,
+                VW = vwPool.Native
+            };
 
             this.namespaceStrings = new List<string>();
             this.foundMulti = false;
@@ -102,6 +113,9 @@ namespace VW.Serializer
         {
             try
             {
+                if (this.featureCount == 0)
+                    return null;
+
                 var vwExample = this.DefaultNamespaceContext.ExampleBuilder.CreateExample();
 
                 if (this.vw.Settings.EnableStringExampleGeneration)
@@ -124,6 +138,12 @@ namespace VW.Serializer
             }
         }
 
+        // re-entering from extension
+        internal void Parse(List<VowpalWabbitJsonParseContext> path, VowpalWabbitMarshalContext namespaceContext, Namespace ns)
+        {
+            this.featureCount = this.defaultMarshaller.MarshalNamespace(namespaceContext, ns, () => this.ParseProperties(path)) + this.featureCount;
+        }
+
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -134,12 +154,16 @@ namespace VW.Serializer
         /// </param>
         /// <param name="specialPropertyAction">Action to be executed when sepcial properties are discovered.</param>
         /// <returns>The VowpalWabbit native example.</returns>
-        public void Parse(JsonReader reader, ILabel label = null, Func<string, bool> specialPropertyAction = null)
+        public void Parse(JsonReader reader, ILabel label = null, List<VowpalWabbitJsonExtension> extensions = null)
         {
+            this.featureCount = 0;
+            this.labelObject = null;
+            this.foundMulti = false;
+
             // avoid parameter passing for the sake of non-reentrantness
             this.reader = reader;
             this.label = label;
-            this.specialPropertyAction = specialPropertyAction;
+            this.extensions = extensions;
 
             if (label != null)
                 this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, label);
@@ -154,9 +178,9 @@ namespace VW.Serializer
                     reader.TokenType, reader.Value));
 
             var ns = new Namespace(this.vw);
-            var path = new List<LocalContext>
+            var path = new List<VowpalWabbitJsonParseContext>
                 {
-                    new LocalContext
+                    new VowpalWabbitJsonParseContext
                     {
                         Namespace = ns,
                         Context = this.DefaultNamespaceContext,
@@ -164,13 +188,18 @@ namespace VW.Serializer
                     }
                 };
 
-            this.defaultMarshaller.MarshalNamespace(this.DefaultNamespaceContext, ns, () => this.ParseProperties(path));
+            this.extensionState.Reader = reader;
+            this.extensionState.Path = path;
+
+            // TODO: duplicate namespace recursion to enable async
+            // featureCount might be modified inside ParseProperties...
+            this.featureCount = this.defaultMarshaller.MarshalNamespace(this.DefaultNamespaceContext, ns, () => this.ParseProperties(path)) + this.featureCount;
 
             if (this.labelObject != null)
             {
                 var propertyName = ((JProperty)this.labelObject.First).Name;
                 Type labelType;
-                if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
+                if (!labelPropertyMapping.TryGetValue(propertyName.ToLowerInvariant(), out labelType))
                     throw new VowpalWabbitJsonException(this.reader, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
 
                 var labelObj = (ILabel)this.labelObject.ToObject(labelType);
@@ -182,12 +211,12 @@ namespace VW.Serializer
             }
         }
 
-        private void ParseSpecialProperty(LocalContext context, string propertyName)
+        private void ParseSpecialProperty(VowpalWabbitJsonParseContext context, string propertyName)
         {
             var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
 
             // special fields
-            if (propertyName.Equals(propertyConfiguration.LabelProperty, StringComparison.Ordinal))
+            if (propertyName.Equals(propertyConfiguration.LabelProperty, StringComparison.OrdinalIgnoreCase))
             {
                 // passed in label has precedence
                 if (label == null)
@@ -195,7 +224,7 @@ namespace VW.Serializer
                 else
                     reader.Skip();
             }
-            else if (propertyName.Equals(propertyConfiguration.TextProperty, StringComparison.Ordinal))
+            else if (propertyName.Equals(propertyConfiguration.TextProperty, StringComparison.OrdinalIgnoreCase))
             {
                 // parse text segment feature
                 this.defaultMarshaller.MarshalFeatureStringSplit(
@@ -204,17 +233,25 @@ namespace VW.Serializer
                     new Feature(propertyName),
                     reader.ReadAsString());
             }
-            else if (propertyName.Equals(propertyConfiguration.LabelIndexProperty, StringComparison.Ordinal))
+            else if (propertyName.Equals(propertyConfiguration.LabelIndexProperty, StringComparison.OrdinalIgnoreCase))
             {
                 if (!this.reader.Read())
                     throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
 
+                // skip
+                if (this.reader.TokenType == JsonToken.Null)
+                    return;
+
                 this.LabelIndex = (int)(long)this.reader.Value;
             }
-            else if (propertyName.StartsWith(propertyConfiguration.LabelPropertyPrefix, StringComparison.Ordinal))
+            else if (propertyName.StartsWith(propertyConfiguration.LabelPropertyPrefix, StringComparison.OrdinalIgnoreCase))
             {
                 if (!this.reader.Read())
                     throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
+
+                // skip
+                if (this.reader.TokenType == JsonToken.Null)
+                    return;
 
                 if (this.labelObject == null)
                     this.labelObject = new JObject();
@@ -228,10 +265,14 @@ namespace VW.Serializer
                     this.foundMulti = true;
 
                 // forward to handler
-                if (specialPropertyAction == null || !specialPropertyAction(propertyName))
-                    reader.Skip(); // if not handled, skip it
+                foreach (var extension in this.extensions)
+                    if (extension(this.extensionState, propertyName))
+                        return;
+
+                // if not handled, skip it
+                reader.Skip();
             }
-         }
+        }
 
         private void ParseLabel()
         {
@@ -254,7 +295,7 @@ namespace VW.Serializer
                             Tuple.Create(JsonToken.PropertyName, (object)propertyName));
 
                         Type labelType;
-                        if (!labelPropertyMapping.TryGetValue(propertyName, out labelType))
+                        if (!labelPropertyMapping.TryGetValue(propertyName.ToLowerInvariant(), out labelType))
                             throw new VowpalWabbitJsonException(this.reader, "The first property ('" + propertyName + "') must match to a property of a VowpalWabbit label type.");
 
                         var label = (ILabel)jsonSerializer.Deserialize(prefixReader, labelType);
@@ -283,7 +324,7 @@ namespace VW.Serializer
         /// <summary>
         /// Expects that actual feature value.
         /// </summary>
-        private void ParseFeature(List<LocalContext> path, string featureName)
+        private void ParseFeature(List<VowpalWabbitJsonParseContext> path, string featureName)
         {
             switch (featureName)
             {
@@ -334,7 +375,7 @@ namespace VW.Serializer
                                 // setup fresh context
                                 using (var context = new VowpalWabbitMarshalContext(this.vw, this.DefaultNamespaceContext.ExampleBuilder))
                                 {
-                                    this.defaultMarshaller.MarshalNamespace(
+                                    this.featureCount += this.defaultMarshaller.MarshalNamespace(
                                         context,
                                         ns,
                                         () => marshalAction.Marshal(this.defaultMarshaller, context, ns, featureName));
@@ -492,14 +533,14 @@ namespace VW.Serializer
         /// <summary>
         /// Parses { "feature1":1, "feature2":true, .... }
         /// </summary>
-        private void ParseNamespaceAndFeatures(List<LocalContext> path, string namespaceValue)
+        private void ParseNamespaceAndFeatures(List<VowpalWabbitJsonParseContext> path, string namespaceValue)
         {
-            LocalContext localContext = null;
+            VowpalWabbitJsonParseContext localContext = null;
 
             try
             {
                 var ns = new Namespace(this.vw, namespaceValue);
-                localContext = new LocalContext
+                localContext = new VowpalWabbitJsonParseContext
                 {
                     Namespace = ns,
                     Context = new VowpalWabbitMarshalContext(this.vw, this.DefaultNamespaceContext.ExampleBuilder),
@@ -509,7 +550,7 @@ namespace VW.Serializer
                 path.Add(localContext);
 
                 var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
-                this.defaultMarshaller.MarshalNamespace(localContext.Context, ns, () => this.ParseProperties(path));
+                featureCount += this.defaultMarshaller.MarshalNamespace(localContext.Context, ns, () => this.ParseProperties(path));
 
                 path.RemoveAt(path.Count - 1);
 
@@ -528,7 +569,7 @@ namespace VW.Serializer
             }
         }
 
-        private void ParseProperties(List<LocalContext> path)
+        private void ParseProperties(List<VowpalWabbitJsonParseContext> path)
         {
             var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
 
@@ -582,14 +623,14 @@ namespace VW.Serializer
                 }
             }
         }
+    }
 
-        private sealed class LocalContext
-        {
-            internal VowpalWabbitMarshalContext Context { get; set; }
+    public sealed class VowpalWabbitJsonParseContext
+    {
+        public VowpalWabbitMarshalContext Context { get; set; }
 
-            internal Namespace Namespace { get; set; }
+        public Namespace Namespace { get; set; }
 
-            internal string JsonProperty { get; set; }
-        }
+        public string JsonProperty { get; set; }
     }
 }

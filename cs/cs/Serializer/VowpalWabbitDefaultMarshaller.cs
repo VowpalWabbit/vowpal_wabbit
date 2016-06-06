@@ -298,7 +298,7 @@ namespace VW.Serializer
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="featureVisits"></param>
-        public void MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
+        public int MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
         {
             try
             {
@@ -322,6 +322,8 @@ namespace VW.Serializer
                         stringExample.Length = position - ns.NamespaceString.Length;
                     }
                 }
+
+                return (int)context.NamespaceBuilder.FeatureCount;
             }
             finally
             {

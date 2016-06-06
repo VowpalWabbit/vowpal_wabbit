@@ -24,6 +24,7 @@ namespace Labels
   using namespace System;
   using namespace System::Collections::Generic;
   using namespace System::Globalization;
+  using namespace System::Text;
   using namespace CB;
   using namespace MULTICLASS;
   using namespace Newtonsoft::Json;
@@ -31,6 +32,7 @@ namespace Labels
   public interface class ILabel
   {
     void UpdateExample(vw* vw, example* ex);
+    void ReadFromExample(example* ex);
   };
 
   public ref class ContextualBanditLabel sealed : ILabel
@@ -96,6 +98,28 @@ namespace Labels
       }
     }
 
+    [JsonIgnore]
+    property bool IsShared
+    {
+      bool get()
+      {
+        return m_cost == FLT_MAX && m_probability == -1.f;
+      }
+    }
+
+    virtual void ReadFromExample(example* ex)
+    {
+      CB::label* ld = (CB::label*)&ex->l;
+      if (ld->costs.size() > 0)
+      {
+        cb_class& f = ld->costs[0];
+
+        m_action = f.action;
+        m_cost = f.cost;
+        m_probability = f.probability;
+      }
+    }
+
     virtual void UpdateExample(vw* vw, example* ex)
     {
       CB::label* ld = (CB::label*)&ex->l;
@@ -155,6 +179,10 @@ namespace Labels
     {
       return "shared";
     }
+
+    virtual void ReadFromExample(example* ex)
+    {
+    }
   };
 
   public ref class SimpleLabel sealed : ILabel
@@ -210,6 +238,15 @@ namespace Labels
       {
         m_initial = value;
       }
+    }
+
+    virtual void ReadFromExample(example* ex)
+    {
+      label_data* ld = (label_data*)&ex->l;
+
+      m_label = ld->label;
+      m_weight = ld->weight;
+      m_initial = ld->initial;
     }
 
     virtual void UpdateExample(vw* vw, example* ex)
@@ -305,6 +342,11 @@ namespace Labels
       }
     }
 
+    virtual void ReadFromExample(example* ex)
+    {
+      throw gcnew NotImplementedException("to be done...");
+    }
+
     virtual void UpdateExample(vw* vw, example* ex)
     {
       throw gcnew NotImplementedException("to be done...");
@@ -358,6 +400,11 @@ namespace Labels
       {
         m_label = value;
       }
+    }
+
+    virtual void ReadFromExample(example* ex)
+    {
+      throw gcnew NotImplementedException("to be done...");
     }
 
     virtual void UpdateExample(vw* vw, example* ex)

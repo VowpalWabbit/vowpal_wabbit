@@ -22,7 +22,7 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="path">The path as returned by <see cref="Newtonsoft.Json.JsonReader.Path"/>.</param>
         /// <param name="message">The message that describes the error.</param>
-        internal VowpalWabbitJsonException(JsonReader reader, string message)
+        public VowpalWabbitJsonException(JsonReader reader, string message)
              : base(message)
         {
             this.Path = reader.Path;
@@ -35,9 +35,9 @@ namespace VW.Serializer
             }
         }
 
-        internal int LineNumber { get; private set; }
+        public int LineNumber { get; private set; }
 
-        internal int LinePosition { get; private set; }
+        public int LinePosition { get; private set; }
 
         /// <summary>
         /// The path as returned by <see cref="Newtonsoft.Json.JsonReader.Path"/>.

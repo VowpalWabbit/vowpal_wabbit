@@ -50,8 +50,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 8,0,0,57
- PRODUCTVERSION 8,0,0,57
+ FILEVERSION 8,0,0,59
+ PRODUCTVERSION 8,0,0,59
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +68,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Microsoft Corp"
             VALUE "FileDescription", "Vowpal Wabbit"
-            VALUE "FileVersion", "8.0.0.57"
+            VALUE "FileVersion", "8.0.0.59"
             VALUE "InternalName", "vw_clr.dll"
             VALUE "LegalCopyright", "Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved"
             VALUE "OriginalFilename", "vw_clr.dll"
             VALUE "ProductName", "Vowpal Wabbit"
-            VALUE "ProductVersion", "8.0.0.57"
+            VALUE "ProductVersion", "8.0.0.59"
         END
     END
     BLOCK "VarFileInfo"

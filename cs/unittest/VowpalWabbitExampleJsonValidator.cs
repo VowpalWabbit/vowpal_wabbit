@@ -52,7 +52,7 @@ namespace cs_unittest
             }
         }
 
-        public void Validate(string[] lines, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, int? index = null)
+        public void Validate(string[] lines, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, int? index = null, VowpalWabbitJsonExtension extension = null)
         {
             VowpalWabbitExample[] strExamples = new VowpalWabbitExample[lines.Count()];
 
@@ -62,26 +62,31 @@ namespace cs_unittest
                     strExamples[i] = this.vw.ParseLine(lines[i]);
 
                 using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
-                using (var jsonExample = (VowpalWabbitMultiLineExampleCollection)jsonSerializer.ParseAndCreate(json, label, index))
                 {
-                    var jsonExamples = new List<VowpalWabbitExample>();
+                    if (extension != null)
+                        jsonSerializer.RegisterExtension(extension);
 
-                    if (jsonExample.SharedExample != null)
-                        jsonExamples.Add(jsonExample.SharedExample);
-
-                    jsonExamples.AddRange(jsonExample.Examples);
-
-                    Assert.AreEqual(strExamples.Length, jsonExamples.Count);
-
-                    for (int i = 0; i < strExamples.Length; i++)
+                    using (var jsonExample = (VowpalWabbitMultiLineExampleCollection)jsonSerializer.ParseAndCreate(json, label, index))
                     {
-                        using (var strJsonExample = this.vw.ParseLine(jsonExamples[i].VowpalWabbitString))
-                        {
-                            var diff = strExamples[i].Diff(this.vw, jsonExamples[i], labelComparator);
-                            Assert.IsNull(diff, diff + " generated string: '" + jsonExamples[i].VowpalWabbitString + "'");
+                        var jsonExamples = new List<VowpalWabbitExample>();
 
-                            diff = strExamples[i].Diff(this.vw, strJsonExample, labelComparator);
-                            Assert.IsNull(diff, diff);
+                        if (jsonExample.SharedExample != null)
+                            jsonExamples.Add(jsonExample.SharedExample);
+
+                        jsonExamples.AddRange(jsonExample.Examples);
+
+                        Assert.AreEqual(strExamples.Length, jsonExamples.Count);
+
+                        for (int i = 0; i < strExamples.Length; i++)
+                        {
+                            using (var strJsonExample = this.vw.ParseLine(jsonExamples[i].VowpalWabbitString))
+                            {
+                                var diff = strExamples[i].Diff(this.vw, jsonExamples[i], labelComparator);
+                                Assert.IsNull(diff, diff + " generated string: '" + jsonExamples[i].VowpalWabbitString + "'");
+
+                                diff = strExamples[i].Diff(this.vw, strJsonExample, labelComparator);
+                                Assert.IsNull(diff, diff);
+                            }
                         }
                     }
                 }

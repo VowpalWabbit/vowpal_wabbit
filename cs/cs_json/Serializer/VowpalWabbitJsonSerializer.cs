@@ -13,19 +13,46 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using VW.Labels;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    public sealed class VowpalWabbitJsonParseState
+    {
+        public VowpalWabbit VW { get; set; }
+
+        public JsonReader Reader { get; set; }
+
+        public VowpalWabbitJsonBuilder JsonBuilder { get; set; }
+
+        public List<VowpalWabbitJsonParseContext> Path { get; set; }
+
+        public void Parse()
+        {
+            using (var context = new VowpalWabbitMarshalContext(this.VW, this.JsonBuilder.DefaultNamespaceContext.ExampleBuilder))
+            {
+                var ns = new Namespace(this.VW);
+                this.Parse(context, ns);
+            }
+        }
+
+        public void Parse(VowpalWabbitMarshalContext namespaceContext, Namespace ns)
+        {
+            this.JsonBuilder.Parse(this.Path, namespaceContext, ns);
+        }
+    }
+
+    public delegate bool VowpalWabbitJsonExtension(VowpalWabbitJsonParseState state, string property);
+
     /// <summary>
     /// A deserializer from JSON to Vowpal Wabbit native examples.
     /// </summary>
     public sealed class VowpalWabbitJsonSerializer : IDisposable
     {
         private readonly IVowpalWabbitExamplePool vwPool;
-        private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
         private readonly VowpalWabbitJsonReferenceResolver referenceResolver;
 
@@ -33,6 +60,7 @@ namespace VW.Serializer
         private readonly object lockObject = new object();
         private bool ready = false;
         private List<Action> marshalRequests;
+        private List<VowpalWabbitJsonExtension> extensions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJson"/> class.
@@ -42,12 +70,18 @@ namespace VW.Serializer
         {
             Contract.Requires(vwPool != null);
 
-            this.vwPool = vwPool;
-            this.referenceResolver = referenceResolver;
-            this.defaultMarshaller = VowpalWabbitDefaultMarshaller.Instance;
+            this.extensions = new List<VowpalWabbitJsonExtension> { this.HandleMultiProperty };
             this.jsonSerializer = new JsonSerializer();
 
-            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
+            this.vwPool = vwPool;
+            this.referenceResolver = referenceResolver;
+
+            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
+        }
+
+        public void RegisterExtension(VowpalWabbitJsonExtension extension)
+        {
+            this.extensions.Add(extension);
         }
 
         /// <summary>
@@ -224,6 +258,54 @@ namespace VW.Serializer
             return 0;
         }
 
+        private bool HandleMultiProperty(VowpalWabbitJsonParseState state, string property)
+        {
+            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+            if (!property.Equals(multiPropertyName, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var reader = state.Reader;
+            if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
+                throw new VowpalWabbitJsonException(reader, "Expected start array for '" + multiPropertyName + "'");
+
+            if (this.ExampleBuilders == null)
+                this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
+
+            while (reader.Read())
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.StartObject:
+                        VowpalWabbitJsonBuilder builder = null;
+
+                        try
+                        {
+                            builder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
+                            this.ExampleBuilders.Add(builder);
+                        }
+                        catch (Exception)
+                        {
+                            builder.Dispose();
+                            throw;
+                        }
+
+                        // pass the label to the selected example
+                        builder.Parse(reader, index != null && index == this.ExampleBuilders.Count - 1 ? label : null, this.extensions);
+                        break;
+                    case JsonToken.EndArray:
+                        return true;
+                    default:
+                        throw new VowpalWabbitJsonException(reader, "Unexpected token: " + reader.TokenType);
+                }
+            }
+
+            throw new VowpalWabbitJsonException(reader, "Unexpected end");
+        }
+
+        // TODO: keeping it local might be nicer...
+        private int? index;
+        private ILabel label;
+
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -235,51 +317,11 @@ namespace VW.Serializer
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Parse(JsonReader reader, ILabel label = null, int? index = null)
         {
-            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+            this.index = index;
+            this.label = label;
 
             // only pass the label if it's not targeted at a particular index
-            this.ExampleBuilder.Parse(reader, index == null ? label : null,
-                propertyName =>
-                {
-                    if (propertyName != multiPropertyName)
-                        return false;
-
-                    if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                        throw new VowpalWabbitJsonException(reader, "Expected start array for '" + multiPropertyName + "'");
-
-                    if (this.ExampleBuilders == null)
-                        this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
-
-                    while (reader.Read())
-                    {
-                        switch (reader.TokenType)
-                        {
-                            case JsonToken.StartObject:
-                                VowpalWabbitJsonBuilder builder = null;
-
-                                try
-                                {
-                                    builder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
-                                    this.ExampleBuilders.Add(builder);
-                                }
-                                catch (Exception)
-                                {
-                                    builder.Dispose();
-                                    throw;
-                                }
-
-                                // pass the label to the selected example
-                                builder.Parse(reader, index != null && index == this.ExampleBuilders.Count - 1 ? label : null);
-                                break;
-                            case JsonToken.EndArray:
-                                return true;
-                            default:
-                                throw new VowpalWabbitJsonException(reader, "Unexpected token: " + reader.TokenType);
-                        }
-                    }
-
-                    throw new VowpalWabbitJsonException(reader, "Unexpected end");
-                });
+            this.ExampleBuilder.Parse(reader, index == null ? label : null, this.extensions);
 
             // check if the outer example foudn a label
             if (this.ExampleBuilder.Label != null)
@@ -310,7 +352,7 @@ namespace VW.Serializer
                     try
                     {
                         // mark shared example as shared
-                        this.defaultMarshaller.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
+                        VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
 
                         sharedExample = this.ExampleBuilder.CreateExample();
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)

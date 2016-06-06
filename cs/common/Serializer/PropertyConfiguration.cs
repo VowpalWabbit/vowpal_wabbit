@@ -17,7 +17,7 @@ namespace VW.Serializer
         public const string FeatureIgnorePrefixDefault = "_";
         public const string TextPropertyDefault = "_text";
         public const string LabelPropertyDefault = "_label";
-        public const string LabelIndexPropertyDefault = "_labelIndex";
+        public const string LabelIndexPropertyDefault = "_labelindex";
         public const string LabelPropertyPrefixDefault = "_label_";
         public const string MultiPropertyDefault = "_multi";
 
@@ -70,11 +70,11 @@ namespace VW.Serializer
         /// <returns>True if <paramref name="property"/> is a special property, false otherwise.</returns>
         public bool IsSpecialProperty(string property)
         {
-            return property.Equals(TextProperty, StringComparison.Ordinal) ||
-                property.Equals(LabelProperty, StringComparison.Ordinal) ||
-                property.Equals(MultiProperty, StringComparison.Ordinal) ||
-                property.Equals(LabelIndexProperty, StringComparison.Ordinal) ||
-                property.StartsWith(LabelPropertyPrefixDefault, StringComparison.Ordinal);
+            return property.Equals(TextProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(LabelProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(MultiProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(LabelIndexProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.StartsWith(LabelPropertyPrefixDefault, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

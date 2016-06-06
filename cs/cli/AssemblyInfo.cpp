@@ -13,4 +13,4 @@ using namespace System::Security::Permissions;
 [assembly:AssemblyTrademarkAttribute("Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved")];
 [assembly:AssemblyCultureAttribute("")];
 [assembly:AssemblyVersionAttribute("8.0.0.57")];
-[assembly:AssemblyFileVersion("8.0.0.57")];
+[assembly:AssemblyFileVersion("8.0.0.59")];
