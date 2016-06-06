@@ -412,7 +412,7 @@ namespace VW
                 return null;
             }
 
-            var values = firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
+            var values = firstExample.GetPrediction(vw, VowpalWabbitPredictionType.ActionScore);
 
             if (values.Length != validActionDependentFeatures.Count)
             {
@@ -424,7 +424,7 @@ namespace VW
             int i = 0;
             foreach (var index in values)
             {
-                result[i++] = validActionDependentFeatures[index];
+                result[i++] = validActionDependentFeatures[(int)index.Action];
             }
 
             // append invalid ones at the end

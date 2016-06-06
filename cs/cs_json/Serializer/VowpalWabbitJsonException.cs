@@ -6,6 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using Newtonsoft.Json;
 using System;
 
 namespace VW.Serializer
@@ -21,11 +22,22 @@ namespace VW.Serializer
         /// </summary>
         /// <param name="path">The path as returned by <see cref="Newtonsoft.Json.JsonReader.Path"/>.</param>
         /// <param name="message">The message that describes the error.</param>
-        internal VowpalWabbitJsonException(string path, string message)
+        internal VowpalWabbitJsonException(JsonReader reader, string message)
              : base(message)
         {
-            this.Path = path;
+            this.Path = reader.Path;
+
+            var lineInfo = reader as IJsonLineInfo;
+            if (lineInfo != null)
+            {
+                this.LineNumber = lineInfo.LineNumber;
+                this.LinePosition = lineInfo.LinePosition;
+            }
         }
+
+        internal int LineNumber { get; private set; }
+
+        internal int LinePosition { get; private set; }
 
         /// <summary>
         /// The path as returned by <see cref="Newtonsoft.Json.JsonReader.Path"/>.

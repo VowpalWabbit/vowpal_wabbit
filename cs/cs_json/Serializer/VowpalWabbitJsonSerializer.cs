@@ -44,7 +44,7 @@ namespace VW.Serializer
 
             this.vwPool = vwPool;
             this.referenceResolver = referenceResolver;
-            this.defaultMarshaller = new VowpalWabbitDefaultMarshaller();
+            this.defaultMarshaller = VowpalWabbitDefaultMarshaller.Instance;
             this.jsonSerializer = new JsonSerializer();
 
             this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
@@ -195,10 +195,10 @@ namespace VW.Serializer
         {
             // handle the case when the reader is already positioned at JsonToken.StartObject
             if (reader.TokenType == JsonToken.None && !reader.Read())
-                throw new VowpalWabbitJsonException(reader.Path, "Expected non-empty JSON");
+                throw new VowpalWabbitJsonException(reader, "Expected non-empty JSON");
 
             if (reader.TokenType != JsonToken.StartObject)
-                throw new VowpalWabbitJsonException(reader.Path, "Expected start object");
+                throw new VowpalWabbitJsonException(reader, "Expected start object");
 
             while (reader.Read())
             {
@@ -209,7 +209,7 @@ namespace VW.Serializer
                 }
 
                 if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                    throw new VowpalWabbitJsonException(reader.Path, "Expected start arrray");
+                    throw new VowpalWabbitJsonException(reader, "Expected start arrray");
 
                 var exampleCount = 0;
                 while(reader.Read() && reader.TokenType != JsonToken.EndArray)
@@ -245,7 +245,7 @@ namespace VW.Serializer
                         return false;
 
                     if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                        throw new VowpalWabbitJsonException(reader.Path, "Expected start array for '" + multiPropertyName + "'");
+                        throw new VowpalWabbitJsonException(reader, "Expected start array for '" + multiPropertyName + "'");
 
                     if (this.ExampleBuilders == null)
                         this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
@@ -274,12 +274,20 @@ namespace VW.Serializer
                             case JsonToken.EndArray:
                                 return true;
                             default:
-                                throw new VowpalWabbitJsonException(reader.Path, "Unexpected token: " + reader.TokenType);
+                                throw new VowpalWabbitJsonException(reader, "Unexpected token: " + reader.TokenType);
                         }
                     }
 
-                    throw new VowpalWabbitJsonException(reader.Path, "Unexpected end");
+                    throw new VowpalWabbitJsonException(reader, "Unexpected end");
                 });
+
+            // check if the outer example foudn a label
+            if (this.ExampleBuilder.Label != null)
+            {
+                VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(
+                    this.ExampleBuilders[this.ExampleBuilder.LabelIndex].DefaultNamespaceContext,
+                    this.ExampleBuilder.Label);
+            }
         }
 
         /// <summary>

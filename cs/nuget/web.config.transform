@@ -1,14 +1,4 @@
 <configuration>
-    <system.web>
-        <httpModules>
-            <add name="VowpalWabbitHttpModule" type="VW.VowpalWabbitHttpModule" />
-        </httpModules>
-    </system.web>
-    <system.webServer>
-        <modules>
-            <add name="VowpalWabbitHttpModule" type="VW.VowpalWabbitHttpModule" />
-        </modules>
-    </system.webServer>
     <system.runtime.caching>
         <memoryCache>
             <namedCaches>

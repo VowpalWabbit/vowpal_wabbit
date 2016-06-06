@@ -19,8 +19,10 @@ namespace VW.Serializer
     /// <summary>
     /// The default marshaller for most types supported by VW.
     /// </summary>
-    public partial class VowpalWabbitDefaultMarshaller
+    public sealed partial class VowpalWabbitDefaultMarshaller
     {
+        public static readonly VowpalWabbitDefaultMarshaller Instance = new VowpalWabbitDefaultMarshaller();
+
         /// <summary>
         /// Marshals a boolean value into native VW.
         ///

@@ -201,10 +201,10 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
 
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
-      { if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].idx);
+      { if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
         else            pred_buf << all.sd->ldict->get(prediction);
       }
-      else            pred_buf << ec.pred.a_s[0].idx;
+      else            pred_buf << ec.pred.a_s[0].action;
       if (action_scores) pred_buf <<".....";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
                            num_current_features, all.progress_add, all.progress_arg);;
