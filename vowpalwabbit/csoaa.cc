@@ -160,8 +160,8 @@ int score_comp(const void* p1, const void* p2)
   // Most sorting algos do not guarantee the output order of elements that compare equal.
   // Tie-breaking on the index ensures that the result is deterministic across platforms.
   // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
-  if(s2->val == s1->val) return cmp(s1->idx, s2->idx);
-  else if(s2->val >= s1->val) return -1;
+  if(s2->score == s1->score) return cmp(s1->action, s2->action);
+  else if(s2->score >= s1->score) return -1;
   else return 1;
 }
 
@@ -414,8 +414,8 @@ void do_actual_learning(ldf& data, base_learner& base)
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
       action_score s;
-      s.val = ec->partial_prediction;
-      s.idx = k - start_K;
+      s.score = ec->partial_prediction;
+      s.action = k - start_K;
       data.a_s.push_back(s);
     }
 
@@ -446,7 +446,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
     for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
-      data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
+    data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
   }
   else
@@ -568,14 +568,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   all.sd->total_features += head_ec.num_features;
 
   float loss = 0.;
-  v_array<action_score> preds = head_ec.pred.a_s;
+  v_array<action_score>& preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
     for (example* ex : *ec_seq)
     { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
-      if (preds[0].idx == idx)
+      if (preds[0].action == idx)
       { loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }

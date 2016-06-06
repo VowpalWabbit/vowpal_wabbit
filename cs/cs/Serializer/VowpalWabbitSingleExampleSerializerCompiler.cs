@@ -61,7 +61,7 @@ namespace VW.Serializer
 
         /// <summary>
         /// Ordered list of featurizer types. Marshalling methods are resolved in order of this list.
-        /// <see cref="VowpalWabbitDefaultMarshaller"/> is added last as  default.
+        /// <see cref="VowpalWabbitDefaultMarshaller"/> is added last as default.
         /// </summary>
         private readonly List<Type> marshallerTypes;
 
