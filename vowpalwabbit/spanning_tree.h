@@ -15,8 +15,13 @@ typedef unsigned short uint16_t;
 typedef int socklen_t;
 typedef SOCKET socket_t;
 
+namespace std
+{
+// forward declare promise as C++/CLI doesn't allow usage in header files
+template<typename T>
+class future;
+}
 #else
-
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -29,37 +34,28 @@ typedef SOCKET socket_t;
 
 typedef int socket_t;
 
-#endif
-
-#ifdef __APPLE__
 #include <future>
-#else
-namespace std
-{
-	template<typename T>
-	class future;
-}
 #endif
 
 namespace VW
 {
-	class SpanningTree
-	{
-	private:
-		bool m_stop;
-		socket_t sock;
-		short unsigned int port;
+class SpanningTree
+{
+private:
+  bool m_stop;
+  socket_t sock;
+  short unsigned int port;
 
-		// future to signal end of thread running. 
-		// Need a pointer since C++/CLI doesn't like futures yet
-		std::future<void>* m_future;
+  // future to signal end of thread running.
+  // Need a pointer since C++/CLI doesn't like futures yet
+  std::future<void>* m_future;
 
-	public:
-		SpanningTree();
-		~SpanningTree();
+public:
+  SpanningTree();
+  ~SpanningTree();
 
-		void Start();
-		void Run();
-		void Stop();
-	};
+  void Start();
+  void Run();
+  void Stop();
+};
 }

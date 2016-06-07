@@ -11,12 +11,14 @@ struct vw;
 
 namespace MULTICLASS
 {
-struct label_t {
-  uint32_t label;
+struct label_t
+{ uint32_t label;
   float weight;
 };
 
 extern label_parser mc_label;
+
+void print_update_with_probability(vw& all, example &ec, uint32_t prediction);
 
 void finish_example(vw& all, example& ec);
 

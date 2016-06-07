@@ -13,25 +13,25 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0   1.0000   0.0000       50
-1.077464 1.154928            2            2.0  -1.0000   0.1549      103
-1.003068 0.928672            4            4.0  -1.0000  -0.1453      134
-0.944367 0.885665            8            8.0  -1.0000  -0.2848      145
-0.929273 0.914179           16           16.0   1.0000  -0.4176       23
-0.917699 0.906124           32           32.0  -1.0000  -0.3805       31
-0.904987 0.892275           64           64.0  -1.0000  -0.5601       60
-0.924562 0.944137          128          128.0   1.0000  -0.1724      105
+1.074842 1.149683            2            2.0  -1.0000   0.1497      103
+1.004367 0.933892            4            4.0  -1.0000  -0.1400      134
+0.946322 0.888277            8            8.0  -1.0000  -0.2731      145
+0.928589 0.910857           16           16.0   1.0000  -0.3958       23
+0.919013 0.909436           32           32.0  -1.0000  -0.3809       31
+0.904098 0.889183           64           64.0  -1.0000  -0.5457       60
+0.929634 0.955169          128          128.0   1.0000  -0.2001      105
 
 finished run
 number of examples = 250
 weighted example sum = 250.000000
 weighted label sum = -22.000000
-average loss = 0.888309
+average loss = 0.893919
 best constant = -0.088000
 best constant's loss = 0.992256
 total feature number = 19870
 Num support = 250
-Number of kernel evaluations = 192975 Number of cache queries = 172366
-Total loss = 222.077240
+Number of kernel evaluations = 182687 Number of cache queries = 103819
+Total loss = 223.479767
 Done freeing model
 Done freeing kernel params
 Done with finish 

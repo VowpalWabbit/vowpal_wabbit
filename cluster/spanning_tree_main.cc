@@ -12,12 +12,10 @@ This creates a binary tree topology over a set of n nodes that connect.
 
 #ifdef _WIN32
 int daemon(int a, int b)
-{
-	return 0;
+{ return 0;
 }
 int getpid()
-{
-	return (int) ::GetCurrentProcessId();
+{ return (int) ::GetCurrentProcessId();
 }
 #endif
 
@@ -30,40 +28,34 @@ int getpid()
 using namespace std;
 using namespace VW;
 
-int main(int argc, char* argv[]) {
-  if (argc > 2)
-    {
-      cout << "usage: spanning_tree [--nondaemon | pid_file]" << endl;
-      exit(0);
-    }
+int main(int argc, char* argv[])
+{ if (argc > 2)
+  { cout << "usage: spanning_tree [--nondaemon | pid_file]" << endl;
+    exit(0);
+  }
 
   try
-  {
-    if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
-    ;
-  else
-    if (daemon(1,1))
-		THROWERRNO("daemon: ");
+  { if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
+      ;
+    else if (daemon(1,1))
+      THROWERRNO("daemon: ");
 
-  SpanningTree spanningTree;
+    SpanningTree spanningTree;
 
-  if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
-    {
-      ofstream pid_file;
+    if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
+    { ofstream pid_file;
       pid_file.open(argv[1]);
       if (!pid_file.is_open())
-	{
-	  cerr << "error writing pid file" << endl;
-	  exit(1);
-	}
+      { cerr << "error writing pid file" << endl;
+        exit(1);
+      }
       pid_file << getpid() << endl;
       pid_file.close();
     }
-  
-	spanningTree.Run();
+
+    spanningTree.Run();
   }
-  catch (VW::vw_exception& e) 
-  {
-	  cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
+  catch (VW::vw_exception& e)
+  { cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
   }
 }

@@ -1,0 +1,20 @@
+C++ Exploration Library
+=======
+This library is a subtree created from https://github.com/multiworldtesting/explore-cpp using:
+1. First add a remote pointing to the mwt repo:
+   git remote add -f explore-cpp https://github.com/multiworldtesting/explore-cpp.git
+2. Prepare the repository for merging:
+   git merge -s ours --no-commit explore-cpp/master
+3. Merge content from the subdirectory 'static' of the original repository into explore/cpp directory:
+   git read-tree --prefix=explore/cpp -u explore-cpp/master:static
+
+The library can be updated as follows:
+
+1. git remote add -f explore-cpp https://github.com/multiworldtesting/explore-cpp.git
+
+2. Then use subtree command to pull from master branch of explore-cpp remote, and place it under explore/cpp directory:
+   git subtree pull --prefix=explore/cpp/ explore-cpp master
+   or alternatively:
+   git pull -X subtree=explore/cpp explore-cpp master
+
+Note that the subtree command may not be installed by default.

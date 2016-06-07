@@ -98,7 +98,6 @@ struct OjaNewton {
     void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
-            //printf("Zx[%d] = %f\n", i, data.Zx[i]);
             data.AZx[i] = 0;
             for (int j = 1; j <= i; j++) {
                 data.AZx[i] += A[i][j] * data.Zx[j];
@@ -118,7 +117,6 @@ struct OjaNewton {
             else {
                 ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * tmp * tmp;
             }
-	    //printf("%d = %f\n", i, ev[i]);
         }
     }
 
@@ -138,7 +136,6 @@ struct OjaNewton {
 	    // if a same learning rate is used
             data.delta[i] = gamma * data.Zx[i] * data.sketch_cnt;
 
-            //printf("delta[%d] = %f\n", i, data.delta[i]);
             data.bdelta += data.delta[i] * b[i];
         }
     }
@@ -151,15 +148,14 @@ struct OjaNewton {
                 K[i][j] += data.delta[i] * data.Zx[j] * data.sketch_cnt;
                 K[i][j] += data.delta[j] * data.Zx[i] * data.sketch_cnt;
                 K[i][j] += data.delta[i] * data.delta[j] * tmp;
-                //printf("K[%d][%d] = %.3f\n", i, j, K[i][j]); 
             }
         }
     }
 
     void update_A()
     {
-        double *zv = calloc_or_die<double>(m+1);
-        double *vv = calloc_or_die<double>(m+1);
+        double *zv = calloc_or_throw<double>(m+1);
+        double *vv = calloc_or_throw<double>(m+1);
 
         for (int i = 1; i <= m; i++) {
 
@@ -195,7 +191,6 @@ struct OjaNewton {
 
             for (int j = 1; j <= i; j++) {
                 A[i][j] /= norm;
-                //printf("A[%d][%d] = %f\n", i, j, A[i][j]);
             }
         }
 
@@ -209,7 +204,6 @@ struct OjaNewton {
             double tmp = 0;
             for (int i = j; i <= m; i++) {
                 tmp += ev[i] * data.AZx[i] * A[i][j] / (alpha * (alpha + ev[i]));
-		//printf("ev=%f, AZx=%f, A=%f\n", ev[i], data.AZx[i], A[i][j]);
             }
             b[j] += tmp * data.g;
         }
@@ -245,7 +239,7 @@ struct OjaNewton {
         // implicit -> explicit representation
         // printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
  
-        double *tmp = calloc_or_die<double>(m+1);    
+        double *tmp = calloc_or_throw<double>(m+1);    
 
         // first step: K <- AKA'
         
@@ -443,9 +437,10 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text) {
 
     if (model_file.files.size() > 0) {
         bool resume = all->save_resume;
-        char buff[512];
-        uint32_t text_len = sprintf(buff, ":%d\n", resume);
-        bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, buff, text_len, text);
+	stringstream msg;
+	msg << ":"<< resume <<"\n";
+        bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, msg, text);
+
 
         if (resume)
             GD::save_load_online_state(*all, model_file, read, text);
@@ -470,7 +465,7 @@ base_learner* OjaNewton_setup(vw& all) {
 
     po::variables_map& vm = all.vm;
 
-    OjaNewton& ON = calloc_or_die<OjaNewton>();
+    OjaNewton& ON = calloc_or_throw<OjaNewton>();
     ON.all = &all;
 
     if (vm.count("sketch_size"))
@@ -509,26 +504,26 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.cnt = 0;
     ON.t = 1;
 
-    ON.ev = calloc_or_die<double>(ON.m+1);
-    ON.b = calloc_or_die<double>(ON.m+1);
-    ON.D = calloc_or_die<double>(ON.m+1);
-    ON.A = calloc_or_die<double*>(ON.m+1);
-    ON.K = calloc_or_die<double*>(ON.m+1);
+    ON.ev = calloc_or_throw<double>(ON.m+1);
+    ON.b = calloc_or_throw<double>(ON.m+1);
+    ON.D = calloc_or_throw<double>(ON.m+1);
+    ON.A = calloc_or_throw<double*>(ON.m+1);
+    ON.K = calloc_or_throw<double*>(ON.m+1);
     for (int i = 1; i <= ON.m; i++) {
-        ON.A[i] = calloc_or_die<double>(ON.m+1);
-        ON.K[i] = calloc_or_die<double>(ON.m+1);
+        ON.A[i] = calloc_or_throw<double>(ON.m+1);
+        ON.K[i] = calloc_or_throw<double>(ON.m+1);
         ON.A[i][i] = 1;
         ON.K[i][i] = 1;
         ON.D[i] = 1;
     }
 
-    ON.buffer = calloc_or_die<example*>(ON.epoch_size);
-    ON.weight_buffer = calloc_or_die<double>(ON.epoch_size);
+    ON.buffer = calloc_or_throw<example*>(ON.epoch_size);
+    ON.weight_buffer = calloc_or_throw<double>(ON.epoch_size);
 
     ON.data.ON = &ON;
-    ON.data.Zx = calloc_or_die<double>(ON.m+1);
-    ON.data.AZx = calloc_or_die<double>(ON.m+1);
-    ON.data.delta = calloc_or_die<double>(ON.m+1);
+    ON.data.Zx = calloc_or_throw<double>(ON.m+1);
+    ON.data.AZx = calloc_or_throw<double>(ON.m+1);
+    ON.data.delta = calloc_or_throw<double>(ON.m+1);
 
     all.reg.stride_shift = ceil(log2(ON.m + 2));
 

@@ -7,10 +7,10 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 vw& parse_args(int argc, char *argv[]);
-void parse_regressor_args(vw& all, io_buf& model);
 void parse_modules(vw& all, io_buf& model);
 void parse_sources(vw& all, io_buf& model);
 
 LEARNER::base_learner* setup_base(vw& all);
 
+string spoof_hex_encoded_namespaces(const string& arg);
 // char** get_argv_from_string(string s, int& argc);

@@ -6,13 +6,15 @@ license as described in the file LICENSE.
 #pragma once
 #include "search.h"
 
-namespace SequenceTask {
+namespace SequenceTask
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void run(Search::search&, vector<example*>&);
 extern Search::search_task task;
 }
 
-namespace SequenceSpanTask {
+namespace SequenceSpanTask
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void finish(Search::search&);
 void run(Search::search&, vector<example*>&);
@@ -21,13 +23,23 @@ void takedown(Search::search&, vector<example*>&);
 extern Search::search_task task;
 }
 
-namespace ArgmaxTask {
+namespace SequenceTaskCostToGo
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void run(Search::search&, vector<example*>&);
 extern Search::search_task task;
 }
 
-namespace SequenceTask_DemoLDF {
+namespace ArgmaxTask
+{
+void initialize(Search::search&, size_t&, po::variables_map&);
+void run(Search::search&, vector<example*>&);
+void finish(Search::search&);
+extern Search::search_task task;
+}
+
+namespace SequenceTask_DemoLDF
+{
 void initialize(Search::search&, size_t&, po::variables_map&);
 void finish(Search::search&);
 void run(Search::search&, vector<example*>&);

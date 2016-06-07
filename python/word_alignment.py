@@ -95,7 +95,7 @@ print 'training LDF'
 vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet -q ef -q ep")
 task = vw.init_search_task(WordAligner)
 for p in range(10):
-    task.learn(my_dataset.__iter__)
+    task.learn(my_dataset)
 print '====== test ======'
 print task.predict( ("the blue flower".split(), ([],[],[]), "la fleur bleue".split()) )
 print 'should have printed [[0], [2], [1]]'

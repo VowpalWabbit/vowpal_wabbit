@@ -20,8 +20,8 @@
 #include "network.h"
 #include "reductions.h"
 
-struct sender {
-  io_buf* buf;
+struct sender
+{ io_buf* buf;
   int sd;
   vw* all;//loss ring_size others
   example** delay_ring;
@@ -30,8 +30,7 @@ struct sender {
 };
 
 void open_sockets(sender& s, string host)
-{
-  s.sd = open_socket(host.c_str());
+{ s.sd = open_socket(host.c_str());
   s.buf = new io_buf();
   s.buf->files.push_back(s.sd);
 }
@@ -40,31 +39,29 @@ void send_features(io_buf *b, example& ec, uint32_t mask)
 { // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec.indices.size()-1));
 
-  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) {
-    if (*i == constant_namespace)
+  for (namespace_index ns : ec.indices)
+  { if (ns == constant_namespace)
       continue;
-    output_features(*b, *i, ec.atomics[*i].begin, ec.atomics[*i].end, mask);
+    output_features(*b, ns, ec.feature_space[ns], mask);
   }
   b->flush();
 }
 
 void receive_result(sender& s)
-{
-  float res, weight;
+{ float res, weight;
 
   get_prediction(s.sd,res,weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar = res;
 
   label_data& ld = ec.l.simple;
-  ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ld.weight;
+  ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
   return_simple_example(*(s.all), nullptr, ec);
 }
 
 void learn(sender& s, LEARNER::base_learner&, example& ec)
-{
-  if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
+{ if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
@@ -84,28 +81,25 @@ void end_examples(sender& s)
 }
 
 void finish(sender& s)
-{
-  s.buf->files.delete_v();
+{ s.buf->files.delete_v();
   s.buf->space.delete_v();
   free(s.delay_ring);
   delete s.buf;
 }
 
 LEARNER::base_learner* sender_setup(vw& all)
-{
-  if (missing_option<string, true>(all, "sendto", "send examples to <host>"))
+{ if (missing_option<string, true>(all, "sendto", "send examples to <host>"))
     return nullptr;
 
-  sender& s = calloc_or_die<sender>();
+  sender& s = calloc_or_throw<sender>();
   s.sd = -1;
   if (all.vm.count("sendto"))
-  {
-    string host = all.vm["sendto"].as< string >();
+  { string host = all.vm["sendto"].as< string >();
     open_sockets(s, host);
   }
 
   s.all = &all;
-  s.delay_ring = calloc_or_die<example*>(all.p->ring_size);
+  s.delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
   LEARNER::learner<sender>& l = init_learner(&s, learn, 1);
   l.set_finish(finish);

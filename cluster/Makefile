@@ -12,7 +12,8 @@ ifeq ($(CXX),)
   $(error No compiler found)
 endif
 
-FLAGS += -I ../vowpalwabbit -std=c++0x 
+FLAGS += -I ../vowpalwabbit 
+STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
 all:	spanning_tree
 
@@ -23,7 +24,7 @@ all:	spanning_tree
 	$(CXX) $(FLAGS) -c $< -o $@
 
 spanning_tree: spanning_tree_main.o ../vowpalwabbit/spanning_tree.o ../vowpalwabbit/vw_exception.o
-	$(CXX) $(FLAGS) -o $@ $+ $(LIBS) 
+	$(CXX) $(FLAGS) -o $@ $+ $(STDLIBS) 
 
 install: spanning_tree
 	cp spanning_tree /usr/local/bin

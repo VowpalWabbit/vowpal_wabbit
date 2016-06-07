@@ -61,8 +61,8 @@ struct RPNewton {
     void Woodbury_update(double **H, double *u, double *v, int size)
     {
         double quad = 0;
-        double *Hu = calloc_or_die<double>(size+1);
-        double *vH = calloc_or_die<double>(size+1);
+        double *Hu = calloc_or_throw<double>(size+1);
+        double *vH = calloc_or_throw<double>(size+1);
 
         for (int i = 1; i <= size; i++) {
             for (int j = 1; j <= size; j++) {
@@ -101,7 +101,7 @@ struct RPNewton {
         data.c = ec.partial_prediction - ec.pred.scalar; 
         if (fabs(data.c) < 1e-7) return;
 
-        double* HSx = calloc_or_die<double>(m+1);
+        double* HSx = calloc_or_throw<double>(m+1);
         double tmp = 0;
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= m; j++)
@@ -207,9 +207,9 @@ void save_load(RPNewton& RPN, io_buf& model_file, bool read, bool text) {
 
     if (model_file.files.size() > 0) {
         bool resume = all->save_resume;
-        char buff[512];
-        uint32_t text_len = sprintf(buff, ":%d\n", resume);
-        bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, buff, text_len, text);
+	stringstream msg;
+        msg << ":"<< resume <<"\n";
+	bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, msg, text);
 
         if (resume)
             GD::save_load_online_state(*all, model_file, read, text);
@@ -231,7 +231,7 @@ base_learner* RPNewton_setup(vw& all) {
 
     po::variables_map& vm = all.vm;
 
-    RPNewton& RPN = calloc_or_die<RPNewton>();
+    RPNewton& RPN = calloc_or_throw<RPNewton>();
     RPN.all = &all;
     
     if (vm.count("sketch_size"))
@@ -249,16 +249,16 @@ base_learner* RPNewton_setup(vw& all) {
     else
         RPN.proj = false;
     
-    RPN.b = calloc_or_die<double>(RPN.m+1);    
-    RPN.H = calloc_or_die<double*>(RPN.m+1);
+    RPN.b = calloc_or_throw<double>(RPN.m+1);    
+    RPN.H = calloc_or_throw<double*>(RPN.m+1);
     for (int i = 1; i <= RPN.m; i++) {
-        RPN.H[i] = calloc_or_die<double>(RPN.m+1);
+        RPN.H[i] = calloc_or_throw<double>(RPN.m+1);
         RPN.H[i][i] = 1.0 / RPN.alpha;
     }
 
-    RPN.data.r = calloc_or_die<double>(RPN.m+1);
-    RPN.data.q = calloc_or_die<double>(RPN.m+1);
-    RPN.data.Sx = calloc_or_die<double>(RPN.m+1);
+    RPN.data.r = calloc_or_throw<double>(RPN.m+1);
+    RPN.data.q = calloc_or_throw<double>(RPN.m+1);
+    RPN.data.Sx = calloc_or_throw<double>(RPN.m+1);
     RPN.data.RPN = &RPN;
 
     all.reg.stride_shift = ceil(log2(RPN.m + 2));

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+  <Bundle Version="1.0" UpgradeCode="2E116260-D1DB-4E45-8299-A64BA1C2C019" Manufacturer="Microsoft Research" Name="Vowpal Wabbit">
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense" >
+      <bal:WixStandardBootstrapperApplication LicenseUrl="" />
+    </BootstrapperApplicationRef>
+    <Chain>
+      <!-- .NET Dependency -->
+      <PackageGroupRef Id="NetFx45Web"/>
+      <!-- Visual Studio Runtime Dependency -->
+      <PackageGroupRef Id="redist_vc120"/>
+      <!-- Actual binaries-->
+      <PackageGroupRef Id="VowpalWabbitPackage"/>
+    </Chain>
+  </Bundle>
+
+  <Fragment>
+    <PackageGroup Id="VowpalWabbitPackage">
+      <MsiPackage
+        Compressed="yes"
+        EnableFeatureSelection="yes"
+        SourceFile="$(var.setup.TargetPath)"
+        InstallCondition="VersionNT64 AND VersionNT >= v5.1" />
+    </PackageGroup>
+  </Fragment>
+
+  <!--visual studio runtime 12-->
+  <Fragment>
+    <PackageGroup Id="redist_vc120">
+      <ExePackage Id="vc120" Cache="yes" PerMachine="yes" Permanent="yes" Vital="yes" Compressed="yes"
+                  SourceFile="C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\redist\1033\vcredist_x64.exe"
+                  Name="vcredist_x64.exe"
+                  InstallCommand="/quiet /norestart"
+                  Protocol="burn"
+                  />
+
+    </PackageGroup>
+  </Fragment>
+</Wix>

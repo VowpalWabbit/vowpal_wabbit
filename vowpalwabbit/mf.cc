@@ -15,8 +15,8 @@ using namespace std;
 
 using namespace LEARNER;
 
-struct mf {
-  vector<string> pairs;
+struct mf
+{ vector<string> pairs;
 
   size_t rank;
 
@@ -33,16 +33,16 @@ struct mf {
   v_array<unsigned char> indices;
 
   // array for temp storage of features
-  v_array<feature> temp_features;
+  features temp_features;
 
   vw* all; // for pairs? and finalize
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, base_learner& base, example& ec) {
-  float prediction = 0;
+void predict(mf& data, base_learner& base, example& ec)
+{ float prediction = 0;
   if (cache_sub_predictions)
-    data.sub_predictions.resize(2*data.rank+1, true);
+    data.sub_predictions.resize(2*data.rank+1);
 
   // predict from linear terms
   base.predict(ec);
@@ -60,14 +60,14 @@ void predict(mf& data, base_learner& base, example& ec) {
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++) {
+  for (string& i : data.pairs)
+  {
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
-
-    if (ec.atomics[left_ns].size() > 0 && ec.atomics[right_ns].size() > 0) {
-      for (size_t k = 1; k <= data.rank; k++) {
-
+    if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
+    { for (size_t k = 1; k <= data.rank; k++)
+      {
         ec.indices[0] = left_ns;
 
         // compute l^k * x_l using base learner
@@ -98,8 +98,8 @@ void predict(mf& data, base_learner& base, example& ec) {
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, base_learner& base, example& ec) {
-  // predict with current weights
+void learn(mf& data, base_learner& base, example& ec)
+{ // predict with current weights
   predict<true>(data, base, ec);
   float predicted = ec.pred.scalar;
 
@@ -116,30 +116,33 @@ void learn(mf& data, base_learner& base, example& ec) {
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
-  for (vector<string>::iterator i = data.pairs.begin(); i != data.pairs.end(); i++) {
+  for (string& i : data.pairs)
+  {
 
-    int left_ns = (int) (*i)[0];
-    int right_ns = (int) (*i)[1];
+    int left_ns = (int) i[0];
+    int right_ns = (int) i[1];
 
-    if (ec.atomics[left_ns].size() > 0 && ec.atomics[right_ns].size() > 0) {
+    if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
+    {
 
       // set example to left namespace only
       ec.indices[0] = left_ns;
 
       // store feature values in left namespace
-      copy_array(data.temp_features, ec.atomics[left_ns]);
+      data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
 
-      for (size_t k = 1; k <= data.rank; k++) {
-
+      for (size_t k = 1; k <= data.rank; k++)
+      {
+        features& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
-        for (feature* f = ec.atomics[left_ns].begin; f != ec.atomics[left_ns].end; f++)
-          f->x *= data.sub_predictions[2*k];
+        for (size_t i= 0; i < fs.size(); ++i)
+          fs.values[i] *= data.sub_predictions[2*k];
 
         // update l^k using base learner
         base.update(ec, k);
 
         // restore left namespace features (undoing multiply)
-        copy_array(ec.atomics[left_ns], data.temp_features);
+        fs.deep_copy_from(data.temp_features);
 
         // compute new l_k * x_l scaling factors
         // base.predict(ec, k);
@@ -151,20 +154,21 @@ void learn(mf& data, base_learner& base, example& ec) {
       ec.indices[0] = right_ns;
 
       // store feature values for right namespace
-      copy_array(data.temp_features, ec.atomics[right_ns]);
+      data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
 
-      for (size_t k = 1; k <= data.rank; k++) {
-
+      for (size_t k = 1; k <= data.rank; k++)
+      {
+        features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
-        for (feature* f = ec.atomics[right_ns].begin; f != ec.atomics[right_ns].end; f++)
-          f->x *= data.sub_predictions[2*k-1];
+        for (size_t i = 0; i < fs.size(); ++i)
+          fs.values[i] *= data.sub_predictions[2*k-1];
 
         // update r^k using base learner
         base.update(ec, k + data.rank);
         ec.pred.scalar = ec.updated_prediction;
 
         // restore right namespace features
-        copy_array(ec.atomics[right_ns], data.temp_features);
+        fs.deep_copy_from(data.temp_features);
       }
     }
   }
@@ -175,8 +179,8 @@ void learn(mf& data, base_learner& base, example& ec) {
   ec.pred.scalar = predicted;
 }
 
-void finish(mf& o) {
-  // restore global pairs
+void finish(mf& o)
+{ // restore global pairs
   o.all->pairs = o.pairs;
 
   // clean up local v_arrays
@@ -184,11 +188,11 @@ void finish(mf& o) {
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(vw& all) {
-  if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
+base_learner* mf_setup(vw& all)
+{ if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
     return nullptr;
 
-  mf& data = calloc_or_die<mf>();
+  mf& data = calloc_or_throw<mf>();
   data.all = &all;
   data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
 
