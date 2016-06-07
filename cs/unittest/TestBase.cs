@@ -31,9 +31,16 @@ namespace cs_unittest
 
         public void Dispose()
         {
-            if (Directory.Exists("models"))
+            try
             {
-                Directory.Delete("models", true);
+                if (Directory.Exists("models"))
+                {
+                    Directory.Delete("models", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to delete model directory: "+ex.Message);
             }
         }
     }
