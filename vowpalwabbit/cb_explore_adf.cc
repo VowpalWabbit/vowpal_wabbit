@@ -1,4 +1,4 @@
-#include <float.h>
+\#include <float.h>
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -81,10 +81,10 @@ namespace CB_EXPLORE_ADF{
       if(data.tau) {
 	float prob = 1.0/(float)num_actions;
 	for(int i = 0;i < num_actions;i++) {
-	action_score a_s;
-	a_s.action = preds[i].action;
-	a_s.score = prob;
-	data.id_probs.push_back(a_s);
+	  action_score a_s;
+	  a_s.action = preds[i].action;
+	  a_s.score = prob;
+	  data.id_probs.push_back(a_s);
 	}
 	data.tau--;
       }
@@ -284,8 +284,8 @@ namespace CB_EXPLORE_ADF{
     else
       is_test = true;
     
-  for (int sink : all.final_prediction_sink)
-    print_action_score(sink, ec.pred.a_s, ec.tag);
+    for (int sink : all.final_prediction_sink)
+      print_action_score(sink, ec.pred.a_s, ec.tag);
   
     if (all.raw_prediction > 0)
       { string outputString;
@@ -306,9 +306,9 @@ namespace CB_EXPLORE_ADF{
   { if (data.ec_seq.size() > 0)
       { all.sd->weighted_examples += 1;
 	all.sd->example_number++;
-	 output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
-	 if (all.raw_prediction > 0)
-	   all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+	output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+	if (all.raw_prediction > 0)
+	  all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
       }
   }
   
