@@ -40,8 +40,8 @@
     <AssemblyOriginatorKeyFile>..\vw_key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GitLink, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.2.0\lib\net45\GitLink.exe</HintPath>
+    <Reference Include="GitLink, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

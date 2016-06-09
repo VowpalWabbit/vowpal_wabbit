@@ -100,8 +100,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GitLink, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.2.0\lib\net45\GitLink.exe</HintPath>
+    <Reference Include="GitLink, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -167,10 +167,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="..\vw_key.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
