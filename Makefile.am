@@ -32,6 +32,7 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/constant.h \
 	vowpalwabbit/ezexample.h 
 
+
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
 	vowpalwabbit/bfgs.h \
@@ -81,9 +82,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h \
-	vowpalwabbit/RPNewton.h \
-	vowpalwabbit/OjaNewton.h 
+	vowpalwabbit/v_hashmap.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
