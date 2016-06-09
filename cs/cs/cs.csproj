@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props" Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -17,7 +16,6 @@
     </TargetFrameworkProfile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
-    <NuGetPackageImportStamp>884b164c</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -102,18 +100,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-<<<<<<< HEAD:cs/cs.csproj
-    <Reference Include="Antlr4.Runtime.net45, Version=4.3.0.0, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
-      <HintPath>..\vowpalwabbit\packages\Antlr4.Runtime.4.3.0\lib\net45\Antlr4.Runtime.net45.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-=======
     <Reference Include="GitLink, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\vowpalwabbit\packages\gitlink.2.2.0\lib\net45\GitLink.exe</HintPath>
->>>>>>> 684798fdd2eceb9abb108fe9e64a0c4ef5ef4a07:cs/cs/cs.csproj
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -201,13 +189,10 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.props'))" />
-    <Error Condition="!Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets'))" />
   </Target>
   <PropertyGroup>
     <PreBuildEvent>$(SolutionDir)..\cs\transform_all.bat $(ProjectDir)</PreBuildEvent>
   </PropertyGroup>
-  <Import Project="..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets" Condition="Exists('..\vowpalwabbit\packages\Antlr4.4.3.0\build\Antlr4.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -95,11 +95,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-<<<<<<< HEAD
-    <NuGetPackageImportStamp>9ef2a33b</NuGetPackageImportStamp>
-=======
     <NuGetPackageImportStamp>f1e5a9b3</NuGetPackageImportStamp>
->>>>>>> 684798fdd2eceb9abb108fe9e64a0c4ef5ef4a07
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -243,31 +239,20 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-<<<<<<< HEAD
-    <Import Project="packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets" Condition="Exists('packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" />
-=======
     <Import Project="packages\boost.1.58.0.0\build\native\boost.targets" Condition="Exists('packages\boost.1.58.0.0\build\native\boost.targets')" />
     <Import Project="packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets" Condition="Exists('packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets')" />
     <Import Project="packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets" Condition="Exists('packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets')" />
     <Import Project="packages\zlib.1.2.8.7\build\native\zlib.targets" Condition="Exists('packages\zlib.1.2.8.7\build\native\zlib.targets')" />
     <Import Project="packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets" Condition="Exists('packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" />
->>>>>>> 684798fdd2eceb9abb108fe9e64a0c4ef5ef4a07
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-<<<<<<< HEAD
-    <Error Condition="!Exists('packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets'))" />
-=======
     <Error Condition="!Exists('packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets'))" />
->>>>>>> 684798fdd2eceb9abb108fe9e64a0c4ef5ef4a07
   </Target>
 </Project>
