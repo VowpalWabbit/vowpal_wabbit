@@ -111,7 +111,7 @@ namespace VowpalWabbit.Azure.Worker
                 throw new InvalidDataException($"Invalid StorageConnectionString '{settings.StorageConnectionString}' found in settings");
 
             // fire and forget
-            this.trainProcessorHost.Restart(settings);
+            var task = this.trainProcessorHost.Restart(settings);
         }
 
         private void AzureSettingsBlobDownloader_Failed(object sender, Exception e)
