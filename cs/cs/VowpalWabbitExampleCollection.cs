@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -109,6 +110,8 @@ namespace VW
         public abstract string VowpalWabbitString { get; }
 
         public abstract ulong NumberOfFeatures { get; }
+
+        public abstract IEnumerable<ILabel> Labels { get; }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

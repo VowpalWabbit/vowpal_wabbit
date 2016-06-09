@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -88,6 +89,14 @@ namespace VW
         public override ulong NumberOfFeatures
         {
             get { return this.Example.NumberOfFeatures; }
+        }
+
+        public override IEnumerable<ILabel> Labels
+        {
+            get
+            {
+                yield return this.Example.Label;
+            }
         }
 
         /// <summary>

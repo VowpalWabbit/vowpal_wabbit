@@ -74,7 +74,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     new
                     {
                         name = policyName,
-                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Action, label.Probability)
+                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Cost, label.Probability)
                     })
             };
         }
@@ -88,10 +88,32 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 yield break;
             }
 
-            yield return Create(tr.Label, "Latest Policy", tr.LearnedAction);
-            yield return Create(tr.Label, "Deployed Policy", tr.Label.Action);
+            yield return new EvalData
+            {
+                PolicyName = "Latest Policy",
+                JSON = JsonConvert.SerializeObject(
+                    new
+                    {
+                        name = "Latest Policy",
+                        // calcuate expectation under current randomized policy (using current exploration strategy)
+                        cost = tr.ProgressivePrediction
+                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(tr.Label.Action, ap.Action, tr.Label.Cost, tr.Label.Probability))
+                    })
+            };
 
-            for (int action = 1; action <= tr.NumberOfActions; action++)
+            // the one currently running
+            yield return new EvalData
+            {
+                PolicyName = "Deployed Policy",
+                JSON = JsonConvert.SerializeObject(
+                    new
+                    {
+                        name = "Deployed Policy",
+                        cost = tr.Label.Cost
+                    })
+            };
+
+            for (int action = 1; action <= tr.ProgressivePrediction.Length; action++)
                 yield return Create(tr.Label, $"Constant Policy {action}", (uint)action);
         }
 

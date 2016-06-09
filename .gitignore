@@ -112,3 +112,4 @@ python/pyvw.egg-info/**
 /cs_unittest/RunTests.cs
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
+/cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs

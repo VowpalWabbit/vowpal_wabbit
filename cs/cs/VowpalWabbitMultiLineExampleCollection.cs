@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -154,6 +155,14 @@ namespace VW
 
                 // filter empty example
                 return string.Join("\n", str.Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+        }
+
+        public override IEnumerable<ILabel> Labels
+        {
+            get
+            {
+                return this.Examples.Select(e => e.Label);
             }
         }
 
