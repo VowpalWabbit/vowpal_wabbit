@@ -1,4 +1,4 @@
-\#include <float.h>
+#include <float.h>
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
@@ -81,7 +81,7 @@ namespace CB_EXPLORE_ADF{
     if (!is_learn || !data.learn_only) {
       if (data.tau) {
         float prob = 1.0 / (float)num_actions;
-        for (int i = 0; i < num_actions; i++) {
+        for (size_t i = 0; i < num_actions; i++) {
           action_score a_s;
           a_s.action = preds[i].action;
           a_s.score = prob;
@@ -90,7 +90,7 @@ namespace CB_EXPLORE_ADF{
         data.tau--;
       }
       else {
-        for (int i = 0; i < num_actions; i++) {
+        for (size_t i = 0; i < num_actions; i++) {
           action_score a_s;
           a_s.action = preds[i].action;
           a_s.score = 0.;
@@ -126,7 +126,7 @@ namespace CB_EXPLORE_ADF{
 
     if(!is_learn || !data.learn_only) {
       float prob = data.epsilon/(float)num_actions;
-      for(int i = 0;i < num_actions;i++) {
+      for(size_t i = 0;i < num_actions;i++) {
 	action_score a_s;
 	a_s.action = preds[i].action;
 	a_s.score = prob;
@@ -378,8 +378,8 @@ namespace CB_EXPLORE_ADF{
     bool shared = CB::ec_is_example_header(*data.ec_seq[0]);
     data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
-    for (example* ec : data.ec_seq)
-      base.predict(*ec);
+    for (example* ec : data.ec_seq) 
+      base.predict(*ec);    
 
     switch (data.explore_type)
     {
@@ -462,17 +462,22 @@ base_learner* cb_explore_adf_setup(vw& all)
   all.delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
+  char type_string[10];
 
   if (vm.count("bag"))
   {
     data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     data.explore_type = BAG_EXPLORE;
     problem_multiplier = data.bag_size;
+    sprintf(type_string, "%lu", data.bag_size);
+    *all.file_options << " --bag "<<type_string;
   }
   else if (vm.count("first"))
   {
     data.tau = (uint32_t)vm["first"].as<size_t>();
     data.explore_type = EXPLORE_FIRST;
+    sprintf(type_string, "%lu", data.tau);
+    *all.file_options << " --first "<<type_string;
   }
   else if (vm.count("softmax"))
   {
@@ -480,6 +485,8 @@ base_learner* cb_explore_adf_setup(vw& all)
     if (vm.count("lambda"))
       data.lambda = (float)vm["lambda"].as<size_t>();
     data.explore_type = SOFTMAX;
+    sprintf(type_string, "%f", data.lambda);
+    *all.file_options << " --softmax --lambda "<<type_string;
   }
   else
   {
@@ -487,6 +494,8 @@ base_learner* cb_explore_adf_setup(vw& all)
     if (vm.count("epsilon"))
       data.epsilon = vm["epsilon"].as<float>();
     data.explore_type = EPS_GREEDY;
+    sprintf(type_string, "%f", data.epsilon);
+    *all.file_options << " --epsilon "<<type_string;
   }
 
   base_learner* base = setup_base(all);
