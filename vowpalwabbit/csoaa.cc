@@ -761,10 +761,11 @@ base_learner* csldf_setup(vw& all)
   { ldf_arg = vm["wap_ldf"].as<string>();
     ld.is_wap = true;
   }
-  if ( vm.count("ldf_override") )
+  if ( vm.count("ldf_override") ) 
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
+    *all.file_options << " --csoaa_rank";
     all.delete_prediction = delete_action_scores;
   }
 
@@ -797,6 +798,7 @@ base_learner* csldf_setup(vw& all)
   if( vm.count("probabilities") )
   { ld.is_probabilities = true;
     all.sd->report_multiclass_log_loss = true;
+    *all.file_options << " --probabilities";
     if (!vm.count("loss_function") || vm["loss_function"].as<string>() != "logistic" )
       cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
