@@ -24,7 +24,7 @@ namespace cs_unittest
 
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
-                Assert.AreEqual("--no_stdin --max_prediction 1 --bit_precision 18 --cb_explore_adf --cb_adf --cb_type ips --csoaa_ldf multiline --interact ud",
+                Assert.AreEqual("--no_stdin --max_prediction 1 --bit_precision 18 --cb_explore_adf --epsilon 0.300000 --cb_adf --cb_type ips --csoaa_ldf multiline --csoaa_rank --interact ud",
                     vw.Arguments.CommandLine);
             }
         }
