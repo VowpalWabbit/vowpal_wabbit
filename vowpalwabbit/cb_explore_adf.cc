@@ -121,7 +121,7 @@ namespace CB_EXPLORE_ADF{
     if(shared)
       num_actions--;
     if(preds.size() != num_actions)
-      cerr<<"Received predictions of wrong size from CB base learner\n";
+      cerr<<"Received predictions of wrong size from CB base learner "<<preds.size()<<" "<<num_actions<<endl;
 
     if(!is_learn || !data.learn_only) {
       float prob = data.epsilon/(float)num_actions;
