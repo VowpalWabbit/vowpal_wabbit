@@ -2049,6 +2049,20 @@ namespace cs_unittest
 				"pred-sets/ref/cbe_adf_first.predict");
         }
 
+        [TestMethod]
+        [Description(@"")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test0()
+        {
+            RunTestsHelper.ExecuteTest(
+				0,
+				"--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson",
+				"train-sets/poisson.dat",
+				"train-sets/ref/poission.train.stderr",
+				"");
+        }
+
     }
 }
 
