@@ -2050,16 +2050,70 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [Description(@"")]
+        [Description(@"train a poisson model")]
 
 		[TestCategory("Command Line")]
-        public void CommandLine_Test0()
+        public void CommandLine_Test132()
         {
             RunTestsHelper.ExecuteTest(
-				0,
+				132,
 				"--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson",
 				"train-sets/poisson.dat",
 				"train-sets/ref/poission.train.stderr",
+				"");
+        }
+
+        [TestMethod]
+        [Description(@"test the possion model from the saved model")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test133()
+        {
+            RunTestsHelper.ExecuteTest(
+				132,
+				"--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson",
+				"train-sets/poisson.dat",
+				"train-sets/ref/poission.train.stderr",
+				"");
+            RunTestsHelper.ExecuteTest(
+				133,
+				"-t -d train-sets/poisson.dat -i models/poisson.model -p poisson.preds",
+				"train-sets/poisson.dat",
+				"train-sets/ref/poisson.stderr",
+				"");
+        }
+
+        [TestMethod]
+        [Description(@"cb explore adf")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test134()
+        {
+            RunTestsHelper.ExecuteTest(
+				134,
+				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
+				"train-sets/cb_adf_crash_1.data",
+				"train-sets/ref/cb_adf_crash1.stderr",
+				"");
+        }
+
+        [TestMethod]
+        [Description(@"cb explore adf predict")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test135()
+        {
+            RunTestsHelper.ExecuteTest(
+				134,
+				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
+				"train-sets/cb_adf_crash_1.data",
+				"train-sets/ref/cb_adf_crash1.stderr",
+				"");
+            RunTestsHelper.ExecuteTest(
+				135,
+				"-d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t",
+				"train-sets/cb_adf_crash_2.data",
+				"train-sets/ref/cb_adf_crash2.stderr",
 				"");
         }
 

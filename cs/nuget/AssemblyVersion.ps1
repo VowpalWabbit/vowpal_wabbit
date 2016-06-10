@@ -1,27 +1,8 @@
-﻿$version = Get-Content version.txt
+﻿param([string]$projectDir)
 
-function PatchAssemblyInfo ($file)
-{
-    $text = (Get-Content $file) -replace "Version\(""[0-9\.]+""\)", "Version(""$version"")"
-    Set-Content -Path $file -Value $text
-}
+$scriptDir = Split-Path -parent $PSCommandPath
+$assemblyInfo = "$projectDir\Properties\AssemblyInfo.cs"
+$version = Get-Content "$scriptDir\version.txt"
 
-PatchAssemblyInfo "..\cs\Properties\AssemblyInfo.cs"
-PatchAssemblyInfo "..\cs_json\Properties\AssemblyInfo.cs"
-PatchAssemblyInfo "..\cs_parallel\Properties\AssemblyInfo.cs"
-PatchAssemblyInfo "..\common\Properties\AssemblyInfo.cs"
-
-$cpp = Get-Content "..\cli\AssemblyInfo.cpp"
-$cpp = $cpp -replace "Version\(""[0-9\.]+""\)", "Version(""$version"")"
-$cpp = $cpp -replace "VersionAttribute\(""[0-9\.]+""\)", "VersionAttribute(""$version"")"
-Set-Content -Path "..\cli\AssemblyInfo.cpp" -Value $cpp
-
-$rc = Get-Content "..\cli\Resource.rc"
-$rc = $rc -replace "FileVersion"", ""[0-9,\.]+""", "FileVersion"", ""$version"""
-$rc = $rc -replace "ProductVersion"", ""[0-9,\.]+""", "ProductVersion"", ""$version"""
-
-$version = $version -replace "\.", ","
-$rc = $rc -replace "FILEVERSION [0-9,]+", "FILEVERSION $version"
-$rc = $rc -replace "PRODUCTVERSION [0-9,]+", "PRODUCTVERSION $version"
-
-Set-Content -Path "..\cli\Resource.rc" -Value $rc
+$text = (Get-Content $assemblyInfo) -replace "Version\(""[0-9\.]+""\)", "Version(""$version"")"
+Set-Content -Path $assemblyInfo -Value $text

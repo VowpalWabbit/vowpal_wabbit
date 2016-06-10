@@ -57,13 +57,13 @@ for (var i = 0; i < lines.Count; i++)
 			// testcase.Dependency = outputModels["models/mask.model"];
 
 		if (testcases.ContainsKey(testcase.Id))
-			throw new Exception("Testcase IDs must be unique: duplicate # Test " + testcase.Id);
+			throw new Exception("Testcase IDs must be unique: duplicate # Test " + testcase.Id + " in line " + i);
 
         testcases.Add(testcase.Id, testcase);
 
         Reset();
     }
-    else if ((match = Regex.Match(line, @"^#\s*Test\s+(?<nr>\d+):(?<comment>.*)?$")).Success)
+    else if ((match = Regex.Match(line, @"^#\s*Test\s+(?<nr>\d+):?(?<comment>.*)?$")).Success)
     {
         var nr = int.Parse(match.Groups["nr"].Value);
         testcase.Id = nr;

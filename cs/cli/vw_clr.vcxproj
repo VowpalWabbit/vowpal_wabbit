@@ -198,8 +198,7 @@
       <Profile>true</Profile>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'">
@@ -221,8 +220,7 @@
       <DelayLoadDLLs>zlib.dll</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -265,8 +263,7 @@
       </AdditionalOptions>
     </Xdcmake>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
