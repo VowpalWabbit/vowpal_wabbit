@@ -355,32 +355,44 @@ base_learner* cb_explore_setup(vw& all)
   base_learner* base = setup_base(all);
 
   learner<cb_explore>* l;
+  char type_string[10];
   if (vm.count("cover"))
     { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
       data.cs = all.cost_sensitive;
       data.second_cs_label.costs.resize(num_actions);
       data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
       data.epsilon = 0.05f;
+	  sprintf(type_string, "%lu", data.cover_size);
+	  *all.file_options << " --cover " << type_string;
+
       if (vm.count("epsilon"))
 	data.epsilon = vm["epsilon"].as<float>();
       data.cover_probs = v_init<float>();
       data.cover_probs.resize(num_actions);
       data.preds = v_init<uint32_t>();
       data.preds.resize(data.cover_size);
+	  sprintf(type_string, "%f", data.epsilon);
+	  *all.file_options << " --epsilon " << type_string;
       l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1);
     }
   else if (vm.count("bag"))
     { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
+      sprintf(type_string, "%lu", data.bag_size);
+	  *all.file_options << " --bag " << type_string;
       l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size);
     }
   else if (vm.count("first") )
     { data.tau = (uint32_t)vm["first"].as<size_t>();
+      sprintf(type_string, "%lu", data.tau);
+	  *all.file_options << " --first " << type_string;
       l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1);
     }
   else
     { data.epsilon = 0.05f;
       if (vm.count("epsilon"))
 	data.epsilon = vm["epsilon"].as<float>();
+	  sprintf(type_string, "%f", data.epsilon);
+	  *all.file_options << " --epsilon " << type_string;
       l = &init_learner(&data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1);
     }
   data.cbcs.scorer = all.scorer;
