@@ -32,8 +32,8 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("8.0.0.63")]
-[assembly: AssemblyFileVersion("8.0.0.63")]
+[assembly: AssemblyVersion("8.0.0.64")]
+[assembly: AssemblyFileVersion("8.0.0.64")]
 
 // make internals available to unit test
 [assembly: InternalsVisibleTo("cs_unittest,PublicKey=" +
