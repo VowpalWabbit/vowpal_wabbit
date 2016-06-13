@@ -9,3 +9,6 @@ $release = Invoke-RestMethod -Headers $headers  https://api.github.com/repos/$re
 
 $url = ($release.upload_url.Replace("{?name,label}", "?name=VowpalWabbit-$version.msi"))
 $asset = Invoke-RestMethod -Headers $headers -Method Post -ContentType "application/zip" -InFile vowpalwabbit\x64\Release\VowpalWabbit.msi $url
+
+$url = ($release.upload_url.Replace("{?name,label}", "?name=VowpalWabbit-AzureCloudService-$version.cspkg"))
+$asset = Invoke-RestMethod -Headers $headers -Method Post -ContentType "application/zip" -InFile cs\azure_service\bin\Release\app.publish\azure_service.cspkg $url
