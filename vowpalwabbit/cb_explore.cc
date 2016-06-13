@@ -328,9 +328,7 @@ namespace CB_EXPLORE{
 
   void finish_example(vw& all, cb_explore& c, example& ec)
   {   
-    v_array<action_score>& temp = ec.pred.a_s;
     output_example(all, c, ec, ec.l.cb);
-    ec.pred.a_s = temp;
     VW::finish_example(all, &ec);
   }
 }
