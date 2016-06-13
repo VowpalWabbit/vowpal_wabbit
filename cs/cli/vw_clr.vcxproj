@@ -340,11 +340,12 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
   </Target>
-  <Target Name="BeforeBuild">
-    <AssemblyInfo CodeLanguage="CPP" OutputFile="$(MSBuildProjectDirectory)\AssemblyInfo.cpp" AssemblyTitle="Vowpal Wabbit Core" AssemblyDescription="Vowpal Wabbit Core" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="true" Guid="5D367C03-F491-4BC4-B525-486ACBC3FA9E" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" UnmanagedCode="true" />
-    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*&quot;" ReplacementText="FileVersion&quot;$(VowpalWabbitAssemblyVersion)&quot;" />
-    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*&quot;" ReplacementText="ProductVersion&quot;$(VowpalWabbitAssemblyVersion)&quot;" />
-    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" />
-    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" />
+  <Target Name="BeforeBuild" BeforeTargets="PrepareForBuild">
+    <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyVersionAttribute\(&quot;.*&quot;\)" ReplacementText="AssemblyVersionAttribute(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
+    <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyFileVersion\(&quot;.*&quot;\)" ReplacementText="AssemblyFileVersion(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
+    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*" ReplacementText="FileVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16"/>
+    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*" ReplacementText="ProductVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;"  Encoding="UTF-16"/>
+    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))"  Encoding="UTF-16"/>
+    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))"  Encoding="UTF-16"/>
   </Target>
 </Project>
