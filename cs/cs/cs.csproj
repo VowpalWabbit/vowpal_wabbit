@@ -194,8 +194,7 @@
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
   </Target>
   <PropertyGroup>
-    <PreBuildEvent>powershell $(ProjectDir)..\nuget\AssemblyVersion.ps1 -projectDir $(ProjectDir)
-$(SolutionDir)..\cs\transform_all.bat $(ProjectDir)
+    <PreBuildEvent>$(SolutionDir)..\cs\transform_all.bat $(ProjectDir)
 </PreBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
