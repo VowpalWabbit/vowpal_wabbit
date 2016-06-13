@@ -17,6 +17,7 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -69,9 +70,9 @@ BEGIN
             VALUE "CompanyName", "Microsoft Corp"
             VALUE "FileDescription", "Vowpal Wabbit"
             VALUE "FileVersion", "8.0.0.64"
-            VALUE "InternalName", "vw_clr.dll"
+            VALUE "InternalName", "VowpalWabbit.Core.dll"
             VALUE "LegalCopyright", "Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved"
-            VALUE "OriginalFilename", "vw_clr.dll"
+            VALUE "OriginalFilename", "VowpalWabbit.Core.dll"
             VALUE "ProductName", "Vowpal Wabbit"
             VALUE "ProductVersion", "8.0.0.64"
         END

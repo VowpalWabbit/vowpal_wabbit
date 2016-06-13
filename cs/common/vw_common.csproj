@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>0</CodeContractsAssemblyMode>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -119,15 +121,28 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>powershell $(ProjectDir)..\nuget\AssemblyVersion.ps1 -projectDir $(ProjectDir)</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
+  <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
+  <Import Project="$(ProjectDir)\..\version.props" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="BeforeBuild">
+    <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Vowpal Wabbit Common" AssemblyDescription="Vowpal Wabbit Common" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="false" Guid="091c7906-1f69-44d5-a15f-fb29847a68ef" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
+  </Target>
 </Project>

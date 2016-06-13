@@ -198,7 +198,8 @@
       <Profile>true</Profile>
     </Link>
     <PreBuildEvent>
-      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'">
@@ -220,7 +221,8 @@
       <DelayLoadDLLs>zlib.dll</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
-      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -263,7 +265,8 @@
       </AdditionalOptions>
     </Xdcmake>
     <PreBuildEvent>
-      <Command>powershell $(ProjectDir)AssemblyVersion.ps1 -projectDir $(ProjectDir)</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -316,6 +319,9 @@
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
@@ -324,11 +330,21 @@
     <Import Project="$(SolutionDir)\packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets" Condition="Exists('$(SolutionDir)\packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets" Condition="Exists('$(SolutionDir)\packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets')" />
     <Import Project="$(SolutionDir)\packages\zlib.1.2.8.7\build\native\zlib.targets" Condition="Exists('$(SolutionDir)\packages\zlib.1.2.8.7\build\native\zlib.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
   </ImportGroup>
+  <Import Project="$(ProjectDir)\..\version.props" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <AssemblyInfo CodeLanguage="CPP" OutputFile="$(MSBuildProjectDirectory)\AssemblyInfo.cpp" AssemblyTitle="Vowpal Wabbit Core" AssemblyDescription="Vowpal Wabbit Core" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="true" Guid="5D367C03-F491-4BC4-B525-486ACBC3FA9E" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" UnmanagedCode="true" />
+    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*&quot;" ReplacementText="FileVersion&quot;$(VowpalWabbitAssemblyVersion)&quot;" />
+    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*&quot;" ReplacementText="ProductVersion&quot;$(VowpalWabbitAssemblyVersion)&quot;" />
+    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" />
+    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" />
   </Target>
 </Project>

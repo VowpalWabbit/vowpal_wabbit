@@ -9,6 +9,7 @@
 using namespace LEARNER;
 using namespace MultiWorldTesting;
 using namespace MultiWorldTesting::SingleAction;
+using namespace ACTION_SCORE;
 
 struct cbify;
 
@@ -38,14 +39,14 @@ struct cbify
   vw_scorer* scorer;
   MwtExplorer<example>* mwt_explorer;
   vw_recorder* recorder;
-  v_array<float> scalars;
+  v_array<action_score> a_s;
 };
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
 {
   vector<float> probs_vec;
-  for(uint32_t i = 0;i < ctx.pred.scalars.size();i++)
-    probs_vec.push_back(ctx.pred.scalars[i]);
+  for(uint32_t i = 0;i < ctx.pred.a_s.size();i++)
+    probs_vec.push_back(ctx.pred.a_s[i].score);
   return probs_vec;
 }
 
@@ -67,7 +68,7 @@ void finish(cbify& data)
   delete_it(data.generic_explorer);
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
-  data.scalars.delete_v();
+  data.a_s.delete_v();
 }
 
 template <bool is_learn>
@@ -77,7 +78,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   MULTICLASS::label_t ld = ec.l.multi;
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
-  ec.pred.scalars = data.scalars;
+  ec.pred.a_s = data.a_s;
 
   //Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -87,7 +88,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
   CB::cb_class cl;
   cl.action = action;
-  cl.probability = ec.pred.scalars[action-1];
+  cl.probability = ec.pred.a_s[action-1].score;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -97,8 +98,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
   base.learn(ec);
-  data.scalars.erase();
-  data.scalars = ec.pred.scalars;
+  data.a_s.erase();
+  data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
   ec.pred.multiclass = action;
 }
@@ -115,7 +116,7 @@ base_learner* cbify_setup(vw& all)
   data.recorder = new vw_recorder();
   data.mwt_explorer = new MwtExplorer<example>("vw",*data.recorder);
   data.scorer = new vw_scorer();
-  data.scalars = v_init<float>();
+  data.a_s = v_init<action_score>();
   //data.probs = v_init<float>();
   data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);  
 
