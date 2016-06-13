@@ -9,8 +9,7 @@
       <Setting name="JoinedEventHubConnectionString" value=""/>
       <Setting name="EvalEventHubConnectionString" value="" />
       <Setting name="AdminToken" value="a"/>
-      <Setting name="CheckpointInterval" value=""/>
-      <Setting name="CheckpointCount" value="5"/>
+      <Setting name="CheckpointIntervalOrCount" value=""/>
       <Setting name="EnableExampleTracing" value="true"/>
     </ConfigurationSettings>
   </Role>

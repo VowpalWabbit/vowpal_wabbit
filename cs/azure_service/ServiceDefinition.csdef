@@ -8,8 +8,7 @@
       <Setting name="JoinedEventHubConnectionString" />
       <Setting name="EvalEventHubConnectionString" />
       <Setting name="AdminToken" />
-      <Setting name="CheckpointInterval" />
-      <Setting name="CheckpointCount" />
+      <Setting name="CheckpointIntervalOrCount" />
       <Setting name="EnableExampleTracing" />
     </ConfigurationSettings>
     <!-- required for perf counters -->

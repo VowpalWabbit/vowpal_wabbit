@@ -166,20 +166,21 @@ namespace VowpalWabbit.Azure.Worker
 
         private ICheckpointPolicy ParseCheckpointPolicy()
         {
-            var checkpointString = CloudConfigurationManager.GetSetting("CheckpointInterval");
-            TimeSpan interval;
-            if (!string.IsNullOrWhiteSpace(checkpointString) &&
-                TimeSpan.TryParse(checkpointString, CultureInfo.InvariantCulture, out interval))
+            var checkpointString = CloudConfigurationManager.GetSetting("CheckpointIntervalOrCount");
+            if (!string.IsNullOrWhiteSpace(checkpointString))
             {
-                return new IntervalCheckpointPolicy(interval);
-            }
-
-            checkpointString = CloudConfigurationManager.GetSetting("CheckpointCount");
-            int syncCount;
-            if (!string.IsNullOrWhiteSpace(checkpointString) &&
-                int.TryParse(checkpointString, NumberStyles.Integer, CultureInfo.InvariantCulture, out syncCount))
-            {
-                return new CountingCheckpointPolicy(syncCount);
+                if (checkpointString.Contains(":"))
+                {
+                    TimeSpan interval;
+                    if (!TimeSpan.TryParse(checkpointString, CultureInfo.InvariantCulture, out interval))
+                        return new IntervalCheckpointPolicy(interval);
+                }
+                else
+                {
+                    int syncCount;
+                    if (int.TryParse(checkpointString, NumberStyles.Integer, CultureInfo.InvariantCulture, out syncCount))
+                        return new CountingCheckpointPolicy(syncCount);
+                }
             }
 
             this.telemetry.TrackTrace("No valid checkpoint policy found. Defaulting to 5 minute wallclock checkpointing.");
