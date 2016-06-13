@@ -1,4 +1,4 @@
-import pyvw
+from vowpalwabbit import pyvw
 
 # the label for each word is its parent, or -1 for root
 my_dataset = [ [("the",      1),   # 0
@@ -70,7 +70,7 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
         # irrelevant and could be any number). +2 ensures >= 1
         ex.set_label_string(str(100 + n - m) + ":0")
         return ex
-            
+
     def _run(self, sentence):
         N = len(sentence)
         # initialize our output so everything is a root

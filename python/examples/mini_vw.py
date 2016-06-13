@@ -1,10 +1,11 @@
 import sys
-import pyvw
+from vowpalwabbit import pyvw
 
 learnFromStrings = False
 
 # this is a stupid program that basically mimics vw's behavior,
 # mostly for the purpose of speed comparisons
+
 
 def mini_vw(inputFile, numPasses, otherArgs):
     vw = pyvw.vw(otherArgs)
@@ -18,8 +19,8 @@ def mini_vw(inputFile, numPasses, otherArgs):
                 ex = vw.example(l)
                 vw.learn(ex)
                 ex.finish()
-        
-	h.close()
+
+        h.close()
     vw.finish()
 
 if __name__ == '__main__':

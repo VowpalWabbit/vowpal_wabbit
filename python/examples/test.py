@@ -1,4 +1,4 @@
-import pyvw
+from vowpalwabbit import pyvw
 
 
 def my_predict(vw, ex):
@@ -53,7 +53,7 @@ print '  final partial prediction =', ex.get_updated_prediction()
 ensure_close(ex.get_updated_prediction(), my_predict(vw,ex))
 print ''
 ex.finish()
-    
+
 ###############################################################################
 exList = []
 for i in range(120):    # note: if this is >=129, we hang!!!
