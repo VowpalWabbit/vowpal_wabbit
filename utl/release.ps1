@@ -1,6 +1,6 @@
 param([string]$githubToken, [string]$repo = "eisber")
 
-$headers = @{ Authorization = "token $token" }
+$headers = @{ Authorization = "token $githubToken" }
 
 $version = ([xml](Get-Content -Path cs\version.props)).Project.PropertyGroup.VowpalWabbitAssemblyVersion
 
