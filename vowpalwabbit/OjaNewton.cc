@@ -40,6 +40,10 @@ struct OjaNewton {
     double **A;
     double **K;
 
+    double *zv;
+    double *vv;
+    double *tmp;
+
     example **buffer;
     double *weight_buffer;
     struct update_data data;
@@ -154,9 +158,6 @@ struct OjaNewton {
 
     void update_A()
     {
-        double *zv = calloc_or_throw<double>(m+1);
-        double *vv = calloc_or_throw<double>(m+1);
-
         for (int i = 1; i <= m; i++) {
 
             for (int j = 1; j < i; j++) {
@@ -193,9 +194,6 @@ struct OjaNewton {
                 A[i][j] /= norm;
             }
         }
-
-        free(zv);
-        free(vv);
     }
 
     void update_b()
@@ -239,8 +237,6 @@ struct OjaNewton {
         // implicit -> explicit representation
         // printf("begin conversion: t = %d, norm(K) = %f\n", t, max_norm);
  
-        double *tmp = calloc_or_throw<double>(m+1);    
-
         // first step: K <- AKA'
         
         // K <- AK
@@ -301,12 +297,33 @@ struct OjaNewton {
             D[i] = 1;
             A[i][i] = 1;
         }
-        free(tmp);
     }
 };
 
 void keep_example(vw& all, OjaNewton& ON, example& ec) {
     output_and_account_example(all, ec);
+}
+
+void finish(OjaNewton& ON) {
+    free(ON.ev);
+    free(ON.b);
+    free(ON.D);
+    free(ON.buffer);
+    free(ON.weight_buffer);
+    free(ON.zv);
+    free(ON.vv);
+    free(ON.tmp);
+   
+    for (int i = 1; i <= ON.m; i++) {
+        free(ON.A[i]);
+	free(ON.K[i]);
+    }
+    free(ON.A);
+    free(ON.K);
+    
+    free(ON.data.Zx);
+    free(ON.data.AZx);
+    free(ON.data.delta);
 }
 
 void make_pred(update_data& data, float x, float& wref) {
@@ -519,6 +536,10 @@ base_learner* OjaNewton_setup(vw& all) {
 
     ON.buffer = calloc_or_throw<example*>(ON.epoch_size);
     ON.weight_buffer = calloc_or_throw<double>(ON.epoch_size);
+    
+    ON.zv = calloc_or_throw<double>(ON.m+1);
+    ON.vv = calloc_or_throw<double>(ON.m+1);
+    ON.tmp = calloc_or_throw<double>(ON.m+1);
 
     ON.data.ON = &ON;
     ON.data.Zx = calloc_or_throw<double>(ON.m+1);
@@ -532,5 +553,6 @@ base_learner* OjaNewton_setup(vw& all) {
     l.set_predict(predict);
     l.set_save_load(save_load);
     l.set_finish_example(keep_example);
+    l.set_finish(finish);
     return make_base(l);
 }
