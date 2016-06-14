@@ -586,7 +586,7 @@ base_learner* cb_adf_setup(vw& all)
 
   // Push necessary flags.
   if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
-       || all.vm.count("rank_all"))
+       || all.vm.count("rank_all") || all.vm.count("csoaa_rank") == 0)
   { if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)
       all.args.push_back("--csoaa_ldf");
     if (count(all.args.begin(), all.args.end(), "multiline") == 0)
