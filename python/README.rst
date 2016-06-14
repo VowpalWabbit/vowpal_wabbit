@@ -1,27 +1,33 @@
 Vowpal Wabbit Python Wrapper
 ============================
 
+Vowpal Wabbit is a fast machine learning library for online learning.
+
 Installation
 ------------
 
 From PyPI:
-..........
 
 .. code-block:: bash
 
     $ pip install vowpalwabbit
 
 From remote repo:
-.................
 
 .. code-block:: bash
 
     $ pip install -e git+https://github.com/JohnLangford/vowpal_wabbit/python
 
 From local repo:
-................
 
 .. code-block:: bash
+
+    $ cd python
+    $ python setup.py install
+
+or
+
+.. code-block::
 
     $ cd python
     $ pip install -e .
@@ -71,8 +77,15 @@ Contributions are welcome for improving the python wrapper to Vowpal Wabbit.
 1. Check for open issues_ or create one to discuss a feature idea or bug.
 2. Fork the repo_ on Github and make changes to the master branch (or a new branch off of master).
 3. Write a test in the python/tests folder showing the bug was fixed or feature works (recommend using pytest_).
-4. Run tox_ to make sure all code tests pass under all supported environments.
+4. Make sure package installs and tests pass under all supported environments (this calls tox_ automatically).
 5. Send the pull request.
+
+Tests can be run using setup.py:
+
+.. code-block:: bash
+
+    $ python setup.py test
+
 
 Directory Structure:
 
@@ -81,15 +94,7 @@ Directory Structure:
 * python/examples : example python code and jupyter notebooks to demonstrate functionality
 * python/tests : contains all tests for python code
 
-**Note:** neither examples nor tests directories are included in the distributed package, these are only for development purposes.
-
-Also, if you having trouble running tox, you might need to prep the package for distribution first:
-
-.. code-block:: bash
-
-    $ python setup.py prep
-    $ python setup.py sdist
-    $ tox
+**Note:** neither examples nor tests directories are included in the distributed package, they are only for development purposes.
 
 .. _issues: https://github.com/JohnLangford/vowpal_wabbit/issues
 .. _repo: https://github.com/JohnLangford/vowpal_wabbit

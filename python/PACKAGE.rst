@@ -14,19 +14,13 @@ Deployment Process
 
         $ python setup.py test
 
-2) Prep source files for distribution
-
-    .. code-block:: bash
-
-        $ python setup.py prep
-
-3) Create dist folder for package
+2) Create dist folder for package
 
     .. code-block:: bash
 
         $ python setup.py sdist
 
-4) Upload package to PyPI
+3) Upload package to PyPI
 
     You should have twine installed and configured and your PyPI / test PyPI user should have access to the package
     <VERSION> corresponds to the new version in the VERSION file
@@ -35,7 +29,7 @@ Deployment Process
 
     .. code-block:: bash
 
-        $ twine upload dist -r test dist/vowpalwabbit-<VERSION>.tar.gz
+        $ twine upload -r test dist/*
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
         $ pip install -i https://testpypi.python.org/simple/ vowpalwabbit
@@ -48,7 +42,7 @@ Deployment Process
 
         $ twine upload dist dist/vowpalwabbit-<VERSION>.tar.gz
 
-5) Cleanup build and packaging artifacts / directories
+4) Cleanup build and packaging artifacts / directories
 
     .. code-block:: bash
 

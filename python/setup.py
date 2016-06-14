@@ -3,10 +3,11 @@
 
 import subprocess
 import sys
+from distutils.command.clean import clean as _clean
 from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext as BuildCommand
-from setuptools.command.test import test as TestCommand
-from setuptools import Command
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.sdist import sdist as _sdist
+from setuptools.command.test import test as _test
 from codecs import open
 from os import makedirs, path, remove, walk
 from shutil import copy, copytree, rmtree
@@ -16,22 +17,34 @@ here = path.abspath(path.dirname(__file__))
 pylibvw = Extension('pylibvw', sources=['python/pylibvw.cc'])
 
 
-# Make a helper class
-class BaseCommand(Command):
-    user_options = []
+def prep():
+    """Prepare source directories for building extension """
 
-    def initialize_options(self):
-        pass
+    # helper function to exclude subdirectories during copytree calls
+    def exclude_dirs(cur_dir, _):
+        return next(walk(cur_dir))[1]
 
-    def finalize_options(self):
-        pass
+    # don't create src folder if it already exists
+    if not path.exists(path.join(here, 'src')):
+        # add main directory (exclude children to avoid recursion)
+        copytree(path.join(here, '..'), path.join(here, 'src'), ignore=exclude_dirs)
 
+        # add python directory (exclude children to avoid recursion)
+        copytree(path.join(here), path.join(here, 'src', 'python'), ignore=exclude_dirs)
+        subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', 'python'))
+
+        # add explore
+        copytree(path.join(here, '..', 'explore'), path.join(here, 'src', 'explore'))
+
+        # add folders necessary to run 'make python'
+        for folder in ['library', 'vowpalwabbit']:
+            copytree(path.join(here, '..', folder), path.join(here, 'src', folder))
+            subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', folder))
+
+
+class Clean(_clean):
+    """Clean up after building python package directories """
     def run(self):
-        pass
-
-    @staticmethod
-    def clean():
-        """Clean up directories built during packaging """
         try:
             remove(path.join(here, '.coverage'))
         except OSError:
@@ -43,46 +56,32 @@ class BaseCommand(Command):
         rmtree(path.join(here, 'dist'), ignore_errors=True)
         rmtree(path.join(here, 'build'), ignore_errors=True)
         rmtree(path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
+        _clean.run(self)
 
 
-# Copy source files into src subdirectory to be included in dist
-class PrepDist(BaseCommand):
+class Sdist(_sdist):
     def run(self):
-        def exclude_dirs(cur_dir, _):
-            return next(walk(cur_dir))[1]
-
-        self.clean()
-        subprocess.check_call(['make', 'clean'], cwd=path.join(here, '..'))
-        copytree(path.join(here, '..'), path.join(here, 'src'), ignore=exclude_dirs)
-        copytree(here, path.join(here, 'src', 'python'), ignore=exclude_dirs)
-        # add folders necessary to run 'make python'
-        for folder in ['cluster', 'explore', 'library', 'vowpalwabbit']:
-            copytree(path.join(here, '..', folder), path.join(here, 'src', folder))
-            try:
-                subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', folder))
-            except:
-                pass
+        # try to run prep if needed
+        try:
+            prep()
+        except:
+            pass
+        _sdist.run(self)
 
 
-# Clean up after building python package directories
-class Clean(BaseCommand):
-    def run(self):
-        self.clean()
-
-
-# Build pylibvw.so and install it as a python extension
-class VWBuildExt(BuildCommand):
+class VWBuildExt(_build_ext):
+    """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
+        prep()
         subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'))
         target_dir = path.dirname(self.get_ext_fullpath(ext.name))
         if not path.isdir(target_dir):
             makedirs(target_dir)
-        copy(path.join(here, 'src', 'python', "%s.so" % ext.name),
-             self.get_ext_fullpath(ext.name))
+        copy(path.join(here, 'src', 'python', "%s.so" % ext.name), self.get_ext_fullpath(ext.name))
 
 
-# Setup tox to run with 'python setup.py test'
-class Tox(TestCommand):
+class Tox(_test):
+    """ Run tox tests with 'python setup.py test' """
     tox_args = None
     test_args = None
     test_suite = None
@@ -90,11 +89,11 @@ class Tox(TestCommand):
     user_options = [('tox-args=', 'a', "Arguments to pass to tox")]
 
     def initialize_options(self):
-        TestCommand.initialize_options(self)
+        _test.initialize_options(self)
         self.tox_args = None
 
     def finalize_options(self):
-        TestCommand.finalize_options(self)
+        _test.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 
@@ -144,7 +143,7 @@ setup(
     cmdclass={
         'build_ext': VWBuildExt,
         'clean': Clean,
-        'prep': PrepDist,
+        'sdist': Sdist,
         'test': Tox,
     },
     # tox.ini handles additional test dependencies
