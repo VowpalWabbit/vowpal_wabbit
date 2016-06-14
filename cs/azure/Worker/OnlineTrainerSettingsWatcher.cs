@@ -1,4 +1,12 @@
-﻿using Microsoft.ApplicationInsights;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="OnlineTrainerSettingsWatcher.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure;
 using Microsoft.ServiceBus;
@@ -14,6 +22,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using VowpalWabbit.Azure.Trainer;
+using VowpalWabbit.Azure.Trainer.Checkpoint;
 
 namespace VowpalWabbit.Azure.Worker
 {

@@ -1,4 +1,14 @@
-﻿namespace VowpalWabbit.Azure.Trainer
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="OnlineTrainerSettingsInternal.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using VowpalWabbit.Azure.Trainer.Checkpoint;
+
+namespace VowpalWabbit.Azure.Trainer
 {
     public class OnlineTrainerSettingsInternal
     {

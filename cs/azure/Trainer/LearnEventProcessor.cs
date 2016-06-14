@@ -9,20 +9,8 @@
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ServiceBus.Messaging;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reactive;
-using System.Reactive.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using VowpalWabbit.Azure.Trainer.Data;
-using VW;
-using VW.Serializer;
 
 namespace VowpalWabbit.Azure.Trainer
 {
@@ -45,9 +33,6 @@ namespace VowpalWabbit.Azure.Trainer
 
         public Task OpenAsync(PartitionContext context)
         {
-            this.telemetry.Context.Properties.Add("PartitionId", context.Lease.PartitionId);
-            this.telemetry.Context.Properties.Add("Offset", context.Lease.Offset.ToString());
-
             this.telemetry.TrackTrace(
                 $"OpenPartition Id {context.Lease.PartitionId}",
                 SeverityLevel.Information,
@@ -64,39 +49,7 @@ namespace VowpalWabbit.Azure.Trainer
 
         public async Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)
         {
-            foreach (EventData eventData in messages)
-            {
-                string eventMessage = string.Empty;
-
-                using (var eventStream = eventData.GetBodyStream())
-                {
-                    using (var sr = new StreamReader(eventStream, Encoding.UTF8))
-                    {
-                        string line;
-                        while ((line = await sr.ReadLineAsync()) != null)
-                        {
-                            var data = new PipelineData
-                            {
-                                JSON = line,
-                                PartitionKey = context.Lease.PartitionId,
-                                Offset = eventData.Offset
-                            };
-
-                            // TODO: ArrayBuffer to avoid string allocation...
-                            // also just send char ref + offset + length
-                            if (!await this.parent.DeserializeBlock.SendAsync(data))
-                                this.telemetry.TrackTrace("Failed to enqueue data");
-                        }
-
-                        this.perfCounters.Stage0_IncomingBytesPerSec.IncrementBy(eventStream.Position);
-                        this.perfCounters.Stage0_Batches_Size.IncrementBy(eventStream.Position);
-                        this.perfCounters.Stage0_Batches_SizeBase.Increment();
-                    }
-                }
-
-                this.perfCounters.Stage0_BatchesPerSec.Increment();
-                this.perfCounters.Stage0_Batches_Total.Increment();
-            }
+            await this.parent.Stage0_Split(context, messages);
         }
 
         public Task CloseAsync(PartitionContext context, CloseReason reason)

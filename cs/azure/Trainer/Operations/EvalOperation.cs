@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
+using VowpalWabbit.Azure.Trainer.Data;
 using VW;
 using VW.Labels;
 

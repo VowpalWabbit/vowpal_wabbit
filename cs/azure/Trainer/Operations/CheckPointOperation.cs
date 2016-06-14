@@ -14,49 +14,28 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using VowpalWabbit.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure.Trainer.Operations
+namespace VowpalWabbit.Azure.Trainer
 {
-    internal sealed class CheckpointEvent
-    {
-        public override string ToString()
-        {
-            return "Checkpoint request";
-        }
-    }
-
-    internal sealed class CheckpointData
-    {
-        internal byte[] Model { get; set; }
-
-        internal byte[] EvalModel { get; set; }
-
-        internal string TrackbackList { get; set; }
-
-        internal bool UpdateClientModel { get; set; }
-
-        internal string State { get; set; }
-
-        internal string Timestamp { get; set; }
-    }
-
     internal partial class Learner
     {
-        internal bool ShouldCheckpoint()
+        internal bool ShouldCheckpoint(int numExamples)
         {
             // don't checkpoint if we didn't see any valid events.
             return this.trackbackList.Count > 0 && 
-                this.settings.CheckpointPolicy.ShouldCheckpointAfterExample(1);
+                this.settings.CheckpointPolicy.ShouldCheckpointAfterExample(numExamples);
         }
 
-        internal CheckpointData CreateCheckpointData()
+        internal CheckpointData CreateCheckpointData(bool updateClientModel)
         {
             // TODO: checkpoint resolver state.
             var data = new CheckpointData
             {
                 TrackbackList = string.Join("\n", this.trackbackList),
                 State = JsonConvert.SerializeObject(this.State),
-                Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture)
+                Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture),
+                UpdateClientModel = updateClientModel
             };
             
             this.trackbackList.Clear();

@@ -6,14 +6,26 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using Microsoft.ApplicationInsights;
 using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 
 namespace VowpalWabbit.Azure.Trainer
 {
     internal static class ExtensionMethods
     {
+        internal static Task Trace(this Task task, TelemetryClient telemetry, string message)
+        {
+            return task.ContinueWith(t =>
+            {
+                telemetry.TrackTrace($"{message} completed: {t.Status}");
+                if (t.IsFaulted)
+                    telemetry.TrackException(t.Exception);
+            });
+        }
+
         internal static IObservable<IList<T>> Buffer<T>(this IObservable<T> source, int maxSize, Func<T, int> measure)
         {
             return Observable.Create<IList<T>>(obs =>

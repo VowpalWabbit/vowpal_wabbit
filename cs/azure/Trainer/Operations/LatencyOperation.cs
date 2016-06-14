@@ -8,6 +8,7 @@
 
 using System;
 using System.Threading.Tasks;
+using VowpalWabbit.Azure.Trainer.Data;
 
 namespace VowpalWabbit.Azure.Trainer
 {

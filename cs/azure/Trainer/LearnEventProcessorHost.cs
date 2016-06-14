@@ -8,6 +8,8 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using VowpalWabbit.Azure.Trainer.Data;
+using VowpalWabbit.Azure.Trainer.Operations;
 using VW.Serializer;
 
 namespace VowpalWabbit.Azure.Trainer
