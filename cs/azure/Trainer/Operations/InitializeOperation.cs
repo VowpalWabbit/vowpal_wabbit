@@ -1,4 +1,11 @@
-﻿using Microsoft.ApplicationInsights;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Learner.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
@@ -8,7 +15,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VW;

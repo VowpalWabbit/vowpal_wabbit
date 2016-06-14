@@ -1,25 +1,23 @@
-﻿using Microsoft.ApplicationInsights.DataContracts;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Learner.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.ApplicationInsights.DataContracts;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
+using VowpalWabbit.Azure.Trainer.Data;
 using VW;
 using VW.Labels;
 
 namespace VowpalWabbit.Azure.Trainer
 {
-    internal sealed class TrainerResult
-    {
-        public ActionScore[] ProgressivePrediction { get; set; }
-
-        public ContextualBanditLabel Label { get; set; }
-
-        public TimeSpan Latency { get; set; }
-
-        public string PartitionKey { get; set; }
-    }
-
     internal partial class Learner
     {
         public TrainerResult Learn(PipelineData example)

@@ -1,25 +1,25 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PipelineData.cs">
+// <copyright file="TrainerResult.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
 using VW;
+using VW.Labels;
 
 namespace VowpalWabbit.Azure.Trainer.Data
 {
-    internal sealed class PipelineData
+    internal sealed class TrainerResult
     {
-        internal string JSON { get; set; }
+        public ActionScore[] ProgressivePrediction { get; set; }
 
-        internal string Offset { get; set; }
+        public ContextualBanditLabel Label { get; set; }
 
-        internal string PartitionKey { get; set; }
+        public TimeSpan Latency { get; set; }
 
-        internal string EventId { get; set; }
-
-        public VowpalWabbitExampleCollection Example { get; set; }
+        public string PartitionKey { get; set; }
     }
 }

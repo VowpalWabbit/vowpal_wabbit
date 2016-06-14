@@ -6,7 +6,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
@@ -15,9 +14,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
-using VW;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VowpalWabbit.Azure.Trainer.Operations
 {
     internal sealed class CheckpointEvent
     {

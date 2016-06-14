@@ -1,4 +1,12 @@
-﻿using Microsoft.ApplicationInsights;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="LearnEventProcessor.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
@@ -12,6 +20,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using VowpalWabbit.Azure.Trainer.Data;
 using VW;
 using VW.Serializer;
 

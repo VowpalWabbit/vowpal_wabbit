@@ -18,6 +18,7 @@ using System.Text;
 using VowpalWabbit.Azure.Trainer;
 using VowpalWabbit.Azure.Trainer.Operations;
 using VW.Serializer;
+using VowpalWabbit.Azure.Trainer.Data;
 
 namespace VowpalWabbit.Azure
 {

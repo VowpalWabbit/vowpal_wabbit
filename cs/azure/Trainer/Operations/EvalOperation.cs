@@ -1,13 +1,19 @@
-﻿using Microsoft.ApplicationInsights;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="EvalData.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.ApplicationInsights;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using VW;
 using VW.Labels;
