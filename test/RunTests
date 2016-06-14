@@ -1442,7 +1442,6 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
 
-<<<<<<< f92e8c0b66228abaeaaea5fb6ee73bffa019c122
 # Test 128: cb_explore_adf with epsilon-greedy exploration
 {VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
     train-sets/ref/cbe_adf_epsilon.stderr
