@@ -1,5 +1,7 @@
 param([string]$githubToken, [string]$repo = "eisber")
 
+Get-ChildItem *.cspkg -Recurse
+
 $version = ([xml](Get-Content -Path cs\version.props)).Project.PropertyGroup.VowpalWabbitAssemblyVersion
 
 $body = @{ tag_name = "v$version"; name = "v$version"; body = "v$version"; draft = $false; prerelease = $false }

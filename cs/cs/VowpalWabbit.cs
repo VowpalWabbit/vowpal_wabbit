@@ -9,10 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using VW;
-using VW.Labels;
 using VW.Labels;
 using VW.Serializer;
 
