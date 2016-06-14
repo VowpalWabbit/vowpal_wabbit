@@ -37,7 +37,7 @@ namespace VowpalWabbit.Azure
         private readonly Learner trainer;
 
         private EvalOperation evalOperation;
-        //private LatencyOperation latencyOperation;
+        private LatencyOperation latencyOperation;
 
         private TransformManyBlock<PipelineData, PipelineData> deserializeBlock;
         private TransformManyBlock<object, object> learnBlock;
@@ -62,7 +62,7 @@ namespace VowpalWabbit.Azure
             this.telemetry.Context.Component.Version = GetType().Assembly.GetName().Version.ToString();
 
             this.evalOperation = new EvalOperation(settings);
-            //this.latencyOperation = new LatencyOperation();
+            this.latencyOperation = new LatencyOperation();
 
             this.deserializeBlock = new TransformManyBlock<PipelineData, PipelineData>(
                 (Func<PipelineData, IEnumerable<PipelineData>>)this.Stage1_Deserialize,
@@ -84,7 +84,7 @@ namespace VowpalWabbit.Azure
 
             // trigger checkpoint checking every second
             this.checkpointTrigger = Observable.Interval(TimeSpan.FromSeconds(1))
-                .Select(_ => new CheckpointTriggerEvent())
+                .Select(_ => new CheckpointEvaluateTriggerEvent())
                 .Subscribe(this.learnBlock.AsObserver());
 
             this.checkpointBlock = new ActionBlock<object>(
@@ -189,6 +189,12 @@ namespace VowpalWabbit.Azure
 
                                 return true;
                             }
+                            else if (property.Equals("_timestamp", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (!state.Reader.Read() && state.Reader.TokenType != JsonToken.Date)
+                                    throw new VowpalWabbitJsonException(state.Reader, "Expected date");
+                                data.Timestamp = (DateTime)state.Reader.Value;
+                            }
 
                             return false;
                         });
@@ -239,16 +245,19 @@ namespace VowpalWabbit.Azure
             var eventHubExample = evt as PipelineData;
             if (eventHubExample != null)
             {
-                yield return this.trainer.Learn(eventHubExample);
+                var result = this.trainer.Learn(eventHubExample);
 
-                // this.latencyOperation.Process(result);
+                // report latency
+                this.latencyOperation.Process(result);
+
+                yield return result;
 
                 if (this.trainer.ShouldCheckpoint(1))
                     yield return this.trainer.CreateCheckpointData(updateClientModel: true);
             }
-            else if (evt is CheckpointEvent)
-                yield return this.trainer.CreateCheckpointData(updateClientModel: false);
             else if (evt is CheckpointTriggerEvent)
+                yield return this.trainer.CreateCheckpointData(updateClientModel: false);
+            else if (evt is CheckpointEvaluateTriggerEvent)
             {
                 if (this.trainer.ShouldCheckpoint(0))
                     yield return this.trainer.CreateCheckpointData(updateClientModel: true);
@@ -290,11 +299,11 @@ namespace VowpalWabbit.Azure
                 this.evalOperation = null;
             }
 
-            //if (this.latencyOperation != null)
-            //{
-            //    this.latencyOperation.Dispose();
-            //    this.latencyOperation = null;
-            //}
+            if (this.latencyOperation != null)
+            {
+                this.latencyOperation.Dispose();
+                this.latencyOperation = null;
+            }
         }
     }
 }

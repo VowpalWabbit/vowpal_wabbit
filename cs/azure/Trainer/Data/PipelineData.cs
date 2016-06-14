@@ -6,6 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
 using VW;
 
 namespace VowpalWabbit.Azure.Trainer.Data
@@ -19,6 +20,8 @@ namespace VowpalWabbit.Azure.Trainer.Data
         internal string PartitionKey { get; set; }
 
         internal string EventId { get; set; }
+
+        internal DateTime Timestamp { get; set; }
 
         public VowpalWabbitExampleCollection Example { get; set; }
     }

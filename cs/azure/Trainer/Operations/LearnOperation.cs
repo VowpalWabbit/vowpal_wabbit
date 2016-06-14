@@ -64,9 +64,7 @@ namespace VowpalWabbit.Azure.Trainer
                 // measure latency
                 const int TimeSpanTicksPerMillisecond = 10000;
 
-                // TODO: not sure which timestamp to use yet
-                // var latency = DateTime.UtcNow - example.Timestamp;
-                var latency = TimeSpan.FromSeconds(1);
+                var latency = DateTime.UtcNow - example.Timestamp;
                 var performanceCounterTicks =
                     latency.Ticks * Stopwatch.Frequency / TimeSpanTicksPerMillisecond;
                 this.perfCounters.AverageExampleLatency.IncrementBy(performanceCounterTicks);

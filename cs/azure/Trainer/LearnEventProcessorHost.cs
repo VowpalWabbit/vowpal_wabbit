@@ -68,7 +68,7 @@ namespace VowpalWabbit.Azure.Trainer
 
         public async Task CheckpointAsync()
         {
-            await this.SafeExecute(async () => await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointEvent()));
+            await this.SafeExecute(async () => await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent()));
         }
 
         private Task SafeExecute(Func<Task> action)
@@ -98,7 +98,7 @@ namespace VowpalWabbit.Azure.Trainer
             await this.StartInternalAsync(settings, state);
 
             // make sure we store this fresh model, in case we die we don't loose the reset
-            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointEvent());
+            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent());
 
             // delete the currently deployed model, so the clients don't use the hold one
             var latestModel = await this.trainer.GetLatestModelBlob();

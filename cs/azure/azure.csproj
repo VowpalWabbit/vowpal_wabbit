@@ -232,7 +232,6 @@
     <Compile Include="System.Buffers\DefaultArrayPool.cs" />
     <Compile Include="System.Buffers\DefaultArrayPoolBucket.cs" />
     <Compile Include="System.Buffers\Utilities.cs" />
-    <Compile Include="Trainer\CheckpointEvent.cs" />
     <Compile Include="Trainer\Checkpoint\CountingCheckpointPolicy.cs" />
     <Compile Include="Trainer\Checkpoint\ICheckpointPolicy.cs" />
     <Compile Include="Trainer\Checkpoint\TimespanCheckpointPolicy.cs" />
