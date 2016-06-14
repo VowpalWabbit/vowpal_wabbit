@@ -1463,19 +1463,11 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cbe_adf_first.predict
 
 # Test 132: train a poisson model
-{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2
-    train-sets/ref/poission.train.stderr
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict
+    train-sets/ref/poisson.train.stderr
+    pred-sets/ref/poisson.train.predict
 
-# Test 133: test the possion model from the saved model
-{VW} -t -d train-sets/poisson.dat -i models/poisson.model -p poisson.preds
-    train-sets/ref/poisson.stderr
-    train-sets/ref/poisson.preds
-
-# Test 134: train a poisson model without invariant updates
-{VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1
+# Test 133: train a poisson model without invariant updates
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
     train-sets/ref/poisson.train.normalized.stderr
-
-# Test 135: test the possion model without invariant updates from the saved model
-{VW} -t -d train-sets/poisson.dat -i models/poisson.normalized.model -p poisson.normalized.preds
-    train-sets/ref/poisson.normalized.stderr
-    train-sets/ref/poisson.normalized.preds
+    pred-sets/ref/poisson.train.normalized.predict
