@@ -1442,6 +1442,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
 
+<<<<<<< f92e8c0b66228abaeaaea5fb6ee73bffa019c122
 # Test 128: cb_explore_adf with epsilon-greedy exploration
 {VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
     train-sets/ref/cbe_adf_epsilon.stderr
@@ -1463,7 +1464,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cbe_adf_first.predict
 
 # Test 132 train a poisson model
-{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2
     train-sets/ref/poission.train.stderr
 
 # Test 133 test the possion model from the saved model
