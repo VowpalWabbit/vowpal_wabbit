@@ -252,7 +252,7 @@
     <Compile Include="Trainer\LearnEventProcessorFactory.cs" />
     <Compile Include="Trainer\LearnEventProcessorHost.cs" />
     <Compile Include="Trainer\Util.cs" />
-    <Compile Include="Worker\AzureBlobBackgroundDownloader.cs" />
+    <Compile Include="Worker\OnlineTrainerSettingsDownloader.cs" />
     <Compile Include="Worker\CheckpointController.cs" />
     <Compile Include="Worker\OnlineTrainerController.cs" />
     <Compile Include="Trainer\OnlineTrainerSettings.cs" />

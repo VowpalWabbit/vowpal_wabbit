@@ -22,7 +22,7 @@ namespace VowpalWabbit.Azure.Worker
         private readonly TelemetryClient telemetry;
         private readonly LearnEventProcessorHost trainProcessorHost;
 
-        private AzureBlobBackgroundDownloader azureSettingsBlobDownloader;
+        private OnlineTrainerSettingsDownloader settingsDownloader;
         private OnlineTrainerSettings metaData;
 
         internal OnlineTrainerSettingsWatcher(LearnEventProcessorHost trainProcessorHost)
@@ -32,39 +32,11 @@ namespace VowpalWabbit.Azure.Worker
 
             RoleEnvironment.Changed += RoleEnvironment_Changed;
 
-            this.azureSettingsBlobDownloader = new AzureBlobBackgroundDownloader(
-                GetSettingsUrl(),
-                TimeSpan.FromSeconds(5));
-
-            this.azureSettingsBlobDownloader.Downloaded += AzureSettingsBlobDownloader_Downloaded;
-            this.azureSettingsBlobDownloader.Failed += AzureSettingsBlobDownloader_Failed;
+            this.settingsDownloader = new OnlineTrainerSettingsDownloader(TimeSpan.FromSeconds(5));
+            this.settingsDownloader.Downloaded += AzureSettingsBlobDownloader_Downloaded;
+            this.settingsDownloader.Failed += AzureSettingsBlobDownloader_Failed;
         }
 
-        private static string GetSettingsUrl()
-        {
-            var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
-
-            return $"{storageAccount.BlobStorageUri.PrimaryUri}{OnlineTrainerSettings.SettingsContainerName}/{OnlineTrainerSettings.LatestClientSettingsBlobName}";
-        }
-
-        private static OnlineTrainerSettings DownloadAndValidate()
-        {
-            var uri = GetSettingsUrl();
-            string jsonMetadata = "";
-            try
-            {
-                using (var wc = new WebClient())
-                {
-                    jsonMetadata = wc.DownloadString(uri);
-                    return JsonConvert.DeserializeObject<OnlineTrainerSettings>(jsonMetadata);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidDataException("Unable to download metadata from specified blob uri '" + uri + "', JSON: " + jsonMetadata, ex);
-            }
-        }
-        
         public void RestartTrainProcessorHost()
         {
             if (this.metaData == null)
@@ -72,7 +44,6 @@ namespace VowpalWabbit.Azure.Worker
 
             var settings = new OnlineTrainerSettingsInternal
             {
-                SettingsUrl = GetSettingsUrl(),
                 StorageConnectionString = CloudConfigurationManager.GetSetting("StorageConnectionString"),
                 JoinedEventHubConnectionString = CloudConfigurationManager.GetSetting("JoinedEventHubConnectionString"),
                 EvalEventHubConnectionString = CloudConfigurationManager.GetSetting("EvalEventHubConnectionString"),
@@ -192,10 +163,10 @@ namespace VowpalWabbit.Azure.Worker
         {
             RoleEnvironment.Changed -= RoleEnvironment_Changed;
 
-            if (this.azureSettingsBlobDownloader != null)
+            if (this.settingsDownloader != null)
             {
-                this.azureSettingsBlobDownloader.Dispose();
-                this.azureSettingsBlobDownloader = null;
+                this.settingsDownloader.Dispose();
+                this.settingsDownloader = null;
             }
         }
     }

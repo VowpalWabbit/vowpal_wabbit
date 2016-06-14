@@ -4,8 +4,6 @@
     {
         public string StorageContainerName { get; private set; } = "onlinetrainer";
 
-        public string SettingsUrl { get; set; }
-
         public OnlineTrainerSettings Metadata { get; set;  }
 
         /// <summary>

@@ -100,8 +100,8 @@ namespace VowpalWabbit.Azure.Trainer
 
             // delete the currently deployed model, so the clients don't use the hold one
             var latestModel = await this.trainer.GetLatestModelBlob();
-            this.telemetry.TrackTrace($"Deleting client visible model: {latestModel.Uri}", SeverityLevel.Information);
-            await latestModel.DeleteIfExistsAsync();
+            this.telemetry.TrackTrace($"Resetting client visible model: {latestModel.Uri}", SeverityLevel.Information);
+            await latestModel.UploadFromByteArrayAsync(new byte[0], 0, 0);
         }
 
         private async Task RestartInternalAsync(OnlineTrainerSettingsInternal settings)

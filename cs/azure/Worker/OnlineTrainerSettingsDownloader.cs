@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using Microsoft.Azure;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
@@ -10,11 +11,21 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using VowpalWabbit.Azure.Trainer;
 
 namespace VowpalWabbit.Azure.Worker
 {
-    internal sealed class AzureBlobBackgroundDownloader : IDisposable
+    internal sealed class OnlineTrainerSettingsDownloader : IDisposable
     {
+        internal static CloudBlob GetSettingsBlockBlob()
+        {
+            var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference(OnlineTrainerSettings.SettingsContainerName);
+            return container.GetBlobReference(OnlineTrainerSettings.LatestClientSettingsBlobName);
+        }
+
         public delegate void DownloadedEventHandler(object sender, byte[] data);
 
         public delegate void FailedEventHandler(object sender, Exception e);
@@ -26,18 +37,11 @@ namespace VowpalWabbit.Azure.Worker
 
         private IDisposable disposable;
 
-        private readonly string blobAddress;
-
         private string blobEtag;
 
-        public AzureBlobBackgroundDownloader(string blobAddress, TimeSpan interval)
+        public OnlineTrainerSettingsDownloader(TimeSpan interval)
         {
-            if (blobAddress == null)
-                throw new ArgumentNullException("blobAddress");
-
-            this.blobAddress = blobAddress;
-
-            // run background threadW
+            // run background thread
             var conn = Observable.Interval(interval)
                 .SelectMany(_ => Observable.FromAsync(this.Execute))
                 .Replay();
@@ -50,7 +54,7 @@ namespace VowpalWabbit.Azure.Worker
             var uri = string.Empty;
             try
             {
-                ICloudBlob blob = new CloudBlockBlob(new Uri(this.blobAddress));
+                var blob = GetSettingsBlockBlob();
                 uri = blob.Uri.ToString();
 
                 // avoid not found exception
