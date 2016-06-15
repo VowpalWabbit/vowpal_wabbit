@@ -1,20 +1,43 @@
 # -*- coding: utf-8 -*-
 """Vowpal Wabbit setup module """
 
+import platform
 import subprocess
 import sys
+from codecs import open
+from ctypes.util import find_library
 from distutils.command.clean import clean as _clean
+from os import environ, makedirs, path, remove, walk
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
-from codecs import open
-from os import makedirs, path, remove, walk
 from shutil import copy, copytree, rmtree
 
 
+system = platform.system()
 here = path.abspath(path.dirname(__file__))
 pylibvw = Extension('pylibvw', sources=['python/pylibvw.cc'])
+
+
+def find_boost():
+    """Find correct boost-python library information """
+    if system == 'Linux':
+        # use version suffix if present
+        boost_lib = 'boost_python-py{v[0]}{v[1]}'.format(v=sys.version_info)
+        if not find_library(boost_lib):
+            boost_lib = "boost_python"
+    elif system == 'Darwin':
+        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
+    elif system == 'Cygwin':
+        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
+    else:
+        raise Exception('Building on this system is not currently supported')
+
+    if not find_library(boost_lib):
+        raise Exception('Could not find boost python library')
+
+    return boost_lib
 
 
 def prep():
@@ -73,11 +96,16 @@ class VWBuildExt(_build_ext):
     """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
         prep()
-        subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'))
+        env = environ
+        env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
+        env['PYTHON_LIBS'] = '-l {}'.format(find_boost())
+        subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=env)
         target_dir = path.dirname(self.get_ext_fullpath(ext.name))
         if not path.isdir(target_dir):
             makedirs(target_dir)
-        copy(path.join(here, 'src', 'python', "%s.so" % ext.name), self.get_ext_fullpath(ext.name))
+        ext_suffix = 'so' if not system == 'Cygwin' else 'dll'
+        copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
+             self.get_ext_fullpath(ext.name))
 
 
 class Tox(_test):

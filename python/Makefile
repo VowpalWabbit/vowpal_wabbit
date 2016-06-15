@@ -8,11 +8,19 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
-PYTHON_VERSION = 2.7
+# The python version and python boost library are resolved and set using setup.py
+# When running make directly PYTHON_VERSION and PYTHON_LIBS env vars can be set to change these defaults
+ifeq ($(PYTHON_VERSION),)
+  PYTHON_VERSION = 2.7
+endif
+
+ifeq ($(PYTHON_LIBS),)
+  PYTHON_LIBS = -l boost_python
+endif
+
 PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
 PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
-PYTHON_LIBS = -l boost_python
 ifeq (,$(wildcard ../vowpalwabbit/vw.so))
   VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 else
@@ -26,7 +34,9 @@ all:
 things: $(PYLIBVW)
 
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-  PYTHON_LIBS = -l boost_python-mt
+  ifeq ($(PYTHON_LIBS),)
+    PYTHON_LIBS = -l boost_python-mt
+  endif
   PYLIBVW = pylibvw.dll
 endif
 ifneq ($(UNAME), Darwin)
@@ -39,6 +49,7 @@ $(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
 	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) $(PYTHON_LDFLAGS) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
 
 pylibvw.o: pylibvw.cc
+	$(info Using Python $(PYTHON_VERSION))
 	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
 
 clean:
