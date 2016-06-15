@@ -24,14 +24,13 @@ struct wclass
   bool is_range_large; // Indicator of whether this label's cost range was large
   bool is_range_overlapped; // Indicator of whether this label's cost range overlaps with the cost range that has the minimnum max_pred
   bool query_needed; // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  bool pred_is_certain; // This is only used in search.cc but NOT in cs_active.cc. Left here to make it compile
 };
 /* if class_index > 0, then this is a "normal" example
    if class_index == 0, then:
      if x == -FLT_MAX then this is a 'shared' example
      if x > 0 then this is a label feature vector for (size_t)x
 */
-
+  
 struct label
 { v_array<wclass> costs;
 };
@@ -45,3 +44,4 @@ bool example_is_test(example& ec);
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }
+
