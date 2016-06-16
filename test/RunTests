@@ -916,7 +916,7 @@ __DATA__
     train-sets/ref/rcv1_small.stderr
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
-{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 train-sets/wiki256.dat
+{VW} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 -d train-sets/wiki256.dat
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run search on seq_small for 12 passes, 4 passes per policy
@@ -1087,7 +1087,7 @@ __DATA__
 
 # Test 53: (holdout-broken regression)
 # ensure we have no holdout loss of '0 h'
-{VW} -k -c --passes 2 train-sets/0001.dat
+{VW} -k -c --passes 2 -d train-sets/0001.dat
     train-sets/ref/holdout-loss-not-zero.stderr
 
 # Test 54: stagewise poly with exponent 0.25
@@ -1306,12 +1306,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
         train-sets/ref/0097.stderr
 
 # Test 98: checking predictions as well
-{VW} train-sets/0001.dat -i models/0097.model -p 0098.predict
+{VW} -d train-sets/0001.dat -i models/0097.model -p 0098.predict
     test-sets/ref/0098.stderr
     pred-sets/ref/0098.predict
 
 # Test 99: checking predictions with testing
-{VW} train-sets/0001.dat -i models/0097.model -p 0099.predict
+{VW} -d train-sets/0001.dat -i models/0097.model -p 0099.predict
     test-sets/ref/0099.stderr
     pred-sets/ref/0099.predict
 
@@ -1378,15 +1378,15 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/confidence.preds
      
 # Test 114: Over size example test
-{VW} train-sets/x.txt
+{VW} -d train-sets/x.txt
     train-sets/ref/oversize.stderr
 
 # Test 115: Long Line test
-{VW} train-sets/long_line -c -k
+{VW} -d train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
     
 # Test 116: MWT test
-{VW} train-sets/cb_eval --multiworld_test f -p cb_eval.preds
+{VW} -d train-sets/cb_eval --multiworld_test f -p cb_eval.preds
     train-sets/ref/cb_eval.stderr
     pred-sets/ref/cb_eval.preds
 
@@ -1401,12 +1401,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/csoaa.audit_regr
 
 # Test 119: MWT learn test
-{VW} train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 -p mwt_learn.preds
     train-sets/ref/mwt_learn.stderr
     pred-sets/ref/mwt_learn.preds
 
 # Test 120: MWT learn exclude test
-{VW} train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
+{VW} -d train-sets/cb_eval --multiworld_test f --learn 2 --exclude_eval -p mwt_learn_exclude.preds
     train-sets/ref/mwt_learn_exclude.stderr
     pred-sets/ref/mwt_learn_exclude.preds
 
@@ -1421,12 +1421,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/confidence_after_training.preds   
 
 # Test 123: cb_eval save/load #1
-{VW} train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
+{VW} -d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
     train-sets/ref/cb_eval1.stderr
     pred-sets/ref/cb_eval1.preds
 
 # Test 124: cb_eval save/load #2
-{VW} train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
+{VW} -d train-sets/cb_eval2 -i mwt.model -p cb_eval2.preds
     train-sets/ref/cb_eval2.stderr
     pred-sets/ref/cb_eval2.preds
 
@@ -1441,4 +1441,24 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model
     train-sets/ref/recall_tree_gauss1k.stderr
     train-sets/ref/recall_tree_gauss1k.stdout
+
+# Test 128: cb_explore_adf with epsilon-greedy exploration
+{VW} --cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_epsilon.predict
+    train-sets/ref/cbe_adf_epsilon.stderr
+    pred-sets/ref/cbe_adf_epsilon.predict
+
+# Test 129: cb_explore_adf with softmax exploration
+{VW} --cb_explore_adf --softmax 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
+    train-sets/ref/cbe_adf_softmax.stderr
+    pred-sets/ref/cbe_adf_softmax.predict
+
+# Test 130: cb_explore_adf with bagging exploration
+{VW} --cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict
+    train-sets/ref/cbe_adf_bag.stderr
+    pred-sets/ref/cbe_adf_bag.predict
+
+# Test 131: cb_explore_adf with explore-first exploration
+{VW} --cb_explore_adf --first 2 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_first.predict
+    train-sets/ref/cbe_adf_first.stderr
+    pred-sets/ref/cbe_adf_first.predict
 

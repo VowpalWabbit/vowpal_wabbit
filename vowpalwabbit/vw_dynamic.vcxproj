@@ -357,6 +357,7 @@
     <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="cb_explore.h" />
+    <ClInclude Include="cb_explore_adf.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="comp_io.h" />
@@ -444,6 +445,7 @@
     <ClCompile Include="cb.cc" />
     <ClCompile Include="cbify.cc" />
     <ClCompile Include="cb_explore.cc" />
+    <ClCompile Include="cb_explore_adf.cc" />
     <ClCompile Include="gen_cs_example.cc" />
     <ClCompile Include="cb_adf.cc" />
     <ClCompile Include="comp_io.cc" />
