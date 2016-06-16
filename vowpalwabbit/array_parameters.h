@@ -32,7 +32,7 @@ public:
 	template<typename T>
 	weight_walker& operator+=(T index)
 	{
-		_current += index;
+		_cur += index;
 		return *this;
 	}
 
