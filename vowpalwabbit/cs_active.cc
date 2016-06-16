@@ -90,7 +90,9 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
 
     if(ec.l.simple.label != FLT_MAX)
     { base.learn(ec, i-1);
-    }
+      cerr << "base.learn(" << i-1 << ", " << ec.l.simple.label << ")" << endl;
+    } else
+      cerr << "no base.learn(" << i-1 << ", " << ec.l.simple.label << ")" << endl;
   }
   else if (!is_simulation) 
   {// Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.

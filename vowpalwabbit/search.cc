@@ -89,6 +89,7 @@ struct scored_action
   //scored_action() { a = (action)-1; s = 0.; }
 };
 std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a << ':' << x.s; return os; }
+  //std::ostream& operator << (std::ostream& os, const COST_SENSITIVE::wclass& wc) { os << wc.class_index << ':' << wc.x; if (wc.query_needed) os << '?'; return os; }
 
 struct action_repr
 { action a;
@@ -221,7 +222,7 @@ struct search_private
   polylabel learn_losses;
   polylabel gte_label;
   v_array< pair<float,size_t> > active_uncertainty;
-  v_array< v_array<float> > active_known;
+  v_array< v_array<CS::wclass> > active_known;
   bool force_setup_ec_ref;
   bool active_csoaa;
   float active_csoaa_verify;
@@ -704,9 +705,9 @@ inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
   else      ld.cs.costs.resize(new_size);
 }
 
-inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value, bool pred_is_certain=false)
+inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
 { if (isCB) { CB::cb_class cost = { value, index, 0., 0.                  }; ld.cb.costs.push_back(cost); }
-  else      { CS::wclass   cost = { value, index, 0., 0., pred_is_certain }; ld.cs.costs.push_back(cost); }
+  else      { CS::wclass   cost = { value, index, 0., 0., 0., 0., false, false, true }; ld.cs.costs.push_back(cost); }
 }
 
 polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost)
@@ -958,17 +959,21 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       THROW("cannot use active_csoaa with cb learning");
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
-    { priv.active_known.push_back( v_array<float>() );
-      priv.active_known[priv.active_known.size()-1] = v_init<float>();
+    { priv.active_known.push_back( v_array<CS::wclass>() );
+      priv.active_known[priv.active_known.size()-1] = v_init<CS::wclass>();
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].erase();
     assert(ec.l.cs.costs.size() > 0);
     for (size_t k = 0; k < ec.l.cs.costs.size(); k++)
-    { priv.active_known[cur_t].push_back( ec.l.cs.costs[k].pred_is_certain
+    { /* priv.active_known[cur_t].push_back( ec.l.cs.costs[k].pred_is_certain
                                           ? ec.l.cs.costs[k].partial_prediction
                                           : FLT_MAX );
-      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl;
+                                          cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl; */
+      CS::wclass& wc = ec.l.cs.costs[k];
+      priv.active_known[cur_t].push_back(wc);
+      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << endl;
+          //query_needed=" << ec.l.cs.costs[k].query_needed << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl;
     }
   }
 
@@ -1646,18 +1651,18 @@ void run_task(search& sch, vector<example*>& ec)
     priv.task->run(sch, ec);
 }
 
-  void verify_active_csoaa(COST_SENSITIVE::label& losses, v_array<float>& known, size_t t, float multiplier) {
+  void verify_active_csoaa(COST_SENSITIVE::label& losses, v_array<CS::wclass>& known, size_t t, float multiplier) {
   float threshold = multiplier / sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
   for (COST_SENSITIVE::wclass& wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
   cdbg << " ]" << endl;
-  cdbg_print_array("verify_active_csoaa,  known", known);
+  //cdbg_print_array("verify_active_csoaa,  known", known);
   size_t i = 0;
   for (COST_SENSITIVE::wclass& wc : losses.costs)
-  { if (known[i] < FLT_MAX)
-    { float err = pow(known[i] - wc.x, 2);
+  { if (! known[i].query_needed)
+    { float err = pow(known[i].partial_prediction - wc.x, 2);
       if (err > threshold)
-      { std::cerr << "verify_active_csoaa failed: truth " << wc.class_index << ":" << wc.x << ", known[" << i << "]=" << known[i] << ", error=" << err << " vs threshold " << threshold << endl;
+      { std::cerr << "verify_active_csoaa failed: truth " << wc.class_index << ":" << wc.x << ", known[" << i << "]=" << known[i].partial_prediction << ", error=" << err << " vs threshold " << threshold << endl;
       }
     }
     i++;
@@ -1670,20 +1675,25 @@ void advance_from_known_actions(search_private& priv) {
   if (priv.active_csoaa_verify > 0.) return;
   if (t >= priv.active_known.size()) return;
   cdbg << "advance_from_known_actions t=" << t << " active_known.size()=" << priv.active_known.size() << " learn_a_idx=" << priv.learn_a_idx;
-  cdbg_print_array(" active_known[t]", priv.active_known[t]);
+  //cdbg_print_array(" active_known[t]", priv.active_known[t]);
   if (priv.learn_a_idx >= priv.active_known[t].size()) {
     cdbg << "advance_from_known_actions setting done_with_all_actions=true" << endl;
     priv.done_with_all_actions = true;
     return;
   }
-  if (priv.active_known[t][priv.learn_a_idx] >= FLT_MAX) return;
+  //if (priv.active_known[t][priv.learn_a_idx] >= FLT_MAX) return;
+  if (priv.active_known[t][priv.learn_a_idx].query_needed) return;
+  //return;
   // wow, we actually found something we were confident about!
+  /*
   cs_cost_push_back(priv.cb_learner,
                     priv.learn_losses,
                     priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx,
                     priv.active_known[t][priv.learn_a_idx],
                     true);
-  cdbg << "  --> adding " << priv.learn_a_idx << ":" << priv.active_known[t][priv.learn_a_idx] << endl;
+  */
+  priv.learn_losses.cs.costs.push_back(priv.active_known[t][priv.learn_a_idx]);
+  cdbg << "  --> adding " << priv.learn_a_idx << ":" << priv.active_known[t][priv.learn_a_idx].x << endl;
   priv.learn_a_idx++;
   advance_from_known_actions(priv);
 }
@@ -2016,7 +2026,7 @@ void search_initialize(vw* all, search& sch)
   sch.task_data = nullptr;
 
   priv.active_uncertainty = v_init< pair<float,size_t> >();
-  priv.active_known = v_init< v_array<float> >();
+  priv.active_known = v_init< v_array<CS::wclass> >();
   
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
   CS::cs_label.default_label(&priv.empty_example->l.cs);
@@ -2441,6 +2451,7 @@ base_learner* setup(vw&all)
     }
     priv.active_csoaa_verify = vm["search_active_verify"].as<float>();
   }
+  cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
   base_learner* base = setup_base(all);
 
