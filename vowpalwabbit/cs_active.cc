@@ -23,6 +23,9 @@ struct cs_active
   uint32_t num_classes;
   size_t t;
 
+  size_t min_labels;
+  size_t max_labels;
+
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
 };
@@ -125,6 +128,21 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
 template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
 { //cerr << "------------- passthrough" << endl;
+
+  if(cs_a.all->sd->queries >= cs_a.min_labels*cs_a.num_classes)
+  { // save regressor
+    stringstream filename;
+    filename << cs_a.all->final_regressor_name << "." << ec.example_t << "." << cs_a.all->sd->queries;	
+    VW::save_predictor(*(cs_a.all), filename.str());
+  
+    // Double label query budget	
+    cs_a.min_labels *= 2;
+  }
+  
+  if(cs_a.all->sd->queries >= cs_a.max_labels*cs_a.num_classes)
+  { return;
+  }
+
   COST_SENSITIVE::label ld = ec.l.cs;
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -190,6 +208,8 @@ base_learner* cs_active_setup(vw& all)
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 8.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
   ("alpha", po::value<float>(),"Non-negative noise condition parameter. Larger value means less noise. Default 0.")
+  ("max_labels", po::value<float>(), "maximum number of label queries.")
+  ("min_labels", po::value<float>(), "minimum number of label queries.")
   ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
   ("cost_min",po::value<float>(),"cost lower bound. Default 0.");
   add_options(all);
@@ -204,7 +224,8 @@ base_learner* cs_active_setup(vw& all)
   data.cost_max = 1.f;
   data.cost_min = 0.f;
   data.t = 1;
- 
+  data.max_labels = (size_t)-1;
+  data.min_labels = (size_t)-1; 
   
   if(all.vm.count("mellowness"))
   { data.c0 = all.vm["mellowness"].as<float>();
@@ -236,8 +257,15 @@ base_learner* cs_active_setup(vw& all)
   { free(&data);
     THROW("error: you can't combine lda and active learning");
   }
-
-
+ 
+  if(all.vm.count("max_labels"))
+  { data.max_labels = (size_t)all.vm["max_labels"].as<float>();
+  }
+  
+  if(all.vm.count("min_labels"))
+  { data.min_labels = (size_t)all.vm["min_labels"].as<float>();
+  }
+  
   if (count(all.args.begin(), all.args.end(),"--active") != 0)
   { free(&data);
     THROW("error: you can't use --cs_active and --active at the same time");
