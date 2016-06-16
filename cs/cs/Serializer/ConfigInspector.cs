@@ -38,6 +38,13 @@ namespace VW.Serializer
                 ",
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
+        /// <summary>
+        /// Creates a <see cref="Schema"/> for the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type to be inspected.</param>
+        /// <param name="config">An optional config restricting the properties to be used as features.</param>
+        /// <param name="warnings">An otpional callback to signal warnings during inspection.</param>
+        /// <returns>Returns a schema describing the feature marshalling.</returns>
         public static Schema CreateSchema(Type type, string config, Action<string> warnings = null)
         {
             if (warnings == null)

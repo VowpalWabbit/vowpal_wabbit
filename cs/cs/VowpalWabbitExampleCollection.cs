@@ -109,8 +109,14 @@ namespace VW
         /// </summary>
         public abstract string VowpalWabbitString { get; }
 
+        /// <summary>
+        /// The number of feature this example holds.
+        /// </summary>
         public abstract ulong NumberOfFeatures { get; }
 
+        /// <summary>
+        /// All labels this example holds.
+        /// </summary>
         public abstract IEnumerable<ILabel> Labels { get; }
 
         /// <summary>

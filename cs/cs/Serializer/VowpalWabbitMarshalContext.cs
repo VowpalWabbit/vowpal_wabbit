@@ -31,7 +31,7 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
         /// </summary>
-        /// <param name="vw">The VW instance the example will be imported to.</param>
+        /// <param name="vwPool">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         public VowpalWabbitMarshalContext(IVowpalWabbitExamplePool vwPool, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)

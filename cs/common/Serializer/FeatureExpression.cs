@@ -15,6 +15,12 @@ using VW.Reflection;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Delegate defintion for feature object creation expressions.
+    /// </summary>
+    /// <param name="vw">An expression resolving to a <see cref="VW.VowpalWabbit"/> instance.</param>
+    /// <param name="namespace">An expression resolving to a <see cref="Namespace"/> instance.</param>
+    /// <returns>An expression constructing a new <see cref="Feature"/> object.</returns>
     public delegate Expression NewFeatureExpressionDelegate(Expression vw, Expression @namespace);
 
     /// <summary>
