@@ -72,7 +72,7 @@ void finish_setup (nn& n, vw& all)
 
   memset (&n.output_layer, 0, sizeof (n.output_layer));
   n.output_layer.indices.push_back(nn_output_namespace);
-  uint64_t nn_index = nn_constant << all.reg.stride_shift;
+  uint64_t nn_index = nn_constant << all.wv.getStride();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)

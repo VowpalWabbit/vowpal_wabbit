@@ -27,29 +27,28 @@ using namespace std;
 
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
-  if (all.reg.weight_vector != nullptr)
+  if (!all.wv.isNull())
   { return;
   }
 
   size_t length = ((size_t)1) << all.num_bits;
-  all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   try
-    { all.reg.weight_vector = calloc_mergable_or_throw<weight>(length << all.reg.stride_shift);
+    { all.wv = *(new weight_vector(length)); //not sure if this is correct
     }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (all.reg.weight_vector == nullptr)
+  if (all.wv.isNull())
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
+    for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+      *j = all.initial_weight;
   else if (all.random_positive_weights)
-    for (size_t j = 0; j < length; j++)
-      all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+	for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+      *j = (float)(0.1 * frand48());
   else if (all.random_weights)
-    for (size_t j = 0; j < length; j++)
-      all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
+	for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+	  *j = (float)(frand48() - 0.5);
 }
 
 const size_t default_buf_size = 512;
@@ -499,8 +498,9 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-      for (size_t j = 0; j < length; j++)
-      { all.reg.weight_vector[j << all.reg.stride_shift] = 0.;
+	  weight_vector w = all.wv;
+      for (weight_vector::iterator j = w.begin(0); j != w.begin(); ++j)
+      { *j = 0.;
       }
     }
     else

@@ -7,6 +7,8 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "gd.h"
 #include "vw_exception.h"
+#include "array_parameters.h"
+
 
 /*
 example format:
@@ -83,10 +85,11 @@ struct task_data
   vector<size_t>   pred;  // predictions
   example*cur_node;       // pointer to the current node for add_edge_features_fn
   float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
-  weight* weight_vector;
+  weight_vector wv;
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
+
 };
 
 inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
@@ -174,11 +177,11 @@ void run_bfs(task_data &D, vector<example*>& ec)
 void setup(Search::search& sch, vector<example*>& ec)
 { task_data& D = *sch.get_task_data<task_data>();
 
-  D.mask = sch.get_vw_pointer_unsafe().reg.weight_mask;
+  D.mask = sch.get_vw_pointer_unsafe().wv.getMask();
   D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss   = sch.get_vw_pointer_unsafe().reg.stride_shift;
+  D.ss   = sch.get_vw_pointer_unsafe().wv.getStride();
   D.multiplier = D.wpp << D.ss;
-  D.weight_vector = sch.get_vw_pointer_unsafe().reg.weight_vector;
+  D.wv = sch.get_vw_pointer_unsafe().wv;
 
   D.N = 0;
   D.E = 0;

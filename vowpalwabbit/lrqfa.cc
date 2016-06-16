@@ -39,6 +39,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   unsigned int k = lrq.k;
   float sqrtk = (float) sqrt(k);
+  weight_vector w = all.wv;
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -53,13 +54,13 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
           { features& fs = ec.feature_space[left];
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
+			weight_vector::iterator iter = w.begin(lindex);
             for (unsigned int n = 1; n <= k; ++n)
-              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.reg.stride_shift)); // a feature has k weights in each field
-                float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
-
+              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << w.getStride())); // a feature has k weights in each field
+			    iter += ((rfd_id*k + n) & w.getMask()); //TODO: get ride of getMask()
                 // perturb away from saddle point at (0, 0)
-                if (is_learn && ! example_is_test (ec) && *lw == 0)
-                  { *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
+                if (is_learn && ! example_is_test (ec) && *iter == 0)
+                  { *iter = cheesyrand(lwindex) * 0.5f / sqrtk; 
                   }
 
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
@@ -68,9 +69,9 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                     // NB: ec.ft_offset added by base learner
                     float rfx = rfs.values[rfn];
                     uint64_t rindex = rfs.indicies[rfn];
-                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.reg.stride_shift));
+                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << w.getStride()));
 
-                    rfs.push_back(*lw * lfx * rfx, rwindex);
+                    rfs.push_back(*iter * lfx * rfx, rwindex);
                     if (all.audit || all.hash_inv)
                       { std::stringstream new_feature_buffer;
                         new_feature_buffer << right << '^'

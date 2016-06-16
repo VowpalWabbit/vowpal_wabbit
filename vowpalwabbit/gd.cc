@@ -135,9 +135,9 @@ void end_pass(gd& g)
   sync_weights(all);
   if (all.all_reduce != nullptr)
   { if (all.adaptive)
-      accumulate_weighted_avg(all, all.reg);
+      accumulate_weighted_avg(all, all.wv);
     else
-      accumulate_avg(all, all.reg, 0);
+      accumulate_avg(all, all.wv, 0);
   }
   all.eta *= all.eta_decay_rate;
   if (all.save_per_pass)
@@ -205,9 +205,10 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{ uint64_t index = ft_idx & dat.all.reg.weight_mask;
-  weight* weights = dat.all.reg.weight_vector;
-  size_t stride_shift = dat.all.reg.stride_shift;
+{ 
+  weight_vector weights = dat.all.wv;
+  uint64_t index = ft_idx & weights.getMask();
+  size_t stride_shift = weights.getStride();
 
   string ns_pre;
   for (string& s : dat.ns_pre) ns_pre += s;
@@ -242,7 +243,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 }
 
 void print_features(vw& all, example& ec)
-{ weight* weights = all.reg.weight_vector;
+{ weight_vector weights = all.wv;
 
   if (all.lda > 0)
   { size_t count = 0;
@@ -250,9 +251,9 @@ void print_features(vw& all, example& ec)
       count += fs.size();
     for (features& fs : ec)
     { for (features::iterator_all& f : fs.values_indices_audit())
-      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> all.reg.stride_shift) & all.parse_mask) << ':' << f.value();
+      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.getStride()) & all.parse_mask) << ':' << f.value();
         for (size_t k = 0; k < all.lda; k++)
-          cout << ':' << weights[(f.index()+k) & all.reg.weight_mask];
+          cout << ':' << weights[(f.index()+k)];
       }
     }
     cout << " total of " << count << " features." << endl;
@@ -345,11 +346,13 @@ void predict(gd& g, base_learner&, example& ec)
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{ weight*w = mp.reg->weight_vector + (fi & mp.reg->weight_mask);
+{ weight_vector::iterator w = mp.wv->begin();
+  w += (fi & mp.wv->getMask()); //TODO: get rid of getMask()
   for (size_t c=0; c<mp.count; c++)
   { mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
     w += mp.step;
   }
+  
 }
 
 template<bool l1, bool audit>
@@ -357,7 +360,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, &g.all->reg, (float)all.sd->gravity };
+  multipredict_info mp = { count, step, pred, &g.all->wv, (float)all.sd->gravity };
   if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
   else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
   if (all.sd->contraction != 1.)
@@ -558,28 +561,30 @@ void learn(gd& g, base_learner& base, example& ec)
 void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  uint64_t length = (uint64_t)1 << all.num_bits;
-  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
-  for(uint64_t i = 0; i < length && all.reg_mode; i++)
-    all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
+  weight_vector weights = all.wv;
+  weight_vector::iterator w = weights.begin(0);
+  for(; w != weights.end() && all.reg_mode; ++w)
+    *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint64_t length = (uint64_t)1 << all.num_bits;
-  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
+  weight_vector weights = all.wv;
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
+  weight_vector::iterator v = weights.begin(0);
 
   if(all.print_invert)   //write readable model with feature names
-  { weight* v;
+  { 
     stringstream msg;
     typedef std::map< std::string, size_t> str_int_map;
-
+    
     for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
-    { v = &(all.reg.weight_vector[stride*it->second]);
+    { 
+	  v += it->second;
       if(*v != 0.)
       {
         msg << it->first;
@@ -587,15 +592,15 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
                                    msg, true);
 
         msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char *)v, sizeof(*v), msg, true);
+        bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, true);
       }
     }
     return;
   }
 
+  v = weights.begin(0);
   do
   { brw = 1;
-    weight* v;
     if (read)
       { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
@@ -607,14 +612,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
-        v = &(all.reg.weight_vector[stride*i]);
-        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+        brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); //TODO: fix &(*v)
       }
     }
     else// write binary or text
     {
 
-      v = &(all.reg.weight_vector[stride*i]);
       if (*v != 0.)
         { stringstream msg;
           msg << i;
@@ -628,14 +631,17 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
             brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
 
           msg << ":"<< *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v), msg, text);
+          brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text); //TODO: fix &(*v)
         }
     }
 
-    if (!read)
-      i++;
+	if (!read)
+	{
+		++v;
+		++i;
+	}
   }
-  while ((!read && i < length) || (read && brw >0));
+  while ((!read && v != weights.end()) || (read && brw >0));
 }
 
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
@@ -728,23 +734,24 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   }
 
   uint64_t length = (uint64_t)1 << all.num_bits;
-  uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
 
-  int c = 0;
-  uint64_t i = 0;
+  weight_vector weights = all.wv;
+  weight_vector::iterator v = weights.begin(0);
+  weight_vector::iterator v1 = weights.begin(1);
+  weight_vector::iterator v2 = weights.begin(2);
+  uint32_t i = 0;
   size_t brw = 1;
   do
   { brw = 1;
     weight* v;
     if (read)
-    { c++;
+    { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
       if (brw > 0)
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
 
-        v = &(all.reg.weight_vector[stride*i]);
         if (g == NULL || (! g->adaptive && ! g->normalized))
           brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
@@ -756,10 +763,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       }
     }
     else // write binary or text
-    { v = &(all.reg.weight_vector[stride*i]);
+    { 
       if (*v != 0.)
-      { c++;
-
+      { 
         msg << i;
         brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
                                    msg, text);
@@ -770,22 +776,24 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         }
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
         { //either adaptive or normalized
-          msg << ":"<< *v << " "<< *(v+1)<< "\n";
+          msg << ":"<< *v << " "<< *(v1)<< "\n";
           brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
                                      msg, text);
         }
         else
           { //adaptive and normalized
-            msg << ":"<< *v << " "<< *(v+1)<< " "<< *(v+2)<< "\n";
+            msg << ":"<< *v << " "<< *(v1)<< " "<< *(v2)<< "\n";
             brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
                                        msg, text);
         }
       }
     }
-    if (!read)
-      i++;
+	if (!read)
+	{
+		++v; ++v1; ++v2; ++i;
+	}
   }
-  while ((!read && i < length) || (read && brw >0));
+  while ((!read && v != weights.end()) || (read && brw >0));
 }
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
@@ -794,10 +802,11 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
     if(all.adaptive && all.initial_t > 0)
-      { uint64_t length = (uint64_t)1 << all.num_bits;
-	uint64_t stride = (uint64_t)1 << all.reg.stride_shift;
-      for (uint64_t j = 1; j < stride*length; j+=stride)
-      { all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+      { weight_vector weights = all.wv;
+	    weight_vector::iterator w = weights.begin(0);
+		++w;
+      for (; w != weights.end(); ++w)
+      { *w = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
         //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
@@ -970,9 +979,9 @@ base_learner* setup(vw& all)
     stride = set_learn<false>(all, feature_mask_off, g);
   if (!all.training)
     stride = 1;
-  all.reg.stride_shift = (uint32_t)ceil_log_2(stride-1);
+  all.wv.setStride((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.reg.stride_shift));
+  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.wv.getStride()));
   ret.set_predict(g.predict);
   ret.set_sensitivity(g.sensitivity);
   ret.set_multipredict(g.multipredict);

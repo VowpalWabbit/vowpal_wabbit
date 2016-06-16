@@ -112,7 +112,7 @@ namespace VW
 
     System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1)
     {
-        uint64_t masked_weight_index1 = i1 & vw->reg.weight_mask;
+		uint64_t masked_weight_index1 = i1 & vw->wv.getMask();
 
         return System::String::Format(
             "weight_index = {0}/{1}, x = {2}",
@@ -156,8 +156,8 @@ namespace VW
         vector<size_t> fa_missing;
         for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
         {
-            auto masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
-            auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+            auto masked_weight_index = fa.indicies[ia] & vw->wv.getMask();
+            auto other_masked_weight_index = fb.indicies[ib] & vw->wv.getMask();
 
             System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
               fa.indicies[ia], masked_weight_index,
@@ -173,7 +173,7 @@ namespace VW
                 bool found = false;
                 for (ib = 0; ib < fb.values.size(); ib++)
                 {
-                    auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+                    auto other_masked_weight_index = fb.indicies[ib] & vw->wv.getMask();
                     if (masked_weight_index == other_masked_weight_index)
                     {
                         if (!FloatEqual(fa.values[ia], fb.values[ib]))
@@ -203,7 +203,7 @@ namespace VW
             for (size_t& ia : fa_missing)
             {
                 diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                    fa.indicies[ia] & vw->reg.weight_mask,
+                    fa.indicies[ia] & vw->wv.getMask(),
                     fa.values[ia]);
             }
 

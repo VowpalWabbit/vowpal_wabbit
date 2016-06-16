@@ -872,8 +872,8 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else
     params.kernel_type = SVM_KER_LIN;
 
-  params.all->reg.weight_mask = (uint64_t)LONG_MAX;
-  params.all->reg.stride_shift = 0;
+  //params.all->reg.weight_mask = (uint64_t)LONG_MAX; --set as default values in array_parameters.h
+  //params.all->reg.stride_shift = 0;
 
   learner<svm_params>& l = init_learner(&params, learn, 1);
   l.set_predict(predict);

@@ -259,7 +259,6 @@ vw::vw()
   bfgs = false;
   hessian_on = false;
   active = false;
-  reg.stride_shift = 0;
   num_bits = 18;
   default_bits = true;
   daemon = false;
@@ -322,7 +321,7 @@ vw::vw()
 
   add_constant = true;
   audit = false;
-  reg.weight_vector = nullptr;
+  wv = weight_vector();
   pass_length = (size_t)-1;
   passes_complete = 0;
 

@@ -12,7 +12,6 @@ license as described in the file LICENSE.
 #include <numeric>
 #include <cmath>
 #include "correctedMath.h"
-
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
@@ -28,7 +27,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "rand48.h"
 #include "reductions.h"
-
+#include "array_parameters.h"
 #include <boost/version.hpp>
 
 #if BOOST_VERSION >= 105600
@@ -561,7 +560,7 @@ v_array<float> old_gamma = v_init<float>();
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, example *ec, float)
+float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_vector weights, example *ec, float)
 { new_gamma.erase();
   old_gamma.erase();
 
@@ -588,7 +587,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
     doc_length = 0;
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
-          { float *u_for_w = &weights[(f.index() & l.all->reg.weight_mask) + l.topics + 1];
+          { float *u_for_w = &weights[f.index() + l.topics + 1];
             float c_w = find_cw(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
@@ -627,48 +626,47 @@ size_t next_pow2(size_t x)
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  uint64_t stride = (uint64_t)1 << all->reg.stride_shift;
-
+  weight_vector weights = all->wv;
   if (read)
   { initialize_regressor(*all);
-    for (uint64_t j = 0; j < stride * length; j += stride)
-    { for (size_t k = 0; k < all->lda; k++)
-      { if (all->random_weights)
-        { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
-          all->reg.weight_vector[j + k] *= (float)(l.lda_D / all->lda / all->length() * 200);
-        }
-      }
-      all->reg.weight_vector[j + all->lda] = all->initial_t;
-    }
+	weight_vector::iterator j = weights.begin(0);
+	weight_vector::iterator w_lda = weights.begin(all->lda);
+	for (; j != weights.end(); ++j, ++w_lda)
+	{ for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(all->lda); ++k)
+	  { if (all->random_weights)
+	    { *k = (float)(-log(frand48()) + 1.0f);
+		  *k *= (float)(l.lda_D / all->lda / all->length() * 200);
+	    }
+	  }
+	  *w_lda = all->initial_t;
+	}
   }
-
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
     stringstream msg;
     size_t brw = 1;
+
     do
     { brw = 0;
-      size_t K = all->lda;
+	  weight_vector::iterator iter = weights.begin(0);
 
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
 
-      if (brw != 0)
-        for (uint64_t k = 0; k < K; k++)
-        { uint64_t ndx = stride * i + k;
-
-          weight *v = &(all->reg.weight_vector[ndx]);
-          msg << *v + l.lda_rho << " ";
-
-          brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
+	  if (brw != 0)	  
+		for (weight_vector::iterator::w_iter v = iter.begin(); v != iter.end(all->lda); ++v)
+        { msg << *v + l.lda_rho << " ";
+          brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
         }
       if (text)
         {
           msg << "\n";
           brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
         }
-      if (!read)
-        i++;
+	  if (!read){
+		  ++i;
+		  ++iter;
+	  }
     }
     while ((!read && i < length) || (read && brw > 0));
   }
@@ -694,10 +692,16 @@ void learn_batch(lda &l)
   { for (size_t k = 0; k < l.all->lda; k++)
       l.total_lambda.push_back(0.f);
 
-    size_t stride = 1 << l.all->reg.stride_shift;
-    for (size_t i = 0; i <= l.all->reg.weight_mask; i += stride)
-      for (size_t k = 0; k < l.all->lda; k++)
-        l.total_lambda[k] += l.all->reg.weight_vector[i + k];
+    size_t stride = 1 << l.all->wv.getStride();
+	weight_vector::iterator iter = l.all->wv.begin(0);
+	for (size_t i = 0; i <= l.all->wv.getMask(); i += stride, ++iter) //TODO: fix to not use stride
+	{
+		weight_vector::iterator::w_iter k_iter = iter.begin();
+		for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
+			l.total_lambda[k] += *k_iter;
+	}
+      
+        
   }
 
   l.example_t++;
@@ -720,14 +724,14 @@ void learn_batch(lda &l)
   { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
-  weight *weights = l.all->reg.weight_vector;
+  weight_vector weights = l.all->wv;
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
   { if (last_weight_index == s->f.weight_index)
       continue;
     last_weight_index = s->f.weight_index;
-    float *weights_for_w = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+    float *weights_for_w = &(weights[s->f.weight_index]);
     float decay_component =
       l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
     float decay = fmin(1.0f, correctedExp(decay_component));
@@ -758,7 +762,7 @@ void learn_batch(lda &l)
     while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
       next++;
 
-    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+    float *word_weights = &(weights[s->f.weight_index]);
     for (size_t k = 0; k < l.all->lda; k++)
     { float new_value = minuseta * word_weights[k];
       word_weights[k] = new_value;
@@ -766,7 +770,7 @@ void learn_batch(lda &l)
 
     for (; s != next; s++)
     { float *v_s = &(l.v[s->document * l.all->lda]);
-      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
+      float *u_for_w = &weights[s->f.weight_index + l.all->lda + 1];
       float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
       for (size_t k = 0; k < l.all->lda; k++)
       { float new_value = u_for_w[k] * v_s[k] * c_w;
@@ -810,13 +814,17 @@ void end_pass(lda &l)
 }
 
 void end_examples(lda &l)
-{ for (size_t i = 0; i < l.all->length(); i++)
-  { weight *weights_for_w = &(l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
+{ weight_vector w = l.all->wv;
+weight_vector::iterator i = w.begin(l.all->lda);
+weight_vector::iterator j = w.begin(0);
+  for (; i != w.end(l.all->lda); ++i, ++j)
+  { 
     float decay_component =
-      l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + *i)];
     float decay = fmin(1.f, correctedExp(decay_component));
-    for (size_t k = 0; k < l.all->lda; k++)
-      weights_for_w[k] *= decay;
+
+	for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(l.all->lda); ++k)
+      *k *= decay;
   }
 }
 
@@ -880,7 +888,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  all.reg.stride_shift = (size_t)temp;
+  all.wv.setStride((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -901,7 +909,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
+  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.wv.getStride());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

@@ -145,14 +145,14 @@ inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-{ return all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)];}
+{ return all.wv[((index << all.wv.getStride()) + offset)];}
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-{ all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)] = value;}
+{ all.wv[((index << all.wv.getStride()) + offset)] = value;}
 
 inline uint32_t num_weights(vw& all)
 { return (uint32_t)all.length();}
 
 inline uint32_t get_stride(vw& all)
-{ return (uint32_t)(1 << all.reg.stride_shift);}
+{ return (uint32_t)(1 << all.wv.getStride());}
 }

@@ -11,6 +11,7 @@
 #include "parse_regressor.h"
 #include "constant.h"
 #include "interactions.h"
+#include "array_parameters.h"
 
 namespace GD
 {
@@ -23,40 +24,42 @@ void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; regressor* reg; /* & for l1: */ float gravity; };
+struct multipredict_info { size_t count; size_t step; polyprediction* pred; weight_vector* wv; /* & for l1: */ float gravity; };
 
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 { if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  weight*w    = mp.reg->weight_vector;
-  uint64_t mask = mp.reg->weight_mask;
+  weight_vector* w = mp.wv;
+  uint64_t mask = w->getMask(); //TODO: shouldn't use getMask()
   polyprediction* p = mp.pred;
-
+  weight_vector::iterator iter = w->begin();
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count-1) * mp.step);
+  uint64_t i = 0;
   if (top <= mask)
-  { weight* last = w + top;
-    w += fi;
-    for (; w <= last; w += mp.step, ++p)
-      p->scalar += fx **w;
+  {
+	  iter += fi;
+	  for (; i <= top; ++i, iter += mp.step, ++p)
+		  p->scalar += fx * (*iter);
   }
   else    // TODO: this could be faster by unrolling into two loops
-    for (size_t c=0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
-    { fi &= mask;
-      p->scalar += fx * w[fi];
+
+    for (size_t c=0; c<mp.count; ++c, iter += (uint64_t)mp.step, ++p)
+    { 
+      p->scalar += fx * (*iter);
     }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&)>
-inline void foreach_feature(weight* weight_vector, uint64_t weight_mask, features& fs, R& dat, uint64_t offset=0, float mult=1.)
+inline void foreach_feature(weight_vector wv, features& fs, R& dat, uint64_t offset=0, float mult=1.)
 {
   for (features::iterator& f : fs)
-    T(dat, mult*f.value(), weight_vector[(f.index() + offset) & weight_mask]);
+    T(dat, mult*f.value(), wv[(f.index() + offset)]);
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t)>
-void foreach_feature(weight* /*weight_vector*/, uint64_t /*weight_mask*/, features& fs, R&dat, uint64_t offset=0, float mult=1.)
+void foreach_feature(weight_vector /*wv*/, features& fs, R&dat, uint64_t offset=0, float mult=1.)
 {
   for (features::iterator& f : fs)
     T(dat, mult*f.value(), f.index() + offset);
@@ -69,7 +72,7 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
 
 for (features& f : ec)
-    foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, f, dat, offset);
+    foreach_feature<R,T>(all.wv, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }

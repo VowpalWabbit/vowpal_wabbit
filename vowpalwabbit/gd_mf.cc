@@ -17,6 +17,8 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "reductions.h"
 #include "vw_exception.h"
+#include "array_parameters.h"
+
 
 using namespace std;
 
@@ -31,8 +33,8 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 { vw& all = *d.all;
-  weight* weights = all.reg.weight_vector;
-  uint64_t mask = all.reg.weight_mask;
+  weight_vector weights = all.wv;
+  uint64_t mask = weights.getMask();
   for (features& fs : ec)
   { bool audit = !fs.space_names.empty();
     for (auto& f : fs.values_indices_audit())
@@ -40,7 +42,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
       if (audit)
         cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
       cout << f.index() <<"(" << ((f.index() + offset) & mask)  << ")" << ':' << f.value();
-      cout << ':' << weights[(f.index() + offset) & mask];
+      cout << ':' << weights[f.index() + offset];
     }
   }
   for (string& i : all.pairs)
@@ -52,13 +54,13 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           { cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index()+k)&mask)
                  <<"(" << ((f1.index() + offset +k) & mask)  << ")" << ':' << f1.value();
-            cout << ':' << weights[(f1.index() + offset + k) & mask];
+            cout << ':' << weights[(f1.index() + offset + k)];
 
             cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':' << ((f2.index() + k + d.rank)&mask)
                  <<"(" << ((f2.index() + offset +k+d.rank) & mask)  << ")" << ':' << f2.value();
-            cout << ':' << weights[(f2.index() + offset + k+d.rank) & mask];
+            cout << ':' << weights[(f2.index() + offset + k+d.rank)];
 
-            cout << ':' <<  weights[(f1.index() + offset + k) & mask] * weights[(f2.index() + offset + k + d.rank) & mask];
+            cout << ':' <<  weights[(f1.index() + offset + k)] * weights[(f2.index() + offset + k + d.rank)];
           }
       }
     }
@@ -89,7 +91,7 @@ float mf_predict(gdmf& d, example& ec)
   float linear_prediction = 0.;
   // linear terms
   for (features& fs : ec)
-    GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, fs, linear_prediction);
+    GD::foreach_feature<float, GD::vec_add>(all.wv, fs, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -103,14 +105,14 @@ float mf_predict(gdmf& d, example& ec)
     { for (uint64_t k = 1; k <= d.rank; k++)
       { // x_l * l^k
         // l^k is from index+1 to index+d.rank
-        //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
+        //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[(int)i[0]], x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add>(all.wv, ec.feature_space[(int)i[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
-        //float x_dot_r = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
+        //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add>(all.wv, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -142,15 +144,14 @@ float mf_predict(gdmf& d, example& ec)
 }
 
 
-void sd_offset_update(weight* weights, uint64_t mask, features& fs, uint64_t offset, float update, float regularization)
+void sd_offset_update(weight_vector weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
-    weights[(fs.indicies[i] + offset) & mask] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset) & mask];
+    weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
 }
 
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
-  weight* weights = all.reg.weight_vector;
-  uint64_t mask = all.reg.weight_mask;
+  weight_vector weights = all.wv;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -162,7 +163,7 @@ void mf_train(gdmf& d, example& ec)
 
   // linear update
   for (features& fs: ec)
-    sd_offset_update(weights, mask, fs, 0, update, regularization);
+    sd_offset_update(weights, fs, 0, update, regularization);
 
   // quadratic update
   for (string& i : all.pairs)
@@ -174,14 +175,14 @@ void mf_train(gdmf& d, example& ec)
       { // r^k \cdot x_r
         float r_dot_x = ec.topic_predictions[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update(weights, mask, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
+        sd_offset_update(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
         float l_dot_x = ec.topic_predictions[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update(weights, mask, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
+        sd_offset_update(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
       }
 
     }
@@ -193,19 +194,20 @@ void mf_train(gdmf& d, example& ec)
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  uint64_t stride_shift = all->reg.stride_shift;
-
+  weight_vector w = all->wv;
   if(read)
   { initialize_regressor(*all);
-    if(all->random_weights)
-      for (size_t j = 0; j < (length << stride_shift); j++)
-        all->reg.weight_vector[j] = (float) (0.1 * frand48());
+    if (all->random_weights)
+    { 
+	  for (weight_vector::iterator j = w.begin(0); j != w.end(); ++j)
+		  *j = (float)(0.1 * frand48());
+    }  
   }
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-
+	 weight_vector::iterator iter = w.begin(0);
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -214,14 +216,11 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
       if (brw != 0)
-        for (uint64_t k = 0; k < K; k++)
-        { uint64_t ndx = (i << stride_shift)+k;
-
-          weight* v = &(all->reg.weight_vector[ndx]);
-          msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+        for (weight_vector::iterator::w_iter v = iter.begin() = 0; v != iter.end(K); ++v)
+		{ 
+          msg << &(*v) << " ";
+          brw += bin_text_read_write_fixed(model_file,(char *)&(*v), sizeof (*v),
                                            "", read, msg, text);
-
         }
       if (text)
         {
@@ -230,8 +229,11 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
                                            "", read, msg,text);
         }
 
-      if (!read)
-        i++;
+	  if (!read)
+	  {
+		  ++i;
+		  ++iter;
+	  }
     }
     while ((!read && i < length) || (read && brw >0));
   }
@@ -287,7 +289,7 @@ base_learner* gd_mf_setup(vw& all)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.reg.stride_shift = (size_t) temp;
+  all.wv.setStride((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -307,7 +309,7 @@ base_learner* gd_mf_setup(vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << all.reg.stride_shift);
+  learner<gdmf>& l = init_learner(&data, learn, 1 << all.wv.getStride());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);

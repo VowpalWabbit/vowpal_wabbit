@@ -19,18 +19,22 @@ using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(vw& all, regressor& reg, size_t o)
+void accumulate(vw& all, weight_vector& wv, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
-  size_t stride = 1 << all.reg.stride_shift;
-  float* local_grad = new float[length];
-  weight* weights = reg.weight_vector;
-  for(uint32_t i = 0; i < length; i++)
-    local_grad[i] = weights[stride*i+o];
+  weight_vector local_grad(length);
+  weight_vector weights = wv;
+  
+  weight_vector::iterator i = weights.begin(o);
+  weight_vector::iterator j = local_grad.begin();
+  for (; i != weights.end(); ++i, ++j)
+	  *j = *i;
 
-  all_reduce<float, add_float>(all, local_grad, length);
-  for (uint32_t i = 0; i < length; i++)
-    weights[stride*i+o] = local_grad[i];
-  delete[] local_grad;
+  all_reduce<float, add_float>(all, local_grad.first(), length); //TODO: modify to not use first()
+ 
+  i = weights.begin(o);
+  j = local_grad.begin();
+  for (; i != weights.end(); ++i, ++j)
+	  *i = *j;
 }
 
 float accumulate_scalar(vw& all, float local_sum)
@@ -39,20 +43,23 @@ float accumulate_scalar(vw& all, float local_sum)
   return temp;
 }
 
-void accumulate_avg(vw& all, regressor& reg, size_t o)
+void accumulate_avg(vw& all, weight_vector& wv, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
-  size_t stride = 1 << all.reg.stride_shift;
-  float* local_grad = new float[length];
-  weight* weights = reg.weight_vector;
+  weight_vector weights = wv;
   float numnodes = (float)all.all_reduce->total;
+  weight_vector local_grad(length);
 
-  for(uint32_t i = 0; i < length; i++)
-    local_grad[i] = weights[stride*i+o];
+  weight_vector::iterator i = weights.begin(o);
+  weight_vector::iterator j = local_grad.begin();
+  for (; i != weights.end(); ++i, ++j)
+	  *j = *i;
 
-  all_reduce<float, add_float>(all, local_grad, length);
-  for (uint32_t i = 0; i < length; i++)
-    weights[stride*i+o] = local_grad[i]/numnodes;
-  delete[] local_grad;
+  all_reduce<float, add_float>(all, local_grad.first(), length); //need to be modified to not use first()
+ 
+  i = weights.begin(o);
+  j = local_grad.begin();
+  for (; i != weights.end(); ++i, ++j)
+	  *i = *j/numnodes;
 }
 
 float max_elem(float* arr, int length)
@@ -69,38 +76,44 @@ float min_elem(float* arr, int length)
   return min;
 }
 
-void accumulate_weighted_avg(vw& all, regressor& reg)
+void accumulate_weighted_avg(vw& all, weight_vector& wv)
 { if(!all.adaptive)
   { cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
-  size_t stride = 1 << all.reg.stride_shift;
-  weight* weights = reg.weight_vector;
-  float* local_weights = new float[length];
+  weight_vector weights = wv;
+  weight_vector local_weights(length);
 
-  for(uint32_t i = 0; i < length; i++)
-    local_weights[i] = weights[stride*i+1];
+  weight_vector::iterator i = weights.begin(1);
+  weight_vector::iterator j = local_weights.begin();
+  for (; i != weights.end(); ++i, ++j)
+	  *j = *i;
 
   //First compute weights for averaging
-  all_reduce<float, add_float>(all, local_weights, length);
+  all_reduce<float, add_float>(all, local_weights.first(), length); //TODO: remove first()
 
-  for(uint32_t i = 0; i < length; i++) //Compute weighted versions
-    if(local_weights[i] > 0)
-    { float ratio = weights[stride*i+1]/local_weights[i];
-      local_weights[i] = weights[stride*i] * ratio;
-      weights[stride*i] *= ratio;
-      weights[stride*i+1] *= ratio; //A crude max
-      if (all.normalized_updates)
-        weights[stride*i+all.normalized_idx] *= ratio; //A crude max
-    }
-    else
-    { local_weights[i] = 0;
-      weights[stride*i] = 0;
-    }
 
-  all_reduce<float, add_float>(all, weights, length*stride);
+  weight_vector::iterator weights_0 = weights.begin(0); 
+  weight_vector::iterator weights_1 = weights.begin(1); 
+  weight_vector::iterator weights_normal_idx = weights.begin(all.normalized_idx);
+  weight_vector::iterator local = local_weights.begin();
 
-  delete[] local_weights;
+  for (; weights_0 != weights.end(); ++weights_0, ++weights_1, ++weights_normal_idx, ++local)
+	if (*local > 0)
+	 {  float ratio = *weights_1 / *local;
+		*local = *weights_0 * ratio;
+		*weights_0 *= ratio;
+		*weights_1 *= ratio; //A crude max
+		if (all.normalized_updates)
+		  *weights_normal_idx *= ratio; //A crude max
+	  }
+	  else
+	  {  *local = 0;
+		 *weights_0 = 0;
+	  }
+	  
+  all_reduce<float, add_float>(all, weights.first(), length*weights.getStride()); //TODO: get rid of first() and getStride()
+
 }
 
