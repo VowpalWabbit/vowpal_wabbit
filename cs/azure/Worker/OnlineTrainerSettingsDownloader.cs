@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure;
+using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
@@ -34,13 +35,17 @@ namespace VowpalWabbit.Azure.Worker
 
         public event FailedEventHandler Failed;
 
-
         private IDisposable disposable;
+
+        private CloudBlob settingsBlob;
 
         private string blobEtag;
 
         public OnlineTrainerSettingsDownloader(TimeSpan interval)
         {
+            this.settingsBlob = GetSettingsBlockBlob();
+            RoleEnvironment.Changed += RoleEnvironment_Changed;
+
             // run background thread
             var conn = Observable.Interval(interval)
                 .SelectMany(_ => Observable.FromAsync(this.Execute))
@@ -49,19 +54,28 @@ namespace VowpalWabbit.Azure.Worker
             this.disposable = conn.Connect();
         }
 
+        private void RoleEnvironment_Changed(object sender, RoleEnvironmentChangedEventArgs e)
+        {
+            var change = e.Changes
+                .OfType<RoleEnvironmentConfigurationSettingChange>()
+                .FirstOrDefault(c => c.ConfigurationSettingName == "StorageConnectionString");
+
+            if (change != null)
+                this.settingsBlob = GetSettingsBlockBlob();
+        }
+
         private async Task Execute(CancellationToken cancellationToken)
         {
             var uri = string.Empty;
             try
             {
-                var blob = GetSettingsBlockBlob();
-                uri = blob.Uri.ToString();
+                uri = this.settingsBlob.Uri.ToString();
 
                 // avoid not found exception
-                if (!await blob.ExistsAsync(cancellationToken))
+                if (!await this.settingsBlob.ExistsAsync(cancellationToken))
                     return;
 
-                if (blob.Properties != null)
+                if (this.settingsBlob.Properties != null)
                 {
                     // if downloadImmediately is set to false, the downloader
                     // will not download the blob on first check, and on second check
@@ -70,19 +84,19 @@ namespace VowpalWabbit.Azure.Worker
                     // other purposes and do not want to redownload.
 
                     // avoid not modified exception
-                    if (blob.Properties.ETag == this.blobEtag)
+                    if (this.settingsBlob.Properties.ETag == this.blobEtag)
                         return;
 
                     var currentBlobEtag = this.blobEtag;
-                    this.blobEtag = blob.Properties.ETag;
+                    this.blobEtag = this.settingsBlob.Properties.ETag;
                 }
 
                 // download
                 using (var ms = new MemoryStream())
                 {
-                    await blob.DownloadToStreamAsync(ms, cancellationToken);
+                    await this.settingsBlob.DownloadToStreamAsync(ms, cancellationToken);
 
-                    Trace.TraceInformation("Retrieved new blob for {0}", blob.Uri);
+                    Trace.TraceInformation("Retrieved new blob for {0}", this.settingsBlob.Uri);
 
                     var evt = this.Downloaded;
                     if (evt != null)
@@ -113,6 +127,8 @@ namespace VowpalWabbit.Azure.Worker
 
         public void Dispose()
         {
+            RoleEnvironment.Changed -= RoleEnvironment_Changed;
+
             if (this.disposable != null)
             {
                 this.disposable.Dispose();

@@ -85,7 +85,7 @@ namespace VowpalWabbit.Azure.Trainer
                     trackbackBlob.UploadTextAsync(data.TrackbackList),
                     stateBlob.UploadTextAsync(data.State));
 
-                var modelBlob = await ExportModel(container, data.Model, modelName);
+                var modelBlob = await ExportModel(container, data.Model, modelName, data.TrackbackList.Length);
 
                 // update the fast recovery state file
                 var latestState = container.GetBlockBlobReference(Learner.StateBlobName);
@@ -104,18 +104,20 @@ namespace VowpalWabbit.Azure.Trainer
             }
         }
 
-        private async Task<CloudBlockBlob> ExportModel(CloudBlobContainer container, byte[] model, string modelName)
+        private async Task<CloudBlockBlob> ExportModel(CloudBlobContainer container, byte[] model, string modelName, int numExamples)
         {
             var modelBlob = container.GetBlockBlobReference(modelName);
             await modelBlob.UploadFromByteArrayAsync(model, 0, model.Length);
 
             this.telemetry.TrackTrace(
-                string.Format("Model Save {0}", modelBlob.Uri),
+                $"Model Save {modelBlob.Uri}",
                 SeverityLevel.Information,
                 new Dictionary<string, string>
                 {
+
                     { "Size", model.Length.ToString() },
-                    { "Uri", modelBlob.Uri.ToString() }
+                    { "Uri", modelBlob.Uri.ToString() },
+                    { "Examples added", numExamples.ToString() }
                 });
 
             return modelBlob;
