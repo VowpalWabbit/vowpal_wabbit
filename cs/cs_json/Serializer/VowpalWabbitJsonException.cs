@@ -35,8 +35,14 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// The line number at which this error happened.
+        /// </summary>
         public int LineNumber { get; private set; }
 
+        /// <summary>
+        /// The character position at which this error happened.
+        /// </summary>
         public int LinePosition { get; private set; }
 
         /// <summary>

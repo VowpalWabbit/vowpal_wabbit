@@ -71,19 +71,35 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Contains evaluation result for constant policies and the currently learned policy.
+        /// </summary>
         public sealed class PoliciesPerformance
         {
             private float[] data;
 
+            /// <summary>
+            /// Initializes a new <see cref="PoliciesPerformance"/> instance.
+            /// </summary>
+            /// <param name="data">The performance data. Learned policy is at position 0.</param>
             public PoliciesPerformance(float[] data)
             {
                 this.data = data;
             }
 
+            /// <summary>
+            /// The performance of the learned policy.
+            /// </summary>
             public float LearnedPolicy { get { return this.data[0]; } }
 
+            /// <summary>
+            /// The number of constant policies evaluated.
+            /// </summary>
             public int NumConstantPolicies { get { return this.data.Length - 1; } }
 
+            /// <summary>
+            /// The performance of each constant policy.
+            /// </summary>
             public IEnumerable<float> ConstantPolicies
             {
                 get

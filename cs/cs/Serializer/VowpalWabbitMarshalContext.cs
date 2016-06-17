@@ -70,8 +70,15 @@ namespace VW.Serializer
         /// </summary>
         public StringBuilder StringExample { get; private set; }
 
+        /// <summary>
+        /// The VW string version of the label.
+        /// </summary>
         public string StringLabel { get; set; }
 
+        /// <summary>
+        /// Creates the VW string for this example.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             if (this.StringExample == null)
