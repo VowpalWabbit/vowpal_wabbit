@@ -1462,3 +1462,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_first.stderr
     pred-sets/ref/cbe_adf_first.predict
 
+# Test 132: train a poisson model
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict
+    train-sets/ref/poisson.train.stderr
+    pred-sets/ref/poisson.train.predict
+
+# Test 133: train a poisson model without invariant updates
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
+    train-sets/ref/poisson.train.normalized.stderr
+    pred-sets/ref/poisson.train.normalized.predict
