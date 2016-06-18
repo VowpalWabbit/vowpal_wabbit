@@ -1332,16 +1332,17 @@ vw* initialize(string s, io_buf* model)
 {
   int argc = 0;
   char** argv = get_argv_from_string(s,argc);
-
+  vw* ret = nullptr;
+  
   try
-  { return initialize(argc, argv, model);
-  }
+  { ret = initialize(argc, argv, model); }
   catch(...)
   { free_args(argc, argv);
     throw;
   }
-
+  
   free_args(argc, argv);
+  return ret;
 }
 
 vw* initialize(int argc, char* argv[], io_buf* model)
