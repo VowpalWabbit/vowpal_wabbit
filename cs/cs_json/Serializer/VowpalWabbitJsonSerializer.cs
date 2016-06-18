@@ -15,11 +15,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VW.Labels;
-using VW.Labels;
 using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class VowpalWabbitJsonParseState
     {
         public VowpalWabbit VW { get; set; }

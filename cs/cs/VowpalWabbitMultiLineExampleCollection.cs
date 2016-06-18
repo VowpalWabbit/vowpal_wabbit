@@ -133,6 +133,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The native VW instance.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction PredictInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {

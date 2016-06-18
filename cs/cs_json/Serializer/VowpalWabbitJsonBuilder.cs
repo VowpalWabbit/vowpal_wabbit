@@ -11,9 +11,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Linq;
-using VW.Labels;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 
@@ -101,8 +99,14 @@ namespace VW.Serializer
         /// </summary>
         public VowpalWabbitMarshalContext DefaultNamespaceContext { get; private set; }
 
+        /// <summary>
+        /// The index the label was assigned to for multi line examples.
+        /// </summary>
         public int LabelIndex { get; private set; }
 
+        /// <summary>
+        /// The label that was deserialized.
+        /// </summary>
         public ILabel Label { get; private set; }
 
         /// <summary>

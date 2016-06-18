@@ -15,6 +15,12 @@ using VW.Reflection;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Delegate defintion for feature object creation expressions.
+    /// </summary>
+    /// <param name="vw">An expression resolving to a VowpalWabbit instance.</param>
+    /// <param name="namespace">An expression resolving to a Namespace instance.</param>
+    /// <returns>An expression constructing a new Feature object.</returns>
     public delegate Expression NewFeatureExpressionDelegate(Expression vw, Expression @namespace);
 
     /// <summary>
@@ -78,6 +84,9 @@ namespace VW.Serializer
                 this.DenseFeatureValueElementType = null;
         }
 
+        /// <summary>
+        /// True if the type is nullable.
+        /// </summary>
         public bool IsNullable { get; set; }
 
         /// <summary>
@@ -98,16 +107,34 @@ namespace VW.Serializer
         /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// The namespace.
+        /// </summary>
         public string Namespace { get; set; }
 
+        /// <summary>
+        /// The feature group.
+        /// </summary>
         public char? FeatureGroup { get; set; }
 
+        /// <summary>
+        /// An optional method overriding the otherwise auto-resolved serialization method.
+        /// </summary>
         public MethodInfo OverrideSerializeMethod { get; set; }
 
+        /// <summary>
+        /// True if this feature should be enumerized.
+        /// </summary>
         public bool Enumerize { get; set; }
 
+        /// <summary>
+        /// True if an anchor element should be added at the beginning of a dense feature array.
+        /// </summary>
         public bool AddAnchor { get; set; }
 
+        /// <summary>
+        /// True if a dictionary should be build for this feature.
+        /// </summary>
         public bool Dictify { get; set; }
 
         /// <summary>
@@ -120,12 +147,24 @@ namespace VW.Serializer
         /// </summary>
         public List<Func<Expression, Expression>> ValueValidExpressionFactories { get; set; }
 
+        /// <summary>
+        /// The expression must create new Feature instances.
+        /// </summary>
         public NewFeatureExpressionDelegate FeatureExpressionFactory { get; set; }
 
+        /// <summary>
+        /// The element type of an enumerable feature type.
+        /// </summary>
         public Type DenseFeatureValueElementType { get; set; }
 
+        /// <summary>
+        /// Used to order feature serialization.
+        /// </summary>
         public int Order { get; set; }
 
+        /// <summary>
+        /// Configures string pre-processing for this feature.
+        /// </summary>
         public StringProcessing StringProcessing { get; set; }
     }
 }
