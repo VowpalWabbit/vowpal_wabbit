@@ -1471,3 +1471,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
     train-sets/ref/poisson.train.normalized.stderr
     pred-sets/ref/poisson.train.normalized.predict
+
+# Test 134: second order online learning
+{VW} --OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict
+    train-sets/ref/second_order.stderr
+    pred-sets/ref/second_order.predict
