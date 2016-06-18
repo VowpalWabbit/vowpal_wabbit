@@ -302,9 +302,15 @@ public:
 
   float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
   {
-    /*pred_per_pdate is ignored*/
 	  float exp_prediction = expf(prediction);
-	  return (label - exp_prediction) * update_scale;
+    if (label > 0)
+    {
+      return label * update_scale - log1p(exp_prediction*expm1(label * update_scale * pred_per_update)/label)/pred_per_update;
+    }
+    else
+    {
+      return - log1p(exp_prediction * update_scale * pred_per_update)/pred_per_update;
+    }
   }
 
   float getUnsafeUpdate(float prediction, float label,float update_scale)
