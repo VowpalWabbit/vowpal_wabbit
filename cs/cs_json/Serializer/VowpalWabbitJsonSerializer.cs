@@ -20,18 +20,33 @@ using VW.Serializer.Intermediate;
 namespace VW.Serializer
 {
     /// <summary>
-    /// 
+    /// The current JSON parse state.
     /// </summary>
     public sealed class VowpalWabbitJsonParseState
     {
+        /// <summary>
+        /// The native VW instance.
+        /// </summary>
         public VowpalWabbit VW { get; set; }
 
+        /// <summary>
+        /// The JSON reader.
+        /// </summary>
         public JsonReader Reader { get; set; }
 
+        /// <summary>
+        /// The VW example JSON builder.
+        /// </summary>
         public VowpalWabbitJsonBuilder JsonBuilder { get; set; }
 
+        /// <summary>
+        /// The current property path within the JSON.
+        /// </summary>
         public List<VowpalWabbitJsonParseContext> Path { get; set; }
 
+        /// <summary>
+        /// Triggers parsing at the current state of the <see cref="Reader"/> using the default namespace.
+        /// </summary>
         public void Parse()
         {
             using (var context = new VowpalWabbitMarshalContext(this.VW, this.JsonBuilder.DefaultNamespaceContext.ExampleBuilder))
@@ -41,12 +56,24 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Triggers parsing at the current state of the <see cref="Reader"/> using the given <paramref name="namespaceContext"/>.
+        /// </summary>
+        /// <param name="namespaceContext">The namespace the JSON should be marshalled into.</param>
+        /// <param name="ns">The namespace the JSON should be marshalled into.</param>
         public void Parse(VowpalWabbitMarshalContext namespaceContext, Namespace ns)
         {
             this.JsonBuilder.Parse(this.Path, namespaceContext, ns);
         }
     }
 
+    /// <summary>
+    /// Delegate definition for JSON parsing extension. E.g. if one wants to extract "_timestamp" or a like.
+    /// </summary>
+    /// <param name="state">The current parsing state.</param>
+    /// <param name="property">The property encountered.</param>
+    /// <returns>True if the extension handled this property, false otherwise.</returns>
+    /// <remarks>Only fires for "ignore prefixed" properties.</remarks>
     public delegate bool VowpalWabbitJsonExtension(VowpalWabbitJsonParseState state, string property);
 
     /// <summary>
@@ -67,7 +94,8 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJson"/> class.
         /// </summary>
-        /// <param name="vw">The VW native instance.</param>
+        /// <param name="vwPool">The VW native instance.</param>
+        /// <param name="referenceResolver">An optional reference resolver.</param>
         public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool, VowpalWabbitJsonReferenceResolver referenceResolver = null)
         {
             Contract.Requires(vwPool != null);
@@ -81,6 +109,10 @@ namespace VW.Serializer
             this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
         }
 
+        /// <summary>
+        /// Registers a parsing extension.
+        /// </summary>
+        /// <param name="extension">The extension to be rgistered.</param>
         public void RegisterExtension(VowpalWabbitJsonExtension extension)
         {
             this.extensions.Add(extension);
@@ -151,6 +183,10 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Creates the VW example, be it single or multi-line.
+        /// </summary>
+        /// <returns>The marshalled VW example.</returns>
         public VowpalWabbitExampleCollection CreateExamples()
         {
             lock (this.lockObject)
@@ -219,6 +255,11 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Returns the number of action dependent examples found within <paramref name="json"/>.
+        /// </summary>
+        /// <param name="json">The JSON to be inspected.</param>
+        /// <returns>Returns the number of action dependent examples.</returns>
         public static int GetNumberOfActionDependentExamples(string json)
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
@@ -227,6 +268,12 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Returns the number of action dependent examples found within <paramref name="reader"/>.
+        /// </summary>
+        /// <param name="reader">The JSON.</param>
+        /// <param name="multiProperty">The optional multi property name.</param>
+        /// <returns>Returns the number of action dependent examples.</returns>
         public static int GetNumberOfActionDependentExamples(JsonReader reader, string multiProperty = PropertyConfiguration.MultiPropertyDefault)
         {
             // handle the case when the reader is already positioned at JsonToken.StartObject

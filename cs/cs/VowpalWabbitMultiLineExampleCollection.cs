@@ -51,6 +51,9 @@ namespace VW
         /// </summary>
         public VowpalWabbitExample[] Examples { get; private set; }
 
+        /// <summary>
+        /// The number of feature this example holds.
+        /// </summary>
         public override ulong NumberOfFeatures
         {
             get { return this.numberOfFeatures; }
@@ -113,6 +116,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The VW instance that should be used for learning.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction LearnInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
@@ -159,6 +163,9 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// All labels this example holds.
+        /// </summary>
         public override IEnumerable<ILabel> Labels
         {
             get

@@ -156,7 +156,7 @@ namespace VW.Serializer
         /// Optional label, taking precedence over "_label" property found in <paramref name="reader"/>.
         /// If null, <paramref name="reader"/> will be inspected and the "_label" property used as label.
         /// </param>
-        /// <param name="specialPropertyAction">Action to be executed when sepcial properties are discovered.</param>
+        /// <param name="extensions">Action to be executed when special properties are discovered.</param>
         /// <returns>The VowpalWabbit native example.</returns>
         public void Parse(JsonReader reader, ILabel label = null, List<VowpalWabbitJsonExtension> extensions = null)
         {
@@ -629,12 +629,24 @@ namespace VW.Serializer
         }
     }
 
+    /// <summary>
+    /// A parsing context holding the current state during JSON parsing.
+    /// </summary>
     public sealed class VowpalWabbitJsonParseContext
     {
+        /// <summary>
+        /// The current marshalling context.
+        /// </summary>
         public VowpalWabbitMarshalContext Context { get; set; }
 
+        /// <summary>
+        /// The current namespace.
+        /// </summary>
         public Namespace Namespace { get; set; }
 
+        /// <summary>
+        /// The current JSON property being processed.
+        /// </summary>
         public string JsonProperty { get; set; }
     }
 }

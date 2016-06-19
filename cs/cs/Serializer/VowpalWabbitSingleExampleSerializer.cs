@@ -257,6 +257,9 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// The associated native instance.
+        /// </summary>
         public VowpalWabbit Native
         {
             get
@@ -265,6 +268,10 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Gets an already allocated instance from the example pool or creates a new one.
+        /// </summary>
+        /// <returns></returns>
         public VowpalWabbitExample GetOrCreateNativeExample()
         {
             return new VowpalWabbitExample(owner: this, example: this.vw.GetOrCreateNativeExample());

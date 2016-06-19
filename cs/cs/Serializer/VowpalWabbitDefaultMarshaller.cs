@@ -21,6 +21,9 @@ namespace VW.Serializer
     /// </summary>
     public sealed partial class VowpalWabbitDefaultMarshaller
     {
+        /// <summary>
+        /// Singleton default marshaller as it is stateless.
+        /// </summary>
         public static readonly VowpalWabbitDefaultMarshaller Instance = new VowpalWabbitDefaultMarshaller();
 
         /// <summary>

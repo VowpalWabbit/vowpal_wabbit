@@ -16,6 +16,9 @@ using VW.Serializer.Attributes;
 
 namespace VW
 {
+    /// <summary>
+    /// A wrapper for --multiworld_testing mode.
+    /// </summary>
     public sealed class VowpalWabbitMultiworldTesting : IDisposable
     {
         private VowpalWabbit<LearnedVsConstantPolicy> vw;
@@ -33,6 +36,13 @@ namespace VW
             this.vw = new VowpalWabbit<LearnedVsConstantPolicy>(settings);
         }
 
+        /// <summary>
+        /// Evaluates <paramref name="learnedAction"/> and <paramref name="numActions"/>x constants policies w.r.t. to <paramref name="label"/>.
+        /// </summary>
+        /// <param name="learnedAction">The learned action.</param>
+        /// <param name="numActions">The number constant policies to be evaluated.</param>
+        /// <param name="label">The label.</param>
+        /// <returns></returns>
         public PoliciesPerformance Evaluate(uint learnedAction, int numActions, ContextualBanditLabel label)
         {
             return new PoliciesPerformance(
@@ -42,6 +52,9 @@ namespace VW
                     VowpalWabbitPredictionType.Scalars));
         }
 
+        /// <summary>
+        /// The assocated VW instance.
+        /// </summary>
         public VowpalWabbit Native
         {
             get
@@ -110,7 +123,7 @@ namespace VW
         }
 
         /// <summary>
-        /// Must public for the serializer to work with.
+        /// Must be public for the serializer to work with it.
         /// </summary>
         [EditorBrowsableAttribute(EditorBrowsableState.Never)]
         public sealed class LearnedVsConstantPolicy
@@ -125,6 +138,9 @@ namespace VW
                 this.numConstantActions = numConstantActions;
             }
 
+            /// <summary>
+            /// The constant policies actions.
+            /// </summary>
             [Feature(FeatureGroup = 'f')]
             public IEnumerable<uint> Actions
             {

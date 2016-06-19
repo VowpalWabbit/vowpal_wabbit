@@ -112,7 +112,7 @@
     <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <TargetName>VowpalWabbit.Core</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <LinkKeyFile>..\vw_key.snk</LinkKeyFile>
@@ -343,9 +343,9 @@
   <Target Name="BeforeBuild" BeforeTargets="PrepareForBuild">
     <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyVersionAttribute\(&quot;.*&quot;\)" ReplacementText="AssemblyVersionAttribute(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
     <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyFileVersion\(&quot;.*&quot;\)" ReplacementText="AssemblyFileVersion(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
-    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*" ReplacementText="FileVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16"/>
-    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*" ReplacementText="ProductVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;"  Encoding="UTF-16"/>
-    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))"  Encoding="UTF-16"/>
-    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))"  Encoding="UTF-16"/>
+    <FileUpdate Files="Resource.rc" Regex="FileVersion&quot;.*" ReplacementText="FileVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
+    <FileUpdate Files="Resource.rc" Regex="ProductVersion&quot;.*" ReplacementText="ProductVersion&quot;, &quot;$(VowpalWabbitAssemblyVersion)&quot;" Encoding="UTF-16" />
+    <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
+    <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
   </Target>
 </Project>

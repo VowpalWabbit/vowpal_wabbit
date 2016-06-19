@@ -28,6 +28,23 @@ namespace VW.Serializer
     /// </summary>
     public sealed class FeatureExpression
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FeatureExpression"/> class.
+        /// </summary>
+        /// <param name="featureType">The type of the feature.</param>
+        /// <param name="name">The name of the feature.</param>
+        /// <param name="valueExpressionFactory">Factory to extract the value for a given feature from the example object (input argument).</param>
+        /// <param name="valueValidExpressionFactories">Factories to provide validation before invoking the expression created through <see cref="ValueExpressionFactory"/>.</param>
+        /// <param name="featureExpressionFactory">The expression must create new Feature instances.</param>
+        /// <param name="namespace">The namespace this feature belongs to.</param>
+        /// <param name="featureGroup">The feature group this feature belongs to.</param>
+        /// <param name="enumerize">If true the marshaller enumerates the feature (as in creates a 1-hot encoding).</param>
+        /// <param name="variableName">The variable name to be used in the generated code.</param>
+        /// <param name="order">Used to order feature serialization.</param>
+        /// <param name="addAnchor">True if an anchor element should be added at the beginning of a dense feature array.</param>
+        /// <param name="stringProcessing">Configures string pre-processing for this feature.</param>
+        /// <param name="overrideSerializeMethod">An optional method overriding the otherwise auto-resolved serialization method.</param>
+        /// <param name="dictify">True if a dictionary should be build for this feature.</param>
         public FeatureExpression(Type featureType,
             string name,
             Func<Expression, Expression> valueExpressionFactory,

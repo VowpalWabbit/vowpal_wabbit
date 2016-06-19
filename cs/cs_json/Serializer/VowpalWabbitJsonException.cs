@@ -20,7 +20,7 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJsonException"/> class.
         /// </summary>
-        /// <param name="path">The path as returned by <see cref="Newtonsoft.Json.JsonReader.Path"/>.</param>
+        /// <param name="reader">The reader used at deserialization time.</param>
         /// <param name="message">The message that describes the error.</param>
         public VowpalWabbitJsonException(JsonReader reader, string message)
              : base(message)

@@ -74,6 +74,9 @@ namespace VW.Serializer
             this.cacheRequests = new MemoryCache(cacheName + "Requests");
         }
 
+        /// <summary>
+        /// Monitoring statistics.
+        /// </summary>
         public Stats Statistics
         {
             get
@@ -201,6 +204,9 @@ namespace VW.Serializer
             internal bool DontDispose { get; set; }
         }
 
+        /// <summary>
+        /// Disposes hold resources.
+        /// </summary>
         public void Dispose()
         {
             if (this.cacheRequests != null)

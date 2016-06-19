@@ -36,6 +36,10 @@ namespace VW
             this.vw = vw;
         }
 
+        /// <summary>
+        /// Learns this example on the VW instance used for marshalling or the optionally passed on <paramref name="vw"/>.
+        /// </summary>
+        /// <param name="vw">The optional VW instance used for learning. Defaults to the one used for marshalling.</param>
         public void Learn(VowpalWabbit vw = null)
         {
             this.LearnInternal(vw ?? this.vw);

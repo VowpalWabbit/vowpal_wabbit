@@ -11,12 +11,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Constructs a marshalling schema based on string based configuration using 
+    /// this format: Property.Property.Property(Enumerize = true, Namespace = , ...)
+    /// </summary>
     public static class ConfigInspector
     {
         /// <summary>
