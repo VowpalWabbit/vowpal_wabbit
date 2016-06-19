@@ -1454,7 +1454,9 @@ void finish(vw& all, bool delete_all)
 
     cerr << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      cerr << endl << "total queries = " << all.sd->queries << endl;
+      cerr << endl << "total queries = " << all.sd->queries;
+    if (all.sd->overlapped_and_range_small > 0)
+      cerr << endl << "total overlapped and range small = " << all.sd->overlapped_and_range_small << endl;
     cerr << endl;
   }
 
