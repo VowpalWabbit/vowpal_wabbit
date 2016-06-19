@@ -1674,7 +1674,7 @@ void advance_from_known_actions(search_private& priv) {
   if (! priv.active_csoaa) return;
   if (priv.active_csoaa_verify > 0.) return;
   if (t >= priv.active_known.size()) return;
-  cdbg << "advance_from_known_actions t=" << t << " active_known.size()=" << priv.active_known.size() << " learn_a_idx=" << priv.learn_a_idx;
+  cdbg << "advance_from_known_actions t=" << t << " active_known.size()=" << priv.active_known.size() << " learn_a_idx=" << priv.learn_a_idx << endl;
   //cdbg_print_array(" active_known[t]", priv.active_known[t]);
   if (priv.learn_a_idx >= priv.active_known[t].size()) {
     cdbg << "advance_from_known_actions setting done_with_all_actions=true" << endl;
