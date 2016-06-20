@@ -140,9 +140,15 @@ class Tox(_test):
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-# Get the current version for the python package from the VERSION file
-with open(path.join(here, 'VERSION'), encoding='utf-8') as f:
-    version = f.readline().strip()
+# Get the current version for the python package from the configure.ac file
+version = '0.0.0'
+for config_path in [path.join(here, '..', 'configure.ac'), path.join(here, 'src', 'configure.ac')]:
+    try:
+        with open(config_path, encoding='utf-8') as f:
+            line = f.readline().strip()
+        version = line.split(',')[1].strip(' []')
+    except IOError:
+        continue
 
 setup(
     name='vowpalwabbit',
