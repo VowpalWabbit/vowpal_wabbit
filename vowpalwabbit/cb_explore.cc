@@ -382,14 +382,17 @@ base_learner* cb_explore_setup(vw& all)
       data.second_cs_label.costs.resize(num_actions);
       data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
       data.epsilon = 0.05f;
+	  sprintf(type_string, "%lu", data.cover_size);
+	  *all.file_options << " --cover " << type_string;
+
       if (vm.count("epsilon"))
 	data.epsilon = vm["epsilon"].as<float>();
-      sprintf(type_string, "%lu --epsilon %f", data.cover_size, data.epsilon);
-      *all.file_options << " --cover "<<type_string;
       data.cover_probs = v_init<float>();
       data.cover_probs.resize(num_actions);
       data.preds = v_init<uint32_t>();
       data.preds.resize(data.cover_size);
+	  sprintf(type_string, "%f", data.epsilon);
+	  *all.file_options << " --epsilon " << type_string;
       l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1);
     }
   else if (vm.count("bag"))

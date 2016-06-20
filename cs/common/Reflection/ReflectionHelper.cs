@@ -24,10 +24,10 @@ namespace VW.Reflection
     public static class ReflectionHelper
     {
         /// <summary>
-        ///
+        /// Compiles the supplied <paramref name="sourceExpression"/> to a callable function.
         /// </summary>
-        /// <param name="?"></param>
-        /// <returns></returns>
+        /// <param name="sourceExpression">The source expression to be compiled.</param>
+        /// <returns>A callable function.</returns>
         /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
         public static System.Delegate CompileToFunc<T>(this Expression<T> sourceExpression)
         {

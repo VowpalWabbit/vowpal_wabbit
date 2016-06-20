@@ -25,7 +25,7 @@ namespace VW
     /// <remarks>
     /// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
     /// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
-    /// </remarks>
+    /// </remarks> 
     public ref class VowpalWabbitBase abstract
     {
     private:

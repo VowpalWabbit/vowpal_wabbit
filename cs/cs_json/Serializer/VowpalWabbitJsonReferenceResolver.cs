@@ -1,21 +1,36 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitJsonReferenceResolver.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Text;
-using System.Threading.Tasks;
-using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Reference resolver for JSON.NET $id, $ref elements.
+    /// </summary>
     public sealed class VowpalWabbitJsonReferenceResolver : IDisposable
     {
+        /// <summary>
+        /// Monitoring statistics.
+        /// </summary>
         public sealed class Stats
         {
+            /// <summary>
+            /// The number of items currently cached.
+            /// </summary>
             public long ItemCount { get; internal set; }
 
+            /// <summary>
+            /// The number of outstanding requests to resolve a referencce.
+            /// </summary>
             public long NumberOfOpenRequests { get; internal set; }
         }
 
@@ -27,6 +42,13 @@ namespace VW.Serializer
         private readonly Func<string, CacheItemPolicy> cacheRequestItemPolicyFactory;
         private int numberOfOpenRequests;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitJsonReferenceResolver"/> instance.
+        /// </summary>
+        /// <param name="exampleComplete">A callback triggered when all outstanding references for a given example are resolved.</param>
+        /// <param name="cacheName">Optional <see cref="MemoryCache"/> name.</param>
+        /// <param name="cacheItemPolicyFactory">Optional cache policy for cached items. Defaults to 1 hour sliding expiration.</param>
+        /// <param name="cacheRequestItemPolicyFactory">Optional cache policy for resolution requets. Defaults to 1 hour sliding expiration.</param>
         public VowpalWabbitJsonReferenceResolver(
             Action<VowpalWabbitJsonSerializer> exampleComplete,
             string cacheName = null,
@@ -52,6 +74,9 @@ namespace VW.Serializer
             this.cacheRequests = new MemoryCache(cacheName + "Requests");
         }
 
+        /// <summary>
+        /// Monitoring statistics.
+        /// </summary>
         public Stats Statistics
         {
             get
@@ -179,6 +204,9 @@ namespace VW.Serializer
             internal bool DontDispose { get; set; }
         }
 
+        /// <summary>
+        /// Disposes hold resources.
+        /// </summary>
         public void Dispose()
         {
             if (this.cacheRequests != null)

@@ -14,15 +14,44 @@ namespace VW.Serializer
     /// </summary>
     public sealed class PropertyConfiguration
     {
+        /// <summary>
+        /// Default value for feature ignore prefix: '_'.
+        /// </summary>
         public const string FeatureIgnorePrefixDefault = "_";
+
+        /// <summary>
+        /// Default value for text property: '_text'.
+        /// </summary>
         public const string TextPropertyDefault = "_text";
+
+        /// <summary>
+        /// Default value for label property: '_label'.
+        /// </summary>
         public const string LabelPropertyDefault = "_label";
-        public const string LabelIndexPropertyDefault = "_labelIndex";
+
+        /// <summary>
+        /// Default value for label index property: '_labelindex'.
+        /// </summary>
+        public const string LabelIndexPropertyDefault = "_labelindex";
+
+        /// <summary>
+        /// Default value for label property prefix: '_label_';
+        /// </summary>
         public const string LabelPropertyPrefixDefault = "_label_";
+
+        /// <summary>
+        /// Default value for multi property: '_multi'.
+        /// </summary>
         public const string MultiPropertyDefault = "_multi";
 
+        /// <summary>
+        /// Default singleton holding the default configuration.
+        /// </summary>
         public static readonly PropertyConfiguration Default = new PropertyConfiguration();
 
+        /// <summary>
+        /// Initializes a new <see cref="PropertyConfiguration"/> instance.
+        /// </summary>
         public PropertyConfiguration()
         {
             this.FeatureIgnorePrefix = FeatureIgnorePrefixDefault;
@@ -70,11 +99,11 @@ namespace VW.Serializer
         /// <returns>True if <paramref name="property"/> is a special property, false otherwise.</returns>
         public bool IsSpecialProperty(string property)
         {
-            return property.Equals(TextProperty, StringComparison.Ordinal) ||
-                property.Equals(LabelProperty, StringComparison.Ordinal) ||
-                property.Equals(MultiProperty, StringComparison.Ordinal) ||
-                property.Equals(LabelIndexProperty, StringComparison.Ordinal) ||
-                property.StartsWith(LabelPropertyPrefixDefault, StringComparison.Ordinal);
+            return property.Equals(TextProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(LabelProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(MultiProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.Equals(LabelIndexProperty, StringComparison.OrdinalIgnoreCase) ||
+                property.StartsWith(LabelPropertyPrefixDefault, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

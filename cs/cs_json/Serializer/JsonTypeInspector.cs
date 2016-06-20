@@ -20,12 +20,10 @@ namespace VW.Serializer
     /// </summary>
     public static class JsonTypeInspector
     {
-        public static readonly ITypeInspector Default;
-
-        static JsonTypeInspector()
-        {
-            Default = new JsonTypeInspectorImpl();
-        }
+        /// <summary>
+        /// The singleton native instance.
+        /// </summary>
+        public static readonly ITypeInspector Default = new JsonTypeInspectorImpl();
 
         private sealed class JsonTypeInspectorImpl : ITypeInspector
         {

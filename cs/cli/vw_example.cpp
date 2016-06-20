@@ -10,6 +10,8 @@ license as described in the file LICENSE.
 
 namespace VW
 {
+    using namespace Labels;
+
     VowpalWabbitExample::VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example) :
         m_owner(owner), m_example(example), m_innerExample(nullptr)
     {
@@ -69,6 +71,31 @@ namespace VW
     bool VowpalWabbitExample::IsNewLine::get()
     {
         return example_is_newline(*m_example) != 0;
+    }
+
+    ILabel^ VowpalWabbitExample::Label::get()
+    {
+      ILabel^ label;
+      auto lp = m_owner->Native->m_vw->p->lp;
+      if (!memcmp(&lp, &simple_label, sizeof(lp)))
+        label = gcnew SimpleLabel();
+      else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
+        label = gcnew ContextualBanditLabel();
+      else if (!memcmp(&lp, &CB_EVAL::cb_eval, sizeof(lp)))
+        label = gcnew SimpleLabel();
+      else if (!memcmp(&lp, &COST_SENSITIVE::cs_label, sizeof(lp)))
+        label = gcnew SimpleLabel();
+      else
+        return nullptr;
+
+      // TODO:
+      //else if (!memcmp(&lp, &MULTICLASS::multilabel, sizeof(lp)))
+      //  label = gcnew MulticlassLabel;
+      //else if (!memcmp(&lp, &MC::multilabel, sizeof(lp)))
+
+      label->ReadFromExample(this->m_example);
+
+      return label;
     }
 
     void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)

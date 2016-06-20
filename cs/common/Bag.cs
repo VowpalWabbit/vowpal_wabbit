@@ -8,25 +8,59 @@ using System.Threading.Tasks;
 
 namespace VW
 {
+    /// <summary>
+    /// Interface to model simple bag.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IBag<T>
     {
+        /// <summary>
+        /// Try add <paramref name="item"/> to this bag.
+        /// </summary>
+        /// <param name="item">The item to add.</param>
+        /// <returns>True if succesful, false otherwise.</returns>
         bool TryAdd(T item);
 
+        /// <summary>
+        /// Remove and return one item from this bag.
+        /// </summary>
+        /// <returns>The item removed from the bag or default(T) if there is no item available.</returns>
         T Remove();
 
+        /// <summary>
+        /// Remove and return all items from this bag.
+        /// </summary>
+        /// <returns>The items removed from the gag.</returns>
         IEnumerable<T> RemoveAll();
 
+        /// <summary>
+        /// The number of items this bag contains.
+        /// </summary>
         int Count { get; }
     }
 
+    /// <summary>
+    /// Factory class for various bag implementations.
+    /// </summary>
     public static class Bag
     {
+        /// <summary>
+        /// Creates a simple bound or unbound, not thread-safe bag object.
+        /// </summary>
+        /// <typeparam name="T">The type of the items.</typeparam>
+        /// <param name="max">The maximum number of items this bag should hold.</param>
+        /// <returns>A new bag instance.</returns>
         public static IBag<T> Create<T>(int max = int.MaxValue)
         {
             return max == int.MaxValue ?
                 (IBag<T>)new BagImpl<T>() : new BoundedBagImpl<T>(max);
         }
 
+        /// <summary>
+        /// Creates an unbound thread-safe, lock free bag.
+        /// </summary>
+        /// <typeparam name="T">The type of the items.</typeparam>
+        /// <returns>A new bag instance.</returns>
         public static IBag<T> CreateLockFree<T>()
         {
             return new LockFreeBagImpl<T>();
