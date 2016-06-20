@@ -61,9 +61,8 @@ class vw(pylibvw.vw):
             s = ('-'+key) if len(key) == 1 else ('--'+key)
             if type(val) is not bool or val != True: s += ' ' + str(val)
             return s
-        l = [format(k,v) for k,v in kw.iteritems()]
+        l = [format(k,v) for k,v in kw.items()]
         if argString is not None: l = [argString] + l
-        #print ' '.join(l)
         pylibvw.vw.__init__(self,' '.join(l))
         self.finished = False
 
@@ -492,7 +491,7 @@ class example(pylibvw.example):
         ns = self.get_ns(ns)  # guaranteed to be a single character
         f = pylibvw.example.feature(self, ns.ord_ns, i)
         if self.setup_done:
-            f = (f - self.get_ft_offset()) / self.stride
+            f = int((f - self.get_ft_offset()) / self.stride)
         return f
 
     def feature_weight(self, ns, i):

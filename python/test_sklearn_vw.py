@@ -100,7 +100,7 @@ class TestVW:
         model = VW()
         model.fit(data.x, data.y)
         weights = model.get_coefs()
-        print weights.data
+        print(weights.data)
         assert np.allclose(weights.indices, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 116060])
 
     def test_get_intercept(self, data):

@@ -9,7 +9,7 @@ learnFromStrings = False
 def mini_vw(inputFile, numPasses, otherArgs):
     vw = pyvw.vw(otherArgs)
     for p in range(numPasses):
-        print 'pass', (p+1)
+        print('pass', (p+1))
         h = open(inputFile, 'r')
         for l in h.readlines():
             if learnFromStrings:
@@ -19,12 +19,13 @@ def mini_vw(inputFile, numPasses, otherArgs):
                 vw.learn(ex)
                 ex.finish()
         
-	h.close()
+        h.close()
+        
     vw.finish()
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print 'usage: mini_vw.py (inputFile) (#passes) (...other VW args...)'
+        print('usage: mini_vw.py (inputFile) (#passes) (...other VW args...)')
         exit()
     inputFile = sys.argv[1]
     numPasses = int(sys.argv[2])

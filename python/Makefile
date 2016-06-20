@@ -8,7 +8,8 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
-PYTHON_VERSION = 2.7
+# change this to 2.7 for Python 2.7
+PYTHON_VERSION = 3
 PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
 PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 

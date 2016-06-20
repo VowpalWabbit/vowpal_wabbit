@@ -104,7 +104,8 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 }
 
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str)
-{ example*ec = my_empty_example0(all, labelType);
+{
+  example*ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
   VW::parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
@@ -173,7 +174,8 @@ uint32_t ex_num_features(example_ptr ec, unsigned char ns)
 }
 
 uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
-{ return ec->feature_space[ns].indicies[i];
+{
+  return ec->feature_space[ns].indicies[i];
 }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i)
@@ -244,13 +246,18 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 }
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
-{ py::object objectKey, objectVal;
-  const py::object objectKeys = dict.iterkeys();
-  const py::object objectVals = dict.itervalues();
+{
+  //py::object objectKey, objectVal;
   unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
-  for (size_t u=0; u<ulCount; u++)
-  { objectKey = objectKeys.attr( "next" )();
-    objectVal = objectVals.attr( "next" )();
+  //PyObject* objectKeys = PyObject_GetIter(dict.keys().ptr());
+  //PyObject* objectVals = PyObject_GetIter(dict.values().ptr());
+
+  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
+  const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
+  for (size_t u=0; u<ulCount; ++u)
+  {
+    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
+    py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
 
     char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
     if (chCheckKey != 's') continue;

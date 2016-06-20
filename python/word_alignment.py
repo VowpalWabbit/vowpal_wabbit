@@ -62,11 +62,11 @@ class WordAligner(pyvw.SearchTask):
             for j0 in range(len(F)):
                 for l in range(3):   # max phrase length of 3
                     if j0+l >= len(F): break
-                    if covered.has_key(j0+l): break
+                    if j0+l in covered: break
 
                     id = len(examples)
                     examples.append( self.makeExample(E, F, i, j0, l) )
-                    spans.append( (alignmentError(A[i], range(j0,j0+l+1)), id, range(j0,j0+l+1)) )
+                    spans.append( (alignmentError(A[i], list(range(j0,j0+l+1))), id, list(range(j0,j0+l+1))) )
 
             sortedSpans = []
             for s in spans: sortedSpans.append(s)
@@ -91,11 +91,11 @@ class WordAligner(pyvw.SearchTask):
     
 
 
-print 'training LDF'
+print('training LDF')
 vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet -q ef -q ep")
 task = vw.init_search_task(WordAligner)
 for p in range(10):
     task.learn(my_dataset)
-print '====== test ======'
-print task.predict( ("the blue flower".split(), ([],[],[]), "la fleur bleue".split()) )
-print 'should have printed [[0], [2], [1]]'
+print('====== test ======')
+print(task.predict( ("the blue flower".split(), ([],[],[]), "la fleur bleue".split()) ))
+print('should have printed [[0], [2], [1]]')
