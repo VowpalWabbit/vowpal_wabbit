@@ -157,10 +157,9 @@ namespace VowpalWabbit.Azure
                     this.performanceCounters.Stage0_BatchesPerSec.Increment();
                     this.performanceCounters.Stage0_Batches_Total.Increment();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
-                    throw;
+                    this.telemetry.TrackException(ex);
                 }
             }
         }
