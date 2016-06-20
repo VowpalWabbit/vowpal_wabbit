@@ -397,6 +397,7 @@
     <ClInclude Include="noop.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
+    <ClInclude Include="OjaNewton.h" />
     <ClInclude Include="boosting.h" />
     <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
@@ -483,6 +484,7 @@
     <ClCompile Include="noop.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
+    <ClCompile Include="OjaNewton.cc" />
     <ClCompile Include="boosting.cc" />
     <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />

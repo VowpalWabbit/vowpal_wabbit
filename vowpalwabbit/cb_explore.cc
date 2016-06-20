@@ -312,7 +312,7 @@ namespace CB_EXPLORE{
       ss << temp_str;
       if(ec.pred.a_s[i].score > maxprob) {
 	maxprob = ec.pred.a_s[i].score;
-	maxid = i;
+	maxid = i+1;
       }
     }
 
