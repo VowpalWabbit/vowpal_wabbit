@@ -13,19 +13,75 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using VW.Labels;
+using System.Threading.Tasks;
 using VW.Labels;
 using VW.Serializer.Intermediate;
 
 namespace VW.Serializer
 {
     /// <summary>
+    /// The current JSON parse state.
+    /// </summary>
+    public sealed class VowpalWabbitJsonParseState
+    {
+        /// <summary>
+        /// The native VW instance.
+        /// </summary>
+        public VowpalWabbit VW { get; set; }
+
+        /// <summary>
+        /// The JSON reader.
+        /// </summary>
+        public JsonReader Reader { get; set; }
+
+        /// <summary>
+        /// The VW example JSON builder.
+        /// </summary>
+        public VowpalWabbitJsonBuilder JsonBuilder { get; set; }
+
+        /// <summary>
+        /// The current property path within the JSON.
+        /// </summary>
+        public List<VowpalWabbitJsonParseContext> Path { get; set; }
+
+        /// <summary>
+        /// Triggers parsing at the current state of the <see cref="Reader"/> using the default namespace.
+        /// </summary>
+        public void Parse()
+        {
+            using (var context = new VowpalWabbitMarshalContext(this.VW, this.JsonBuilder.DefaultNamespaceContext.ExampleBuilder))
+            {
+                var ns = new Namespace(this.VW);
+                this.Parse(context, ns);
+            }
+        }
+
+        /// <summary>
+        /// Triggers parsing at the current state of the <see cref="Reader"/> using the given <paramref name="namespaceContext"/>.
+        /// </summary>
+        /// <param name="namespaceContext">The namespace the JSON should be marshalled into.</param>
+        /// <param name="ns">The namespace the JSON should be marshalled into.</param>
+        public void Parse(VowpalWabbitMarshalContext namespaceContext, Namespace ns)
+        {
+            this.JsonBuilder.Parse(this.Path, namespaceContext, ns);
+        }
+    }
+
+    /// <summary>
+    /// Delegate definition for JSON parsing extension. E.g. if one wants to extract "_timestamp" or a like.
+    /// </summary>
+    /// <param name="state">The current parsing state.</param>
+    /// <param name="property">The property encountered.</param>
+    /// <returns>True if the extension handled this property, false otherwise.</returns>
+    /// <remarks>Only fires for "ignore prefixed" properties.</remarks>
+    public delegate bool VowpalWabbitJsonExtension(VowpalWabbitJsonParseState state, string property);
+
+    /// <summary>
     /// A deserializer from JSON to Vowpal Wabbit native examples.
     /// </summary>
     public sealed class VowpalWabbitJsonSerializer : IDisposable
     {
         private readonly IVowpalWabbitExamplePool vwPool;
-        private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
         private readonly VowpalWabbitJsonReferenceResolver referenceResolver;
 
@@ -33,21 +89,33 @@ namespace VW.Serializer
         private readonly object lockObject = new object();
         private bool ready = false;
         private List<Action> marshalRequests;
+        private List<VowpalWabbitJsonExtension> extensions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitJson"/> class.
         /// </summary>
-        /// <param name="vw">The VW native instance.</param>
+        /// <param name="vwPool">The VW native instance.</param>
+        /// <param name="referenceResolver">An optional reference resolver.</param>
         public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool, VowpalWabbitJsonReferenceResolver referenceResolver = null)
         {
             Contract.Requires(vwPool != null);
 
-            this.vwPool = vwPool;
-            this.referenceResolver = referenceResolver;
-            this.defaultMarshaller = VowpalWabbitDefaultMarshaller.Instance;
+            this.extensions = new List<VowpalWabbitJsonExtension> { this.HandleMultiProperty };
             this.jsonSerializer = new JsonSerializer();
 
-            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
+            this.vwPool = vwPool;
+            this.referenceResolver = referenceResolver;
+
+            this.ExampleBuilder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
+        }
+
+        /// <summary>
+        /// Registers a parsing extension.
+        /// </summary>
+        /// <param name="extension">The extension to be rgistered.</param>
+        public void RegisterExtension(VowpalWabbitJsonExtension extension)
+        {
+            this.extensions.Add(extension);
         }
 
         /// <summary>
@@ -115,6 +183,10 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Creates the VW example, be it single or multi-line.
+        /// </summary>
+        /// <returns>The marshalled VW example.</returns>
         public VowpalWabbitExampleCollection CreateExamples()
         {
             lock (this.lockObject)
@@ -183,6 +255,11 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Returns the number of action dependent examples found within <paramref name="json"/>.
+        /// </summary>
+        /// <param name="json">The JSON to be inspected.</param>
+        /// <returns>Returns the number of action dependent examples.</returns>
         public static int GetNumberOfActionDependentExamples(string json)
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
@@ -191,6 +268,12 @@ namespace VW.Serializer
             }
         }
 
+        /// <summary>
+        /// Returns the number of action dependent examples found within <paramref name="reader"/>.
+        /// </summary>
+        /// <param name="reader">The JSON.</param>
+        /// <param name="multiProperty">The optional multi property name.</param>
+        /// <returns>Returns the number of action dependent examples.</returns>
         public static int GetNumberOfActionDependentExamples(JsonReader reader, string multiProperty = PropertyConfiguration.MultiPropertyDefault)
         {
             // handle the case when the reader is already positioned at JsonToken.StartObject
@@ -224,6 +307,54 @@ namespace VW.Serializer
             return 0;
         }
 
+        private bool HandleMultiProperty(VowpalWabbitJsonParseState state, string property)
+        {
+            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+            if (!property.Equals(multiPropertyName, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var reader = state.Reader;
+            if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
+                throw new VowpalWabbitJsonException(reader, "Expected start array for '" + multiPropertyName + "'");
+
+            if (this.ExampleBuilders == null)
+                this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
+
+            while (reader.Read())
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.StartObject:
+                        VowpalWabbitJsonBuilder builder = null;
+
+                        try
+                        {
+                            builder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
+                            this.ExampleBuilders.Add(builder);
+                        }
+                        catch (Exception)
+                        {
+                            builder.Dispose();
+                            throw;
+                        }
+
+                        // pass the label to the selected example
+                        builder.Parse(reader, index != null && index == this.ExampleBuilders.Count - 1 ? label : null, this.extensions);
+                        break;
+                    case JsonToken.EndArray:
+                        return true;
+                    default:
+                        throw new VowpalWabbitJsonException(reader, "Unexpected token: " + reader.TokenType);
+                }
+            }
+
+            throw new VowpalWabbitJsonException(reader, "Unexpected end");
+        }
+
+        // TODO: keeping it local might be nicer...
+        private int? index;
+        private ILabel label;
+
         /// <summary>
         /// Parses the example.
         /// </summary>
@@ -235,51 +366,11 @@ namespace VW.Serializer
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Parse(JsonReader reader, ILabel label = null, int? index = null)
         {
-            var multiPropertyName = this.vwPool.Native.Settings.PropertyConfiguration.MultiProperty;
+            this.index = index;
+            this.label = label;
 
             // only pass the label if it's not targeted at a particular index
-            this.ExampleBuilder.Parse(reader, index == null ? label : null,
-                propertyName =>
-                {
-                    if (propertyName != multiPropertyName)
-                        return false;
-
-                    if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-                        throw new VowpalWabbitJsonException(reader, "Expected start array for '" + multiPropertyName + "'");
-
-                    if (this.ExampleBuilders == null)
-                        this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
-
-                    while (reader.Read())
-                    {
-                        switch (reader.TokenType)
-                        {
-                            case JsonToken.StartObject:
-                                VowpalWabbitJsonBuilder builder = null;
-
-                                try
-                                {
-                                    builder = new VowpalWabbitJsonBuilder(this, this.vwPool, this.defaultMarshaller, this.jsonSerializer);
-                                    this.ExampleBuilders.Add(builder);
-                                }
-                                catch (Exception)
-                                {
-                                    builder.Dispose();
-                                    throw;
-                                }
-
-                                // pass the label to the selected example
-                                builder.Parse(reader, index != null && index == this.ExampleBuilders.Count - 1 ? label : null);
-                                break;
-                            case JsonToken.EndArray:
-                                return true;
-                            default:
-                                throw new VowpalWabbitJsonException(reader, "Unexpected token: " + reader.TokenType);
-                        }
-                    }
-
-                    throw new VowpalWabbitJsonException(reader, "Unexpected end");
-                });
+            this.ExampleBuilder.Parse(reader, index == null ? label : null, this.extensions);
 
             // check if the outer example foudn a label
             if (this.ExampleBuilder.Label != null)
@@ -310,7 +401,7 @@ namespace VW.Serializer
                     try
                     {
                         // mark shared example as shared
-                        this.defaultMarshaller.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
+                        VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
 
                         sharedExample = this.ExampleBuilder.CreateExample();
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)

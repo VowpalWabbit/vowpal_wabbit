@@ -13,7 +13,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test1()
         {
@@ -27,7 +26,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"checking predictions as well")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test2()
@@ -49,7 +47,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"without -d, training only")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test3()
         {
@@ -63,7 +60,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"same, with -d")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test4()
@@ -79,7 +75,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"add -q .., adaptive, and more (same input, different outputs)")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test5()
         {
@@ -93,7 +88,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"run predictions on Test 4 model")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test6()
@@ -115,7 +109,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"using normalized adaptive updates and a low --power_t")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test7()
         {
@@ -129,7 +122,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"predicts on test 7 model")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test8()
@@ -151,7 +143,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"label-dependent features with csoaa_ldf")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test9()
         {
@@ -165,7 +156,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"label-dependent features with wap_ldf")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test10()
@@ -181,7 +171,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"one-against-all")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test11()
         {
@@ -195,7 +184,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Error Correcting Tournament")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test12()
@@ -211,9 +199,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Run search (dagger) on wsj_small for 6 passes extra features")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test13()
         {
@@ -228,9 +214,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Run search (searn) on wsj_small for 6 passes extra features")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test14()
         {
@@ -244,7 +228,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"LBFGS on zero derivative input")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test15()
@@ -260,9 +243,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"LBFGS early termination")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test16()
         {
@@ -277,9 +258,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Run LDA with 100 topics on 1000 Wikipedia articles")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test17()
         {
@@ -293,7 +272,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Run search on seq_small for 12 passes, 4 passes per policy")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test18()
@@ -309,7 +287,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"neural network 3-parity with 2 hidden units")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test19()
         {
@@ -323,7 +300,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"neural network 3-parity with 2 hidden units (predict)")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test20()
@@ -345,7 +321,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cubic features -- on a parity test case")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test21()
         {
@@ -360,7 +335,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"matrix factorization -- training")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test22()
         {
@@ -374,7 +348,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"matrix factorization -- testing")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test23()
@@ -396,7 +369,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"active-learning -- training")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test24()
         {
@@ -411,9 +383,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"bagging -- training regressor")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test25()
         {
@@ -428,9 +398,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"bagging -- predicting with bagged regressor")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test26()
         {
@@ -451,7 +419,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"bagging -- binary classifiers")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test27()
         {
@@ -465,7 +432,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"bagging -- predict with bagged classifier")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test28()
@@ -487,7 +453,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"affix features")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test29()
         {
@@ -501,7 +466,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"train --l1 regularized model")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test30()
@@ -517,9 +481,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train model using --feature_mask")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test31()
         {
@@ -534,9 +496,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train model using --feature_mask and --initial_regressor")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test32()
         {
@@ -557,9 +517,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train model for topk recommender")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test33()
         {
@@ -574,9 +532,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train model for topk recommender")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test34()
         {
@@ -597,7 +553,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"non-centered data-set where constant >> 0")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test35()
         {
@@ -611,7 +566,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"new option: --progress w/ integer arg")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test36()
@@ -627,7 +581,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"new-option: --progress w/ floating-point arg")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test37()
         {
@@ -641,7 +594,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"--nn without --quiet to avoid nn regressions")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test38()
@@ -657,9 +609,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb with dr")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test39()
         {
@@ -674,9 +624,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb with ips")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test40()
         {
@@ -691,9 +639,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb with dm")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test41()
         {
@@ -707,7 +653,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"--lda --passes 2 hang regression")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test42()
@@ -723,7 +668,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"search sequence labeling, non-ldf train")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test43()
         {
@@ -737,7 +681,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"search sequence labeling, non-ldf test")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test44()
@@ -759,7 +702,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"make sure that history works")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test45()
         {
@@ -774,7 +716,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"search sequence labeling, ldf train")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test46()
         {
@@ -788,7 +729,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"search sequence labeling, ldf test")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test47()
@@ -810,7 +750,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"search sequence SPAN labeling BIO, non-ldf train, no rollouts")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test48()
         {
@@ -824,7 +763,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"search sequence SPAN labeling BIO, non-ldf test")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test49()
@@ -846,7 +784,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"search sequence SPAN labeling BILOU, non-ldf train")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test50()
         {
@@ -860,7 +797,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"search sequence SPAN labeling BILOU, non-ldf test")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test51()
@@ -882,7 +818,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"silly test for ""argmax"" task")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test52()
         {
@@ -897,9 +832,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"(holdout-broken regression)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test53()
         {
@@ -913,7 +846,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"stagewise poly with exponent 0.25")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test54()
@@ -929,7 +861,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"stagewise poly with exponent 1.0")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test55()
         {
@@ -943,7 +874,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"stagewise poly with exponent 0.25 and doubling batches")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test56()
@@ -959,7 +889,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"stagewise poly with exponent 1.0 and doubling batches")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test57()
         {
@@ -973,7 +902,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"library test, train the initial model")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test58()
@@ -989,9 +917,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"library test, run ezexample_predict")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test59()
         {
@@ -1006,9 +932,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"empty test, bad builds (without make clean)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test60()
         {
@@ -1023,9 +947,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"daemon test")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test61()
         {
@@ -1039,7 +961,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"SVM linear kernel")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test62()
@@ -1055,7 +976,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"SVM polynomial kernel")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test63()
         {
@@ -1069,7 +989,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"SVM rbf kernel")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test64()
@@ -1085,7 +1004,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Run search (dagger) on an entity-relation recognitions data set,")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test65()
         {
@@ -1100,9 +1018,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Train a depenency parser with search (dagger)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test66()
         {
@@ -1116,7 +1032,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"classification with data from dictionaries")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test67()
@@ -1132,9 +1047,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Search for multiclass classification")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test68()
         {
@@ -1148,7 +1061,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"(see Test 43/Test 44): search sequence labeling, with selective branching")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test69()
@@ -1170,7 +1082,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"(see Test 46/47) search sequence labeling, ldf test, with selective branching")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test70()
         {
@@ -1191,9 +1102,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"autolink")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test71()
         {
@@ -1208,7 +1117,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train FTRL-Proximal")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test72()
         {
@@ -1222,7 +1130,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"test FTRL-Proximal")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test73()
@@ -1244,7 +1151,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb evaluation")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test74()
         {
@@ -1258,7 +1164,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Log_multi")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test75()
@@ -1274,7 +1179,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cbify, epsilon-greedy")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test76()
         {
@@ -1288,7 +1192,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"cbify, tau first")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test77()
@@ -1304,7 +1207,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cbify, bag")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test78()
         {
@@ -1318,7 +1220,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"cbify, cover")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test79()
@@ -1334,7 +1235,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"lrq empty namespace")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test80()
         {
@@ -1349,7 +1249,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train FTRL-PiSTOL")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test81()
         {
@@ -1363,7 +1262,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"test FTRL-PiSTOL")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test82()
@@ -1385,7 +1283,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"check redefine functionality")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test83()
         {
@@ -1399,7 +1296,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"check cb_adf")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test84()
@@ -1415,7 +1311,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"check multilabel_oaa")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test85()
         {
@@ -1429,7 +1324,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"check --csoaa_rank on csoaa_ldf")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test86()
@@ -1445,7 +1339,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"check --rank_all on csoaa_ldf")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test87()
         {
@@ -1460,7 +1353,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"named labels at training time")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test88()
         {
@@ -1474,7 +1366,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"named labels at prediction")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test89()
@@ -1496,9 +1387,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"named labels at training time (csoaa)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test90()
         {
@@ -1513,9 +1402,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"named labels at prediction (csoaa)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test91()
         {
@@ -1536,9 +1423,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"check -q :: and -oaa inverse hash")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test92()
         {
@@ -1552,7 +1437,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"check cb_adf with doubly robust option")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test93()
@@ -1568,7 +1452,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"experience replay version of test 1")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test94()
         {
@@ -1583,9 +1466,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"named labels at training time (csoaa) with experience replay")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test95()
         {
@@ -1600,9 +1481,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"backwards compatibility")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test96()
         {
@@ -1616,7 +1495,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test97()
@@ -1632,9 +1510,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"checking predictions as well")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test98()
         {
@@ -1655,9 +1531,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"checking predictions with testing")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test99()
         {
@@ -1678,7 +1552,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"action costs, no rollout")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test100()
         {
@@ -1693,9 +1566,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"active cover")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test101()
         {
@@ -1710,9 +1581,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"active cover (predict)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test102()
         {
@@ -1733,9 +1602,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"active cover oracular")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test103()
         {
@@ -1749,7 +1616,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"check cb_adf")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test104()
@@ -1765,9 +1631,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train FTRL-Proximal early stopping")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test105()
         {
@@ -1782,9 +1646,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"test FTRL-Proximal early stopping prediction")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test106()
         {
@@ -1805,7 +1667,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"train FTRL-Proximal no early stopping")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test107()
         {
@@ -1819,7 +1680,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"test FTRL-Proximal no early stopping")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test108()
@@ -1841,7 +1701,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"--probabilities --oaa")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test109()
         {
@@ -1855,7 +1714,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"--probabilities --csoaa_ldf=mc")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test110()
@@ -1871,9 +1729,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Train a depenency parser with neural network and one_learner approach (lols)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test111()
         {
@@ -1888,9 +1744,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Train a depenency parser with cost_to_go")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test112()
         {
@@ -1904,7 +1758,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Predictions with confidences")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test113()
@@ -1920,7 +1773,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Over size example test")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test114()
         {
@@ -1934,7 +1786,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Long Line test")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test115()
@@ -1950,7 +1801,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"MWT test")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test116()
         {
@@ -1964,7 +1814,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"Audit regressor of ftrl model (from test #107)")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test117()
@@ -1986,9 +1835,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Audit regressor of csoaa model (from test #95)")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test118()
         {
@@ -2009,9 +1856,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"MWT learn test")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test119()
         {
@@ -2026,9 +1871,7 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"MWT learn exclude test")]
 
-
 		[Ignore]
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test120()
         {
@@ -2042,7 +1885,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"cb_explore")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test121()
@@ -2058,7 +1900,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"Predictions with confidences after training")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test122()
         {
@@ -2073,7 +1914,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb_eval save/load #1")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test123()
         {
@@ -2087,7 +1927,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"cb_eval save/load #2")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test124()
@@ -2109,7 +1948,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"arc-eager trasition-based dependency parser")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test125()
         {
@@ -2124,7 +1962,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"recall tree hello world")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test126()
         {
@@ -2138,7 +1975,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"recall_tree hello world predict-from-saved-model")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test127()
@@ -2160,7 +1996,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb_explore_adf with epsilon-greedy exploration")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test128()
         {
@@ -2174,7 +2009,6 @@ namespace cs_unittest
 
         [TestMethod]
         [Description(@"cb_explore_adf with softmax exploration")]
-
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test129()
@@ -2190,7 +2024,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb_explore_adf with bagging exploration")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test130()
         {
@@ -2205,7 +2038,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cb_explore_adf with explore-first exploration")]
 
-
 		[TestCategory("Command Line")]
         public void CommandLine_Test131()
         {
@@ -2217,6 +2049,39 @@ namespace cs_unittest
 				"pred-sets/ref/cbe_adf_first.predict");
         }
 
+        [TestMethod]
+        [Description(@"cb explore adf")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test132()
+        {
+            RunTestsHelper.ExecuteTest(
+				132,
+				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
+				"train-sets/cb_adf_crash_1.data",
+				"train-sets/ref/cb_adf_crash1.stderr",
+				"");
+        }
+
+        [TestMethod]
+        [Description(@"cb explore adf predict")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test133()
+        {
+            RunTestsHelper.ExecuteTest(
+				132,
+				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
+				"train-sets/cb_adf_crash_1.data",
+				"train-sets/ref/cb_adf_crash1.stderr",
+				"");
+            RunTestsHelper.ExecuteTest(
+				133,
+				"-d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t",
+				"train-sets/cb_adf_crash_2.data",
+				"train-sets/ref/cb_adf_crash2.stderr",
+				"");
+        }
 
     }
 }

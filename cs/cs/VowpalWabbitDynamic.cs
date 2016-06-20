@@ -100,6 +100,13 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Learns from the given example and returns the current prediction.
+        /// </summary>
+        /// <param name="example">The example to learn.</param>
+        /// <param name="predictionFactory">The prediction factory used to extract the prediction. Use <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="label">The optional label for this <paramref name="example"/>.</param>
+        /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         public TPrediction Learn<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
@@ -111,6 +118,15 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// Predict for the given example and return the current prediction for it.
+        /// </summary>
+        /// <typeparam name="TPrediction"></typeparam>
+        /// <param name="example"></param>
+        /// <param name="predictionFactory"></param>
+        /// <param name="index">The optional index of the example to evaluate within </param>
+        /// <param name="label">The optional label for the example to evaluate.</param>
+        /// <returns></returns>
         public TPrediction Predict<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);

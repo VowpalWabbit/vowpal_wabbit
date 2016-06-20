@@ -73,6 +73,8 @@ namespace VW
         /// </summary>
         /// <param name="size">The number of features to pre-allocate.</param>
         void PreAllocate(int size);
+
+        property size_t FeatureCount { size_t get(); }
     };
 
     /// <summary>

@@ -1476,3 +1476,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict
     train-sets/ref/second_order.stderr
     pred-sets/ref/second_order.predict
+
+# Test 135: cb explore adf
+{VW} -d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05
+    train-sets/ref/cb_adf_crash1.stderr
+
+# Test 136: cb explore adf predict
+{VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
+    train-sets/ref/cb_adf_crash2.stderr
+

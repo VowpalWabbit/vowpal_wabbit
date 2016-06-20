@@ -76,7 +76,9 @@ namespace VW.Serializer
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="feature">The feature description.</param>
-        /// <param name="value">The feature value.</param>
+        /// <param name="value">The feature values.</param>
+        /// <param name="offset">Start offset for feature values.</param>
+        /// <param name="length">Length of feature values.</param>
         public unsafe void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, <#=t#>[] value, int offset, int length)
         {
             if (value == null)

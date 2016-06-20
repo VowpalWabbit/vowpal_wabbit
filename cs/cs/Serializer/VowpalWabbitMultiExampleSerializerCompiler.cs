@@ -9,8 +9,18 @@ using VW.Reflection;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Factory class to create <see cref="IVowpalWabbitSerializer{TExample}"/>.
+    /// </summary>
     public static class VowpalWabbitMultiExampleSerializerCompiler
     {
+        /// <summary>
+        /// Creates a serializer for <typeparamref name="TExample"/> based on <paramref name="settings"/> and <paramref name="schema"/>,
+        /// </summary>
+        /// <typeparam name="TExample">The example type.</typeparam>
+        /// <param name="settings">Settings for inspection.</param>
+        /// <param name="schema">The schema used for serializer creation.</param>
+        /// <returns>If the schema is valid a compiler is created, otherwise null.</returns>
         public static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
         {
             // check for _multi

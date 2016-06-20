@@ -15,10 +15,12 @@ namespace cs_unittest
         [TestMethod]
         public void TestArguments()
         {
-            using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--cb_adf --rank_all --interact ud") { Verbose = true }))
+            using (var vw = new VowpalWabbit(new VowpalWabbitSettings("--cb_explore_adf --epsilon 0.3 --interact ud") { Verbose = true }))
             {
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_adf"));
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--rank_all"));
+                // --cb_explore_adf --epsilon 0.3 --interact ud --cb_adf--csoaa_ldf multiline --csoaa_rank
+                Console.WriteLine(vw.Arguments.CommandLine);
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_explore_adf"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--epsilon 0.3"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--interact ud"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_ldf multiline"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));
@@ -27,12 +29,18 @@ namespace cs_unittest
 
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
+                Console.WriteLine(vw.Arguments.CommandLine);
+                // --no_stdin--max_prediction 1--bit_precision 18--cb_explore_adf--epsilon 0.300000--cb_adf--cb_type ips --csoaa_ldf multiline--csoaa_rank--interact ud
+
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--no_stdin"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--max_prediction 1"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--bit_precision 18"));
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_adf"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_explore_adf"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--epsilon 0.3"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--interact ud"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_ldf multiline"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_type ips"));
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--rank_all"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_ldf multiline"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--interact ud"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));

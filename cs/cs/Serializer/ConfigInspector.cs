@@ -11,12 +11,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// Constructs a marshalling schema based on string based configuration using 
+    /// this format: Property.Property.Property(Enumerize = true, Namespace = , ...)
+    /// </summary>
     public static class ConfigInspector
     {
         /// <summary>
@@ -38,6 +40,13 @@ namespace VW.Serializer
                 ",
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
+        /// <summary>
+        /// Creates a <see cref="Schema"/> for the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type to be inspected.</param>
+        /// <param name="config">An optional config restricting the properties to be used as features.</param>
+        /// <param name="warnings">An otpional callback to signal warnings during inspection.</param>
+        /// <returns>Returns a schema describing the feature marshalling.</returns>
         public static Schema CreateSchema(Type type, string config, Action<string> warnings = null)
         {
             if (warnings == null)

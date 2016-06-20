@@ -8,6 +8,9 @@
 
 namespace VW.Serializer
 {
+    /// <summary>
+    /// String constants used by VW.
+    /// </summary>
     public static class VowpalWabbitConstants
     {
         /// <summary>

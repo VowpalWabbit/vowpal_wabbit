@@ -177,6 +177,11 @@ namespace VW.Serializer
             return this.Create(vw);
         }
 
+        /// <summary>
+        /// Creates a serializer for <typeparamref name="TExample"/> bound to <paramref name="vw"/>.
+        /// </summary>
+        /// <param name="vw">The VW native instance examples will be assocated with.</param>
+        /// <returns>A serializer for <typeparamref name="TExample"/>.</returns>
         public VowpalWabbitSingleExampleSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSingleExampleSerializer<TExample>(this, vw);

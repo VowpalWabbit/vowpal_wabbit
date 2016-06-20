@@ -21,6 +21,9 @@ namespace VW.Serializer
     /// </summary>
     public sealed partial class VowpalWabbitDefaultMarshaller
     {
+        /// <summary>
+        /// Singleton default marshaller as it is stateless.
+        /// </summary>
         public static readonly VowpalWabbitDefaultMarshaller Instance = new VowpalWabbitDefaultMarshaller();
 
         /// <summary>
@@ -298,7 +301,7 @@ namespace VW.Serializer
         /// <param name="context">The marshalling context.</param>
         /// <param name="ns">The namespace description.</param>
         /// <param name="featureVisits"></param>
-        public void MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
+        public int MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Action featureVisits)
         {
             try
             {
@@ -322,6 +325,8 @@ namespace VW.Serializer
                         stringExample.Length = position - ns.NamespaceString.Length;
                     }
                 }
+
+                return (int)context.NamespaceBuilder.FeatureCount;
             }
             finally
             {
