@@ -972,7 +972,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
                                           cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl; */
       CS::wclass& wc = ec.l.cs.costs[k];
       priv.active_known[cur_t].push_back(wc);
-      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << endl;
+      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << " max_pred=" << wc.max_pred << " min_pred=" << wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << " is_range_large=" << wc.is_range_large << endl;
           //query_needed=" << ec.l.cs.costs[k].query_needed << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl;
     }
   }
