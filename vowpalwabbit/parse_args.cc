@@ -705,6 +705,7 @@ void parse_feature_tweaks(vw& all)
     vector<string> ignore = vm["ignore"].as< vector<string> >();
     for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
     { *i = spoof_hex_encoded_namespaces(*i);
+      *all.file_options << " --ignore " << *i;
       for (string::const_iterator j = i->begin(); j != i->end(); j++)
         all.ignore[(size_t)(unsigned char)*j] = true;
 
