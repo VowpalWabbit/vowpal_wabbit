@@ -1,0 +1,4 @@
+include README.rst *.txt
+recursive-include src *
+recursive-include vowpalwabbit *
+global-exclude *.o *.exe *.pyc

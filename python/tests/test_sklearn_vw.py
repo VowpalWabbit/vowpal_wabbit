@@ -2,7 +2,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 
-from sklearn_vw import VW, VWClassifier, VWRegressor, tovw
+from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
 from sklearn.utils.validation import NotFittedError
 from scipy.sparse import csr_matrix
