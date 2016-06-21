@@ -22,8 +22,7 @@ script:
   - make test_gcov --always-make
   - cd python
   - source activate test-python27
-  - pip install check-manifest pytest readme_renderer
-  - check-manifest -v --ignore Makefile,PACKAGE.rst,*.cc,tox.ini,tests*,examples*,src*
+  - pip install pytest readme_renderer
   - python setup.py check -mrs
   - python setup.py install
   - py.test tests
