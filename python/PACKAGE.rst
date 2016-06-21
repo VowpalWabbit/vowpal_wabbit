@@ -7,20 +7,31 @@ The following instructions assume you are working from the python directory.
 Deployment Process
 ------------------
 
-0) push changes (increment the version in configure.ac file, PyPI will not overwrite a package using the same version)
-1) Make sure code passes all tests under supported environments
+0) Commit changes (increment the version in configure.ac file, PyPI will not overwrite a package using the same version)
+1) Lint the code:
+   .. code-block:: bash
+
+       $ pylint -f colorized vowpalwabbit
+
+2) Make sure code passes all tests under supported environments
 
     .. code-block:: bash
 
         $ python setup.py test
 
-2) Create dist folder for package
+3) Update MANIFEST.in to include any additional files then check it to make sure the dist has the right data in it
+
+    .. code-block:: bash
+
+        $ check-manifest --ignore Makefile,PACKAGE.rst,*.cc,tox.ini,tests*,examples*,src*
+
+4) Create dist folder for package
 
     .. code-block:: bash
 
         $ python setup.py sdist
 
-3) Upload package to PyPI
+5) Upload package to PyPI
 
     You should have twine installed and configured and your PyPI / test PyPI user should have access to the package
     <VERSION> corresponds to the new version in the configure.ac file
@@ -30,9 +41,11 @@ Deployment Process
     .. code-block:: bash
 
         $ twine upload -r test dist/*
+        $ cd /tmp
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
         $ pip install -i https://testpypi.python.org/simple/ vowpalwabbit
+        $ python -c 'from vowpalwabbit import pyvw'
         $ deactivate
         $ rm -rf test_vw_package
 
@@ -42,7 +55,7 @@ Deployment Process
 
         $ twine upload dist dist/vowpalwabbit-<VERSION>.tar.gz
 
-4) Cleanup build and packaging artifacts / directories
+6) Cleanup build and packaging artifacts / directories
 
     .. code-block:: bash
 
