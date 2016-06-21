@@ -152,7 +152,7 @@ namespace VowpalWabbit.Azure.Worker
                 if (checkpointString.Contains(":"))
                 {
                     TimeSpan interval;
-                    if (!TimeSpan.TryParse(checkpointString, CultureInfo.InvariantCulture, out interval))
+                    if (TimeSpan.TryParse(checkpointString, CultureInfo.InvariantCulture, out interval))
                         return new IntervalCheckpointPolicy(interval);
                 }
                 else
