@@ -5,7 +5,7 @@
 Utilities to support integration of Vowpal Wabbit and scikit-learn
 """
 import numpy as np
-from pyvw import vw
+from vowpalwabbit.pyvw import vw
 import re
 from scipy.sparse import csr_matrix
 from sklearn import metrics

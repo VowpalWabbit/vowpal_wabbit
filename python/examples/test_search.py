@@ -1,5 +1,5 @@
 import sys
-import pyvw
+from vowpalwabbit import pyvw
 
 class SequenceLabeler(pyvw.SearchTask):
     def __init__(self, vw, sch, num_actions):
@@ -13,7 +13,7 @@ class SequenceLabeler(pyvw.SearchTask):
         if sch.po_exists('search'):
             print 'found --search'
             print '--search value =', sch.po_get('search'), ', type =', type(sch.po_get('search'))
-        
+
         # set whatever options you want
         sch.set_options( sch.AUTO_HAMMING_LOSS | sch.AUTO_CONDITION_FEATURES )
 
@@ -26,7 +26,7 @@ class SequenceLabeler(pyvw.SearchTask):
                 pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos, condition=(n,'p'))
                 output.append(pred)
         return output
-    
+
 # wow! your data can be ANY type you want... does NOT have to be VW examples
 DET  = 1
 NOUN = 2

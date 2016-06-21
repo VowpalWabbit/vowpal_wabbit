@@ -28,8 +28,7 @@ allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 
 %.d:	%.cc config.h
 	$(CXX) -std=c++0x -MM $< > $@
-
--include $(vw_DEPS)
+	-include $(vw_DEPS)
 
 %.o:	 %.cc  %.h
 	$(CXX) $(FLAGS) -c $< -o $@

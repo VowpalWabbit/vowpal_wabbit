@@ -1,4 +1,4 @@
-import pyvw
+from vowpalwabbit import pyvw
 
 vw = pyvw.vw('--audit')
 full = vw.example( { 'a': ['b'], 'x': ['y'] } )

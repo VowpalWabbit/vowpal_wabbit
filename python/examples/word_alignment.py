@@ -1,4 +1,4 @@
-import pyvw
+from vowpalwabbit import pyvw
 
 # the dataset is triples of E, A, F where A[i] = list of words E_i
 # aligned to, or [] for null-aligned
@@ -25,7 +25,7 @@ def alignmentError(true, sys):
     s = set(sys)
     if len(t | s) == 0: return 0.
     return 1. - float(len(t & s)) / float(len(t | s))
-    
+
 class WordAligner(pyvw.SearchTask):
     def __init__(self, vw, sch, num_actions):
         pyvw.SearchTask.__init__(self, vw, sch, num_actions)
@@ -42,18 +42,18 @@ class WordAligner(pyvw.SearchTask):
         lab = 'Null' if j0 is None else str(j0+l)
         ex.set_label_string(lab + ':0')
         return ex
-        
+
     def _run(self, alignedSentence):
         E,A,F = alignedSentence
 
         # for each E word, we pick a F span
         covered = {}  # which F words have been covered so far?
         output  = []
-        
+
         for i in range(len(E)):
             examples = []  # contains vw examples
             spans    = []  # contains triples (alignment error, index in examples, [range])
-            
+
             # empty span:
             examples.append( self.makeExample(E, F, i, None, None) )
             spans.append( (alignmentError(A[i], []), 0, []) )
@@ -75,7 +75,7 @@ class WordAligner(pyvw.SearchTask):
             for id in range(len(sortedSpans)):
                 if sortedSpans[id][0] > sortedSpans[0][0]: break
                 oracle.append( sortedSpans[id][1] )
-                
+
             pred = self.sch.predict(examples  = examples,
                                     my_tag    = i+1,
                                     oracle    = oracle,
@@ -88,7 +88,7 @@ class WordAligner(pyvw.SearchTask):
                 covered[j] = True
 
         return output
-    
+
 
 
 print 'training LDF'
