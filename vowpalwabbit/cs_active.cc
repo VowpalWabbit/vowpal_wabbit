@@ -34,8 +34,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 { float maxw = min(fhat/sens,FLT_MAX);
   
   if(maxw*fhat*fhat <= delta)
-  { //cerr << " max w is returned." ;
-    return maxw;
+  { return maxw;
   }
 
   float l = 0, u = maxw, w, v;
@@ -54,7 +53,6 @@ float binarySearch(float fhat, float delta, float sens, float tol)
     }
   }
 
-  //cerr << " w = " << l << "."; 
   return l;
 }
 
@@ -92,9 +90,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
 
     if(ec.l.simple.label != FLT_MAX)
     { base.learn(ec, i-1);
-      //cout << "t = " << cs_a.t << ", base.learn(" << i-1 << ", " << ec.l.simple.label << ")" << endl;
-    } //else
-      //cout << "t = " << cs_a.t << ", no base.learn(" << i-1 << ", " << ec.l.simple.label << ")" << endl;
+    }
   }
   else if (!is_simulation) 
   {// Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.
@@ -117,22 +113,15 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
   float sens = base.sensitivity(ec, i-1);
   
   if (cs_a.t <= 1 || nanpattern(sens) || infpattern(sens))
-  { //if(cs_a.t > 1)
-    //{ cerr << "Warning: sensitivity=" << sens << endl;      
-    //}
-    min_pred = cs_a.cost_min;
+  { min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;
     is_range_large = true;
   }
   else
   { // finding max_pred and min_pred by binary search
-    //cerr << "find cost range for " << i-1 << ", sens=" << sens << ", cost_max: "; 
     max_pred =  min(ec.pred.scalar + sens*binarySearch(cs_a.cost_max-ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    //cerr << " max_pred=" << max_pred << ", cost_min: ";
     min_pred =  max(ec.pred.scalar - sens*binarySearch(ec.pred.scalar-cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
-    //cerr << " min_pred=" << min_pred;
     is_range_large = (max_pred-min_pred > eta);
-    //cerr << " is_range_large=" << is_range_large;
   }
 }
 
@@ -173,19 +162,13 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     }
 
     uint32_t n_overlapped = 0;
-    bool large_range = false;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(cl.is_range_overlapped); 
-      //large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
-      //if(cl.is_range_overlapped && is_learn)
-      //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ", is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
-      //}
       cs_a.all->sd->overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
     }
-    //bool query = (n_overlapped > 1 && large_range);
+    
     bool query = (n_overlapped > 1);
-       
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && cl.is_range_overlapped && cl.is_range_large), cl.query_needed);
     }
