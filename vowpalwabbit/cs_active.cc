@@ -173,7 +173,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     }
 
     uint32_t n_overlapped = 0;
-    bool large_range = false;
+    //bool large_range = false;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(cl.is_range_overlapped); 
