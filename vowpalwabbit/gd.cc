@@ -456,7 +456,11 @@ float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
-  float grad_squared = ec.weight; //all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ec.weight;
+
+  float grad_squared = ec.weight; 
+  if (count(all.args.begin(), all.args.end(),"--cs_active") == 0)
+     grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+
   if (grad_squared == 0 && !stateless) return 1.;
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
