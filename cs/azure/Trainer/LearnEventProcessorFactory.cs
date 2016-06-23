@@ -61,7 +61,7 @@ namespace VowpalWabbit.Azure
             this.telemetry = new TelemetryClient();
             this.telemetry.Context.Component.Version = GetType().Assembly.GetName().Version.ToString();
 
-            this.evalOperation = new EvalOperation(settings);
+            this.evalOperation = new EvalOperation(settings, performanceCounters);
             this.latencyOperation = new LatencyOperation();
 
             this.deserializeBlock = new TransformManyBlock<PipelineData, PipelineData>(

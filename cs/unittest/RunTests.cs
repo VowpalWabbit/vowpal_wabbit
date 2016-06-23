@@ -2050,13 +2050,55 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [Description(@"cb explore adf")]
+        [Description(@"train a poisson model")]
 
 		[TestCategory("Command Line")]
         public void CommandLine_Test132()
         {
             RunTestsHelper.ExecuteTest(
 				132,
+				"--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
+				"train-sets/poisson.dat",
+				"train-sets/ref/poisson.train.stderr",
+				"pred-sets/ref/poisson.train.predict");
+        }
+
+        [TestMethod]
+        [Description(@"train a poisson model without invariant updates")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test133()
+        {
+            RunTestsHelper.ExecuteTest(
+				133,
+				"--quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
+				"train-sets/poisson.dat",
+				"train-sets/ref/poisson.train.normalized.stderr",
+				"pred-sets/ref/poisson.train.normalized.predict");
+        }
+
+        [TestMethod]
+        [Description(@"second order online learning")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test134()
+        {
+            RunTestsHelper.ExecuteTest(
+				134,
+				"--OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict",
+				"train-sets/0001.dat",
+				"train-sets/ref/second_order.stderr",
+				"pred-sets/ref/second_order.predict");
+        }
+
+        [TestMethod]
+        [Description(@"cb explore adf")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test135()
+        {
+            RunTestsHelper.ExecuteTest(
+				135,
 				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
 				"train-sets/cb_adf_crash_1.data",
 				"train-sets/ref/cb_adf_crash1.stderr",
@@ -2067,16 +2109,16 @@ namespace cs_unittest
         [Description(@"cb explore adf predict")]
 
 		[TestCategory("Command Line")]
-        public void CommandLine_Test133()
+        public void CommandLine_Test136()
         {
             RunTestsHelper.ExecuteTest(
-				132,
+				135,
 				"-d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05",
 				"train-sets/cb_adf_crash_1.data",
 				"train-sets/ref/cb_adf_crash1.stderr",
 				"");
             RunTestsHelper.ExecuteTest(
-				133,
+				136,
 				"-d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t",
 				"train-sets/cb_adf_crash_2.data",
 				"train-sets/ref/cb_adf_crash2.stderr",

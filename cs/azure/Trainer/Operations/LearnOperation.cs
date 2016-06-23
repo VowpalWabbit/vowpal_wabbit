@@ -39,6 +39,9 @@ namespace VowpalWabbit.Azure.Trainer
                 var label = example.Example.Labels
                     .OfType<ContextualBanditLabel>()
                     .FirstOrDefault(l => l.Probability != 0f || l.Cost != 0);
+
+                if (label == null)
+                    this.telemetry.TrackTrace($"Unable to find valid label for event '{example.EventId}'", SeverityLevel.Warning);
                 
                 //if (this.vwAllReduce != null)
                 //{

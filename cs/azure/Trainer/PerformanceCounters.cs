@@ -157,6 +157,19 @@ namespace VowpalWabbit.Azure.Trainer
         public PerformanceCounter Stage3_Checkpoint_Queue { get; private set; }
 
 
+        [PerformanceCounterType(PerformanceCounterType.NumberOfItems64)]
+        public PerformanceCounter Stage4_Evaluation_Total { get; private set; }
+
+        [PerformanceCounterType(PerformanceCounterType.RateOfCountsPerSecond64)]
+        public PerformanceCounter Stage4_Evaluation_PerSec { get; private set; }
+
+        [PerformanceCounterType(PerformanceCounterType.NumberOfItems64)]
+        public PerformanceCounter Stage4_Evaluation_BatchesTotal { get; private set; }
+
+        [PerformanceCounterType(PerformanceCounterType.RateOfCountsPerSecond64)]
+        public PerformanceCounter Stage4_Evaluation_BatchesPerSec { get; private set; }
+
+
         [PerformanceCounterType(PerformanceCounterType.AverageTimer32)]
         public PerformanceCounter AverageExampleLatency { get; private set; }
 
