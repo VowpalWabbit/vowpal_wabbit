@@ -161,7 +161,10 @@ public:
 	}
 	~weight_vector(){
 		if (_begin != nullptr)
+		{
 			free(_begin);
+			_begin = nullptr;
+		}
 	}
 	friend class weights_iterator;
 };
