@@ -109,11 +109,11 @@ public:
 	typedef weights_iterator iterator;
 
 	weight_vector()
-		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _size(0)
+		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _size(0), _stride_shift(0)
 	{ }
 
-	weight_vector(size_t length)
-		: _begin(new weight[length << _stride_shift]()), _weight_mask((length << _stride_shift) - 1), _size(length << _stride_shift)
+	weight_vector(size_t length, uint32_t _stride_shift=0)
+		: _begin(calloc_mergable_or_throw<weight>(length << _stride_shift)), _weight_mask((length << _stride_shift) - 1), _size(length << _stride_shift)
 	{ }
 
 	inline weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
