@@ -91,6 +91,7 @@ namespace VowpalWabbit.Azure.Worker
                 // Register controller
                 container.RegisterType<ResetController>();
                 container.RegisterType<CheckpointController>();
+                container.RegisterType<StatusController>();
 
                 // Register interface
                 container.RegisterInstance(typeof(LearnEventProcessorHost), this.trainProcesserHost);

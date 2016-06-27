@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Diagnostics;
 using Microsoft.ApplicationInsights;
+using System.Collections.Generic;
 
 namespace VowpalWabbit.Azure.Trainer
 {
@@ -35,7 +36,10 @@ namespace VowpalWabbit.Azure.Trainer
                     PerformanceCounterCategory.Delete(category);
 
                 // order to be sure that *Base follows counter
-                var props = typeof(PerformanceCounters).GetProperties().OrderBy(p => p.Name).ToList();
+                var props = typeof(PerformanceCounters)
+                    .GetProperties()
+                    .Where(p => p.PropertyType == typeof(PerformanceCounter))
+                    .OrderBy(p => p.Name).ToList();
 
                 var counterCollection = new CounterCreationDataCollection();
 
@@ -58,11 +62,17 @@ namespace VowpalWabbit.Azure.Trainer
             try
             {
                 var perfCollectorModule = new PerformanceCollectorModule();
-                foreach (var p in typeof(PerformanceCounters).GetProperties())
+                var props = typeof(PerformanceCounters)
+                    .GetProperties()
+                    .Where(p => p.PropertyType == typeof(PerformanceCounter));
+
+                var all = new List<PerformanceCounter>();
+                foreach (var p in props)
                 {
                     var counter = new PerformanceCounter(category, p.Name, instance, false);
                     p.SetValue(this, counter);
                     counter.RawValue = 0;
+                    all.Add(counter);
 
                     if (!p.Name.EndsWith("Base", StringComparison.Ordinal))
                     {
@@ -76,6 +86,8 @@ namespace VowpalWabbit.Azure.Trainer
                 }
 
                 perfCollectorModule.Initialize(TelemetryConfiguration.Active);
+
+                this.All = all.ToArray();
             }
             catch (Exception e)
             {
@@ -96,6 +108,8 @@ namespace VowpalWabbit.Azure.Trainer
                 }
             }
         }
+
+        public PerformanceCounter[] All { get; private set; }
 
         [PerformanceCounterType(PerformanceCounterType.NumberOfItems32)]
         public PerformanceCounter EventHub_Processors { get; private set; }

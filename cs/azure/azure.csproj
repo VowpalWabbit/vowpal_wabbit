@@ -262,6 +262,7 @@
     <Compile Include="Trainer\OnlineTrainerSettings.cs" />
     <Compile Include="Worker\OnlineTrainerSettingsWatcher.cs" />
     <Compile Include="Worker\ResetController.cs" />
+    <Compile Include="Worker\StatusController.cs" />
     <Compile Include="Worker\WorkerRole.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -312,7 +313,6 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <Target Name="AfterBuild">
-    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings"
-          Condition="'$(BuildNuget)' == 'true'" />
+    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
 </Project>

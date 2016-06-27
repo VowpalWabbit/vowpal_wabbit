@@ -37,6 +37,8 @@ namespace VowpalWabbit.Azure.Trainer
             this.exclusiveTaskFactory = new TaskFactory(exclusiveScheduler.ExclusiveScheduler);
         }
 
+        public PerformanceCounters PerformanceCounters {  get { return this.perfCounters; } }
+
         internal object InitialOffsetProvider(string partition)
         {
             string offset;
