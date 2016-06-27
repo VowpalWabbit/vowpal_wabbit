@@ -450,15 +450,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
-      float* shared_weights =
-        (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
-                     PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
-
-      size_t float_count = all.length() << all.reg.stride_shift;
-      weight_vector dest(shared_weights);
-      memcpy(dest.begin, all.reg.weight_vector.begin, float_count*sizeof(float));
-      free(all.reg.weight_vector.begin);
-      all.reg.weight_vector = dest;
+      all.wv.share(all.length());
 
       // learning state to be shared across children
       shared_data* sd = (shared_data *)mmap(0,sizeof(shared_data),

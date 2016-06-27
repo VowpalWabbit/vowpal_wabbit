@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
+#include <sys/mman.h>
+#endif
+
 using namespace std;
 typedef float weight;
 
@@ -98,7 +102,7 @@ class weight_vector //different name? (previously array_parameters)
 private:
 	weight* _begin;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
-	uint32_t _stride_shift = 0;
+	uint32_t _stride_shift;
 	size_t _size;
 
 public:
@@ -143,11 +147,23 @@ public:
 		_stride_shift = stride;
 	}
 
+	void share(size_t length)
+	{
+	  #ifndef _WIN32
+	  float* shared_weights = (float*)mmap(0, (length << _stride_shift) * sizeof(float),
+			                  PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+          size_t float_count = length << _stride_shift;
+      	  weight* dest = shared_weights;
+	  memcpy(dest, _begin, float_count*sizeof(float));
+      	  free(_begin);
+      	  _begin = dest;
+     	  #endif
+	}
 	~weight_vector(){
 		if (_begin != nullptr)
 			free(_begin);
 	}
-	friend weights_iterator;
+	friend class weights_iterator;
 };
 
 
