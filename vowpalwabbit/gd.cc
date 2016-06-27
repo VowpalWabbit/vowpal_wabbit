@@ -206,9 +206,9 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 { 
-  weight_vector weights = dat.all.wv;
-  uint64_t index = ft_idx & weights.getMask();
-  size_t stride_shift = weights.getStride();
+  weight_vector& weights = dat.all.wv;
+  uint64_t index = ft_idx & weights.mask();
+  size_t stride_shift = weights.stride();
 
   string ns_pre;
   for (string& s : dat.ns_pre) ns_pre += s;
@@ -243,7 +243,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 }
 
 void print_features(vw& all, example& ec)
-{ weight_vector weights = all.wv;
+{ weight_vector& weights = all.wv;
 
   if (all.lda > 0)
   { size_t count = 0;
@@ -251,7 +251,7 @@ void print_features(vw& all, example& ec)
       count += fs.size();
     for (features& fs : ec)
     { for (features::iterator_all& f : fs.values_indices_audit())
-      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.getStride()) & all.parse_mask) << ':' << f.value();
+      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride()) & all.parse_mask) << ':' << f.value();
         for (size_t k = 0; k < all.lda; k++)
           cout << ':' << weights[(f.index()+k)];
       }
@@ -347,7 +347,7 @@ void predict(gd& g, base_learner&, example& ec)
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 { weight_vector::iterator w = mp.wv->begin();
-  w += (fi & mp.wv->getMask()); //TODO: get rid of getMask()
+  w += (fi & mp.wv->mask()); //TODO: get rid of mask()
   for (size_t c=0; c<mp.count; c++)
   { mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
     w += mp.step;
@@ -561,7 +561,7 @@ void learn(gd& g, base_learner& base, example& ec)
 void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  weight_vector weights = all.wv;
+  weight_vector& weights = all.wv;
   weight_vector::iterator w = weights.begin(0);
   for(; w != weights.end() && all.reg_mode; ++w)
     *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
@@ -571,7 +571,7 @@ void sync_weights(vw& all)
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint64_t length = (uint64_t)1 << all.num_bits;
-  weight_vector weights = all.wv;
+  weight_vector& weights = all.wv;
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
@@ -735,7 +735,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
   uint64_t length = (uint64_t)1 << all.num_bits;
 
-  weight_vector weights = all.wv;
+  weight_vector& weights = all.wv;
   weight_vector::iterator v = weights.begin(0);
   weight_vector::iterator v1 = weights.begin(1);
   weight_vector::iterator v2 = weights.begin(2);
@@ -743,7 +743,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   size_t brw = 1;
   do
   { brw = 1;
-    weight* v;
     if (read)
     { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -753,11 +752,11 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         }
 
         if (g == NULL || (! g->adaptive && ! g->normalized))
-          brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+          brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-          brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 2, "");
+			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
         else //adaptive and normalized
-          brw += bin_read_fixed(model_file, (char*)v, sizeof(*v) * 3, "");
+			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
         /*        if (!all.training)
                   v[1] = v[2] = 0.;*/
       }
@@ -771,19 +770,19 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
                                    msg, text);
         if (g == nullptr || (! g->adaptive && ! g->normalized))
           { msg << ":" << *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char *)v, sizeof(*v),
+		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v),
                                       msg, text);
         }
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
         { //either adaptive or normalized
           msg << ":"<< *v << " "<< *(v1)<< "\n";
-          brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
+		  brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
                                      msg, text);
         }
         else
           { //adaptive and normalized
             msg << ":"<< *v << " "<< *(v1)<< " "<< *(v2)<< "\n";
-            brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
+			brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
                                        msg, text);
         }
       }
@@ -802,8 +801,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
     if(all.adaptive && all.initial_t > 0)
-      { weight_vector weights = all.wv;
-	    weight_vector::iterator w = weights.begin(0);
+	{  weight_vector& weights = all.wv;
+	   weight_vector::iterator w = weights.begin(0);
 		++w;
       for (; w != weights.end(); ++w)
       { *w = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
@@ -979,9 +978,9 @@ base_learner* setup(vw& all)
     stride = set_learn<false>(all, feature_mask_off, g);
   if (!all.training)
     stride = 1;
-  all.wv.setStride((uint32_t)ceil_log_2(stride-1));
+  all.wv.stride((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.wv.getStride()));
+  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.wv.stride()));
   ret.set_predict(g.predict);
   ret.set_sensitivity(g.sensitivity);
   ret.set_multipredict(g.multipredict);

@@ -560,7 +560,7 @@ v_array<float> old_gamma = v_init<float>();
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_vector weights, example *ec, float)
+float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_vector& weights, example *ec, float)
 { new_gamma.erase();
   old_gamma.erase();
 
@@ -626,7 +626,7 @@ size_t next_pow2(size_t x)
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector weights = all->wv;
+  weight_vector& weights = all->wv;
   if (read)
   { initialize_regressor(*all);
 	weight_vector::iterator j = weights.begin(0);
@@ -692,9 +692,9 @@ void learn_batch(lda &l)
   { for (size_t k = 0; k < l.all->lda; k++)
       l.total_lambda.push_back(0.f);
 
-    size_t stride = 1 << l.all->wv.getStride();
+    size_t stride = 1 << l.all->wv.stride();
 	weight_vector::iterator iter = l.all->wv.begin(0);
-	for (size_t i = 0; i <= l.all->wv.getMask(); i += stride, ++iter) //TODO: fix to not use stride
+	for (size_t i = 0; i <= l.all->wv.mask(); i += stride, ++iter) //TODO: fix to not use stride
 	{
 		weight_vector::iterator::w_iter k_iter = iter.begin();
 		for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
@@ -724,7 +724,7 @@ void learn_batch(lda &l)
   { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
-  weight_vector weights = l.all->wv;
+  weight_vector& weights = l.all->wv;
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
@@ -814,18 +814,18 @@ void end_pass(lda &l)
 }
 
 void end_examples(lda &l)
-{ weight_vector w = l.all->wv;
-weight_vector::iterator i = w.begin(l.all->lda);
-weight_vector::iterator j = w.begin(0);
-  for (; i != w.end(l.all->lda); ++i, ++j)
-  { 
+{  weight_vector& w = l.all->wv;
+   weight_vector::iterator i = w.begin(l.all->lda);
+   weight_vector::iterator j = w.begin(0);
+   for (; i != w.end(l.all->lda); ++i, ++j)
+   { 
     float decay_component =
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + *i)];
     float decay = fmin(1.f, correctedExp(decay_component));
 
 	for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(l.all->lda); ++k)
       *k *= decay;
-  }
+   }
 }
 
 void finish_example(vw&, lda&, example &) {}
@@ -888,7 +888,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  all.wv.setStride((size_t)temp);
+  all.wv.stride((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -909,7 +909,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.wv.getStride());
+  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.wv.stride());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

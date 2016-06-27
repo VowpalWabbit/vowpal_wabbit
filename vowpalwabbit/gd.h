@@ -29,7 +29,7 @@ struct multipredict_info { size_t count; size_t step; polyprediction* pred; weig
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 { if ((-1e-10 < fx) && (fx < 1e-10)) return;
   weight_vector* w = mp.wv;
-  uint64_t mask = w->getMask(); //TODO: shouldn't use getMask()
+  uint64_t mask = w->mask(); //TODO: shouldn't use mask()
   polyprediction* p = mp.pred;
   weight_vector::iterator iter = w->begin();
   fi &= mask;
@@ -51,7 +51,7 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
 template <class R, void (*T)(R&, const float, float&)>
-inline void foreach_feature(weight_vector wv, features& fs, R& dat, uint64_t offset=0, float mult=1.)
+inline void foreach_feature(weight_vector& wv, features& fs, R& dat, uint64_t offset = 0, float mult = 1.)
 {
   for (features::iterator& f : fs)
     T(dat, mult*f.value(), wv[(f.index() + offset)]);
@@ -59,7 +59,7 @@ inline void foreach_feature(weight_vector wv, features& fs, R& dat, uint64_t off
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_index)
 template <class R, void (*T)(R&, float, uint64_t)>
-void foreach_feature(weight_vector /*wv*/, features& fs, R&dat, uint64_t offset=0, float mult=1.)
+void foreach_feature(weight_vector& /*wv*/, features& fs, R&dat, uint64_t offset = 0, float mult = 1.)
 {
   for (features::iterator& f : fs)
     T(dat, mult*f.value(), f.index() + offset);

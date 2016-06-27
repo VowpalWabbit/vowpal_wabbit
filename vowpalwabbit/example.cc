@@ -92,8 +92,8 @@ namespace VW
 {
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
-  fs.stride_shift = all.wv.getStride();
-  fs.mask = (uint64_t)all.wv.getMask() >> all.wv.getStride();
+  fs.stride_shift = all.wv.stride();
+  fs.mask = (uint64_t)all.wv.mask() >> all.wv.stride();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -130,8 +130,8 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.stride_shift = all.wv.getStride();
-  ffs.mask = (uint64_t)all.wv.getMask() >> all.wv.getStride();
+  ffs.stride_shift = all.wv.stride();
+  ffs.mask = (uint64_t)all.wv.mask() >> all.wv.stride();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   fec.fs = ffs.fs;

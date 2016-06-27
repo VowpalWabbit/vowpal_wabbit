@@ -177,9 +177,9 @@ void run_bfs(task_data &D, vector<example*>& ec)
 void setup(Search::search& sch, vector<example*>& ec)
 { task_data& D = *sch.get_task_data<task_data>();
 
-  D.mask = sch.get_vw_pointer_unsafe().wv.getMask();
+  D.mask = sch.get_vw_pointer_unsafe().wv.mask();
   D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss   = sch.get_vw_pointer_unsafe().wv.getStride();
+  D.ss   = sch.get_vw_pointer_unsafe().wv.stride();
   D.multiplier = D.wpp << D.ss;
   D.wv = sch.get_vw_pointer_unsafe().wv;
 

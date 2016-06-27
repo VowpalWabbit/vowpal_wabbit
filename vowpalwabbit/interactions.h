@@ -54,13 +54,13 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 // 3 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
 template <class R, void (*T)(R&, const float, float&)>
-  inline void call_T( R& dat, weight_vector wv, const float ft_value, const uint64_t ft_idx)
+inline void call_T(R& dat, weight_vector& wv, const float ft_value, const uint64_t ft_idx)
 {
   T(dat, ft_value, wv[ft_idx]);
 }
 
 template <class R, void (*T)(R&, float, uint64_t)>
-  inline void call_T( R& dat,  weight_vector /*wv*/, const float ft_value, const uint64_t ft_idx)
+inline void call_T(R& dat, weight_vector& /*wv*/, const float ft_value, const uint64_t ft_idx)
 {
     T(dat, ft_value, ft_idx);
 }
@@ -90,7 +90,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 // #define GEN_INTER_LOOP
 
 template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)>
-inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, weight_vector wv, feature_value ft_value, feature_index halfhash)
+inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, weight_vector& wv, feature_value ft_value, feature_index halfhash)
 {
   if (audit)
   {
@@ -121,7 +121,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
-  weight_vector wv = all.wv;
+  weight_vector& wv = all.wv;
 
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();

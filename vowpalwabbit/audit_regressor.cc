@@ -46,7 +46,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
 
 inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
 {
-    weight_vector weights = dat.all->wv;
+    weight_vector& weights = dat.all->wv;
 
 	if (weights[ft_idx] != 0)
         ++dat.values_audited;
@@ -56,7 +56,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_
     for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
     ostringstream tempstream;
-	tempstream << ':' << ((ft_idx & weights.getMask()) >> weights.getStride()) << ':' << weights[ft_idx];
+	tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride()) << ':' << weights[ft_idx];
 
     string temp = ns_pre+tempstream.str() + '\n';
     if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
@@ -78,12 +78,12 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
     if (all.lda > 0)
     {
         ostringstream tempstream;
-        weight_vector weights = all.wv;
+        weight_vector& weights = all.wv;
         for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
         {
             features& fs = ec.feature_space[*i];
             for (size_t j = 0; j < fs.size(); ++j)
-            { tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.getStride()) & all.parse_mask);
+            { tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.stride()) & all.parse_mask);
                 for (size_t k = 0; k < all.lda; k++)
                 {
                     weight& w = weights[(fs.indicies[j]+k)];
@@ -205,7 +205,7 @@ void init_driver(audit_regressor_data& dat)
     }
 
     // count non-null feature values in regressor
-	weight_vector w = dat.all->wv;
+	weight_vector& w = dat.all->wv;
 	for (weight_vector::iterator iter = w.begin(); iter != w.end(); iter += dat.increment)
 		if (*iter != 0) dat.loaded_regressor_values++;
 

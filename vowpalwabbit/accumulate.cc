@@ -19,21 +19,20 @@ using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(vw& all, weight_vector& wv, size_t o)
+void accumulate(vw& all, weight_vector& weights, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
   weight_vector local_grad(length);
-  weight_vector weights = wv;
-  
+ 
   weight_vector::iterator i = weights.begin(o);
   weight_vector::iterator j = local_grad.begin();
-  for (; i != weights.end(); ++i, ++j)
+  for (; i != weights.end(o); ++i, ++j)
 	  *j = *i;
 
   all_reduce<float, add_float>(all, local_grad.first(), length); //TODO: modify to not use first()
  
   i = weights.begin(o);
   j = local_grad.begin();
-  for (; i != weights.end(); ++i, ++j)
+  for (; i != weights.end(o); ++i, ++j)
 	  *i = *j;
 }
 
@@ -43,9 +42,8 @@ float accumulate_scalar(vw& all, float local_sum)
   return temp;
 }
 
-void accumulate_avg(vw& all, weight_vector& wv, size_t o)
+void accumulate_avg(vw& all, weight_vector& weights, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
-  weight_vector weights = wv;
   float numnodes = (float)all.all_reduce->total;
   weight_vector local_grad(length);
 
@@ -76,18 +74,17 @@ float min_elem(float* arr, int length)
   return min;
 }
 
-void accumulate_weighted_avg(vw& all, weight_vector& wv)
+void accumulate_weighted_avg(vw& all, weight_vector& weights)
 { if(!all.adaptive)
   { cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
-  weight_vector weights = wv;
   weight_vector local_weights(length);
 
   weight_vector::iterator i = weights.begin(1);
   weight_vector::iterator j = local_weights.begin();
-  for (; i != weights.end(); ++i, ++j)
+  for (; i != weights.end(1); ++i, ++j)
 	  *j = *i;
 
   //First compute weights for averaging
@@ -113,7 +110,7 @@ void accumulate_weighted_avg(vw& all, weight_vector& wv)
 		 *weights_0 = 0;
 	  }
 	  
-  all_reduce<float, add_float>(all, weights.first(), length*weights.getStride()); //TODO: get rid of first() and getStride()
+  all_reduce<float, add_float>(all, weights.first(), length*weights.stride()); //TODO: get rid of first() and stride()
 
 }
 

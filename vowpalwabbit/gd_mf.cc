@@ -33,8 +33,8 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 { vw& all = *d.all;
-  weight_vector weights = all.wv;
-  uint64_t mask = weights.getMask();
+  weight_vector& weights = all.wv;
+  uint64_t mask = weights.mask();
   for (features& fs : ec)
   { bool audit = !fs.space_names.empty();
     for (auto& f : fs.values_indices_audit())
@@ -144,14 +144,14 @@ float mf_predict(gdmf& d, example& ec)
 }
 
 
-void sd_offset_update(weight_vector weights, features& fs, uint64_t offset, float update, float regularization)
+void sd_offset_update(weight_vector& weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
     weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
 }
 
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
-  weight_vector weights = all.wv;
+  weight_vector& weights = all.wv;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -194,7 +194,7 @@ void mf_train(gdmf& d, example& ec)
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector w = all->wv;
+  weight_vector& w = all->wv;
   if(read)
   { initialize_regressor(*all);
     if (all->random_weights)
@@ -289,7 +289,7 @@ base_learner* gd_mf_setup(vw& all)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.wv.setStride((size_t) temp);
+  all.wv.stride((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -309,7 +309,7 @@ base_learner* gd_mf_setup(vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << all.wv.getStride());
+  learner<gdmf>& l = init_learner(&data, learn, 1 << all.wv.stride());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);

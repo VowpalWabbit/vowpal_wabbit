@@ -498,7 +498,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  weight_vector w = all.wv;
+	  weight_vector& w = all.wv;
       for (weight_vector::iterator j = w.begin(0); j != w.begin(); ++j)
       { *j = 0.;
       }

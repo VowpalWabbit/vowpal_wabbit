@@ -39,7 +39,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 { f_dest.erase();
   features& f_src1 = in.feat_store;
   vw* all = in.all;
-  uint64_t weight_mask = all->wv.getMask();
+  uint64_t weight_mask = all->wv.mask();
   uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
   uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
 

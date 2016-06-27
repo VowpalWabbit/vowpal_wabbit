@@ -86,13 +86,13 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-		  weight_vector w = all.wv;
+		  weight_vector& w = all.wv;
 		  weight_vector::iterator lw = w.begin(lindex) + 1;
 		  unsigned int n = 1;
 		  for (; n <= k; ++n, ++lw)
             { if (! do_dropout || cheesyrbit (lrq.seed))
 		     {
-			      uint64_t lwindex = (uint64_t)(lindex + (n << w.getStride()));
+			      uint64_t lwindex = (uint64_t)(lindex + (n << w.stride()));
                   // perturb away from saddle point at (0, 0)
                   if (is_learn && ! example_is_test (ec) && *lw == 0)
                     *lw = cheesyrand (lwindex); //not sure if lw needs a weight mask?
@@ -104,7 +104,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                     { // NB: ec.ft_offset added by base learner
                       float rfx = right_fs.values[rfn];
                       uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << w.getStride()));
+                      uint64_t rwindex = (uint64_t)(rindex + (n << w.stride()));
 
                       right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 

@@ -39,7 +39,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   unsigned int k = lrq.k;
   float sqrtk = (float) sqrt(k);
-  weight_vector w = all.wv;
+  weight_vector& w = all.wv;
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -56,8 +56,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
             uint64_t lindex = fs.indicies[lfn];
 			weight_vector::iterator iter = w.begin(lindex);
             for (unsigned int n = 1; n <= k; ++n)
-              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << w.getStride())); // a feature has k weights in each field
-			    iter += ((rfd_id*k + n) & w.getMask()); //TODO: get ride of getMask()
+              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << w.stride())); // a feature has k weights in each field
+			    iter += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
                 // perturb away from saddle point at (0, 0)
                 if (is_learn && ! example_is_test (ec) && *iter == 0)
                   { *iter = cheesyrand(lwindex) * 0.5f / sqrtk; 
@@ -69,7 +69,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                     // NB: ec.ft_offset added by base learner
                     float rfx = rfs.values[rfn];
                     uint64_t rindex = rfs.indicies[rfn];
-                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << w.getStride()));
+                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << w.stride()));
 
                     rfs.push_back(*iter * lfx * rfx, rwindex);
                     if (all.audit || all.hash_inv)

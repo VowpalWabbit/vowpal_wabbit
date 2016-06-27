@@ -162,8 +162,8 @@ base_learner* svrg_setup(vw& all)
   s.stable_grad_count = 0;
 
   // Request more parameter storage (4 floats per feature)
-  all.wv.setStride(2);
-  learner<svrg>& l = init_learner(&s, learn, 1 << all.wv.getStride());
+  all.wv.stride(2);
+  learner<svrg>& l = init_learner(&s, learn, 1 << all.wv.stride());
 
   l.set_predict(predict);
   l.set_save_load(save_load);
