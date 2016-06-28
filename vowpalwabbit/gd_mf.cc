@@ -289,7 +289,7 @@ base_learner* gd_mf_setup(vw& all)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.wv.stride((size_t) temp);
+  all.wv.stride_shift((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -309,7 +309,7 @@ base_learner* gd_mf_setup(vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << all.wv.stride());
+  learner<gdmf>& l = init_learner(&data, learn, 1 << all.wv.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);

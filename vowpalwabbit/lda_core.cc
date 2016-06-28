@@ -692,7 +692,7 @@ void learn_batch(lda &l)
   { for (size_t k = 0; k < l.all->lda; k++)
       l.total_lambda.push_back(0.f);
 
-    size_t stride = 1 << l.all->wv.stride();
+    size_t stride = 1 << l.all->wv.stride_shift();
 	weight_vector::iterator iter = l.all->wv.begin(0);
 	for (size_t i = 0; i <= l.all->wv.mask(); i += stride, ++iter) //TODO: fix to not use stride
 	{
@@ -888,7 +888,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  all.wv.stride((size_t)temp);
+  all.wv.stride_shift((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -909,7 +909,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.wv.stride());
+  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.wv.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

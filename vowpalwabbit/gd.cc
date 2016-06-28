@@ -208,7 +208,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 { 
   weight_vector& weights = dat.all.wv;
   uint64_t index = ft_idx & weights.mask();
-  size_t stride_shift = weights.stride();
+  size_t stride_shift = weights.stride_shift();
 
   string ns_pre;
   for (string& s : dat.ns_pre) ns_pre += s;
@@ -251,7 +251,7 @@ void print_features(vw& all, example& ec)
       count += fs.size();
     for (features& fs : ec)
     { for (features::iterator_all& f : fs.values_indices_audit())
-      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride()) & all.parse_mask) << ':' << f.value();
+      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride_shift()) & all.parse_mask) << ':' << f.value();
         for (size_t k = 0; k < all.lda; k++)
           cout << ':' << weights[(f.index()+k)];
       }
@@ -978,9 +978,9 @@ base_learner* setup(vw& all)
     stride = set_learn<false>(all, feature_mask_off, g);
   if (!all.training)
     stride = 1;
-  all.wv.stride((uint32_t)ceil_log_2(stride-1));
+  all.wv.stride_shift((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.wv.stride()));
+  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.wv.stride_shift()));
   ret.set_predict(g.predict);
   ret.set_sensitivity(g.sensitivity);
   ret.set_multipredict(g.multipredict);

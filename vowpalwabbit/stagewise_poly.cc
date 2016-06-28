@@ -66,11 +66,11 @@ struct stagewise_poly
 
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
-{ return idx << poly.all->wv.stride();
+{ return idx << poly.all->wv.stride_shift();
 }
 
 inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
-{ return idx >> poly.all->wv.stride();
+{ return idx >> poly.all->wv.stride_shift();
 }
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
@@ -85,7 +85,7 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
     return idx;
   else
   { while (idx < poly.synth_ec.ft_offset)
-    { idx += poly.all->length() << poly.all->wv.stride();
+    { idx += poly.all->length() << poly.all->wv.stride_shift();
     }
     return idx - poly.synth_ec.ft_offset;
   }

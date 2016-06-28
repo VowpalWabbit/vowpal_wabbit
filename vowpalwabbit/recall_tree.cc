@@ -222,7 +222,7 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
 {
   vw* all = b.all;
   uint64_t mask = all->wv.mask();
-  size_t ss = all->wv.stride();
+  size_t ss = all->wv.stride_shift();
   ec.indices.push_back (node_id_namespace);
   features& fs = ec.feature_space[node_id_namespace];
 

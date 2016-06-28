@@ -892,7 +892,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.alpha = calloc_or_throw<double>(m);
 
     if (!all->quiet)
-    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->wv.stride())) >> 20);
+    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->wv.stride_shift())) >> 20);
     }
 
     b.net_time = 0.0;
@@ -984,9 +984,9 @@ base_learner* bfgs_setup(vw& all)
   }
 
   all.bfgs = true;
-  all.wv.stride(2);
+  all.wv.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(&b, learn, 1 << all.wv.stride());
+  learner<bfgs>& l = init_learner(&b, learn, 1 << all.wv.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);

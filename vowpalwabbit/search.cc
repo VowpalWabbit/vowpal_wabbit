@@ -451,7 +451,7 @@ void print_update(search_private& priv)
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
 { uint64_t mask = priv.all->wv.mask();
-  size_t ss   = priv.all->wv.stride();
+  size_t ss   = priv.all->wv.stride_shift();
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
@@ -501,9 +501,9 @@ void add_neighbor_features(search_private& priv)
 
       //cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
-        add_new_feature(priv, 1., 925871901 << priv.all->wv.stride());
+        add_new_feature(priv, 1., 925871901 << priv.all->wv.stride_shift());
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
-        add_new_feature(priv, 1., 3824917 << priv.all->wv.stride());
+        add_new_feature(priv, 1., 3824917 << priv.all->wv.stride_shift());
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
         GD::foreach_feature<search_private,add_new_feature>(all.wv, other.feature_space[ns], priv, me.ft_offset);
@@ -629,7 +629,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       // add the single bias feature
       if (n < priv.acset.max_bias_ngram_length)
-        add_new_feature(priv, 1., 4398201 << priv.all->wv.stride());
+        add_new_feature(priv, 1., 4398201 << priv.all->wv.stride_shift());
 
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
@@ -656,7 +656,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
           priv.dat_new_feature_idx = fid;
           priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
-          add_new_feature(priv, 1., 4398201 << priv.all->wv.stride());
+          add_new_feature(priv, 1., 4398201 << priv.all->wv.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;
@@ -2481,7 +2481,7 @@ void search::set_num_learners(size_t num_learners) { this->priv->num_learners = 
 void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
 uint64_t search::get_mask() { return this->priv->all->wv.mask();}
-size_t search::get_stride_shift() { return this->priv->all->wv.stride();}
+size_t search::get_stride_shift() { return this->priv->all->wv.stride_shift();}
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
 string search::pretty_label(action a)

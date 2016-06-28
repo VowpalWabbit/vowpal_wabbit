@@ -54,37 +54,37 @@ class weights_iterator
 {
 private:
 	weight* _current;
-	uint32_t _stride_shift;
+	uint32_t _stride;
 
 public:
 	typedef weights_iterator_iterator w_iter;
 
-	weights_iterator(weight* current, uint32_t stride_shift)
-		: _current(current), _stride_shift(stride_shift)
+	weights_iterator(weight* current, uint32_t stride)
+		: _current(current), _stride(stride)
 	{ }
 
 	weight& operator*() { return *_current; }
 
 	weights_iterator& operator++()
 	{
-		_current += _stride_shift;
+		_current += _stride;
 		return *this;
 	}
 
 	template<typename T>
-	weights_iterator operator+(T index) { return weights_iterator(_current + (index*_stride_shift), _stride_shift); }
+	weights_iterator operator+(T index) { return weights_iterator(_current + (index*_stride), _stride); }
 
 	template<typename T>
 	weights_iterator& operator+=(T index)
 	{
-		_current += (index*_stride_shift);
+		_current += (index*_stride);
 		return *this;
 	}
 
 	weights_iterator& operator=(const weights_iterator& other)
 	{
 		_current = other._current;
-		_stride_shift = other._stride_shift;
+		_stride = other._stride;
 		return *this;
 	}
 
@@ -103,30 +103,29 @@ private:
 	weight* _begin;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
-	size_t _size;
 	bool _seeded;
 
 public:
 	typedef weights_iterator iterator;
 
 	weight_vector()
-		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _size(0), _stride_shift(0),_seeded(false)
+		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _stride_shift(0),_seeded(false)
 	{ }
 
-	weight_vector(size_t length) 
-		: _begin(calloc_mergable_or_throw<weight>(length << _stride_shift)),
-		_weight_mask((length << _stride_shift) - 1),
-		_size(length << _stride_shift),
+	weight_vector(size_t length, uint32_t stride_shift=0) //TODO: probably incorrect for stride_shift.
+		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
+		_weight_mask((length << stride_shift) - 1),	
+		_stride_shift(stride_shift),
 		_seeded(false)
 	{ }
 
 	inline weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
 	iterator begin() { return iterator(_begin, 1); }
-	iterator end() { return iterator(_begin + _size, 1); }
+	iterator end() { return iterator(_begin + _weight_mask + 1, 1); }
 
 	//iterator with stride and offset
 	iterator begin(size_t offset) { return iterator(_begin + offset, (1<<_stride_shift)); }
-	iterator end(size_t offset) { return iterator(_begin + _size + offset, (1 << _stride_shift)); }
+	iterator end(size_t offset) { return iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
 	
 	bool isNull() const { return _begin == nullptr; }
 
@@ -140,12 +139,12 @@ public:
 	{ return _weight_mask;
 	}
 
-	uint32_t stride()
+	uint32_t stride_shift()
 	{ return _stride_shift;
 	}
 	//TODO: needs to be removed.
-	void stride(uint32_t stride)
-	{ _stride_shift = stride;
+	void stride_shift(uint32_t stride_shift)
+	{ _stride_shift = stride_shift;
 	}
 	
 	bool seeded()

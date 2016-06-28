@@ -179,7 +179,7 @@ void setup(Search::search& sch, vector<example*>& ec)
 
   D.mask = sch.get_vw_pointer_unsafe().wv.mask();
   D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss   = sch.get_vw_pointer_unsafe().wv.stride();
+  D.ss   = sch.get_vw_pointer_unsafe().wv.stride_shift();
   D.multiplier = D.wpp << D.ss;
   D.wv = sch.get_vw_pointer_unsafe().wv;
 

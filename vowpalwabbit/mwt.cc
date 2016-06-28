@@ -54,7 +54,7 @@ namespace MWT {
       cout << "error " << val << " is not a valid action " << endl;
 
     uint32_t value = (uint32_t) val;
-    uint64_t new_index = ((index & c.all->wv.mask()) >> c.all->wv.stride());
+    uint64_t new_index = ((index & c.all->wv.mask()) >> c.all->wv.stride_shift());
 
     if (!c.evals[new_index].seen)
       {
@@ -93,7 +93,7 @@ namespace MWT {
 	      if (learn)
 		{
 		  c.feature_space[ns].erase();
-		  uint32_t stride_shift = c.all->wv.stride();
+		  uint32_t stride_shift = c.all->wv.stride_shift();
 		  for ( features::iterator& f : ec.feature_space[ns])
 		    {
 		      uint64_t new_index=((f.index()& c.all->wv.mask()) >> stride_shift)*c.num_classes +f.value();
