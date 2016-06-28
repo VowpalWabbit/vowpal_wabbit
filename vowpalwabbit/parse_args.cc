@@ -1393,7 +1393,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   new_model->wv = vw_model->wv; // regressor
   new_model->sd = vw_model->sd; // shared data
 
-  new_model->seeded = true;
+  new_model->wv.seeded(true);
 
   return new_model;
 }
@@ -1480,13 +1480,13 @@ void finish(vw& all, bool delete_all)
   
   //TODO: check for all.seeded? Look into std::move wv? (AK)
   //if (!all.wv.isNull() && !all.seeded) // don't free weight vector if it is shared with another instance
-   // all.wv.~weight_vector(); 
+  //all.wv.~weight_vector(); 
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.seeded)
+  if (!all.wv.seeded())
   { delete(all.sd->ldict);
     free(all.sd);
   }

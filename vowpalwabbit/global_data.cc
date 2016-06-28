@@ -344,8 +344,8 @@ vw::vw()
   progress_add = false;   // default is multiplicative progress dumps
   progress_arg = 2.0;     // next update progress dump multiplier
 
-  seeded = false; // default is not to share model states
-
+  //seeded = false; // default is not to share model states
+  
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;

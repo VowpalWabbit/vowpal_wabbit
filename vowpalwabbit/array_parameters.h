@@ -104,16 +104,20 @@ private:
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
 	size_t _size;
+	bool _seeded;
 
 public:
 	typedef weights_iterator iterator;
 
 	weight_vector()
-		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _size(0), _stride_shift(0)
+		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _size(0), _stride_shift(0),_seeded(false)
 	{ }
 
-	weight_vector(size_t length, uint32_t _stride_shift=0)
-		: _begin(calloc_mergable_or_throw<weight>(length << _stride_shift)), _weight_mask((length << _stride_shift) - 1), _size(length << _stride_shift)
+	weight_vector(size_t length) 
+		: _begin(calloc_mergable_or_throw<weight>(length << _stride_shift)),
+		_weight_mask((length << _stride_shift) - 1),
+		_size(length << _stride_shift),
+		_seeded(false)
 	{ }
 
 	inline weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
@@ -133,18 +137,23 @@ public:
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 
 	uint64_t mask()
-	{
-		return _weight_mask;
+	{ return _weight_mask;
 	}
 
 	uint32_t stride()
-	{
-		return _stride_shift;
+	{ return _stride_shift;
 	}
 	//TODO: needs to be removed.
 	void stride(uint32_t stride)
-	{
-		_stride_shift = stride;
+	{ _stride_shift = stride;
+	}
+	
+	bool seeded()
+	{ return _seeded;
+	}
+	
+	void seeded(bool seeded)
+	{ _seeded = seeded;
 	}
 
 	void share(size_t length)
@@ -160,7 +169,7 @@ public:
      	  #endif
 	}
 	~weight_vector(){
-		if (_begin != nullptr)
+		if (_begin != nullptr && !_seeded)
 		{
 			free(_begin);
 			_begin = nullptr;
