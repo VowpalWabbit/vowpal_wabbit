@@ -45,7 +45,7 @@ inline float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(vw& all)
 { new_options(all)
-  ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
+  ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic, glf1 or poisson");
   add_options(all);
   po::variables_map& vm = all.vm;
   scorer& s = calloc_or_throw<scorer>();
