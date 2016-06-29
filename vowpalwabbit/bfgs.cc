@@ -453,6 +453,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
     }
 
   float max_precond = (max_hessian==0.f) ? 0.f : max_precond_ratio / max_hessian;
+  weights = all.wv;
   w_cond = weights.begin(W_COND);
   for (; w_cond != weights.end(W_COND); ++w_cond)
   { if (infpattern(*w_cond) || *w_cond>max_precond)

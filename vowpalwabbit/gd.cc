@@ -802,9 +802,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
     if(all.adaptive && all.initial_t > 0)
 	{  weight_vector& weights = all.wv;
-	   weight_vector::iterator w = weights.begin(0);
-		++w;
-      for (; w != weights.end(); ++w)
+	   weight_vector::iterator w = weights.begin(1);	
+      for (; w != weights.end(1); ++w)
       { *w = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
