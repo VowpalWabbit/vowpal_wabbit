@@ -1456,8 +1456,14 @@ void finish(vw& all, bool delete_all)
     if (all.sd->queries > 0)
       cerr << endl << "total queries = " << all.sd->queries;
     if (all.sd->overlapped_and_range_small > 0)
-      cerr << endl << "total overlapped and range small = " << all.sd->overlapped_and_range_small << endl;
+      cerr << endl << "total overlapped and range small = " << all.sd->overlapped_and_range_small;
+
+    for (size_t i=0; i<all.sd->examples_by_queries.size(); i++)
+    {  cerr << endl << "examples with " << i << " labels queried = " << all.sd->examples_by_queries[i];
+    }
+   
     cerr << endl;
+
   }
 
   // implement finally.

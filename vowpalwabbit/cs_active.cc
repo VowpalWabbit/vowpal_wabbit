@@ -26,6 +26,8 @@ struct cs_active
   size_t min_labels;
   size_t max_labels;
 
+  bool is_baseline;  
+
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
 };
@@ -169,9 +171,12 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     }
     
     bool query = (n_overlapped > 1);
+    size_t queries = cs_a.all->sd->queries;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && cl.is_range_overlapped && cl.is_range_large), cl.query_needed);
+    { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large))), cl.query_needed);
     }
+
+    cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
 
     ec.partial_prediction = score;
     if(is_learn)
@@ -201,6 +206,7 @@ base_learner* cs_active_setup(vw& all)
 
   new_options(all, "cost-sensitive active Learning options")
   ("simulation", "cost-sensitive active learning simulation mode")
+  ("baseline", "cost-sensitive active learning baseline")
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 0.1.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
   ("alpha", po::value<float>(),"Non-negative noise condition parameter. Larger value means less noise. Default 0.")
@@ -221,7 +227,12 @@ base_learner* cs_active_setup(vw& all)
   data.cost_min = 0.f;
   data.t = 1;
   data.max_labels = (size_t)-1;
-  data.min_labels = (size_t)-1; 
+  data.min_labels = (size_t)-1;
+  data.is_baseline = false; 
+  
+  if(all.vm.count("baseline"))
+  { data.is_baseline = true;
+  }
   
   if(all.vm.count("mellowness"))
   { data.c0 = all.vm["mellowness"].as<float>();
@@ -280,14 +291,17 @@ base_learner* cs_active_setup(vw& all)
   learner<cs_active>* l; 
 
   if (all.vm.count("simulation"))
-     l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
+    l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
   else
-     l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+    l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
 
   all.set_minmax(all.sd,data.cost_max);
   all.set_minmax(all.sd,data.cost_min);
 
   all.p->lp = cs_label; // assigning the label parser
+  for (uint32_t i=0; i<data.num_classes+1; i++)
+    all.sd->examples_by_queries.push_back(0); 
+
   l->set_finish_example(finish_example);
   base_learner* b = make_base(*l);
   all.cost_sensitive = b;
