@@ -235,8 +235,8 @@ vw::vw()
 { sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
-  sd->max_label = 1.;
-  sd->min_label = 0.;
+  sd->max_label = -FLT_MAX;
+  sd->min_label = FLT_MAX;
 
   p = new_parser();
   p->emptylines_separate_examples = false;
