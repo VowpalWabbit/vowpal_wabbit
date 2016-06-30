@@ -16,7 +16,6 @@ struct cs_active
 { // active learning algorithm parameters
   float c0; // mellowness controlling the width of the set of good functions
   float c1; // multiplier on the threshold for the cost range test
-  float alpha; // noise parameter
   float cost_max; // max cost
   float cost_min; // min cost
 
@@ -67,9 +66,6 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
      
     if (is_simulation)
     { // In simulation mode 
-      // Use the true cost of this label if these two conditions hold:
-      // (1) query = true, meaning there is more than one good prediction and some of them have large cost ranges.
-      // (2) this label is a good prediction, i.e., its cost range overlaps with that of the label with the min max cost.
       if(query_this_label)
       { ec.l.simple.label = cost;
         all.sd->queries += 1;
@@ -139,6 +135,11 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   
     // Double label query budget	
     cs_a.min_labels *= 2;
+    for (size_t i=0; i<cs_a.all->sd->examples_by_queries.size(); i++)
+    {  cerr << endl << "examples with " << i << " labels queried = " << cs_a.all->sd->examples_by_queries[i];
+    }
+    cerr << endl << endl;
+
   }
   
   if(cs_a.all->sd->queries >= cs_a.max_labels*cs_a.num_classes)
@@ -154,7 +155,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   float t = (float)cs_a.t; // ec.example_t;  // current round
   float t_prev = t-1.; // ec.weight; // last round
 
-  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/pow(t,1.f/(cs_a.alpha+2.f)); // threshold on cost range
+  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/sqrt(t); // threshold on cost range
   float delta = cs_a.c0*log((float)(cs_a.num_classes*max(t_prev,1.f)))*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -209,7 +210,6 @@ base_learner* cs_active_setup(vw& all)
   ("baseline", "cost-sensitive active learning baseline")
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 0.1.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
-  ("alpha", po::value<float>(),"Non-negative noise condition parameter. Larger value means less noise. Default 0.")
   ("max_labels", po::value<float>(), "maximum number of label queries.")
   ("min_labels", po::value<float>(), "minimum number of label queries.")
   ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
@@ -221,7 +221,6 @@ base_learner* cs_active_setup(vw& all)
   data.num_classes = (uint32_t)all.vm["cs_active"].as<size_t>();
   data.c0 = 0.1;
   data.c1 = 0.5;
-  data.alpha = 0.f;
   data.all = &all;
   data.cost_max = 1.f;
   data.cost_min = 0.f;
@@ -240,10 +239,6 @@ base_learner* cs_active_setup(vw& all)
 
   if(all.vm.count("range_c"))
   { data.c1 = all.vm["range_c"].as<float>();
-  }
-  
-  if(all.vm.count("alpha"))
-  { data.alpha = all.vm["alpha"].as<float>();
   }
   
   if(all.vm.count("cost_max"))
