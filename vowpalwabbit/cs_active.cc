@@ -138,6 +138,16 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     for (size_t i=0; i<cs_a.all->sd->examples_by_queries.size(); i++)
     {  cerr << endl << "examples with " << i << " labels queried = " << cs_a.all->sd->examples_by_queries[i];
     }
+
+    cerr << endl << "labels outside of cost range = " << cs_a.all->sd->labels_outside_range;
+    cerr << endl << "average distance to range = " << cs_a.all->sd->distance_to_range/((float)cs_a.all->sd->labels_outside_range);
+    cerr << endl << "average range = " << cs_a.all->sd->range/((float)cs_a.all->sd->labels_outside_range);
+ 
+    /*
+    for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
+    {  cerr << endl << "label " << i << ", average distance to range = " << cs_a.all->sd->distance_to_range[i]/((float)(cs_a.t-1));
+    }*/
+
     cerr << endl << endl;
 
   }
@@ -169,6 +179,13 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
       n_overlapped += (uint32_t)(cl.is_range_overlapped); 
       cs_a.all->sd->overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
+      if(cl.x > cl.max_pred || cl.x < cl.min_pred)
+      {  cs_a.all->sd->labels_outside_range++;
+         //cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+         cs_a.all->sd->distance_to_range += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+         cs_a.all->sd->range += cl.max_pred - cl.min_pred;
+      }
+
     }
     
     bool query = (n_overlapped > 1);
@@ -296,6 +313,11 @@ base_learner* cs_active_setup(vw& all)
   all.p->lp = cs_label; // assigning the label parser
   for (uint32_t i=0; i<data.num_classes+1; i++)
     all.sd->examples_by_queries.push_back(0); 
+
+  /*
+  for (uint32_t i=0; i<data.num_classes; i++)
+    all.sd->distance_to_range.push_back(0.f); 
+  */
 
   l->set_finish_example(finish_example);
   base_learner* b = make_base(*l);

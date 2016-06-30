@@ -1461,6 +1461,18 @@ void finish(vw& all, bool delete_all)
     for (size_t i=0; i<all.sd->examples_by_queries.size(); i++)
     {  cerr << endl << "examples with " << i << " labels queried = " << all.sd->examples_by_queries[i];
     }
+    
+    if (all.sd->labels_outside_range > 0)
+    {  cerr << endl << "labels outside of cost range = " << all.sd->labels_outside_range;
+       cerr << endl << "average distance to range = " << all.sd->distance_to_range/((float)all.sd->labels_outside_range);
+       cerr << endl << "average range = " << all.sd->range/((float)all.sd->labels_outside_range);
+    }
+   
+    /* 
+    for (size_t i=0; i<all.sd->distance_to_range.size(); i++)
+    {  cerr << endl << "label " << i << ", average distance to range = " << all.sd->distance_to_range[i]/((float)all.sd->example_number);
+    }
+    */
    
     cerr << endl;
 
