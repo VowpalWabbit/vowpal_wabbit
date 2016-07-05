@@ -85,7 +85,7 @@ void print_result(int f, float res, float, v_array<char> tag)
     if (floorf(res) != res)
       sprintf(temp, "%f", res);
     else
-      sprintf(temp, "%d", (uint32_t) res);
+      sprintf(temp, "%.0f", res);
     std::stringstream ss;
     ss << temp;
     print_tag(ss, tag);
