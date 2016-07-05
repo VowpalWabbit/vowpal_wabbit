@@ -199,7 +199,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   { initialize_regressor(*all);
     if (all->random_weights)
     { 
-	  for (weight_vector::iterator j = w.begin(0); j != w.end(); ++j)
+	  for (weight_vector::iterator j = w.begin(); j != w.end(); ++j)
 		  *j = (float)(0.1 * frand48());
     }  
   }
