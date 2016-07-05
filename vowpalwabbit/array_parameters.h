@@ -138,6 +138,10 @@ public:
 	uint64_t mask()
 	{ return _weight_mask;
 	}
+	
+	void mask(uint64_t weight_mask)
+	{ _weight_mask = weight_mask;
+	}
 
 	uint32_t stride_shift()
 	{ return _stride_shift;

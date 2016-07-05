@@ -21,7 +21,9 @@ void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(vw& all, weight_vector& weights, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
-  weight_vector local_grad(length);
+  weight_vector local_grad;
+  local_grad.stride_shift(0);
+  local_grad = weight_vector(length);
  
   weight_vector::iterator i = weights.begin(o);
   weight_vector::iterator j = local_grad.begin();

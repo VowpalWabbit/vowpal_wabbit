@@ -575,16 +575,16 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
-  weight_vector::iterator v = weights.begin(0);
-
+  
   if(all.print_invert)   //write readable model with feature names
   { 
-    stringstream msg;
+	weight_vector::iterator v = weights.begin(0);
+	stringstream msg;
     typedef std::map< std::string, size_t> str_int_map;
     
     for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
     { 
-	  v += it->second;
+	  v = weights.begin(0) + it->second; 
       if(*v != 0.)
       {
         msg << it->first;
@@ -598,9 +598,9 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     return;
   }
 
-  v = weights.begin(0);
   do
   { brw = 1;
+    weight_vector::iterator v = weights.begin(0);
     if (read)
       { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
@@ -612,12 +612,13 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
+	    v += i;
         brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); //TODO: fix &(*v)
       }
     }
     else// write binary or text
     {
-
+	  v += i;
       if (*v != 0.)
         { stringstream msg;
           msg << i;
@@ -636,12 +637,9 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     }
 
 	if (!read)
-	{
-		++v;
 		++i;
-	}
   }
-  while ((!read && v != weights.end()) || (read && brw >0));
+  while ((!read && i < length) || (read && brw >0));
 }
 
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
