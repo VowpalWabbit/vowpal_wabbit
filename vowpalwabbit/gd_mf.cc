@@ -207,7 +207,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-	 weight_vector::iterator iter = w.begin(0);
+	 
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -215,13 +215,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
-      if (brw != 0)
-        for (weight_vector::iterator::w_iter v = iter.begin() = 0; v != iter.end(K); ++v)
-		{ 
-          msg << &(*v) << " ";
-          brw += bin_text_read_write_fixed(model_file,(char *)&(*v), sizeof (*v),
-                                           "", read, msg, text);
-        }
+	  if (brw != 0)
+	  { weight_vector::iterator iter = w.begin(0)+ i;
+		for (weight_vector::iterator::w_iter v = iter.begin() = 0; v != iter.end(K); ++v)
+		{  msg << &(*v) << " ";
+		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+				  "", read, msg, text);
+		}
+	  }
       if (text)
         {
           msg << "\n";
@@ -230,10 +231,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         }
 
 	  if (!read)
-	  {
-		  ++i;
-		  ++iter;
-	  }
+	    ++i;
     }
     while ((!read && i < length) || (read && brw >0));
   }

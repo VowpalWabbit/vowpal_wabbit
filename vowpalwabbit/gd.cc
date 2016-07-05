@@ -734,13 +734,13 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   uint64_t length = (uint64_t)1 << all.num_bits;
 
   weight_vector& weights = all.wv;
-  weight_vector::iterator v = weights.begin(0);
-  weight_vector::iterator v1 = weights.begin(1);
-  weight_vector::iterator v2 = weights.begin(2);
   uint32_t i = 0;
   size_t brw = 1;
   do
   { brw = 1;
+    weight_vector::iterator v = weights.begin(0);
+    weight_vector::iterator v1 = weights.begin(1);
+    weight_vector::iterator v2 = weights.begin(2);
     if (read)
     { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -748,7 +748,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       { if (i >= length)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
-
+	    v += i;
+		v1 += i;
+		v2 += i;
         if (g == NULL || (! g->adaptive && ! g->normalized))
           brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
@@ -761,6 +763,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     }
     else // write binary or text
     { 
+	  v += i;
+      v1 += i;
+	  v2 += i;
       if (*v != 0.)
       { 
         msg << i;
@@ -786,11 +791,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
       }
     }
 	if (!read)
-	{
-		++v; ++v1; ++v2; ++i;
-	}
+	  ++i;
   }
-  while ((!read && v != weights.end()) || (read && brw >0));
+  while ((!read && i < length) || (read && brw >0));
 }
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)

@@ -33,7 +33,9 @@ void initialize_regressor(vw& all)
 
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { all.wv = *(new weight_vector(length)); //not sure if this is correct
+    { 
+		if (all.wv.stride_shift() != 0)
+			all.wv = *(new weight_vector(length, all.wv.stride_shift())); //TODO: need to change. Very hacky.
     }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
