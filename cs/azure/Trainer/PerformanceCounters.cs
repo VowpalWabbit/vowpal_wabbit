@@ -5,6 +5,8 @@ using System.Linq;
 using System.Diagnostics;
 using Microsoft.ApplicationInsights;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace VowpalWabbit.Azure.Trainer
 {
@@ -81,7 +83,13 @@ namespace VowpalWabbit.Azure.Trainer
                             .Replace('_', ' ')
                             .Replace("Per", "/");
 
-                        perfCollectorModule.Counters.Add(new PerformanceCounterCollectionRequest(perfCounterSpec, reportAs));
+                        // http://i1.blogs.msdn.com/b/visualstudioalm/archive/2015/04/01/application-insights-choose-your-own-performance-counters.aspx
+                        // Currently, metric names may only contain letters, round brackets, forward slashes, hyphens, underscores, spaces and dots.
+                        var reportAsStringBuilder = new StringBuilder(reportAs);
+                        foreach (Match match in Regex.Matches(reportAs, "[0-9]"))
+                            reportAsStringBuilder[match.Index] = (char)('A' + (match.Groups[0].Value[0] - '0'));
+
+                        perfCollectorModule.Counters.Add(new PerformanceCounterCollectionRequest(perfCounterSpec, reportAsStringBuilder.ToString()));
                     }
                 }
 
@@ -97,7 +105,11 @@ namespace VowpalWabbit.Azure.Trainer
 
         public void Dispose()
         {
-            foreach (var p in typeof(PerformanceCounters).GetProperties())
+            var props = typeof(PerformanceCounters)
+                .GetProperties()
+                .Where(p => p.PropertyType == typeof(IDisposable));
+
+            foreach (var p in props)
             {
                 var perfCounter = (IDisposable)p.GetValue(this);
                 
