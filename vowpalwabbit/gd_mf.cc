@@ -217,7 +217,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
                                        "", read, msg, text);
 	  if (brw != 0)
 	  { weight_vector::iterator iter = w.begin(0)+ i;
-		for (weight_vector::iterator::w_iter v = iter.begin() = 0; v != iter.end(K); ++v)
+		for (weight_vector::iterator::w_iter v = iter.begin(); v != iter.end(K); ++v)
 		{  msg << &(*v) << " ";
 		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
 				  "", read, msg, text);
