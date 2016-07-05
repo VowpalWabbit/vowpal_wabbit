@@ -9,10 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using VW;
-using VW.Labels;
 using VW.Labels;
 using VW.Serializer;
 
@@ -255,7 +251,7 @@ namespace VW
         }
 
         /// <summary>
-        /// Learn from the given example and return the current prediction for it.
+        /// Predict for the given example and return the current prediction for it.
         /// </summary>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to evaluate within <paramref name="actionDependentFeatures"/>.</param>

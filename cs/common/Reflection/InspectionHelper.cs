@@ -13,8 +13,16 @@ using System.Linq;
 
 namespace VW.Reflection
 {
+    /// <summary>
+    /// Utilitiy class supporting feature type inspection.
+    /// </summary>
     public static class InspectionHelper
     {
+        /// <summary>
+        /// Determines if the <paramref name="elemType"/> is a supported numeric type.
+        /// </summary>
+        /// <param name="elemType">The type to be inspected.</param>
+        /// <returns>True if numeric, false otherwise.</returns>
         public static bool IsNumericType(Type elemType)
         {
             return IsNumericTypeInternal(elemType) ||
@@ -40,6 +48,12 @@ namespace VW.Reflection
                     || elemType == typeof(Int64);
         }
 
+        /// <summary>
+        /// If <paramref name="type"/> is an enumerable type (such as array or <see cref="IEnumerable{T}"/>), this method will 
+        /// return the element type.
+        /// </summary>
+        /// <param name="type">The type to be inspected.</param>
+        /// <returns>If <paramref name="type"/> is an enumerable type the element type is returned, otherwise null.</returns>
         public static Type GetEnumerableElementType(Type type)
         {
             Contract.Requires(type != null);

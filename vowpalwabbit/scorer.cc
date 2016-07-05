@@ -45,7 +45,7 @@ inline float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(vw& all)
 { new_options(all)
-  ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
+  ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic, glf1 or poisson");
   add_options(all);
   po::variables_map& vm = all.vm;
   scorer& s = calloc_or_throw<scorer>();
@@ -69,6 +69,12 @@ LEARNER::base_learner* scorer_setup(vw& all)
     l = &init_learner(&s, base, predict_or_learn<true, glf1>,
                       predict_or_learn<false, glf1>);
     multipredict_f = multipredict<glf1>;
+  }
+  else if (link.compare("poisson") == 0)
+  {
+    *all.file_options << " --link=poisson ";
+    l = &init_learner(&s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
+    multipredict_f = multipredict<expf>;
   }
   else
     THROW("Unknown link function: " << link);

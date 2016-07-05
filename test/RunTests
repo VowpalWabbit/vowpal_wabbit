@@ -1462,3 +1462,26 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_first.stderr
     pred-sets/ref/cbe_adf_first.predict
 
+# Test 132: train a poisson model
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict
+    train-sets/ref/poisson.train.stderr
+    pred-sets/ref/poisson.train.predict
+
+# Test 133: train a poisson model without invariant updates
+{VW} --quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict
+    train-sets/ref/poisson.train.normalized.stderr
+    pred-sets/ref/poisson.train.normalized.predict
+
+# Test 134: second order online learning
+{VW} --OjaNewton -d train-sets/0001.dat -f models/second_order.model -p second_order.predict
+    train-sets/ref/second_order.stderr
+    pred-sets/ref/second_order.predict
+
+# Test 135: cb explore adf
+{VW} -d train-sets/cb_adf_crash_1.data -f models/cb_adf_crash.model --cb_explore_adf --epsilon 0.05
+    train-sets/ref/cb_adf_crash1.stderr
+
+# Test 136: cb explore adf predict
+{VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
+    train-sets/ref/cb_adf_crash2.stderr
+

@@ -9,10 +9,12 @@ license as described in the file LICENSE.
 #include "vw_clr.h"
 #include "vw_interface.h"
 #include "vw_labelcomparator.h"
+#include "vw_label.h"
 
 namespace VW
 {
-    using namespace System::Collections::Generic;
+  using namespace System::Collections::Generic;
+  using namespace VW::Labels;
 
     [System::Diagnostics::DebuggerDisplay("{m_weight_index}:{m_x}")]
     public ref struct VowpalWabbitFeature
@@ -235,6 +237,11 @@ namespace VW
         property size_t NumberOfFeatures
         {
             size_t get();
+        }
+
+        property ILabel^ Label
+        {
+            ILabel^ get();
         }
     };
 }

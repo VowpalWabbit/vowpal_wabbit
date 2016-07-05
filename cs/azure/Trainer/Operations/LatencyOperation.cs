@@ -1,0 +1,26 @@
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="LatencyOperation.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System;
+using System.Threading.Tasks;
+using VowpalWabbit.Azure.Trainer.Data;
+
+namespace VowpalWabbit.Azure.Trainer
+{
+    internal sealed class LatencyOperation : ThrottledOperation<TrainerResult>
+    {
+        public LatencyOperation() : base(TimeSpan.FromSeconds(1))
+        { }
+
+        protected override Task ProcessInternal(TrainerResult value)
+        {
+            this.telemetry.TrackMetric("End-to-End Latency " + value.PartitionKey, value.Latency.TotalSeconds);
+            return Task.FromResult(true);
+        }
+    }
+}

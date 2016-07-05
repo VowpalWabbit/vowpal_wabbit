@@ -334,13 +334,15 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
       try
       { f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (exception e) { f = -1;}
+      catch (exception e) { f = -1; }
     if (f == -1)
       make_write_cache(all, caches[i], quiet);
     else
     { uint64_t c = cache_numbits(all.p->input, f);
       if (c < all.num_bits)
-      { all.p->input->close_file();
+      { if (!quiet)
+          cerr << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
+        all.p->input->close_file();
         make_write_cache(all, caches[i], quiet);
       }
       else

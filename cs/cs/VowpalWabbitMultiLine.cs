@@ -12,7 +12,6 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using VW.Labels;
-using VW.Labels;
 using VW.Serializer;
 
 namespace VW

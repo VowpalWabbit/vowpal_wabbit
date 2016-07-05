@@ -66,6 +66,7 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "vw_validate.h"
 #include "vw_allreduce.h"
+#include "OjaNewton.h"
 #include "audit_regressor.h"
 
 using namespace std;
@@ -704,6 +705,7 @@ void parse_feature_tweaks(vw& all)
     vector<string> ignore = vm["ignore"].as< vector<string> >();
     for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
     { *i = spoof_hex_encoded_namespaces(*i);
+      *all.file_options << " --ignore " << *i;
       for (string::const_iterator j = i->begin(); j != i->end(); j++)
         all.ignore[(size_t)(unsigned char)*j] = true;
 
@@ -853,7 +855,7 @@ void parse_example_tweaks(vw& all)
   ("min_prediction", po::value<float>(&(all.sd->min_label)), "Smallest prediction to output")
   ("max_prediction", po::value<float>(&(all.sd->max_label)), "Largest prediction to output")
   ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
-  ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
+  ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson.")
   ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
   ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
   ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
@@ -1052,6 +1054,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(noop_setup);
   all.reduction_stack.push_back(lda_setup);
   all.reduction_stack.push_back(bfgs_setup);
+  all.reduction_stack.push_back(OjaNewton_setup);
 
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
@@ -1330,16 +1333,17 @@ vw* initialize(string s, io_buf* model)
 {
   int argc = 0;
   char** argv = get_argv_from_string(s,argc);
-
+  vw* ret = nullptr;
+  
   try
-  { return initialize(argc, argv, model);
-  }
+  { ret = initialize(argc, argv, model); }
   catch(...)
   { free_args(argc, argv);
     throw;
   }
-
+  
   free_args(argc, argv);
+  return ret;
 }
 
 vw* initialize(int argc, char* argv[], io_buf* model)

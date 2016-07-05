@@ -9,6 +9,7 @@ using VW;
 using VW.Labels;
 using VW.Serializer;
 using VW.Serializer.Attributes;
+using VW.Serializer.Intermediate;
 
 namespace cs_unittest
 {
@@ -230,6 +231,106 @@ namespace cs_unittest
                     },
                     "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3}",
                     VowpalWabbitLabelComparator.ContextualBandit);
+
+                // all lower case (ASA issue)
+                validator.Validate(new[] {
+                     " | w1 w2 |a x:1",
+                     "0:-1:.3 | w2 w3"
+                    },
+                     "{\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelindex\":1, \"_label_cost\":-1, \"_label_probability\":0.3}",
+                     VowpalWabbitLabelComparator.ContextualBandit);
+
+                validator.Validate(new[] {
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     " | w2 w3"
+                    },
+                     "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelindex\":null}",
+                     VowpalWabbitLabelComparator.ContextualBandit);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonLabelExtraction()
+        {
+            using (var vw = new VowpalWabbit("--cb_adf --rank_all"))
+            {
+                using (var jsonSerializer = new VowpalWabbitJsonSerializer(vw))
+                {
+                    string eventId = null;
+                    jsonSerializer.RegisterExtension((state, property) =>
+                    {
+                        Assert.AreEqual(property, "_eventid");
+                        Assert.IsTrue(state.Reader.Read());
+
+                        eventId = (string)state.Reader.Value;
+                        return true;
+                    });
+
+                    jsonSerializer.Parse("{\"_eventid\":\"abc123\",\"a\":1,\"_label_cost\":-1,\"_label_probability\":0.3}");
+
+                    Assert.AreEqual("abc123", eventId);
+
+                    using (var examples = jsonSerializer.CreateExamples())
+                    {
+                        var single = examples as VowpalWabbitSingleLineExampleCollection;
+                        Assert.IsNotNull(single);
+
+                        var label = single.Example.Label as ContextualBanditLabel;
+                        Assert.IsNotNull(label);
+
+                        Assert.AreEqual(-1, label.Cost);
+                        Assert.AreEqual(0.3, label.Probability, 0.0001);
+                    }
+                }
+
+                using (var jsonSerializer = new VowpalWabbitJsonSerializer(vw))
+                {
+                    jsonSerializer.Parse("{\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\"}], \"_labelindex\":1, \"_label_cost\":-1, \"_label_probability\":0.3}");
+
+                    using (var examples = jsonSerializer.CreateExamples())
+                    {
+                        var multi = examples as VowpalWabbitMultiLineExampleCollection;
+                        Assert.IsNotNull(multi);
+
+                        Assert.AreEqual(2, multi.Examples.Length);
+                        var label = multi.Examples[0].Label as ContextualBanditLabel;
+                        Assert.AreEqual(0, label.Cost);
+                        Assert.AreEqual(0, label.Probability);
+
+                        label = multi.Examples[1].Label as ContextualBanditLabel;
+                        Assert.IsNotNull(label);
+
+                        Assert.AreEqual(-1, label.Cost);
+                        Assert.AreEqual(0.3, label.Probability, 0.0001);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonRedirection()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings("--cb_adf")))
+            {
+                validator.Validate(new[] {
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     "0:-1:.3 | w2 w3"
+                    },
+                    "{\"_ignoreMe\":5,\"_sub\":{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\"}]}, \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3}",
+                    VowpalWabbitLabelComparator.ContextualBandit,
+                    extension: (state, property) =>
+                    {
+                        if (!property.Equals("_sub"))
+                            return false;
+
+                        state.Parse();
+
+                        return true;
+                    });
             }
         }
 

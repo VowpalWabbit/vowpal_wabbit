@@ -1,4 +1,0 @@
-include Makefile Makefile.am configure.ac
-recursive-include vowpalwabbit *.cc *.h *.config Makefile Makefile.am
-recursive-include python *.cc Makefile
-recursive-include explore *.h *.config Makefile
