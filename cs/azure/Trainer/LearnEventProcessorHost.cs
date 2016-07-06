@@ -29,15 +29,21 @@ namespace VowpalWabbit.Azure.Trainer
         private Learner trainer;
         private PerformanceCounters perfCounters;
         private SafeTimer perfUpdater;
+        private DateTime? eventHubStartDateTimeUtc;
 
         public LearnEventProcessorHost()
         {
             this.telemetry = new TelemetryClient();
             this.exclusiveScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, 1);
             this.exclusiveTaskFactory = new TaskFactory(exclusiveScheduler.ExclusiveScheduler);
+            
+            // by default read from the beginning of Event Hubs event stream.
+            this.eventHubStartDateTimeUtc = null;
         }
 
-        public PerformanceCounters PerformanceCounters {  get { return this.perfCounters; } }
+        public PerformanceCounters PerformanceCounters { get { return this.perfCounters; } }
+
+        public DateTime LastStartDateTimeUtc { get; private set; }
 
         internal object InitialOffsetProvider(string partition)
         {
@@ -45,7 +51,8 @@ namespace VowpalWabbit.Azure.Trainer
             if (this.trainer.State.Partitions.TryGetValue(partition, out offset))
                 return offset;
 
-            return DateTime.UtcNow;
+            // either DateTime.UtcNow on reset or null if start the first time
+            return this.eventHubStartDateTimeUtc;
         }
 
         public async Task StartAsync(OnlineTrainerSettingsInternal settings)
@@ -114,11 +121,15 @@ namespace VowpalWabbit.Azure.Trainer
 
             await this.StopInternalAsync();
 
+            // make sure we ignore previous events
+            this.eventHubStartDateTimeUtc = DateTime.UtcNow;
+
             await this.StartInternalAsync(settings);
         }
 
         private async Task StartInternalAsync(OnlineTrainerSettingsInternal settings, OnlineTrainerState state = null)
         {
+            this.LastStartDateTimeUtc = DateTime.UtcNow;
             this.perfCounters = new PerformanceCounters(settings.Metadata.ApplicationID);
 
             // setup trainer

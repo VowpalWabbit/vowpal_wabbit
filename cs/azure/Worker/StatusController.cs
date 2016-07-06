@@ -32,7 +32,9 @@ namespace VowpalWabbit.Azure.Worker
             if (perfCounts == null)
                 return Json(new { Message = "Not yet initialized." });
 
-            return Json(new JObject(perfCounts.All.Select(pc => new JProperty(pc.CounterName, pc.RawValue))));
+            var status = new JObject(perfCounts.All.Select(pc => new JProperty(pc.CounterName, pc.RawValue)));
+            status.Add(new JProperty("LastStartDateTimeUtc", this.trainProcessorHost.LastStartDateTimeUtc));
+            return Json(status);
         }
     }
 }
