@@ -45,7 +45,7 @@ yum install -q -y boost141-devel;
 make clean;
 cat Makefile.permissive | sed 's/BOOST_LIBRARY\s*=\(.*\)/BOOST_LIBRARY =\1 -L \/usr\/lib64\/boost141/g' | sed 's/BOOST_INCLUDE\s*=\(.*\)/BOOST_INCLUDE =\1 -I \/usr\/include\/boost141/g' > Makefile.permissive.boost141;
 make -f Makefile.permissive.boost141 vw java;
-rm -f Makefile.permissive Makefile.permissive.boost141;
+rm -f Makefile.permissive.boost141 Makefile.permissive;
 mv java/target/vw_jni.lib java/target/vw_jni.Red_Hat.5.amd64.lib"
 
 red_hat_6="$early_red_hat
