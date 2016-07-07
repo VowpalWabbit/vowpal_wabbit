@@ -79,7 +79,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     new
                     {
                         name = policyName,
-                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Cost, label.Probability)
+                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Cost, label.Probability),
+                        prob = label.Probability 
                     })
             };
         }
@@ -119,7 +120,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                         // calcuate expectation under current randomized policy (using current exploration strategy)
                         // VW action is 0-based, label Action is 1 based
                         cost = trainerResult.ProgressivePrediction
-                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, ap.Action + 1, trainerResult.Label.Cost, trainerResult.Label.Probability))
+                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, ap.Action + 1, trainerResult.Label.Cost, trainerResult.Label.Probability)),
+                        prob = trainerResult.Label.Probability
                     })
             };
 
@@ -131,7 +133,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     new
                     {
                         name = "Deployed Policy",
-                        cost = trainerResult.Label.Cost
+                        cost = trainerResult.Label.Cost,
+                        prob = trainerResult.Label.Probability
                     })
             };
 
