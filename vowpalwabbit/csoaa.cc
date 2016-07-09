@@ -124,6 +124,7 @@ base_learner* csoaa_setup(vw& all)
   l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
+  cerr << "initialized csoaa!" << endl;
   return b;
 }
 

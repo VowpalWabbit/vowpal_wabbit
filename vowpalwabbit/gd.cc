@@ -499,7 +499,8 @@ float get_scale(gd& g, example& ec, float weight)
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& base, example& ec)
-{ return get_scale<adaptive>(g, ec, 1.)
+{ return 1000.;
+  return get_scale<adaptive>(g, ec, 1.)
          * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
 }
 

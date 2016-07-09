@@ -1056,7 +1056,6 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
   all.reduction_stack.push_back(active_cover_setup);
-  all.reduction_stack.push_back(cs_active_setup);
   all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
@@ -1077,6 +1076,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
 
+  all.reduction_stack.push_back(cs_active_setup);
   all.reduction_stack.push_back(CSOAA::csoaa_setup);
   all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(CSOAA::csldf_setup);

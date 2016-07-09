@@ -392,7 +392,10 @@ void print_update(search_private& priv)
   if (!priv.printed_output_header && !all.quiet)
   { const char * header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true",  "current predicted", "cur",  "cur", "predic", "cache", "examples", "");
-    fprintf(stderr, header_fmt, "loss",    "last",  "counter",  "output prefix",  "output prefix",    "pass", "pol", "made",    "hits",  "gener", "beta");
+    if (priv.active_csoaa)
+      fprintf(stderr, header_fmt, "loss",    "last",  "counter",  "output prefix",  "output prefix",    "pass", "pol", "made",    "hits",  "gener", "#run");
+    else
+      fprintf(stderr, header_fmt, "loss",    "last",  "counter",  "output prefix",  "output prefix",    "pass", "pol", "made",    "hits",  "gener", "beta");
     std::cerr.precision(5);
     priv.printed_output_header = true;
   }
@@ -436,7 +439,7 @@ void print_update(search_private& priv)
           total_pred,
           total_cach,
           total_exge,
-          priv.beta);
+          priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
     { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
@@ -1181,7 +1184,9 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     for (size_t is_local=0; is_local<= (size_t)priv.xv; is_local++)
     { int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       ec.in_use = true;
+      cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
       priv.base_learner->learn(ec, learner);
+      cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
     ec.l = old_label;
@@ -1569,7 +1574,15 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   // if there's no subsampling to do, just return [0,T)
   else if (priv.subsample_timesteps <= 0)
     for (size_t t=0; t<priv.T; t++)
-      timesteps.push_back(t);
+    { uint32_t count = 99;
+      if (priv.active_csoaa && (t < priv.active_known.size()))
+      { count = 0;
+        for (CS::wclass& wc : priv.active_known[t])
+          if (wc.query_needed) { count++; if (count > 1) break; }
+      }
+      if (count > 1)
+        timesteps.push_back(t);
+    }
 
   // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
   else if (priv.subsample_timesteps < 1)
@@ -1677,7 +1690,7 @@ void advance_from_known_actions(search_private& priv) {
   cdbg << "advance_from_known_actions t=" << t << " active_known.size()=" << priv.active_known.size() << " learn_a_idx=" << priv.learn_a_idx << endl;
   //cdbg_print_array(" active_known[t]", priv.active_known[t]);
   if (priv.learn_a_idx >= priv.active_known[t].size()) {
-    cdbg << "advance_from_known_actions setting done_with_all_actions=true" << endl;
+    cdbg << "advance_from_known_actions setting done_with_all_actions=true (active_known[t].size()=" << priv.active_known[t].size() << ")" << endl;
     priv.done_with_all_actions = true;
     return;
   }
