@@ -634,7 +634,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     for (uint64_t j = 0; j < stride * length; j += stride)
     { for (size_t k = 0; k < all->lda; k++)
       { if (all->random_weights)
-        { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
+        { all->reg.weight_vector[j + k] = (float)(-log(frand48() + 1e-6) + 1.0f);
           all->reg.weight_vector[j + k] *= (float)(l.lda_D / all->lda / all->length() * 200);
         }
       }
