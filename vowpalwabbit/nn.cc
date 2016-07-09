@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "gd.h"
 #include "vw.h"
+#include "nn.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -20,9 +21,88 @@ const float hidden_min_activation = -3;
 const float hidden_max_activation = 3;
 const uint64_t nn_constant = 533357803;
 
+// activation function to use for the hidden layer
+#define cast_uint32_t static_cast<uint32_t>
+
+static inline float
+fastpow2 (float p)
+{ float offset = (p < 0) ? 1.0f : 0.0f;
+  float clipp = (p < -126) ? -126.0f : p;
+  int w = (int)clipp;
+  float z = clipp - w + offset;
+  union { uint32_t i; float f; } v = { cast_uint32_t ( (1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) ) };
+
+  return v.f;
+}
+
+static inline float
+fastexp (float p)
+{ return fastpow2 (1.442695040f * p);
+}
+
+class tanh_activation : public activation_function
+{
+public :
+  tanh_activation()
+  {
+
+  }
+
+  inline float fire(float x)
+  {
+    return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * x));
+  }
+
+  inline float first_derivative(float x)
+  {
+    return 1 - x * x;
+  }
+
+  inline string getName()
+  {
+    return "tanh";
+  }
+
+};
+
+class rect_lin_activation : public activation_function
+{
+public :
+  rect_lin_activation()
+  {
+
+  }
+
+  inline float fire(float x)
+  {
+    return std::max(x, 0.0f);
+  }
+
+  inline float first_derivative(float x)
+  {
+    return (x > 0.0f) ? 1.0f : 0.0f;
+  }
+
+  inline string getName()
+  {
+    return "rectified_linear_unit";
+  }
+
+};
+
+activation_function* getNonlinearity(const string &actName)
+{ if(actName.compare("relu") == 0)
+    return new rect_lin_activation();
+  else if(actName.compare("tanh") == 0)
+    return new tanh_activation();
+  else
+    THROW("Invalid activation function name: \'" << actName << "\' Bailing!");
+}
+
 struct nn
 { uint32_t k;
   loss_function* squared_loss;
+  activation_function* nonlinearity;
   example output_layer;
   example hiddenbias;
   example outputweight;
@@ -44,28 +124,6 @@ struct nn
   vw* all;//many things
 };
 
-#define cast_uint32_t static_cast<uint32_t>
-
-static inline float
-fastpow2 (float p)
-{ float offset = (p < 0) ? 1.0f : 0.0f;
-  float clipp = (p < -126) ? -126.0f : p;
-  int w = (int)clipp;
-  float z = clipp - w + offset;
-  union { uint32_t i; float f; } v = { cast_uint32_t ( (1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) ) };
-
-  return v.f;
-}
-
-static inline float
-fastexp (float p)
-{ return fastpow2 (1.442695040f * p);
-}
-
-static inline float
-fasttanh (float p)
-{ return -1.0f + 2.0f / (1.0f + fastexp (-2.0f * p));
-}
 
 void finish_setup (nn& n, vw& all)
 { // TODO: output_layer audit
@@ -179,7 +237,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
   if (shouldOutput)
     for (unsigned int i = 0; i < n.k; ++i )
     { if (i > 0) outputStringStream << ' ';
-      outputStringStream << i << ':' << hidden_units[i].scalar << ',' << fasttanh (hidden_units[i].scalar); // TODO: huh, what was going on here?
+      outputStringStream << i << ':' << hidden_units[i].scalar << ',' << n.nonlinearity->fire(hidden_units[i].scalar); // TODO: huh, what was going on here?
     }
 
   n.all->loss = save_loss;
@@ -209,7 +267,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   for (unsigned int i = 0; i < n.k; ++i)
   { float sigmah =
-      (dropped_out[i]) ? 0.0f : dropscale * fasttanh (hidden_units[i].scalar);
+      (dropped_out[i]) ? 0.0f : dropscale * n.nonlinearity->fire(hidden_units[i].scalar);
     features& out_fs = n.output_layer.feature_space[nn_output_namespace];
     out_fs.values[i] = sigmah;
 
@@ -295,7 +353,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       { if (! dropped_out[i])
         { float sigmah =
             n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
-          float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
+          float sigmahprime = dropscale * n.nonlinearity->first_derivative(sigmah);
           n.outputweight.feature_space[nn_output_namespace].indicies[0] =
             n.output_layer.feature_space[nn_output_namespace].indicies[i];
           base.predict(n.outputweight, n.k);
@@ -365,6 +423,7 @@ void finish_example(vw& all, nn&, example& ec)
 
 void finish(nn& n)
 { delete n.squared_loss;
+  delete n.nonlinearity;
   free(n.hidden_units);
   free(n.dropped_out);
   free(n.hidden_units_pred);
@@ -378,10 +437,11 @@ base_learner* nn_setup(vw& all)
 { if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
     return nullptr;
   new_options(all, "Neural Network options")
-  ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
+  ("activation", po::value<string>()->default_value("tanh"), "Activation function applied to the hidden layer.")
+  ("inpass", "Train or test a feedforward network with input passthrough.")
   ("multitask", "Share hidden layer across all reduced tasks.")
-  ("dropout", "Train or test sigmoidal feedforward network using dropout.")
-  ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
+  ("dropout", "Train or test a feedforward network using dropout.")
+  ("meanfield", "Train or test a feedforward network using mean field.");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -389,6 +449,15 @@ base_learner* nn_setup(vw& all)
   n.all = &all;
   //first parse for number of hidden units
   n.k = (uint64_t)vm["nn"].as<size_t>();
+
+  //parse for activation function type
+  n.nonlinearity = getNonlinearity(vm["activation"].as<string>());
+  *all.file_options << " --activation";
+  if (! all.quiet) {
+    std::cerr << "Use activation \'" << n.nonlinearity->getName() << "\' for neural network "
+              << (all.training ? "training" : "testing")
+              << std::endl;
+  }
 
   if ( vm.count("dropout") )
   { n.dropout = true;
