@@ -451,8 +451,9 @@ base_learner* nn_setup(vw& all)
   n.k = (uint64_t)vm["nn"].as<size_t>();
 
   //parse for activation function type
-  n.nonlinearity = getNonlinearity(vm["activation"].as<string>());
-  *all.file_options << " --activation";
+  const string activation_type = vm["activation"].as<string>();
+  n.nonlinearity = getNonlinearity(activation_type);
+  *all.file_options << " --activation " << activation_type;
   if (! all.quiet) {
     std::cerr << "Use activation \'" << n.nonlinearity->getName() << "\' for neural network "
               << (all.training ? "training" : "testing")
