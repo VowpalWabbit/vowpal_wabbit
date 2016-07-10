@@ -363,6 +363,11 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
   }
   else if(funcName.compare("poisson") == 0)
   {
+    if (all.set_minmax != noop_mm)
+    {
+      all.sd->min_label = -50;
+      all.sd->max_label = 50;
+    }
     return new poisson_loss();
   }
   else
