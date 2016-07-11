@@ -1448,7 +1448,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cbe_adf_epsilon.predict
 
 # Test 129: cb_explore_adf with softmax exploration
-{VW} --cb_explore_adf --softmax 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
+{VW} --cb_explore_adf --softmax --lambda 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict
     train-sets/ref/cbe_adf_softmax.stderr
     pred-sets/ref/cbe_adf_softmax.predict
 

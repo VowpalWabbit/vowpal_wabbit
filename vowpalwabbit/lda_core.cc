@@ -634,7 +634,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 	for (; j != weights.end(); ++j, ++w_lda)
 	{ for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(all->lda); ++k)
 	  { if (all->random_weights)
-	    { *k = (float)(-log(frand48()) + 1.0f);
+	    { *k = (float)(-log(frand48() + 1e-6) + 1.0f);
 		  *k *= (float)(l.lda_D / all->lda / all->length() * 200);
 	    }
 	  }
