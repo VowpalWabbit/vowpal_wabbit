@@ -173,15 +173,20 @@ namespace VowpalWabbit.Azure.Trainer
 
         private void UpdatePerformanceCounters()
         {
-            try
+            exclusiveTaskFactory.StartNew(() =>
             {
-                this.trainer.UpdatePerformanceCounters();
-                this.trainProcessorFactory.UpdatePerformanceCounters();
-            }
-            catch (Exception ex)
-            {
-                this.telemetry.TrackException(ex);
-            }
+                // make sure this is thread safe w.r.t reset/start/stop/...
+                try
+                {
+                    this.trainer.UpdatePerformanceCounters();
+                    this.trainProcessorFactory.UpdatePerformanceCounters();
+                }
+                catch (Exception ex)
+                {
+                    this.telemetry.TrackException(ex);
+                }
+            })
+            .Wait();
         }
 
         private async Task StopInternalAsync()
