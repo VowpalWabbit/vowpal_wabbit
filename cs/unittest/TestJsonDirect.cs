@@ -106,6 +106,16 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("JSON")]
+        public void TestJsonDictionaryStringFloat()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<POCODict>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
+            {
+                vw.Validate("|Features Feature1:2.1 Feature2:3.2", new POCODict { Features = new Dictionary<string, float> { { "Feature1", 2.1f }, { "Feature2", 3.2f } } });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
         public void TestJsonByte()
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContextByte>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))

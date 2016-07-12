@@ -229,6 +229,21 @@ namespace cs_unittest
                 vw.Validate("| Feature1 Feature2:5", new POCO { Feature1 = true, Feature2 = 5 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("Marshal")]
+        public void TestFeatureDictionaryStringFloat()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<POCODict>(new VowpalWabbitSettings { TypeInspector = TypeInspector.All }))
+            {
+                vw.Validate("| Feature1:2.1 Feature2:3.2", new POCODict { Features = new Dictionary<string, float> { { "Feature1", 2.1f }, { "Feature2", 3.2f } } });
+            }
+        }
+    }
+
+    public class POCODict
+    {
+        public Dictionary<string, float> Features { get; set; }
     }
 
     public class POCO

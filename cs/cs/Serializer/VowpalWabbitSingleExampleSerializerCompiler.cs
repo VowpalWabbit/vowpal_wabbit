@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -23,6 +24,7 @@ namespace VW.Serializer
                 /// <summary>
         /// Internal structure collecting all itmes required to marshal a single feature.
         /// </summary>
+        [DebuggerDisplay("FeatureExpressionInternal(Source={Source}, MarshalMethod={MarshalMethod})")]
         internal sealed class FeatureExpressionInternal
         {
             /// <summary>
@@ -326,6 +328,18 @@ namespace VW.Serializer
             return null;
         }
 
+        private bool ContainsAncestor(FeatureExpressionInternal candidate, List<FeatureExpressionInternal> validFeature)
+        {
+            if (candidate.Source.Parent == null)
+                return false;
+
+            if (validFeature.Any(valid => object.ReferenceEquals(valid.Source, candidate.Source.Parent)))
+                return true;
+
+            var parent = this.allFeatures.First(f => object.ReferenceEquals(f.Source, candidate.Source.Parent));
+            return ContainsAncestor(parent, validFeature);
+        }
+
         /// <summary>
         /// Resolve methods for each feature base on feature type and configuration.
         /// </summary>
@@ -334,6 +348,10 @@ namespace VW.Serializer
             var validFeature = new List<FeatureExpressionInternal>(this.allFeatures.Length);
             foreach (var feature in this.allFeatures)
             {
+                // skip any feature which parent feature is already resolved
+                if (ContainsAncestor(feature, validFeature))
+                    continue;
+
                 feature.MarshalMethod = this.ResolveFeatureMarshalMethod(feature.Source);
 
                 if (feature.MarshalMethod != null)
