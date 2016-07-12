@@ -232,11 +232,11 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
-        public void TestFeatureDictionaryStringFloat()
+        public void TestFeatureDictionaryStringToFloat()
         {
             using (var vw = new VowpalWabbitExampleValidator<POCODict>(new VowpalWabbitSettings { TypeInspector = TypeInspector.All }))
             {
-                vw.Validate("| Feature1:2.1 Feature2:3.2", new POCODict { Features = new Dictionary<string, float> { { "Feature1", 2.1f }, { "Feature2", 3.2f } } });
+                vw.Validate("| Abc:2.1 def:3.2", new POCODict { Features = new Dictionary<string, float> { { "Abc", 2.1f }, { "def", 3.2f } } });
             }
         }
     }
