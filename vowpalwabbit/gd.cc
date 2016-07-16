@@ -199,15 +199,20 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
     ns_pre += '*';
 
   if (f->first != "" && ((f->first) != " "))
-    {
-      ns_pre.append(f->first);
-      ns_pre += '^';
-    }
+  {
+    ns_pre.append(f->first);
+    ns_pre += '^';
+  }
+  
   if (f->second != "")
-    {
-      ns_pre.append(f->second);
-      dat.ns_pre.push_back(ns_pre);
-    }
+  {
+    ns_pre.append(f->second);
+  }
+
+  if (!ns_pre.empty())
+  {
+    dat.ns_pre.push_back(ns_pre);
+  }
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
