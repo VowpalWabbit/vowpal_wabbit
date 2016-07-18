@@ -8,10 +8,12 @@ license as described in the file LICENSE.
 #endif
 #include <fstream>
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <numeric>
 #include <cmath>
 #include "correctedMath.h"
+#include "vw_versions.h"
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -64,6 +66,12 @@ struct lda
   v_array<float> digammas;
   v_array<float> v;
   std::vector<index_feature> sorted_features;
+
+  bool compute_metrics;
+
+  // size by 1 << bits
+  std::vector<uint32_t> feature_counts;
+  std::vector<std::vector<size_t>> feature_to_example_map;
 
   bool total_lambda_init;
 
@@ -634,7 +642,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     for (uint64_t j = 0; j < stride * length; j += stride)
     { for (size_t k = 0; k < all->lda; k++)
       { if (all->random_weights)
-        { all->reg.weight_vector[j + k] = (float)(-log(frand48()) + 1.0f);
+        { all->reg.weight_vector[j + k] = (float)(-log(frand48() + 1e-6) + 1.0f);
           all->reg.weight_vector[j + k] *= (float)(l.lda_D / all->lda / all->length() * 200);
         }
       }
@@ -650,8 +658,16 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     { brw = 0;
       size_t K = all->lda;
 
-      msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+	  msg << i << " ";
+	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+		brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+	  else
+	  {
+		  // support 32bit build models
+		  uint32_t j;
+		  brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
+		  i = j;
+	  }
 
       if (brw != 0)
         for (uint64_t k = 0; k < K; k++)
@@ -786,8 +802,30 @@ void learn_batch(lda &l)
   l.doc_lengths.erase();
 }
 
+template <bool should_compute_metrics>
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{ uint32_t num_ex = (uint32_t)l.examples.size();
+{ 
+  if (should_compute_metrics)
+  {
+	  if (l.all->passes_complete == 0)
+	  {
+		  // build feature to example map
+		  auto weight_mask = l.all->reg.weight_mask;
+		  auto stride_shift = l.all->reg.stride_shift;
+
+		  for (features& fs : ec)
+		  {
+			  for (feature_index idx : fs.indicies)
+			  {
+				  idx = (idx & weight_mask) >> stride_shift;
+				  l.feature_counts[idx]++;
+				  l.feature_to_example_map[idx].push_back({ ec.example_counter });
+			  }
+		  }
+	  }
+  }
+
+  uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (features& fs : ec)
@@ -802,11 +840,148 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
+template <bool should_compute_metrics>
+void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn<should_compute_metrics>(l, base, ec); }
+
+struct word_doc_frequency
+{
+	uint64_t idx;
+	uint32_t count;
+};
+
+void compute_metrics(lda &l)
+{
+	weight* weight_vector = l.all->reg.weight_vector;
+	uint64_t length = (uint64_t)1 << l.all->num_bits;
+	uint64_t stride = (uint64_t)1 << l.all->reg.stride_shift;
+
+	std::vector<std::vector<std::tuple<uint64_t, uint64_t>>> topics_word_pairs;
+	topics_word_pairs.resize(l.topics);
+
+	int top_words_count = 10; // parameterize and check
+
+	for (int topic = 0; topic < l.topics;topic++)
+	{
+		// get top features for this topic
+		auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
+		std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
+		for (uint64_t i = 0; i < min(top_words_count, length); i++)
+		{
+			weight v = weight_vector[(stride * i) + topic];
+			top_features.push(std::make_tuple(v, i));
+		}
+
+		for (uint64_t i = top_words_count; i < length; i++)
+		{
+			weight v = weight_vector[(stride * i) + topic];
+
+			if (v > std::get<0>(top_features.top()))
+			{
+				top_features.pop();
+				top_features.push(std::make_tuple(v, i));
+			}
+		}
+
+		// TODO: validate top_features ordered in right direction
+		auto& word_pairs = topics_word_pairs[topic];
+		for (int i = 0; i < top_words_count; i++)
+			for (int j = i + 1; j < top_words_count; j++)
+				word_pairs.push_back(std::make_tuple(i, j));
+	}
+
+	// compress word pairs and create record for storing frequency
+	std::map<uint64_t, std::vector<word_doc_frequency>> coWordsDFSet;
+	for (auto& vec : topics_word_pairs)
+	{
+		for (auto& wp : vec)
+		{
+			auto f1 = std::get<0>(wp);
+			auto f2 = std::get<0>(wp);
+			auto wdf = coWordsDFSet.find(f1);
+
+			if (wdf != coWordsDFSet.end())
+			{
+				// http://stackoverflow.com/questions/5377434/does-stdmapiterator-return-a-copy-of-value-or-a-value-itself
+				//if (wdf->second.find(f2) == wdf->second.end())
+
+				if (std::find_if(wdf->second.begin(), wdf->second.end(), [&f2](const word_doc_frequency& v) { return v.idx == f2; }) != wdf->second.end())
+					wdf->second.push_back({ f2, 0 });
+			}
+			else
+			{
+				std::vector<word_doc_frequency> vec = { { f2, 0 } };
+				coWordsDFSet.insert(std::make_pair(f1, vec));
+			}
+		}
+	}
+
+	// this.GetWordPairsDocumentFrequency(coWordsDFSet);
+	for (auto& pair : coWordsDFSet)
+	{
+		auto& examples_for_f1 = l.feature_to_example_map[pair.first];
+		for (auto& wdf : pair.second)
+		{
+			auto& examples_for_f2 = l.feature_to_example_map[wdf.idx];
+
+			// assumes examples_for_f1 and examples_for_f2 are orderd
+			int i = 0;
+			int j = 0;
+			while (i < examples_for_f1.size() && j < examples_for_f2.size())
+			{
+				if (examples_for_f1[i] == examples_for_f2[j])
+				{
+					wdf.count++;
+					i++;
+					j++;
+				}
+				else if (examples_for_f2[j] < examples_for_f1[i])
+					j++;
+				else
+					i++;
+			}
+		}
+	}
+
+	float epsilon = 1e-6f; // TODO
+	float avg_coherence = 0;
+	for (int topic = 0; topic < l.topics;topic++)
+	{
+		float coherence = 0;
+
+		for (auto& pairs : topics_word_pairs[topic])
+		{
+			auto f1 = std::get<0>(pairs);
+			auto f2 = std::get<1>(pairs);
+			auto& co_feature = coWordsDFSet[f1];
+			auto co_feature_df = std::find_if(co_feature.begin(), co_feature.end(), [&f2](const word_doc_frequency& v) { return v.idx == f2; });
+
+			if (co_feature_df != co_feature.end())
+				coherence += logf((co_feature_df->count + epsilon) / l.feature_counts[f1]);
+		}
+
+		printf("Topic %3d coherence: %f\n", topic, coherence);
+
+		// TODO: expose per topic coherence
+
+		// TODO: good vs. bad topics
+		avg_coherence += coherence;
+	}
+
+	avg_coherence /= l.topics;
+
+	printf("Avg topic coherence: %f\n", avg_coherence);
+}
 
 void end_pass(lda &l)
-{ if (l.examples.size())
-    learn_batch(l);
+{ 
+	if (l.compute_metrics && l.all->passes_complete == l.all->numpasses)
+	{
+		compute_metrics(l);
+		return;
+	}
+
+	if (l.examples.size())
+		learn_batch(l);
 }
 
 void end_examples(lda &l)
@@ -859,7 +1034,8 @@ LEARNER::base_learner *lda_setup(vw &all)
     ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
     ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
     ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
-    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
+    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx")
+    ("metrics", po::value<bool>()->default_value(false), "Compute metrics");
   add_options(all);
   po::variables_map &vm = all.vm;
 
@@ -878,6 +1054,11 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.all = &all;
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
+  ld.compute_metrics = vm["metrics"].as<bool>();
+  if (ld.compute_metrics) {
+	  ld.feature_counts.resize((uint32_t)1 << all.num_bits);
+	  ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
   all.reg.stride_shift = (size_t)temp;
@@ -901,8 +1082,8 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
-  l.set_predict(predict);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_metrics ? learn<true> : learn<false>, 1 << all.reg.stride_shift);
+  l.set_predict(ld.compute_metrics ? predict<true> : predict<false>);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
