@@ -132,7 +132,7 @@ OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
 ```
 brew install vowpal-wabbit
 ```
-[The homebrew formula for VW is located on github](https://github.com/Homebrew/homebrew/blob/master/Library/Formula/vowpal-wabbit.rb).
+[The homebrew formula for VW is located on github](https://github.com/Homebrew/homebrew-core/blob/master/Formula/vowpal-wabbit.rb).
 
 ### Manual install ov Vowpal Wabbit
 #### OSX Dependencies (if using Brew): 

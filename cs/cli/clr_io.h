@@ -18,6 +18,9 @@ namespace VW
     {
     private:
         gcroot<Stream^> m_stream;
+		gcroot<cli::array<unsigned char>^> m_buffer;
+
+		void ensure_buffer_size(size_t nbytes);
 
     public:
         /// <summary>

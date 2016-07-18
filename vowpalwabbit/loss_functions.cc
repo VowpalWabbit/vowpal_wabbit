@@ -294,7 +294,8 @@ public:
   poisson_loss() {}
 
   float getLoss(shared_data*, float prediction, float label)
-  {
+  { if (label < 0.f)
+      cout << "You are using label " << label << " but loss function expects label >= 0!" << endl;
 	  float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
 	  return 2 * (label * (logf(label + 1e-6) - prediction) - (label - exp_prediction));
@@ -362,6 +363,11 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
   }
   else if(funcName.compare("poisson") == 0)
   {
+    if (all.set_minmax != noop_mm)
+    {
+      all.sd->min_label = -50;
+      all.sd->max_label = 50;
+    }
     return new poisson_loss();
   }
   else

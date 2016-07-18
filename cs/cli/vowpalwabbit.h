@@ -104,6 +104,8 @@ namespace VW
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
         uint64_t HashFeature(String^ s, size_t u);
 
+		cli::array<cli::array<float>^>^ GetTopicAllocation();
+
         /// <summary>
         /// The associated <see cref="VowpalWabbitBase"/> instance learns from this example and returns the prediction result for this example.
         /// </summary>

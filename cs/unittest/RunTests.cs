@@ -2015,7 +2015,7 @@ namespace cs_unittest
         {
             RunTestsHelper.ExecuteTest(
 				129,
-				"--cb_explore_adf --softmax 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict",
+				"--cb_explore_adf --softmax --lambda 1 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_softmax.predict",
 				"train-sets/cb_test.ldf",
 				"train-sets/ref/cbe_adf_softmax.stderr",
 				"pred-sets/ref/cbe_adf_softmax.predict");

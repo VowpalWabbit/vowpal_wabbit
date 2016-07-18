@@ -696,4 +696,33 @@ namespace VW
       throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");
 #endif
   }
+  
+  cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+  {
+	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	  uint64_t stride = (uint64_t)1 << m_vw->reg.stride_shift;
+
+	  // using jagged array to enable LINQ
+	  auto K = m_vw->lda;
+	  auto allocation = gcnew cli::array<cli::array<float>^>(K);
+	  for (uint64_t k = 0; k < K; k++)
+		  allocation[k] = gcnew cli::array<float>(length);
+
+	  // TODO: better way of peaking into lda?
+	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+
+	  // over fetures
+	  for (uint64_t i = 0; i < length; i++)
+	  {
+		  auto offset = stride * i;
+		  // over topics
+		  for (uint64_t k = 0; k < K; k++)
+		  {
+			  weight *v = &(m_vw->reg.weight_vector[offset + k]);
+			  allocation[k][i] = *v + lda_rho;
+		  }
+	  }
+
+	  return allocation;
+  }
 }
