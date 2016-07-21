@@ -112,7 +112,7 @@ public:
 		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _stride_shift(0),_seeded(false)
 	{ }
 
-	weight_vector(size_t length, uint32_t stride_shift=0) //TODO: probably incorrect for stride_shift.
+	weight_vector(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
 		_stride_shift(stride_shift),
@@ -129,10 +129,6 @@ public:
 	
 	bool isNull() const { return _begin == nullptr; }
 
-	//weight_vector(const weight_vector& other)
-	//	: _begin(other._begin)
-	//{ }
-
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 
 	uint64_t mask()
@@ -141,14 +137,6 @@ public:
 	
 	void mask(uint64_t weight_mask)
 	{ _weight_mask = weight_mask;
-	}
-
-	uint32_t stride_shift()
-	{ return _stride_shift;
-	}
-	//TODO: needs to be removed.
-	void stride_shift(uint32_t stride_shift)
-	{ _stride_shift = stride_shift;
 	}
 	
 	bool seeded()

@@ -270,7 +270,7 @@ struct OjaNewton {
 	//second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
         uint32_t length = 1 << all->num_bits;
-        //size_t stride_shift = all->reg.stride_shift;
+        //size_t stride_shift = all->stride_shift;
         weight_vector& weights = all->wv;
 		for (weight_vector::iterator i = weights.begin(0); i != weights.end(); ++i)
 		{  weight_vector::iterator::w_iter w_j = i.begin() + 1;
@@ -551,9 +551,9 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_throw<double>(ON.m+1);
     ON.data.delta = calloc_or_throw<double>(ON.m+1);
 
-    all.wv.stride_shift(ceil(log2(ON.m + 2)));
+    all.stride_shift = ceil(log2(ON.m + 2));
 
-    learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.wv.stride_shift());
+    learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.stride_shift);
 
     l.set_predict(predict);
     l.set_save_load(save_load);

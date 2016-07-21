@@ -73,7 +73,7 @@ struct task_data
 
   // for adding new features
   uint64_t mask; // all->reg.weight_mask
-  uint64_t multiplier;   // all.wpp << all.reg.stride_shift
+  uint64_t multiplier;   // all.wpp << all.stride_shift
   size_t ss; // stride_shift
   size_t wpp;
 
@@ -179,7 +179,7 @@ void setup(Search::search& sch, vector<example*>& ec)
 
   D.mask = sch.get_vw_pointer_unsafe().wv.mask();
   D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss   = sch.get_vw_pointer_unsafe().wv.stride_shift();
+  D.ss   = sch.get_vw_pointer_unsafe().stride_shift;
   D.multiplier = D.wpp << D.ss;
   D.wv = sch.get_vw_pointer_unsafe().wv;
 

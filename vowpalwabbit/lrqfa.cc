@@ -56,7 +56,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
             uint64_t lindex = fs.indicies[lfn];
 			weight_vector::iterator iter = w.begin(lindex);
             for (unsigned int n = 1; n <= k; ++n)
-              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << w.stride_shift())); // a feature has k weights in each field
+              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.stride_shift)); // a feature has k weights in each field
 			    iter += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
                 // perturb away from saddle point at (0, 0)
                 if (is_learn && ! example_is_test (ec) && *iter == 0)
@@ -69,7 +69,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                     // NB: ec.ft_offset added by base learner
                     float rfx = rfs.values[rfn];
                     uint64_t rindex = rfs.indicies[rfn];
-                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << w.stride_shift()));
+                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.stride_shift));
 
                     rfs.push_back(*iter * lfx * rfx, rwindex);
                     if (all.audit || all.hash_inv)

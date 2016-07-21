@@ -1263,7 +1263,7 @@ void parse_sources(vw& all, io_buf& model)
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all.wpp = (1 << i) >> all.wv.stride_shift();
+  all.wpp = (1 << i) >> all.stride_shift;
 
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */

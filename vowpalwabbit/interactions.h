@@ -120,7 +120,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
   // often used values
   const uint64_t offset = ec.ft_offset;
-//    const uint64_t stride_shift = all.reg.stride_shift; // it seems we don't need stride shift in FTRL-like hash
+//    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
   weight_vector& wv = all.wv;
 
   // statedata for generic non-recursive iteration
