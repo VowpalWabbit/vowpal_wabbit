@@ -31,10 +31,12 @@ namespace VW
         float get();
       }
 
-      property uint64_t WeightIndex
+      property uint64_t FeatureIndex
       {
         uint64_t get();
       }
+
+	  uint64_t GetWeightIndex(VowpalWabbit^ vw);
 
 	  float GetWeight(VowpalWabbit^ vw);
 

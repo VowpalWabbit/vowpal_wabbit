@@ -38,7 +38,7 @@ namespace cs_unittest
 
                     foreach (var feature in ns)
                     {
-                        Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                        Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                     }
                 }
 
@@ -80,7 +80,7 @@ namespace cs_unittest
 
                         foreach (var feature in ns)
                         {
-                            Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                            Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                         }
                     }
 
@@ -108,7 +108,7 @@ namespace cs_unittest
 
                             foreach (var feature in ns)
                             {
-                                Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                                Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                             }
                         }                        
                     }

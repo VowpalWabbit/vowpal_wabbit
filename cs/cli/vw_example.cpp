@@ -409,14 +409,19 @@ namespace VW
       return m_x;
     }
 
-    uint64_t VowpalWabbitFeature::WeightIndex::get()
+    uint64_t VowpalWabbitFeature::FeatureIndex::get()
     {
       return m_weight_index;
     }
 
+	uint64_t VowpalWabbitFeature::GetWeightIndex(VowpalWabbit^ vw)
+	{
+		return (m_weight_index >> vw->m_vw->reg.stride_shift) & vw->m_vw->parse_mask;
+	}
+
 	float VowpalWabbitFeature::GetWeight(VowpalWabbit^ vw)
 	{
-		return vw->m_vw->reg.weight_vector[(m_weight_index >> vw->m_vw->reg.stride_shift) & vw->m_vw->parse_mask];
+		return vw->m_vw->reg.weight_vector[GetWeightIndex(vw)];
 	}
 
     bool VowpalWabbitFeature::Equals(Object^ o)
