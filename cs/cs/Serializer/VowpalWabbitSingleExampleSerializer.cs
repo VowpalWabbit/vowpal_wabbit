@@ -54,9 +54,7 @@ namespace VW.Serializer
         internal VowpalWabbitSingleExampleSerializer(VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler, VowpalWabbit vw)
         {
             if (compiler == null)
-            {
                 throw new ArgumentNullException("compiler");
-            }
             Contract.Ensures(vw != null);
             Contract.EndContractBlock();
 
@@ -71,16 +69,12 @@ namespace VW.Serializer
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
-            {
                 return;
-            }
 
             if (this.vw.Settings.EnableExampleCaching)
             {
                 if (cacheableAttribute.EqualityComparer == null)
-                {
                     this.exampleCache = new Dictionary<TExample, CacheEntry>();
-                }
                 else
                 {
                     if (!typeof(IEqualityComparer<TExample>).IsAssignableFrom(cacheableAttribute.EqualityComparer))
