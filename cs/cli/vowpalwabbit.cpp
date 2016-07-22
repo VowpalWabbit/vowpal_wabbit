@@ -700,7 +700,7 @@ namespace VW
   cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
-	  uint64_t stride = (uint64_t)1 << m_vw->reg.stride_shift;
+	  uint64_t stride_shift = m_vw->reg.stride_shift;
 
 	  // using jagged array to enable LINQ
 	  auto K = m_vw->lda;
@@ -714,7 +714,7 @@ namespace VW
 	  // over fetures
 	  for (uint64_t i = 0; i < length; i++)
 	  {
-		  auto offset = stride * i;
+		  auto offset = i << stride_shift;
 		  // over topics
 		  for (uint64_t k = 0; k < K; k++)
 		  {

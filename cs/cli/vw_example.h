@@ -36,6 +36,8 @@ namespace VW
         uint64_t get();
       }
 
+	  float GetWeight(VowpalWabbit vw);
+
       virtual bool Equals(Object^ o) override;
 
       virtual int GetHashCode() override;
