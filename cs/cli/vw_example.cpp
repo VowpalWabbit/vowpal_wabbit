@@ -362,10 +362,10 @@ namespace VW
 
     IEnumerator<VowpalWabbitNamespace^>^ VowpalWabbitExample::GetEnumerator()
     {
-      return gcnew NamespaceEnumerator(m_example);
+      return gcnew NamespaceEnumerator(this);
     }
 
-    VowpalWabbitExample::NamespaceEnumerator::NamespaceEnumerator(example* example)
+    VowpalWabbitExample::NamespaceEnumerator::NamespaceEnumerator(VowpalWabbitExample^ example)
       : m_example(example)
     {
         Reset();
@@ -378,21 +378,21 @@ namespace VW
     {
       m_current++;
 
-      return m_current < m_example->indices.end();
+      return m_current < m_example->m_example->indices.end();
     }
 
     void VowpalWabbitExample::NamespaceEnumerator::Reset()
     {
         // position before the beginning.
-        m_current = m_example->indices.begin() - 1;
+        m_current = m_example->m_example->indices.begin() - 1;
     }
 
     VowpalWabbitNamespace^ VowpalWabbitExample::NamespaceEnumerator::Current::get()
     {
-      if (m_current < m_example->indices.begin() || m_current >= m_example->indices.end())
+      if (m_current < m_example->m_example->indices.begin() || m_current >= m_example->m_example->indices.end())
         throw gcnew InvalidOperationException();
-
-      return gcnew VowpalWabbitNamespace(*m_current, &m_example->feature_space[*m_current]);
+	  
+      return gcnew VowpalWabbitNamespace(m_example, *m_current, &m_example->m_example->feature_space[*m_current]);
     }
 
     System::Object^ VowpalWabbitExample::NamespaceEnumerator::IEnumeratorCurrent::get()
@@ -400,8 +400,8 @@ namespace VW
       return Current;
     }
 
-    VowpalWabbitFeature::VowpalWabbitFeature(feature_value x, uint64_t weight_index)
-      : m_x(x), m_weight_index(weight_index)
+    VowpalWabbitFeature::VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index)
+      : m_example(example), m_x(x), m_weight_index(weight_index)
     { }
 
     float VowpalWabbitFeature::X::get()
@@ -414,14 +414,17 @@ namespace VW
       return m_weight_index;
     }
 
-	uint64_t VowpalWabbitFeature::GetWeightIndex(VowpalWabbit^ vw)
+	uint64_t VowpalWabbitFeature::WeightIndex::get()
 	{
-		return (m_weight_index >> vw->m_vw->reg.stride_shift) & vw->m_vw->parse_mask;
+		vw* vw = m_example->Owner->Native->m_vw;
+		return (m_weight_index >> vw->reg.stride_shift) & vw->parse_mask;
 	}
 
-	float VowpalWabbitFeature::GetWeight(VowpalWabbit^ vw)
+	float VowpalWabbitFeature::Weight::get()
 	{
-		return vw->m_vw->reg.weight_vector[GetWeightIndex(vw)];
+		uint64_t weightIndex = WeightIndex;
+		vw* vw = m_example->Owner->Native->m_vw;
+		return vw->reg.weight_vector[(weightIndex + m_example->m_example->ft_offset) & vw->reg.weight_mask];
 	}
 
     bool VowpalWabbitFeature::Equals(Object^ o)
@@ -435,12 +438,12 @@ namespace VW
 
     int VowpalWabbitFeature::GetHashCode()
     {
-      return (int)m_x + m_weight_index;
+      return (int)(m_x + m_weight_index);
     }
 
 
-    VowpalWabbitNamespace::VowpalWabbitNamespace(namespace_index ns, features* features)
-      : m_ns(ns), m_features(features)
+    VowpalWabbitNamespace::VowpalWabbitNamespace(VowpalWabbitExample^ example, namespace_index ns, features* features)
+      : m_example(example), m_ns(ns), m_features(features)
     { }
 
     VowpalWabbitNamespace::~VowpalWabbitNamespace()
@@ -458,11 +461,11 @@ namespace VW
 
     IEnumerator<VowpalWabbitFeature^>^ VowpalWabbitNamespace::GetEnumerator()
     {
-      return gcnew FeatureEnumerator(m_features);
+      return gcnew FeatureEnumerator(m_example, m_features);
     }
 
-    VowpalWabbitNamespace::FeatureEnumerator::FeatureEnumerator(features* features)
-      : m_features(features), m_iterator(nullptr)
+    VowpalWabbitNamespace::FeatureEnumerator::FeatureEnumerator(VowpalWabbitExample^ example, features* features)
+      : m_example(example), m_features(features), m_iterator(nullptr)
     {
       m_end = new Holder<features::iterator>{ features->end() };
     }
@@ -499,6 +502,6 @@ namespace VW
       if (!m_iterator || m_iterator->value == m_end->value)
         throw gcnew InvalidOperationException();
 
-      return gcnew VowpalWabbitFeature(m_iterator->value.value(), m_iterator->value.index());
+      return gcnew VowpalWabbitFeature(m_example, m_iterator->value.value(), m_iterator->value.index());
     }
 }

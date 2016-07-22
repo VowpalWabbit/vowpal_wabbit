@@ -47,15 +47,15 @@ namespace cs_unittest
                 Assert.AreEqual((byte)' ', namespaces[0].Index);
                 CollectionAssert.AreEqual(
                     new[] {
-                        new VowpalWabbitFeature(3.2f, 610696),
+                        new VowpalWabbitFeature(singleExample.Example, 3.2f, 610696),
                     },
                     namespaces[0].ToArray());
 
                 Assert.AreEqual((byte)'l', namespaces[1].Index);
                 CollectionAssert.AreEqual(
                     new[] {
-                        new VowpalWabbitFeature(1, 414696),
-                        new VowpalWabbitFeature(1, 380324),
+                        new VowpalWabbitFeature(singleExample.Example, 1, 414696),
+                        new VowpalWabbitFeature(singleExample.Example, 1, 380324),
                     },
                     namespaces[1].ToArray());
             }
@@ -89,8 +89,8 @@ namespace cs_unittest
                     Assert.AreEqual((byte)'n', ns1[0].Index);
                     CollectionAssert.AreEqual(
                             new[] {
-                                new VowpalWabbitFeature(1, 12),
-                                new VowpalWabbitFeature(3.4f, 28)
+                                new VowpalWabbitFeature(singleExample.Example, 1, 12),
+                                new VowpalWabbitFeature(singleExample.Example, 3.4f, 28)
                             },
                             ns1[0].ToArray());
                 }
