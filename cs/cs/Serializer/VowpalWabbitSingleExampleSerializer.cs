@@ -8,11 +8,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using VW.Labels;
 using VW.Serializer.Attributes;
 
@@ -64,6 +62,10 @@ namespace VW.Serializer
 
             this.vw = vw;
             this.compiler = compiler;
+
+            var exampleType = typeof(TExample);
+            if (!exampleType.IsVisible)
+                throw new ArgumentException($"Type '{typeof(TExample)}' must be public and all enclosing types must be public.");
 
             this.serializerFunc = compiler.Func(vw);
 

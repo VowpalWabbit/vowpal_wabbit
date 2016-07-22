@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
+#include "gd.h"
 
 namespace VW
 {
@@ -417,14 +418,23 @@ namespace VW
 	uint64_t VowpalWabbitFeature::WeightIndex::get()
 	{
 		vw* vw = m_example->Owner->Native->m_vw;
-		return (m_weight_index >> vw->reg.stride_shift) & vw->parse_mask;
+		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->reg.stride_shift) & vw->parse_mask;
 	}
 
 	float VowpalWabbitFeature::Weight::get()
 	{
-		uint64_t weightIndex = WeightIndex;
 		vw* vw = m_example->Owner->Native->m_vw;
-		return vw->reg.weight_vector[(weightIndex + m_example->m_example->ft_offset) & vw->reg.weight_mask];
+
+		uint64_t weightIndex = (m_weight_index + m_example->m_example->ft_offset) & vw->reg.weight_mask;
+		return vw->reg.weight_vector[weightIndex];
+	}
+
+
+	float VowpalWabbitFeature::AuditWeight::get()
+	{
+		vw* vw = m_example->Owner->Native->m_vw;
+
+		return GD::trunc_weight(Weight, (float)vw->sd->gravity) * (float)vw->sd->contraction;
 	}
 
     bool VowpalWabbitFeature::Equals(Object^ o)

@@ -18,12 +18,7 @@ namespace VowpalWabbit.Azure.Trainer
     {
         private readonly TelemetryClient telemetry;
 
-        /// <summary>
-        /// During start/stop/restart operations the objects below gets reset.
-        /// Make sure this is done in a consistent manner.
-        /// </summary>
-        private readonly ConcurrentExclusiveSchedulerPair exclusiveScheduler;
-        private readonly TaskFactory exclusiveTaskFactory;
+        private readonly object managementLock = new object();
         private TrainEventProcessorFactory trainProcessorFactory;
         private EventProcessorHost eventProcessorHost;
         private Learner trainer;
@@ -34,8 +29,6 @@ namespace VowpalWabbit.Azure.Trainer
         public LearnEventProcessorHost()
         {
             this.telemetry = new TelemetryClient();
-            this.exclusiveScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, 1);
-            this.exclusiveTaskFactory = new TaskFactory(exclusiveScheduler.ExclusiveScheduler);
             
             // by default read from the beginning of Event Hubs event stream.
             this.eventHubStartDateTimeUtc = null;
@@ -84,17 +77,29 @@ namespace VowpalWabbit.Azure.Trainer
         {
             try
             {
-                return exclusiveTaskFactory.StartNew(action).Unwrap();
+                // need to do a lock as child tasks are interleaving
+                lock (this.managementLock)
+                {
+                    action().Wait(TimeSpan.FromMinutes(3));
+                }
             }
             catch (Exception ex)
             {
                 this.telemetry.TrackException(ex);
                 throw ex;
             }
+
+            return Task.FromResult(true);
         }
         
         private async Task ResetInternalAsync(OnlineTrainerState state = null)
         {
+            if (this.trainer == null)
+            {
+                this.telemetry.TrackTrace("Online Trainer resetting skipped as trainer hasn't started yet.", SeverityLevel.Information);
+                return;
+            }
+
             this.telemetry.TrackTrace("Online Trainer resetting", SeverityLevel.Information);
 
             var settings = this.trainer.Settings;
@@ -173,7 +178,7 @@ namespace VowpalWabbit.Azure.Trainer
 
         private void UpdatePerformanceCounters()
         {
-            exclusiveTaskFactory.StartNew(() =>
+            lock (this.managementLock)
             {
                 // make sure this is thread safe w.r.t reset/start/stop/...
                 try
@@ -185,8 +190,7 @@ namespace VowpalWabbit.Azure.Trainer
                 {
                     this.telemetry.TrackException(ex);
                 }
-            })
-            .Wait();
+            }
         }
 
         private async Task StopInternalAsync()

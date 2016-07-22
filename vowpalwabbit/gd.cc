@@ -163,12 +163,6 @@ struct string_value
   friend bool operator<(const string_value& first, const string_value& second);
 };
 
-inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
-
-inline float trunc_weight(const float w, const float gravity)
-{ return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
-}
-
 bool operator<(const string_value& first, const string_value& second)
 { return fabsf(first.v) > fabsf(second.v);
 }

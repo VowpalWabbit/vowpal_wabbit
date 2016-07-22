@@ -47,6 +47,11 @@ namespace VW
 		  float get();
 	  }
 
+	  property float AuditWeight
+	  {
+		  float get();
+	  }
+
       virtual bool Equals(Object^ o) override;
 
       virtual int GetHashCode() override;
