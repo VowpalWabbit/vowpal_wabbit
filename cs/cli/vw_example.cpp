@@ -414,9 +414,9 @@ namespace VW
       return m_weight_index;
     }
 
-	float VowpalWabbitFeature::GetWeight(VowpalWabbit vw)
+	float VowpalWabbitFeature::GetWeight(VowpalWabbit^ vw)
 	{
-		return vw.m_vw->reg.weight_vector[(m_weight_index >> vw.m_vw->reg.stride_shift) & vw.m_vw->parse_mask];
+		return vw->m_vw->reg.weight_vector[(m_weight_index >> vw->m_vw->reg.stride_shift) & vw->m_vw->parse_mask];
 	}
 
     bool VowpalWabbitFeature::Equals(Object^ o)
