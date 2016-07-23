@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=line-too-long, unused-argument, invalid-name, too-many-arguments, too-many-locals
+# pylint: unused-argument, invalid-name, too-many-arguments, too-many-locals
 
 """
 Utilities to support integration of Vowpal Wabbit and scikit-learn
 """
+
 import numpy as np
-from vowpalwabbit.pyvw import vw
 import re
+import StringIO
+
 from scipy.sparse import csr_matrix
-from sklearn import metrics
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
-import StringIO
+from sklearn.externals import joblib
+from vowpalwabbit import pyvw
 
 
 DEFAULT_NS = ''
@@ -201,13 +203,10 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        self : object
-               Returns self.
+        (BaseEstimator): Returns self
         """
 
         # clear estimator attributes
-        if hasattr(self, 'label_type_'):
-            del self.label_type_
         if hasattr(self, 'fit_'):
             del self.fit_
         if hasattr(self, 'passes_'):
@@ -242,10 +241,8 @@ class VW(BaseEstimator):
         pyvw.vw instance
         """
         if self.vw_ is None:
-            self.vw_ = vw(**self.params)
+            self.vw_ = pyvw.vw(**self.params)
 
-            # set label type
-            self.label_type_ = self.vw_.get_label_type()
         return self.vw_
 
     def fit(self, X, y=None, sample_weight=None):
@@ -269,13 +266,17 @@ class VW(BaseEstimator):
         -------
         return self so pipeline can call transform() after fit
         """
+        if self.convert_to_vw_:
+            X = tovw(x=X, y=y, sample_weight=sample_weight)
+
+        model = self.get_vw()
 
         # add examples to model
-        for _ in xrange(self.passes_):
+        for n in range(self.passes_):
+            if n > 1:
+                np.random.shuffle(X)
             for idx, x in enumerate(X):
-                if self.convert_to_vw_:
-                    x = tovw(x=x, y=y[idx], sample_weight=sample_weight)[0]
-                self.get_vw().learn(x)
+                model.learn(x)
         self.fit_ = True
         return self
 
@@ -323,39 +324,18 @@ class VW(BaseEstimator):
         except AttributeError:
             num_samples = len(X)
 
-        # add test examples to model
+        if self.convert_to_vw_:
+            X = tovw(X)
+
+        model = self.get_vw()
+        label_type = model.get_label_type()
+
         y = np.empty([num_samples])
+        # add test examples to model
         for idx, x in enumerate(X):
-            if self.convert_to_vw_:
-                x = tovw(x)[0]
-            y[idx] = self.get_vw().predict(ec=x, labelType=self.label_type_)
+            y[idx] = model.predict(ec=x, labelType=label_type)
 
         return y
-
-    def score(self, X, y=None):
-        """Returns the score on the given data, if the estimator has been refit.
-
-        This uses the score defined by ``scoring`` where provided, and the
-        ``best_estimator_.score`` method otherwise.
-
-        Parameters
-        ----------
-        X : array-like, shape = [n_samples, n_features]
-            Input data, where n_samples is the number of samples and
-            n_features is the number of features.
-
-        y : array-like, shape = [n_samples] or [n_samples, n_output], optional
-            Target relative to X for classification or regression;
-            None for unsupervised learning.
-
-        Returns
-        -------
-        score : float
-        """
-
-        pred = self.predict(X)
-        score = metrics.accuracy_score(y, pred)
-        return score
 
     def __str__(self):
         if self.params is not None:
@@ -369,6 +349,7 @@ class VW(BaseEstimator):
             self.vw_.__del__()
 
     def get_params(self, deep=True):
+        """This returns the set of vw and estimator parameters currently in use"""
         out = dict()
         # add in the vw params
         out.update(self.params)
@@ -406,7 +387,20 @@ class VW(BaseEstimator):
         {sparse matrix} coefficient weights for model
         """
 
-        return csr_matrix([self.get_vw().get_weight(i) for i in xrange(self.get_vw().num_weights())])
+        model = self.get_vw()
+        return csr_matrix([model.get_weight(i) for i in range(model.num_weights())])
+
+    def set_coefs(self, coefs):
+        """Sets coefficients weights from ordered sparse matrix
+
+        Parameters
+        ----------
+        coefs : {sparse matrix} coefficient weights for model
+        """
+
+        model = self.get_vw()
+        for i in range(coefs.getnnz()):
+            model.set_weight(int(coefs.indices[i]), 0, float(coefs.data[i]))
 
     def get_intercept(self):
         """ Returns intercept weight for model
@@ -418,6 +412,15 @@ class VW(BaseEstimator):
 
         return self.get_vw().get_weight(CONSTANT_HASH)
 
+    def save(self, filename):
+        joblib.dump(dict(params=self.get_params(), coefs=self.get_coefs(), fit=self.fit_), filename=filename)
+
+    def load(self, filename):
+        obj = joblib.load(filename=filename)
+        self.set_params(**obj['params'])
+        self.set_coefs(obj['coefs'])
+        self.fit_ = obj['fit']
+
 
 class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
     """Mixin for linear classifiers.  A threshold is used to specify the positive
@@ -425,6 +428,8 @@ class ThresholdingLinearClassifierMixin(LinearClassifierMixin):
 
     Handles prediction for sparse and dense X.
     """
+
+    classes_ = np.array([-1., 1.])
 
     def __init__(self, **params):
 
@@ -459,8 +464,6 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
     Only supports binary classification currently. Use VW directly for multiclass classification
     note - don't try to apply link='logistic' on top of the existing functionality
     """
-
-    classes_ = np.array([-1., 1.])
 
     def __init__(self, **params):
 
