@@ -7,7 +7,7 @@ Utilities to support integration of Vowpal Wabbit and scikit-learn
 
 import numpy as np
 import re
-import StringIO
+import io
 
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -221,8 +221,8 @@ class VW(BaseEstimator):
 
         # assign all valid args to params dict
         args = dict(locals())
-        for k, v in args.iteritems():
-            if k != 'self' and v is not None:
+        for k, v in args.items():
+            if k != 'self' and k != '__class__' and v is not None:
                 self.params[k] = v
 
         # store passes separately to be used in fit
@@ -543,11 +543,11 @@ def tovw(x, y=None, sample_weight=None):
                 x[row, col] = INVALID_CHARS.sub('.', x[row, col])
 
     # convert input to svmlight format
-    s = StringIO.StringIO()
+    s = io.BytesIO()
     dump_svmlight_file(x, np.zeros(rows), s)
 
     # parse entries to construct VW format
-    rows = s.getvalue().split('\n')[:-1]
+    rows = s.getvalue().decode('ascii').split('\n')[:-1]
     out = []
     for idx, row in enumerate(rows):
         truth = y[idx] if use_truth else 1

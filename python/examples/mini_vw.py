@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 from vowpalwabbit import pyvw
 
@@ -10,7 +12,7 @@ learnFromStrings = False
 def mini_vw(inputFile, numPasses, otherArgs):
     vw = pyvw.vw(otherArgs)
     for p in range(numPasses):
-        print 'pass', (p+1)
+        print('pass', (p+1))
         h = open(inputFile, 'r')
         for l in h.readlines():
             if learnFromStrings:
@@ -25,7 +27,7 @@ def mini_vw(inputFile, numPasses, otherArgs):
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print 'usage: mini_vw.py (inputFile) (#passes) (...other VW args...)'
+        print('usage: mini_vw.py (inputFile) (#passes) (...other VW args...)')
         exit()
     inputFile = sys.argv[1]
     numPasses = int(sys.argv[2])

@@ -244,13 +244,14 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 }
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
-{ py::object objectKey, objectVal;
-  const py::object objectKeys = dict.iterkeys();
-  const py::object objectVals = dict.itervalues();
+{
+  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
+  const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
   unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
-  for (size_t u=0; u<ulCount; u++)
-  { objectKey = objectKeys.attr( "next" )();
-    objectVal = objectVals.attr( "next" )();
+  for (size_t u=0; u<ulCount; ++u)
+  {
+    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
+    py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
 
     char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
     if (chCheckKey != 's') continue;
