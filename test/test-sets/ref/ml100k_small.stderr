@@ -9,17 +9,17 @@ Reading datafile = test-sets/ml100k_small_test
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-2.655687 2.655687            1            1.0   5.0000   3.3704       23
-2.862807 3.069926            2            2.0   5.0000   3.2479       23
-2.392509 1.922212            4            4.0   4.0000   3.2218       23
-1.468514 0.544518            8            8.0   4.0000   3.2538       23
-1.515712 1.562910           16           16.0   5.0000   3.1581       23
+2.805888 2.805888            1            1.0   5.0000   3.3249       23
+2.938380 3.070872            2            2.0   5.0000   3.2476       23
+2.430562 1.922743            4            4.0   4.0000   3.2215       23
+1.486828 0.543094            8            8.0   4.0000   3.2582       23
+1.525028 1.563228           16           16.0   5.0000   3.1578       23
 
 finished run
 number of examples per pass = 30
 passes used = 1
 weighted example sum = 30.000000
 weighted label sum = 110.000000
-average loss = 1.471805
+average loss = 1.478601
 best constant = 3.666667
 total feature number = 690

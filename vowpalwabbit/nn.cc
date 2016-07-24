@@ -120,7 +120,6 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
 { bool shouldOutput = n.all->raw_prediction > 0;
   if (! n.finished_setup)
     finish_setup (n, *(n.all));
-
   shared_data sd;
   memcpy (&sd, n.all->sd, sizeof(shared_data));
   shared_data* save_sd = n.all->sd;
@@ -238,7 +237,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   { // TODO: this is not correct if there is something in the
     // nn_output_namespace but at least it will not leak memory
     // in that case
-
     ec.indices.push_back (nn_output_namespace);
     features save_nn_output_namespace = ec.feature_space[nn_output_namespace];
     ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
@@ -257,6 +255,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   else
   { n.output_layer.ft_offset = ec.ft_offset;
     n.output_layer.l = ec.l;
+    cout << "in else " << is_learn << " " << n.output_layer.l.simple.label << " " << ec.example_t << endl;
     n.output_layer.weight = ec.weight;
     n.output_layer.partial_prediction = 0;
     n.output_layer.example_t = ec.example_t;
@@ -267,6 +266,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.l = n.output_layer.l;
   }
 
+  cout << n.output_layer.partial_prediction << endl;
   n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
 
   if (shouldOutput)
