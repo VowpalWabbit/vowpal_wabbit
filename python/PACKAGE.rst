@@ -15,6 +15,7 @@ Deployment Process
         $ check-manifest --ignore Makefile,PACKAGE.rst,*.cc,tox.ini,tests*,examples*,src*
 
 2) Lint the code:
+
    .. code-block:: bash
 
        $ pylint -f colorized vowpalwabbit
@@ -23,6 +24,8 @@ Deployment Process
 
     .. code-block:: bash
 
+        # install virtualenv if necessary
+        $ pip install virtualenv
         $ python setup.py test
 
 
