@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 from vowpalwabbit import pyvw
 
@@ -53,13 +55,13 @@ vw = pyvw.vw("--search 0 --csoaa_ldf m --quiet --search_task hook --ring_size 10
 sequenceLabeler = vw.init_search_task(SequenceLabeler)
 
 # train it on the above dataset ten times; the my_dataset.__iter__ feeds into _run above
-print >>sys.stderr, 'training!'
+print('training!')
 i = 0
 while i < 10:
     sequenceLabeler.learn(my_dataset)
     i += 1
 
 # now see the predictions on a test sentence
-print >>sys.stderr, 'predicting!'
-print sequenceLabeler.predict( [(1,w) for w in "the sandwich ate a monster".split()] )
-print 'should have printed: [1, 2, 3, 1, 2]'
+print('predicting!', file=sys.stderr)
+print(sequenceLabeler.predict( [(1,w) for w in "the sandwich ate a monster".split()] ))
+print('should have printed: [1, 2, 3, 1, 2]')
