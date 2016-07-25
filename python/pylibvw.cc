@@ -379,7 +379,6 @@ size_t   get_num_features(example_ptr ec) { return ec->num_features; }
 float    get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 float    get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 float    get_loss(example_ptr ec) { return ec->loss; }
-float    get_example_t(example_ptr ec) { return ec->example_t; }
 float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
@@ -634,7 +633,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_partial_prediction", &get_partial_prediction, "Returns the partial prediction associated with this example")
   .def("get_updated_prediction", &get_updated_prediction, "Returns the partial prediction as if we had updated it after learning")
   .def("get_loss", &get_loss, "Returns the loss associated with this example")
-  .def("get_example_t", &get_example_t, "The total sum of importance weights up to and including this example")
   .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example")
 
   .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")
