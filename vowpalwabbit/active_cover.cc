@@ -24,7 +24,7 @@ struct active_cover
 };
 
 bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float threshold)
-{ if(ec.example_t <= 3)
+{ if(all.sd->t + ec.weight <= 3)
   { return true;
   }
 
@@ -32,7 +32,7 @@ bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float 
   float middle = 0.f;
   ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
 
-  float k = ec.example_t - ec.weight;
+  float k = all.sd->t;
   float loss_delta = ec.confidence/k;
 
   bool result = (loss_delta <= threshold);
@@ -65,7 +65,7 @@ float get_pmin(float sum_loss, float t)
 float query_decision(active_cover& a, base_learner& l, example& ec, float prediction, float pmin, bool in_dis)
 {
 
-  if(ec.example_t <= 3)
+  if(a.all->sd->t + ec.weight <= 3)
   { return 1.f;
   }
 
@@ -107,7 +107,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
   { vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
-    float t = ec.example_t - ec.weight;
+    float t = a.all->sd->t;
     float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple.label;
 
@@ -134,6 +134,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     { // Make sure the loss computation does not include
       // skipped examples
       ec.l.simple.label = FLT_MAX;
+      ec.weight = 0;
     }
 
     // Update the learners in the cover and their weights

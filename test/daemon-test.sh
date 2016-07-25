@@ -83,12 +83,12 @@ EOF
 
 # prepare expected predict output
 cat > $PREDREF <<EOF
-0.553585 1
-0.733882 2
+0.550000 1
+0.709153 2
 EOF
 
 # Train
-$VW -b 10 --quiet -d $TRAINSET -f $MODEL
+$VW -b 10 --quiet -k -c --passes 2 -d $TRAINSET -f $MODEL
 
 start_daemon
 

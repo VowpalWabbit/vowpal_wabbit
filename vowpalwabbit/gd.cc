@@ -126,7 +126,6 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
 void train(gd& g, example& ec, float update)
 { if (normalized)
     update *= g.update_multiplier;
-
   foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
 }
 
@@ -283,7 +282,6 @@ void print_features(vw& all, example& ec)
         cout << '\t' << sv.s;
       cout << endl;
     }
-
   }
 }
 
@@ -471,7 +469,6 @@ float get_pred_per_update(gd& g, example& ec)
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
   }
-
   return nd.pred_per_update;
 }
 
@@ -487,7 +484,7 @@ template<size_t adaptive>
 float get_scale(gd& g, example& ec, float weight)
 { float update_scale = g.all->eta * weight;
   if(!adaptive)
-  { float t = (float)(ec.example_t - g.all->sd->weighted_holdout_examples);
+  { float t = (float)(g.all->sd->t+weight - g.all->sd->weighted_holdout_examples);
     update_scale *= powf(t, g.neg_power_t);
   }
   return update_scale;
@@ -510,7 +507,6 @@ float compute_update(gd& g, example& ec)
   if (all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) > 0.)
   { float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-
     if(invariant)
       update = all.loss->getUpdate(ec.pred.scalar, ld.label, update_scale, pred_per_update);
     else

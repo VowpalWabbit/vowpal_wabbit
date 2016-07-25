@@ -247,7 +247,8 @@ struct shared_data
   static const int col_current_features = 8;
 
   void update(bool test_example, float loss, float weight, size_t num_features)
-  { if(test_example)
+  { t += weight;
+    if(test_example)
     { weighted_holdout_examples += weight;//test weight seen
       weighted_holdout_examples_since_last_dump += weight;
       weighted_holdout_examples_since_last_pass += weight;

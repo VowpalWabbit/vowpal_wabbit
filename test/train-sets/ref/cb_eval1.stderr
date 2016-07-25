@@ -17,4 +17,3 @@ weighted example sum = 4
 weighted label sum = 0
 average loss = 0
 total feature number = 12
-vw (vw_validate.cc:20): Max label cannot be less than min label.

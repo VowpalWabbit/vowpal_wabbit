@@ -255,10 +255,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   else
   { n.output_layer.ft_offset = ec.ft_offset;
     n.output_layer.l = ec.l;
-    cout << "in else " << is_learn << " " << n.output_layer.l.simple.label << " " << ec.example_t << endl;
     n.output_layer.weight = ec.weight;
     n.output_layer.partial_prediction = 0;
-    n.output_layer.example_t = ec.example_t;
     if (is_learn)
       base.learn(n.output_layer, n.k);
     else
@@ -266,7 +264,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.l = n.output_layer.l;
   }
 
-  cout << n.output_layer.partial_prediction << endl;
   n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
 
   if (shouldOutput)

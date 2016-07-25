@@ -155,7 +155,7 @@ void mf_train(gdmf& d, example& ec)
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ec.weight;
+  float eta_t = all.eta/pow(all.sd->t + ec.weight, all.power_t) / 3.f * ec.weight;
   float update = all.loss->getUpdate(ec.pred.scalar, ld.label, eta_t, 1.); //ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.l2_lambda;

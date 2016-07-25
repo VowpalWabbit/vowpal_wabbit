@@ -93,7 +93,6 @@ struct example // core example datatype.
   float updated_prediction;//estimated post-update prediction.
   v_array<float> topic_predictions;
   float loss;
-  float example_t;//sum of importance weights so far.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
   features* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
