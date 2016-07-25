@@ -270,14 +270,12 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
     all_costs.push_back(&data.ec_seq[k]->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
-  data.csoaa_example_t += 1.;
   for (size_t k1=start_K; k1<K; k1++)
   { example *ec1 = data.ec_seq[k1];
 
     // save original variables
     COST_SENSITIVE::label   save_cs_label = ec1->l.cs;
     label_data& simple_label = ec1->l.simple;
-    float save_example_t1 = ec1->example_t;
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
@@ -297,7 +295,6 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
-      ec1->example_t = data.csoaa_example_t;
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
@@ -312,7 +309,6 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
 
     // restore original cost-sensitive label, sum of importance weights
     ec1->l.cs = save_cs_label;
-    ec1->example_t = save_example_t1;
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -328,18 +324,15 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     if (ec_cost > max_cost) max_cost = ec_cost;
   }
 
-  data.csoaa_example_t += 1.;
   for (size_t k=start_K; k<K; k++)
   { example *ec = data.ec_seq[k];
 
     // save original variables
     label save_cs_label = ec->l.cs;
-    float save_example_t = ec->example_t;
     v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;
-    ec->example_t = data.csoaa_example_t;
 
     simple_label.initial = 0.;
     float old_weight = ec->weight;
@@ -365,7 +358,6 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
     ec->l.cs = save_cs_label;
-    ec->example_t = save_example_t;
     ec->partial_prediction = costs[0].partial_prediction;
   }
 }

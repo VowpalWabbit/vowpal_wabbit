@@ -43,7 +43,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   if (is_learn)
   { vw& all = *a.all;
 
-    float k = ec.example_t - ec.weight;
+    float k = all.sd->t;
     float threshold = 0.f;
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
@@ -55,7 +55,10 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
       base.learn(ec);
     }
     else
-      ec.l.simple.label = FLT_MAX;
+      {
+	ec.l.simple.label = FLT_MAX;
+	ec.weight = 0.f;
+      }
   }
 }
 

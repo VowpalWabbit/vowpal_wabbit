@@ -50,7 +50,6 @@ private:
     new_ec->topic_predictions.erase();
     new_ec->passthrough = nullptr;
     new_ec->loss = 0.;
-    new_ec->example_t = 0.;
     new_ec->total_sum_feat_sq = 0.;
     new_ec->confidence = 0.;
     return new_ec;
@@ -203,8 +202,7 @@ public:
 
   void mini_setup_example()
   { ec->partial_prediction = 0.;
-    vw_ref->sd->t += vw_par_ref->p->lp.get_weight(&ec->l);
-    ec->example_t = (float)vw_ref->sd->t;
+    ec->weight = vw_par_ref->p->lp.get_weight(&ec->l);
 
     ec->num_features      -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
