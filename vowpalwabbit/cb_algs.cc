@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "gen_cs_example.h"
 
 using namespace LEARNER;
+using namespace std;
 
 using namespace CB;
 

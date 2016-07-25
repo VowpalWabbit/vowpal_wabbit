@@ -3,6 +3,7 @@
 #include "reductions.h"
 #include "vw_exception.h"
 
+using namespace std;
 struct scorer { vw* all; }; // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>

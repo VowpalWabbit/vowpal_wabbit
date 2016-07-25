@@ -12,5 +12,5 @@ void parse_sources(vw& all, io_buf& model);
 
 LEARNER::base_learner* setup_base(vw& all);
 
-string spoof_hex_encoded_namespaces(const string& arg);
+std::string spoof_hex_encoded_namespaces(const std::string& arg);
 // char** get_argv_from_string(string s, int& argc);

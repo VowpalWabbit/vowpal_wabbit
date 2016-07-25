@@ -8,6 +8,8 @@
 #define sprintf_s snprintf
 #endif
 
+using namespace std;
+
 namespace MULTICLASS
 {
 

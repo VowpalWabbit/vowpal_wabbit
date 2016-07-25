@@ -10,8 +10,6 @@ license as described in the file LICENSE.
 #include <stdlib.h>
 #include "v_array.h"
 
-using namespace std;
-
 // TODO: special case the version where beam_size == 1
 // TODO: *maybe* special case the version where beam_size <= 10
 

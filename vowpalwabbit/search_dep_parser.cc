@@ -9,6 +9,7 @@
 #include "label_dictionary.h"   // for add_example_namespaces_from_example
 #include "vw.h"
 #include "vw_exception.h"
+using namespace std;
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429

@@ -19,7 +19,7 @@ typedef struct gzFile_s *gzFile;
 class comp_io_buf : public io_buf
 {
 public:
-  vector<gzFile> gz_files;
+  std::vector<gzFile> gz_files;
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ);
 

@@ -1,5 +1,5 @@
 #include "best_constant.h"
-
+using namespace std;
 bool  is_more_than_two_labels_observed = false;
 float first_observed_label = FLT_MAX;
 float second_observed_label = FLT_MAX;

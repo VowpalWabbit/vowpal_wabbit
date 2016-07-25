@@ -7,7 +7,7 @@
 #include "vw_exception.h"
 
 using namespace LEARNER;
-
+using namespace std;
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 { float b,sb,rs,sl;
   b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));

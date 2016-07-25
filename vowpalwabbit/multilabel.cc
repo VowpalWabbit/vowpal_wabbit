@@ -2,6 +2,8 @@
 #include "gd.h"
 #include "vw.h"
 
+using namespace std;
+
 namespace MULTILABEL
 {
 bool is_test_label(labels& ld)

@@ -68,7 +68,7 @@ void finish(expreplay& er)
 
 template<char er_level, label_parser& lp>
 LEARNER::base_learner* expreplay_setup(vw& all)
-{ string replay_string = "replay_"; replay_string += er_level;
+  { std::string replay_string = "replay_"; replay_string += er_level;
   if (missing_option<size_t, true>(all, replay_string.c_str(), "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
     return nullptr;
 
@@ -76,7 +76,7 @@ LEARNER::base_learner* expreplay_setup(vw& all)
 
   size_t N  = vm[replay_string].as<size_t>();
 
-  string replay_count_string = replay_string;
+  std::string replay_count_string = replay_string;
   replay_count_string += "_count";
 
   size_t rc = 1;
@@ -99,7 +99,7 @@ LEARNER::base_learner* expreplay_setup(vw& all)
   er.replay_count = rc;
 
   if (! all.quiet)
-    cerr << "experience replay level=" << er_level << ", buffer=" << er.N << ", replay count=" << er.replay_count << endl;
+    std::cerr << "experience replay level=" << er_level << ", buffer=" << er.N << ", replay count=" << er.replay_count << std::endl;
 
   LEARNER::base_learner* base = setup_base(all);
   LEARNER::learner<expreplay>* l = &init_learner(&er, base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);

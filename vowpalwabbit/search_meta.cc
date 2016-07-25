@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "search.h"
 
+using namespace std;
 namespace DebugMT
 {
 void run(Search::search& sch, vector<example*>& ec);

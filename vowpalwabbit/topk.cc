@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 #include "vw.h"
+using namespace std;
 
 typedef pair<float, v_array<char> > scored_example;
 
