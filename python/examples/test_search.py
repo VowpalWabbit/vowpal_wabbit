@@ -1,5 +1,8 @@
+from __future__ import print_function
+
 import sys
 from vowpalwabbit import pyvw
+
 
 class SequenceLabeler(pyvw.SearchTask):
     def __init__(self, vw, sch, num_actions):
@@ -11,8 +14,8 @@ class SequenceLabeler(pyvw.SearchTask):
         # and get their values with sch.po_get -> string and
         # sch.po_get_int -> int
         if sch.po_exists('search'):
-            print 'found --search'
-            print '--search value =', sch.po_get('search'), ', type =', type(sch.po_get('search'))
+            print('found --search')
+            print('--search value =', sch.po_get('search'), ', type =', type(sch.po_get('search')))
 
         # set whatever options you want
         sch.set_options( sch.AUTO_HAMMING_LOSS | sch.AUTO_CONDITION_FEATURES )
@@ -55,11 +58,11 @@ vw = pyvw.vw("--search 4 --quiet --search_task hook --ring_size 1024")
 sequenceLabeler = vw.init_search_task(SequenceLabeler)
 
 # train it on the above dataset ten times; the my_dataset.__iter__ feeds into _run above
-print >>sys.stderr, 'training!'
-for i in xrange(10):
+print('training!', file=sys.stderr)
+for i in range(10):
     sequenceLabeler.learn(my_dataset)
 
 # now see the predictions on a test sentence
-print >>sys.stderr, 'predicting!'
-print sequenceLabeler.predict( [(0,w) for w in "the sandwich ate a monster".split()] )
-print 'should have printed: [1, 2, 3, 1, 2]'
+print('predicting!', file=sys.stderr)
+print(sequenceLabeler.predict( [(0,w) for w in "the sandwich ate a monster".split()] ))
+print('should have printed: [1, 2, 3, 1, 2]')
