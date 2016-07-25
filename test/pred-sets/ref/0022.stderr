@@ -9,17 +9,17 @@ Reading datafile = train-sets/3parity
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.883464 0.883464            1            1.0  -1.0000  -0.0601        4
-0.883464 0.883464            2            2.0  -1.0000  -0.0601        4
-1.076252 1.269040            4            4.0  -1.0000   0.1893        4
-1.011661 0.947071            8            8.0   1.0000   0.1893        4
+0.000000 0.000000            1            1.0  -1.0000  -1.0000        4
+0.000000 0.000000            2            2.0  -1.0000  -1.0000        4
+0.000000 0.000000            4            4.0  -1.0000  -1.0000        4
+0.000000 0.000000            8            8.0   1.0000   1.0000        4
 
 finished run
 number of examples per pass = 8
 passes used = 1
 weighted example sum = 8.000000
 weighted label sum = 0.000000
-average loss = 1.011661
+average loss = 0.000000
 best constant = 0.000000
 best constant's loss = 1.000000
 total feature number = 32

@@ -9,8 +9,8 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0    known        0.....        9
-1.000000 1.000000            2            2.0    known        0.....        6
-1.250000 1.500000            4            4.0    known        1.....        9
+0.500000 0.000000            2            2.0    known        1.....        6
+1.250000 2.000000            4            4.0    known        1.....        9
 0.875000 0.500000            8            8.0    known        2.....        9
 
 finished run

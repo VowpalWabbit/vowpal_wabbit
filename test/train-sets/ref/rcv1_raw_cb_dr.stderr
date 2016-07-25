@@ -9,21 +9,21 @@ Reading datafile = train-sets/rcv1_raw_cb_small.vw
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            1            1.0    known        1      280
-0.500000 0.000000            2            2.0    known        1      598
-0.250000 0.000000            4            4.0    known        1      784
-0.375000 0.500000            8            8.0    known        2      850
-0.561229 0.747458           16           16.0    known        2      118
-0.293785 0.026342           32           32.0    known        1      166
-0.314870 0.335954           64           64.0    known        1      340
-0.252558 0.190246          128          128.0    known        2      610
-0.211414 0.170269          256          256.0    known        2      712
-0.180684 0.149954          512          512.0    known        1      424
+2.000000 2.000000            1            1.0    known        1      280
+1.000000 0.000000            2            2.0    known        2      598
+0.500000 0.000000            4            4.0    known        2      784
+0.250000 0.000000            8            8.0    known        2      850
+0.620249 0.990498           16           16.0    known        2      118
+0.325918 0.031587           32           32.0    known        1      166
+0.336368 0.346819           64           64.0    known        1      340
+0.259987 0.183606          128          128.0    known        2      610
+0.215063 0.170140          256          256.0    known        2      712
+0.186591 0.158118          512          512.0    known        1      424
 
 finished run
 number of examples per pass = 1000
 passes used = 1
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 0.127539
+average loss = 0.130576
 total feature number = 440020

@@ -231,9 +231,6 @@ LEARNER::base_learner* oaa_setup(vw& all)
     l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false, false>,
                                           predict_or_learn<false, false, false>, all.p, data.k);
 
-  all.set_minmax(all.sd, -1.f);
-  all.set_minmax(all.sd, 1.f);
-
   if (data.num_subsample > 0)
     l->set_learn(learn_randomized);
   l->set_finish(finish);
