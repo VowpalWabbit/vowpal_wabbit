@@ -1,0 +1,4 @@
+1 | feature
+2 |namespace feature
+3 | :1
+4 |other_namespace :1
