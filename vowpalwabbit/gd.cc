@@ -425,6 +425,7 @@ struct norm_data
 
 const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
+  const float x2_max = FLT_MAX;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
@@ -435,6 +436,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
     { x = (x>0)? x_min:-x_min;
       x2 = x2_min;
     }
+    if (x2 > x2_max)
+      THROW("your features have too much magnitude");
     if(adaptive && !stateless)
       w[adaptive] += nd.grad_squared * x2;
     if(normalized)
