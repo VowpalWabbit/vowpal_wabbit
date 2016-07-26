@@ -464,8 +464,7 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
 void parse_mask_regressor_args(vw& all)
 { po::variables_map& vm = all.vm;
   if (vm.count("feature_mask"))
-  { size_t length = ((size_t)1) << all.num_bits;
-    string mask_filename = vm["feature_mask"].as<string>();
+  { string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor"))
     { vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0])   //-i and -mask are from same file, just generate mask

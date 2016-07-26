@@ -39,9 +39,9 @@ LEARNER::base_learner* print_setup(vw& all)
   print& p = calloc_or_throw<print>();
   p.all = &all;
 
-  size_t length = ((size_t)1) << all.num_bits;
+  //size_t length = ((size_t)1) << all.num_bits;
   //all.reg.weight_mask = (length << all.stride_shift) - 1;
-  //all.stride_shift = 0;
+  all.stride_shift = 0;
 
   LEARNER::learner<print>& ret = init_learner(&p, learn, 1);
   return make_base(ret);

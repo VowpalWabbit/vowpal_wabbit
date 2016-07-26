@@ -626,9 +626,9 @@ size_t next_pow2(size_t x)
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector& weights = *(all->wv);
   if (read)
   { initialize_regressor(*all);
+    weight_vector& weights = *(all->wv);
 	weight_vector::iterator j = weights.begin(0);
 	weight_vector::iterator w_lda = weights.begin(all->lda);
 	for (; j != weights.end(); ++j, ++w_lda)
@@ -645,7 +645,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   { uint64_t i = 0;
     stringstream msg;
     size_t brw = 1;
-
+	weight_vector& weights = *(all->wv);
     do
     { brw = 0;
 	  weight_vector::iterator iter = weights.begin(0);

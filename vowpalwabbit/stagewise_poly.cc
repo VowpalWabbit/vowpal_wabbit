@@ -172,7 +172,7 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->wv[wid]) > 0) );
+    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->wv->operator[](wid)) > 0) );
     //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->wv[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
