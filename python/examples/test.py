@@ -80,7 +80,6 @@ for i in range(2):
     ex = vw.example("1 foo| a b")
     ex.learn()
     print('tag =', ex.get_tag())
-    print('counter =', ex.get_example_counter())
     print('partial pred =', ex.get_partial_prediction())
     print('loss =', ex.get_loss())
 
