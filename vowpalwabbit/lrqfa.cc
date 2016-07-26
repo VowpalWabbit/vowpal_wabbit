@@ -4,6 +4,7 @@
 #include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
+using namespace std;
 
 struct LRQFAstate
 { vw* all;

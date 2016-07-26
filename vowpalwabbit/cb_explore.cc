@@ -12,7 +12,7 @@
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
-
+using namespace std;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE{

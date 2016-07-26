@@ -162,7 +162,6 @@ struct search_private
   float test_loss;               // loss incurred when run INIT_TEST
   float learn_loss;              // loss incurred when run LEARN
   float train_loss;              // loss incurred when run INIT_TRAIN
-  float total_example_t;         // accumulated weight of examples
 
   bool last_example_was_newline; // used so we know when a block of examples has passed
   bool hit_new_pass;             // have we hit a new pass?
@@ -1142,8 +1141,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
   }
   //cdbg << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cdbg << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cdbg << " ], min_loss=" << min_loss << endl;
 
-  priv.total_example_t += 1.;   // TODO: should be max-min
-
   if (!priv.is_ldf)     // not LDF
   { // since we're not LDF, it should be the case that ec_ref_cnt == 1
     // and learn_ec_ref[0] is a pointer to a single example
@@ -1151,8 +1148,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     assert(priv.learn_ec_ref != nullptr);
 
     example& ec = priv.learn_ec_ref[0];
-    float old_example_t = ec.example_t;
-    ec.example_t = priv.total_example_t;
     polylabel old_label = ec.l;
     ec.l = losses; // labels;
     if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(), priv.learn_condition_on_act.begin());
@@ -1163,7 +1158,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
     ec.l = old_label;
-    ec.example_t = old_example_t;
     priv.total_examples_generated++;
   }
   else                  // is  LDF
@@ -1182,8 +1176,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
 
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       { example& ec = priv.learn_ec_ref[a];
-        float old_example_t = ec.example_t;
-        ec.example_t = priv.total_example_t;
 
         CS::label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
@@ -1196,7 +1188,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         priv.base_learner->learn(ec, learner);
 
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
-        ec.example_t = old_example_t;
         priv.total_examples_generated++;
       }
 

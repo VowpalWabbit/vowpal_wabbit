@@ -10,8 +10,6 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 
-using namespace CB;
-
 struct cb_to_cs
 {
   size_t cb_type;
@@ -23,10 +21,10 @@ struct cb_to_cs
   float last_pred_reg;
   float last_correct_cost;
 
-  cb_class* known_cost;
+  CB::cb_class* known_cost;
 };
 
-cb_class* get_observed_cost(CB::label& ld);
+CB::cb_class* get_observed_cost(CB::label& ld);
 
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
 float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action);

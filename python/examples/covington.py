@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from vowpalwabbit import pyvw
 
 # the label for each word is its parent, or -1 for root
@@ -97,21 +99,21 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
 
 # demo the non-ldf version:
 
-print 'training non-LDF'
+print('training non-LDF')
 vw = pyvw.vw("--search 2 --search_task hook --ring_size 1024 --quiet")
 task = vw.init_search_task(CovingtonDepParser)
 for p in range(2): # do two passes over the training data
     task.learn(my_dataset)
-print 'testing non-LDF'
-print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
-print 'should have printed [ 1 2 -1 4 2 ]'
+print('testing non-LDF')
+print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
+print('should have printed [ 1 2 -1 4 2 ]')
 
 # demo the ldf version:
-print 'training LDF'
+print('training LDF')
 vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
 task = vw.init_search_task(CovingtonDepParserLDF)
 for p in range(100): # do two passes over the training data
     task.learn(my_dataset)
-print 'testing LDF'
-print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
-print 'should have printed [ 1 2 -1 4 2 ]'
+print('testing LDF')
+print(task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] ))
+print('should have printed [ 1 2 -1 4 2 ]')

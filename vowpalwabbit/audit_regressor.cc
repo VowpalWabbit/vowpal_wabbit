@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
-
+using namespace std;
 struct audit_regressor_data
 {
     vw* all;

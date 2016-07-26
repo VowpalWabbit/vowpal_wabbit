@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
+using namespace std;
 
 void dispatch_example(vw& all, example& ec)
 { if (ec.test_only || !all.training)

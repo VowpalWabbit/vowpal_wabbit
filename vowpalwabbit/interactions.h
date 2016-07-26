@@ -23,7 +23,7 @@ const uint64_t valid_ns_size = printable_end - printable_start - 1; // -1 to ski
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length
 // err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
-v_array<v_string> expand_interactions(const vector<string> &vec, const size_t required_length, const string &err_msg);
+ v_array<v_string> expand_interactions(const std::vector<std::string> &vec, const size_t required_length, const std::string &err_msg);
 
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(v_array<v_string> &vec, bool filter_duplicates, size_t &removed_cnt, size_t &sorted_cnt);

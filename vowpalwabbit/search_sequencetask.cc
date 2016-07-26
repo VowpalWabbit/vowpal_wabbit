@@ -6,6 +6,8 @@ license as described in the file LICENSE.
 #include "search_sequencetask.h"
 #include "vw.h"
 
+using namespace std;
+
 namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
 namespace SequenceTaskCostToGo { Search::search_task task = { "sequence_ctg",      run, initialize, nullptr,   nullptr,  nullptr     }; }
@@ -21,7 +23,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
                    0);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+  void run(Search::search& sch, vector<example*>& ec)
 { Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
   { action oracle     = ec[i]->l.multi.label;

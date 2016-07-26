@@ -6,6 +6,7 @@
 #include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
+using namespace std;
 
 struct LRQstate
 { vw* all; // feature creation, audit, hash_inv

@@ -1,6 +1,6 @@
 #include "interactions.h"
 #include "vw_exception.h"
-
+using namespace std;
 namespace INTERACTIONS
 {
 

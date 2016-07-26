@@ -260,7 +260,7 @@ class HyperOptimizer(object):
         v = open('%s' % self.holdout_pred, 'r')
         y_pred_holdout = []
         for line in v:
-            y_pred_holdout.append(float(line.strip()))
+            y_pred_holdout.append(float(line.split()[0].strip()))
 
         if self.outer_loss_function == 'logistic':
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]

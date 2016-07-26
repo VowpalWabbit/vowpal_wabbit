@@ -26,13 +26,9 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
-
-  if (is_learn && simple_temp.label != FLT_MAX)
+  if (is_learn && known_cost != nullptr && index == known_cost->action)
   { float old_weight = ec.weight;
-    if (known_cost != nullptr && index == known_cost->action)
-      ec.weight = 1.f / known_cost->probability;
-    else
-      ec.weight = 1.f;
+    ec.weight /= known_cost->probability;
     scorer->learn(ec, index-1+base);
     ec.weight = old_weight;
   }

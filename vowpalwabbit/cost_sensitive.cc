@@ -2,6 +2,8 @@
 #include "gd.h"
 #include "vw.h"
 #include "vw_exception.h"
+
+using namespace std;
 namespace COST_SENSITIVE
 {
 

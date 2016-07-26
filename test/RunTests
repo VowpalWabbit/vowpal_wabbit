@@ -1485,3 +1485,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
     train-sets/ref/cb_adf_crash2.stderr
 
+# Test 137: Fix for regression introduced by badeedb.  
+# Ensure audit output continues to work correctly in the presence of anon features.
+# Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)
+{VW} --audit -d train-sets/audit.dat --noconstant
+    train-sets/ref/audit.stderr
+    train-sets/ref/audit.stdout

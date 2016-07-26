@@ -77,7 +77,7 @@ size_t my_get_label_type(vw*all)
 
 void my_delete_example(void*voidec)
 { example* ec = (example*) voidec;
-  size_t labelType = (ec->tag.size() == 0) ? lDEFAULT : ec->tag[0];
+  size_t labelType = ec->example_counter;
   label_parser* lp = get_label_parser(NULL, labelType);
   VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
@@ -92,9 +92,7 @@ example* my_empty_example0(vw_ptr vw, size_t labelType)
   { COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
     ec->l.cs.costs.push_back(zero);
   }
-  ec->tag.erase();
-  if (labelType != lDEFAULT)
-    ec->tag.push_back((char)labelType);  // hide the label type in the tag
+  ec->example_counter = labelType;
   return ec;
 }
 
@@ -109,9 +107,6 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, char*str)
   VW::parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
-  ec->tag.erase();
-  if (labelType != lDEFAULT)
-    ec->tag.push_back((char)labelType);  // hide the label type in the tag
   return boost::shared_ptr<example>(ec, my_delete_example);
 }
 
@@ -244,13 +239,14 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 }
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
-{ py::object objectKey, objectVal;
-  const py::object objectKeys = dict.iterkeys();
-  const py::object objectVals = dict.itervalues();
+{
+  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
+  const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
   unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
-  for (size_t u=0; u<ulCount; u++)
-  { objectKey = objectKeys.attr( "next" )();
-    objectVal = objectVals.attr( "next" )();
+  for (size_t u=0; u<ulCount; ++u)
+  {
+    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
+    py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
 
     char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
     if (chCheckKey != 's') continue;
@@ -373,13 +369,13 @@ uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.cos
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
 float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].partial_prediction; }
 
+// example_counter is being overriden by lableType!
 size_t   get_example_counter(example_ptr ec) { return ec->example_counter; }
 uint32_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
 size_t   get_num_features(example_ptr ec) { return ec->num_features; }
 float    get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 float    get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 float    get_loss(example_ptr ec) { return ec->loss; }
-float    get_example_t(example_ptr ec) { return ec->example_t; }
 float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
@@ -634,7 +630,6 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_partial_prediction", &get_partial_prediction, "Returns the partial prediction associated with this example")
   .def("get_updated_prediction", &get_updated_prediction, "Returns the partial prediction as if we had updated it after learning")
   .def("get_loss", &get_loss, "Returns the loss associated with this example")
-  .def("get_example_t", &get_example_t, "The total sum of importance weights up to and including this example")
   .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example")
 
   .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")

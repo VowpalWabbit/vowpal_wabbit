@@ -704,10 +704,7 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   ae->weight = all.p->lp.get_weight(&ae->l);
-  all.sd->t += ae->weight;
-  ae->example_t = (float)all.sd->t;
-
-
+ 
   if (all.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
       if (all.ignore[*i])

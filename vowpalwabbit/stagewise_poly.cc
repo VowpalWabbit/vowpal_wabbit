@@ -373,7 +373,6 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.feature_space[tree_atomics].erase();
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
-  poly.synth_ec.example_t = ec.example_t;
 
   if (poly.synth_ec.indices.size()==0)
     poly.synth_ec.indices.push_back(tree_atomics);
@@ -616,7 +615,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
     {
       stringstream msg;
-      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
     }
   //unfortunately, following can't go here since save_load called before gd::save_load and thus
   //weight vector state uninitialiazed.
