@@ -27,7 +27,7 @@ using namespace std;
 
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
-  if (!all.wv->isNull())
+  if (all.wv != nullptr)
   { return;
   }
 
@@ -39,7 +39,7 @@ void initialize_regressor(vw& all)
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (all.wv->isNull())
+  if (all.wv == nullptr)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
     for (weight_vector::iterator j = all.wv->begin(0); j != all.wv->end(); ++j)

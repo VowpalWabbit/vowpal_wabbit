@@ -112,8 +112,6 @@ public:
 	//iterator with stride and offset
 	iterator begin(size_t offset) { return iterator(_begin + offset, (1<<_stride_shift)); }
 	iterator end(size_t offset) { return iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
-	
-	bool isNull() const { return _begin == nullptr; }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 
