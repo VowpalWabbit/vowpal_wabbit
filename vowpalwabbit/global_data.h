@@ -540,7 +540,7 @@ struct vw
   bool  progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;   // next update progress dump multiplier
 
-  //bool seeded; // whether the instance is sharing model state with others
+  bool seeded; // whether the instance is sharing model state with others
 
   std::map< std::string, size_t> name_index_map;
 

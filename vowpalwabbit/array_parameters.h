@@ -93,7 +93,6 @@ private:
 	weight* _begin;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
-	bool _seeded;
 
 public:
 	typedef weights_iterator iterator;
@@ -101,8 +100,7 @@ public:
 	weight_vector(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
-		_stride_shift(stride_shift),
-		_seeded(false)
+		_stride_shift(stride_shift)
 	{ }
 
 	weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
@@ -119,21 +117,9 @@ public:
 	{ return _weight_mask;
 	}
 	
-	void mask(uint64_t weight_mask)
-	{ _weight_mask = weight_mask;
-	}
-	
-	bool seeded()
-	{ return _seeded;
-	}
-	
-	void seeded(bool seeded)
-	{ _seeded = seeded;
-	}
-
+	#ifndef _WIN32
 	void share(size_t length)
 	{
-	  #ifndef _WIN32
 	  float* shared_weights = (float*)mmap(0, (length << _stride_shift) * sizeof(float),
 			                  PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
           size_t float_count = length << _stride_shift;
@@ -141,14 +127,14 @@ public:
 	  memcpy(dest, _begin, float_count*sizeof(float));
       	  free(_begin);
       	  _begin = dest;
-     	  #endif
 	}
-	~weight_vector(){
-		if (_begin != nullptr && !_seeded)
-		{
-			free(_begin);
-			_begin = nullptr;
-		}
+	#endif
+	
+	~weight_vector()
+	{  if (_begin != nullptr)
+	   {  free(_begin);
+	      _begin = nullptr;
+	   }
 	}
 	friend class weights_iterator;
 };

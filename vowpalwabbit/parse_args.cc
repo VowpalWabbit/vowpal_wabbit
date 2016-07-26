@@ -1390,14 +1390,15 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
   vw* new_model = VW::initialize(init_args.str().c_str());
 
-  free_it(new_model->wv->first()); //TODO: Definitely should not happen 
+  delete(new_model->wv); 
+  new_model->wv = nullptr; 
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
   new_model->wv = vw_model->wv; // regressor
   new_model->sd = vw_model->sd; // shared data
 
-  new_model->wv->seeded(true);
+  new_model->seeded = true;
 
   return new_model;
 }
@@ -1482,15 +1483,16 @@ void finish(vw& all, bool delete_all)
     free_it(all.l);
   }
   
-  //TODO: check for all.seeded? Look into std::move wv? (AK)
-  //if (!all.wv.isNull() && !all.seeded) // don't free weight vector if it is shared with another instance
-  //all.wv.~weight_vector(); 
+  if (!all.seeded) // don't free weight vector if it is shared with another instance
+  {  delete all.wv;
+     all.wv = nullptr; 
+  }
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.wv->seeded())
+  if (!all.seeded)
   { delete(all.sd->ldict);
     free(all.sd);
   }

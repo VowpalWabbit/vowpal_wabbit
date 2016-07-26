@@ -130,7 +130,10 @@ flat_example* flatten_example(vw& all, example *ec)
 
   full_features_and_source ffs;
   ffs.stride_shift = all.stride_shift;
-  ffs.mask = (uint64_t)all.wv->mask() >> all.stride_shift;
+  if (all.wv != nullptr)  //TODO:temporary fix. all.wv is not initialized at this point in some cases.
+    ffs.mask = (uint64_t)all.wv->mask() >> all.stride_shift;
+  else
+    ffs.mask = (uint64_t)LONG_MAX >> all.stride_shift;
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   fec.fs = ffs.fs;
