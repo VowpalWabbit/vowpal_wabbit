@@ -194,11 +194,10 @@ void mf_train(gdmf& d, example& ec)
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector& w = *(all->wv);
   if(read)
   { initialize_regressor(*all);
     if (all->random_weights)
-    { 
+	{ weight_vector& w = *(all->wv);
 	  for (weight_vector::iterator j = w.begin(); j != w.end(); ++j)
 		  *j = (float)(0.1 * frand48());
     }  
@@ -207,7 +206,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-	 
+	 weight_vector& w = *(all->wv);
     do
     { brw = 0;
       size_t K = d.rank*2+1;
