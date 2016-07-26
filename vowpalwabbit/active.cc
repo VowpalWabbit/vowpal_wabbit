@@ -43,7 +43,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   if (is_learn)
   { vw& all = *a.all;
 
-    float k = all.sd->t;
+    float k = (float)all.sd->t;
     float threshold = 0.f;
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);

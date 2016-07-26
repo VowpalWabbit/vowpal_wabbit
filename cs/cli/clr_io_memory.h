@@ -16,9 +16,9 @@ namespace VW
     class clr_io_memory_buf : public io_buf
     {
     private:
-        vector<char> m_data;
+        std::vector<char> m_data;
 
-        vector<char>::const_iterator m_iterator;
+        std::vector<char>::const_iterator m_iterator;
 
     public:
         /// <summary>
