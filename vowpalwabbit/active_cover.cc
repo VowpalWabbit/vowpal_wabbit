@@ -139,7 +139,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
     // Update the learners in the cover and their weights
     float q2 = 4.f*pmin*pmin;
-    float p, s, cost, cost_delta;
+    float p, s, cost, cost_delta=0;
     float ec_output_label = ec.l.simple.label;
     float ec_output_weight = ec.weight;
     float r = 2.f*threshold*t*a.alpha/a.active_c0/a.beta_scale;

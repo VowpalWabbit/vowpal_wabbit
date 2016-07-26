@@ -30,10 +30,9 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Console.WriteLine(vw.Arguments.CommandLine);
-                // --no_stdin--max_prediction 1--bit_precision 18--cb_explore_adf--epsilon 0.300000--cb_adf--cb_type ips --csoaa_ldf multiline--csoaa_rank--interact ud
+                // --no_stdin--bit_precision 18--cb_explore_adf--epsilon 0.300000--cb_adf--cb_type ips --csoaa_ldf multiline--csoaa_rank--interact ud
 
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--no_stdin"));
-                Assert.IsTrue(vw.Arguments.CommandLine.Contains("--max_prediction 0"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--bit_precision 18"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--cb_explore_adf"));
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--epsilon 0.3"));
