@@ -27,28 +27,28 @@ using namespace std;
 
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
-  if (!all.wv.isNull())
+  if (!all.wv->isNull())
   { return;
   }
 
   size_t length = ((size_t)1) << all.num_bits;
   try
     { 
-		all.wv = *(new weight_vector(length, all.stride_shift)); 
+		all.wv = new weight_vector(length, all.stride_shift); 
     }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (all.wv.isNull())
+  if (all.wv->isNull())
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-    for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+    for (weight_vector::iterator j = all.wv->begin(0); j != all.wv->end(); ++j)
       *j = all.initial_weight;
   else if (all.random_positive_weights)
-	for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+	for (weight_vector::iterator j = all.wv->begin(0); j != all.wv->end(); ++j)
       *j = (float)(0.1 * frand48());
   else if (all.random_weights)
-	for (weight_vector::iterator j = all.wv.begin(0); j != all.wv.end(); ++j)
+	for (weight_vector::iterator j = all.wv->begin(0); j != all.wv->end(); ++j)
 	  *j = (float)(frand48() - 0.5);
 }
 
@@ -499,7 +499,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  weight_vector& w = all.wv;
+	  weight_vector& w = *all.wv;
       for (weight_vector::iterator j = w.begin(0); j != w.begin(); ++j)
       { *j = 0.;
       }

@@ -626,7 +626,7 @@ size_t next_pow2(size_t x)
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector& weights = all->wv;
+  weight_vector& weights = *(all->wv);
   if (read)
   { initialize_regressor(*all);
 	weight_vector::iterator j = weights.begin(0);
@@ -693,8 +693,9 @@ void learn_batch(lda &l)
       l.total_lambda.push_back(0.f);
 
     size_t stride = 1 << l.all->stride_shift;
-	weight_vector::iterator iter = l.all->wv.begin(0);
-	for (size_t i = 0; i <= l.all->wv.mask(); i += stride, ++iter) //TODO: fix to not use stride
+	weight_vector& weights = *(l.all->wv);
+	weight_vector::iterator iter = weights.begin(0);
+	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{
 		weight_vector::iterator::w_iter k_iter = iter.begin();
 		for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
@@ -724,7 +725,7 @@ void learn_batch(lda &l)
   { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
-  weight_vector& weights = l.all->wv;
+  weight_vector& weights = *(l.all->wv);
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
@@ -814,7 +815,7 @@ void end_pass(lda &l)
 }
 
 void end_examples(lda &l)
-{  weight_vector& w = l.all->wv;
+{  weight_vector& w = *(l.all->wv);
    weight_vector::iterator i = w.begin(l.all->lda);
    weight_vector::iterator j = w.begin(0);
    for (; i != w.end(l.all->lda); ++i, ++j)

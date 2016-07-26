@@ -5,7 +5,7 @@
 struct print { vw* all; }; //regressor, feature loop
 
 void print_feature(vw& all, float value, float& weight)
-{ size_t index = &weight - all.wv.first();
+{ size_t index = &weight - all.wv->first(); //TODO: remove first()
 
   cout << index;
   if (value != 1.)

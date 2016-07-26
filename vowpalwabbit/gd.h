@@ -28,10 +28,10 @@ struct multipredict_info { size_t count; size_t step; polyprediction* pred; weig
 
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 { if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  weight_vector* w = mp.wv;
-  uint64_t mask = w->mask(); //TODO: shouldn't use mask()
+  weight_vector& w = *mp.wv;
+  uint64_t mask = w.mask(); 
   polyprediction* p = mp.pred;
-  weight_vector::iterator iter = w->begin();
+  weight_vector::iterator iter = w.begin();
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count-1) * mp.step);
   uint64_t i = 0;
@@ -74,7 +74,7 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
 
 for (features& f : ec)
-    foreach_feature<R,T>(all.wv, f, dat, offset);
+    foreach_feature<R,T>(*all.wv, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }

@@ -1,14 +1,10 @@
 #pragma once
-#include <stdio.h>
-#include <iostream>
-#include <stdlib.h>
 #include <string.h>
 
 #ifndef _WIN32
 #include <sys/mman.h>
 #endif
 
-using namespace std;
 typedef float weight;
 
 class weight_vector;
@@ -26,15 +22,13 @@ public:
 
 	weights_iterator_iterator& operator++()
 	{
-		_cur++;
+		++_cur;
 		return *this;
 	}
 
-	template<typename T>
-	weights_iterator_iterator operator+(T index) { return weights_iterator_iterator(_cur + index); }
+	weights_iterator_iterator operator+(size_t index) { return weights_iterator_iterator(_cur + index); }
 
-	template<typename T>
-	weights_iterator_iterator& operator+=(T index)
+	weights_iterator_iterator& operator+=(size_t index)
 	{
 		_cur += index;
 		return *this;
@@ -71,21 +65,17 @@ public:
 		return *this;
 	}
 
-	template<typename T>
-	weights_iterator operator+(T index) { return weights_iterator(_current + (index*_stride), _stride); }
+	weights_iterator operator+(size_t index) { return weights_iterator(_current + (index*_stride), _stride); }
 
-	template<typename T>
-	weights_iterator& operator+=(T index)
-	{
-		_current += (index*_stride);
-		return *this;
+	weights_iterator& operator+=(size_t index)
+	{  _current += (index*_stride);
+	   return *this;
 	}
 
 	weights_iterator& operator=(const weights_iterator& other)
-	{
-		_current = other._current;
-		_stride = other._stride;
-		return *this;
+	{  _current = other._current;
+	   _stride = other._stride;
+	   return *this;
 	}
 
 	bool operator==(const weights_iterator& rhs) { return _current == rhs._current; }
@@ -108,10 +98,6 @@ private:
 public:
 	typedef weights_iterator iterator;
 
-	weight_vector()
-		: _begin(nullptr), _weight_mask((uint64_t)LONG_MAX), _stride_shift(0),_seeded(false)
-	{ }
-
 	weight_vector(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
@@ -119,7 +105,7 @@ public:
 		_seeded(false)
 	{ }
 
-	inline weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
+	weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
 	iterator begin() { return iterator(_begin, 1); }
 	iterator end() { return iterator(_begin + _weight_mask + 1, 1); }
 

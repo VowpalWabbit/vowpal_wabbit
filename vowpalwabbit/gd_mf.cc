@@ -33,7 +33,7 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 { vw& all = *d.all;
-  weight_vector& weights = all.wv;
+  weight_vector& weights = *all.wv;
   uint64_t mask = weights.mask();
   for (features& fs : ec)
   { bool audit = !fs.space_names.empty();
@@ -91,7 +91,7 @@ float mf_predict(gdmf& d, example& ec)
   float linear_prediction = 0.;
   // linear terms
   for (features& fs : ec)
-    GD::foreach_feature<float, GD::vec_add>(all.wv, fs, linear_prediction);
+    GD::foreach_feature<float, GD::vec_add>(*all.wv, fs, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -107,12 +107,12 @@ float mf_predict(gdmf& d, example& ec)
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(all.wv, ec.feature_space[(int)i[0]], x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add>(*all.wv, ec.feature_space[(int)i[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(all.wv, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add>(*all.wv, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -151,7 +151,7 @@ void sd_offset_update(weight_vector& weights, features& fs, uint64_t offset, flo
 
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
-  weight_vector& weights = all.wv;
+  weight_vector& weights = *all.wv;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -194,7 +194,7 @@ void mf_train(gdmf& d, example& ec)
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
-  weight_vector& w = all->wv;
+  weight_vector& w = *(all->wv);
   if(read)
   { initialize_regressor(*all);
     if (all->random_weights)

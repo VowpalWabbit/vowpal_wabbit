@@ -1390,14 +1390,14 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
   vw* new_model = VW::initialize(init_args.str().c_str());
 
-  free_it(new_model->wv.first()); //TODO: Definitely should not happen
+  free_it(new_model->wv->first()); //TODO: Definitely should not happen 
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
   new_model->wv = vw_model->wv; // regressor
   new_model->sd = vw_model->sd; // shared data
 
-  new_model->wv.seeded(true);
+  new_model->wv->seeded(true);
 
   return new_model;
 }
@@ -1490,7 +1490,7 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.wv.seeded())
+  if (!all.wv->seeded())
   { delete(all.sd->ldict);
     free(all.sd);
   }

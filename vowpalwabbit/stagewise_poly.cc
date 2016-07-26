@@ -92,11 +92,11 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
 }
 
 inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{ return wid & poly.all->wv.mask();
+{ return wid & poly.all->wv->mask();
 }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
-{ return stride_un_shift(poly, wid & poly.all->wv.mask());
+{ return stride_un_shift(poly, wid & poly.all->wv->mask());
 }
 
 inline uint64_t constant_feat(const stagewise_poly &poly)
@@ -269,8 +269,8 @@ void sort_data_update_support(stagewise_poly &poly)
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
-    { float wval = (fabsf(poly.all->wv[wid])
-                    * poly.all->wv[poly.all->normalized_idx + (wid)])
+    { float wval = (fabsf(poly.all->wv->operator[](wid))
+                    * poly.all->wv->operator[](poly.all->normalized_idx + (wid)))
                    /*
                     * here's some depth penalization code.  It was found to not improve
                     * statistical performance, and meanwhile it is verified as giving
@@ -390,7 +390,7 @@ void synthetic_decycle(stagewise_poly &poly)
 
 void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->wv.first()))));
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->wv->first())))); //TODO: Remove first()
   uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 

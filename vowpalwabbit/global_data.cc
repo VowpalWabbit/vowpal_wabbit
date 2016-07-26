@@ -322,7 +322,7 @@ vw::vw()
   add_constant = true;
   audit = false;
   stride_shift = 0;
-  wv = weight_vector();
+  wv = nullptr;
   pass_length = (size_t)-1;
   passes_complete = 0;
 

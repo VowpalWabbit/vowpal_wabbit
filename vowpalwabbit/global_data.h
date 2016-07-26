@@ -528,7 +528,7 @@ struct vw
   std::string final_regressor_name;
 
   uint32_t stride_shift;
-  weight_vector wv;
+  weight_vector* wv;
 
   size_t max_examples; // for TLC
 
