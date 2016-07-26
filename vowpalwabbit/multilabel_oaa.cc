@@ -8,6 +8,8 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
+using namespace std;
+
 struct multi_oaa
 { size_t k;
 };

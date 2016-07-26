@@ -32,7 +32,7 @@ bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float 
   float middle = 0.f;
   ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
 
-  float k = all.sd->t;
+  float k = (float)all.sd->t;
   float loss_delta = ec.confidence/k;
 
   bool result = (loss_delta <= threshold);
@@ -107,7 +107,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
   { vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
-    float t = a.all->sd->t;
+    float t = (float)a.all->sd->t;
     float ec_input_weight = ec.weight;
     float ec_input_label = ec.l.simple.label;
 
@@ -139,7 +139,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
 
     // Update the learners in the cover and their weights
     float q2 = 4.f*pmin*pmin;
-    float p, s, cost, cost_delta;
+    float p, s, cost, cost_delta=0;
     float ec_output_label = ec.l.simple.label;
     float ec_output_weight = ec.weight;
     float r = 2.f*threshold*t*a.alpha/a.active_c0/a.beta_scale;

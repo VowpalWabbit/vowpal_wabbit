@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include "reductions.h"
 #include "v_array.h"
-
+using namespace std;
 struct interact
 { unsigned char n1, n2;  //namespaces to interact
   features feat_store;

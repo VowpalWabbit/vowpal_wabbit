@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 
 using namespace LEARNER;
+using namespace std;
 
 namespace CB
 {

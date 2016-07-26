@@ -5,6 +5,7 @@
 */
 #include "search_entityrelationtask.h"
 #include "vw.h"
+using namespace std;
 
 #define R_NONE 10 // label for NONE relation
 #define LABEL_SKIP 11 // label for SKIP

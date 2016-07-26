@@ -1,4 +1,4 @@
-import sys
+from __future__ import division
 import pylibvw
 
 class SearchTask():
@@ -61,7 +61,7 @@ class vw(pylibvw.vw):
             s = ('-'+key) if len(key) == 1 else ('--'+key)
             if type(val) is not bool or val != True: s += ' ' + str(val)
             return s
-        l = [format(k,v) for k,v in kw.iteritems()]
+        l = [format(k,v) for k,v in kw.items()]
         if argString is not None: l = [argString] + l
         #print ' '.join(l)
         pylibvw.vw.__init__(self,' '.join(l))
@@ -437,7 +437,9 @@ class example(pylibvw.example):
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
-        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary. finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more (for lazy feature computation)."""
+        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary.
+        finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more
+        (for lazy feature computation)."""
 
         while hasattr(initStringOrDict, '__call__'):
             initStringOrDict = initStringOrDict()
@@ -492,7 +494,7 @@ class example(pylibvw.example):
         ns = self.get_ns(ns)  # guaranteed to be a single character
         f = pylibvw.example.feature(self, ns.ord_ns, i)
         if self.setup_done:
-            f = (f - self.get_ft_offset()) / self.stride
+            f = (f - self.get_ft_offset()) // self.stride
         return f
 
     def feature_weight(self, ns, i):

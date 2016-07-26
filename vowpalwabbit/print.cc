@@ -2,6 +2,7 @@
 #include "float.h"
 #include "reductions.h"
 
+using namespace std;
 struct print { vw* all; }; //regressor, feature loop
 
 void print_feature(vw& all, float value, float& weight)

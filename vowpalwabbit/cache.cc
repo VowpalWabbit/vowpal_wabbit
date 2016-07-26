@@ -7,6 +7,8 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 #include "global_data.h"
 
+using namespace std;
+
 const size_t int_size = 11;
 const size_t char_size = 2;
 const size_t neg_1 = 1;

@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "gd.h"
 #include "vw_exception.h"
-
+using namespace std;
 /*
 example format:
 

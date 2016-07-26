@@ -3,7 +3,7 @@
 #include "math.h"
 
 using namespace LEARNER;
-
+using namespace std;
 struct confidence
 { vw* all;//statistics, loss
 };
