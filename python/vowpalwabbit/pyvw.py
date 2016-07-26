@@ -437,7 +437,9 @@ class example(pylibvw.example):
         get an "empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
-        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary. finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more (for lazy feature computation)."""
+        example (and "setup_example" is run). if it is a dict, then we add all features in that dictionary.
+        finally, if it's a function, we (repeatedly) execute it fn() until it's not a function any more
+        (for lazy feature computation)."""
 
         while hasattr(initStringOrDict, '__call__'):
             initStringOrDict = initStringOrDict()
