@@ -9,16 +9,17 @@ typedef float weight;
 
 class weight_vector;
 
+template <typename T> 
 class weights_iterator_iterator
 {
 private:
-	weight* _cur;
+	T* _cur;
 public:
-	weights_iterator_iterator(weight* cur)
+	weights_iterator_iterator(T* cur)
 		: _cur(cur)
 	{ }
 	
-	weight& operator*() { return *_cur; }
+	T& operator*() { return *_cur; }
 
 	weights_iterator_iterator& operator++()
 	{
@@ -34,30 +35,26 @@ public:
 		return *this;
 	}
 
-	weights_iterator_iterator& operator=(const weights_iterator_iterator& other)
-	{
-		_cur = other._cur;
-		return *this;
-	}
-
-	bool operator==(const weights_iterator_iterator& rhs) { return _cur == rhs._cur; }
-	bool operator!=(const weights_iterator_iterator& rhs) { return _cur != rhs._cur; }
+	bool operator==(const weights_iterator_iterator& rhs) const { return _cur == rhs._cur; }
+	bool operator!=(const weights_iterator_iterator& rhs) const { return _cur != rhs._cur; }
 
 };
+
+template <typename T>
 class weights_iterator
 {
 private:
-	weight* _current;
+	T* _current;
 	uint32_t _stride;
 
 public:
-	typedef weights_iterator_iterator w_iter;
-
-	weights_iterator(weight* current, uint32_t stride)
+	typedef weights_iterator_iterator<T> w_iter;
+	
+	weights_iterator(T* current, uint32_t stride)
 		: _current(current), _stride(stride)
 	{ }
 
-	weight& operator*() { return *_current; }
+	T& operator*() { return *_current; }
 
 	weights_iterator& operator++()
 	{
@@ -72,19 +69,12 @@ public:
 	   return *this;
 	}
 
-	weights_iterator& operator=(const weights_iterator& other)
-	{  _current = other._current;
-	   _stride = other._stride;
-	   return *this;
-	}
-
-	bool operator==(const weights_iterator& rhs) { return _current == rhs._current; }
-	bool operator!=(const weights_iterator& rhs) { return _current != rhs._current; }
+	bool operator==(const weights_iterator& rhs) const { return _current == rhs._current; }
+	bool operator!=(const weights_iterator& rhs) const { return _current != rhs._current; }
 
 	//to iterate within a bucket
 	w_iter begin() { return w_iter(_current); }
 	w_iter end(size_t offset) { return w_iter(_current + offset); }
-
 };
 
 class weight_vector //different name? (previously array_parameters)
@@ -95,7 +85,8 @@ private:
 	uint32_t _stride_shift;
 
 public:
-	typedef weights_iterator iterator;
+	typedef weights_iterator<weight> iterator;
+	typedef weights_iterator<const weight> const_iterator;
 
 	weight_vector(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
@@ -103,13 +94,25 @@ public:
 		_stride_shift(stride_shift)
 	{ }
 
+	//disable copy, move constructor and assignment
+	weight_vector(const weight_vector &) = delete;
+	weight_vector(weight_vector &&) = delete;
+	weight_vector& operator=(const weight_vector &) = delete;
+	weight_vector& operator=(weight_vector &&) = delete;
+
 	weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
+	
 	iterator begin() { return iterator(_begin, 1); }
 	iterator end() { return iterator(_begin + _weight_mask + 1, 1); }
-
 	//iterator with stride and offset
 	iterator begin(size_t offset) { return iterator(_begin + offset, (1<<_stride_shift)); }
 	iterator end(size_t offset) { return iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
+
+	//const iterators
+	const_iterator cbegin() { return const_iterator(_begin, 1); }
+	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, 1); }
+	const_iterator cbegin(size_t offset) { return const_iterator(_begin + offset, (1 << _stride_shift)); }
+	const_iterator cend(size_t offset) { return const_iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 
@@ -136,7 +139,6 @@ public:
 	      _begin = nullptr;
 	   }
 	}
-	friend class weights_iterator;
 };
 
 
