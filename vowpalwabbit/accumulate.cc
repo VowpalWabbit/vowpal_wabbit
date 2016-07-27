@@ -88,8 +88,7 @@ void accumulate_weighted_avg(vw& all, weight_vector& weights)
 	  *j = *i;
 
   //First compute weights for averaging
-  all_reduce<float, add_float>(all, local_weights.first(), length); //TODO: remove first()
-
+  all_reduce<float, add_float>(all, local_weights.first(), length); 
 
   weight_vector::iterator weights_0 = weights.begin(0); 
   weight_vector::iterator weights_1 = weights.begin(1); 

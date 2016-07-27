@@ -622,7 +622,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
 	    v += i;
-        brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); //TODO: fix &(*v)
+        brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); 
       }
     }
     else// write binary or text
@@ -641,7 +641,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
             brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
 
           msg << ":"<< *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text); //TODO: fix &(*v)
+          brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text); 
         }
     }
 
