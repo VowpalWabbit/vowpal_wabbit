@@ -1,16 +1,9 @@
-#include <float.h>
 #include "reductions.h"
 #include "cb_adf.h"
 #include "rand48.h"
 #include "bs.h"
-#include "vw.h"
-#include "cb_explore_adf.h"
 #include "gen_cs_example.h"
-#include "cb_algs.h"
-#include "learner.h"
-#include "mwt.h"
-//#include "action_score.h"
-#include "correctedMath.h"
+#include "cb_explore.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -29,11 +22,6 @@ using namespace std;
 #define COVER 4
 
 namespace CB_EXPLORE_ADF{
-
-  struct cb_explore_adf;
-
-  void safety(v_array<float>& distribution, float min_prob);
-
 
   struct cb_explore_adf
   {
@@ -63,17 +51,6 @@ namespace CB_EXPLORE_ADF{
     ele1 = temp;
   }
 
-  void add_uniform(v_array<action_score>& id_probs, float epsilon, size_t num_actions)
-  {
-    if (epsilon > 0)
-      {
-	float prob = epsilon/num_actions;
-	float multiplier = 1.f - epsilon;
-	for (size_t i = 0; i < num_actions; i++)
-	  id_probs[i].score = id_probs[i].score * multiplier + prob;
-      }
-  }
-  
   void multiline_learn(base_learner& base, v_array<example*>& examples, uint32_t id = 0)
   { for (example* ec : examples) base.learn(*ec, id);}
   void multiline_predict(base_learner& base, v_array<example*>& examples, uint32_t id = 0)
@@ -126,7 +103,7 @@ namespace CB_EXPLORE_ADF{
 	preds[i].score = 0.;
       preds[0].score = 1.0;
     }
-    add_uniform(preds, data.epsilon, num_actions);
+    CB_EXPLORE::safety(preds, data.epsilon, true);
   }
   
   template <bool is_learn>
@@ -141,9 +118,9 @@ namespace CB_EXPLORE_ADF{
     assert(preds.size() == num_actions);
 
     float prob = data.epsilon/(float)num_actions;
-    for(size_t i = 0;i < num_actions;i++) 
+    for (size_t i = 0; i < num_actions; i++)
       preds[i].score = prob;
-    preds[0].score += (1 - data.epsilon);
+    preds[0].score += 1.f - data.epsilon;
   }
 
   template <bool is_learn>
@@ -177,7 +154,7 @@ namespace CB_EXPLORE_ADF{
 	}	
     }
    
-    add_uniform(data.action_probs, data.epsilon, num_actions);
+    CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
 
     for (size_t i = 0; i < num_actions; i++) 
       preds[i].score = data.action_probs[preds[i].action].score;
@@ -203,7 +180,7 @@ namespace CB_EXPLORE_ADF{
     }
     for (size_t i = 0; i < num_actions; i++)
       preds[i].score /= norm;
-    add_uniform(preds, data.epsilon, num_actions);
+    CB_EXPLORE::safety(preds, data.epsilon, true);
   }
 
   void end_examples(cb_explore_adf& data)

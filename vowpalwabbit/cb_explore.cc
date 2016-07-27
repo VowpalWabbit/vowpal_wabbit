@@ -1,14 +1,8 @@
-#include <float.h>
 #include "reductions.h"
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "vw.h"
-#include "cb_explore.h"
 #include "gen_cs_example.h"
-#include "learner.h"
-#include "mwt.h"
-//#include "action_score.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
@@ -16,11 +10,6 @@ using namespace std;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE{
-
-  struct cb_explore;
-
-  void safety(v_array<float>& distribution, float min_prob);
-
 
   struct cb_explore
   {
@@ -142,20 +131,27 @@ namespace CB_EXPLORE{
     ec.pred.a_s = probs;
   }
 
-  void safety(v_array<action_score>& distribution, float min_prob)
-  { float added_mass = 0.;
+  void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
+  { //input: a probability distribution
+    //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
+    float touched_mass = 0.;
+    float untouched_mass = 0.;
     for (uint32_t i = 0; i < distribution.size(); i++)
-      if (distribution[i].score > 0 && distribution[i].score <= min_prob)
-	{ added_mass += min_prob - distribution[i].score;
+      if ((distribution[i].score > 0 || (distribution[i].score ==0 && zeros)) && distribution[i].score <= min_prob)
+	{ touched_mass += min_prob;
 	  distribution[i].score = min_prob;
 	}
-
-    float ratio = 1.f / (1.f + added_mass);
-    if (ratio < 0.999)
-      { for (uint32_t i = 0; i < distribution.size(); i++)
+      else 
+	untouched_mass += distribution[i].score;
+    
+    if (touched_mass > 0.)
+      { 
+	if (touched_mass > 0.999)
+	  THROW("Cannot safety this distribution");
+	float ratio = (1.f - touched_mass) / untouched_mass;
+	for (uint32_t i = 0; i < distribution.size(); i++)
 	  if (distribution[i].score > min_prob)
 	    distribution[i].score = distribution[i].score * ratio;
-	safety(distribution, min_prob);
       }
   }
 
@@ -186,7 +182,7 @@ namespace CB_EXPLORE{
     
     float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
     
-    safety(probs, min_prob);
+    safety(probs, min_prob, false);
     
     data.counter++;
   }
