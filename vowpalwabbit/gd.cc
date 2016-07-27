@@ -342,7 +342,6 @@ inline void vec_add_print(float&p, const float fx, float& fw)
 template<bool l1, bool audit>
 void predict(gd& g, base_learner&, example& ec)
 { vw& all = *g.all;
-
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else

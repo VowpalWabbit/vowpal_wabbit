@@ -39,7 +39,7 @@ namespace CB_EXPLORE_ADF{
   {
 
     v_array<example*> ec_seq;
-    v_array<action_score> id_probs;
+    v_array<action_score> action_probs;
 
     size_t explore_type;
 
@@ -54,8 +54,6 @@ namespace CB_EXPLORE_ADF{
     vw* all;
     LEARNER::base_learner* scorer;
     CB::cb_class known_cost;
-    bool learn_only;
-
   };
 
   template<class T> void swap(T& ele1, T& ele2)
@@ -65,174 +63,147 @@ namespace CB_EXPLORE_ADF{
     ele1 = temp;
   }
 
-  template <bool is_learn>
-  void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, bool isTest, bool shared)
-  { //Explore tau times, then act according to optimal.
-
-    v_array<action_score>& preds = examples[0]->pred.a_s;
-    data.id_probs.erase();
-
-    size_t num_actions = examples.size() - 1;
-    if (shared)
-      num_actions--;
-    if (preds.size() != num_actions)
-      THROW("Received predictions of wrong size from CB base learner");
-
-    if (!is_learn || !data.learn_only) {
-      if (data.tau) {
-        float prob = 1.0 / (float)num_actions;
-        for (size_t i = 0; i < num_actions; i++) {
-          action_score a_s;
-          a_s.action = preds[i].action;
-          a_s.score = prob;
-          data.id_probs.push_back(a_s);
-        }
-        data.tau--;
-      }
-      else {
-        for (size_t i = 0; i < num_actions; i++) {
-          action_score a_s;
-          a_s.action = preds[i].action;
-          a_s.score = 0.;
-          data.id_probs.push_back(a_s);
-        }
-        data.id_probs[0].score = 1.0;
-      }
-    }
-
-    if (is_learn && data.known_cost.probability < 1)
-      for (example* ec : examples)
-        base.learn(*ec);
-
-    for (size_t i = 0; i < num_actions; i++) {
-      examples[0]->pred.a_s[i].score = data.id_probs[i].score;
-      examples[0]->pred.a_s[i].action = data.id_probs[i].action;
-    }
-
-  }
-
-  template <bool is_learn>
-  void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, bool isTest, bool shared)
-  { //Explore uniform random an epsilon fraction of the time.
-
-    v_array<action_score>& preds = examples[0]->pred.a_s;
-    data.id_probs.erase();
-
-    size_t num_actions = examples.size() - 1;
-    if (shared)
-      num_actions--;
-    if (preds.size() != num_actions)
-      THROW("Received predictions of wrong size from CB base learner");
-
-    if(!is_learn || !data.learn_only) {
-      float prob = data.epsilon/(float)num_actions;
-      for(size_t i = 0;i < num_actions;i++) {
-	action_score a_s;
-	a_s.action = preds[i].action;
-	a_s.score = prob;
-	data.id_probs.push_back(a_s);
-      }
-      data.id_probs[0].score += (1 - data.epsilon);
-    }
-
-
-    if (is_learn)
-      for (example* ec : examples)
-        base.learn(*ec);
-
-    for (size_t i = 0; i < num_actions; i++) {
-      examples[0]->pred.a_s[i].score = data.id_probs[i].score;
-      examples[0]->pred.a_s[i].action = data.id_probs[i].action;
-    }
-
-  }
-
-  template <bool is_learn>
-  void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, bool isTest, bool shared)
-  { //Randomize over predictions from a base set of predictors
-
-    v_array<action_score>& preds = examples[0]->pred.a_s;
-    data.id_probs.erase();
-
-    size_t num_actions = examples.size() - 1;
-    if (shared)
-      num_actions--;
-    if (preds.size() != num_actions)
-      THROW("Received predictions of wrong size from CB base learner");
-
-    if (!is_learn || !data.learn_only) {
-      for (size_t i = 0; i < num_actions; i++) {
-        action_score a_s;
-        a_s.action = preds[i].action;
-        a_s.score = 0.;
-        data.id_probs.push_back(a_s);
-      }
-      float prob = 1.0 / (float)data.bag_size;
-      data.id_probs[0].score += prob;
-      for (size_t i = 1; i < data.bag_size; i++) {
-        for (example* ec : examples)
-          base.predict(*ec, i);
-        uint32_t chosen = preds[0].action;
-        for (size_t i = 0; i < num_actions; i++)
-          if (data.id_probs[i].action == chosen)
-            data.id_probs[i].score += prob;
-      }
-    }
-
-    if (is_learn)
-      for (size_t i = 0; i < data.bag_size; i++)
-      {
-        uint32_t count = BS::weight_gen();
-        for (uint32_t j = 0; j < count; j++)
-          for (example* ec : examples)
-            base.learn(*ec, i);
-      }
-
-    for (size_t i = 0; i < num_actions; i++) {
-      examples[0]->pred.a_s[i].score = data.id_probs[i].score;
-      examples[0]->pred.a_s[i].action = data.id_probs[i].action;
-    }
-
-  }
-
-
-  template <bool is_learn>
-  void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, bool isTest, bool shared)
+  void add_uniform(v_array<action_score>& id_probs, float epsilon, size_t num_actions)
   {
-    v_array<action_score>& preds = examples[0]->pred.a_s;
-    data.id_probs.erase();
+    if (epsilon > 0)
+      {
+	float prob = epsilon/num_actions;
+	float multiplier = 1.f - epsilon;
+	for (size_t i = 0; i < num_actions; i++)
+	  id_probs[i].score = id_probs[i].score * multiplier + prob;
+      }
+  }
+  
+  void multiline_learn(base_learner& base, v_array<example*>& examples, uint32_t id = 0)
+  { for (example* ec : examples) base.learn(*ec, id);}
+  void multiline_predict(base_learner& base, v_array<example*>& examples, uint32_t id = 0)
+  { for (example* ec : examples) base.predict(*ec, id);}
 
-    size_t num_actions = examples.size() - 1;
-    if (shared)
-      num_actions--;
-    if (preds.size() != num_actions)
-      THROW("Received predictions of wrong size from CB base learner");
+  bool test_adf_sequence(cb_explore_adf& data)
+  {
+    uint32_t count = 0;
+    for (size_t k = 0; k < data.ec_seq.size(); k++)
+    {
+      example *ec = data.ec_seq[k];
+
+      if (ec->l.cb.costs.size() > 1)
+        THROW("cb_adf: badly formatted example, only one cost can be known.");
+
+      if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
+        count += 1;
+
+      if (CB::ec_is_example_header(*ec))
+        if (k != 0)
+          THROW("warning: example headers at position " << k << ": can only have in initial position!");
+    }
+    if (count == 0)
+      return true;
+    else if (count == 1)
+      return false;
+    else
+      THROW("cb_adf: badly formatted example, only one line can have a cost");
+  }
+  
+  template <bool is_learn>
+  void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  { //Explore tau times, then act according to optimal.
+    if (is_learn && data.known_cost.probability < 1 && !test_adf_sequence(data))
+      multiline_learn(base, examples);
+    else
+      multiline_predict(base, examples);
+
+    v_array<action_score>& preds = examples[0]->pred.a_s;
+    assert(preds.size() == num_actions);
+
+    if (data.tau) {
+      float prob = 1.0 / (float)num_actions;
+      for (size_t i = 0; i < num_actions; i++) 
+	preds[i].score = prob;
+      data.tau--;
+    }
+    else {
+      for (size_t i = 1; i < num_actions; i++) 
+	preds[i].score = 0.;
+      preds[0].score = 1.0;
+    }
+    add_uniform(preds, data.epsilon, num_actions);
+  }
+  
+  template <bool is_learn>
+  void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  { //Explore uniform random an epsilon fraction of the time.
+    if (is_learn && !test_adf_sequence(data))
+      multiline_learn(base, examples);
+    else
+      multiline_predict(base, examples);
+
+    v_array<action_score>& preds = examples[0]->pred.a_s;
+    assert(preds.size() == num_actions);
+
+    float prob = data.epsilon/(float)num_actions;
+    for(size_t i = 0;i < num_actions;i++) 
+      preds[i].score = prob;
+    preds[0].score += (1 - data.epsilon);
+  }
+
+  template <bool is_learn>
+  void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  { //Randomize over predictions from a base set of predictors
+    v_array<action_score>& preds = examples[0]->pred.a_s;
+
+    data.action_probs.resize(num_actions);
+    for (uint32_t i = 0; i < num_actions; i++)
+      data.action_probs[i] = {i,0.};
+    float prob = 1.0 / (float)data.bag_size;
+    for (size_t i = 0; i < data.bag_size; i++) {
+      if (!is_learn || test_adf_sequence(data)) 
+	{
+	  multiline_predict(base, examples, i);
+	  assert(preds.size() == num_actions);
+	  data.action_probs[preds[0].action].score += prob;
+	}
+      else
+	{
+	  uint32_t count = BS::weight_gen();
+	  if (count == 0)
+	    multiline_predict(base, examples, i);	    
+	  else
+	    multiline_learn(base, examples, i);
+	  assert(preds.size() == num_actions);
+	  data.action_probs[preds[0].action].score += prob;
+	  
+	  for (uint32_t j = 1; j < count; j++)
+	    multiline_learn(base, examples, i);
+	}	
+    }
+   
+    add_uniform(data.action_probs, data.epsilon, num_actions);
+
+    for (size_t i = 0; i < num_actions; i++) 
+      preds[i].score = data.action_probs[preds[i].action].score;
+  }
+
+  template <bool is_learn>
+  void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  {
+    if (is_learn && !test_adf_sequence(data)) 
+      multiline_learn(base, examples);
+    else
+      multiline_predict(base, examples);
+    
+    v_array<action_score>& preds = examples[0]->pred.a_s;
+    assert(preds.size() == num_actions);
     float norm = 0.;
     float max_score = preds[0].score;
 
-    if (!is_learn || !data.learn_only) {
-      for (size_t i = 0; i < num_actions; i++) {
-        float prob = exp(data.lambda*(preds[i].score - max_score));
-        action_score a_s;
-        a_s.action = preds[i].action;
-        a_s.score = prob;
-        data.id_probs.push_back(a_s);
-        norm += prob;
-      }
-      for (size_t i = 0; i < num_actions; i++)
-        data.id_probs[i].score /= norm;
-    }
-
-
-    if (is_learn) {
-      for (example* ec : examples)
-        base.learn(*ec);
-    }
-
     for (size_t i = 0; i < num_actions; i++) {
-      examples[0]->pred.a_s[i].score = data.id_probs[i].score;
-      examples[0]->pred.a_s[i].action = data.id_probs[i].action;
+      float prob = exp(data.lambda*(preds[i].score - max_score));
+      preds[i].score = prob;
+      norm += prob;
     }
+    for (size_t i = 0; i < num_actions; i++)
+      preds[i].score /= norm;
+    add_uniform(preds, data.epsilon, num_actions);
   }
 
   void end_examples(cb_explore_adf& data)
@@ -246,7 +217,7 @@ namespace CB_EXPLORE_ADF{
   void finish(cb_explore_adf& data)
   {
     data.ec_seq.delete_v();
-    data.id_probs.delete_v();
+    data.action_probs.delete_v();
   }
 
 
@@ -256,7 +227,6 @@ namespace CB_EXPLORE_ADF{
 
   void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* ec_seq)
   {
-
     if (CB_ADF::example_is_newline_not_header(ec)) return;
 
     size_t num_features = 0;
@@ -343,57 +313,27 @@ namespace CB_EXPLORE_ADF{
     }
   }
 
-
-  bool test_adf_sequence(cb_explore_adf& data)
-  {
-    uint32_t count = 0;
-    for (size_t k = 0; k < data.ec_seq.size(); k++)
-    {
-      example *ec = data.ec_seq[k];
-
-      if (ec->l.cb.costs.size() > 1)
-        THROW("cb_adf: badly formatted example, only one cost can be known.");
-
-      if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
-        count += 1;
-
-      if (CB::ec_is_example_header(*ec))
-        if (k != 0)
-          THROW("warning: example headers at position " << k << ": can only have in initial position!");
-    }
-    if (count == 0)
-      return true;
-    else if (count == 1)
-      return false;
-    else
-      THROW("cb_adf: badly formatted example, only one line can have a cost");
-  }
-
-
-
   template <bool is_learn>
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
-    bool isTest = test_adf_sequence(data);
-    bool shared = CB::ec_is_example_header(*data.ec_seq[0]);
     data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
-
-    for (example* ec : data.ec_seq) 
-      base.predict(*ec);    
+    uint32_t num_actions = (uint32_t)(data.ec_seq.size() - 1);
+    if (CB::ec_is_example_header(*data.ec_seq[0]))
+      num_actions--;
 
     switch (data.explore_type)
     {
     case EXPLORE_FIRST:
-      predict_or_learn_first<is_learn>(data, base, data.ec_seq, isTest, shared);
+      predict_or_learn_first<is_learn>(data, base, data.ec_seq, num_actions);
       break;
     case EPS_GREEDY:
-      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq, isTest, shared);
+      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq, num_actions);
       break;
     case SOFTMAX:
-      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq, isTest, shared);
+      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq, num_actions);
       break;
     case BAG_EXPLORE:
-      predict_or_learn_bag<is_learn>(data, base, data.ec_seq, isTest, shared);
+      predict_or_learn_bag<is_learn>(data, base, data.ec_seq, num_actions);
       break;
     default:
       THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
@@ -443,28 +383,28 @@ base_learner* cb_explore_adf_setup(vw& all)
     ("epsilon", po::value<float>(), "epsilon-greedy exploration")
     ("bag", po::value<size_t>(), "bagging-based exploration")
     ("softmax", "softmax exploration")
-    ("lambda", po::value<float>(), "parameter for softmax")
-    ("learn_only", "for not calling predict when learn is true");
+    ("lambda", po::value<float>(), "parameter for softmax");
   add_options(all);
 
   po::variables_map& vm = all.vm;
   cb_explore_adf& data = calloc_or_throw<cb_explore_adf>();
-  data.id_probs = v_init<action_score>();
+  data.action_probs = v_init<action_score>();
 
   data.all = &all;
   if (count(all.args.begin(), all.args.end(), "--cb_adf") == 0)
     all.args.push_back("--cb_adf");
-
-  if (vm.count("learn_only"))
-    data.learn_only = true;
-  else
-    data.learn_only = false;
 
   all.delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
   char type_string[10];
 
+  if (vm.count("epsilon"))
+    {
+      data.epsilon = vm["epsilon"].as<float>();
+      sprintf(type_string, "%f", data.epsilon);
+      *all.file_options << " --epsilon "<<type_string;
+    }
   if (vm.count("bag"))
   {
     data.bag_size = (uint32_t)vm["bag"].as<size_t>();
@@ -489,15 +429,13 @@ base_learner* cb_explore_adf_setup(vw& all)
     sprintf(type_string, "%f", data.lambda);
     *all.file_options << " --softmax --lambda "<<type_string;
   }
-  else
-  {
-    data.epsilon = 0.05f;
-    if (vm.count("epsilon"))
-      data.epsilon = vm["epsilon"].as<float>();
+  else if (vm.count("epsilon"))
     data.explore_type = EPS_GREEDY;
-    sprintf(type_string, "%f", data.epsilon);
-    *all.file_options << " --epsilon "<<type_string;
-  }
+  else //epsilon
+    {
+      data.epsilon = 0.05f;
+      data.explore_type = EPS_GREEDY;
+    }
 
   base_learner* base = setup_base(all);
   all.p->lp = CB::cb_label;
