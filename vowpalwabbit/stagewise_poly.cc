@@ -387,9 +387,9 @@ void synthetic_decycle(stagewise_poly &poly)
     }
 }
 
-void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
+void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->wv->first())))); //TODO: Remove first()
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex)); 
   uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -434,7 +434,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 #ifdef DEBUG
       poly.max_depth = (poly.max_depth > poly.cur_depth) ? poly.max_depth : poly.cur_depth;
 #endif //DEBUG
-      GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
+      GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
       --poly.cur_depth;
       poly.synth_rec_f = parent_f;
     }
@@ -454,7 +454,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
    * Problem with this is if there is a collision with the root...
    */
-  GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+  GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
   poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 

@@ -100,7 +100,7 @@ public:
 	weight_vector& operator=(const weight_vector &) = delete;
 	weight_vector& operator=(weight_vector &&) = delete;
 
-	weight* first() { return _begin; } //TODO: Temporary fix for lines like (&w - all.reg.weight_vector). Needs to change for sparse.
+	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
 	iterator begin() { return iterator(_begin, 1); }
 	iterator end() { return iterator(_begin + _weight_mask + 1, 1); }

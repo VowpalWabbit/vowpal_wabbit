@@ -5,10 +5,8 @@
 using namespace std;
 struct print { vw* all; }; //regressor, feature loop
 
-void print_feature(vw& all, float value, float& weight)
-{ size_t index = &weight - all.wv->first(); //TODO: remove first()
-
-  cout << index;
+void print_feature(vw& all, float value, uint64_t index)
+{ cout << index;
   if (value != 1.)
     cout << ":" << value;
   cout << " ";
@@ -29,7 +27,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
     cout.write(ec.tag.begin(), ec.tag.size());
   }
   cout << "| ";
-  GD::foreach_feature<vw, print_feature>(*(p.all), ec, *p.all);
+  GD::foreach_feature<vw, uint64_t, print_feature>(*(p.all), ec, *p.all);
   cout << endl;
 }
 
