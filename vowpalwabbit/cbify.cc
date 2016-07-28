@@ -125,7 +125,6 @@ base_learner* cbify_setup(vw& all)
     stringstream ss;
     ss << num_actions;
     all.args.push_back(ss.str());
-    all.args.push_back("--learn_only");
   }
   base_learner* base = setup_base(all);
 

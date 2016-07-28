@@ -43,14 +43,24 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   return pred;
 }
 
-
-}
-
-float get_unbiased_cost(CB::cb_class* known_cost, COST_SENSITIVE::label& cb_label, uint32_t action);
 inline float get_unbiased_cost(CB::cb_class* observation, uint32_t action, float offset = 0.) 
 {
   if (action == observation->action)
     return (observation->cost - offset) / observation->probability;
   return 0.;
 }
+
+inline float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action)
+{
+  for (auto& cl : scores.costs)
+    if (cl.class_index == action)
+      return get_unbiased_cost(observation, action, cl.x) + cl.x;
+  return get_unbiased_cost(observation, action);
+}
+
+inline bool example_is_newline_not_header(example& ec)
+  { return (example_is_newline(ec) && !CB::ec_is_example_header(ec)); }
+}
+
+
 
