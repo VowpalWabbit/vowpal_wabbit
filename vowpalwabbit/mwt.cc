@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace CB_ALGS;
 
 namespace MWT {
   struct policy_data

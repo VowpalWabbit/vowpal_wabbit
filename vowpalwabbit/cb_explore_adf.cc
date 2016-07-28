@@ -8,6 +8,7 @@
 using namespace LEARNER;
 using namespace ACTION_SCORE;
 using namespace std;
+using namespace CB_ALGS;
 //All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities are the probability with which each action should be replaced to the top of the list. 
 
 //tau first
@@ -28,6 +29,7 @@ namespace CB_EXPLORE_ADF{
 
     v_array<example*> ec_seq;
     v_array<action_score> action_probs;
+    v_array<uint32_t> base_predictions;
 
     size_t explore_type;
 
@@ -40,7 +42,7 @@ namespace CB_EXPLORE_ADF{
     size_t counter;
     bool need_to_clear;
     vw* all;
-    LEARNER::base_learner* scorer;
+    LEARNER::base_learner* cs_ldf_learner;
     CB::cb_class known_cost;
   };
 
@@ -82,7 +84,7 @@ namespace CB_EXPLORE_ADF{
   }
   
   template <bool is_learn>
-  void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore tau times, then act according to optimal.
     if (is_learn && data.known_cost.probability < 1 && !test_adf_sequence(data))
       multiline_learn(base, examples);
@@ -90,7 +92,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    assert(preds.size() == num_actions);
+    uint32_t num_actions = preds.size();
 
     if (data.tau) {
       float prob = 1.0 / (float)num_actions;
@@ -107,7 +109,7 @@ namespace CB_EXPLORE_ADF{
   }
   
   template <bool is_learn>
-  void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore uniform random an epsilon fraction of the time.
     if (is_learn && !test_adf_sequence(data))
       multiline_learn(base, examples);
@@ -115,7 +117,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    assert(preds.size() == num_actions);
+    uint32_t num_actions = preds.size();
 
     float prob = data.epsilon/(float)num_actions;
     for (size_t i = 0; i < num_actions; i++)
@@ -124,44 +126,129 @@ namespace CB_EXPLORE_ADF{
   }
 
   template <bool is_learn>
-  void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
     v_array<action_score>& preds = examples[0]->pred.a_s;
+    uint32_t num_actions = (uint32_t)(examples.size() - 1);
+    if (CB::ec_is_example_header(*examples[0]))
+      num_actions--;
 
     data.action_probs.resize(num_actions);
     for (uint32_t i = 0; i < num_actions; i++)
       data.action_probs[i] = {i,0.};
     float prob = 1.0 / (float)data.bag_size;
-    for (size_t i = 0; i < data.bag_size; i++) {
-      if (!is_learn || test_adf_sequence(data)) 
-	{
+    bool test_sequence = test_adf_sequence(data);
+    for (size_t i = 0; i < data.bag_size; i++) 
+      {
+	uint32_t count = BS::weight_gen();
+	if (is_learn && count > 0 && !test_sequence)
+	  multiline_learn(base, examples, i);
+	else
 	  multiline_predict(base, examples, i);
-	  assert(preds.size() == num_actions);
-	  data.action_probs[preds[0].action].score += prob;
-	}
-      else
-	{
-	  uint32_t count = BS::weight_gen();
-	  if (count == 0)
-	    multiline_predict(base, examples, i);	    
-	  else
-	    multiline_learn(base, examples, i);
-	  assert(preds.size() == num_actions);
-	  data.action_probs[preds[0].action].score += prob;
-	  
+	assert(preds.size() == num_actions);
+	data.action_probs[preds[0].action].score += prob;
+	if (is_learn && !test_sequence)
 	  for (uint32_t j = 1; j < count; j++)
 	    multiline_learn(base, examples, i);
-	}	
-    }
-   
+      }
+    
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
-
+    
     for (size_t i = 0; i < num_actions; i++) 
       preds[i].score = data.action_probs[preds[i].action].score;
   }
-
+  
+  /*
+  void get_cover_probabilities(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, v_array<action_score>& preds, uint32_t num_actions)
+  { 
+    float additive_probability = 1.f / (float)data.cover_size;
+    data.base_predictions.erase();
+    
+    for(uint32_t i = 0;i < num_actions;i++)
+      preds.push_back({i,0.});
+    
+    for (size_t i = 0; i < data.cover_size; i++)
+      { //get predicted cost-sensitive predictions
+	if (i == 0)
+	  data.cs_ldf_learner->predict(ec, i);
+	else
+	  data.cs_ldf_learner->predict(ec, i + 1);
+	uint32_t pred = ec.pred.multiclass;
+	preds[pred - 1].score += additive_probability;
+	data.preds.push_back((uint32_t)pred);
+      }
+    
+    safety(probs, data.epsilon / num_actions, false);
+  }
+    
   template <bool is_learn>
-  void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, uint32_t num_actions)
+  void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
+  { //Randomize over predictions from a base set of predictors
+    //Use cost sensitive oracle to cover actions to form distribution.
+    v_array<action_score> preds = ec.pred.a_s;
+    preds.erase();
+    data.cs_label.costs.erase();
+
+    for (uint32_t j = 0; j < num_actions; j++)
+      data.cs_label.costs.push_back({x,j+1,0.,0.});
+
+    float epsilon = data.epsilon;
+    size_t cover_size = data.cover_size;
+    size_t counter = data.counter;
+    v_array<float>& probabilities = data.cover_probs;
+    v_array<uint32_t>& predictions = data.preds;
+
+    float additive_probability = 1.f / (float)cover_size;
+
+    float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
+
+    data.cb_label = ec.l.cb;
+
+    ec.l.cs = data.cs_label;
+    get_cover_probabilities(data, base, ec, probs);
+	
+    if (is_learn) {
+      ec.l.cb = data.cb_label;
+      base.learn(ec);
+
+      //Now update oracles
+
+      //1. Compute loss vector
+      data.cs_label.costs.erase();
+      float norm = min_prob * num_actions;
+      ec.l.cb = data.cb_label;
+      data.cbcs.known_cost = get_observed_cost(data.cb_label);
+      gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+      for(uint32_t i = 0;i < num_actions;i++)
+	probabilities[i] = 0;
+
+      ec.l.cs = data.second_cs_label;
+      //2. Update functions
+      for (size_t i = 0; i < cover_size; i++)
+	{ //Create costs of each action based on online cover
+	  for (uint32_t j = 0; j < num_actions; j++)
+	    { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
+	      data.second_cs_label.costs[j].class_index = j+1;
+	      data.second_cs_label.costs[j].x = pseudo_cost;
+	      //cout<<pseudo_cost<<" ";
+	    }
+	  //cout<<epsilon<<" "<<endl;
+	  if (i != 0)
+	    data.cs->learn(ec,i+1);
+	  if (probabilities[predictions[i] - 1] < min_prob)
+	    norm += max(0, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
+	  else
+	    norm += additive_probability;
+	  probabilities[predictions[i] - 1] += additive_probability;
+	}
+    }
+
+    ec.l.cb = data.cb_label;
+    ec.pred.a_s = probs;
+  }
+  */
+  template <bool is_learn>
+  void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   {
     if (is_learn && !test_adf_sequence(data)) 
       multiline_learn(base, examples);
@@ -169,7 +256,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
     
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    assert(preds.size() == num_actions);
+    uint32_t num_actions = preds.size();
     float norm = 0.;
     float max_score = preds[0].score;
 
@@ -182,7 +269,7 @@ namespace CB_EXPLORE_ADF{
       preds[i].score /= norm;
     CB_EXPLORE::safety(preds, data.epsilon, true);
   }
-
+  
   void end_examples(cb_explore_adf& data)
   {
     if (data.need_to_clear)
@@ -204,7 +291,7 @@ namespace CB_EXPLORE_ADF{
 
   void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* ec_seq)
   {
-    if (CB_ADF::example_is_newline_not_header(ec)) return;
+    if (CB_ALGS::example_is_newline_not_header(ec)) return;
 
     size_t num_features = 0;
 
@@ -294,23 +381,20 @@ namespace CB_EXPLORE_ADF{
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
     data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
-    uint32_t num_actions = (uint32_t)(data.ec_seq.size() - 1);
-    if (CB::ec_is_example_header(*data.ec_seq[0]))
-      num_actions--;
 
     switch (data.explore_type)
     {
     case EXPLORE_FIRST:
-      predict_or_learn_first<is_learn>(data, base, data.ec_seq, num_actions);
+      predict_or_learn_first<is_learn>(data, base, data.ec_seq);
       break;
     case EPS_GREEDY:
-      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq, num_actions);
+      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
       break;
     case SOFTMAX:
-      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq, num_actions);
+      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
       break;
     case BAG_EXPLORE:
-      predict_or_learn_bag<is_learn>(data, base, data.ec_seq, num_actions);
+      predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
       break;
     default:
       THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
@@ -327,7 +411,7 @@ namespace CB_EXPLORE_ADF{
     bool is_test_ec = CB::example_is_test(ec);
     bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
-    if ((CB_ADF::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
+    if ((CB_ALGS::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
     {
       data.ec_seq.push_back(&ec);
       do_actual_learning<is_learn>(data, base);
@@ -359,6 +443,7 @@ base_learner* cb_explore_adf_setup(vw& all)
     ("first", po::value<size_t>(), "tau-first exploration")
     ("epsilon", po::value<float>(), "epsilon-greedy exploration")
     ("bag", po::value<size_t>(), "bagging-based exploration")
+    ("cover",po::value<size_t>() ,"Online cover based exploration")
     ("softmax", "softmax exploration")
     ("lambda", po::value<float>(), "parameter for softmax");
   add_options(all);
@@ -382,21 +467,32 @@ base_learner* cb_explore_adf_setup(vw& all)
       sprintf(type_string, "%f", data.epsilon);
       *all.file_options << " --epsilon "<<type_string;
     }
-  if (vm.count("bag"))
-  {
-    data.bag_size = (uint32_t)vm["bag"].as<size_t>();
-    data.explore_type = BAG_EXPLORE;
-    problem_multiplier = data.bag_size;
-    sprintf(type_string, "%lu", data.bag_size);
-    *all.file_options << " --bag "<<type_string;
-  }
+  if (vm.count("cover"))
+    { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
+      data.cs_ldf_learner = all.cost_sensitive;
+      sprintf(type_string, "%lu", data.cover_size);
+      *all.file_options << " --cover " << type_string;
+
+      if (!vm.count("epsilon"))
+	data.epsilon = 0.05f;
+      
+      data.base_predictions = v_init<uint32_t>();
+    }
+  else if (vm.count("bag"))
+    {
+      data.bag_size = (uint32_t)vm["bag"].as<size_t>();
+      data.explore_type = BAG_EXPLORE;
+      problem_multiplier = data.bag_size;
+      sprintf(type_string, "%lu", data.bag_size);
+      *all.file_options << " --bag "<<type_string;
+    }
   else if (vm.count("first"))
-  {
-    data.tau = (uint32_t)vm["first"].as<size_t>();
-    data.explore_type = EXPLORE_FIRST;
-    sprintf(type_string, "%lu", data.tau);
-    *all.file_options << " --first "<<type_string;
-  }
+    {
+      data.tau = (uint32_t)vm["first"].as<size_t>();
+      data.explore_type = EXPLORE_FIRST;
+      sprintf(type_string, "%lu", data.tau);
+      *all.file_options << " --first "<<type_string;
+    }
   else if (vm.count("softmax"))
   {
     data.lambda = 1.0;
@@ -421,7 +517,6 @@ base_learner* cb_explore_adf_setup(vw& all)
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
 
   l.increment = base->increment;
-  data.scorer = all.scorer;
 
   l.set_finish(CB_EXPLORE_ADF::finish);
   l.set_end_examples(CB_EXPLORE_ADF::end_examples);

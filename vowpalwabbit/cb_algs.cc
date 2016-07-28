@@ -15,7 +15,8 @@ using namespace LEARNER;
 using namespace std;
 
 using namespace CB;
-
+using namespace GEN_CS;
+namespace CB_ALGS {
 struct cb
 {
   cb_to_cs cbcs;
@@ -119,7 +120,8 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 { output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, &ec);
 }
-
+}
+using namespace CB_ALGS;
 base_learner* cb_algs_setup(vw& all)
 { if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
     return nullptr;

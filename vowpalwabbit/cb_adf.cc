@@ -12,12 +12,17 @@
 #include "vw.h"
 #include "cb_algs.h"
 #include "vw_exception.h"
+#include "gen_cs_example.h"
 
 using namespace std;
 using namespace LEARNER;
 using namespace CB;
 using namespace ACTION_SCORE;
+using namespace GEN_CS;
+using namespace CB_ALGS;
 
+namespace CB_ADF
+{
 // doubly robust
 #define CB_TYPE_DR 0
 // direct method
@@ -57,97 +62,6 @@ struct cb_adf
   bool rank_all;
   bool predict;
 };
-
-namespace CB_ADF
-{
-  bool example_is_newline_not_header(example& ec)
-  { return (example_is_newline(ec) && !CB::ec_is_example_header(ec)); }
-
-void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-{ if (cs_labels.size() < examples.size())
-  { cs_labels.resize(examples.size());
-    // TODO: introduce operation
-    cs_labels.end() = cs_labels.end_array;
-  }
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  for (uint32_t i = 0; i < examples.size(); i++)
-  { CB::label ld = examples[i]->l.cb;
-
-    COST_SENSITIVE::wclass wc;
-    if (shared && i > 0)
-      wc.class_index = (uint32_t)i-1;
-    else
-      wc.class_index = (uint32_t)i;
-    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost / ld.costs[0].probability;
-    else
-      wc.x = 0.f;
-    cs_labels[i].costs.erase();
-    cs_labels[i].costs.push_back(wc);
-  }
-  cs_labels[examples.size() - 1].costs[0].x = FLT_MAX; //trigger end of multiline example.
-
-  if (shared)//take care of shared examples
-  { cs_labels[0].costs[0].class_index = 0;
-    cs_labels[0].costs[0].x = -FLT_MAX;
-  }
-}
-
-void gen_cs_example_dr(cb_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
-{ //size_t mysize = examples.size();
-  if (cs_labels.size() < examples.size())
-  { cs_labels.resize(examples.size());
-    cs_labels.end() = cs_labels.end_array;
-  }
-
-  c.pred_scores.costs.erase();
-
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  int startK = 0;
-  if (shared) startK = 1;
-
-  for (size_t i = 0; i < examples.size(); i++)
-  { if (example_is_newline_not_header(*examples[i])) continue;
-
-    COST_SENSITIVE::wclass wc;
-    wc.class_index = 0;
-
-    if (c.known_cost.action + startK == i)
-    { int known_index = c.known_cost.action;
-      c.known_cost.action = 0;
-      //get cost prediction for this label
-      // num_actions should be 1 effectively.
-      // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
-      c.known_cost.action = known_index;
-    }
-    else
-      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, nullptr, *(examples[i]), 0, 2);
-
-    if (shared)
-      wc.class_index = (uint32_t)i - 1;
-    else
-      wc.class_index = (uint32_t)i;
-    c.pred_scores.costs.push_back(wc); // done
-
-    //add correction if we observed cost for this action and regressor is wrong
-    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
-    { wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
-    }
-    cs_labels[i].costs.erase();
-    cs_labels[i].costs.push_back(wc);
-  }
-  COST_SENSITIVE::wclass wc;
-  wc.class_index = 0;
-  wc.x = FLT_MAX;
-  cs_labels[examples.size() - 1].costs.erase();
-  cs_labels[examples.size() - 1].costs.push_back(wc); //trigger end of multiline example.
-
-  if (shared)//take care of shared examples
-  { cs_labels[0].costs[0].class_index = 0;
-    cs_labels[0].costs[0].x = -FLT_MAX;
-  }
-}
 
   CB::cb_class get_observed_cost(v_array<example*>& examples)
 { CB::label ld;
@@ -227,46 +141,8 @@ void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
-  gen_cs_example_dr(mydata, examples, mydata.cs_labels);
+  gen_cs_example_dr(mydata.pred_scores, mydata.known_cost, examples, mydata.cs_labels, mydata.scorer);
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
-}
-
-void gen_cs_example_MTR(cb_adf& data, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
-{ mtr_ec_seq.erase();
-  bool shared = CB::ec_is_example_header(*(ec_seq[0]));
-  data.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
-  if (!shared)
-    data.action_sum += 1;
-  data.event_sum++;
-  uint32_t keep_count = 0;
-
-  for (size_t i = 0; i < ec_seq.size(); i++)
-  { CB::label ld = ec_seq[i]->l.cb;
-
-    COST_SENSITIVE::wclass wc = {0, 0};
-
-    bool keep_example = false;
-    if (shared && i == 0)
-    { wc.x = -FLT_MAX;
-      keep_example = true;
-    }
-    else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-    { wc.x = ld.costs[0].cost;
-      data.mtr_example = (uint32_t)i;
-      keep_example = true;
-    }
-
-    else if (i == ec_seq.size() - 1)
-    { wc.x = FLT_MAX; //trigger end of multiline example.
-      keep_example = true;
-    }
-
-    if (keep_example)
-    { mtr_ec_seq.push_back(ec_seq[i]);
-      mtr_cs_labels[keep_count].costs.erase();
-      mtr_cs_labels[keep_count++].costs.push_back(wc);
-    }
-  }
 }
 
 template<bool predict>
@@ -275,25 +151,19 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   if (predict) //first get the prediction to return
   { gen_cs_example_ips(examples, mydata.cs_labels);
     call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
-    //    if (!mydata.rank_all) //preserve prediction
-    //      action = examples[0]->pred.multiclass;
-    //    else
-      swap(examples[0]->pred.a_s, mydata.a_s);
+    swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
-  gen_cs_example_MTR(mydata, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
+  gen_cs_example_MTR(mydata.action_sum, mydata.event_sum, mydata.mtr_example, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.mtr_example]->num_features;
   float old_weight = examples[mydata.mtr_example]->weight;
   examples[mydata.mtr_example]->weight *= 1.f / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
   call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
   examples[mydata.mtr_example]->num_features = nf;
   examples[mydata.mtr_example]->weight = old_weight;
-  //  if (!mydata.rank_all) //restore prediction
-  //    examples[0]->pred.multiclass = action;
-  //  else
-    swap(examples[0]->pred.a_s, mydata.a_s);
+  swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -526,7 +396,7 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
   }
 }
 }
-
+using namespace CB_ADF;
 base_learner* cb_adf_setup(vw& all)
 { if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
     return nullptr;

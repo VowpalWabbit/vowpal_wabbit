@@ -6,7 +6,9 @@
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
+using namespace GEN_CS;
 using namespace std;
+using namespace CB_ALGS;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE{
@@ -16,8 +18,6 @@ namespace CB_EXPLORE{
     cb_to_cs cbcs;
     v_array<uint32_t> preds;
     v_array<float> cover_probs;
-
-    bool learn_only;
 
     CB::label cb_label;
     COST_SENSITIVE::label cs_label;
@@ -38,37 +38,29 @@ namespace CB_EXPLORE{
   template <bool is_learn>
   void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
   { //Explore tau times, then act according to optimal.
-    
     v_array<action_score> probs = ec.pred.a_s;
-    probs.erase();
 
-    if(!is_learn || !data.learn_only) {      
-      if(data.tau) {
-	float prob = 1.0/(float)data.cbcs.num_actions;
-	for(int i = 0;i < data.cbcs.num_actions;i++) {
-	  action_score a_s;
-	  a_s.action = i;
-	  a_s.score = prob;
-	  probs.push_back(a_s);
-	}
-	data.tau--;
-      }
-      else {
-	base.predict(ec);
-	uint32_t chosen = ec.pred.multiclass-1;
-	for(int i = 0;i < data.cbcs.num_actions;i++) {
-	  action_score a_s;
-	  a_s.action = i;
-	  a_s.score = 0.;
-	  probs.push_back(a_s);
-	}
-	probs[chosen].score = 1.0;
-      }    
-    }
-    
     if (is_learn && ec.l.cb.costs[0].probability < 1) 
       base.learn(ec);
+    else
+      base.predict(ec);
 
+    probs.erase();
+    if(data.tau > 0) 
+      {
+	float prob = 1.0/(float)data.cbcs.num_actions;
+	for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+	  probs.push_back({i,prob});
+	data.tau--;
+      }
+    else
+      {
+	uint32_t chosen = ec.pred.multiclass-1;
+	for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
+	  probs.push_back({i,0.});
+	probs[chosen].score = 1.0;
+      }    
+    
     ec.pred.a_s = probs;
   }
 
@@ -79,22 +71,16 @@ namespace CB_EXPLORE{
     v_array<action_score> probs = ec.pred.a_s;
     probs.erase();
 
-    if(!is_learn || !data.learn_only) {
-      float prob = data.epsilon/(float)data.cbcs.num_actions;
-      for(int i = 0;i < data.cbcs.num_actions;i++) {
-	action_score a_s;
-	a_s.action = i;
-	a_s.score = prob;
-	probs.push_back(a_s);
-      }
-      base.predict(ec);
-      uint32_t chosen = ec.pred.multiclass-1;
-      probs[chosen].score += (1-data.epsilon);
-    }
-        
-    
     if (is_learn)
       base.learn(ec);
+    else
+      base.predict(ec);
+
+    float prob = data.epsilon/(float)data.cbcs.num_actions;
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+      probs.push_back({i,prob});
+    uint32_t chosen = ec.pred.multiclass-1;
+    probs[chosen].score += (1-data.epsilon);
     
     ec.pred.a_s = probs;    
   }
@@ -106,28 +92,22 @@ namespace CB_EXPLORE{
     v_array<action_score> probs = ec.pred.a_s;
     probs.erase();
 
-    if(!is_learn || !data.learn_only) {
-      for(int i = 0;i < data.cbcs.num_actions;i++) {
-	action_score a_s;
-	a_s.action = i;
-	a_s.score = 0.;
-	probs.push_back(a_s);
-      }
-      float prob = 1.0/(float)data.bag_size;
-      for(int i = 0;i < data.bag_size;i++) {
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+      probs.push_back({i,0.});
+    float prob = 1.0/(float)data.bag_size;
+    for(int i = 0;i < data.bag_size;i++) {
+      uint32_t count = BS::weight_gen();
+      if (is_learn && count > 0)
+	base.learn(ec,i);
+      else
 	base.predict(ec, i);
-	uint32_t chosen = ec.pred.multiclass-1;
-	probs[chosen].score += prob;
-      }
+      uint32_t chosen = ec.pred.multiclass-1;	
+      probs[chosen].score += prob;
+      if (is_learn)
+	for (uint32_t j = 1; j < count; j++)
+	  base.learn(ec,i);
     }
 
-    if (is_learn)
-      for (size_t i = 0; i < data.bag_size; i++)
-	{ uint32_t count = BS::weight_gen();
-	  for (uint32_t j = 0; j < count; j++)
-	    base.learn(ec,i);
-	}
-    
     ec.pred.a_s = probs;
   }
 
@@ -160,12 +140,8 @@ namespace CB_EXPLORE{
     float additive_probability = 1.f / (float)data.cover_size;
     data.preds.erase();
 
-    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) {
-      action_score a_s;
-      a_s.action = i;
-      a_s.score = 0.;
-      probs.push_back(a_s);
-    }
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
+      probs.push_back({i,0.});
 
     for (size_t i = 0; i < data.cover_size; i++)
       { //get predicted cost-sensitive predictions
@@ -199,15 +175,7 @@ namespace CB_EXPLORE{
     data.cs_label.costs.erase();
 
     for (uint32_t j = 0; j < num_actions; j++)
-      { COST_SENSITIVE::wclass wc;
-	
-    	//get cost prediction for this label
-    	wc.x = FLT_MAX;
-    	wc.class_index = j+1;
-    	wc.partial_prediction = 0.;
-    	wc.wap_value = 0.;
-    	data.cs_label.costs.push_back(wc);
-      }
+      data.cs_label.costs.push_back({FLT_MAX,j+1,0.,0.});
 
     float epsilon = data.epsilon;
     size_t cover_size = data.cover_size;
@@ -263,8 +231,6 @@ namespace CB_EXPLORE{
     ec.l.cb = data.cb_label;
     ec.pred.a_s = probs;
   }
-
-  template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
   void finish(cb_explore& data)
   { data.preds.delete_v();
@@ -339,8 +305,7 @@ base_learner* cb_explore_setup(vw& all)
     ("first", po::value<size_t>(), "tau-first exploration")
     ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
     ("bag",po::value<size_t>() ,"bagging-based exploration")
-    ("cover",po::value<size_t>() ,"bagging-based exploration")
-    ("learn_only","for not calling predict when learn is true");
+    ("cover",po::value<size_t>() ,"Online cover based exploration");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -356,10 +321,6 @@ base_learner* cb_explore_setup(vw& all)
     }
 
   char type_string[30];
-  if(vm.count("learn_only"))
-    data.learn_only = true;
-  else
-    data.learn_only = false;
 
   data.cbcs.cb_type = CB_TYPE_DR;
   all.delete_prediction = delete_action_scores;
@@ -387,8 +348,8 @@ base_learner* cb_explore_setup(vw& all)
       data.cover_probs.resize(num_actions);
       data.preds = v_init<uint32_t>();
       data.preds.resize(data.cover_size);
-	  sprintf(type_string, "%f", data.epsilon);
-	  *all.file_options << " --epsilon " << type_string;
+      sprintf(type_string, "%f", data.epsilon);
+      *all.file_options << " --epsilon " << type_string;
       l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1);
     }
   else if (vm.count("bag"))
