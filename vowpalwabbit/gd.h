@@ -69,7 +69,8 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
 
 for (features& f : ec)
-    foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, f, dat, offset);
+    if (!f.ignored)
+      foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }

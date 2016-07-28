@@ -213,7 +213,7 @@ struct features {
   typedef features_value_index_iterator iterator;
   typedef features_value_iterator iterator_value;
   typedef features_value_index_audit_iterator iterator_all;
-
+  char ignored;
   /// defines a "range" usable by C++ 11 for loops
   class features_value_index_audit_range {
   private:
@@ -231,6 +231,7 @@ struct features {
     indicies = v_init<feature_index>();
     space_names = v_init<audit_strings_ptr>();
     sum_feat_sq = 0.f;
+    ignored = 0;
   }
 
   inline size_t size() const { return values.size(); }
