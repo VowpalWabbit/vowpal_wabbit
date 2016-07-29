@@ -80,12 +80,13 @@ namespace VowpalWabbit.Azure.Trainer
                     // this.state.PartitionsDateTime[eventHubExample.PartitionKey] = eventHubExample.Offset;
                 }
 
-                return new TrainerResult
+                return new TrainerResult(example.Actions, example.Probabilities)
                 {
                     Label = label,
                     ProgressivePrediction = progressivePrediction,
                     PartitionKey = example.PartitionKey,
-                    Latency = latency
+                    Latency = latency,
+                    ProbabilityOfDrop = example.ProbabilityOfDrop
                 };
             }
             catch (Exception ex)

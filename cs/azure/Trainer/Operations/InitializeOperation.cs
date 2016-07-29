@@ -65,7 +65,7 @@ namespace VowpalWabbit.Azure.Trainer
             this.FreshStart();
         }
 
-        internal void FreshStart(OnlineTrainerState state = null)
+        internal void FreshStart(OnlineTrainerState state = null, byte[] model = null)
         {
             if (state == null)
                 state = new OnlineTrainerState();
@@ -75,7 +75,11 @@ namespace VowpalWabbit.Azure.Trainer
             // start from scratch
             this.state = state;
 
-            this.InitializeVowpalWabbit(new VowpalWabbitSettings(this.settings.Metadata.TrainArguments));
+            var settings = model == null ?
+                new VowpalWabbitSettings(this.settings.Metadata.TrainArguments) :
+                new VowpalWabbitSettings(string.Empty) { ModelStream = new MemoryStream(model) };
+
+            this.InitializeVowpalWabbit(settings);
         }
 
         private async Task<bool> TryLoadModel()

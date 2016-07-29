@@ -23,6 +23,12 @@ namespace VowpalWabbit.Azure.Trainer.Data
 
         internal DateTime Timestamp { get; set; }
 
+        internal int[] Actions { get; set; }
+
+        internal float[] Probabilities { get; set; }
+
+        internal float ProbabilityOfDrop { get; set; }
+
         public VowpalWabbitExampleCollection Example { get; set; }
     }
 }
