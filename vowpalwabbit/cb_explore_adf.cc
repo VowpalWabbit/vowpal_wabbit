@@ -29,7 +29,6 @@ namespace CB_EXPLORE_ADF{
 
     v_array<example*> ec_seq;
     v_array<action_score> action_probs;
-    v_array<uint32_t> base_predictions;
 
     size_t explore_type;
 
@@ -39,7 +38,6 @@ namespace CB_EXPLORE_ADF{
     size_t cover_size;
     float lambda;
 
-    size_t counter;
     bool need_to_clear;
     vw* all;
     LEARNER::base_learner* cs_ldf_learner;
@@ -179,74 +177,60 @@ namespace CB_EXPLORE_ADF{
       }
     
     safety(probs, data.epsilon / num_actions, false);
-  }
-    
+    }*/
+  /*    
   template <bool is_learn>
   void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    v_array<action_score> preds = ec.pred.a_s;
-    preds.erase();
-    data.cs_label.costs.erase();
-
-    for (uint32_t j = 0; j < num_actions; j++)
-      data.cs_label.costs.push_back({x,j+1,0.,0.});
-
-    float epsilon = data.epsilon;
-    size_t cover_size = data.cover_size;
-    size_t counter = data.counter;
-    v_array<float>& probabilities = data.cover_probs;
-    v_array<uint32_t>& predictions = data.preds;
-
-    float additive_probability = 1.f / (float)cover_size;
-
-    float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
-
-    data.cb_label = ec.l.cb;
-
-    ec.l.cs = data.cs_label;
-    get_cover_probabilities(data, base, ec, probs);
-	
-    if (is_learn) {
-      ec.l.cb = data.cb_label;
+    if (is_learn)
       base.learn(ec);
+    else
+      base.predict(ec);
 
-      //Now update oracles
+    v_array<action_score>& preds = ec.pred.a_s;
+    uint32_t num_actions = preds.size();
+    
+    float additive_probability = 1.f / (float)data.cover_size;
+    float min_prob = data.epsilon * min(1.f / num_actions);
+    v_array<action_score>& probs = data.action_probs;
+    for(uint32_t i = 0;i < num_actions;i++)
+      probs[i] = {i,0.};
 
-      //1. Compute loss vector
-      data.cs_label.costs.erase();
-      float norm = min_prob * num_actions;
-      ec.l.cb = data.cb_label;
-      data.cbcs.known_cost = get_observed_cost(data.cb_label);
-      gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
-      for(uint32_t i = 0;i < num_actions;i++)
-	probabilities[i] = 0;
-
-      ec.l.cs = data.second_cs_label;
-      //2. Update functions
-      for (size_t i = 0; i < cover_size; i++)
-	{ //Create costs of each action based on online cover
-	  for (uint32_t j = 0; j < num_actions; j++)
-	    { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
-	      data.second_cs_label.costs[j].class_index = j+1;
-	      data.second_cs_label.costs[j].x = pseudo_cost;
-	      //cout<<pseudo_cost<<" ";
-	    }
-	  //cout<<epsilon<<" "<<endl;
-	  if (i != 0)
+    //1. Compute loss vector
+    data.cs_label.costs.erase();
+    float norm = min_prob * num_actions;
+    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+    
+    ec.l.cs = data.second_cs_label;
+    //2. Update functions
+    for (size_t i = 0; i < data.cover_size; i++)
+      { //Create costs of each action based on online cover
+	for (uint32_t j = 0; j < num_actions; j++)
+	  { float pseudo_cost = data.cs_label.costs[j].x - data.epsilon * min_prob / (max(action_scores[j].score, min_prob) / norm) + 1;
+	    data.second_cs_label.costs[j].class_index = j+1;
+	    data.second_cs_label.costs[j].x = pseudo_cost;
+	  }
+	if (i != 0)
+	  if (is_learn)
 	    data.cs->learn(ec,i+1);
-	  if (probabilities[predictions[i] - 1] < min_prob)
-	    norm += max(0, additive_probability - (min_prob - probabilities[predictions[i] - 1]));
 	  else
-	    norm += additive_probability;
-	  probabilities[predictions[i] - 1] += additive_probability;
-	}
-    }
-
+	    data.cs->predict(ec,i+1);
+	if (actions_scores[predictions[i] - 1].score < min_prob)
+	  norm += max(0, additive_probability - (min_prob - action_scores[predictions[i] - 1].score));
+	else
+	  norm += additive_probability;
+	action_scores[predictions[i] - 1].score += additive_probability;
+      }
+    
     ec.l.cb = data.cb_label;
-    ec.pred.a_s = probs;
-  }
-  */
+
+    CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
+    for (size_t i = 0; i < num_actions; i++) 
+      preds[i].score = data.action_probs[preds[i].action].score;
+      }*/
+  
   template <bool is_learn>
   void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   {
@@ -450,7 +434,6 @@ base_learner* cb_explore_adf_setup(vw& all)
 
   po::variables_map& vm = all.vm;
   cb_explore_adf& data = calloc_or_throw<cb_explore_adf>();
-  data.action_probs = v_init<action_score>();
 
   data.all = &all;
   if (count(all.args.begin(), all.args.end(), "--cb_adf") == 0)
@@ -475,8 +458,6 @@ base_learner* cb_explore_adf_setup(vw& all)
 
       if (!vm.count("epsilon"))
 	data.epsilon = 0.05f;
-      
-      data.base_predictions = v_init<uint32_t>();
     }
   else if (vm.count("bag"))
     {
