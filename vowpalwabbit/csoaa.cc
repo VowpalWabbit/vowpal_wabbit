@@ -119,9 +119,8 @@ base_learner* csoaa_setup(vw& all)
   all.p->lp = cs_label;
   l.set_finish_example(finish_example);
   l.set_finish(finish);
-  base_learner* b = make_base(l);
-  all.cost_sensitive = b;
-  return b;
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 
 using namespace ACTION_SCORE;
@@ -819,5 +818,6 @@ base_learner* csldf_setup(vw& all)
   l.set_finish(finish);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  return make_base(l);
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }

@@ -13,6 +13,6 @@ namespace VW
   {
     CB::cb_class observation = { cost, actionObservered, probability };
 
-    return get_unbiased_cost(&observation, actionTaken);
+    return CB_ALGS::get_unbiased_cost(&observation, actionTaken);
   }
 }

@@ -1,9 +1,10 @@
+#pragma once
 namespace ACTION_SCORE
 {
 
   struct action_score
-  { float score;
-    uint32_t action;
+  { uint32_t action;
+    float score;
   };
 
   typedef v_array<action_score> action_scores;

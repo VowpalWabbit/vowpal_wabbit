@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "constant.h"
 #include "feature_group.h"
-#include "cb_explore.h"
 #include "action_score.h"
 
 const unsigned char wap_ldf_namespace  = 126;
@@ -40,12 +39,11 @@ typedef union
 typedef union
 { float scalar;
   v_array<float> scalars;//a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.
+  ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.  Also used for probabilities.
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float* probs; // for --probabilities --oaa
   float prob; // for --probabilities --csoaa_ldf=mc
-  cb_explore_pred action_prob; // for --cb_explore
 } polyprediction;
 
 typedef unsigned char namespace_index;
