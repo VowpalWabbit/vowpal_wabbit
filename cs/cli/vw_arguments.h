@@ -56,7 +56,7 @@ namespace VW
             m_commandLine = sb->ToString()->TrimEnd();
 
             if (vw->vm.count("cb"))
-                m_numberOfActions = vw->vm["cb"].as<size_t>();
+                m_numberOfActions = (int)vw->vm["cb"].as<size_t>();
         }
 
     public:

@@ -65,7 +65,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_
     if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
         temp = to_string(dat.cur_class) + ':' + temp;
 
-    bin_write_fixed(*dat.out_file, temp.c_str(), temp.size());
+    bin_write_fixed(*dat.out_file, temp.c_str(), (uint32_t)temp.size());
 
     weights[index] = 0.; //mark value audited
 }
@@ -97,7 +97,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
             }
         }
 
-        bin_write_fixed(*rd.out_file, tempstream.str().c_str(), tempstream.str().size());
+        bin_write_fixed(*rd.out_file, tempstream.str().c_str(), (uint32_t)tempstream.str().size());
 
     } else {
 
@@ -159,7 +159,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
     if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
     {
         print_ex(ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
-        all.sd->weighted_examples = ec.example_counter+1; //used in update_dump_interval
+        all.sd->weighted_examples = (double)(ec.example_counter+1); //used in update_dump_interval
         all.sd->update_dump_interval(all.progress_add, all.progress_arg);
         printed = true;
     }

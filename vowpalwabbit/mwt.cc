@@ -97,8 +97,8 @@ namespace MWT {
 		  uint32_t stride_shift = c.all->reg.stride_shift;
 		  for ( features::iterator& f : ec.feature_space[ns])
 		    {
-		      uint64_t new_index=((f.index()& c.all->reg.weight_mask) >> stride_shift)*c.num_classes +f.value();
-		      c.feature_space[ns].push_back(new_index << stride_shift, 1);
+		      uint64_t new_index=((f.index()& c.all->reg.weight_mask) >> stride_shift)*c.num_classes +(uint64_t)f.value();
+		      c.feature_space[ns].push_back(1, new_index << stride_shift);
 		    }
 		}
 	      std::swap(c.feature_space[ns], ec.feature_space[ns]);
@@ -125,9 +125,9 @@ namespace MWT {
     //modify the predictions to use a vector with a score for each evaluated feature.
     preds.erase();
     if (learn)
-      preds.push_back(ec.pred.multiclass);
+      preds.push_back((float)ec.pred.multiclass);
     for(uint64_t index : c.policies)
-      preds.push_back(c.evals[index].cost / c.total);
+      preds.push_back((float)c.evals[index].cost / (float)c.total);
 
     ec.pred.scalars = preds;
   }
@@ -155,7 +155,7 @@ namespace MWT {
     if (c.learn)
       {
 	if (c.observation != nullptr)
-	  loss = get_unbiased_cost(c.observation, ec.pred.scalars[0]);
+	  loss = get_unbiased_cost(c.observation, (uint32_t)ec.pred.scalars[0]);
       }
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     

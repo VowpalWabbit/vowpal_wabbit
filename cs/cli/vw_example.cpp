@@ -425,7 +425,7 @@ namespace VW
 
     int VowpalWabbitFeature::GetHashCode()
     {
-      return (int)m_x + m_weight_index;
+      return (int)(m_x + m_weight_index);
     }
 
 

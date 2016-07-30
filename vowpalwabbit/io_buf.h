@@ -241,7 +241,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
   return ret;
 }
 
-inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
+inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
 { if (len > 0)
   { char* p;
     buf_write (o, p, len);
@@ -255,16 +255,16 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
   return len;
 }
 
-inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
+inline size_t bin_write(io_buf& o, const char* data, size_t len)
 { bin_write_fixed(o,(char*)&len, sizeof(len));
   bin_write_fixed(o,data,len);
   return (len + sizeof(len));
 }
 
-inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
+inline size_t bin_text_write(io_buf& io, char* data, size_t len,
                              std::stringstream& msg, bool text)
 { if (text)
-  { size_t temp = bin_write_fixed (io, msg.str().c_str(), (uint32_t)msg.str().size());
+  { size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
     msg.str("");
     return temp;
   }
@@ -274,7 +274,7 @@ inline size_t bin_text_write(io_buf& io, char* data, uint32_t len,
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
+inline size_t bin_text_read_write(io_buf& io, char* data, size_t len,
                                   const char* read_message, bool read,
                                   std::stringstream& msg, bool text)
 { if (read)
@@ -283,10 +283,10 @@ inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len,
     return bin_text_write(io,data,len, msg, text);
 }
 
-inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
+inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len,
                                    std::stringstream& msg, bool text)
 { if (text)
-  { size_t temp = bin_write_fixed(io, msg.str().c_str(), (uint32_t)msg.str().size());
+  { size_t temp = bin_write_fixed(io, msg.str().c_str(), msg.str().size());
     msg.str("");
     return temp;
   }
@@ -296,7 +296,7 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len,
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len,
                                         const char* read_message, bool read,
                                         std::stringstream& msg, bool text)
 { if (read)
@@ -305,7 +305,7 @@ inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len,
     return bin_text_write_fixed(io, data, len, msg, text);
 }
 
-inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, uint32_t len,
+inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, size_t len,
                                                   const char* read_message, bool read,
                                                   std::stringstream& msg, bool text)
 { size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);

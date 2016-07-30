@@ -90,10 +90,10 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    uint32_t num_actions = preds.size();
+    uint32_t num_actions = (uint32_t)preds.size();
 
     if (data.tau) {
-      float prob = 1.0 / (float)num_actions;
+      float prob = 1.f / (float)num_actions;
       for (size_t i = 0; i < num_actions; i++) 
 	preds[i].score = prob;
       data.tau--;
@@ -115,7 +115,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    uint32_t num_actions = preds.size();
+    uint32_t num_actions = (uint32_t)preds.size();
 
     float prob = data.epsilon/(float)num_actions;
     for (size_t i = 0; i < num_actions; i++)
@@ -134,9 +134,9 @@ namespace CB_EXPLORE_ADF{
     data.action_probs.resize(num_actions);
     for (uint32_t i = 0; i < num_actions; i++)
       data.action_probs[i] = {i,0.};
-    float prob = 1.0 / (float)data.bag_size;
+    float prob = 1.f / (float)data.bag_size;
     bool test_sequence = test_adf_sequence(data);
-    for (size_t i = 0; i < data.bag_size; i++) 
+    for (uint32_t i = 0; i < data.bag_size; i++) 
       {
 	uint32_t count = BS::weight_gen();
 	if (is_learn && count > 0 && !test_sequence)
@@ -240,7 +240,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
     
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    uint32_t num_actions = preds.size();
+    uint32_t num_actions = (uint32_t)preds.size();
     float norm = 0.;
     float max_score = preds[0].score;
 
