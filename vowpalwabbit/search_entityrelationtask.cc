@@ -108,8 +108,8 @@ void finish(Search::search& sch)
 }    // if we had task data, we'd want to free it here
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
-{ int valid_ent1_id [] = {2,3,4,2,2}; // encode the valid entity-relation combinations
-  int valid_ent2_id [] = {4,4,4,3,2};
+{ size_t valid_ent1_id [] = {2,3,4,2,2}; // encode the valid entity-relation combinations
+  size_t valid_ent2_id [] = {4,4,4,3,2};
   if(rel_id - 5 == 5)
     return true;
   if(valid_ent1_id[rel_id-5] == ent1_id && valid_ent2_id[rel_id-5] == ent2_id)

@@ -255,7 +255,7 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
   return len;
 }
 
-inline size_t bin_write(io_buf& o, const char* data, size_t len)
+inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
 { bin_write_fixed(o,(char*)&len, sizeof(len));
   bin_write_fixed(o,data,len);
   return (len + sizeof(len));
@@ -269,7 +269,7 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len,
     return temp;
   }
   else
-    return bin_write (io, data, len);
+    return bin_write (io, data, (uint32_t)len);
   return 0;
 }
 
