@@ -119,9 +119,8 @@ base_learner* csoaa_setup(vw& all)
   all.p->lp = cs_label;
   l.set_finish_example(finish_example);
   l.set_finish(finish);
-  base_learner* b = make_base(l);
-  all.cost_sensitive = b;
-  return b;
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 
 using namespace ACTION_SCORE;
@@ -270,14 +269,12 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
     all_costs.push_back(&data.ec_seq[k]->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
-  data.csoaa_example_t += 1.;
   for (size_t k1=start_K; k1<K; k1++)
   { example *ec1 = data.ec_seq[k1];
 
     // save original variables
     COST_SENSITIVE::label   save_cs_label = ec1->l.cs;
     label_data& simple_label = ec1->l.simple;
-    float save_example_t1 = ec1->example_t;
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
@@ -297,7 +294,6 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
-      ec1->example_t = data.csoaa_example_t;
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
@@ -312,7 +308,6 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
 
     // restore original cost-sensitive label, sum of importance weights
     ec1->l.cs = save_cs_label;
-    ec1->example_t = save_example_t1;
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -328,18 +323,15 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     if (ec_cost > max_cost) max_cost = ec_cost;
   }
 
-  data.csoaa_example_t += 1.;
   for (size_t k=start_K; k<K; k++)
   { example *ec = data.ec_seq[k];
 
     // save original variables
     label save_cs_label = ec->l.cs;
-    float save_example_t = ec->example_t;
     v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;
-    ec->example_t = data.csoaa_example_t;
 
     simple_label.initial = 0.;
     float old_weight = ec->weight;
@@ -365,7 +357,6 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
     ec->l.cs = save_cs_label;
-    ec->example_t = save_example_t;
     ec->partial_prediction = costs[0].partial_prediction;
   }
 }
@@ -391,25 +382,25 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
 
   /////////////////////// add headers
-  size_t K = data.ec_seq.size();
-  size_t start_K = 0;
+  uint32_t K = (uint32_t)data.ec_seq.size();
+  uint32_t start_K = 0;
 
   if (ec_is_example_header(*data.ec_seq[0]))
   { start_K = 1;
-    for (size_t k=1; k<K; k++)
+    for (uint32_t k=1; k<K; k++)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
   bool isTest = check_ldf_sequence(data, start_K);
 
   /////////////////////// do prediction
-  size_t predicted_K = start_K;
+  uint32_t predicted_K = start_K;
   if(data.rank)
   { data.a_s.erase();
     data.stored_preds.erase();
     if (start_K > 0)
       data.stored_preds.push_back(data.ec_seq[0]->pred.a_s);
 
-    for (size_t k=start_K; k<K; k++)
+    for (uint32_t k=start_K; k<K; k++)
     { data.stored_preds.push_back(data.ec_seq[k]->pred.a_s);
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
@@ -423,7 +414,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
   else
   { float  min_score = FLT_MAX;
-    for (size_t k=start_K; k<K; k++)
+    for (uint32_t k=start_K; k<K; k++)
     { example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
       if (ec->partial_prediction < min_score)
@@ -827,5 +818,6 @@ base_learner* csldf_setup(vw& all)
   l.set_finish(finish);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  return make_base(l);
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }

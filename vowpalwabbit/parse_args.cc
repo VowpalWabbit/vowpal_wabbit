@@ -873,7 +873,7 @@ void parse_example_tweaks(vw& all)
   else
     all.training = true;
 
-  if(all.numpasses > 1)
+  if(all.numpasses > 1 || all.holdout_after > 0)
     all.holdout_set_off = false;
 
   if(vm.count("holdout_off"))

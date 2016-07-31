@@ -162,7 +162,7 @@ namespace VW
     }
   }
 
-  uint64_t VowpalWabbit::HashFeatureNative(String^ s, size_t u)
+  uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
   {
     auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
     auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);

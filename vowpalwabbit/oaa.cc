@@ -11,6 +11,8 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include "vw.h"
 
+using namespace std;
+
 struct oaa
 { size_t k;
   vw* all; // for raw

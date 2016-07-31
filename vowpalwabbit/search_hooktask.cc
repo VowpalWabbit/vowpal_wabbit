@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include "search_hooktask.h"
 
+using namespace std;
 // this is used for the C++ library and python library hook; hopefully
 // it can be used for any foreign library too!
 namespace HookTask

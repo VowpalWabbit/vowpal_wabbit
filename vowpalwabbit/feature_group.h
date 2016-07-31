@@ -2,7 +2,7 @@
 
 typedef float feature_value;
 typedef uint64_t feature_index;
-typedef pair<string, string> audit_strings;
+typedef std::pair<std::string, std::string> audit_strings;
 typedef std::shared_ptr<audit_strings> audit_strings_ptr;
 
 struct feature {//sparse feature definition for the library interface
@@ -80,7 +80,7 @@ public:
   bool operator==(const features_value_iterator& rhs) { return _begin == rhs._begin; }
   bool operator!=(const features_value_iterator& rhs) { return _begin != rhs._begin; }
 
-  friend void swap(features_value_iterator& lhs, features_value_iterator& rhs) { swap(lhs._begin, rhs._begin); }
+  friend void swap(features_value_iterator& lhs, features_value_iterator& rhs) { std::swap(lhs._begin, rhs._begin); }
 
   friend struct features;
 };
@@ -140,7 +140,7 @@ public:
 
   friend void swap(features_value_index_iterator& lhs, features_value_index_iterator& rhs)
   { swap(static_cast<features_value_iterator&>(lhs), static_cast<features_value_iterator&>(rhs));
-    swap(lhs._begin_index, rhs._begin_index);
+    std::swap(lhs._begin_index, rhs._begin_index);
   }
 };
 

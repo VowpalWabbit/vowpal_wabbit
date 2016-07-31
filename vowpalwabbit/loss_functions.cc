@@ -298,7 +298,7 @@ public:
       cout << "You are using label " << label << " but loss function expects label >= 0!" << endl;
 	  float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
-	  return 2 * (label * (logf(label + 1e-6) - prediction) - (label - exp_prediction));
+	  return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
   float getUpdate(float prediction, float label,float update_scale, float pred_per_update)

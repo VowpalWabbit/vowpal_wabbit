@@ -86,9 +86,9 @@ void init_tree (recall_tree& b,
     {
       uint32_t left_child;
       uint32_t right_child;
-      left_child = b.nodes.size ();
+      left_child = (uint32_t)b.nodes.size ();
       b.nodes.push_back (node ());
-      right_child = b.nodes.size ();
+      right_child = (uint32_t)b.nodes.size ();
       b.nodes.push_back (node ());
       b.nodes[root].base_router = routers_used++;
 
@@ -153,9 +153,9 @@ void compute_recall_lbest (recall_tree& b, node* n)
       mass_at_k += ls->label_count;
     }
 
-  float f = mass_at_k / n->n;
-  float stdf = sqrt (f * (1. - f) / n->n);
-  float diamf = 15. / (sqrt (18.) * n->n);
+  float f = (float)mass_at_k / (float)n->n;
+  float stdf = sqrt (f * (1.f - f) / (float)n->n);
+  float diamf = 15.f / (sqrtf (18.f) * (float)n->n);
 
   // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
   n->recall_lbest = (std::max) (0.f,
@@ -373,7 +373,7 @@ float train_node (recall_tree& b,
   double delta_left = nl * (new_left - old_left) + mc.weight * new_left;
   double delta_right = nr * (new_right - old_right) + mc.weight * new_right;
   float route_label = delta_left < delta_right ? -1.f : 1.f;
-  float imp_weight = fabs (delta_left - delta_right);
+  float imp_weight = fabs ((float)(delta_left - delta_right));
 
   ec.l.simple = { route_label, imp_weight, 0. };
   base.learn (ec, b.nodes[cn].base_router);
@@ -576,7 +576,7 @@ base_learner* recall_tree_setup(vw& all)
 
   recall_tree& tree = calloc_or_throw<recall_tree> ();
   tree.all = &all;
-  tree.k = vm["recall_tree"].as<size_t>();
+  tree.k = (uint32_t)vm["recall_tree"].as<size_t>();
   tree.node_only = vm["node_only"].as<bool> ();
   *(all.file_options) << " --node_only " << tree.node_only;
   tree.max_candidates =

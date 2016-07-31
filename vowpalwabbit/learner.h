@@ -12,7 +12,6 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
-using namespace std;
 
 namespace LEARNER
 {

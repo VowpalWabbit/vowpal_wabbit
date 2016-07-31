@@ -6,6 +6,7 @@
 #include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
+using namespace std;
 
 struct LRQstate
 { vw* all; // feature creation, audit, hash_inv
@@ -167,7 +168,7 @@ base_learner* lrq_setup(vw& all)
     return nullptr;
 
   LRQstate& lrq = calloc_or_throw<LRQstate>();
-  size_t maxk = 0;
+  uint32_t maxk = 0;
   lrq.all = &all;
 
   vector<string> arg = all.vm["lrq"].as<vector<string> > ();

@@ -1,7 +1,7 @@
 #include "v_array.h"
 #include "action_score.h"
 #include "io_buf.h"
-
+using namespace std;
 namespace ACTION_SCORE
 {
 

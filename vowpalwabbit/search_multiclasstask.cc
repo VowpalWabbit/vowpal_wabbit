@@ -4,6 +4,7 @@
   license as described in the file LICENSE.
 */
 #include "search_multiclasstask.h"
+using namespace std;
 
 namespace MulticlassTask { Search::search_task task = { "multiclasstask", run, initialize, finish, nullptr, nullptr };  }
 

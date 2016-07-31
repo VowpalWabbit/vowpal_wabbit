@@ -66,10 +66,6 @@ class TestVW:
         model.fit(data.x, data.y)
         assert not np.allclose(weights.data, model.get_coefs().data)
 
-        # second pass weights should match
-        model.fit(data.x, data.y)
-        assert np.allclose(weights.data, model.get_coefs().data)
-
     def test_predict_not_fit(self, data):
         model = VW(loss_function='logistic')
         with pytest.raises(NotFittedError):
@@ -100,7 +96,6 @@ class TestVW:
         model = VW()
         model.fit(data.x, data.y)
         weights = model.get_coefs()
-        print weights.data
         assert np.allclose(weights.indices, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 116060])
 
     def test_get_intercept(self, data):
@@ -131,12 +126,13 @@ class TestVWClassifier:
         raw_model.fit(data.x, data.y)
         predictions = raw_model.predict(data.x)
         class_indices = (predictions > 0).astype(np.int)
-        class_predictions = classes[class_indices]
+        expected = classes[class_indices]
 
         model = VWClassifier()
         model.fit(data.x, data.y)
+        actual = model.predict(data.x)
 
-        assert np.allclose(class_predictions, model.predict(data.x))
+        assert np.allclose(expected, actual)
 
 
 class TestVWRegressor:

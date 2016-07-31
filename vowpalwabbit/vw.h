@@ -26,13 +26,13 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-vw* initialize(string s, io_buf* model=nullptr);
+  vw* initialize(std::string s, io_buf* model=nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model=nullptr);
-vw* seed_vw_model(vw* vw_model, string extra_args);
+ vw* seed_vw_model(vw* vw_model, std::string extra_args);
 
-void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value );
+ void cmd_string_replace_value( std::stringstream*& ss, std::string flag_to_replace, std::string new_value );
 
-char** get_argv_from_string(string s, int& argc);
+ char** get_argv_from_string(std::string s, int& argc);
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
@@ -57,12 +57,12 @@ struct primitive_feature_space   //just a helper definition.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
 example* read_example(vw& all, char* example_line);
-example* read_example(vw& all, string example_line);
+ example* read_example(vw& all, std::string example_line);
 
 //The more complex way to create an example.
 
 //after you create and fill feature_spaces, get an example with everything filled in.
-example* import_example(vw& all, string label, primitive_feature_space* features, size_t len);
+ example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
 
 // callers must free memory using release_example
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -72,7 +72,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
 example *alloc_examples(size_t, size_t);
 void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
-void parse_example_label(vw&all, example&ec, string label);
+ void parse_example_label(vw&all, example&ec, std::string label);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
 example* get_example(parser* pf);
@@ -104,32 +104,32 @@ void clear_example_data(example&);  // don't clear the label
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
-void save_predictor(vw& all, string reg_name);
+ void save_predictor(vw& all, std::string reg_name);
 void save_predictor(vw& all, io_buf& buf);
 
 // inlines
 
 //First create the hash of a namespace.
-inline uint32_t hash_space(vw& all, string s)
+ inline uint32_t hash_space(vw& all, std::string s)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)all.p->hasher(ss,hash_base);
 }
-inline uint32_t hash_space_static(string s, string hash)
+ inline uint32_t hash_space_static(std::string s, std::string hash)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)getHasher(hash)(ss, hash_base);
 }
 //Then use it as the seed for hashing features.
-inline uint32_t hash_feature(vw& all, string s, unsigned long u)
+ inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
 }
-inline uint32_t hash_feature_static(string s, unsigned long u, string h, uint32_t num_bits)
+ inline uint32_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();

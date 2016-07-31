@@ -105,7 +105,12 @@ struct version_struct
     return s;
   }
   void from_string(const char* str)
-  { std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+  {
+#ifdef _WIN32
+	  sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
+#else
+	  std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+#endif
   }
 };
 
@@ -140,10 +145,10 @@ private:
 
 public:
 
-  namedlabels(string label_list)
+  namedlabels(std::string label_list)
   { id2name = v_init<substring>();
     char* temp = calloc_or_throw<char>(1+label_list.length());
-    strncpy(temp, label_list.c_str(), strlen(label_list.c_str()));
+    memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
     substring ss = { temp, nullptr };
     ss.end = ss.begin + label_list.length();
     tokenize(',', ss, id2name);
@@ -179,9 +184,9 @@ public:
   { uint64_t hash = uniform_hash((unsigned char*)s.begin, s.end-s.begin, 378401);
     uint64_t v  =  name2id.get(s, hash);
     if (v == 0)
-    { cerr << "warning: missing named label '";
-      for (char*c = s.begin; c != s.end; c++) cerr << *c;
-      cerr << '\'' << endl;
+      { std::cerr << "warning: missing named label '";
+	for (char*c = s.begin; c != s.end; c++) std::cerr << *c;
+      std::cerr << '\'' << std::endl;
     }
     return v;
   }
@@ -247,7 +252,8 @@ struct shared_data
   static const int col_current_features = 8;
 
   void update(bool test_example, float loss, float weight, size_t num_features)
-  { if(test_example)
+  { t += weight;
+    if(test_example)
     { weighted_holdout_examples += weight;//test weight seen
       weighted_holdout_examples_since_last_dump += weight;
       weighted_holdout_examples_since_last_pass += weight;
@@ -415,7 +421,7 @@ struct vw
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
-  string data_filename; // was vm["data"]
+  std::string data_filename; // was vm["data"]
 
   bool daemon;
   size_t num_children;
@@ -428,7 +434,7 @@ struct vw
   bool hessian_on;
 
   bool save_resume;
-  string id;
+  std::string id;
 
   version_struct model_file_ver;
   double normalized_sum_norm_x;
@@ -438,7 +444,7 @@ struct vw
   po::options_description* new_opts;
   po::variables_map vm;
   std::stringstream* file_options;
-  vector<std::string> args;
+  std::vector<std::string> args;
 
   void* /*Search::search*/ searchstr;
 
@@ -477,9 +483,9 @@ struct vw
   uint32_t limit[256];//count to limit features by
   uint64_t affix_features[256]; // affixes to generate (up to 16 per namespace - 4 bits per affix)
   bool     spelling_features[256]; // generate spelling features for which namespace
-  vector<string> dictionary_path;  // where to look for dictionaries
-  vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
-  vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
+  std::vector<std::string> dictionary_path;  // where to look for dictionaries
+  std::vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
+  std::vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
 
   void (*delete_prediction)(void*);
   bool audit;//should I print lots of debugging information?
@@ -517,7 +523,7 @@ struct vw
   int raw_prediction; // file descriptors for text output.
 
   void (*print)(int,float,float,v_array<char>);
-  void (*print_text)(int, string, v_array<char>);
+  void (*print_text)(int, std::string, v_array<char>);
   loss_function* loss;
 
   char* program_name;
@@ -554,8 +560,8 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
-void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
-void compile_limits(vector<string> limits, uint32_t* dest, bool quiet);
+void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
 void add_options(vw& all, po::options_description& opts);
 inline po::options_description_easy_init new_options(vw& all, std::string name = "\0")

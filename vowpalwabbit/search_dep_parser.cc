@@ -9,6 +9,7 @@
 #include "label_dictionary.h"   // for add_example_namespaces_from_example
 #include "vw.h"
 #include "vw_exception.h"
+using namespace std;
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
@@ -173,7 +174,7 @@ size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint3
     uint32_t hd     = idx;
     heads[last]     = hd;
     children[3][hd] = children[2][hd];
-    children[2][hd] = last;
+    children[2][hd] = (uint32_t)last;
     children[0][hd] ++;
     tags[last]      = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
@@ -210,7 +211,7 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
     uint32_t hd     = (idx >n)? 0:idx;
     heads[last]     = hd;
     children[3][hd] = children[2][hd];
-    children[2][hd] = last;
+    children[2][hd] = (uint32_t)last;
     children[0][hd] ++;
     tags[last]      = t_id;
     sch.loss(gold_heads[last] != heads[last] ? 2 : (gold_tags[last] != t_id) ? 1.f : 0.f);
@@ -273,7 +274,7 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
 
   // Other features
   temp.resize(10);
-  temp[0] = empty ? 0: (idx >n? 1: 2+min(5, idx - (uint64_t)last));
+  temp[0] = empty ? 0: (idx >n? 1: 2+min(5, idx - (uint32_t)last));
   temp[1] = empty? 1: 1+min(5, children[0][last]);
   temp[2] = empty? 1: 1+min(5, children[1][last]);
   temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
@@ -336,7 +337,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
     { if(heads[stack.last()]!=my_null) temp[REDUCE_LEFT] = 0;
       if(idx <=n && heads[idx] != my_null) temp[REDUCE_RIGHT] = 0;     
     }
-    for(size_t i=1; i<=4; i++){
+    for(uint32_t i=1; i<=4; i++){
       if(temp[i]) valid_action.push_back(i);
     }
   }
@@ -424,18 +425,18 @@ void get_cost_to_go_losses(Search::search &sch, v_array<pair<action, float>>& go
 
   if(one_learner)
   { if(is_valid(SHIFT, valid_actions))
-      gold_action_losses.push_back(make_pair(SHIFT, action_loss[SHIFT]));
-    for(size_t i=2; i<=3; i++)
+      gold_action_losses.push_back(make_pair(SHIFT, (float)action_loss[SHIFT]));
+    for(uint32_t i=2; i<=3; i++)
       if(is_valid(i, valid_actions))
-      { for(size_t j=1; j<=num_label; j++)
+      { for(uint32_t j=1; j<=num_label; j++)
           if(sys==arc_eager || j!=data->root_label)
             gold_action_losses.push_back(make_pair((1+j+(i-2)*num_label), action_loss[i]+(float)(j != (i==REDUCE_LEFT? left_label:right_label))));
       }
     if(sys==arc_eager && is_valid(REDUCE, valid_actions))
-      gold_action_losses.push_back(make_pair(2+num_label*2, action_loss[REDUCE]));
+      gold_action_losses.push_back(make_pair(2+num_label*2, (float)action_loss[REDUCE]));
   }
   else
-  { for(size_t i=1; i<=3; i++)
+  { for(action i=1; i<=3; i++)
       if(is_valid(i, valid_actions))
         gold_action_losses.push_back(make_pair(i, (float)action_loss[i]));
     if(sys==arc_eager && is_valid(REDUCE, valid_actions))
@@ -462,14 +463,14 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
   }  
   size_t best_action = 1;
   size_t count = 0;
-  for(size_t i=1; i<=4; i++)
+  for(uint32_t i=1; i<=4; i++)
   { if(i==4 && sys==arc_hybrid)
       continue;
     if(action_loss[i] < action_loss[best_action] && is_valid(i,valid_actions))
     { best_action= i;
       count = 1;
       gold_actions.erase();
-      gold_actions.push_back((uint32_t)i);
+      gold_actions.push_back(i);
     }
     else if (action_loss[i] == action_loss[best_action] && is_valid(i,valid_actions))
     { count++;
@@ -488,13 +489,13 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
   if(left_label!=my_null && is_valid(REDUCE_RIGHT, actions)) actions_onelearner.push_back(1+right_label);
   if(left_label!=my_null && is_valid(REDUCE_LEFT, actions)) actions_onelearner.push_back(1+left_label+num_label);  
   if(left_label==my_null && is_valid(REDUCE_RIGHT, actions))
-     for(size_t i=0; i< num_label; i++)
+     for(uint32_t i=0; i< num_label; i++)
        if(i!=data->root_label-1)
            actions_onelearner.push_back(i+2);  
   if(left_label==my_null && is_valid(REDUCE_LEFT, actions))
-          for(size_t i=0; i<num_label; i++)
+          for(uint32_t i=0; i<num_label; i++)
             if(sys==arc_eager || i!=data->root_label-1)
-              actions_onelearner.push_back(i+2+num_label);
+              actions_onelearner.push_back((uint32_t)(i+2+num_label));
 }     
 
 void setup(Search::search& sch, vector<example*>& ec)
@@ -509,7 +510,7 @@ void setup(Search::search& sch, vector<example*>& ec)
   gold_tags.push_back(0);
   for (size_t i=0; i<n; i++)
   { v_array<COST_SENSITIVE::wclass>& costs = ec[i]->l.cs.costs;
-    size_t head,tag;
+    uint32_t head,tag;
     if (data->old_style_labels)
     { uint32_t label = costs[0].class_index;
       head = (label & 255) -1;
@@ -517,7 +518,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     }
     else
     { head = (costs.size() == 0) ? 0 : costs[0].class_index;
-      tag  = (costs.size() <= 1) ? (uint64_t)data->root_label : costs[1].class_index;
+      tag  = (costs.size() <= 1) ? (uint32_t)data->root_label : costs[1].class_index;
     }
     if (tag > data->num_label)
       THROW("invalid label " << tag << " which is > num actions=" << data->num_label);
@@ -540,7 +541,7 @@ void run(Search::search& sch, vector<example*>& ec)
   bool &cost_to_go = data->cost_to_go, &one_learner = data->one_learner;
   uint32_t &num_label = data->num_label;
   uint32_t &sys = data->transition_system;
-  uint64_t n = (uint64_t) ec.size();
+  uint32_t n = (uint32_t) ec.size();
   uint32_t left_label, right_label;
   stack.erase();
   stack.push_back((data->root_label==0&&sys==arc_hybrid)?0:1);
@@ -551,8 +552,8 @@ void run(Search::search& sch, vector<example*>& ec)
   { heads[i+1] = my_null;
     tags[i+1] = my_null;
   }
-  size_t count=1;
-  size_t idx = ((data->root_label==0&&sys==arc_hybrid)?1:2);
+  ptag count=1;
+  uint32_t idx = ((data->root_label==0&&sys==arc_hybrid)?1:2);
   Search::predictor P(sch, (ptag) 0);
   while(true)
   { if(sys==arc_hybrid && stack.size()<=1 && idx > n)
@@ -576,7 +577,7 @@ void run(Search::search& sch, vector<example*>& ec)
     else if(sys==arc_eager) right_label = idx<=n? gold_tags[idx] : (uint32_t) data->root_label;	
     else THROW("unknown transition system");
 
-    size_t a_id = 0, t_id = 0;
+    uint32_t a_id = 0, t_id = 0;
     if(one_learner)
     { if(cost_to_go)
       { get_cost_to_go_losses(sch, gold_action_losses, left_label, right_label);
@@ -665,13 +666,13 @@ void run(Search::search& sch, vector<example*>& ec)
     }
     count++;
     if(sys==arc_hybrid)
-        idx = transition_hybrid(sch, a_id, idx, t_id, n);
+        idx = (uint32_t)transition_hybrid(sch, a_id, idx, t_id, n);
     else if(sys==arc_eager)
-        idx = transition_eager(sch, a_id, idx, t_id, n);
+        idx = (uint32_t)transition_eager(sch, a_id, idx, t_id, n);
   }
   if(sys==arc_hybrid)
   {   heads[stack.last()] = 0;
-      tags[stack.last()] = (uint64_t)data->root_label;
+      tags[stack.last()] = (uint32_t)data->root_label;
       sch.loss((gold_heads[stack.last()] != heads[stack.last()]));
   }
   if (sch.output().good())

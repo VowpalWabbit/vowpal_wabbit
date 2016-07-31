@@ -7,7 +7,7 @@
 #include "vw_exception.h"
 
 using namespace LEARNER;
-
+using namespace std;
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 { float b,sb,rs,sl;
   b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
@@ -43,7 +43,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   if (is_learn)
   { vw& all = *a.all;
 
-    float k = ec.example_t - ec.weight;
+    float k = (float)all.sd->t;
     float threshold = 0.f;
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
@@ -55,7 +55,10 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
       base.learn(ec);
     }
     else
-      ec.l.simple.label = FLT_MAX;
+      {
+	ec.l.simple.label = FLT_MAX;
+	ec.weight = 0.f;
+      }
   }
 }
 

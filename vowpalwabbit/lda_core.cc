@@ -36,7 +36,7 @@ license as described in the file LICENSE.
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
 #endif
-
+using namespace std;
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -698,7 +698,15 @@ void learn_batch(lda &l)
     // the for loops down there. Since it seems that there's not much to
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
-      return_simple_example(*l.all, nullptr, *l.examples[d]);
+      {
+	l.examples[d]->topic_predictions.erase();
+	l.examples[d]->topic_predictions.resize(l.topics);
+	memset(l.examples[d]->topic_predictions.begin(), 0, l.topics * sizeof(float));
+	l.examples[d]->topic_predictions.end() = l.examples[d]->topic_predictions.begin() + l.topics;
+
+	l.examples[d]->topic_predictions.erase();
+	return_simple_example(*l.all, nullptr, *l.examples[d]);
+      }
     l.examples.erase();
     return;
   }

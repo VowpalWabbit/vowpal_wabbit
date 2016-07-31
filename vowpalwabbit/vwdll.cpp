@@ -27,6 +27,7 @@
 
 extern "C"
 {
+	using namespace std;
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs)
   { std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;

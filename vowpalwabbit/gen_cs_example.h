@@ -10,7 +10,7 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 
-using namespace CB;
+namespace GEN_CS{
 
 struct cb_to_cs
 {
@@ -23,13 +23,13 @@ struct cb_to_cs
   float last_pred_reg;
   float last_correct_cost;
 
-  cb_class* known_cost;
+  CB::cb_class* known_cost;
 };
 
-cb_class* get_observed_cost(CB::label& ld);
+CB::cb_class* get_observed_cost(CB::label& ld);
 
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
-float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label& scores, uint32_t action);
+void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels);
 
 template <bool is_learn> 
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
@@ -46,9 +46,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
     { //in this case generate cost-sensitive example with all actions
       for (uint32_t i = 1; i <= c.num_actions; i++)
 	{
-	  COST_SENSITIVE::wclass wc;
-	  wc.wap_value = 0.;
-
+	  COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
 	  //get cost prediction for this action
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
 	  if (wc.x < min)
@@ -56,10 +54,6 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 	      min = wc.x;
 	      argmin = i;
 	    }
-
-	  wc.class_index = i;
-	  wc.partial_prediction = 0.;
-	  wc.wap_value = 0.;
 
 	  c.pred_scores.costs.push_back(wc);
 
@@ -78,8 +72,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
     { //in this case generate cost-sensitive example with only allowed actions
       for (auto& cl : ld.costs)
 	{
-	  COST_SENSITIVE::wclass wc;
-	  wc.wap_value = 0.;
+	  COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
 
 	  //get cost prediction for this action
 	  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
@@ -88,11 +81,6 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 	      min = wc.x;
 	      argmin = cl.action;
 	    }
-
-	  wc.class_index = cl.action;
-	  wc.partial_prediction = 0.;
-	  wc.wap_value = 0.;
-
 	  c.pred_scores.costs.push_back(wc);
 
 	  if (c.known_cost != nullptr && c.known_cost->action == cl.action)
@@ -111,20 +99,16 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
 }
 
 template <bool is_learn> 
-void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
+void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action)
 {
-  COST_SENSITIVE::wclass wc;
-  wc.wap_value = 0.;
+  COST_SENSITIVE::wclass wc = {0., action, 0., 0.};
 
-  //get cost prediction for this label
-  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, label, c.num_actions);
-  wc.class_index = label;
-  wc.partial_prediction = 0.;
-  wc.wap_value = 0.;
+  //get cost prediction for this action
+  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
 
   c.pred_scores.costs.push_back(wc);
   //add correction if we observed cost for this action and regressor is wrong
-  if (c.known_cost != nullptr && c.known_cost->action == label)
+  if (c.known_cost != nullptr && c.known_cost->action == action)
     {
       c.nb_ex_regressors++;
       c.avg_loss_regressors += (1.0f / c.nb_ex_regressors)*((c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors);
@@ -136,6 +120,8 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
   cs_ld.costs.push_back(wc);
 
 }
+
+ void gen_cs_example_dr(COST_SENSITIVE::label& pred_scores, CB::cb_class& known_cost, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels, LEARNER::base_learner* scorer);
 
 template <bool is_learn> 
 void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
@@ -178,3 +164,6 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
     }
 }
 
+ void gen_cs_example_MTR(uint64_t& action_sum, uint64_t& event_sum, uint32_t& mtr_example, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels);
+
+}

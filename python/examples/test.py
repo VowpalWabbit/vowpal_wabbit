@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from vowpalwabbit import pyvw
 
 
@@ -20,38 +22,38 @@ vw.learn("1 |x a b")
 
 
 ###############################################################################
-print '# do some stuff with a read example:'
+print('# do some stuff with a read example:')
 ex = vw.example("1 |x a b |y c")
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 
 updated_pred = ex.get_updated_prediction()
-print 'current partial prediction =', updated_pred
+print('current partial prediction =', updated_pred)
 
 # compute our own prediction
-print '        my view of example =', str([(f,v,vw.get_weight(f)) for f,v in ex.iter_features()])
+print('        my view of example =', str([(f,v,vw.get_weight(f)) for f,v in ex.iter_features()]))
 my_pred = my_predict(vw, ex)
-print '     my partial prediction =', my_pred
+print('     my partial prediction =', my_pred)
 ensure_close(updated_pred, my_pred)
-print ''
+print('')
 ex.finish()
 
 ###############################################################################
-print '# make our own example from scratch'
+print('# make our own example from scratch')
 ex = vw.example()
 ex.set_label_string("0")
 ex.push_features('x', ['a', 'b'])
 ex.push_features('y', [('c', 1.)])
 ex.setup_example()
 
-print '        my view of example =', str([(f,v,vw.get_weight(f)) for f,v in ex.iter_features()])
+print('        my view of example =', str([(f,v,vw.get_weight(f)) for f,v in ex.iter_features()]))
 my_pred2 = my_predict(vw, ex)
-print '     my partial prediction =', my_pred2
+print('     my partial prediction =', my_pred2)
 ensure_close(my_pred, my_pred2)
 
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
-print '  final partial prediction =', ex.get_updated_prediction()
+print('  final partial prediction =', ex.get_updated_prediction())
 ensure_close(ex.get_updated_prediction(), my_predict(vw,ex))
-print ''
+print('')
 ex.finish()
 
 ###############################################################################
@@ -77,12 +79,11 @@ for ex in exList:
 for i in range(2):
     ex = vw.example("1 foo| a b")
     ex.learn()
-    print 'tag =', ex.get_tag()
-    print 'counter =', ex.get_example_counter()
-    print 'partial pred =', ex.get_partial_prediction()
-    print 'loss =', ex.get_loss()
+    print('tag =', ex.get_tag())
+    print('partial pred =', ex.get_partial_prediction())
+    print('loss =', ex.get_loss())
 
-    print 'label =', ex.get_label()
+    print('label =', ex.get_label())
     ex.finish()
 
 
@@ -91,12 +92,12 @@ vw.finish()
 
 
 ###############################################################################
-print '# test some save/load behavior'
+print('# test some save/load behavior')
 vw = pyvw.vw("--quiet -f test.model")
 ex = vw.example("1 |x a b |y c")
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 before_save = ex.get_updated_prediction()
-print 'before saving, prediction =', before_save
+print('before saving, prediction =', before_save)
 ex.finish()
 vw.finish()   # this should create the file
 
@@ -105,9 +106,9 @@ vw = pyvw.vw("--quiet -i test.model")
 ex = vw.example("1 |x a b |y c")  # test example
 ex.learn()
 after_save = ex.get_partial_prediction()
-print ' after saving, prediction =', after_save
+print(' after saving, prediction =', after_save)
 ex.finish()
 ensure_close(before_save, after_save)
 vw.finish()   # this should create the file
 
-print 'done!'
+print('done!')
