@@ -23,44 +23,19 @@ using namespace CB_ALGS;
 
 namespace CB_ADF
 {
-// doubly robust
-#define CB_TYPE_DR 0
-// direct method
-#define CB_TYPE_DM 1
-// inverse propensity scoring
-#define CB_TYPE_IPS 2
-// multitask regression
-#define CB_TYPE_MTR 3
-
 struct cb_adf
 { v_array<example*> ec_seq;
-
-  size_t cb_type;
   bool need_to_clear;
   vw* all;
-  LEARNER::base_learner* scorer;
-  CB::cb_class known_cost;
 
-  // contextual bandit
+  cb_to_cs_adf gen_cs;
   v_array<CB::label> cb_labels;
-
-  // cost sensitive
   v_array<COST_SENSITIVE::label> cs_labels;
 
-  // mtr
-  uint32_t mtr_example;
-  v_array<COST_SENSITIVE::label> mtr_cs_labels;
-  v_array<example*> mtr_ec_seq;
-  action_scores a_s;
-  uint64_t action_sum;
-  uint64_t event_sum;
+  action_scores a_s;//temporary storage for mtr
 
-  COST_SENSITIVE::label pred_scores;
-
-  base_learner* base;
-
-  bool rank_all;
   bool predict;
+  bool rank_all;
 };
 
   CB::cb_class get_observed_cost(v_array<example*>& examples)
@@ -123,15 +98,6 @@ void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>
   size_t i = 0;
   for (example* ec : examples)
     ec->l.cb = cb_labels[i++];
-
-  // if (!mydata.rank_all)
-  //   { uint32_t action = 0;
-  //     for (size_t i = 0; i < examples.size(); i++)
-  // 	if (!CB::ec_is_example_header(*examples[i]) && !example_is_newline_not_header(*examples[i]))
-  // 	  if (examples[i]->pred.multiclass != 0)
-  // 	    action = examples[i]->pred.multiclass;
-  //     examples[0]->pred.multiclass = action;
-  // }
 }
 
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
@@ -141,7 +107,7 @@ void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
-  gen_cs_example_dr(mydata.pred_scores, mydata.known_cost, examples, mydata.cs_labels, mydata.scorer);
+  gen_cs_example_dr(mydata.gen_cs, examples, mydata.cs_labels);
   call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
 }
 
@@ -156,13 +122,13 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
   //proper feature handling.
-  gen_cs_example_MTR(mydata.action_sum, mydata.event_sum, mydata.mtr_example, examples, mydata.mtr_ec_seq, mydata.mtr_cs_labels);
-  uint32_t nf = (uint32_t)examples[mydata.mtr_example]->num_features;
-  float old_weight = examples[mydata.mtr_example]->weight;
-  examples[mydata.mtr_example]->weight *= 1.f / examples[mydata.mtr_example]->l.cb.costs[0].probability * ((float)mydata.event_sum / (float)mydata.action_sum);
-  call_predict_or_learn<true>(mydata, base, mydata.mtr_ec_seq, mydata.cb_labels, mydata.mtr_cs_labels);
-  examples[mydata.mtr_example]->num_features = nf;
-  examples[mydata.mtr_example]->weight = old_weight;
+  gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
+  uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
+  float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
+  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
+  call_predict_or_learn<true>(mydata, base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels);
+  examples[mydata.gen_cs.mtr_example]->num_features = nf;
+  examples[mydata.gen_cs.mtr_example]->weight = old_weight;
   swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
@@ -192,14 +158,14 @@ bool test_adf_sequence(cb_adf& data)
 template <bool is_learn>
 void do_actual_learning(cb_adf& data, base_learner& base)
 { bool isTest = test_adf_sequence(data);
-  data.known_cost = get_observed_cost(data.ec_seq);
+  data.gen_cs.known_cost = get_observed_cost(data.ec_seq);
 
   if (isTest || !is_learn)
   { gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
     call_predict_or_learn<false>(data, base, data.ec_seq, data.cb_labels, data.cs_labels);
   }
   else
-  { switch (data.cb_type)
+  { switch (data.gen_cs.cb_type)
     { case CB_TYPE_IPS:
         learn_IPS(data, base, data.ec_seq);
         break;
@@ -213,7 +179,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
           learn_MTR<false>(data, base, data.ec_seq);
         break;
       default:
-        THROW("Unknown cb_type specified for contextual bandit learning: " << data.cb_type);
+        THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
     }
   }
 }
@@ -247,8 +213,8 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   all.sd->total_features += num_features;
 
   bool is_test = false;
-  if (c.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, action);
+  if (c.gen_cs.known_cost.probability > 0)
+  { loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }
@@ -293,8 +259,8 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
   action_scores& preds = head_ec.pred.a_s;
   bool is_test = false;
 
-  if (c.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.known_cost), c.pred_scores, preds[0].action);
+  if (c.gen_cs.known_cost.probability > 0)
+  { loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, preds[0].action);
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   }
@@ -361,23 +327,19 @@ void end_examples(cb_adf& data)
 
 void finish(cb_adf& data)
 { data.ec_seq.delete_v();
-  data.mtr_ec_seq.delete_v();
+  data.gen_cs.mtr_ec_seq.delete_v();
   data.cb_labels.delete_v();
   for(size_t i = 0; i < data.cs_labels.size(); i++)
     data.cs_labels[i].costs.delete_v();
   data.cs_labels.delete_v();
 
-  for(size_t i = 0; i < data.mtr_cs_labels.size(); i++)
-    data.mtr_cs_labels[i].costs.delete_v();
-  data.mtr_cs_labels.delete_v();
   data.a_s.delete_v();
-  data.pred_scores.costs.delete_v();
+  data.gen_cs.pred_scores.costs.delete_v();
 }
 
 template <bool is_learn>
 void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
 { vw* all = data.all;
-  data.base = &base;
   bool is_test_ec = CB::example_is_test(ec);
   bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
@@ -419,27 +381,25 @@ base_learner* cb_adf_setup(vw& all)
     *all.file_options << " --cb_type " << type_string;
 
     if (type_string.compare("dr") == 0)
-    { ld.cb_type = CB_TYPE_DR;
+    { ld.gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
     }
     else if (type_string.compare("ips") == 0)
-    { ld.cb_type = CB_TYPE_IPS;
+    { ld.gen_cs.cb_type = CB_TYPE_IPS;
       problem_multiplier = 1;
     }
     else if (type_string.compare("mtr") == 0)
-    { ld.cb_type = CB_TYPE_MTR;
-      ld.mtr_cs_labels.resize(3);//shared, task, and end_sequence examples
-      ld.mtr_cs_labels.end() = ld.mtr_cs_labels.end_array;
+    { ld.gen_cs.cb_type = CB_TYPE_MTR;
       problem_multiplier = 1;
     }
     else
     { std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
-      ld.cb_type = CB_TYPE_IPS;
+      ld.gen_cs.cb_type = CB_TYPE_IPS;
     }
   }
   else
   { //by default use ips
-    ld.cb_type = CB_TYPE_IPS;
+    ld.gen_cs.cb_type = CB_TYPE_IPS;
     *all.file_options << " --cb_type ips";
   }
 
@@ -472,7 +432,7 @@ base_learner* cb_adf_setup(vw& all)
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   l.increment = base->increment;
-  ld.scorer = all.scorer;
+  ld.gen_cs.scorer = all.scorer;
 
   l.set_finish(CB_ADF::finish);
   l.set_end_examples(CB_ADF::end_examples);

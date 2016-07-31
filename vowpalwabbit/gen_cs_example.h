@@ -26,10 +26,25 @@ struct cb_to_cs
   CB::cb_class* known_cost;
 };
 
+struct cb_to_cs_adf
+{
+  size_t cb_type;
+
+  //for MTR
+  uint64_t action_sum;
+  uint64_t event_sum;
+  uint32_t mtr_example; 
+  v_array<example*> mtr_ec_seq;//shared + the one example + an end example.
+
+  //for DR
+  COST_SENSITIVE::label pred_scores;
+  CB::cb_class known_cost;
+  LEARNER::base_learner* scorer;
+};
+
 CB::cb_class* get_observed_cost(CB::label& ld);
 
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
-void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels);
 
 template <bool is_learn> 
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
@@ -121,8 +136,6 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 
 }
 
- void gen_cs_example_dr(COST_SENSITIVE::label& pred_scores, CB::cb_class& known_cost, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels, LEARNER::base_learner* scorer);
-
 template <bool is_learn> 
 void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 { //this implements the doubly robust method
@@ -164,6 +177,28 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
     }
 }
 
- void gen_cs_example_MTR(uint64_t& action_sum, uint64_t& event_sum, uint32_t& mtr_example, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels);
+ void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels);
 
+ void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, v_array<COST_SENSITIVE::label>& cs_labels);
+
+ void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> ec_seq, v_array<COST_SENSITIVE::label>& cs_labels);
+
+ template <bool is_learn>
+   void gen_cs_example(cb_to_cs_adf& c, v_array<example*>& ec_seq, v_array<COST_SENSITIVE::label>& cs_labels)
+   {
+     switch (c.cb_type)
+       {
+       case CB_TYPE_IPS:
+	 gen_cs_example_ips(ec_seq, cs_labels);
+	 break;
+       case CB_TYPE_DR:
+	 gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
+	 break;
+       case CB_TYPE_MTR:
+	 gen_cs_example_mtr(c, ec_seq, cs_labels);
+	 break;
+       default:
+	 THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
+       }
+   }
 }

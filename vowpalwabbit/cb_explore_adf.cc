@@ -178,8 +178,8 @@ namespace CB_EXPLORE_ADF{
     
     safety(probs, data.epsilon / num_actions, false);
     }*/
-  /*    
-  template <bool is_learn>
+    
+  /*  template <bool is_learn>
   void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
@@ -200,7 +200,7 @@ namespace CB_EXPLORE_ADF{
     //1. Compute loss vector
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
-    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    data.cbcs.known_cost = CB_ADF::get_observed_cost(examples);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     
     ec.l.cs = data.second_cs_label;

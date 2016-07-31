@@ -29,14 +29,14 @@ cb_class* get_observed_cost(CB::label& ld)
   return nullptr;
 }
 
-  void gen_cs_example_dr(COST_SENSITIVE::label& pred_scores, CB::cb_class& known_cost, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels, base_learner* scorer)
+  void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { //size_t mysize = examples.size();
   if (cs_labels.size() < examples.size())
   { cs_labels.resize(examples.size());
     cs_labels.end() = cs_labels.end_array;
   }
 
-  pred_scores.costs.erase();
+  c.pred_scores.costs.erase();
 
   bool shared = CB::ec_is_example_header(*examples[0]);
   int startK = 0;
@@ -48,27 +48,27 @@ cb_class* get_observed_cost(CB::label& ld)
     COST_SENSITIVE::wclass wc;
     wc.class_index = 0;
 
-    if (known_cost.action + startK == i)
-    { int known_index = known_cost.action;
-      known_cost.action = 0;
+    if (c.known_cost.action + startK == i)
+    { int known_index = c.known_cost.action;
+      c.known_cost.action = 0;
       //get cost prediction for this label
       // num_actions should be 1 effectively.
       // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<true>(scorer, &(known_cost), *(examples[i]), 0, 2);
-      known_cost.action = known_index;
+      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
+      c.known_cost.action = known_index;
     }
     else
-      wc.x = CB_ALGS::get_cost_pred<true>(scorer, nullptr, *(examples[i]), 0, 2);
+      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, nullptr, *(examples[i]), 0, 2);
 
     if (shared)
       wc.class_index = (uint32_t)i - 1;
     else
       wc.class_index = (uint32_t)i;
-    pred_scores.costs.push_back(wc); // done
+    c.pred_scores.costs.push_back(wc); // done
 
     //add correction if we observed cost for this action and regressor is wrong
-    if (known_cost.probability != -1 && known_cost.action + startK == i)
-    { wc.x += (known_cost.cost - wc.x) / known_cost.probability;
+    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
+    { wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
     }
     cs_labels[i].costs.erase();
     cs_labels[i].costs.push_back(wc);
@@ -89,7 +89,6 @@ cb_class* get_observed_cost(CB::label& ld)
 void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels)
 { if (cs_labels.size() < examples.size())
   { cs_labels.resize(examples.size());
-    // TODO: introduce operation
     cs_labels.end() = cs_labels.end_array;
   }
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -158,41 +157,43 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
     }
 }
 
-  void gen_cs_example_MTR(uint64_t& action_sum, uint64_t& event_sum, uint32_t& mtr_example, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels)
-{ mtr_ec_seq.erase();
-  bool shared = CB::ec_is_example_header(*(ec_seq[0]));
-  action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
-  if (!shared)
-    action_sum += 1;
-  event_sum++;
-  uint32_t keep_count = 0;
-
-  for (size_t i = 0; i < ec_seq.size(); i++)
-  { CB::label ld = ec_seq[i]->l.cb;
-
-    COST_SENSITIVE::wclass wc = {0, 0};
-
-    bool keep_example = false;
-    if (shared && i == 0)
-    { wc.x = -FLT_MAX;
-      keep_example = true;
-    }
-    else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-    { wc.x = ld.costs[0].cost;
-      mtr_example = (uint32_t)i;
-      keep_example = true;
-    }
-
-    else if (i == ec_seq.size() - 1)
-    { wc.x = FLT_MAX; //trigger end of multiline example.
-      keep_example = true;
-    }
-
-    if (keep_example)
-    { mtr_ec_seq.push_back(ec_seq[i]);
-      mtr_cs_labels[keep_count].costs.erase();
-      mtr_cs_labels[keep_count++].costs.push_back(wc);
-    }
+  void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, v_array<COST_SENSITIVE::label>& cs_labels)
+  { 
+    bool shared = CB::ec_is_example_header(*(ec_seq[0]));
+    c.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
+    if (!shared)
+      c.action_sum += 1;
+    c.event_sum++;
+    uint32_t keep_count = 0;
+    
+    c.mtr_ec_seq.erase();
+    cs_labels.erase();
+    for (size_t i = 0; i < ec_seq.size(); i++)
+      { CB::label ld = ec_seq[i]->l.cb;
+	
+	COST_SENSITIVE::wclass wc = {0, 0};
+	
+	bool keep_example = false;
+	if (shared && i == 0)
+	  { wc.x = -FLT_MAX;
+	    keep_example = true;
+	  }
+	else if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+	  { wc.x = ld.costs[0].cost;
+	    c.mtr_example = (uint32_t)i;
+	    keep_example = true;
+	  }
+	
+	else if (i == ec_seq.size() - 1)
+	  { wc.x = FLT_MAX; //trigger end of multiline example.
+	    keep_example = true;
+	  }
+	
+	if (keep_example)
+	  { c.mtr_ec_seq.push_back(ec_seq[i]);
+	    cs_labels[keep_count].costs.erase();
+	    cs_labels[keep_count++].costs.push_back(wc);
+	  }
+      }
   }
-}
 }
