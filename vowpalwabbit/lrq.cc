@@ -168,7 +168,7 @@ base_learner* lrq_setup(vw& all)
     return nullptr;
 
   LRQstate& lrq = calloc_or_throw<LRQstate>();
-  size_t maxk = 0;
+  uint32_t maxk = 0;
   lrq.all = &all;
 
   vector<string> arg = all.vm["lrq"].as<vector<string> > ();

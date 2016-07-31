@@ -127,7 +127,7 @@ public:
                    { v_array<char> affix_v = v_init<char>();
                      if (index != ' ') affix_v.push_back(index);
                      affix_v.push_back(is_prefix ? '+' : '-');
-                     affix_v.push_back('0' + len);
+                     affix_v.push_back('0' + (char)len);
                      affix_v.push_back('=');
                      push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
                      affix_v.push_back('\0');
