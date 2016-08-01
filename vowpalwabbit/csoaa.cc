@@ -363,9 +363,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
-{ //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
-  if (data.ec_seq.size() <= 0) return;  // nothing to do
-
+{ if (data.ec_seq.size() <= 0) return;  // nothing to do
   /////////////////////// handle label definitions
   if (ec_seq_is_label_definition(data.ec_seq))
   {
@@ -382,25 +380,25 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
 
   /////////////////////// add headers
-  size_t K = data.ec_seq.size();
-  size_t start_K = 0;
+  uint32_t K = (uint32_t)data.ec_seq.size();
+  uint32_t start_K = 0;
 
   if (ec_is_example_header(*data.ec_seq[0]))
   { start_K = 1;
-    for (size_t k=1; k<K; k++)
+    for (uint32_t k=1; k<K; k++)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
   bool isTest = check_ldf_sequence(data, start_K);
 
   /////////////////////// do prediction
-  size_t predicted_K = start_K;
+  uint32_t predicted_K = start_K;
   if(data.rank)
   { data.a_s.erase();
     data.stored_preds.erase();
     if (start_K > 0)
       data.stored_preds.push_back(data.ec_seq[0]->pred.a_s);
 
-    for (size_t k=start_K; k<K; k++)
+    for (uint32_t k=start_K; k<K; k++)
     { data.stored_preds.push_back(data.ec_seq[k]->pred.a_s);
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
@@ -414,7 +412,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   }
   else
   { float  min_score = FLT_MAX;
-    for (size_t k=start_K; k<K; k++)
+    for (uint32_t k=start_K; k<K; k++)
     { example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
       if (ec->partial_prediction < min_score)
@@ -426,9 +424,9 @@ void do_actual_learning(ldf& data, base_learner& base)
 
   /////////////////////// learn
   if (is_learn && !isTest)
-  { if (data.is_wap) do_actual_learning_wap(data, base, start_K);
-    else             do_actual_learning_oaa(data, base, start_K);
-  }
+    {if (data.is_wap) do_actual_learning_wap(data, base, start_K);
+      else             do_actual_learning_oaa(data, base, start_K);
+    }
 
   if(data.rank)
   { data.stored_preds[0].erase();

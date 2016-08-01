@@ -106,7 +106,12 @@ struct version_struct
     return s;
   }
   void from_string(const char* str)
-  { std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+  {
+#ifdef _WIN32
+	  sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
+#else
+	  std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+#endif
   }
 };
 
@@ -138,7 +143,7 @@ public:
   namedlabels(std::string label_list)
   { id2name = v_init<substring>();
     char* temp = calloc_or_throw<char>(1+label_list.length());
-    strncpy(temp, label_list.c_str(), strlen(label_list.c_str()));
+    memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
     substring ss = { temp, nullptr };
     ss.end = ss.begin + label_list.length();
     tokenize(',', ss, id2name);

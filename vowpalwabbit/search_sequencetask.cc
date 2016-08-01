@@ -353,7 +353,7 @@ void run(Search::search& sch, vector<example*>& ec)
 { task_data *data = sch.get_task_data<task_data>();
   Search::predictor P(sch, (ptag)0);
   for (ptag i=0; i<ec.size(); i++)
-  { for (size_t a=0; a<data->num_actions; a++)
+  { for (uint32_t a=0; a<data->num_actions; a++)
     { if (sch.predictNeedsExample())   // we can skip this work if `predict` won't actually use the example data
       { VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
@@ -364,7 +364,7 @@ void run(Search::search& sch, vector<example*>& ec)
       CS::label& lab = data->ldf_examples[a].l.cs;
       // need to tell search what the action id is, so that it can add history features correctly!
       lab.costs[0].x = 0.;
-      lab.costs[0].class_index = (uint64_t)a+1;
+      lab.costs[0].class_index = a+1;
       lab.costs[0].partial_prediction = 0.;
       lab.costs[0].wap_value = 0.;
     }

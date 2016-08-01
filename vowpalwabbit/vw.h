@@ -123,7 +123,7 @@ void save_predictor(vw& all, io_buf& buf);
   return (uint32_t)getHasher(hash)(ss, hash_base);
 }
 //Then use it as the seed for hashing features.
- inline uint32_t hash_feature(vw& all, std::string s, unsigned long u)
+ inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();

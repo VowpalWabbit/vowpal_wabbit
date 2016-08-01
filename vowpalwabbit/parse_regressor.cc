@@ -100,7 +100,6 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                                               "", read, msg, text);
       all.model_file_ver = buff2; //stored in all to check save_resume fix in gd
-
       VW::validate_version(all);
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)

@@ -385,7 +385,7 @@ base_learner* nn_setup(vw& all)
   nn& n = calloc_or_throw<nn>();
   n.all = &all;
   //first parse for number of hidden units
-  n.k = (uint64_t)vm["nn"].as<size_t>();
+  n.k = (uint32_t)vm["nn"].as<size_t>();
 
   if ( vm.count("dropout") )
   { n.dropout = true;
