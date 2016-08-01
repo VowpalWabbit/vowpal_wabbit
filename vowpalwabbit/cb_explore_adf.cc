@@ -42,10 +42,12 @@ namespace CB_EXPLORE_ADF{
     LEARNER::base_learner* cs_ldf_learner;
 
     GEN_CS::cb_to_cs_adf gen_cs;
-    v_array<COST_SENSITIVE::label> cs_labels;
+    COST_SENSITIVE::label cs_labels;
     v_array<CB::label> cb_labels;
 
-    v_array<COST_SENSITIVE::label> cs_labels_2;
+    COST_SENSITIVE::label cs_labels_2;
+
+    v_array<COST_SENSITIVE::label> prepped_cs_labels;
   };
 
   template<class T> void swap(T& ele1, T& ele2)
@@ -153,36 +155,13 @@ namespace CB_EXPLORE_ADF{
 	  for (uint32_t j = 1; j < count; j++)
 	    multiline_learn(base, examples, i);
       }
-    
+
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
     
     for (size_t i = 0; i < num_actions; i++) 
       preds[i].score = data.action_probs[preds[i].action].score;
   }
   
-  /*
-  void get_cover_probabilities(cb_explore_adf& data, base_learner& base, v_array<example*>& examples, v_array<action_score>& preds, uint32_t num_actions)
-  { 
-    float additive_probability = 1.f / (float)data.cover_size;
-    data.base_predictions.erase();
-    
-    for(uint32_t i = 0;i < num_actions;i++)
-      preds.push_back({i,0.});
-    
-    for (size_t i = 0; i < data.cover_size; i++)
-      { //get predicted cost-sensitive predictions
-	if (i == 0)
-	  data.cs_ldf_learner->predict(ec, i);
-	else
-	  data.cs_ldf_learner->predict(ec, i + 1);
-	uint32_t pred = ec.pred.multiclass;
-	preds[pred - 1].score += additive_probability;
-	data.preds.push_back((uint32_t)pred);
-      }
-    
-    safety(probs, data.epsilon / num_actions, false);
-    }*/
-  /*    
   template <bool is_learn>
   void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
@@ -209,32 +188,32 @@ namespace CB_EXPLORE_ADF{
     //2. Update functions
     for (size_t i = 0; i < data.cover_size; i++)
       { //Create costs of each action based on online cover
-	data.cs_labels_2.erase();
+	data.cs_labels_2.costs.erase();
 	for (uint32_t j = 0; j < num_actions; j++)
-	  { float pseudo_cost = data.cs_labels[j].costs[0].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm) + 1;
+	  { float pseudo_cost = data.cs_labels.costs[j].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm) + 1;
 	    COST_SENSITIVE::wclass wc = {pseudo_cost,j+1,0.,0.};
-	    data.cs_labels_2[j].class_index = j+1;
-	    data.cs_labels_2[j].x = pseudo_cost;
+	    data.cs_labels_2.costs[j].class_index = j+1;
+	    data.cs_labels_2.costs[j].x = pseudo_cost;
 	  }
 	if (i != 0)
-	  if (is_learn)
-	    multiline_learn(data.cs, examples, i+1);
-	  else
-	    multiline_predict(data.cs, examples, i+1);
-	if (actions_scores[predictions[i] - 1].score < min_prob)
-	  norm += max(0, additive_probability - (min_prob - action_scores[predictions[i] - 1].score));
+	  {
+	    if (is_learn)
+	      GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, i+1);
+	    else
+	      GEN_CS::call_cs_ldf<false>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, i+1);
+	  }
+	if (probs[preds[i].action - 1].score < min_prob)
+	  norm += max(0, additive_probability - (min_prob - probs[preds[i].action - 1].score));
 	else
 	  norm += additive_probability;
-	action_scores[predictions[i] - 1].score += additive_probability;
+	probs[preds[i].action - 1].score += additive_probability;
       }
     
-    ec.l.cb = data.cb_label;
-
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
     for (size_t i = 0; i < num_actions; i++) 
       preds[i].score = data.action_probs[preds[i].action].score;
-      }*/
-  
+  }
+ 
   template <bool is_learn>
   void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   {

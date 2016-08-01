@@ -72,53 +72,15 @@ struct cb_adf
   return known_cost;
 }
 
-template<bool is_learn>
-void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples,
-                           v_array<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels)
-{ // first of all, clear the container mydata.array.
-  cb_labels.erase();
-  if (mydata.prepped_cs_labels.size() < cs_labels.costs.size())
-    {
-      mydata.prepped_cs_labels.resize(cs_labels.costs.size()+1);
-      mydata.prepped_cs_labels.end() = mydata.prepped_cs_labels.end_array;
-    }
-
-  // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
-  size_t index = 0;
-  for (example* ec : examples)
-  { cb_labels.push_back(ec->l.cb);
-    mydata.prepped_cs_labels[index].costs.erase();
-    if (index != examples.size()-1)
-      mydata.prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    else
-      mydata.prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
-    ec->l.cs = mydata.prepped_cs_labels[index++];
-  }
-
-  // 2nd: predict for each ex
-  // // call base.predict for each vw exmaple in the sequence
-  for (example* ec : examples)
-    if (is_learn)
-      base.learn(*ec);
-    else
-      base.predict(*ec);
-  
-  // 3rd: restore cb_label for each example
-  // (**ec).l.cb = array.element.
-  size_t i = 0;
-  for (example* ec : examples)
-    ec->l.cb = cb_labels[i++];
-}
-
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { gen_cs_example_ips(examples, mydata.cs_labels);
-  call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+  GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
 }
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
   gen_cs_example_dr(mydata.gen_cs, examples, mydata.cs_labels);
-  call_predict_or_learn<true>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+  GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
 }
 
 template<bool predict>
@@ -126,7 +88,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { //uint32_t action = 0;
   if (predict) //first get the prediction to return
   { gen_cs_example_ips(examples, mydata.cs_labels);
-    call_predict_or_learn<false>(mydata, base, examples, mydata.cb_labels, mydata.cs_labels);
+    GEN_CS::call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
     swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
@@ -136,7 +98,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
-  call_predict_or_learn<true>(mydata, base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels);
+  GEN_CS::call_cs_ldf<true>(base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
   swap(examples[0]->pred.a_s, mydata.a_s);
@@ -172,7 +134,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 
   if (isTest || !is_learn)
   { gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
-    call_predict_or_learn<false>(data, base, data.ec_seq, data.cb_labels, data.cs_labels);
+    call_cs_ldf<false>(base, data.ec_seq, data.cb_labels, data.cs_labels, data.prepped_cs_labels);
   }
   else
   { switch (data.gen_cs.cb_type)

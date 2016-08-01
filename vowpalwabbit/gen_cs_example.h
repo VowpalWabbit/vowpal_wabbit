@@ -201,4 +201,42 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 	 THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
        }
    }
+
+template<bool is_learn>
+  void call_cs_ldf(LEARNER::base_learner& base, v_array<example*>& examples, v_array<CB::label>& cb_labels, 
+	       COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, size_t id = 0)
+  { 
+    cb_labels.erase();
+    if (prepped_cs_labels.size() < cs_labels.costs.size())
+      {
+	prepped_cs_labels.resize(cs_labels.costs.size()+1);
+	prepped_cs_labels.end() = prepped_cs_labels.end_array;
+      }
+    
+    // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
+    size_t index = 0;
+    for (example* ec : examples)
+      { cb_labels.push_back(ec->l.cb);
+	prepped_cs_labels[index].costs.erase();
+	if (index != examples.size()-1)
+	  prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
+	else
+	  prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
+	ec->l.cs = prepped_cs_labels[index++];
+      }
+    
+    // 2nd: predict for each ex
+    // // call base.predict for each vw exmaple in the sequence
+    for (example* ec : examples)
+      if (is_learn)
+	base.learn(*ec, id);
+      else
+	base.predict(*ec, id);
+    
+    // 3rd: restore cb_label for each example
+    // (**ec).l.cb = array.element.
+    size_t i = 0;
+    for (example* ec : examples)
+      ec->l.cb = cb_labels[i++];
+  }
 }
