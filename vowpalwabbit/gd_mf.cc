@@ -33,7 +33,7 @@ struct gdmf
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 { vw& all = *d.all;
-  weight_vector& weights = *all.wv;
+  weight_parameters& weights = *all.weights;
   uint64_t mask = weights.mask();
   for (features& fs : ec)
   { bool audit = !fs.space_names.empty();
@@ -91,7 +91,7 @@ float mf_predict(gdmf& d, example& ec)
   float linear_prediction = 0.;
   // linear terms
   for (features& fs : ec)
-    GD::foreach_feature<float, GD::vec_add>(*all.wv, fs, linear_prediction);
+    GD::foreach_feature<float, GD::vec_add>(*all.weights, fs, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -107,12 +107,12 @@ float mf_predict(gdmf& d, example& ec)
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(*all.wv, ec.feature_space[(int)i[0]], x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add>(*all.weights, ec.feature_space[(int)i[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(*all.wv, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add>(*all.weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -144,14 +144,14 @@ float mf_predict(gdmf& d, example& ec)
 }
 
 
-void sd_offset_update(weight_vector& weights, features& fs, uint64_t offset, float update, float regularization)
+void sd_offset_update(weight_parameters& weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
     weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
 }
 
 void mf_train(gdmf& d, example& ec)
 { vw& all = *d.all;
-  weight_vector& weights = *all.wv;
+  weight_parameters& weights = *all.weights;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -197,8 +197,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if(read)
   { initialize_regressor(*all);
     if (all->random_weights)
-	{ weight_vector& w = *(all->wv);
-	  for (weight_vector::iterator j = w.begin(); j != w.end(); ++j)
+	{ weight_parameters& w = *(all->weights);
+	  for (weight_parameters::iterator j = w.begin(); j != w.end(); ++j)
 		  *j = (float)(0.1 * frand48());
     }  
   }
@@ -206,7 +206,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-	 weight_vector& w = *(all->wv);
+	 weight_parameters& w = *(all->weights);
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -215,8 +215,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { weight_vector::iterator iter = w.begin(0)+ i;
-		for (weight_vector::iterator::w_iter v = iter.begin(); v != iter.end(K); ++v)
+	  { weight_parameters::iterator iter = w.begin(0)+ i;
+		for (weight_parameters::iterator::w_iter v = iter.begin(); v != iter.end(K); ++v)
 		{  msg << &(*v) << " ";
 		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
 				  "", read, msg, text);

@@ -1390,12 +1390,12 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
   vw* new_model = VW::initialize(init_args.str().c_str());
 
-  delete(new_model->wv); 
-  new_model->wv = nullptr; 
+  delete(new_model->weights); 
+  new_model->weights = nullptr; 
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
-  new_model->wv = vw_model->wv; // regressor
+  new_model->weights = vw_model->weights; // regressor
   new_model->sd = vw_model->sd; // shared data
 
   new_model->seeded = true;
@@ -1484,8 +1484,8 @@ void finish(vw& all, bool delete_all)
   }
   
   if (!all.seeded) // don't free weight vector if it is shared with another instance
-  {  delete all.wv;
-     all.wv = nullptr; 
+  {  delete all.weights;
+     all.weights = nullptr; 
   }
   free_parser(all);
   finalize_source(all.p);

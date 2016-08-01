@@ -452,7 +452,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
 #else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
-      all.wv->share(all.length());
+      all.weights->share(all.length());
 
       // learning state to be shared across children
       shared_data* sd = (shared_data *)mmap(0,sizeof(shared_data),

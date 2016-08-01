@@ -19,12 +19,12 @@ using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(vw& all, weight_vector& weights, size_t o)
+void accumulate(vw& all, weight_parameters& weights, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
-  weight_vector local_grad(length);
+  weight_parameters local_grad(length);
  
-  weight_vector::iterator i = weights.begin(o);
-  weight_vector::iterator j = local_grad.begin();
+  weight_parameters::iterator i = weights.begin(o);
+  weight_parameters::iterator j = local_grad.begin();
   for (; i != weights.end(o); ++i, ++j)
 	  *j = *i;
 
@@ -42,13 +42,13 @@ float accumulate_scalar(vw& all, float local_sum)
   return temp;
 }
 
-void accumulate_avg(vw& all, weight_vector& weights, size_t o)
+void accumulate_avg(vw& all, weight_parameters& weights, size_t o)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
   float numnodes = (float)all.all_reduce->total;
-  weight_vector local_grad(length);
+  weight_parameters local_grad(length);
 
-  weight_vector::iterator i = weights.begin(o);
-  weight_vector::iterator j = local_grad.begin();
+  weight_parameters::iterator i = weights.begin(o);
+  weight_parameters::iterator j = local_grad.begin();
   for (; i != weights.end(); ++i, ++j)
 	  *j = *i;
 
@@ -74,26 +74,26 @@ float min_elem(float* arr, int length)
   return min;
 }
 
-void accumulate_weighted_avg(vw& all, weight_vector& weights)
+void accumulate_weighted_avg(vw& all, weight_parameters& weights)
 { if(!all.adaptive)
   { cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
-  weight_vector local_weights(length);
+  weight_parameters local_weights(length);
 
-  weight_vector::iterator i = weights.begin(1);
-  weight_vector::iterator j = local_weights.begin();
+  weight_parameters::iterator i = weights.begin(1);
+  weight_parameters::iterator j = local_weights.begin();
   for (; i != weights.end(1); ++i, ++j)
 	  *j = *i;
 
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights.first(), length); 
 
-  weight_vector::iterator weights_0 = weights.begin(0); 
-  weight_vector::iterator weights_1 = weights.begin(1); 
-  weight_vector::iterator weights_normal_idx = weights.begin(all.normalized_idx);
-  weight_vector::iterator local = local_weights.begin();
+  weight_parameters::iterator weights_0 = weights.begin(0); 
+  weight_parameters::iterator weights_1 = weights.begin(1); 
+  weight_parameters::iterator weights_normal_idx = weights.begin(all.normalized_idx);
+  weight_parameters::iterator local = local_weights.begin();
 
   for (; weights_0 != weights.end(); ++weights_0, ++weights_1, ++weights_normal_idx, ++local)
 	if (*local > 0)

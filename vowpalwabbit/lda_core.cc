@@ -560,7 +560,7 @@ v_array<float> old_gamma = v_init<float>();
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_vector& weights, example *ec, float)
+float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_parameters& weights, example *ec, float)
 { new_gamma.erase();
   old_gamma.erase();
 
@@ -628,11 +628,11 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   uint64_t length = (uint64_t)1 << all->num_bits;
   if (read)
   { initialize_regressor(*all);
-    weight_vector& weights = *(all->wv);
-	weight_vector::iterator j = weights.begin(0);
-	weight_vector::iterator w_lda = weights.begin(all->lda);
+    weight_parameters& weights = *(all->weights);
+	weight_parameters::iterator j = weights.begin(0);
+	weight_parameters::iterator w_lda = weights.begin(all->lda);
 	for (; j != weights.end(); ++j, ++w_lda)
-	{ for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(all->lda); ++k)
+	{ for (weight_parameters::iterator::w_iter k = j.begin(); k != j.end(all->lda); ++k)
 	  { if (all->random_weights)
 	    { *k = (float)(-log(frand48() + 1e-6) + 1.0f);
 		  *k *= (float)(l.lda_D / all->lda / all->length() * 200);
@@ -645,16 +645,16 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   { uint64_t i = 0;
     stringstream msg;
     size_t brw = 1;
-	weight_vector& weights = *(all->wv);
+	weight_parameters& weights = *(all->weights);
     do
     { brw = 0;
-	  weight_vector::iterator iter = weights.begin(0);
+	  weight_parameters::iterator iter = weights.begin(0);
 
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
 
 	  if (brw != 0)	  
-		for (weight_vector::iterator::w_iter v = iter.begin(); v != iter.end(all->lda); ++v)
+		for (weight_parameters::iterator::w_iter v = iter.begin(); v != iter.end(all->lda); ++v)
         { msg << *v + l.lda_rho << " ";
           brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
         }
@@ -701,11 +701,11 @@ void learn_batch(lda &l)
       l.total_lambda.push_back(0.f);
 
     size_t stride = 1 << l.all->stride_shift;
-	weight_vector& weights = *(l.all->wv);
-	weight_vector::iterator iter = weights.begin(0);
+	weight_parameters& weights = *(l.all->weights);
+	weight_parameters::iterator iter = weights.begin(0);
 	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{
-		weight_vector::iterator::w_iter k_iter = iter.begin();
+		weight_parameters::iterator::w_iter k_iter = iter.begin();
 		for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
 			l.total_lambda[k] += *k_iter;
 	}
@@ -733,7 +733,7 @@ void learn_batch(lda &l)
   { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
-  weight_vector& weights = *(l.all->wv);
+  weight_parameters& weights = *(l.all->weights);
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
@@ -823,16 +823,16 @@ void end_pass(lda &l)
 }
 
 void end_examples(lda &l)
-{  weight_vector& w = *(l.all->wv);
-   weight_vector::iterator i = w.begin(l.all->lda);
-   weight_vector::iterator j = w.begin(0);
+{  weight_parameters& w = *(l.all->weights);
+   weight_parameters::iterator i = w.begin(l.all->lda);
+   weight_parameters::iterator j = w.begin(0);
    for (; i != w.end(l.all->lda); ++i, ++j)
    { 
     float decay_component =
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + *i)];
     float decay = fmin(1.f, correctedExp(decay_component));
 
-	for (weight_vector::iterator::w_iter k = j.begin(); k != j.end(l.all->lda); ++k)
+	for (weight_parameters::iterator::w_iter k = j.begin(); k != j.end(l.all->lda); ++k)
       *k *= decay;
    }
 }

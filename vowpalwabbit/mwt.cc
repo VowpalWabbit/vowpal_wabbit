@@ -55,7 +55,7 @@ namespace MWT {
       cout << "error " << val << " is not a valid action " << endl;
 
     uint32_t value = (uint32_t) val;
-    uint64_t new_index = ((index & c.all->wv->mask()) >> c.all->stride_shift);
+    uint64_t new_index = ((index & c.all->weights->mask()) >> c.all->stride_shift);
 
     if (!c.evals[new_index].seen)
       {
@@ -77,7 +77,7 @@ namespace MWT {
 	//For each nonzero feature in observed namespaces, check it's value.
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
-	    GD::foreach_feature<mwt, value_policy>(*c.all->wv, ec.feature_space[ns], c);
+	    GD::foreach_feature<mwt, value_policy>(*c.all->weights, ec.feature_space[ns], c);
 	for (uint64_t policy : c.policies)
 	  {
 	    c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action);
@@ -97,7 +97,7 @@ namespace MWT {
 		  uint32_t stride_shift = c.all->stride_shift;
 		  for ( features::iterator& f : ec.feature_space[ns])
 		    {
-		      uint64_t new_index=((f.index()& c.all->wv->mask()) >> stride_shift)*c.num_classes +f.value();
+		      uint64_t new_index=((f.index()& c.all->weights->mask()) >> stride_shift)*c.num_classes +f.value();
 		      c.feature_space[ns].push_back(new_index << stride_shift, 1);
 		    }
 		}

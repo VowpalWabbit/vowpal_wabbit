@@ -92,7 +92,7 @@ namespace VW
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
   fs.stride_shift = all.stride_shift;
-  fs.mask = (uint64_t)all.wv->mask() >> all.stride_shift;
+  fs.mask = (uint64_t)all.weights->mask() >> all.stride_shift;
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -130,8 +130,8 @@ flat_example* flatten_example(vw& all, example *ec)
 
   full_features_and_source ffs;
   ffs.stride_shift = all.stride_shift;
-  if (all.wv != nullptr)  //TODO:temporary fix. all.wv is not initialized at this point in some cases.
-    ffs.mask = (uint64_t)all.wv->mask() >> all.stride_shift;
+  if (all.weights != nullptr)  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
+    ffs.mask = (uint64_t)all.weights->mask() >> all.stride_shift;
   else
     ffs.mask = (uint64_t)LONG_MAX >> all.stride_shift;
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);

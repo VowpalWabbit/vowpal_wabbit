@@ -71,7 +71,7 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
 { vw& all = *b.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  GD::multipredict_info mp = { count, step, pred, all.wv, (float)all.sd->gravity };
+  GD::multipredict_info mp = { count, step, pred, all.weights, (float)all.sd->gravity };
   GD::foreach_feature<GD::multipredict_info, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)

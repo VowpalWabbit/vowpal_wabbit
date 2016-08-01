@@ -134,9 +134,9 @@ void end_pass(gd& g)
   sync_weights(all);
   if (all.all_reduce != nullptr)
   { if (all.adaptive)
-      accumulate_weighted_avg(all, *all.wv);
+      accumulate_weighted_avg(all, *all.weights);
     else
-      accumulate_avg(all, *all.wv, 0);
+      accumulate_avg(all, *all.weights, 0);
   }
   all.eta *= all.eta_decay_rate;
   if (all.save_per_pass)
@@ -216,7 +216,7 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 { 
-  weight_vector& weights = *dat.all.wv;
+  weight_parameters& weights = *dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = dat.all.stride_shift;
 
@@ -253,7 +253,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 }
 
 void print_features(vw& all, example& ec)
-{ weight_vector& weights = *all.wv;
+{ weight_parameters& weights = *all.weights;
 
   if (all.lda > 0)
   { size_t count = 0;
@@ -354,8 +354,8 @@ void predict(gd& g, base_learner&, example& ec)
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{ weight_vector::iterator w = mp.wv->begin();
-  w += (fi & mp.wv->mask()); //TODO: get rid of mask()
+{ weight_parameters::iterator w = mp.weights->begin();
+  w += (fi & mp.weights->mask()); //TODO: get rid of mask()
   for (size_t c=0; c<mp.count; c++)
   { mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
     w += mp.step;
@@ -368,7 +368,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, g.all->wv, (float)all.sd->gravity };
+  multipredict_info mp = { count, step, pred, g.all->weights, (float)all.sd->gravity };
   if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
   else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
   if (all.sd->contraction != 1.)
@@ -570,8 +570,8 @@ void learn(gd& g, base_learner& base, example& ec)
 void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  weight_vector& weights = *all.wv;
-  weight_vector::iterator w = weights.begin(0);
+  weight_parameters& weights = *all.weights;
+  weight_parameters::iterator w = weights.begin(0);
   for(; w != weights.end() && all.reg_mode; ++w)
     *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
@@ -580,14 +580,14 @@ void sync_weights(vw& all)
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint64_t length = (uint64_t)1 << all.num_bits;
-  weight_vector& weights = *all.wv;
+  weight_parameters& weights = *all.weights;
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
   
   if(all.print_invert)   //write readable model with feature names
   { 
-	weight_vector::iterator v = weights.begin(0);
+	weight_parameters::iterator v = weights.begin(0);
 	stringstream msg;
     typedef std::map< std::string, size_t> str_int_map;
     
@@ -609,7 +609,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
   do
   { brw = 1;
-    weight_vector::iterator v = weights.begin(0);
+    weight_parameters::iterator v = weights.begin(0);
     if (read)
       { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
@@ -742,14 +742,14 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
   uint64_t length = (uint64_t)1 << all.num_bits;
 
-  weight_vector& weights = *all.wv;
+  weight_parameters& weights = *all.weights;
   uint32_t i = 0;
   size_t brw = 1;
   do
   { brw = 1;
-    weight_vector::iterator v = weights.begin(0);
-    weight_vector::iterator v1 = weights.begin(1);
-    weight_vector::iterator v2 = weights.begin(2);
+    weight_parameters::iterator v = weights.begin(0);
+    weight_parameters::iterator v1 = weights.begin(1);
+    weight_parameters::iterator v2 = weights.begin(2);
     if (read)
     { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -811,8 +811,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
     if(all.adaptive && all.initial_t > 0)
-	{  weight_vector& weights = *all.wv;
-	   weight_vector::iterator w = weights.begin(1);	
+	{  weight_parameters& weights = *all.weights;
+	   weight_parameters::iterator w = weights.begin(1);	
       for (; w != weights.end(1); ++w)
       { *w = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be

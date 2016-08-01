@@ -7,7 +7,7 @@
 
 typedef float weight;
 
-class weight_vector;
+class weight_parameters;
 
 template <typename T> 
 class weights_iterator_iterator
@@ -77,7 +77,7 @@ public:
 	w_iter end(size_t offset) { return w_iter(_current + offset); }
 };
 
-class weight_vector //different name? (previously array_parameters)
+class weight_parameters 
 {
 private:
 	weight* _begin;
@@ -88,17 +88,17 @@ public:
 	typedef weights_iterator<weight> iterator;
 	typedef weights_iterator<const weight> const_iterator;
 
-	weight_vector(size_t length, uint32_t stride_shift=0)
+	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
 		_stride_shift(stride_shift)
 	{ }
 
 	//disable copy, move constructor and assignment
-	weight_vector(const weight_vector &) = delete;
-	weight_vector(weight_vector &&) = delete;
-	weight_vector& operator=(const weight_vector &) = delete;
-	weight_vector& operator=(weight_vector &&) = delete;
+	weight_parameters(const weight_parameters &) = delete;
+	weight_parameters(weight_parameters &&) = delete;
+	weight_parameters& operator=(const weight_parameters &) = delete;
+	weight_parameters& operator=(weight_parameters &&) = delete;
 
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
@@ -133,7 +133,7 @@ public:
 	}
 	#endif
 	
-	~weight_vector()
+	~weight_parameters()
 	{  if (_begin != nullptr)
 	   {  free(_begin);
 	      _begin = nullptr;

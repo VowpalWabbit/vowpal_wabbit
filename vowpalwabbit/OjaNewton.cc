@@ -53,25 +53,25 @@ struct OjaNewton {
     bool random_init;
 
 	void initialize_Z()
-	{  weight_vector& weights = *(all->wv);
+	{  weight_parameters& weights = *(all->weights);
        uint32_t length = 1 << all->num_bits;
 	   if (normalize) { // initialize normalization part
-		 for (weight_vector::iterator i = weights.begin(NORM2); i != weights.end(NORM2); ++i)
+		 for (weight_parameters::iterator i = weights.begin(NORM2); i != weights.end(NORM2); ++i)
 		   *i = 0.1;
 	    }
         if(!random_init) {
             // simple initialization
-		  weight_vector::iterator iter = weights.begin(0) + 1;
+		  weight_parameters::iterator iter = weights.begin(0) + 1;
 		  for (int i = 1; i <= m; ++i, ++iter)
-		  { weight_vector::iterator::w_iter j = iter.begin() + i;
+		  { weight_parameters::iterator::w_iter j = iter.begin() + i;
 			*j = 1;
 		  }
         }
 	    else {
             // more complicated initialization: orthgonal basis of a random matrix
 	    const double PI = 3.1415927;
-		for (weight_vector::iterator i = weights.begin(0); i != weights.end(); ++i)
-		  for (weight_vector::iterator::w_iter j = i.begin() + 1; j != i.end(m + 1); ++j)
+		for (weight_parameters::iterator i = weights.begin(0); i != weights.end(); ++i)
+		  for (weight_parameters::iterator::w_iter j = i.begin() + 1; j != i.end(m + 1); ++j)
 		  {  double r1 = frand48();
 		     double r2 = frand48();
 			 *j = sqrt(-2 * log(r1)) * cos(2 * PI * r2);
@@ -80,8 +80,8 @@ struct OjaNewton {
           for (int j = 1; j <= m; j++) {
              for (int k = 1; k <= j - 1; k++) {
 	            double tmp = 0;
-				weight_vector::iterator w_j = weights.begin(j);
-				weight_vector::iterator w_k = weights.begin(k);
+				weight_parameters::iterator w_j = weights.begin(j);
+				weight_parameters::iterator w_k = weights.begin(k);
 		        for (; w_j != weights.end(j); ++w_j, ++w_k) 
 		          tmp += (*w_j) * (*w_k);
 				w_j = weights.begin(j);
@@ -90,7 +90,7 @@ struct OjaNewton {
 		          *w_j -= tmp * (*w_k);
 	         }
 	        double norm = 0;
-			weight_vector::iterator w_j = weights.begin(j);
+			weight_parameters::iterator w_j = weights.begin(j);
 			for (; w_j != weights.end(j); ++w_j)
                norm += (*w_j) * (*w_j);
             norm = sqrt(norm);
@@ -271,9 +271,9 @@ struct OjaNewton {
 
         uint32_t length = 1 << all->num_bits;
         //size_t stride_shift = all->stride_shift;
-        weight_vector& weights = *(all->wv);
-		for (weight_vector::iterator i = weights.begin(0); i != weights.end(); ++i)
-		{  weight_vector::iterator::w_iter w_j = i.begin() + 1;
+        weight_parameters& weights = *(all->weights);
+		for (weight_parameters::iterator i = weights.begin(0); i != weights.end(); ++i)
+		{  weight_parameters::iterator::w_iter w_j = i.begin() + 1;
 		   for (int j = 1; j <= m; ++j, ++w_j)
 		     *i += *w_j * b[j] * D[j];
 		}
@@ -281,15 +281,15 @@ struct OjaNewton {
 
         //third step: Z <- ADZ, A, D <- Identity
 	    //double norm = 0;
-		weight_vector::iterator iter = weights.begin(0);
+		weight_parameters::iterator iter = weights.begin(0);
         for (uint32_t i = 0; i < length; ++i, ++iter) {
             memset(tmp, 0, sizeof(double) * (m+1));
 			for (int j = 1; j <= m; j++)
-			{ weight_vector::iterator::w_iter w_k = iter.begin() + 1;
+			{ weight_parameters::iterator::w_iter w_k = iter.begin() + 1;
 			  for (int h = 1; h <= m; ++h, ++w_k)
 			    tmp[j] += A[j][h] * D[h] * (*w_k);
 			}
-			weight_vector::iterator::w_iter w_j = iter.begin() + 1;
+			weight_parameters::iterator::w_iter w_j = iter.begin() + 1;
             for (int j = 1; j <= m; ++j, ++w_j) {
 		      //norm = max(norm, fabs(tmp[j]));
                *w_j = tmp[j];
