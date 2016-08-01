@@ -77,6 +77,31 @@ namespace VW
         CATCHRETHROW
     }
 
+	Dictionary<int, float>^ VowpalWabbitCostSensitiveConfidencePredictionFactory::Create(vw* vw, example* ex)
+	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+		size_t length;
+		v_array<float> confidence_scores;
+		
+		try {
+			confidence_scores = VW::get_cost_sensitive_prediction_confidence_scores(ex, length);
+		}
+		CATCHRETHROW
+
+		if (length > Int32::MaxValue)
+			throw gcnew ArgumentOutOfRangeException("Cost Sensitive predictions too large");
+
+		auto values = gcnew Dictionary<int, float>((int)length);
+		for (int i = 0; i < length; i++) {
+			values->Add(i + 1, confidence_scores[i]);
+		}
+
+		return values;
+	}
+
     cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
     {
 #if _DEBUG

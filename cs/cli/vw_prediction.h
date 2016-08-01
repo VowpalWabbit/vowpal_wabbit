@@ -84,6 +84,19 @@ namespace VW
             virtual float Create(vw* vw, example* ex) sealed;
         };
 
+		/// <summary>
+		/// A cost sensitive prediction result with associated confidence score
+		/// For -oaa --probabilities
+		/// </summary>
+		public ref class VowpalWabbitCostSensitiveConfidencePredictionFactory sealed : IVowpalWabbitPredictionFactory<Dictionary<int, float>^>
+		{	
+		public:
+			/// <summary>
+			/// Extracts cost sensitive prediction results from example, including confidence score.
+			/// </summary>
+			virtual Dictionary<int, float>^ Create(vw* vw, example* ex) sealed;
+		};
+
         /// <summary>
         /// A multi label prediction result.
         /// </summary>
