@@ -32,7 +32,6 @@ cb_class* get_observed_cost(CB::label& ld)
   void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
 { //size_t mysize = examples.size();
   c.pred_scores.costs.erase();
-
   bool shared = CB::ec_is_example_header(*examples[0]);
   int startK = 0;
   if (shared) startK = 1;
@@ -41,8 +40,7 @@ cb_class* get_observed_cost(CB::label& ld)
   for (size_t i = 0; i < examples.size(); i++)
   { if (example_is_newline_not_header(*examples[i])) continue;
 
-    COST_SENSITIVE::wclass wc;
-    wc.class_index = 0;
+    COST_SENSITIVE::wclass wc = {0.,0,0.,0.};
 
     if (c.known_cost.action + startK == i)
     { int known_index = c.known_cost.action;
@@ -64,8 +62,7 @@ cb_class* get_observed_cost(CB::label& ld)
 
     //add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
-      { wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
-      }
+      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
     cs_labels.costs.push_back(wc);
   }
 
@@ -80,7 +77,7 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
 { 
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (uint32_t i = 0; i < examples.size(); i++)
+  for (uint32_t i = 0; i < examples.size()-1; i++)
   { CB::label ld = examples[i]->l.cb;
 
     COST_SENSITIVE::wclass wc = {0.,i,0.,0.};

@@ -161,13 +161,16 @@ namespace CB_EXPLORE_ADF{
     for (size_t i = 0; i < num_actions; i++) 
       preds[i].score = data.action_probs[preds[i].action].score;
   }
-  
+
   template <bool is_learn>
   void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
     if (is_learn)
-      multiline_learn(base, examples);
+      {
+	GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
+	multiline_learn(base, examples);
+      }
     else
       multiline_predict(base, examples);
 
@@ -177,41 +180,40 @@ namespace CB_EXPLORE_ADF{
     float additive_probability = 1.f / (float)data.cover_size;
     float min_prob = data.epsilon / num_actions;
     v_array<action_score>& probs = data.action_probs;
+    probs.erase();
     for(uint32_t i = 0;i < num_actions;i++)
-      probs[i] = {i,0.};
-
-    //1. Compute loss vector
-    data.gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
-    GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
+      probs.push_back({i,0.});
+    probs[preds[0].action].score += additive_probability;
     
-    float norm = min_prob * num_actions;
-    //2. Update functions
-    for (size_t i = 0; i < data.cover_size; i++)
+    uint32_t shared = CB::ec_is_example_header(*examples[0]) ? 1 : 0;
+    
+    float norm = min_prob * num_actions + (additive_probability - min_prob);
+    for (size_t i = 1; i < data.cover_size; i++)
       { //Create costs of each action based on online cover
-	data.cs_labels_2.costs.erase();
-	for (uint32_t j = 0; j < num_actions; j++)
-	  { float pseudo_cost = data.cs_labels.costs[j].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm) + 1;
-	    COST_SENSITIVE::wclass wc = {pseudo_cost,j+1,0.,0.};
-	    data.cs_labels_2.costs[j].class_index = j+1;
-	    data.cs_labels_2.costs[j].x = pseudo_cost;
-	  }
-	if (i != 0)
+	if (is_learn)
 	  {
-	    if (is_learn)
-	      GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, i+1);
-	    else
-	      GEN_CS::call_cs_ldf<false>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, i+1);
+	    data.cs_labels_2.costs.erase();
+	    if (shared > 0)
+	      data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
+	    for (uint32_t j = 0; j < num_actions; j++)
+	      { float pseudo_cost = data.cs_labels.costs[j+shared].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm);
+		data.cs_labels_2.costs.push_back({pseudo_cost,j,0.,0.});
+	      }
+	    GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2, data.prepped_cs_labels, i+1);
 	  }
-	if (probs[preds[i].action - 1].score < min_prob)
-	  norm += max(0, additive_probability - (min_prob - probs[preds[i].action - 1].score));
+	else
+	  GEN_CS::call_cs_ldf<false>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2, data.prepped_cs_labels, i+1);
+	uint32_t action = preds[0].action;
+	if (probs[action].score < min_prob)
+	  norm += max(0, additive_probability - (min_prob - probs[action].score));
 	else
 	  norm += additive_probability;
-	probs[preds[i].action - 1].score += additive_probability;
+	probs[action].score += additive_probability;
       }
     
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
     for (size_t i = 0; i < num_actions; i++) 
-      preds[i].score = data.action_probs[preds[i].action].score;
+      preds[i].score = probs[preds[i].action].score;
   }
  
   template <bool is_learn>
@@ -249,6 +251,13 @@ namespace CB_EXPLORE_ADF{
   {
     data.ec_seq.delete_v();
     data.action_probs.delete_v();
+    data.cs_labels.costs.delete_v();
+    data.cs_labels_2.costs.delete_v();
+    data.cb_labels.delete_v();
+    for(size_t i = 0; i < data.prepped_cs_labels.size(); i++)
+      data.prepped_cs_labels[i].costs.delete_v();
+    data.prepped_cs_labels.delete_v();
+    data.gen_cs.pred_scores.costs.delete_v();
   }
 
 
@@ -268,9 +277,7 @@ namespace CB_EXPLORE_ADF{
     for (size_t i = 0; i < (*ec_seq).size(); i++)
       if (!CB::ec_is_example_header(*(*ec_seq)[i])) {
         num_features += (*ec_seq)[i]->num_features;
-        //cout<<(*ec_seq)[i]->num_features<<" ";
       }
-    //cout<<endl;
 
     all.sd->total_features += num_features;
 
@@ -278,10 +285,8 @@ namespace CB_EXPLORE_ADF{
     if (c.gen_cs.known_cost.probability > 0) {
       for (uint32_t i = 0; i < preds.size(); i++) {
         float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
-        //cout<<l<<":"<<l*preds[i].score<<" ";
         loss += l*preds[i].score;
       }
-      //cout<<endl;
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
     }
@@ -347,25 +352,51 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
+    bool isTest = test_adf_sequence(data);
     data.gen_cs.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
-    switch (data.explore_type)
-    {
-    case EXPLORE_FIRST:
-      predict_or_learn_first<is_learn>(data, base, data.ec_seq);
-      break;
-    case EPS_GREEDY:
-      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
-      break;
-    case SOFTMAX:
-      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
-      break;
-    case BAG_EXPLORE:
-      predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
-      break;
-    default:
-      THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
-    }
+    if (isTest || !is_learn)
+      switch (data.explore_type)
+	{
+	case EXPLORE_FIRST:
+	  predict_or_learn_first<false>(data, base, data.ec_seq);
+	  break;
+	case EPS_GREEDY:
+	  predict_or_learn_greedy<false>(data, base, data.ec_seq);
+	  break;
+	case SOFTMAX:
+	  predict_or_learn_softmax<false>(data, base, data.ec_seq);
+	  break;
+	case BAG_EXPLORE:
+	  predict_or_learn_bag<false>(data, base, data.ec_seq);
+	  break;
+	case COVER:
+	  predict_or_learn_cover<false>(data, base, data.ec_seq);
+	  break;
+	default:
+	  THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+	}
+    else
+      switch (data.explore_type)
+	{
+	case EXPLORE_FIRST:
+	  predict_or_learn_first<is_learn>(data, base, data.ec_seq);
+	  break;
+	case EPS_GREEDY:
+	  predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
+	  break;
+	case SOFTMAX:
+	  predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
+	  break;
+	case BAG_EXPLORE:
+	  predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
+	  break;
+	case COVER:
+	  predict_or_learn_cover<is_learn>(data, base, data.ec_seq);
+	  break;
+	default:
+	  THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+	}
   }
 
 
@@ -434,7 +465,8 @@ base_learner* cb_explore_adf_setup(vw& all)
     }
   if (vm.count("cover"))
     { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
-      data.cs_ldf_learner = all.cost_sensitive;
+      data.explore_type = COVER;
+      problem_multiplier = data.cover_size;
       sprintf(type_string, "%lu", data.cover_size);
       *all.file_options << " --cover " << type_string;
 
@@ -477,10 +509,33 @@ base_learner* cb_explore_adf_setup(vw& all)
   all.p->lp = CB::cb_label;
 
   learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier);
-  l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
 
+  //Extract from lower level reductions.
+  data.gen_cs.scorer = all.scorer;
+  data.cs_ldf_learner = all.cost_sensitive;
+  data.gen_cs.cb_type = CB_TYPE_IPS;
+  if (all.vm.count("cb_type"))
+    { std::string type_string;
+      type_string = all.vm["cb_type"].as<std::string>();
+      
+      if (type_string.compare("dr") == 0)
+	data.gen_cs.cb_type = CB_TYPE_DR;
+      else if (type_string.compare("ips") == 0)
+	data.gen_cs.cb_type = CB_TYPE_IPS;
+      else if (type_string.compare("mtr") == 0)
+	if (vm.count("cover"))
+	  {
+	    cout << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
+	    data.gen_cs.cb_type = CB_TYPE_IPS;
+	  }
+	else
+	  data.gen_cs.cb_type = CB_TYPE_MTR;
+      else
+	std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+    }
   l.increment = base->increment;
 
+  l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);  
   l.set_finish(CB_EXPLORE_ADF::finish);
   l.set_end_examples(CB_EXPLORE_ADF::end_examples);
   return make_base(l);

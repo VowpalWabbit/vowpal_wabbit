@@ -192,7 +192,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 	 gen_cs_example_ips(ec_seq, cs_labels);
 	 break;
        case CB_TYPE_DR:
-	 gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
+	 gen_cs_example_dr(c, ec_seq, cs_labels);
 	 break;
        case CB_TYPE_MTR:
 	 gen_cs_example_mtr(c, ec_seq, cs_labels);
