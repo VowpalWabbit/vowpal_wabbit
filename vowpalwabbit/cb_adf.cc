@@ -30,7 +30,8 @@ struct cb_adf
 
   cb_to_cs_adf gen_cs;
   v_array<CB::label> cb_labels;
-  v_array<COST_SENSITIVE::label> cs_labels;
+  COST_SENSITIVE::label cs_labels;
+  v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
   action_scores a_s;//temporary storage for mtr
 
@@ -73,26 +74,35 @@ struct cb_adf
 
 template<bool is_learn>
 void call_predict_or_learn(cb_adf& mydata, base_learner& base, v_array<example*>& examples,
-                           v_array<CB::label>& cb_labels, v_array<COST_SENSITIVE::label>& cs_labels)
+                           v_array<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels)
 { // first of all, clear the container mydata.array.
   cb_labels.erase();
+  if (mydata.prepped_cs_labels.size() < cs_labels.costs.size())
+    {
+      mydata.prepped_cs_labels.resize(cs_labels.costs.size()+1);
+      mydata.prepped_cs_labels.end() = mydata.prepped_cs_labels.end_array;
+    }
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   size_t index = 0;
   for (example* ec : examples)
   { cb_labels.push_back(ec->l.cb);
-    ec->l.cs = cs_labels[index++];
+    mydata.prepped_cs_labels[index].costs.erase();
+    if (index != examples.size()-1)
+      mydata.prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
+    else
+      mydata.prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
+    ec->l.cs = mydata.prepped_cs_labels[index++];
   }
 
   // 2nd: predict for each ex
   // // call base.predict for each vw exmaple in the sequence
   for (example* ec : examples)
-  { if (is_learn)
+    if (is_learn)
       base.learn(*ec);
     else
       base.predict(*ec);
-  }
-
+  
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = array.element.
   size_t i = 0;
@@ -247,11 +257,8 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
 
   size_t num_features = 0;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i])) {
+    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
       num_features += (*ec_seq)[i]->num_features;
-      //cout<<(*ec_seq)[i]->num_features<<" ";
-    }
-  //cout<<endl;
 
   all.sd->total_features += num_features;
 
@@ -329,9 +336,10 @@ void finish(cb_adf& data)
 { data.ec_seq.delete_v();
   data.gen_cs.mtr_ec_seq.delete_v();
   data.cb_labels.delete_v();
-  for(size_t i = 0; i < data.cs_labels.size(); i++)
-    data.cs_labels[i].costs.delete_v();
-  data.cs_labels.delete_v();
+  for(size_t i = 0; i < data.prepped_cs_labels.size(); i++)
+    data.prepped_cs_labels[i].costs.delete_v();
+  data.prepped_cs_labels.delete_v();
+  data.cs_labels.costs.delete_v();
 
   data.a_s.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();

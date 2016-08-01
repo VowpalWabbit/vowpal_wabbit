@@ -26,7 +26,6 @@ namespace CB_EXPLORE_ADF{
 
   struct cb_explore_adf
   {
-
     v_array<example*> ec_seq;
     v_array<action_score> action_probs;
 
@@ -41,7 +40,12 @@ namespace CB_EXPLORE_ADF{
     bool need_to_clear;
     vw* all;
     LEARNER::base_learner* cs_ldf_learner;
-    CB::cb_class known_cost;
+
+    GEN_CS::cb_to_cs_adf gen_cs;
+    v_array<COST_SENSITIVE::label> cs_labels;
+    v_array<CB::label> cb_labels;
+
+    v_array<COST_SENSITIVE::label> cs_labels_2;
   };
 
   template<class T> void swap(T& ele1, T& ele2)
@@ -84,7 +88,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore tau times, then act according to optimal.
-    if (is_learn && data.known_cost.probability < 1 && !test_adf_sequence(data))
+    if (is_learn && data.gen_cs.known_cost.probability < 1 && !test_adf_sequence(data))
       multiline_learn(base, examples);
     else
       multiline_predict(base, examples);
@@ -178,45 +182,45 @@ namespace CB_EXPLORE_ADF{
     
     safety(probs, data.epsilon / num_actions, false);
     }*/
-    
-  /*  template <bool is_learn>
+  /*    
+  template <bool is_learn>
   void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
     if (is_learn)
-      base.learn(ec);
+      multiline_learn(base, examples);
     else
-      base.predict(ec);
+      multiline_predict(base, examples);
 
-    v_array<action_score>& preds = ec.pred.a_s;
+    v_array<action_score>& preds = examples[0]->pred.a_s;
     uint32_t num_actions = preds.size();
     
     float additive_probability = 1.f / (float)data.cover_size;
-    float min_prob = data.epsilon * min(1.f / num_actions);
+    float min_prob = data.epsilon / num_actions;
     v_array<action_score>& probs = data.action_probs;
     for(uint32_t i = 0;i < num_actions;i++)
       probs[i] = {i,0.};
 
     //1. Compute loss vector
-    data.cs_label.costs.erase();
-    float norm = min_prob * num_actions;
-    data.cbcs.known_cost = CB_ADF::get_observed_cost(examples);
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+    data.gen_cs.known_cost = CB_ADF::get_observed_cost(examples);
+    GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
     
-    ec.l.cs = data.second_cs_label;
+    float norm = min_prob * num_actions;
     //2. Update functions
     for (size_t i = 0; i < data.cover_size; i++)
       { //Create costs of each action based on online cover
+	data.cs_labels_2.erase();
 	for (uint32_t j = 0; j < num_actions; j++)
-	  { float pseudo_cost = data.cs_label.costs[j].x - data.epsilon * min_prob / (max(action_scores[j].score, min_prob) / norm) + 1;
-	    data.second_cs_label.costs[j].class_index = j+1;
-	    data.second_cs_label.costs[j].x = pseudo_cost;
+	  { float pseudo_cost = data.cs_labels[j].costs[0].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm) + 1;
+	    COST_SENSITIVE::wclass wc = {pseudo_cost,j+1,0.,0.};
+	    data.cs_labels_2[j].class_index = j+1;
+	    data.cs_labels_2[j].x = pseudo_cost;
 	  }
 	if (i != 0)
 	  if (is_learn)
-	    data.cs->learn(ec,i+1);
+	    multiline_learn(data.cs, examples, i+1);
 	  else
-	    data.cs->predict(ec,i+1);
+	    multiline_predict(data.cs, examples, i+1);
 	if (actions_scores[predictions[i] - 1].score < min_prob)
 	  norm += max(0, additive_probability - (min_prob - action_scores[predictions[i] - 1].score));
 	else
@@ -292,9 +296,9 @@ namespace CB_EXPLORE_ADF{
     all.sd->total_features += num_features;
 
     bool is_test = false;
-    if (c.known_cost.probability > 0) {
+    if (c.gen_cs.known_cost.probability > 0) {
       for (uint32_t i = 0; i < preds.size(); i++) {
-        float l = get_unbiased_cost(&c.known_cost, preds[i].action);
+        float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
         //cout<<l<<":"<<l*preds[i].score<<" ";
         loss += l*preds[i].score;
       }
@@ -364,7 +368,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
-    data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
+    data.gen_cs.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
     switch (data.explore_type)
     {
@@ -383,7 +387,6 @@ namespace CB_EXPLORE_ADF{
     default:
       THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
-
   }
 
 
