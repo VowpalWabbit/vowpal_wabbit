@@ -85,7 +85,9 @@ namespace VW
 #endif
 		size_t length;
 		v_array<float> confidence_scores;
-		
+
+		length = vw->vm["oaa"].as<uint_least64_t>();
+
 		try {
 			confidence_scores = VW::get_cost_sensitive_prediction_confidence_scores(ex, length);
 		}

@@ -964,8 +964,12 @@ float get_cost_sensitive_prediction(example* ec)
 { return (float)ec->pred.multiclass; }
 
 v_array<float> get_cost_sensitive_prediction_confidence_scores(example* ec, size_t& len) {
-	auto& probs = v_array<float>{ec->pred.probs};
-	len = probs.size();
+	auto probs = v_array<float>{};
+
+	for (int i = 0; i < len; i++) {
+		probs.push_back(*(ec->pred.probs + i));
+	}
+	
 	return probs;
 }
 

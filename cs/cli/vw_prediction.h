@@ -169,6 +169,11 @@ namespace VW
             /// </summary>
             static initonly VowpalWabbitCostSensitivePredictionFactory^ CostSensitive = gcnew VowpalWabbitCostSensitivePredictionFactory;
 
+			/// <summary>
+			/// Use for cost sensitive predictions with confidence score
+			/// </summary>
+			static initonly VowpalWabbitCostSensitiveConfidencePredictionFactory^ CostSensitiveAndConfidenceScores = gcnew VowpalWabbitCostSensitiveConfidencePredictionFactory;
+
             /// <summary>
             /// Use for multi label predictions.
             /// </summary>
