@@ -2746,6 +2746,42 @@ namespace cs_unittest
         }
 
 
+        [TestMethod]
+        [Description(@"Fix for regression introduced by badeedb.")]
+
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test137()
+        {
+
+            RunTestsHelper.ExecuteTest(
+				137,
+				"--audit -d train-sets/audit.dat --noconstant",
+				"train-sets/audit.dat",
+				"train-sets/ref/audit.stderr",
+				"");
+
+        }
+
+
+        [TestMethod]
+        [Description(@"cb_explore_adf with cover exploration")]
+
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test138()
+        {
+
+            RunTestsHelper.ExecuteTest(
+				138,
+				"--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict",
+				"train-sets/cb_test.ldf",
+				"train-sets/ref/cbe_adf_cover.stderr",
+				"pred-sets/ref/cbe_adf_cover.predict");
+
+        }
+
+
     }
 }
 
