@@ -26,10 +26,25 @@ struct cb_to_cs
   CB::cb_class* known_cost;
 };
 
+struct cb_to_cs_adf
+{
+  size_t cb_type;
+
+  //for MTR
+  uint64_t action_sum;
+  uint64_t event_sum;
+  uint32_t mtr_example; 
+  v_array<example*> mtr_ec_seq;//shared + the one example + an end example.
+
+  //for DR
+  COST_SENSITIVE::label pred_scores;
+  CB::cb_class known_cost;
+  LEARNER::base_learner* scorer;
+};
+
 CB::cb_class* get_observed_cost(CB::label& ld);
 
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
-void gen_cs_example_ips(v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels);
 
 template <bool is_learn> 
 void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
@@ -121,8 +136,6 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 
 }
 
- void gen_cs_example_dr(COST_SENSITIVE::label& pred_scores, CB::cb_class& known_cost, v_array<example*> examples, v_array<COST_SENSITIVE::label>& cs_labels, LEARNER::base_learner* scorer);
-
 template <bool is_learn> 
 void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 { //this implements the doubly robust method
@@ -164,6 +177,66 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
     }
 }
 
- void gen_cs_example_MTR(uint64_t& action_sum, uint64_t& event_sum, uint32_t& mtr_example, v_array<example*>& ec_seq, v_array<example*>& mtr_ec_seq, v_array<COST_SENSITIVE::label>& mtr_cs_labels);
+ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
 
+ void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels);
+
+ void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> ec_seq, COST_SENSITIVE::label& cs_labels);
+
+ template <bool is_learn>
+   void gen_cs_example(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels)
+   {
+     switch (c.cb_type)
+       {
+       case CB_TYPE_IPS:
+	 gen_cs_example_ips(ec_seq, cs_labels);
+	 break;
+       case CB_TYPE_DR:
+	 gen_cs_example_dr(c, ec_seq, cs_labels);
+	 break;
+       case CB_TYPE_MTR:
+	 gen_cs_example_mtr(c, ec_seq, cs_labels);
+	 break;
+       default:
+	 THROW("Unknown cb_type specified for contextual bandit learning: " << c.cb_type);
+       }
+   }
+
+template<bool is_learn>
+  void call_cs_ldf(LEARNER::base_learner& base, v_array<example*>& examples, v_array<CB::label>& cb_labels, 
+	       COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, size_t id = 0)
+  { 
+    cb_labels.erase();
+    if (prepped_cs_labels.size() < cs_labels.costs.size())
+      {
+	prepped_cs_labels.resize(cs_labels.costs.size()+1);
+	prepped_cs_labels.end() = prepped_cs_labels.end_array;
+      }
+    
+    // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
+    size_t index = 0;
+    for (example* ec : examples)
+      { cb_labels.push_back(ec->l.cb);
+	prepped_cs_labels[index].costs.erase();
+	if (index != examples.size()-1)
+	  prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
+	else
+	  prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
+	ec->l.cs = prepped_cs_labels[index++];
+      }
+    
+    // 2nd: predict for each ex
+    // // call base.predict for each vw exmaple in the sequence
+    for (example* ec : examples)
+      if (is_learn)
+	base.learn(*ec, id);
+      else
+	base.predict(*ec, id);
+    
+    // 3rd: restore cb_label for each example
+    // (**ec).l.cb = array.element.
+    size_t i = 0;
+    for (example* ec : examples)
+      ec->l.cb = cb_labels[i++];
+  }
 }
