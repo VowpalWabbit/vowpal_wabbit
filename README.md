@@ -140,7 +140,8 @@ brew install vowpal-wabbit
 brew install libtool
 brew install autoconf
 brew install automake
-brew install boost --with-python
+brew install boost
+brew install boost-python
 ```
 
 #### OSX Dependencies (if using MacPorts):
