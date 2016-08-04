@@ -70,17 +70,18 @@ namespace VowpalWabbit.Azure.Trainer.Operations
 
         internal ITargetBlock<object> TargetBlock { get { return this.evalBlock; } }
 
-        private IEnumerable<EvalData> OfflineEvaluate(object trainerResult)
+        private List<EvalData> OfflineEvaluate(object trainerResult)
         {
             try
             {
-                return this.OfflineEvaluateInternal(trainerResult as TrainerResult);
+                return this.OfflineEvaluateInternal(trainerResult as TrainerResult)
+                    .ToList();
             }
             catch (Exception e)
             {
                 this.telemetry.TrackException(e);
 
-                return new EvalData[0];
+                return new List<EvalData>();
             }
         }
 
@@ -91,10 +92,22 @@ namespace VowpalWabbit.Azure.Trainer.Operations
 
             if (trainerResult == null)
             {
-                this.telemetry.TrackTrace($"Received invalid data: {trainerResult}");
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult is null");
                 yield break;
             }
 
+            if (trainerResult.Label == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.Label is null");
+                yield break;
+            }
+
+            if (trainerResult.ProgressivePrediction == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
+                yield break;
+            }
+            
             yield return new EvalData
             {
                 PolicyName = "Latest Policy",

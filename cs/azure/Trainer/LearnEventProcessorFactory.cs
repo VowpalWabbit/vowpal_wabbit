@@ -214,7 +214,7 @@ namespace VowpalWabbit.Azure
                                 return true;
                             else if (TryExtractProperty(state, property, "_timestamp", JsonToken.Date, reader => data.Timestamp = (DateTime)reader.Value))
                                 return true;
-                            else if (TryExtractProperty(state, property, "_ProbabilityOfDrop", JsonToken.Float, reader => data.ProbabilityOfDrop = (float)reader.Value))
+                            else if (TryExtractProperty(state, property, "_ProbabilityOfDrop", JsonToken.Float, reader => data.ProbabilityOfDrop = (float)(reader.Value ?? 0f)))
                                 return true;
                             else if (TryExtractArrayProperty<float>(state, property, "_p", arr => data.Probabilities = arr))
                                 return true;
@@ -225,6 +225,11 @@ namespace VowpalWabbit.Azure
                         });
 
                         data.Example = vwJsonSerializer.ParseAndCreate(jsonReader);
+
+                        if (data.Probabilities == null)
+                            throw new ArgumentNullException("Missing probabilities (_p)");
+                        if (data.Actions == null)
+                            throw new ArgumentNullException("Missing actions (_a)");
 
                         if (data.Example == null)
                         {

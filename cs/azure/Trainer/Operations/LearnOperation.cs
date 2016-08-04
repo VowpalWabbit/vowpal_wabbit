@@ -31,10 +31,9 @@ namespace VowpalWabbit.Azure.Trainer
                         new Dictionary<string, string>
                         {
                             { "ID", example.EventId },
-                            { "VW", example.Example.VowpalWabbitString }
+                            { "VW", example.Example.VowpalWabbitString },
+                            { "JSON", example.JSON }
                         });
-
-                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionScore, this.vw);
 
                 var label = example.Example.Labels
                     .OfType<ContextualBanditLabel>()
@@ -42,6 +41,8 @@ namespace VowpalWabbit.Azure.Trainer
 
                 if (label == null)
                     this.telemetry.TrackTrace($"Unable to find valid label for event '{example.EventId}'", SeverityLevel.Warning);
+
+                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionScore, this.vw);
                 
                 //if (this.vwAllReduce != null)
                 //{
