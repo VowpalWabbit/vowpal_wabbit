@@ -229,7 +229,7 @@ template<bool is_learn>
     // // call base.predict for each vw exmaple in the sequence
     for (example* ec : examples)
       if (is_learn)
-	base.learn(*ec, id);
+    base.learn(*ec, id);
       else
 	base.predict(*ec, id);
     

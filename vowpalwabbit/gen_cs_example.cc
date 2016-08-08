@@ -74,8 +74,7 @@ cb_class* get_observed_cost(CB::label& ld)
 
 //Multiline version
 void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
-{ 
-  cs_labels.costs.erase();
+{ cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size()-1; i++)
   { CB::label ld = examples[i]->l.cb;
@@ -85,7 +84,12 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
       wc.class_index = (uint32_t)i-1;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
-    cs_labels.costs.push_back(wc);
+
+    /*std::cerr << "WC.x: " << wc.x << std::endl
+              << "WC.class_index: " << wc.class_index << std::endl
+              << "WC.partial_prediction: " << wc.partial_prediction << std::endl
+              << "WC.wap_value: " << wc.wap_value << std::endl << std::endl;
+    */cs_labels.costs.push_back(wc);
   }
 
   if (shared)//take care of shared examples

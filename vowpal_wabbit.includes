@@ -1,0 +1,10 @@
+cs/cli
+explore/cpp
+java/src/main/c++
+java/target/checkout/cs/cli
+java/target/checkout/explore/cpp
+java/target/checkout/java/src/main/c++
+java/target/checkout/library
+java/target/checkout/vowpalwabbit
+library
+vowpalwabbit

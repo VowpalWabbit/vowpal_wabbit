@@ -17,6 +17,27 @@ public class VWIntLearnerTest extends VWTestHelper {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
+    public void testCBADF() throws IOException {
+        String[][] train = new String[][]{
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
+        };
+
+        String cbADFModel = temporaryFolder.newFile().getAbsolutePath();
+        VWIntLearner vw = VWLearners.create("--quiet --cb_adf -f " + cbADFModel);
+        int[] trainPreds = new int[train.length];
+        for (int i=0; i<train.length; ++i) {
+            trainPreds[i] = vw.learn(train[i]);
+        }
+        int[] expectedTrainPreds = new int[]{0, 0, 0, 1};
+        vw.close();
+
+        assertArrayEquals(expectedTrainPreds, trainPreds);
+    }
+
+    @Test
     public void testContextualBandits() throws IOException {
         // Note that the expected values in this test were obtained by running
         // vw from the command line as follows

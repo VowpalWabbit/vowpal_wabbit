@@ -13,3 +13,7 @@ jfloatArray floatArrayPredictor(example* vec, JNIEnv *env)
 JNIEXPORT jfloatArray JNICALL Java_vw_learner_VWFloatArrayLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 { return base_predict<jfloatArray>(env, obj, example_string, learn, vwPtr, floatArrayPredictor);
 }
+
+JNIEXPORT jfloatArray JNICALL Java_vw_learner_VWFloatArrayLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
+{ return base_predict<jfloatArray>(env, obj, example_strings, learn, vwPtr, floatArrayPredictor);
+}

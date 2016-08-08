@@ -32,13 +32,36 @@ abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
         return learnOrPredict(example, false);
     }
 
+    @Override
+    public final T learn(String[] example) { return learnOrPredict(example, true); }
+
+    @Override
+    public final T predict(String[] example) {
+        return learnOrPredict(example, false);
+    }
+
     protected abstract T predict(String example, boolean learn, long nativePointer);
+
+    protected abstract T predictMultiline(String[] example, boolean learn, long nativePointer);
 
     private T learnOrPredict(final String example, final boolean learn) {
         lock.lock();
         try {
             if (isOpen()) {
                 return predict(example, learn, nativePointer);
+            }
+            throw new IllegalStateException("Already closed.");
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private T learnOrPredict(final String[] example, final boolean learn) {
+        lock.lock();
+        try {
+            if (isOpen()) {
+                return predictMultiline(example, learn, nativePointer);
             }
             throw new IllegalStateException("Already closed.");
         }

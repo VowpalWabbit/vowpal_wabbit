@@ -16,6 +16,14 @@ extern "C"
 JNIEXPORT jintArray JNICALL Java_vw_learner_VWIntArrayLearner_predict
 (JNIEnv *, jobject, jstring, jboolean, jlong);
 
+/*
+ * Class:     vw_learner_VWIntArrayLearner
+ * Method:    predict
+ * Signature: (Ljava/lang/String;ZJ)[F
+ */
+JNIEXPORT jintArray JNICALL Java_vw_learner_VWIntArrayLearner_predictMultiline
+(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+
 #ifdef __cplusplus
 }
 #endif

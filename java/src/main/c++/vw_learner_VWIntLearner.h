@@ -16,6 +16,14 @@ extern "C"
 JNIEXPORT jint JNICALL Java_vw_learner_VWIntLearner_predict
 (JNIEnv *, jobject, jstring, jboolean, jlong);
 
+/*
+ * Class:     vw_learner_VWIntLearner
+ * Method:    predictFloat
+ * Signature: (Ljava/lang/String;ZJ)F
+ */
+JNIEXPORT jint JNICALL Java_vw_learner_VWIntLearner_predictMultiline
+(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+
 #ifdef __cplusplus
 }
 #endif

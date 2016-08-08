@@ -6,4 +6,5 @@ public final class VWIntArrayLearner extends VWLearnerBase<int[]> {
     }
 
     protected native int[] predict(String example, boolean learn, long nativePointer);
+    protected native int[] predictMultiline(String[] example, boolean learn, long nativePointer);
 }

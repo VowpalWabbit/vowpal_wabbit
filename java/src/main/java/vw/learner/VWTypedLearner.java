@@ -25,4 +25,18 @@ public interface VWTypedLearner<T> extends VWLearner {
      * @return a prediction.
      */
     T predict(String example);
+
+    /**
+     * Learn from a multiline example then return the prediction given the example, after the internal learner is updated.
+     * @param example an example from which to learn.
+     * @return a prediction after the model has been updated.
+     */
+    T learn(String[] example);
+
+    /**
+     * Prediction from a multiline example without learning from the example.
+     * @param example an example upon which the prediction is based
+     * @return a prediction.
+     */
+    T predict(String[] example);
 }

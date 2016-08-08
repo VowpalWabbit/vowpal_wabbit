@@ -6,4 +6,5 @@ public final class VWFloatArrayLearner extends VWLearnerBase<float[]> {
     }
 
     protected native float[] predict(String example, boolean learn, long nativePointer);
+    protected native float[] predictMultiline(String[] example, boolean learn, long nativePointer);
 }

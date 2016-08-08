@@ -13,3 +13,7 @@ jintArray intArrayPredictor(example* vec, JNIEnv *env)
 JNIEXPORT jintArray JNICALL Java_vw_learner_VWIntArrayLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 { return base_predict<jintArray>(env, obj, example_string, learn, vwPtr, intArrayPredictor);
 }
+
+JNIEXPORT jintArray JNICALL Java_vw_learner_VWIntArrayLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
+{ return base_predict<jintArray>(env, obj, example_strings, learn, vwPtr, intArrayPredictor);
+}
