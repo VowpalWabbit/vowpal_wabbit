@@ -85,11 +85,7 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
 
-    /*std::cerr << "WC.x: " << wc.x << std::endl
-              << "WC.class_index: " << wc.class_index << std::endl
-              << "WC.partial_prediction: " << wc.partial_prediction << std::endl
-              << "WC.wap_value: " << wc.wap_value << std::endl << std::endl;
-    */cs_labels.costs.push_back(wc);
+    cs_labels.costs.push_back(wc);
   }
 
   if (shared)//take care of shared examples
