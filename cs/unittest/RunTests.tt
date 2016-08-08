@@ -19,8 +19,7 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	25, 26, // crash
 	92, 95, 96, 98,	91, 99, 118, 119, 120,
 	14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
-	71, // --examples to test parser
-	77 // parser bug
+	71 // --examples to test parser
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
