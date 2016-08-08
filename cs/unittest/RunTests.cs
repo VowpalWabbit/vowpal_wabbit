@@ -1193,7 +1193,6 @@ namespace cs_unittest
         [TestMethod]
         [Description(@"cbify, tau first")]
 
-		[Ignore]
 		[TestCategory("Command Line")]
         public void CommandLine_Test77()
         {
