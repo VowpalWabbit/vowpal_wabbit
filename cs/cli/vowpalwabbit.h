@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 namespace VW
 {
     ref class VowpalWabbitExampleBuilder;
+	ref struct VowpalWabbitFeature;
 
     /// <summary>
     /// Simple string example based wrapper for vowpal wabbit.
@@ -103,6 +104,16 @@ namespace VW
         /// <returns>The resulting hash code.</returns>
         /// <remarks>The hash code depends on the vowpal wabbit instance as different has functions can be configured.</remarks>
         uint64_t HashFeature(String^ s, size_t u);
+
+		/// <summary>
+		/// Return full topic allocation [topic, feature].
+		/// </summary>
+		cli::array<cli::array<float>^>^ GetTopicAllocation();
+
+		/// <summary>
+		/// Return the <paramref name="top"/> topic weights.
+		/// </summary>
+		cli::array<System::Collections::Generic::List<VowpalWabbitFeature^>^>^ GetTopicAllocation(int top);
 
         /// <summary>
         /// The associated <see cref="VowpalWabbitBase"/> instance learns from this example and returns the prediction result for this example.

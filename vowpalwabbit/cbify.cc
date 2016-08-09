@@ -40,6 +40,8 @@ struct cbify
   MwtExplorer<example>* mwt_explorer;
   vw_recorder* recorder;
   v_array<action_score> a_s;
+  // used as the seed
+  size_t example_counter;
 };
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
@@ -84,7 +86,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   base.predict(ec);
   //data.probs = ec.pred.scalars;
 
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(ec.example_counter), ec);
+  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
 
   CB::cb_class cl;
   cl.action = action;

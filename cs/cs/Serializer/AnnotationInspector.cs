@@ -73,6 +73,7 @@ namespace VW.Serializer
             validExpressions.Push(valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)));
 
             return CreateSchema(
+                null,
                 type,
                 null,
                 null,
@@ -85,6 +86,7 @@ namespace VW.Serializer
         }
 
         private static Schema CreateSchema(
+            FeatureExpression parent,
             Type type,
             string parentNamespace,
             char? parentFeatureGroup,
@@ -96,25 +98,27 @@ namespace VW.Serializer
         {
             var props = type.GetProperties(BindingFlags.Instance | BindingFlags.GetProperty | BindingFlags.Public);
 
-            var localFeatures = from p in props
-                                let declaredAttr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
-                                where featurePropertyPredicate(p, declaredAttr)
-                                let attr = declaredAttr ?? new FeatureAttribute()
-                                select new FeatureExpression(
-                                    featureType: p.PropertyType,
-                                    name: attr.Name ?? p.Name,
-                                    // CODE example.Property
-                                    valueExpressionFactory: valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
-                                    // @Reverse: make sure conditions are specified in the right order
-                                    valueValidExpressionFactories: valueValidExpressionFactories.Reverse().ToList(),
-                                    @namespace: attr.Namespace ?? parentNamespace,
-                                    featureGroup: attr.InternalFeatureGroup ?? parentFeatureGroup,
-                                    enumerize: attr.Enumerize,
-                                    variableName: p.Name,
-                                    order: attr.Order,
-                                    addAnchor: attr.AddAnchor,
-                                    stringProcessing: attr.StringProcessing,
-                                    dictify: attr.InternalDictify ?? parentDictify);
+            var localFeatures = (from p in props
+                                 let declaredAttr = (FeatureAttribute)p.GetCustomAttributes(typeof(FeatureAttribute), true).FirstOrDefault()
+                                 where featurePropertyPredicate(p, declaredAttr)
+                                 let attr = declaredAttr ?? new FeatureAttribute()
+                                 select new FeatureExpression(
+                                     featureType: p.PropertyType,
+                                     name: attr.Name ?? p.Name,
+                                     // CODE example.Property
+                                     valueExpressionFactory: valueExpression => Expression.Property(valueExpressionFactory(valueExpression), p),
+                                     // @Reverse: make sure conditions are specified in the right order
+                                     valueValidExpressionFactories: valueValidExpressionFactories.Reverse().ToList(),
+                                     @namespace: attr.Namespace ?? parentNamespace,
+                                     featureGroup: attr.InternalFeatureGroup ?? parentFeatureGroup,
+                                     enumerize: attr.Enumerize,
+                                     variableName: p.Name,
+                                     order: attr.Order,
+                                     addAnchor: attr.AddAnchor,
+                                     stringProcessing: attr.StringProcessing,
+                                     dictify: attr.InternalDictify ?? parentDictify,
+                                     parent: parent)
+                                 ).ToList();
 
             var localLabels = from p in props
                               let declaredAttr = (LabelAttribute)p.GetCustomAttributes(typeof(LabelAttribute), true).FirstOrDefault()
@@ -138,7 +142,7 @@ namespace VW.Serializer
                 {
                     // CODE example.Prop1.Prop2 != null
                     valueValidExpressionFactories.Push(valueExpression => Expression.NotEqual(f.ValueExpressionFactory(valueExpression), Expression.Constant(null)));
-                    var subSchema = CreateSchema(f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, featurePropertyPredicate, labelPropertyPredicate);
+                    var subSchema = CreateSchema(f, f.FeatureType, f.Namespace, f.FeatureGroup, f.Dictify, f.ValueExpressionFactory, valueValidExpressionFactories, featurePropertyPredicate, labelPropertyPredicate);
                     valueValidExpressionFactories.Pop();
 
                     return subSchema;

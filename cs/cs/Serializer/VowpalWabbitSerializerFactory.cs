@@ -19,6 +19,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Contracts;
 using VW.Reflection;
+using System.Collections.ObjectModel;
 
 namespace VW.Serializer
 {
@@ -30,7 +31,40 @@ namespace VW.Serializer
         /// <summary>
         /// Example and example result type based serializer cache.
         /// </summary>
-        private static readonly Dictionary<Type, object> SerializerCache = new Dictionary<Type, object>();
+        private static readonly Dictionary<Key, object> SerializerCache = new Dictionary<Key, object>();
+
+        private sealed class Key
+        {
+            internal Type Type { get; set; }
+
+            internal ITypeInspector TypeInspector { get; set; }
+
+            internal bool EnableStringExampleGeneration { get; set; }
+
+            internal bool EnableStringFloatCompact { get; set; }
+
+            internal List<Type> CustomFeaturizer { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                var other = obj as Key;
+                return other != null &&
+                    this.Type == other.Type &&
+                    this.TypeInspector == other.TypeInspector &&
+                    this.EnableStringExampleGeneration == other.EnableStringExampleGeneration &&
+                    this.EnableStringFloatCompact == other.EnableStringFloatCompact &&
+                    ((this.CustomFeaturizer == null && other.CustomFeaturizer == null) || this.CustomFeaturizer.SequenceEqual(other.CustomFeaturizer));
+            }
+
+            public override int GetHashCode()
+            {
+                return this.Type.GetHashCode() ^
+                    this.TypeInspector.GetHashCode() ^
+                    this.EnableStringExampleGeneration.GetHashCode() ^
+                    this.EnableStringFloatCompact.GetHashCode() ^
+                    (this.CustomFeaturizer == null ? 1 : this.CustomFeaturizer.GetHashCode());
+            }
+        }
 
         /// <summary>
         /// Creates a serializer for the given type and settings.
@@ -42,29 +76,34 @@ namespace VW.Serializer
         {
             Schema schema = null;
 
-            Type cacheKey = null;
+            Key cacheKey = null;
             if (settings != null && settings.Schema != null)
             {
                 schema = settings.Schema;
             }
             else
             {
-                // only cache non-string generating serializer
-                if (!settings.EnableStringExampleGeneration)
-                {
-                    cacheKey = typeof(TExample);
-                    object serializer;
-
-                    if (SerializerCache.TryGetValue(cacheKey, out serializer))
-                    {
-                        return (IVowpalWabbitSerializerCompiler<TExample>)serializer;
-                    }
-                }
-
                 ITypeInspector typeInspector = settings.TypeInspector;
                 if (typeInspector == null)
                     typeInspector = TypeInspector.Default;
 
+                // only cache non-string generating serializer
+                cacheKey = new Key
+                {
+                    Type = typeof(TExample),
+                    TypeInspector = typeInspector,
+                    CustomFeaturizer = settings == null ? null : settings.CustomFeaturizer,
+                    EnableStringExampleGeneration = settings == null ? false : settings.EnableStringExampleGeneration,
+                    EnableStringFloatCompact = settings == null ? false : settings.EnableStringFloatCompact
+                };
+
+                object serializer;
+                if (SerializerCache.TryGetValue(cacheKey, out serializer))
+                {
+                    return (IVowpalWabbitSerializerCompiler<TExample>)serializer;
+                }
+
+                
                 // TODO: enhance caching based on feature list & featurizer set
                 // if no feature mapping is provided, use [Feature] annotation on provided type.
                 schema = typeInspector.CreateSchema(settings, typeof(TExample));

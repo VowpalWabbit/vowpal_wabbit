@@ -31,14 +31,18 @@ namespace VowpalWabbit.Azure.Trainer
                         new Dictionary<string, string>
                         {
                             { "ID", example.EventId },
-                            { "VW", example.Example.VowpalWabbitString }
+                            { "VW", example.Example.VowpalWabbitString },
+                            { "JSON", example.JSON }
                         });
-
-                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionScore, this.vw);
 
                 var label = example.Example.Labels
                     .OfType<ContextualBanditLabel>()
                     .FirstOrDefault(l => l.Probability != 0f || l.Cost != 0);
+
+                if (label == null)
+                    this.telemetry.TrackTrace($"Unable to find valid label for event '{example.EventId}'", SeverityLevel.Warning);
+
+                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionScore, this.vw);
                 
                 //if (this.vwAllReduce != null)
                 //{
@@ -77,12 +81,13 @@ namespace VowpalWabbit.Azure.Trainer
                     // this.state.PartitionsDateTime[eventHubExample.PartitionKey] = eventHubExample.Offset;
                 }
 
-                return new TrainerResult
+                return new TrainerResult(example.Actions, example.Probabilities)
                 {
                     Label = label,
                     ProgressivePrediction = progressivePrediction,
                     PartitionKey = example.PartitionKey,
-                    Latency = latency
+                    Latency = latency,
+                    ProbabilityOfDrop = example.ProbabilityOfDrop
                 };
             }
             catch (Exception ex)

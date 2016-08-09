@@ -8,10 +8,12 @@ license as described in the file LICENSE.
 #endif
 #include <fstream>
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <numeric>
 #include <cmath>
 #include "correctedMath.h"
+#include "vw_versions.h"
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -64,6 +66,12 @@ struct lda
   v_array<float> digammas;
   v_array<float> v;
   std::vector<index_feature> sorted_features;
+
+  bool compute_coherence_metrics;
+
+  // size by 1 << bits
+  std::vector<uint32_t> feature_counts;
+  std::vector<std::vector<size_t>> feature_to_example_map;
 
   bool total_lambda_init;
 
@@ -196,6 +204,30 @@ inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
 inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
+#ifdef WIN32
+
+inline __m128 operator+(const __m128 a, const __m128 b)
+{
+	return _mm_add_ps(a, b);
+}
+
+inline __m128 operator-(const __m128 a, const __m128 b)
+{
+	return _mm_sub_ps(a, b);
+}
+
+inline __m128 operator*(const __m128 a, const __m128 b)
+{
+	return _mm_mul_ps(a, b);
+}
+
+inline __m128 operator/(const __m128 a, const __m128 b)
+{
+	return _mm_div_ps(a, b);
+}
+
+#endif
+
 inline v4sf vfastpow2(const v4sf p)
 { v4sf ltzero = _mm_cmplt_ps(p, v4sfl(0.0f));
   v4sf offset = _mm_and_ps(ltzero, v4sfl(1.0f));
@@ -264,7 +296,7 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
   // Rip through the aligned portion...
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   { v4sf arg = _mm_load_ps(fp);
-    sum += arg;
+    sum = sum + arg;
     arg = vfastdigamma(arg);
     _mm_store_ps(fp, arg);
   }
@@ -292,7 +324,7 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   { v4sf arg = _mm_load_ps(fp);
-    arg -= sum;
+    arg = arg - sum;
     arg = vfastexp(arg);
     arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
     _mm_store_ps(fp, arg);
@@ -316,7 +348,7 @@ void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float under
   { v4sf arg = _mm_load_ps(fp);
     arg = vfastdigamma(arg);
     v4sf vnorm = _mm_loadu_ps(np);
-    arg -= vnorm;
+    arg = arg - vnorm;
     arg = vfastexp(arg);
     arg = _mm_max_ps(v4sfl(underflow_threshold), arg);
     _mm_store_ps(fp, arg);
@@ -650,8 +682,16 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     { brw = 0;
       size_t K = all->lda;
 
-      msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+	  msg << i << " ";
+	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+		brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+	  else
+	  {
+		  // support 32bit build models
+		  uint32_t j;
+		  brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
+		  i = j;
+	  }
 
       if (brw != 0)
         for (uint64_t k = 0; k < K; k++)
@@ -675,7 +715,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 }
 
 void learn_batch(lda &l)
-{ if (l.sorted_features.empty())
+{ if (l.sorted_features.empty()) // FAST-PASS for real "true"
   { // This can happen when the socket connection is dropped by the client.
     // If l.sorted_features is empty, then l.sorted_features[0] does not
     // exist, so we should not try to take its address in the beginning of
@@ -761,33 +801,41 @@ void learn_batch(lda &l)
     return_simple_example(*l.all, nullptr, *l.examples[d]);
   }
 
-  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
-  { index_feature *next = s + 1;
-    while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
-      next++;
+  // -t there's no need to update weights (especially since it's a noop)
+  if (eta != 0)
+  {
+	  for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
+	  {
+		  index_feature *next = s + 1;
+		  while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
+			  next++;
 
-    float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
-    for (size_t k = 0; k < l.all->lda; k++)
-    { float new_value = minuseta * word_weights[k];
-      word_weights[k] = new_value;
-    }
+		  float *word_weights = &(weights[s->f.weight_index & l.all->reg.weight_mask]);
+		  for (size_t k = 0; k < l.all->lda; k++)
+		  {
+			  float new_value = minuseta * word_weights[k];
+			  word_weights[k] = new_value;
+		  }
 
-    for (; s != next; s++)
-    { float *v_s = &(l.v[s->document * l.all->lda]);
-      float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
-      float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-      for (size_t k = 0; k < l.all->lda; k++)
-      { float new_value = u_for_w[k] * v_s[k] * c_w;
-        l.total_new[k] += new_value;
-        word_weights[k] += new_value;
-      }
-    }
+		  for (; s != next; s++)
+		  {
+			  float *v_s = &(l.v[s->document * l.all->lda]);
+			  float *u_for_w = &weights[(s->f.weight_index & l.all->reg.weight_mask) + l.all->lda + 1];
+			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
+			  for (size_t k = 0; k < l.all->lda; k++)
+			  {
+				  float new_value = u_for_w[k] * v_s[k] * c_w;
+				  l.total_new[k] += new_value;
+				  word_weights[k] += new_value;
+			  }
+		  }
+	  }
+  
+	  for (size_t k = 0; k < l.all->lda; k++)
+	  { l.total_lambda[k] *= minuseta;
+		l.total_lambda[k] += l.total_new[k];
+	  }
   }
-  for (size_t k = 0; k < l.all->lda; k++)
-  { l.total_lambda[k] *= minuseta;
-    l.total_lambda[k] += l.total_new[k];
-  }
-
   l.sorted_features.resize(0);
 
   l.examples.erase();
@@ -795,7 +843,8 @@ void learn_batch(lda &l)
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{ uint32_t num_ex = (uint32_t)l.examples.size();
+{ 
+  uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (features& fs : ec)
@@ -809,12 +858,267 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
     learn_batch(l);
 }
 
+void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
+{
+  if (l.all->passes_complete == 0)
+  { // build feature to example map
+    auto weight_mask = l.all->reg.weight_mask;
+    auto stride_shift = l.all->reg.stride_shift;
+    
+    for (features& fs : ec)
+    { for (features::iterator& f : fs)
+      { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
+        l.feature_counts[idx] += f.value();
+        l.feature_to_example_map[idx].push_back(ec.example_counter);
+      }
+    }
+  }
+
+  learn(l, base, ec);
+}
+
 // placeholder
 void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+
+struct word_doc_frequency
+{
+	// feature/word index
+	uint64_t idx;
+	// document count
+	uint32_t count;
+};
+
+// cooccurence of 2 features/words
+struct feature_pair
+{
+	// feature/word 1
+	uint64_t f1;
+	// feature/word 2
+	uint64_t f2;
+
+	feature_pair(uint64_t _f1, uint64_t _f2) : f1(_f1), f2(_f2)
+	{}
+};
+
+void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
+{
+	weight* weight_vector = all->reg.weight_vector;
+	uint64_t length = (uint64_t)1 << all->num_bits;
+	uint64_t stride = (uint64_t)1 << all->reg.stride_shift;
+
+	// get top features for this topic
+	auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
+	std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
+	for (uint64_t i = 0; i < min(top_words_count, length); i++)
+	{
+		weight v = weight_vector[(stride * i) + topic];
+		top_features.push(std::make_tuple(v, i));
+	}
+
+	for (uint64_t i = top_words_count; i < length; i++)
+	{
+		weight v = weight_vector[(stride * i) + topic];
+
+		if (v > std::get<0>(top_features.top()))
+		{
+			top_features.pop();
+			top_features.push(std::make_tuple(v, i));
+		}
+	}
+
+	// extract idx and sort descending
+	output.resize(top_features.size());
+	for (int i = top_features.size() - 1; i >= 0; i--)
+	{
+		output[i] = top_features.top();
+		top_features.pop();
+	}
+}
+
+void compute_coherence_metrics(lda &l)
+{
+	weight* weight_vector = l.all->reg.weight_vector;
+	uint64_t length = (uint64_t)1 << l.all->num_bits;
+	uint64_t stride = (uint64_t)1 << l.all->reg.stride_shift;
+
+	std::vector<std::vector<feature_pair>> topics_word_pairs;
+	topics_word_pairs.resize(l.topics);
+
+	int top_words_count = 10; // parameterize and check
+
+ 	// TODO: remove or make output file available through parameters
+	/*
+	FILE* vocab = fopen("C:\\Data\\MinMaxWordFreq_1200_0.3\\vocab.tsv", "w");
+	for (int f = 0; f < length;f++)
+	{
+		fprintf(vocab, "%d\t%d\t%d\n", 
+			f,
+			l.feature_counts[f],
+			l.feature_to_example_map[f].size());
+	}
+	fclose(vocab);
+
+	FILE* docAlloc = fopen("C:\\Data\\MinMaxWordFreq_1200_0.3\\VW-DocumentTopicAllocations.txt", "w");
+	// using jagged array to enable LINQ
+	auto K = l.all->lda;
+
+	uint64_t stride_shift = l.all->reg.stride_shift;
+	for (uint64_t i = 0; i < length; i++)
+	{
+		auto offset = i << stride_shift;
+
+		// over topics
+		for (uint64_t k = 0; k < K; k++)
+		{
+			weight *v = &(l.all->reg.weight_vector[offset + k]);
+			fprintf(docAlloc, "%f ", *v + l.lda_rho);
+		}
+		fprintf(docAlloc, "\n");
+	}
+	fclose(docAlloc);
+	*/
+
+	for (size_t topic = 0; topic < l.topics;topic++)
+	{
+		// get top features for this topic
+		auto cmp = [](feature& left, feature& right) { return left.x > right.x; };
+		std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
+		for (uint64_t i = 0; i < min(top_words_count, length); i++)
+		{
+			weight v = weight_vector[(stride * i) + topic];
+			top_features.push(feature(v, i));
+		}
+
+		for (uint64_t i = top_words_count; i < length; i++)
+		{
+			weight v = weight_vector[(stride * i) + topic];
+
+			if (v > top_features.top().x)
+			{
+				top_features.pop();
+				top_features.push(feature(v, i));
+			}
+		}
+
+		// extract idx and sort descending
+		vector<uint64_t> top_features_idx;
+		top_features_idx.resize(top_features.size());
+		for (int i = top_features.size() - 1; i >= 0; i--)
+		{
+			top_features_idx[i] = top_features.top().weight_index;
+			top_features.pop();
+		}
+
+		auto& word_pairs = topics_word_pairs[topic];
+		for (size_t i = 0; i < top_features_idx.size(); i++)
+			for (size_t j = i + 1; j < top_features_idx.size(); j++)
+				word_pairs.push_back(feature_pair(top_features_idx[i], top_features_idx[j]));
+	}
+
+	// compress word pairs and create record for storing frequency
+	std::map<uint64_t, std::vector<word_doc_frequency>> coWordsDFSet;
+	for (auto& vec : topics_word_pairs)
+	{
+		for (auto& wp : vec)
+		{
+			auto f1 = wp.f1;
+			auto f2 = wp.f2;
+			auto wdf = coWordsDFSet.find(f1);
+
+			if (wdf != coWordsDFSet.end())
+			{
+				// http://stackoverflow.com/questions/5377434/does-stdmapiterator-return-a-copy-of-value-or-a-value-itself
+				//if (wdf->second.find(f2) == wdf->second.end())
+
+				if (std::find_if(wdf->second.begin(), wdf->second.end(), [&f2](const word_doc_frequency& v) { return v.idx == f2; }) != wdf->second.end())
+				{
+					wdf->second.push_back({ f2, 0 });
+					//printf(" add %d %d\n", f1, f2);
+				}
+			}
+			else
+			{
+				std::vector<word_doc_frequency> vec = { { f2, 0 } };
+				coWordsDFSet.insert(std::make_pair(f1, vec));
+				//printf(" insert %d %d\n", f1, f2);
+			}
+		}
+	}
+
+	// this.GetWordPairsDocumentFrequency(coWordsDFSet);
+	for (auto& pair : coWordsDFSet)
+	{
+		auto& examples_for_f1 = l.feature_to_example_map[pair.first];
+		for (auto& wdf : pair.second)
+		{
+			auto& examples_for_f2 = l.feature_to_example_map[wdf.idx];
+
+			// assumes examples_for_f1 and examples_for_f2 are orderd
+			size_t i = 0;
+			size_t j = 0;
+			while (i < examples_for_f1.size() && j < examples_for_f2.size())
+			{
+				if (examples_for_f1[i] == examples_for_f2[j])
+				{
+					wdf.count++;
+					i++;
+					j++;
+				}
+				else if (examples_for_f2[j] < examples_for_f1[i])
+					j++;
+				else
+					i++;
+			}
+		}
+	}
+
+	float epsilon = 1e-6f; // TODO
+	float avg_coherence = 0;
+	for (size_t topic = 0; topic < l.topics;topic++)
+	{
+		float coherence = 0;
+
+		for (auto& pairs : topics_word_pairs[topic])
+		{
+			auto f1 = pairs.f1;
+			if (l.feature_counts[f1] == 0)
+				continue;
+
+			auto f2 = pairs.f2;
+			auto& co_feature = coWordsDFSet[f1];
+			auto co_feature_df = std::find_if(co_feature.begin(), co_feature.end(), [&f2](const word_doc_frequency& v) { return v.idx == f2; });
+
+			if (co_feature_df != co_feature.end())
+			{
+				// printf("(%d:%d + eps)/(%d:%d)\n", f2, co_feature_df->count, f1, l.feature_counts[f1]);
+				coherence += logf((co_feature_df->count + epsilon) / l.feature_counts[f1]);
+			}
+		}
+
+		printf("Topic %3d coherence: %f\n", (int)topic, coherence);
+
+		// TODO: expose per topic coherence
+
+		// TODO: good vs. bad topics
+		avg_coherence += coherence;
+	}
+
+	avg_coherence /= l.topics;
+
+	printf("Avg topic coherence: %f\n", avg_coherence);
+}
 
 void end_pass(lda &l)
-{ if (l.examples.size())
-    learn_batch(l);
+{ 
+	if (l.examples.size())
+		learn_batch(l);
+
+	if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
+	{
+		compute_coherence_metrics(l);
+		// FASTPASS return;
+	}
 }
 
 void end_examples(lda &l)
@@ -867,7 +1171,8 @@ LEARNER::base_learner *lda_setup(vw &all)
     ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
     ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
     ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
-    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx");
+    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx")
+    ("metrics", po::value<bool>()->default_value(false), "Compute metrics");
   add_options(all);
   po::variables_map &vm = all.vm;
 
@@ -886,6 +1191,11 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.all = &all;
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
+  ld.compute_coherence_metrics = vm["metrics"].as<bool>();
+  if (ld.compute_coherence_metrics) {
+	  ld.feature_counts.resize((uint32_t)1 << all.num_bits);
+	  ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
   all.reg.stride_shift = (size_t)temp;
@@ -909,8 +1219,8 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, learn, 1 << all.reg.stride_shift);
-  l.set_predict(predict);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.reg.stride_shift);
+  l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);

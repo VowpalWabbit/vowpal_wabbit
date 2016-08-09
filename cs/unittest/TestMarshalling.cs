@@ -231,6 +231,11 @@ namespace cs_unittest
         }
     }
 
+    public class POCODict
+    {
+        public Dictionary<string, float> Features { get; set; }
+    }
+
     public class POCO
     {
         public bool Feature1 { get; set; }

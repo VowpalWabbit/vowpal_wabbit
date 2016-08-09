@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -26,6 +27,7 @@ namespace VW.Serializer
     /// <summary>
     /// Feature data composed during compilation step.
     /// </summary>
+    [DebuggerDisplay("FeatureExpression({Name})")]
     public sealed class FeatureExpression
     {
         /// <summary>
@@ -45,6 +47,7 @@ namespace VW.Serializer
         /// <param name="stringProcessing">Configures string pre-processing for this feature.</param>
         /// <param name="overrideSerializeMethod">An optional method overriding the otherwise auto-resolved serialization method.</param>
         /// <param name="dictify">True if a dictionary should be build for this feature.</param>
+        /// <param name="parent">The parent feature expression.</param>
         public FeatureExpression(Type featureType,
             string name,
             Func<Expression, Expression> valueExpressionFactory,
@@ -58,7 +61,8 @@ namespace VW.Serializer
             bool addAnchor = false,
             StringProcessing stringProcessing = StringProcessing.Split,
             MethodInfo overrideSerializeMethod = null,
-            bool? dictify = null)
+            bool? dictify = null,
+            FeatureExpression parent = null)
         {
             if (featureType == null)
                 throw new ArgumentNullException("featureType");
@@ -94,12 +98,18 @@ namespace VW.Serializer
             this.StringProcessing = stringProcessing;
             this.OverrideSerializeMethod = overrideSerializeMethod;
             this.Dictify = dictify ?? false;
+            this.Parent = parent;
 
             this.DenseFeatureValueElementType = InspectionHelper.GetEnumerableElementType(featureType);
 
             if (!InspectionHelper.IsNumericType(this.DenseFeatureValueElementType))
                 this.DenseFeatureValueElementType = null;
         }
+
+        /// <summary>
+        /// The parent feature expression.
+        /// </summary>
+        public FeatureExpression Parent { get; private set; }
 
         /// <summary>
         /// True if the type is nullable.
