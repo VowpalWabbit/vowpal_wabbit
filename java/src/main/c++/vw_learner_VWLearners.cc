@@ -26,6 +26,11 @@ JNIEXPORT void JNICALL Java_vw_learner_VWLearners_closeInstance(JNIEnv *env, job
   }
 }
 
+bool args_contain(vw* vwInstance, const std::string& arg)
+{ std::vector<std::string> args = vwInstance->args;
+  return std::find(args.begin(), args.end(), arg) != args.end();
+}
+
 JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, jobject obj, jlong vwPtr)
 { jclass clVWReturnType = env->FindClass(RETURN_TYPE);
   jfieldID field;
@@ -38,6 +43,10 @@ JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, 
   }
   else if (vwInstance->p->lp.parse_label == MULTILABEL::multilabel.parse_label)
     field = env->GetStaticFieldID(clVWReturnType , "VWIntArrayType", RETURN_TYPE_INSTANCE);
+  else if (args_contain(vwInstance, "cb_explore_adf") ||
+           args_contain(vwInstance, "cb_explore") ||
+           args_contain(vwInstance, "rank_all"))
+    field = env->GetStaticFieldID(clVWReturnType , "VWFloatArrayType", RETURN_TYPE_INSTANCE);
   else if (vwInstance->p->lp.parse_label == MULTICLASS::mc_label.parse_label ||
            vwInstance->p->lp.parse_label == CB::cb_label.parse_label ||
            vwInstance->p->lp.parse_label == CB_EVAL::cb_eval.parse_label ||
