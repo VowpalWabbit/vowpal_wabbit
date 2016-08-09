@@ -44,7 +44,6 @@ T base_predict(
 template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
-  jobject obj,
   jstring example_string,
   jboolean learn,
   jlong vwPtr,
@@ -58,7 +57,6 @@ T base_predict(
 template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
-  jobject obj,
   jobjectArray example_strings,
   jboolean learn,
   jlong vwPtr,
