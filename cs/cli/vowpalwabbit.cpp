@@ -13,8 +13,10 @@ license as described in the file LICENSE.
 #include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
+#include "lda_core.h"
 
 using namespace System;
+using namespace System::Collections::Generic;
 using namespace System::Text;
 
 namespace VW
@@ -697,6 +699,37 @@ namespace VW
 #endif
   }
   
+  cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
+  {
+	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	  uint64_t stride_shift = m_vw->reg.stride_shift;
+
+	  // using jagged array to enable LINQ
+	  auto K = m_vw->lda;
+	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
+	  for (uint64_t k = 0; k < K; k++)
+		  allocation[k] = gcnew cli::array<float>(top);
+
+	  // TODO: better way of peaking into lda?
+	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+	  
+	  v_array<tuple<weight, uint64_t>> top_weights;
+
+	  // over topics
+	  for (uint64_t topic = 0; topic < K; topic++)
+	  {
+		  get_top_weights(m_vw, top, topic, top_weights);
+
+		  auto clr_weights = gcnew List<VowpalWabbitFeature^>();
+		  allocation[topic] = clr_weights;
+		  for (auto& pair : top_weights)
+			  clr_weights->Add(gcnew VowpalWabbitFeature(nullptr, std::get<0>(pair), std::get<1>(pair)));
+	  }
+
+	  return allocation;
+  }
+
+
   cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
@@ -711,7 +744,7 @@ namespace VW
 	  // TODO: better way of peaking into lda?
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
-	  // over fetures
+	  // over weights
 	  for (uint64_t i = 0; i < length; i++)
 	  {
 		  auto offset = i << stride_shift;
