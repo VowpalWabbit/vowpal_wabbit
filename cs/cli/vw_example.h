@@ -16,6 +16,8 @@ namespace VW
   using namespace System::Collections::Generic;
   using namespace VW::Labels;
 
+  ref class VowpalWabbitExample;
+
     [System::Diagnostics::DebuggerDisplay("{m_weight_index}:{m_x}")]
     public ref struct VowpalWabbitFeature
     {

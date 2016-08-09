@@ -705,10 +705,10 @@ namespace VW
 	  uint64_t stride_shift = m_vw->reg.stride_shift;
 
 	  // using jagged array to enable LINQ
-	  auto K = m_vw->lda;
+	  auto K = (int)m_vw->lda;
 	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
-	  for (uint64_t k = 0; k < K; k++)
-		  allocation[k] = gcnew cli::array<float>(top);
+	  for (int k = 0; k < K; k++)
+		  allocation[k] = gcnew List<VowpalWabbitFeature^>(top);
 
 	  // TODO: better way of peaking into lda?
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
@@ -716,7 +716,7 @@ namespace VW
 	  v_array<tuple<weight, uint64_t>> top_weights;
 
 	  // over topics
-	  for (uint64_t topic = 0; topic < K; topic++)
+	  for (int topic = 0; topic < K; topic++)
 	  {
 		  get_top_weights(m_vw, top, topic, top_weights);
 
@@ -736,10 +736,10 @@ namespace VW
 	  uint64_t stride_shift = m_vw->reg.stride_shift;
 
 	  // using jagged array to enable LINQ
-	  auto K = m_vw->lda;
+	  auto K = (int)m_vw->lda;
 	  auto allocation = gcnew cli::array<cli::array<float>^>(K);
-	  for (uint64_t k = 0; k < K; k++)
-		  allocation[k] = gcnew cli::array<float>(length);
+	  for (int k = 0; k < K; k++)
+		  allocation[k] = gcnew cli::array<float>((int)length);
 
 	  // TODO: better way of peaking into lda?
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
@@ -752,7 +752,7 @@ namespace VW
 		  for (uint64_t k = 0; k < K; k++)
 		  {
 			  weight *v = &(m_vw->reg.weight_vector[offset + k]);
-			  allocation[k][i] = *v + lda_rho;
+			  allocation[(int)k][(int)i] = *v + lda_rho;
 		  }
 	  }
 

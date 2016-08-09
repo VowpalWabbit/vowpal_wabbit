@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 namespace VW
 {
     ref class VowpalWabbitExampleBuilder;
+	ref struct VowpalWabbitFeature;
 
     /// <summary>
     /// Simple string example based wrapper for vowpal wabbit.

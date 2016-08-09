@@ -25,7 +25,7 @@ namespace VW
 		if (m_buffer != nullptr && m_buffer->Length >= nbytes)
 			return;
 
-		m_buffer = gcnew array<unsigned char>(nbytes);
+		m_buffer = gcnew array<unsigned char>((int)nbytes);
 	}
 
     int clr_io_buf::open_file(const char* name, bool stdin_off, int flag)
