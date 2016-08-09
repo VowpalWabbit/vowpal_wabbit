@@ -19,6 +19,8 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Created by jmorra on 10/29/15.
+ * NOTE: Because of some changes to VW during some of the tests which are supposed to trigger failures
+ *   standard error is written to.  This is expected behavior during these tests.
  */
 public class VWLearnersTest extends VWTestHelper {
 
