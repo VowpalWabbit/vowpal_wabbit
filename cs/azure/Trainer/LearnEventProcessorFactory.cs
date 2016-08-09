@@ -164,6 +164,36 @@ namespace VowpalWabbit.Azure
             }
         }
 
+        private static bool TryExtractProperty(VowpalWabbitJsonParseState state, string property, string expectedProperty, JsonToken expectedToken, Action<JsonReader> success)
+        {
+            if (property.Equals(expectedProperty, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!state.Reader.Read() && state.Reader.TokenType != expectedToken)
+                    throw new VowpalWabbitJsonException(state.Reader, $"Property '{expectedProperty}' must be of type '{expectedToken}'");
+
+                success(state.Reader);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryExtractArrayProperty<T>(VowpalWabbitJsonParseState state, string property, string expectedProperty, Action<T[]> success)
+        {
+            return TryExtractProperty(
+                state, 
+                property, 
+                expectedProperty, 
+                JsonToken.StartArray,
+                reader =>
+                {
+                    success(JsonSerializer.CreateDefault().Deserialize<T[]>(reader));
+
+                    if (state.Reader.TokenType != JsonToken.EndArray && !reader.Read())
+                        throw new VowpalWabbitJsonException(state.Reader, $"Property {expectedProperty} must end with 'EndArray'");
+                });
+        }
+
         private IEnumerable<PipelineData> Stage1_Deserialize(PipelineData data)
         {
             try
@@ -180,25 +210,26 @@ namespace VowpalWabbit.Azure
 
                         vwJsonSerializer.RegisterExtension((state, property) =>
                         {
-                            if (property.Equals("_eventid", StringComparison.OrdinalIgnoreCase))
-                            {
-                                if (!state.Reader.Read() && state.Reader.TokenType != JsonToken.String)
-                                    throw new VowpalWabbitJsonException(state.Reader, "Expected string");
-                                data.EventId = (string)state.Reader.Value;
-
+                            if (TryExtractProperty(state, property, "_eventid", JsonToken.String, reader => data.EventId = (string)reader.Value))
                                 return true;
-                            }
-                            else if (property.Equals("_timestamp", StringComparison.OrdinalIgnoreCase))
-                            {
-                                if (!state.Reader.Read() && state.Reader.TokenType != JsonToken.Date)
-                                    throw new VowpalWabbitJsonException(state.Reader, "Expected date");
-                                data.Timestamp = (DateTime)state.Reader.Value;
-                            }
+                            else if (TryExtractProperty(state, property, "_timestamp", JsonToken.Date, reader => data.Timestamp = (DateTime)reader.Value))
+                                return true;
+                            else if (TryExtractProperty(state, property, "_ProbabilityOfDrop", JsonToken.Float, reader => data.ProbabilityOfDrop = (float)(reader.Value ?? 0f)))
+                                return true;
+                            else if (TryExtractArrayProperty<float>(state, property, "_p", arr => data.Probabilities = arr))
+                                return true;
+                            else if (TryExtractArrayProperty<int>(state, property, "_a", arr => data.Actions = arr))
+                                return true;
 
                             return false;
                         });
 
                         data.Example = vwJsonSerializer.ParseAndCreate(jsonReader);
+
+                        if (data.Probabilities == null)
+                            throw new ArgumentNullException("Missing probabilities (_p)");
+                        if (data.Actions == null)
+                            throw new ArgumentNullException("Missing actions (_a)");
 
                         if (data.Example == null)
                         {

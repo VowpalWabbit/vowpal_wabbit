@@ -85,9 +85,10 @@ namespace cs_unittest
                         }
                     }
 
-
-                    if (vw.Arguments.NumPasses > 0)
+                    if (vw.Arguments.NumPasses > 1)
                         vw.RunMultiPass();
+                    else
+                        vw.EndOfPass();
 
                     if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                         VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);

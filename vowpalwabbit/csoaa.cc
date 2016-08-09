@@ -363,9 +363,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
-{ //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
-  if (data.ec_seq.size() <= 0) return;  // nothing to do
-
+{ if (data.ec_seq.size() <= 0) return;  // nothing to do
   /////////////////////// handle label definitions
   if (ec_seq_is_label_definition(data.ec_seq))
   {
@@ -426,9 +424,9 @@ void do_actual_learning(ldf& data, base_learner& base)
 
   /////////////////////// learn
   if (is_learn && !isTest)
-  { if (data.is_wap) do_actual_learning_wap(data, base, start_K);
-    else             do_actual_learning_oaa(data, base, start_K);
-  }
+    {if (data.is_wap) do_actual_learning_wap(data, base, start_K);
+      else             do_actual_learning_oaa(data, base, start_K);
+    }
 
   if(data.rank)
   { data.stored_preds[0].erase();

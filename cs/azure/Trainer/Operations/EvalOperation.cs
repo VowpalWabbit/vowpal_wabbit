@@ -70,32 +70,18 @@ namespace VowpalWabbit.Azure.Trainer.Operations
 
         internal ITargetBlock<object> TargetBlock { get { return this.evalBlock; } }
 
-        private static EvalData Create(ContextualBanditLabel label, string policyName, uint actionTaken)
-        {
-            return new EvalData
-            {
-                PolicyName = policyName,
-                JSON = JsonConvert.SerializeObject(
-                    new
-                    {
-                        name = policyName,
-                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Cost, label.Probability),
-                        prob = label.Probability 
-                    })
-            };
-        }
-
-        private IEnumerable<EvalData> OfflineEvaluate(object trainerResult)
+        private List<EvalData> OfflineEvaluate(object trainerResult)
         {
             try
             {
-                return this.OfflineEvaluateInternal(trainerResult as TrainerResult);
+                return this.OfflineEvaluateInternal(trainerResult as TrainerResult)
+                    .ToList();
             }
             catch (Exception e)
             {
                 this.telemetry.TrackException(e);
 
-                return new EvalData[0];
+                return new List<EvalData>();
             }
         }
 
@@ -106,10 +92,22 @@ namespace VowpalWabbit.Azure.Trainer.Operations
 
             if (trainerResult == null)
             {
-                this.telemetry.TrackTrace($"Received invalid data: {trainerResult}");
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult is null");
                 yield break;
             }
 
+            if (trainerResult.Label == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.Label is null");
+                yield break;
+            }
+
+            if (trainerResult.ProgressivePrediction == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
+                yield break;
+            }
+            
             yield return new EvalData
             {
                 PolicyName = "Latest Policy",
@@ -121,7 +119,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                         // VW action is 0-based, label Action is 1 based
                         cost = trainerResult.ProgressivePrediction
                             .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, ap.Action + 1, trainerResult.Label.Cost, trainerResult.Label.Probability)),
-                        prob = trainerResult.Label.Probability
+                        prob = trainerResult.ProgressivePrediction
+                            .Sum(ap => ap.Score / (trainerResult.Probabilities[ap.Action] * (1 - trainerResult.ProbabilityOfDrop)))
                     })
             };
 
@@ -139,7 +138,17 @@ namespace VowpalWabbit.Azure.Trainer.Operations
             };
 
             for (int action = 1; action <= trainerResult.ProgressivePrediction.Length; action++)
-                yield return Create(trainerResult.Label, $"Constant Policy {action}", (uint)action);
+                yield return new EvalData
+                {
+                    PolicyName = $"Constant Policy {action}",
+                    JSON = JsonConvert.SerializeObject(
+                    new
+                    {
+                        name = $"Constant Policy {action}",
+                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
+                        prob = trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)
+                    })
+                };
         }
 
         private void UploadEvaluation(IList<EvalData> batch)

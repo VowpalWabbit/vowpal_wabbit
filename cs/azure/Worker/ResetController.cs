@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
 using VowpalWabbit.Azure.Trainer;
 
 namespace VowpalWabbit.Azure.Worker
@@ -17,6 +18,10 @@ namespace VowpalWabbit.Azure.Worker
         {
         }
 
+        /// <summary>
+        /// Vanilla reset.
+        /// </summary>
+        [HttpGet]
         public async Task<HttpResponseMessage> Get()
         {
             if (!this.TryAuthorize())
@@ -35,6 +40,10 @@ namespace VowpalWabbit.Azure.Worker
             }
         }
 
+        /// <summary>
+        /// Reset optionally include EventHub position.
+        /// </summary>
+        [HttpPost]
         public async Task<HttpResponseMessage> Post()
         {
             if (!this.TryAuthorize())
@@ -48,6 +57,30 @@ namespace VowpalWabbit.Azure.Worker
                     state = JsonConvert.DeserializeObject<OnlineTrainerState>(body);
 
                 await this.trainProcessorHost.ResetModelAsync(state);
+
+                return this.Request.CreateResponse(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                this.telemetry.TrackException(ex);
+                return this.Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Reset including a warm started model.
+        /// </summary>
+        [HttpPut]
+        public async Task<HttpResponseMessage> Put()
+        {
+            if (!this.TryAuthorize())
+                return this.Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            try
+            {
+                var model = await Request.Content.ReadAsByteArrayAsync();
+
+                await this.trainProcessorHost.ResetModelAsync(model: model);
 
                 return this.Request.CreateResponse(HttpStatusCode.OK);
             }

@@ -1491,3 +1491,13 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --audit -d train-sets/audit.dat --noconstant
     train-sets/ref/audit.stderr
     train-sets/ref/audit.stdout
+
+# Test 138: cb_explore_adf with cover exploration
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict
+    train-sets/ref/cbe_adf_cover.stderr
+    pred-sets/ref/cbe_adf_cover.predict
+
+# Test 139: cb_explore_adf with cover exploration + double robust
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.stderr
+    pred-sets/ref/cbe_adf_cover_dr.predict

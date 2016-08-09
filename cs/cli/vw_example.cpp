@@ -187,10 +187,10 @@ namespace VW
             auto masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
             auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
 
-            System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
+            /*System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
               fa.indicies[ia], masked_weight_index,
               fb.indicies[ib], other_masked_weight_index
-              ));
+              ));*/
 
             if (masked_weight_index == other_masked_weight_index && FloatEqual(fa.values[ia], fb.values[ib]))
                 ib++;
