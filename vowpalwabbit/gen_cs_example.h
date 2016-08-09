@@ -207,7 +207,7 @@ template<bool is_learn>
 	       COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, size_t id = 0)
   { 
     cb_labels.erase();
-    if (prepped_cs_labels.size() < cs_labels.costs.size())
+    if (prepped_cs_labels.size() < cs_labels.costs.size()+1)
       {
 	prepped_cs_labels.resize(cs_labels.costs.size()+1);
 	prepped_cs_labels.end() = prepped_cs_labels.end_array;
