@@ -901,6 +901,41 @@ struct feature_pair
 	{}
 };
 
+void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
+{
+	weight* weight_vector = all->reg.weight_vector;
+	uint64_t length = (uint64_t)1 << all->num_bits;
+	uint64_t stride = (uint64_t)1 << all->reg.stride_shift;
+
+	// get top features for this topic
+	auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
+	std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
+	for (uint64_t i = 0; i < min(top_words_count, length); i++)
+	{
+		weight v = weight_vector[(stride * i) + topic];
+		top_features.push(std::make_tuple(v, i));
+	}
+
+	for (uint64_t i = top_words_count; i < length; i++)
+	{
+		weight v = weight_vector[(stride * i) + topic];
+
+		if (v > std::get<0>(top_features.top()))
+		{
+			top_features.pop();
+			top_features.push(std::make_tuple(v, i));
+		}
+	}
+
+	// extract idx and sort descending
+	output.resize(top_features.size());
+	for (int i = top_features.size() - 1; i >= 0; i--)
+	{
+		output[i] = top_features.top();
+		top_features.pop();
+	}
+}
+
 void compute_coherence_metrics(lda &l)
 {
 	weight* weight_vector = l.all->reg.weight_vector;
