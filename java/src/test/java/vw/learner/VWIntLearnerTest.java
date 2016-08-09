@@ -18,25 +18,21 @@ public class VWIntLearnerTest extends VWTestHelper {
 
     @Test
     public void testCBADF() throws IOException {
-       // while(true) {
-            String[][] train = new String[][]{
-                    new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-                    new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
-                    new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-                    new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
-            };
+        String[][] train = new String[][]{
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
+        };
 
-            String cbADFModel = temporaryFolder.newFile().getAbsolutePath();
-            //VWIntLearner vw = VWLearners.create("--quiet --cb_adf -f " + cbADFModel);
-            VWFloatArrayLearner vw = VWLearners.create("--quiet --cb_adf -f " + cbADFModel);
-            float[][] trainPreds = new float[train.length][];
-            for (int i=0; i<train.length; ++i) {
-                trainPreds[i] = vw.learn(train[i]);
-            }
-            //int[] expectedTrainPreds = new int[]{0, 0, 0, 1};
-            vw.close();
-            //assertArrayEquals(expectedTrainPreds, trainPreds);
-       // }
+        VWIntLearner vw = VWLearners.create("--quiet --cb_adf");
+        int[] trainPreds = new int[train.length];
+        for (int i=0; i<train.length; ++i) {
+            trainPreds[i] = vw.learn(train[i]);
+        }
+        int[] expectedTrainPreds = new int[]{0, 0, 0, 1};
+        vw.close();
+        assertArrayEquals(expectedTrainPreds, trainPreds);
     }
 
     @Test
@@ -46,11 +42,11 @@ public class VWIntLearnerTest extends VWTestHelper {
         // echo -e "1:2:0.4 | a c\n3:0.5:0.2 | b d\n4:1.2:0.5 | a b c\n2:1:0.3 | b c\n3:1.5:0.7 | a d" | ../vowpalwabbit/vw --cb 4 -f cb.model -p cb.train.out
         // echo -e "1:2 3:5 4:1:0.6 | a c d\n1:0.5 2:1:0.4 3:2 4:1.5 | c d" | ../vowpalwabbit/vw -i cb.model -t -p cb.out
         String[] train = new String[]{
-                "1:2:0.4 | a c",
-                "3:0.5:0.2 | b d",
-                "4:1.2:0.5 | a b c",
-                "2:1:0.3 | b c",
-                "3:1.5:0.7 | a d"
+            "1:2:0.4 | a c",
+            "3:0.5:0.2 | b d",
+            "4:1.2:0.5 | a b c",
+            "2:1:0.3 | b c",
+            "3:1.5:0.7 | a d"
         };
         String cbModel = temporaryFolder.newFile().getAbsolutePath();
         VWIntLearner vw = VWLearners.create("--quiet --cb 4 -f " + cbModel);
@@ -65,8 +61,8 @@ public class VWIntLearnerTest extends VWTestHelper {
 
         vw = VWLearners.create("--quiet -t -i " + cbModel);
         String[] test = new String[]{
-                "1:2 3:5 4:1:0.6 | a c d",
-                "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
+            "1:2 3:5 4:1:0.6 | a c d",
+            "1:0.5 2:1:0.4 3:2 4:1.5 | c d"
         };
 
         int[] testPreds = new int[test.length];

@@ -21,8 +21,8 @@ T base_predict(
   example* ex,
   bool learn,
   vw* vwInstance,
-  const F &predictor,
-  const bool predict = true)
+  const F& predictor,
+  const bool predict)
 { T result = 0;
   try
   { if (learn)
@@ -48,10 +48,11 @@ T base_predict(
   jstring example_string,
   jboolean learn,
   jlong vwPtr,
-  const F &predictor)
+  jlong predictorPtr)
 { vw* vwInstance = (vw*)vwPtr;
+  F* predictor = (F*)predictorPtr;
   example* ex = read_example(env, example_string, vwInstance);
-  return base_predict<T>(env, ex, learn, vwInstance, predictor);
+  return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
 
 template<typename T, typename F>
@@ -61,8 +62,9 @@ T base_predict(
   jobjectArray example_strings,
   jboolean learn,
   jlong vwPtr,
-  const F &predictor)
+  jlong predictorPtr)
 { vw* vwInstance = (vw*)vwPtr;
+  F* predictor = (F*)predictorPtr;
   int example_count = env->GetArrayLength(example_strings);
 
   // When doing multiline prediction the final result is stored in the FIRST example parsed.
@@ -70,9 +72,9 @@ T base_predict(
   for (int i=0; i<example_count; i++) {
     jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
+    base_predict<T>(env, ex, learn, vwInstance, predictor, false);
     if (i == 0)
       first_example = ex;
-    base_predict<T>(env, ex, learn, vwInstance, predictor, false);
   }
   env->DeleteLocalRef(example_strings);
 

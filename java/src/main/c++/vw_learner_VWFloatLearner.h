@@ -14,7 +14,7 @@ extern "C"
  * Signature: (Ljava/lang/String;ZJ)F
  */
 JNIEXPORT jfloat JNICALL Java_vw_learner_VWFloatLearner_predict
-(JNIEnv *, jobject, jstring, jboolean, jlong);
+(JNIEnv *, jobject, jstring, jboolean, jlong, jlong);
 
 /*
  * Class:     vw_learner_VWFloatLearner
@@ -22,7 +22,7 @@ JNIEXPORT jfloat JNICALL Java_vw_learner_VWFloatLearner_predict
  * Signature: (Ljava/lang/String;ZJ)F
  */
 JNIEXPORT jfloat JNICALL Java_vw_learner_VWFloatLearner_predictMultiline
-(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+(JNIEnv *, jobject, jobjectArray, jboolean, jlong, jlong);
 
 #ifdef __cplusplus
 }

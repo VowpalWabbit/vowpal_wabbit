@@ -25,6 +25,7 @@ abstract class VWBase implements Closeable {
      */
     protected final Lock lock;
     protected final long nativePointer;
+    protected final long predictionFunctionPointer;
 
     /**
      * Create a new VW instance that is ready to either create predictions or learn based on examples.
@@ -35,10 +36,11 @@ abstract class VWBase implements Closeable {
      * 3.  Call either {@link System#load(String)} or {@link System#loadLibrary(String)}<br>
      * If a user wishes to use the prepackaged JNI libraries (which is encouraged) then no additional steps need to be taken.
      */
-    protected VWBase(final long nativePointer) {
+    protected VWBase(final long nativePointer, final long predictionFunctionPointer) {
         isOpen = true;
         lock = new ReentrantLock();
         this.nativePointer = nativePointer;
+        this.predictionFunctionPointer = predictionFunctionPointer;
     }
 
     /**
@@ -69,12 +71,15 @@ abstract class VWBase implements Closeable {
 
         VWBase vwBase = (VWBase) o;
 
-        return nativePointer == vwBase.nativePointer;
+        if (nativePointer != vwBase.nativePointer) return false;
+        return predictionFunctionPointer == vwBase.predictionFunctionPointer;
 
     }
 
     @Override
     public int hashCode() {
-        return (int) (nativePointer ^ (nativePointer >>> 32));
+        int result = (int) (nativePointer ^ (nativePointer >>> 32));
+        result = 31 * result + (int) (predictionFunctionPointer ^ (predictionFunctionPointer >>> 32));
+        return result;
     }
 }

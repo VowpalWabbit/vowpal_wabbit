@@ -4,8 +4,8 @@ package vw.learner;
  * @author deak
  */
 final public class VWFloatLearner extends VWBase implements VWLearner {
-    VWFloatLearner(final long nativePointer) {
-        super(nativePointer);
+    VWFloatLearner(final long nativePointer, final long predictionFunctionPointer) {
+        super(nativePointer, predictionFunctionPointer);
     }
 
     /**
@@ -19,7 +19,7 @@ final public class VWFloatLearner extends VWBase implements VWLearner {
         lock.lock();
         try {
             if (isOpen()) {
-                return predict(example, learn, nativePointer);
+                return predict(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -39,7 +39,7 @@ final public class VWFloatLearner extends VWBase implements VWLearner {
         lock.lock();
         try {
             if (isOpen()) {
-                return predictMultiline(example, learn, nativePointer);
+                return predictMultiline(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -88,6 +88,6 @@ final public class VWFloatLearner extends VWBase implements VWLearner {
         return learnOrPredict(example, true);
     }
 
-    private native float predict(String example, boolean learn, long nativePointer);
-    private native float predictMultiline(String[] example, boolean learn, long nativePointer);
+    private native float predict(String example, boolean learn, long nativePointer, long predictionFunctionPointer);
+    private native float predictMultiline(String[] example, boolean learn, long nativePointer, long predictionFunctionPointer);
 }

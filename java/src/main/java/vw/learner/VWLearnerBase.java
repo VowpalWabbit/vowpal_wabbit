@@ -18,8 +18,8 @@ package vw.learner;
  * @author deak
  */
 abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
-    VWLearnerBase(final long nativePointer) {
-        super(nativePointer);
+    VWLearnerBase(final long nativePointer, final long predictionFunctionPointer) {
+        super(nativePointer, predictionFunctionPointer);
     }
 
     @Override
@@ -40,15 +40,15 @@ abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
         return learnOrPredict(example, false);
     }
 
-    protected abstract T predict(String example, boolean learn, long nativePointer);
+    protected abstract T predict(String example, boolean learn, long nativePointer, long predictionFunctionPointer);
 
-    protected abstract T predictMultiline(String[] example, boolean learn, long nativePointer);
+    protected abstract T predictMultiline(String[] example, boolean learn, long nativePointer, long predictionFunctionPointer);
 
     private T learnOrPredict(final String example, final boolean learn) {
         lock.lock();
         try {
             if (isOpen()) {
-                return predict(example, learn, nativePointer);
+                return predict(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -61,7 +61,7 @@ abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
         lock.lock();
         try {
             if (isOpen()) {
-                return predictMultiline(example, learn, nativePointer);
+                return predictMultiline(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }

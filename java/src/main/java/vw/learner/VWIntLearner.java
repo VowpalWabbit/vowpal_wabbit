@@ -4,8 +4,8 @@ package vw.learner;
  * @author deak
  */
 final public class VWIntLearner extends VWBase implements VWLearner {
-    VWIntLearner(final long nativePointer) {
-        super(nativePointer);
+    VWIntLearner(final long nativePointer, final long predictionFunctionPointer) {
+        super(nativePointer, predictionFunctionPointer);
     }
 
     /**
@@ -19,7 +19,7 @@ final public class VWIntLearner extends VWBase implements VWLearner {
         lock.lock();
         try {
             if (isOpen()) {
-                return predict(example, learn, nativePointer);
+                return predict(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -39,7 +39,7 @@ final public class VWIntLearner extends VWBase implements VWLearner {
         lock.lock();
         try {
             if (isOpen()) {
-                return predictMultiline(example, learn, nativePointer);
+                return predictMultiline(example, learn, nativePointer, predictionFunctionPointer);
             }
             throw new IllegalStateException("Already closed.");
         }
@@ -86,6 +86,6 @@ final public class VWIntLearner extends VWBase implements VWLearner {
      */
     public int learn(final String[] example) { return learnOrPredict(example, true); }
 
-    private native int predict(String example, boolean learn, long nativePointer);
-    private native int predictMultiline(String[] example, boolean learn, long nativePointer);
+    private native int predict(String example, boolean learn, long nativePointer, long predictionFunctionPointer);
+    private native int predictMultiline(String[] example, boolean learn, long nativePointer, long predictionFunctionPointer);
 }

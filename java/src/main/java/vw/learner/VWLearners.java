@@ -43,12 +43,13 @@ final public class VWLearners {
     public static <T extends VWLearner> T create(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
+        long predictionFunctionPointer = getPredictionFunction(nativePointer, returnType.name());
 
         switch (returnType) {
-            case VWFloatType: return (T)new VWFloatLearner(nativePointer);
-            case VWIntType: return (T)new VWIntLearner(nativePointer);
-            case VWFloatArrayType: return (T)new VWFloatArrayLearner(nativePointer);
-            case VWIntArrayType: return (T)new VWIntArrayLearner(nativePointer);
+            case VWFloatType: return (T)new VWFloatLearner(nativePointer, predictionFunctionPointer);
+            case VWIntType: return (T)new VWIntLearner(nativePointer, predictionFunctionPointer);
+            case VWFloatArrayType: return (T)new VWFloatArrayLearner(nativePointer, predictionFunctionPointer);
+            case VWIntArrayType: return (T)new VWIntArrayLearner(nativePointer, predictionFunctionPointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.
@@ -99,6 +100,7 @@ final public class VWLearners {
 
     private static native long initialize(String command);
     private static native VWReturnType getReturnType(long nativePointer);
+    private static native long getPredictionFunction(long nativePointer, String vWReturnType);
 
     // Closing needs to be done here when initialization fails and by VWBase
     static native void closeInstance(long nativePointer);

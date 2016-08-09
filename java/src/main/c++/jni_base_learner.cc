@@ -29,7 +29,7 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env)
 }
 
 example* read_example(JNIEnv *env, jstring example_string, vw* vwInstance)
-{ const char *utf_string = env->GetStringUTFChars(example_string, NULL);
+{ const char* utf_string = env->GetStringUTFChars(example_string, NULL);
   example* ex = read_example(utf_string, vwInstance);
 
   env->ReleaseStringUTFChars(example_string, utf_string);
