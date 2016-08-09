@@ -77,6 +77,16 @@ namespace VW
         CATCHRETHROW
     }
 
+	uint32_t VowpalWabbitMulticlassPredictionFactory::Create(vw* vw, example* ex)
+	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
+		return ex->pred.multiclass;
+	}
+
     cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
     {
 #if _DEBUG
