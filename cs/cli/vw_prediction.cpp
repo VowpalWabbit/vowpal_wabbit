@@ -111,8 +111,7 @@ namespace VW
         throw gcnew ArgumentNullException("ex");
 #endif
 
-      auto length = ex->pred.a_s.size();
-      auto values = gcnew cli::array<ActionScore>(length);
+      auto values = gcnew cli::array<ActionScore>((int)ex->pred.a_s.size());
 
       auto index = 0;
       for (auto& as : ex->pred.a_s)
