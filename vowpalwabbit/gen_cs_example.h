@@ -219,10 +219,10 @@ template<bool is_learn>
       { cb_labels.push_back(ec->l.cb);
 	prepped_cs_labels[index].costs.erase();
 	if (index != examples.size()-1)
-   	  prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
- 	else
-   	  prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
- 	ec->l.cs = prepped_cs_labels[index++];
+	  prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
+	else
+	  prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
+	ec->l.cs = prepped_cs_labels[index++];
       }
 	
     // 2nd: predict for each ex
