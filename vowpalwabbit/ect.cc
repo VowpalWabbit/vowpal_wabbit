@@ -164,6 +164,8 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
   return e.last_pair + (eliminations-1);
 }
 
+float class_boundary = 0.;
+
 uint32_t ect_predict(ect& e, base_learner& base, example& ec)
 { if (e.k == (size_t)1)
     return 1;
@@ -180,7 +182,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > 0.)
+      if (ec.pred.scalar > class_boundary)
         finals_winner = finals_winner | (((size_t)1) << i);
     }
   }
@@ -189,7 +191,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
   while (id >= e.k)
   { base.learn(ec, id - e.k);
 
-    if (ec.pred.scalar > 0.)
+    if (ec.pred.scalar > class_boundary)
       id = e.directions[id].right;
     else
       id = e.directions[id].left;
@@ -230,7 +232,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
     base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
     ec.weight = old_weight;
 
-    bool won = ec.pred.scalar * simple_temp.label > 0;
+    bool won = (ec.pred.scalar-class_boundary) * simple_temp.label > 0;
 
     if (won)
     { if (!e.directions[id].last)
@@ -274,7 +276,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
 
         base.learn(ec, problem_number);
 
-        if (ec.pred.scalar > 0.)
+        if (ec.pred.scalar > class_boundary)
           e.tournaments_won[j] = right;
         else
           e.tournaments_won[j] = left;
@@ -341,5 +343,9 @@ base_learner* ect_setup(vw& all)
 
   learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
   l.set_finish(finish);
+
+  if (all.vm["link"].as<string>().compare("logistic") == 0)
+      class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
+
   return make_base(l);
 }

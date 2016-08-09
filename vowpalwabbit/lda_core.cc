@@ -842,29 +842,8 @@ void learn_batch(lda &l)
   l.doc_lengths.erase();
 }
 
-template <bool should_compute_metrics>
 void learn(lda &l, LEARNER::base_learner &, example &ec)
 { 
-  if (should_compute_metrics)
-  {
-	  if (l.all->passes_complete == 0)
-	  {
-		  // build feature to example map
-		  auto weight_mask = l.all->reg.weight_mask;
-		  auto stride_shift = l.all->reg.stride_shift;
-
-		  for (features& fs : ec)
-		  {
-			  for (features::iterator& f : fs)
-			  {
-				  uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-				  l.feature_counts[idx] += f.value();
-				  l.feature_to_example_map[idx].push_back(ec.example_counter);
-			  }
-		  }
-	  }
-  }
-
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
@@ -879,9 +858,28 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
     learn_batch(l);
 }
 
+void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
+{
+  if (l.all->passes_complete == 0)
+  { // build feature to example map
+    auto weight_mask = l.all->reg.weight_mask;
+    auto stride_shift = l.all->reg.stride_shift;
+    
+    for (features& fs : ec)
+    { for (features::iterator& f : fs)
+      { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
+        l.feature_counts[idx] += f.value();
+        l.feature_to_example_map[idx].push_back(ec.example_counter);
+      }
+    }
+  }
+
+  learn(l, base, ec);
+}
+
 // placeholder
-template <bool should_compute_metrics>
-void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn<should_compute_metrics>(l, base, ec); }
+void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -914,6 +912,8 @@ void compute_metrics(lda &l)
 
 	int top_words_count = 10; // parameterize and check
 
+ 	// TODO: remove or make output file available through parameters
+	/*
 	FILE* vocab = fopen("C:\\Data\\MinMaxWordFreq_1200_0.3\\vocab.tsv", "w");
 	for (int f = 0; f < length;f++)
 	{
@@ -924,12 +924,9 @@ void compute_metrics(lda &l)
 	}
 	fclose(vocab);
 
-	// 
-	/*
 	FILE* docAlloc = fopen("C:\\Data\\MinMaxWordFreq_1200_0.3\\VW-DocumentTopicAllocations.txt", "w");
 	// using jagged array to enable LINQ
 	auto K = l.all->lda;
-
 
 	uint64_t stride_shift = l.all->reg.stride_shift;
 	for (uint64_t i = 0; i < length; i++)
@@ -947,7 +944,7 @@ void compute_metrics(lda &l)
 	fclose(docAlloc);
 	*/
 
-	for (int topic = 0; topic < l.topics;topic++)
+	for (size_t topic = 0; topic < l.topics;topic++)
 	{
 		// get top features for this topic
 		auto cmp = [](feature& left, feature& right) { return left.x > right.x; };
@@ -979,8 +976,8 @@ void compute_metrics(lda &l)
 		}
 
 		auto& word_pairs = topics_word_pairs[topic];
-		for (int i = 0; i < top_features_idx.size(); i++)
-			for (int j = i + 1; j < top_features_idx.size(); j++)
+		for (size_t i = 0; i < top_features_idx.size(); i++)
+			for (size_t j = i + 1; j < top_features_idx.size(); j++)
 				word_pairs.push_back(feature_pair(top_features_idx[i], top_features_idx[j]));
 	}
 
@@ -1023,8 +1020,8 @@ void compute_metrics(lda &l)
 			auto& examples_for_f2 = l.feature_to_example_map[wdf.idx];
 
 			// assumes examples_for_f1 and examples_for_f2 are orderd
-			int i = 0;
-			int j = 0;
+			size_t i = 0;
+			size_t j = 0;
 			while (i < examples_for_f1.size() && j < examples_for_f2.size())
 			{
 				if (examples_for_f1[i] == examples_for_f2[j])
@@ -1043,7 +1040,7 @@ void compute_metrics(lda &l)
 
 	float epsilon = 1e-6f; // TODO
 	float avg_coherence = 0;
-	for (int topic = 0; topic < l.topics;topic++)
+	for (size_t topic = 0; topic < l.topics;topic++)
 	{
 		float coherence = 0;
 
@@ -1064,7 +1061,7 @@ void compute_metrics(lda &l)
 			}
 		}
 
-		printf("Topic %3d coherence: %f\n", topic, coherence);
+		printf("Topic %3d coherence: %f\n", (int)topic, coherence);
 
 		// TODO: expose per topic coherence
 
@@ -1187,8 +1184,8 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_metrics ? learn<true> : learn<false>, 1 << all.reg.stride_shift);
-  l.set_predict(ld.compute_metrics ? predict<true> : predict<false>);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_metrics ? learn_with_metrics : learn, 1 << all.reg.stride_shift);
+  l.set_predict(ld.compute_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);

@@ -95,7 +95,8 @@ For Mac OSX
 .. code-block:: bash
 
     $ brew install libtool autoconf automake
-    $ brew install boost --with-python
+    $ brew install boost
+    $ brew install boost-python
     # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
     $ brew install boost --with-python3
 
