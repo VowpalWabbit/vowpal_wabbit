@@ -172,7 +172,6 @@ void global_print_newline(vw& all)
 
 void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
 { if (example_is_newline_not_header(ec)) return;
-
   size_t num_features = 0;
 
   float loss = 0.;

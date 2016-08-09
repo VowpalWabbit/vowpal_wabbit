@@ -6,6 +6,9 @@
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg);
 void rethrow_cpp_exception_as_java_exception(JNIEnv *env);
 
+example* read_example(JNIEnv *env, jstring example_string, vw* vwInstance);
+example* read_example(const char* example_string, vw* vwInstance);
+
 // It would appear that after reading posts like
 // http://stackoverflow.com/questions/6458612/c0x-proper-way-to-receive-a-lambda-as-parameter-by-reference
 // and
@@ -15,28 +18,22 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env);
 template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
-  jobject obj,
-  jstring example_string,
-  jboolean learn,
-  jlong vwPtr,
-  const F &predictor)
+  example* ex,
+  bool learn,
+  vw* vwInstance,
+  const F &predictor,
+  const bool predict = true)
 { T result = 0;
   try
-  { vw* vwInstance = (vw*)vwPtr;
-    const char *utf_string = env->GetStringUTFChars(example_string, NULL);
-    example* vec = VW::read_example(*vwInstance, utf_string);
-
-    if (learn)
-      vwInstance->learn(vec);
+  { if (learn)
+      vwInstance->l->learn(*ex);
     else
-      vwInstance->l->predict(*vec);
+      vwInstance->l->predict(*ex);
 
-    result = predictor(vec, env);
+    if (predict)
+      result = predictor(ex, env);
 
-    vwInstance->l->finish_example(*vwInstance, *vec);
-
-    env->ReleaseStringUTFChars(example_string, utf_string);
-    env->DeleteLocalRef(example_string);
+    vwInstance->l->finish_example(*vwInstance, *ex);
   }
   catch (...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -48,21 +45,41 @@ template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
   jobject obj,
+  jstring example_string,
+  jboolean learn,
+  jlong vwPtr,
+  const F &predictor)
+{ vw* vwInstance = (vw*)vwPtr;
+  example* ex = read_example(env, example_string, vwInstance);
+  return base_predict<T>(env, ex, learn, vwInstance, predictor);
+}
+
+template<typename T, typename F>
+T base_predict(
+  JNIEnv *env,
+  jobject obj,
   jobjectArray example_strings,
   jboolean learn,
   jlong vwPtr,
   const F &predictor)
-{ int example_count = env->GetArrayLength(example_strings);
+{ vw* vwInstance = (vw*)vwPtr;
+  int example_count = env->GetArrayLength(example_strings);
 
+  // When doing multiline prediction the final result is stored in the FIRST example parsed.
+  example* first_example;
   for (int i=0; i<example_count; i++) {
     jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
-    base_predict<T>(env, obj, example_string, learn, vwPtr, predictor);
+    example* ex = read_example(env, example_string, vwInstance);
+    if (i == 0)
+      first_example = ex;
+    base_predict<T>(env, ex, learn, vwInstance, predictor, false);
   }
   env->DeleteLocalRef(example_strings);
 
-  const char empty_string = '\0';
-  jstring empty_jstring = env->NewStringUTF(&empty_string);
-  return base_predict<T>(env, obj, empty_jstring, learn, vwPtr, predictor);
+  example* ex = read_example("\0", vwInstance);
+  base_predict<T>(env, ex, learn, vwInstance, predictor, false);
+
+  return predictor(first_example, env);
 }
 
 #endif // VW_BASE_LEARNER_H
