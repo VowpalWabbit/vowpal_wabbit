@@ -109,6 +109,16 @@ namespace cs_unittest
             InternalTestHash("--hash strings");
         }
 
+        [TestMethod]
+        public void TestHashSpace()
+        {
+            using (var vw = new VowpalWabbit(""))
+            {
+                Assert.AreEqual(0ul, vw.HashSpace(" "));
+                Assert.AreEqual(0ul, vw.HashSpace("0"));
+            }
+        }
+
         private void InternalTestHash(string args)
         {
             var stopWatchNative = new Stopwatch();

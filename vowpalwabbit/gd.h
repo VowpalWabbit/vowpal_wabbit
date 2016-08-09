@@ -87,4 +87,12 @@ inline float inline_predict(vw& all, example& ec)
   foreach_feature<float, vec_add>(all, ec, temp);
   return temp;
 }
+
+inline float sign(float w) { if (w < 0.) return -1.; else  return 1.; }
+
+inline float trunc_weight(const float w, const float gravity)
+{
+	return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+}
+
 }

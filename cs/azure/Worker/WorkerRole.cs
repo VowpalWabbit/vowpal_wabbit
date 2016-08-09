@@ -2,6 +2,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure;
+using Microsoft.Owin.Cors;
 using Microsoft.Owin.Hosting;
 using Microsoft.Practices.Unity;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -11,6 +12,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.Http.ExceptionHandling;
 using Unity.WebApi;
 using VowpalWabbit.Azure.Trainer;
@@ -91,12 +93,14 @@ namespace VowpalWabbit.Azure.Worker
                 // Register controller
                 container.RegisterType<ResetController>();
                 container.RegisterType<CheckpointController>();
+                container.RegisterType<StatusController>();
 
                 // Register interface
                 container.RegisterInstance(typeof(LearnEventProcessorHost), this.trainProcesserHost);
 
                 var config = new HttpConfiguration();
                 config.DependencyResolver = new UnityDependencyResolver(container);
+                config.EnableCors(new EnableCorsAttribute("*", "*", "*"));
                 config.Routes.MapHttpRoute(
                     "Default",
                     "{controller}/{id}",
@@ -104,6 +108,7 @@ namespace VowpalWabbit.Azure.Worker
 
                 // config.Services.Add(typeof(IExceptionLogger), new AiWebApiExceptionLogger());
 
+                app.UseCors(CorsOptions.AllowAll);
                 app.UseWebApi(config);
             });
         }

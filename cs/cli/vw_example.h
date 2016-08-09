@@ -16,25 +16,43 @@ namespace VW
   using namespace System::Collections::Generic;
   using namespace VW::Labels;
 
+  ref class VowpalWabbitExample;
+
     [System::Diagnostics::DebuggerDisplay("{m_weight_index}:{m_x}")]
     public ref struct VowpalWabbitFeature
     {
     private:
       feature_value m_x;
       uint64_t m_weight_index;
+	  VowpalWabbitExample^ m_example;
 
     public:
-      VowpalWabbitFeature(feature_value x, uint64_t weight_index);
+      VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index);
 
       property feature_value X
       {
         float get();
       }
 
-      property uint64_t WeightIndex
+      property uint64_t FeatureIndex
       {
         uint64_t get();
       }
+
+	  property uint64_t WeightIndex
+	  {
+		  uint64_t get();
+	  }
+
+	  property float Weight
+	  {
+		  float get();
+	  }
+
+	  property float AuditWeight
+	  {
+		  float get();
+	  }
 
       virtual bool Equals(Object^ o) override;
 
@@ -54,12 +72,13 @@ namespace VW
       ref class FeatureEnumerator : public IEnumerator<VowpalWabbitFeature^>
       {
       private:
+		VowpalWabbitExample^ m_example;
         features* m_features;
         Holder<features::iterator>* m_iterator;
         Holder<features::iterator>* m_end;
 
       internal:
-        FeatureEnumerator(features* features);
+        FeatureEnumerator(VowpalWabbitExample^ example, features* features);
         ~FeatureEnumerator();
 
         property System::Object^ IEnumeratorCurrent
@@ -80,6 +99,7 @@ namespace VW
 
       namespace_index m_ns;
       features* m_features;
+	  VowpalWabbitExample^ m_example;
 
       property System::Collections::IEnumerator^ EnumerableGetEnumerator
       {
@@ -87,7 +107,7 @@ namespace VW
       }
 
     public:
-      VowpalWabbitNamespace(namespace_index ns, features* features);
+      VowpalWabbitNamespace(VowpalWabbitExample^ m_example, namespace_index ns, features* features);
       ~VowpalWabbitNamespace();
 
       property namespace_index Index
@@ -118,11 +138,11 @@ namespace VW
         ref class NamespaceEnumerator : public IEnumerator<VowpalWabbitNamespace^>
         {
         private:
-          example* m_example;
+	      VowpalWabbitExample^ m_example;
           namespace_index* m_current;
 
         internal:
-          NamespaceEnumerator(example* example);
+          NamespaceEnumerator(VowpalWabbitExample^ example);
           ~NamespaceEnumerator();
 
           property System::Object^ IEnumeratorCurrent
