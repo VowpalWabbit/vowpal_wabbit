@@ -67,7 +67,7 @@ struct lda
   v_array<float> v;
   std::vector<index_feature> sorted_features;
 
-  bool compute_metrics;
+  bool compute_coherence_metrics;
 
   // size by 1 << bits
   std::vector<uint32_t> feature_counts;
@@ -901,7 +901,7 @@ struct feature_pair
 	{}
 };
 
-void compute_metrics(lda &l)
+void compute_coherence_metrics(lda &l)
 {
 	weight* weight_vector = l.all->reg.weight_vector;
 	uint64_t length = (uint64_t)1 << l.all->num_bits;
@@ -1079,9 +1079,9 @@ void end_pass(lda &l)
 	if (l.examples.size())
 		learn_batch(l);
 
-	if (l.compute_metrics && l.all->passes_complete == l.all->numpasses)
+	if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
 	{
-		compute_metrics(l);
+		compute_coherence_metrics(l);
 		// FASTPASS return;
 	}
 }
@@ -1156,8 +1156,8 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.all = &all;
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
-  ld.compute_metrics = vm["metrics"].as<bool>();
-  if (ld.compute_metrics) {
+  ld.compute_coherence_metrics = vm["metrics"].as<bool>();
+  if (ld.compute_coherence_metrics) {
 	  ld.feature_counts.resize((uint32_t)1 << all.num_bits);
 	  ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
   }
@@ -1184,8 +1184,8 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_metrics ? learn_with_metrics : learn, 1 << all.reg.stride_shift);
-  l.set_predict(ld.compute_metrics ? predict_with_metrics : predict);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.reg.stride_shift);
+  l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);
