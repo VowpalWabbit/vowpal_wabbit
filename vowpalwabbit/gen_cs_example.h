@@ -224,7 +224,7 @@ template<bool is_learn>
 	  prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
 	ec->l.cs = prepped_cs_labels[index++];
       }
-    	
+    
     // 2nd: predict for each ex
     // // call base.predict for each vw exmaple in the sequence
     for (example* ec : examples)
