@@ -370,6 +370,7 @@ int read_features(void* in, example* ex)
     num_chars--;
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);
+
   return (int)num_chars_initial;
 }
 

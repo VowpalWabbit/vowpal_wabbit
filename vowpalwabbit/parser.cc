@@ -887,6 +887,7 @@ void *main_parse_loop(void *in)
 { vw* all = (vw*) in;
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
+
   while(!all->p->done)
   { example* ae = get_unused_example(*all);
     if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number

@@ -10,7 +10,6 @@ license as described in the file LICENSE.
 
 //example processing
 
-void substring_to_example(vw* all, example* ae, substring example);
 int read_features(void* a, example* ex);// read example from  preset buffers.
 namespace VW
 {
