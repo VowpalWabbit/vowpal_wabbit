@@ -885,13 +885,18 @@ void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn<should_co
 
 struct word_doc_frequency
 {
+	// feature/word index
 	uint64_t idx;
+	// document count
 	uint32_t count;
 };
 
+// cooccurence of 2 features/words
 struct feature_pair
 {
+	// feature/word 1
 	uint64_t f1;
+	// feature/word 2
 	uint64_t f2;
 
 	feature_pair(uint64_t _f1, uint64_t _f2) : f1(_f1), f2(_f2)

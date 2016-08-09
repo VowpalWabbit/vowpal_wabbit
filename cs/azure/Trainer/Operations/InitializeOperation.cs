@@ -179,7 +179,24 @@ namespace VowpalWabbit.Azure.Trainer
             vwSettings.EnableThreadSafeExamplePooling = true;
             vwSettings.MaxExamples = 64 * 1024;
 
-            this.vw = new VW.VowpalWabbit(vwSettings);
+            try
+            {
+                this.vw = new VW.VowpalWabbit(vwSettings);
+                var cmdLine = vw.Arguments.CommandLine;
+
+                if (!(cmdLine.Contains("--cb_explore") || cmdLine.Contains("--cb_explore_adf")))
+                    throw new ArgumentException("Only cb_explore and cb_explore_adf are supported");
+            }
+            catch (Exception ex)
+            {
+                this.telemetry.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "help", "Invalid model. For help go to https://github.com/JohnLangford/vowpal_wabbit/wiki/Azure-Trainer" }
+                });
+
+                throw ex;
+            }
+
             this.referenceResolver = new VowpalWabbitJsonReferenceResolver(
                 this.delayedExampleCallback,
                 cacheRequestItemPolicyFactory:
@@ -188,7 +205,7 @@ namespace VowpalWabbit.Azure.Trainer
                         SlidingExpiration = TimeSpan.FromHours(1),
                         RemovedCallback = this.CacheEntryRemovedCallback
                     });
-                
+
             //this.vwAllReduce = new VowpalWabbitThreadedLearning(vwSettings.ShallowCopy(
             //    maxExampleQueueLengthPerInstance: 4*1024,
             //    parallelOptions: new ParallelOptions
