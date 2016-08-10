@@ -8,11 +8,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using VW.Labels;
 using VW.Serializer.Attributes;
 
@@ -56,29 +54,27 @@ namespace VW.Serializer
         internal VowpalWabbitSingleExampleSerializer(VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler, VowpalWabbit vw)
         {
             if (compiler == null)
-            {
                 throw new ArgumentNullException("compiler");
-            }
             Contract.Ensures(vw != null);
             Contract.EndContractBlock();
 
             this.vw = vw;
             this.compiler = compiler;
 
+            var exampleType = typeof(TExample);
+            if (!exampleType.IsVisible)
+                throw new ArgumentException($"Type '{typeof(TExample)}' must be public and all enclosing types must be public.");
+
             this.serializerFunc = compiler.Func(vw);
 
             var cacheableAttribute = (CacheableAttribute) typeof (TExample).GetCustomAttributes(typeof (CacheableAttribute), true).FirstOrDefault();
             if (cacheableAttribute == null)
-            {
                 return;
-            }
 
             if (this.vw.Settings.EnableExampleCaching)
             {
                 if (cacheableAttribute.EqualityComparer == null)
-                {
                     this.exampleCache = new Dictionary<TExample, CacheEntry>();
-                }
                 else
                 {
                     if (!typeof(IEqualityComparer<TExample>).IsAssignableFrom(cacheableAttribute.EqualityComparer))

@@ -77,6 +77,16 @@ namespace VW
         CATCHRETHROW
     }
 
+	uint32_t VowpalWabbitMulticlassPredictionFactory::Create(vw* vw, example* ex)
+	{
+#if _DEBUG
+		if (ex == nullptr)
+			throw gcnew ArgumentNullException("ex");
+#endif
+
+		return ex->pred.multiclass;
+	}
+
     cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
     {
 #if _DEBUG
@@ -111,8 +121,7 @@ namespace VW
         throw gcnew ArgumentNullException("ex");
 #endif
 
-      auto length = ex->pred.a_s.size();
-      auto values = gcnew cli::array<ActionScore>(length);
+      auto values = gcnew cli::array<ActionScore>((int)ex->pred.a_s.size());
 
       auto index = 0;
       for (auto& as : ex->pred.a_s)

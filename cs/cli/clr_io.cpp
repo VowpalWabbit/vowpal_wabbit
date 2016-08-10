@@ -12,13 +12,21 @@ using namespace System::Runtime::InteropServices;
 
 namespace VW
 {
-    clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream)
+    clr_io_buf::clr_io_buf(Stream^ stream) : m_stream(stream), m_buffer(nullptr)
     {
         if (stream == nullptr)
             throw gcnew ArgumentNullException("stream");
 
         files.push_back(0);
     }
+
+	void clr_io_buf::ensure_buffer_size(size_t nbytes)
+	{
+		if (m_buffer != nullptr && m_buffer->Length >= nbytes)
+			return;
+
+		m_buffer = gcnew array<unsigned char>((int)nbytes);
+	}
 
     int clr_io_buf::open_file(const char* name, bool stdin_off, int flag)
     {
@@ -35,10 +43,10 @@ namespace VW
 
     ssize_t clr_io_buf::read_file(int f, void* buf, size_t nbytes)
     {
-        auto buffer = gcnew array<unsigned char>((int)nbytes);
-        int readBytes = m_stream->Read(buffer, 0, (int)nbytes);
+		ensure_buffer_size(nbytes);
 
-        Marshal::Copy(buffer, 0, IntPtr(buf), (int)nbytes);
+        int readBytes = m_stream->Read(m_buffer, 0, (int)nbytes);
+        Marshal::Copy(m_buffer, 0, IntPtr(buf), (int)nbytes);
 
         return readBytes;
     }
@@ -50,10 +58,10 @@ namespace VW
 
     ssize_t clr_io_buf::write_file(int file, const void* buf, size_t nbytes)
     {
-        auto buffer = gcnew array<unsigned char>((int)nbytes);
-        Marshal::Copy(IntPtr((void*)buf), buffer, 0, (int)nbytes);
+		ensure_buffer_size(nbytes);
 
-        m_stream->Write(buffer, 0, (int)nbytes);
+		Marshal::Copy(IntPtr((void*)buf), m_buffer, 0, (int)nbytes);
+        m_stream->Write(m_buffer, 0, (int)nbytes);
 
         return nbytes;
     }

@@ -1,10 +1,21 @@
-﻿using System.Net;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="CheckpointController.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using VowpalWabbit.Azure.Trainer;
 
 namespace VowpalWabbit.Azure.Worker
 {
+    /// <summary>
+    /// HTTP Front end to trigger checkpointing
+    /// </summary>
     public sealed class CheckpointController : OnlineTrainerController
     {
         public CheckpointController(LearnEventProcessorHost trainProcessorFactory)

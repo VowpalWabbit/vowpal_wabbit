@@ -527,7 +527,6 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
 
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
-    assert(loss >= 0);
   }
 
   for (int sink : all.final_prediction_sink)

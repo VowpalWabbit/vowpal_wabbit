@@ -84,6 +84,18 @@ namespace VW
             virtual float Create(vw* vw, example* ex) sealed;
         };
 
+		/// <summary>
+		/// A cost sensitive prediction result.
+		/// </summary>
+		public ref class VowpalWabbitMulticlassPredictionFactory sealed : IVowpalWabbitPredictionFactory<uint32_t>
+		{
+		public:
+			/// <summary>
+			/// Extracts cost sensitive prediction results from example.
+			/// </summary>
+			virtual uint32_t Create(vw* vw, example* ex) sealed;
+		};
+
         /// <summary>
         /// A multi label prediction result.
         /// </summary>
@@ -141,10 +153,10 @@ namespace VW
             /// </summary>
             static initonly VowpalWabbitScalarPredictionFactory^ Scalar = gcnew VowpalWabbitScalarPredictionFactory;
 
-			      /// <summary>
-			      /// Use for scalar predictions.
-			      /// </summary>
-			      static initonly VowpalWabbitScalarConfidencePredictionFactory^ ScalarConfidence = gcnew VowpalWabbitScalarConfidencePredictionFactory;
+			/// <summary>
+			/// Use for scalar predictions.
+			/// </summary>
+			static initonly VowpalWabbitScalarConfidencePredictionFactory^ ScalarConfidence = gcnew VowpalWabbitScalarConfidencePredictionFactory;
 
             /// <summary>
             /// Use for scalar predictions.
@@ -160,6 +172,11 @@ namespace VW
             /// Use for multi label predictions.
             /// </summary>
             static initonly VowpalWabbitMultilabelPredictionFactory^ Multilabel = gcnew VowpalWabbitMultilabelPredictionFactory;
+
+			/// <summary>
+			/// Use for multi class predictions.
+			/// </summary>
+			static initonly VowpalWabbitMulticlassPredictionFactory^ Multiclass = gcnew VowpalWabbitMulticlassPredictionFactory;
 
             /// <summary>
             /// Use for action score predictions.

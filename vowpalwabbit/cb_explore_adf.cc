@@ -175,7 +175,7 @@ namespace CB_EXPLORE_ADF{
       multiline_predict(base, examples);
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
-    uint32_t num_actions = preds.size();
+    uint32_t num_actions = (uint32_t)preds.size();
     
     float additive_probability = 1.f / (float)data.cover_size;
     float min_prob = data.epsilon / num_actions;

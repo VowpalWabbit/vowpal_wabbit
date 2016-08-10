@@ -1366,6 +1366,11 @@ vw* initialize(int argc, char* argv[], io_buf* model)
 
     return &all;
   }
+  catch (std::exception& e)
+  { std::cerr << "Error: " << e.what() << "\n";
+	finish(all);
+	throw;
+  }
   catch (...)
   { finish(all);
     throw;

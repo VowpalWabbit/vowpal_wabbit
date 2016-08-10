@@ -392,7 +392,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 { save_load_header(all, buf, false, as_text);
-  all.l->save_load(buf, false, as_text);
+  if (all.l != nullptr)
+    all.l->save_load(buf, false, as_text);
 
   buf.flush(); // close_file() should do this for me ...
   buf.close_file();
