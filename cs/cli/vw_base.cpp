@@ -49,15 +49,17 @@ namespace VW
                 if (settings->Model != nullptr)
                 {
                     m_model = settings->Model;
-                    m_vw = VW::seed_vw_model(m_model->m_vw, string);
+					if (!settings->Verbose && !settings->Arguments->Contains("--quiet") && !m_model->Arguments->CommandLine->Contains("--quiet"))
+						string.append(" --quiet");
+					m_vw = VW::seed_vw_model(m_model->m_vw, string);
                     m_model->IncrementReference();
                 }
                 else
                 {
                     if (settings->ModelStream == nullptr)
                     {
-						            if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
-							            string.append(" --quiet");
+						if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
+							string.append(" --quiet");
 
                         m_vw = VW::initialize(string);
                     }

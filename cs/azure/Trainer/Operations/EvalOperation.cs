@@ -11,6 +11,7 @@ using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
@@ -138,17 +139,23 @@ namespace VowpalWabbit.Azure.Trainer.Operations
             };
 
             for (int action = 1; action <= trainerResult.ProgressivePrediction.Length; action++)
+            {
+                string tag;
+                if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
+                    tag = action.ToString(CultureInfo.InvariantCulture);
+
                 yield return new EvalData
                 {
-                    PolicyName = $"Constant Policy {action}",
+                    PolicyName = $"Constant Policy {tag}",
                     JSON = JsonConvert.SerializeObject(
                     new
                     {
-                        name = $"Constant Policy {action}",
+                        name = $"Constant Policy {tag}",
                         cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
                         prob = trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)
                     })
                 };
+            }
         }
 
         private void UploadEvaluation(IList<EvalData> batch)

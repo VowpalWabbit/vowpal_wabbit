@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using VW;
 using VW.Labels;
@@ -47,5 +48,7 @@ namespace VowpalWabbit.Azure.Trainer.Data
         internal float[] ProbabilitiesOrderedByRanking { get; private set; }
 
         internal float ProbabilityOfDrop { get; set; }
+
+        internal Dictionary<int, string> ActionsTags { get; set; }
     }
 }

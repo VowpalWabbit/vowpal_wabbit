@@ -220,7 +220,8 @@ namespace VowpalWabbit.Azure
                                 return true;
                             else if (TryExtractArrayProperty<int>(state, property, "_a", arr => data.Actions = arr))
                                 return true;
-
+                            else if (TryExtractProperty(state, property, "_tag", JsonToken.String, reader => data.ActionsTags.Add(state.MultiIndex + 1, (string)reader.Value)))
+                                return true;
                             return false;
                         });
 

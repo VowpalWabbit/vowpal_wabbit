@@ -327,7 +327,29 @@ namespace cs_unittest
                         if (!property.Equals("_sub"))
                             return false;
 
+                        Assert.AreEqual(state.MultiIndex, -1);
+
                         state.Parse();
+
+                        return true;
+                    });
+
+                validator.Validate(new[] {
+                     "shared | Age:25",
+                     " | w1 w2 |a x:1",
+                     "0:-1:.3 | w2 w3"
+                    },
+                    "{\"Age\":25,\"_multi\":[{\"_text\":\"w1 w2\", \"a\":{\"x\":1}}, {\"_text\":\"w2 w3\", \"_tag\":\"2\"}], \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3}",
+                    VowpalWabbitLabelComparator.ContextualBandit,
+                    extension: (state, property) =>
+                    {
+                        if (!property.Equals("_tag"))
+                            return false;
+
+                        var tag = state.Reader.ReadAsString();
+
+                        Assert.AreEqual(1, state.MultiIndex);
+                        Assert.AreEqual("2", tag);
 
                         return true;
                     });

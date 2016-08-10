@@ -39,8 +39,8 @@ namespace VW
 
                         var settings = (VowpalWabbitSettings)m.Settings.Clone();
                         settings.Model = m;
-                        // avoid duplicate arguments
-                        settings.Arguments = null;
+                        // avoid duplicate arguments (e.g. -i) and force testing mode
+                        settings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
                         return this.InternalCreate(new VowpalWabbit(settings));
                     }));
         }
@@ -64,6 +64,8 @@ namespace VW
                 {
                     var settings = (VowpalWabbitSettings)m.Settings.Clone();
                     settings.Model = m;
+                    // avoid duplicate arguments (e.g. -i) and force testing mode
+                    settings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
                     return this.InternalCreate(new VowpalWabbit(settings));
                 }));
         }

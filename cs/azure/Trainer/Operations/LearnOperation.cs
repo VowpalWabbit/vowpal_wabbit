@@ -87,7 +87,8 @@ namespace VowpalWabbit.Azure.Trainer
                     ProgressivePrediction = progressivePrediction,
                     PartitionKey = example.PartitionKey,
                     Latency = latency,
-                    ProbabilityOfDrop = example.ProbabilityOfDrop
+                    ProbabilityOfDrop = example.ProbabilityOfDrop,
+                    ActionsTags = example.ActionsTags
                 };
             }
             catch (Exception ex)
