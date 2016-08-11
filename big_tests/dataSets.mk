@@ -5,7 +5,7 @@ allData := mnist covtype URLRep ER movielens
 ################ begin generic stuff #########
 
 VPATH+=$(testCodeDir)
-WGET ?= wget -nv -N --no-use-server-timestamps
+WGET ?= wget -nv -N --no-use-server-timestamps --no-check-certificate
 
 .PHONY:	getData prepData archive eraseData
 
