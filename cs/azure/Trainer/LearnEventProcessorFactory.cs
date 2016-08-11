@@ -287,7 +287,7 @@ namespace VowpalWabbit.Azure
                     yield return this.trainer.CreateCheckpointData(updateClientModel: true);
             }
             else if (evt is CheckpointTriggerEvent)
-                yield return this.trainer.CreateCheckpointData(updateClientModel: false);
+                yield return this.trainer.CreateCheckpointData(updateClientModel: ((CheckpointTriggerEvent)evt).UpdateClientModel);
             else if (evt is CheckpointEvaluateTriggerEvent)
             {
                 if (this.trainer.ShouldCheckpoint(0))

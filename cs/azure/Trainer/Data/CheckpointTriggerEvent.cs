@@ -14,5 +14,7 @@ namespace VowpalWabbit.Azure.Trainer.Data
         {
             return "Checkpoint request";
         }
+
+        public bool UpdateClientModel { get; set; }
     }
 }
