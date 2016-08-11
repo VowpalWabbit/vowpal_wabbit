@@ -702,8 +702,6 @@ namespace VW
   cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
-	  uint64_t stride_shift = m_vw->reg.stride_shift;
-
 	  // using jagged array to enable LINQ
 	  auto K = (int)m_vw->lda;
 	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
@@ -733,7 +731,6 @@ namespace VW
   cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
-	  uint64_t stride_shift = m_vw->reg.stride_shift;
 
 	  // using jagged array to enable LINQ
 	  auto K = (int)m_vw->lda;
@@ -745,15 +742,13 @@ namespace VW
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
 	  // over weights
-	  for (uint64_t i = 0; i < length; i++)
-	  {
-		  auto offset = i << stride_shift;
-		  // over topics
-		  for (uint64_t k = 0; k < K; k++)
-		  {
-			  weight *v = &(m_vw->reg.weight_vector[offset + k]);
-			  allocation[(int)k][(int)i] = *v + lda_rho;
-		  }
+	  weight_parameters& weights = *(m_vw->weights);
+	  weight_parameters::iterator iter = weights.begin(0);
+	  for (uint64_t i = 0; i < length; i++, ++iter)
+	  {   // over topics
+		  weight_parameters::iterator::w_iter v = iter.begin();
+		  for (uint64_t k = 0; k < K; k++, ++v)
+		    allocation[(int)k][(int)i] = *v + lda_rho;
 	  }
 
 	  return allocation;
