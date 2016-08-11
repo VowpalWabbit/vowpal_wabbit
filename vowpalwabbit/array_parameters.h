@@ -48,6 +48,12 @@ private:
 	uint32_t _stride;
 
 public:
+	typedef typename std::forward_iterator_tag iterator_category;
+	typedef typename T value_type;
+	typedef typename ptrdiff_t difference_type;
+	typedef typename T* pointer;
+	typedef typename T& reference;
+
 	typedef weights_iterator_iterator<T> w_iter;
 	
 	weights_iterator(T* current, uint32_t stride)
