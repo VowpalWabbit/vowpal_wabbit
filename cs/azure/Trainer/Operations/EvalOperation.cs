@@ -144,13 +144,14 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
                     tag = action.ToString(CultureInfo.InvariantCulture);
 
+                var name = $"Constant Policy {tag}";
                 yield return new EvalData
                 {
-                    PolicyName = $"Constant Policy {tag}",
+                    PolicyName = name,
                     JSON = JsonConvert.SerializeObject(
                     new
                     {
-                        name = $"Constant Policy {tag}",
+                        name = name,
                         cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
                         prob = trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)
                     })
