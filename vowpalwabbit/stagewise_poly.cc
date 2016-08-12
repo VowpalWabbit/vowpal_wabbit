@@ -472,6 +472,7 @@ void predict(stagewise_poly &poly, base_learner &base, example &ec)
   ec.partial_prediction = poly.synth_ec.partial_prediction;
   ec.updated_prediction = poly.synth_ec.updated_prediction;
   ec.pred.scalar = poly.synth_ec.pred.scalar;
+  ec.prediction_type = prediction_type::scalar;
 }
 
 void learn(stagewise_poly &poly, base_learner &base, example &ec)
@@ -489,6 +490,7 @@ void learn(stagewise_poly &poly, base_learner &base, example &ec)
     ec.partial_prediction = poly.synth_ec.partial_prediction;
     ec.updated_prediction = poly.synth_ec.updated_prediction;
     ec.pred.scalar = poly.synth_ec.pred.scalar;
+	ec.prediction_type = prediction_type::scalar;
 
     if (ec.example_counter
         //following line is to avoid repeats when multiple reductions on same example.

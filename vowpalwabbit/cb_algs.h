@@ -27,6 +27,7 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
+  prediction_type::prediction_type_t p_type = ec.prediction_type;
   if (is_learn && known_cost != nullptr && index == known_cost->action)
   { float old_weight = ec.weight;
     ec.weight /= known_cost->probability;
@@ -38,6 +39,7 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
 
   float pred = ec.pred.scalar;
   ec.pred = p;
+  ec.prediction_type = p_type;
 
   ec.l.cb = ld;
 

@@ -39,10 +39,11 @@ namespace cs_test
 
                         vwValidate.Validate(data.Line, data, data.Label);
 
-                        var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
+                        var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Dynamic);
+                        Assert.IsInstanceOfType(expected, typeof(float));
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);
 
-                        Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
+                        Assert.AreEqual((float)expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
 
                         lineNr++;
                     }));

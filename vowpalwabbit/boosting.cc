@@ -102,6 +102,7 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
 
   ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
+  ec.prediction_type = prediction_type::scalar;
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -158,6 +159,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
 
   ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
+  ec.prediction_type = prediction_type::scalar;
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;
@@ -240,6 +242,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
 
   ec.weight = u;
   ec.pred.scalar = sign(final_prediction);
+  ec.prediction_type = prediction_type::scalar;
 
   if (ld.label == ec.pred.scalar)
     ec.loss = 0.;

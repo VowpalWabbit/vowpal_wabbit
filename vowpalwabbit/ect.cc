@@ -293,6 +293,7 @@ void predict(ect& e, base_learner& base, example& ec)
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
     cout << "label " << mc.label << " is not in {1,"<< e.k << "} This won't work right." << endl;
   ec.pred.multiclass = ect_predict(e, base, ec);
+  ec.prediction_type = prediction_type::multiclass;
   ec.l.multi = mc;
 }
 
@@ -305,6 +306,7 @@ void learn(ect& e, base_learner& base, example& ec)
     ect_train(e, base, ec);
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
+  ec.prediction_type = prediction_type::multiclass;
 }
 
 void finish(ect& e)

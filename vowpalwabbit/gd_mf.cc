@@ -131,6 +131,7 @@ float mf_predict(gdmf& d, example& ec)
   all.set_minmax(all.sd, ld.label);
 
   ec.pred.scalar = GD::finalize_prediction(all.sd, ec.partial_prediction);
+  ec.prediction_type = prediction_type::scalar;
 
   if (ld.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;

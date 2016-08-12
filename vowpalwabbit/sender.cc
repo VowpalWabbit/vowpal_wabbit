@@ -54,6 +54,7 @@ void receive_result(sender& s)
   get_prediction(s.sd,res,weight);
   example& ec = *s.delay_ring[s.received_index++ % s.all->p->ring_size];
   ec.pred.scalar = res;
+  ec.prediction_type = prediction_type::scalar;
 
   label_data& ld = ec.l.simple;
   ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;

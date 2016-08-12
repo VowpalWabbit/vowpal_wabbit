@@ -89,7 +89,8 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   if (predict) //first get the prediction to return
   { gen_cs_example_ips(examples, mydata.cs_labels);
     GEN_CS::call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
-    swap(*examples[0]->pred.a_s, mydata.a_s);
+    swap(examples[0]->pred.a_s, mydata.a_s);
+	examples[0]->prediction_type = prediction_type::action_scores;
   }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
@@ -101,7 +102,8 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   GEN_CS::call_cs_ldf<true>(base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
-  swap(*examples[0]->pred.a_s, mydata.a_s);
+  swap(examples[0]->pred.a_s, mydata.a_s);
+  examples[0]->prediction_type = prediction_type::action_scores;
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -377,6 +379,7 @@ base_learner* cb_adf_setup(vw& all)
   { ld.rank_all = true;
     *all.file_options << " --rank_all";
   }
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   if (all.vm.count("no_predict"))
     ld.predict = false;

@@ -96,6 +96,7 @@ void predict(mf& data, base_learner& base, example& ec)
   // finalize prediction
   ec.partial_prediction = prediction;
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
+  ec.prediction_type = prediction_type::scalar;
 }
 
 void learn(mf& data, base_learner& base, example& ec)
@@ -106,6 +107,7 @@ void learn(mf& data, base_learner& base, example& ec)
   // update linear weights
   base.update(ec);
   ec.pred.scalar = ec.updated_prediction;
+  ec.prediction_type = prediction_type::scalar;
 
   // store namespace indices
   copy_array(data.indices, ec.indices);
@@ -177,6 +179,7 @@ void learn(mf& data, base_learner& base, example& ec)
 
   // restore original prediction
   ec.pred.scalar = predicted;
+  ec.prediction_type = prediction_type::scalar;
 }
 
 void finish(mf& o)

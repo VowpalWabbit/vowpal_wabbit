@@ -130,6 +130,7 @@ namespace MWT {
       preds.push_back((float)c.evals[index].cost / (float)c.total);
 
     ec.pred.scalars = preds;
+	ec.prediction_type = prediction_type::scalars;
   }
 
   void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
@@ -166,9 +167,11 @@ namespace MWT {
       {
 	v_array<float> temp = ec.pred.scalars;
 	ec.pred.multiclass = (uint32_t)temp[0];
+	ec.prediction_type = prediction_type::multiclass;
 	CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
 	ec.pred.scalars = temp;
-      }
+	ec.prediction_type = prediction_type::scalars;
+	}
     VW::finish_example(all, &ec);
   }
 
@@ -220,6 +223,11 @@ namespace MWT {
 }
 using namespace MWT;
 
+void delete_scalars(void* v)
+{ v_array<float>* preds = (v_array<float>*)v;
+  preds->delete_v();
+}
+
 base_learner* mwt_setup(vw& all)
 { if (missing_option<string, true>(all, "multiworld_test", "Evaluate features as a policies"))
     return nullptr;
@@ -238,6 +246,7 @@ base_learner* mwt_setup(vw& all)
   calloc_reserve(c.evals, all.length());
   c.evals.end() = c.evals.begin() + all.length();
 
+  all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 

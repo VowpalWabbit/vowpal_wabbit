@@ -451,6 +451,8 @@ base_learner* cb_explore_adf_setup(vw& all)
   data.all = &all;
   if (count(all.args.begin(), all.args.end(), "--cb_adf") == 0)
     all.args.push_back("--cb_adf");
+  
+  all.delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
   char type_string[10];

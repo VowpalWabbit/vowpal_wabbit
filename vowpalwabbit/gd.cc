@@ -342,6 +342,7 @@ void predict(gd& g, base_learner&, example& ec)
 
   ec.partial_prediction *= (float)all.sd->contraction;
   ec.pred.scalar = finalize_prediction(all.sd, ec.partial_prediction);
+  ec.prediction_type = prediction_type::scalar;
   if (audit)
     print_audit_features(all, ec);
 }
@@ -371,6 +372,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
   if (audit)
   { for (size_t c=0; c<count; c++)
     { ec.pred.scalar = pred[c].scalar;
+	  ec.prediction_type = prediction_type::scalar;
       print_audit_features(all, ec);
       ec.ft_offset += (uint64_t)step;
     }

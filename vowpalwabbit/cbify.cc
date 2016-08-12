@@ -47,9 +47,8 @@ struct cbify
 vector<float> vw_scorer::Score_Actions(example& ctx)
 {
   vector<float> probs_vec;
-  auto& a_s = *ctx.pred.a_s;
-  for(uint32_t i = 0;i < a_s.size();i++)
-    probs_vec.push_back(a_s[i].score);
+  for(uint32_t i = 0;i < ctx.pred.a_s.size();i++)
+    probs_vec.push_back(ctx.pred.a_s[i].score);
   return probs_vec;
 }
 
@@ -82,6 +81,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
+  ec.prediction_type = prediction_type::action_scores;
 
   //Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -105,6 +105,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
   ec.pred.multiclass = action;
+  ec.prediction_type = prediction_type::multiclass;
 }
 
 base_learner* cbify_setup(vw& all)
@@ -130,7 +131,8 @@ base_learner* cbify_setup(vw& all)
     all.args.push_back(ss.str());
   }
   base_learner* base = setup_base(all);
-
+  
+  all.delete_prediction = nullptr;
   learner<cbify>* l;
   l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
   l->set_finish(finish);

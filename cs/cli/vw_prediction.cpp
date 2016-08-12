@@ -16,7 +16,7 @@ namespace VW
 		if (ex == nullptr)
 			throw gcnew ArgumentNullException("ex");
 
-		auto ex_pred_type = ex->pred.type();
+		auto ex_pred_type = ex->prediction_type;
 		if (ex_pred_type != type)
 		{
 			auto sb = gcnew StringBuilder();
@@ -63,7 +63,7 @@ namespace VW
 
       try
       {
-		auto& scalars = *ex->pred.scalars;
+		auto& scalars = ex->pred.scalars;
         auto values = gcnew cli::array<float>((int)scalars.size());
         int index = 0;
         for (float s : scalars)
@@ -87,10 +87,9 @@ namespace VW
 
 		try
 		{
-			auto& probs = *ex->pred.probs;
 			int k = (int)vw->vm["oaa"].as<size_t>();
 			auto values = gcnew cli::array<float>(k);
-			System::Runtime::InteropServices::Marshal::Copy(IntPtr(probs), values, 0, k);
+			System::Runtime::InteropServices::Marshal::Copy(IntPtr(ex->pred.probs), values, 0, k);
 
 			return values;
 		}
@@ -143,7 +142,7 @@ namespace VW
     {
 		CheckExample(ex, PredictionType);
 
-		auto& a_s = *ex->pred.a_s;
+		auto& a_s = ex->pred.a_s;
 		auto values = gcnew cli::array<ActionScore>((int)a_s.size());
 
 		auto index = 0;
@@ -173,7 +172,7 @@ namespace VW
 		if (ex == nullptr)
 			throw gcnew ArgumentNullException("ex");
 
-		switch (ex->pred.type())
+		switch (ex->prediction_type)
 		{
 		case prediction_type::scalar:
 			return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
@@ -193,7 +192,7 @@ namespace VW
 			{
 				auto sb = gcnew StringBuilder();
 				sb->Append("Unsupported prediction type: ");
-				sb->Append(gcnew String(prediction_type::to_string(ex->pred.type())));
+				sb->Append(gcnew String(prediction_type::to_string(ex->prediction_type)));
 				throw gcnew ArgumentException(sb->ToString());
 			}
 		}

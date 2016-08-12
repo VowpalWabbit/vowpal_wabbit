@@ -62,6 +62,7 @@ template<bool audit>
 void predict(ftrl& b, base_learner&, example& ec)
 { ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.prediction_type = prediction_type::scalar;
   if (audit)
     GD::print_audit_features(*(b.all), ec);
 }
@@ -82,6 +83,7 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
   if (audit)
     { for (size_t c=0; c<count; c++)
 	{ ec.pred.scalar = pred[c].scalar;
+	  ec.prediction_type = prediction_type::scalar;
 	  GD::print_audit_features(all, ec);
 	  ec.ft_offset += (uint64_t)step;
 	}
@@ -138,6 +140,7 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_state_and_predict>(*b.all, ec, b.data);
   ec.partial_prediction = b.data.predict;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  ec.prediction_type = prediction_type::scalar;
 }
 
 void update_after_prediction_proximal(ftrl& b, example& ec)

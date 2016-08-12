@@ -51,24 +51,24 @@ namespace prediction_type
   }
 }
 
-void polyprediction::init() 
-{
-	scalar.init(&prediction_type);
-	scalars.init(&prediction_type);
-	a_s.init(&prediction_type);
-	multiclass.init(&prediction_type);
-	multilabels.init(&prediction_type);
-	probs.init(&prediction_type);
-	prob.init(&prediction_type);
-}
-
-void polyprediction::dealloc()
-{
-	a_s->delete_v();
-	scalars->delete_v();
-	multilabels->label_v.delete_v();
-	scalars->delete_v();
-}
+//void polyprediction::init() 
+//{
+//	scalar.init(&prediction_type);
+//	scalars.init(&prediction_type);
+//	a_s.init(&prediction_type);
+//	multiclass.init(&prediction_type);
+//	multilabels.init(&prediction_type);
+//	probs.init(&prediction_type);
+//	prob.init(&prediction_type);
+//}
+//
+//void polyprediction::dealloc()
+//{
+//	a_s->delete_v();
+//	scalars->delete_v();
+//	multilabels->label_v.delete_v();
+//	scalars->delete_v();
+//}
 
 namespace VW
 {
@@ -202,16 +202,18 @@ example *alloc_examples(size_t, size_t count = 1)
     ec[i].ft_offset = 0;
     //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
-  ec->pred.init();
+  //ec->pred.init();
   return ec;
 }
 
-void dealloc_example(void(*delete_label)(void*), example&ec)
+void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*))
 { if (delete_label)
     delete_label(&ec.l);
 
   // all prediction types are of type typed_prediction<> and &*ec.pred.scalar returns the address of the actual value
-  ec.pred.dealloc();
+  //ec.pred.dealloc();
+  if (delete_prediction)
+    delete_prediction(&ec.pred);
 
   ec.tag.delete_v();
 

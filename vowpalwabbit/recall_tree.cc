@@ -343,6 +343,7 @@ predict_type predict_from (recall_tree& b,
 
   ec.l.multi = mc;
   ec.pred.multiclass = save_pred;
+  ec.prediction_type = prediction_type::multiclass;
 
   return predict_type (cn, oas_predict (b, base, cn, ec));
 }
@@ -352,6 +353,7 @@ void predict (recall_tree& b,  base_learner& base, example& ec)
   predict_type pred = predict_from (b, base, ec, 0);
 
   ec.pred.multiclass = pred.class_prediction;
+  ec.prediction_type = prediction_type::multiclass;
 }
 
 float train_node (recall_tree& b,
@@ -387,6 +389,7 @@ float train_node (recall_tree& b,
 
   ec.l.multi = mc;
   ec.pred.multiclass = save_pred;
+  ec.prediction_type = prediction_type::multiclass;
 
   return save_scalar;
 }
@@ -448,7 +451,8 @@ void learn (recall_tree& b, base_learner& base, example& ec)
 
           ec.l.multi = mc;
           ec.pred.multiclass = save_pred;
-        }
+		  ec.prediction_type = prediction_type::multiclass;
+	  }
     }
 }
 

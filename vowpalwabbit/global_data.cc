@@ -253,6 +253,7 @@ vw::vw()
   reduction_stack=v_init<LEARNER::base_learner* (*)(vw&)>();
 
   data_filename = "";
+  delete_prediction = nullptr;
 
   file_options = new std::stringstream;
 

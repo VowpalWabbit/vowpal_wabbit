@@ -124,10 +124,8 @@ void print_update(vw& all, bool is_test, example& ec)
         label_string << " " << ec.l.multilabels.label_v[i];
 
     stringstream pred_string;
-	auto& label_v = ec.pred.multilabels->label_v;
-    for(size_t i = 0; i < label_v.size(); i++)
-      pred_string << " " << label_v[i];
-
+    for(size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+      pred_string << " " << ec.pred.multilabels.label_v[i];
 
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
                          ec.num_features, all.progress_add, all.progress_arg);

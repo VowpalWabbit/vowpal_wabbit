@@ -51,6 +51,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   o.subsample_id = p;
 
   ec.pred.multiclass = (uint32_t)prediction;
+  ec.prediction_type = prediction_type::multiclass;
   ec.l.multi = ld;
 }
 
@@ -77,7 +78,8 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
   { for (uint32_t i=1; i<=o.k; i++)
     { ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f };
       ec.pred.scalar = o.pred[i-1].scalar;
-      base.update(ec, i-1);
+	  ec.prediction_type = prediction_type::scalar;
+	  base.update(ec, i-1);
     }
   }
 
@@ -89,19 +91,23 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 
   if (is_probabilities)
   { float sum_prob = 0;
-    ec.pred.probs = calloc_or_throw<float>(o.k);
+    float* probs = calloc_or_throw<float>(o.k);
     for (uint32_t i=0; i<o.k; i++)
     { // probability of class (i+1) = logistic_link_function(raw_prediction)
       float prob = 1.f / (1.f + exp(- o.pred[i].scalar));
-      ec.pred.probs[i] = prob;
+      probs[i] = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (uint32_t i=0; i<o.k; i++)
-      ec.pred.probs[i] /= sum_prob;
+      probs[i] /= sum_prob;
+
+	ec.pred.probs = probs;
+	ec.prediction_type = prediction_type::probs;
   }
   else
   { ec.pred.multiclass = prediction;
+    ec.prediction_type = prediction_type::multiclass;
   }
 
   ec.l.multi = mc_label_data;

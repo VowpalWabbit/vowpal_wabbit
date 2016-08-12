@@ -22,4 +22,10 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
   }
 }
 
+void delete_action_scores(void* v)
+{
+	v_array<action_score>* cs = (v_array<action_score>*)v;
+	cs->delete_v();
+}
+
 }

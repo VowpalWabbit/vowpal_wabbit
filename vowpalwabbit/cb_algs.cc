@@ -77,6 +77,7 @@ void learn_eval(cb& data, base_learner&, example& ec)
     ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
 
   ec.pred.multiclass = ec.l.cb_eval.action;
+  ec.prediction_type = prediction_type::multiclass;
 }
 
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)

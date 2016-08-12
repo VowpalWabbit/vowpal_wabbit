@@ -18,6 +18,7 @@ void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
     ec.loss = s.all->loss->getLoss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   ec.pred.scalar = link(ec.pred.scalar);
+  ec.prediction_type = prediction_type::scalar;
 }
 
 template <float (*link)(float in)>

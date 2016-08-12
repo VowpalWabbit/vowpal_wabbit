@@ -93,16 +93,17 @@ namespace cs_unittest
                 {
                     validate.Validate(line, x, label);
 
+                    var expectedDynamic = vwRef.Predict(x.Line, VowpalWabbitPredictionType.Dynamic);
+                    Assert.IsInstanceOfType(expectedDynamic, typeof(float));
                     var expected = vwRef.Predict(x.Line, VowpalWabbitPredictionType.Scalar);
 
                     var actual = vwInMemoryShared2.Predict(x, VowpalWabbitPredictionType.Scalar, label);
 
+                    Assert.AreEqual((float)expectedDynamic, actual, 1e-5);
                     Assert.AreEqual(expected, actual, 1e-5);
 
                     if (references != null)
-                    {
                         Assert.AreEqual(references[index++], actual, 1e-5);
-                    }
                 };
             }
         }

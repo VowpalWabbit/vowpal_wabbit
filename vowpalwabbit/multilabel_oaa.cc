@@ -41,6 +41,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec)
     cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k-1 << "} This won't work right." << endl;
 
   ec.pred.multilabels = preds;
+  ec.prediction_type = prediction_type::multilabels;
   ec.l.multilabels = multilabels;
 }
 

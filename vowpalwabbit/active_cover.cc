@@ -188,6 +188,7 @@ void predict_or_learn_active_cover(active_cover& a, base_learner& base, example&
     ec.weight = ec_output_weight;
     ec.l.simple.label = ec_output_label;
     ec.pred.scalar = prediction;
+	ec.prediction_type = prediction_type::scalar;
   }
 }
 

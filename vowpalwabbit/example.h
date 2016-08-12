@@ -51,100 +51,100 @@ typedef union
   MULTILABEL::labels multilabels;
 } polylabel;
 
-template<class T, prediction_type::prediction_type_t PT>
-class typed_prediction
-{
-protected:
-	prediction_type::prediction_type_t* prediction_type;
-	T val;
-
-public:
-	void init(prediction_type::prediction_type_t* pt) 
-	{ prediction_type = pt;
-	  memset(&val, 0, sizeof(val));
-	}
-
-	T* operator->()
-	{ if (prediction_type) *prediction_type = PT; // update on access
-	  return &val;
-	}
-	
-	operator T&() 
-	{ if (prediction_type) *prediction_type = PT; // update on access
-	  return val;
-	}
-
-	bool operator<(const typed_prediction<T,PT>& rhs) { return val < rhs.val; }
-	bool operator>(const typed_prediction<T,PT>& rhs) { return val > rhs.val; }
-	bool operator<=(const typed_prediction<T,PT>& rhs) { return val <= rhs.val; }
-	bool operator>=(const typed_prediction<T,PT>& rhs) { return val >= rhs.val; }
-	bool operator==(const typed_prediction<T,PT>& rhs) { return val == rhs.val; }
-	bool operator!=(const typed_prediction<T,PT>& rhs) { return val != rhs.val; }
-
-	//operator T()
-	//{
-	//	return val;
-	//}
-
-	T& operator=(const T& other)
-	{ if (prediction_type) *prediction_type = PT; // update on access
-	  val = other;
-	  return val;
-	}
-
-	T& operator*()
-	{ if (prediction_type) *prediction_type = PT; // update on access
-	  return val;
-	}
-};
-
-template<class T, class E, prediction_type::prediction_type_t PT>
-class typed_indexed_prediction : public typed_prediction<T, PT>
-{
-public:
-	E& operator[](int index) 
-	{ return val[index];
-	}
-
-	T& operator=(const T& other)
-	{ return typed_prediction<T, PT>::operator=(other);
-	}
-};
-
-typedef typed_prediction<float, prediction_type::scalar> scalar_prediction;
-typedef typed_indexed_prediction<v_array<float>, float, prediction_type::scalars> scalars_prediction;
-typedef typed_indexed_prediction<ACTION_SCORE::action_scores, ACTION_SCORE::action_score, prediction_type::action_scores> action_scores_prediction;
-
-class polyprediction
-{
-private:
-	float value;
-	prediction_type::prediction_type_t prediction_type;
-
-public:
-	void init();
-
-	void dealloc();
-
-	scalar_prediction scalar;
-
-	scalars_prediction scalars; //a sequence of scalar predictions
-
-	action_scores_prediction a_s; //a sequence of classes with scores.  Also used for probabilities.
-
-	typed_prediction<uint32_t, prediction_type::multiclass> multiclass;
-
-	typed_prediction<MULTILABEL::labels, prediction_type::multilabels> multilabels;
-
-	typed_indexed_prediction<float*, float, prediction_type::probs> probs; // for --probabilities --oaa
-
-	typed_prediction<float, prediction_type::prob> prob; // for --probabilities --csoaa_ldf=mc
-
-	prediction_type::prediction_type_t type()
-	{
-		return prediction_type;
-	}
-};
+//template<class T, prediction_type::prediction_type_t PT>
+//class typed_prediction
+//{
+//protected:
+//	prediction_type::prediction_type_t* prediction_type;
+//	T val;
+//
+//public:
+//	void init(prediction_type::prediction_type_t* pt) 
+//	{ prediction_type = pt;
+//	  // memset(&val, 0, sizeof(val));
+//	}
+//
+//	T* operator->()
+//	{ if (prediction_type) *prediction_type = PT; // update on access
+//	  return &val;
+//	}
+//	
+//	operator T&() 
+//	{ if (prediction_type) *prediction_type = PT; // update on access
+//	  return val;
+//	}
+//
+//	bool operator<(const typed_prediction<T,PT>& rhs) { return val < rhs.val; }
+//	bool operator>(const typed_prediction<T,PT>& rhs) { return val > rhs.val; }
+//	bool operator<=(const typed_prediction<T,PT>& rhs) { return val <= rhs.val; }
+//	bool operator>=(const typed_prediction<T,PT>& rhs) { return val >= rhs.val; }
+//	bool operator==(const typed_prediction<T,PT>& rhs) { return val == rhs.val; }
+//	bool operator!=(const typed_prediction<T,PT>& rhs) { return val != rhs.val; }
+//
+//	//operator T()
+//	//{
+//	//	return val;
+//	//}
+//
+//	T& operator=(const T& other)
+//	{ if (prediction_type) *prediction_type = PT; // update on access
+//	  val = other;
+//	  return val;
+//	}
+//
+//	T& operator*()
+//	{ if (prediction_type) *prediction_type = PT; // update on access
+//	  return val;
+//	}
+//};
+//
+//template<class T, class E, prediction_type::prediction_type_t PT>
+//class typed_indexed_prediction : public typed_prediction<T, PT>
+//{
+//public:
+//	E& operator[](int index) 
+//	{ return val[index];
+//	}
+//
+//	T& operator=(const T& other)
+//	{ return typed_prediction<T, PT>::operator=(other);
+//	}
+//};
+//
+//typedef typed_prediction<float, prediction_type::scalar> scalar_prediction;
+//typedef typed_indexed_prediction<v_array<float>, float, prediction_type::scalars> scalars_prediction;
+//typedef typed_indexed_prediction<ACTION_SCORE::action_scores, ACTION_SCORE::action_score, prediction_type::action_scores> action_scores_prediction;
+//
+//class polyprediction
+//{
+//private:
+//	float value;
+//	prediction_type::prediction_type_t prediction_type;
+//
+//public:
+//	void init();
+//
+//	void dealloc();
+//
+//	scalar_prediction scalar;
+//
+//	scalars_prediction scalars; //a sequence of scalar predictions
+//
+//	action_scores_prediction a_s; //a sequence of classes with scores.  Also used for probabilities.
+//
+//	typed_prediction<uint32_t, prediction_type::multiclass> multiclass;
+//
+//	typed_prediction<MULTILABEL::labels, prediction_type::multilabels> multilabels;
+//
+//	typed_indexed_prediction<float*, float, prediction_type::probs> probs; // for --probabilities --oaa
+//
+//	typed_prediction<float, prediction_type::prob> prob; // for --probabilities --csoaa_ldf=mc
+//
+//	prediction_type::prediction_type_t type()
+//	{
+//		return prediction_type;
+//	}
+//};
 
 //typedef union
 //{ scalar_prediction scalar;
@@ -155,6 +155,17 @@ public:
 //  typed_indexed_prediction<float*, float, prediction_type::probs> probs; // for --probabilities --oaa
 //  typed_prediction<float, prediction_type::prob> prob; // for --probabilities --csoaa_ldf=mc
 //} polyprediction;
+
+typedef union
+{
+	float scalar;
+	v_array<float> scalars;//a sequence of scalar predictions
+	ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.  Also used for probabilities.
+	uint32_t multiclass;
+	MULTILABEL::labels multilabels;
+	float* probs; // for --probabilities --oaa
+	float prob; // for --probabilities --csoaa_ldf=mc
+} polyprediction;
 
 typedef unsigned char namespace_index;
 
@@ -184,6 +195,7 @@ struct example // core example datatype.
 
   //output prediction
   polyprediction pred;
+  prediction_type::prediction_type_t prediction_type;
 
   // input fields
   polylabel l;

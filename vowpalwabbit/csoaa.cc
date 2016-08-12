@@ -93,6 +93,7 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
+  ec.prediction_type = prediction_type::multiclass;
   ec.l.cs = ld;
 }
 
@@ -434,20 +435,23 @@ void do_actual_learning(ldf& data, base_learner& base)
   { data.stored_preds[0].erase();
     if (start_K > 0)
     { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
+	data.ec_seq[0]->prediction_type = prediction_type::action_scores;
     }
-	auto& a_s0 = *data.ec_seq[0]->pred.a_s;
-    for (size_t k=start_K; k<K; k++)
+	for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
-	  a_s0.push_back(data.a_s[k-start_K]);
+	  data.ec_seq[k]->prediction_type = prediction_type::action_scores;
+      data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
   }
   else
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
-      if (k == predicted_K)
+	{ if (k == predicted_K)
         data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
+	  data.ec_seq[k]->prediction_type = prediction_type::action_scores;
+	}
   }
   /////////////////////// remove header
   if (start_K > 0)
@@ -463,12 +467,15 @@ void do_actual_learning(ldf& data, base_learner& base)
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
       float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
-      data.ec_seq[k]->pred.prob = prob;
+	  data.ec_seq[k]->pred.prob = prob;
+	  data.ec_seq[k]->prediction_type = prediction_type::prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (size_t k=start_K; k<K; k++)
-      data.ec_seq[k]->pred.prob /= sum_prob;
+	{ data.ec_seq[k]->pred.prob /= sum_prob;
+	  data.ec_seq[k]->prediction_type = prediction_type::prob;
+	}
   }
 }
 
@@ -757,6 +764,7 @@ base_learner* csldf_setup(vw& all)
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
     *all.file_options << " --csoaa_rank";
+	all.delete_prediction = delete_action_scores;
   }
 
   all.p->lp = COST_SENSITIVE::cs_label;
