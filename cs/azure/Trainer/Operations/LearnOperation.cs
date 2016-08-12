@@ -93,7 +93,14 @@ namespace VowpalWabbit.Azure.Trainer
             }
             catch (Exception ex)
             {
-                this.telemetry.TrackException(ex);
+                this.telemetry.TrackException(ex, 
+                    new Dictionary<string, string>
+                        {
+                            { "ID", example.EventId },
+                            { "VW", example.Example.VowpalWabbitString },
+                            { "JSON", example.JSON }
+                        });
+
                 this.perfCounters.Stage2_Faulty_ExamplesPerSec.Increment();
                 this.perfCounters.Stage2_Faulty_Examples_Total.Increment();
                 return null;
