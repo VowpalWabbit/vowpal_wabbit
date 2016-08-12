@@ -234,7 +234,7 @@ void output_example(vw& all, example& ec)
         min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      cerr << "warning: csoaa predicted an invalid class" << endl;
+      cerr << "warning: csoaa predicted an invalid class. Are all muti-class labels in the {1..k} range?" << endl;
 
     loss = chosen_loss - min;
   }
