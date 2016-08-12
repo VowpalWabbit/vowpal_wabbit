@@ -424,7 +424,11 @@ namespace VW
                 result = new ActionDependentFeature<TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
 
                 foreach (var index in actionScores)
-                    result[i++] = validActionDependentFeatures[(int)index.Action];
+                {
+                    result[i] = validActionDependentFeatures[(int)index.Action];
+                    result[i].Probability = index.Score;
+                    i++;
+                }
             }
             else
             {
@@ -438,6 +442,8 @@ namespace VW
 
                     foreach (var index in multilabel)
                         result[i++] = validActionDependentFeatures[index];
+
+                    result[0].Probability = 1f;
                 }
                 else
                     throw new NotSupportedException("Unsupported return type: " + values.GetType());
