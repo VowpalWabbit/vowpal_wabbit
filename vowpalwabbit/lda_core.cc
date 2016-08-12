@@ -577,7 +577,7 @@ float theta_kl(lda &l, v_array<float> &Elogtheta, float *gamma)
   return kl;
 }
 
-static inline float find_cw(lda &l, float* u_for_w, float *v)
+static inline float find_cw(lda &l, weight_parameters::iterator u_for_w, float *v)
 { return 1.0f / std::inner_product(u_for_w, u_for_w + l.topics, v, 0.0f);
 }
 
@@ -620,14 +620,13 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight_parameters& w
     doc_length = 0;
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
-	{
-		float* u_for_w = &weights[(f.index() & weights.mask()) + l.topics + 1];
+	     {  weight_parameters::iterator u_for_w = weights.begin() + (f.index() & weights.mask()) + l.topics + 1;
             float c_w = find_cw(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
             size_t max_k = l.topics;
-            for (size_t k = 0; k < max_k; k++)
-              new_gamma[k] += xc_w * u_for_w[k];
+            for (size_t k = 0; k < max_k; k++, ++u_for_w)
+              new_gamma[k] += xc_w * *u_for_w;
             word_count++;
             doc_length += f.value();
           }
@@ -817,27 +816,25 @@ void learn_batch(lda &l)
 		  while (next <= &l.sorted_features.back() && next->f.weight_index == s->f.weight_index)
 			  next++;
 
-		  float *word_weights = &(weights[s->f.weight_index]);
-		  //weight_parameters::iterator word_weights = weights.begin() + (s->f.weight_index & weights.mask());
-		  for (size_t k = 0; k < l.all->lda; k++)
+		  //float *word_weights = &(weights[s->f.weight_index]);
+		  weight_parameters::iterator word_weights = weights.begin() + (s->f.weight_index & weights.mask());
+		  for (size_t k = 0; k < l.all->lda; k++, ++word_weights)
 		  {
-			  float new_value = minuseta * word_weights[k];
-			  word_weights[k] = new_value;
+			  float new_value = minuseta * *word_weights;
+			  *word_weights = new_value;
 		  }
 
-		  
-		  //word_weights = weights.begin() + (s->f.weight_index & weights.mask());
 		  for (; s != next; s++)
 		  {
 			  float *v_s = &(l.v[s->document * l.all->lda]);
-			  //weight_parameters::iterator u_for_w = weights.begin() + ((s->f.weight_index & weights.mask()) + l.all->lda + 1);
-			  float *u_for_w = &weights[(s->f.weight_index & weights.mask()) + l.all->lda + 1];
+			  weight_parameters::iterator u_for_w = weights.begin() + (s->f.weight_index & weights.mask()) + l.all->lda + 1;
 			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-			  for (size_t k = 0; k < l.all->lda; k++)
-			  {
-				  float new_value = u_for_w[k] * v_s[k] * c_w;
+			  word_weights = weights.begin() + (s->f.weight_index & weights.mask());
+			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
+			  {   
+				  float new_value = *u_for_w * v_s[k] * c_w;
 				  l.total_new[k] += new_value;
-				  word_weights[k] += new_value;
+				  *word_weights += new_value;
 			  }
 		  }
 	  }
