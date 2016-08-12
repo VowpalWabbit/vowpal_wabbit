@@ -47,8 +47,9 @@ struct cbify
 vector<float> vw_scorer::Score_Actions(example& ctx)
 {
   vector<float> probs_vec;
-  for(uint32_t i = 0;i < ctx.pred.a_s.size();i++)
-    probs_vec.push_back(ctx.pred.a_s[i].score);
+  auto& a_s = *ctx.pred.a_s;
+  for(uint32_t i = 0;i < a_s.size();i++)
+    probs_vec.push_back(a_s[i].score);
   return probs_vec;
 }
 
@@ -130,7 +131,6 @@ base_learner* cbify_setup(vw& all)
   }
   base_learner* base = setup_base(all);
 
-  all.delete_prediction = nullptr;
   learner<cbify>* l;
   l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
   l->set_finish(finish);

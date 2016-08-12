@@ -33,16 +33,17 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count-1) * mp.step);
+  float& scalar = *p->scalar;
   if (top <= mask)
   { weight* last = w + top;
     w += fi;
     for (; w <= last; w += mp.step, ++p)
-      p->scalar += fx **w;
+	  scalar += fx **w;
   }
   else    // TODO: this could be faster by unrolling into two loops
     for (size_t c=0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     { fi &= mask;
-      p->scalar += fx * w[fi];
+	  scalar += fx * w[fi];
     }
 }
 

@@ -82,7 +82,7 @@ namespace CB_EXPLORE{
     uint32_t chosen = ec.pred.multiclass-1;
     probs[chosen].score += (1-data.epsilon);
     
-    ec.pred.a_s = probs;    
+	ec.pred.a_s = probs;
   }
 
   template <bool is_learn>
@@ -108,7 +108,7 @@ namespace CB_EXPLORE{
 	  base.learn(ec,i);
     }
 
-    ec.pred.a_s = probs;
+	ec.pred.a_s = probs;
   }
 
   void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
@@ -229,7 +229,7 @@ namespace CB_EXPLORE{
     }
 
     ec.l.cb = data.cb_label;
-    ec.pred.a_s = probs;
+	ec.pred.a_s = probs;
   }
 
   void finish(cb_explore& data)
@@ -258,9 +258,10 @@ namespace CB_EXPLORE{
 
     cb_to_cs& c = data.cbcs;
   
+	auto& a_s = *ec.pred.a_s;
     if ((c.known_cost = get_observed_cost(ld)) != nullptr)
-      for(uint32_t i = 0;i < ec.pred.a_s.size();i++)
-	loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.a_s[i].score;
+      for(uint32_t i = 0;i < a_s.size();i++)
+	loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*a_s[i].score;
   
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
     
@@ -269,11 +270,11 @@ namespace CB_EXPLORE{
     float maxprob = 0.;
     uint32_t maxid;
     //cout<<ec.pred.scalars.size()<<endl;
-    for(uint32_t i = 0;i < ec.pred.a_s.size();i++) {
-      sprintf(temp_str,"%f ", ec.pred.a_s[i].score);
+    for(uint32_t i = 0;i < a_s.size();i++) {
+      sprintf(temp_str,"%f ", a_s[i].score);
       ss << temp_str;
-      if(ec.pred.a_s[i].score > maxprob) {
-	maxprob = ec.pred.a_s[i].score;
+      if(a_s[i].score > maxprob) {
+	maxprob = a_s[i].score;
 	maxid = i+1;
       }
     }
@@ -323,7 +324,6 @@ base_learner* cb_explore_setup(vw& all)
   char type_string[30];
 
   data.cbcs.cb_type = CB_TYPE_DR;
-  all.delete_prediction = delete_action_scores;
   //ALEKH: Others TBD later
   // if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
   //   data.cbcs->cb_type = CB_TYPE_DR;

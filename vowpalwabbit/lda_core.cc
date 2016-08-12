@@ -868,7 +868,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
     for (features& fs : ec)
     { for (features::iterator& f : fs)
       { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-        l.feature_counts[idx] += f.value();
+        l.feature_counts[idx] += (uint32_t)f.value();
         l.feature_to_example_map[idx].push_back(ec.example_counter);
       }
     }
@@ -929,7 +929,7 @@ void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weig
 
 	// extract idx and sort descending
 	output.resize(top_features.size());
-	for (int i = top_features.size() - 1; i >= 0; i--)
+	for (int i = (int)top_features.size() - 1; i >= 0; i--)
 	{
 		output[i] = top_features.top();
 		top_features.pop();
@@ -1004,7 +1004,7 @@ void compute_coherence_metrics(lda &l)
 		// extract idx and sort descending
 		vector<uint64_t> top_features_idx;
 		top_features_idx.resize(top_features.size());
-		for (int i = top_features.size() - 1; i >= 0; i--)
+		for (int i = (int)top_features.size() - 1; i >= 0; i--)
 		{
 			top_features_idx[i] = top_features.top().weight_index;
 			top_features.pop();

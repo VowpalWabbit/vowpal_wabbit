@@ -74,11 +74,11 @@ namespace cs_unittest
                         {
                             if (!string.IsNullOrWhiteSpace(predictFile) && File.Exists(predictFile))
                             {
-                                float actualValue;
+                                object actualValue;
                                 if (args.Contains("-t")) // test only
-                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
+                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Dynamic);
                                 else
-                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
+                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Dynamic);
                             }
                             else
                                 vw.Learn(dataLine);

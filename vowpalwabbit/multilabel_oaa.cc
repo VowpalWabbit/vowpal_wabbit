@@ -60,7 +60,7 @@ LEARNER::base_learner* multilabel_oaa_setup(vw& all)
                                    predict_or_learn<false>, data.k);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
-  all.delete_prediction = MULTILABEL::multilabel.delete_label;
+  all.label_type = label_type::multi;
 
   return make_base(l);
 }

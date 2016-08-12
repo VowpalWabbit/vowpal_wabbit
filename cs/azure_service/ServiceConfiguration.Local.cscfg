@@ -3,14 +3,14 @@
   <Role name="OnlineTrainer">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" value="c27e4fcf-7a1d-40f7-b97f-18eee6eff3d7" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="" />
-      <Setting name="StorageConnectionString" value="" />
-      <Setting name="JoinedEventHubConnectionString" value=""/>
-      <Setting name="EvalEventHubConnectionString" value="" />
-      <Setting name="AdminToken" value="a"/>
-      <Setting name="CheckpointIntervalOrCount" value=""/>
-      <Setting name="EnableExampleTracing" value="true"/>
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" value="47fe0733-1eff-4ac8-a95c-cea9c3d46cc4" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=storageeujul3v6w5ngg;AccountKey=pDSr2m88FF77bcC4wIGWjBdV8zh4yXO2Y4gRnztD0wRm6KPz4GPUhdLpGSKf8ufqYlr0n1xC6Ff/ZT8fVWP4BQ==" />
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=storageeujul3v6w5ngg;AccountKey=pDSr2m88FF77bcC4wIGWjBdV8zh4yXO2Y4gRnztD0wRm6KPz4GPUhdLpGSKf8ufqYlr0n1xC6Ff/ZT8fVWP4BQ==" />
+      <Setting name="JoinedEventHubConnectionString" value="Endpoint=sb://sb-eujul3v6w5nggdvlwlpoxc42g6.servicebus.windows.net/;SharedAccessKeyName=ListenOnly;SharedAccessKey=QDzJ0s0rVHMTvXEB8CKIAE7GLhYcf2lLi3ZVk8kapp4=;EntityPath=joined" />
+      <Setting name="EvalEventHubConnectionString" value="Endpoint=sb://sb-eujul3v6w5nggdvlwlpoxc42g6.servicebus.windows.net/;SharedAccessKeyName=SendOnly;SharedAccessKey=5y+gGnV3cBytXl7sENNqGiyJHcl4WFslMThZIIRVE48=;EntityPath=eval" />
+      <Setting name="AdminToken" value="ms75bjrsyvbhc" />
+      <Setting name="CheckpointIntervalOrCount" value="00:00:10" />
+      <Setting name="EnableExampleTracing" value="true" />
     </ConfigurationSettings>
   </Role>
 </ServiceConfiguration>

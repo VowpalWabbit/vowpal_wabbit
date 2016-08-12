@@ -60,7 +60,7 @@ template<label_parser& lp>
 void finish(expreplay& er)
 { for (size_t n=0; n<er.N; n++)
   { lp.delete_label(&er.buf[n].l);
-    VW::dealloc_example(NULL, er.buf[n], NULL);  // TODO: need to free label
+    VW::dealloc_example(NULL, er.buf[n]);  // TODO: need to free label
   }
   free(er.buf);
   free(er.filled);

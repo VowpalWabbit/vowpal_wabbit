@@ -1031,7 +1031,7 @@ void free_parser(vw& all)
   if (all.p->examples != nullptr)
   { 
     for (size_t i = 0; i < all.p->ring_size; i++)
-      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], all.delete_prediction);
+      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
     free(all.p->examples);
   }
 

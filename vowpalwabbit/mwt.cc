@@ -220,11 +220,6 @@ namespace MWT {
 }
 using namespace MWT;
 
-void delete_scalars(void* v)
-{ v_array<float>* preds = (v_array<float>*)v;
-  preds->delete_v();
-}
-
 base_learner* mwt_setup(vw& all)
 { if (missing_option<string, true>(all, "multiworld_test", "Evaluate features as a policies"))
     return nullptr;
@@ -243,8 +238,9 @@ base_learner* mwt_setup(vw& all)
   calloc_reserve(c.evals, all.length());
   c.evals.end() = c.evals.begin() + all.length();
 
-  all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
+
   if (all.vm.count("learn"))
     {
       c.num_classes = all.vm["learn"].as<uint32_t>();

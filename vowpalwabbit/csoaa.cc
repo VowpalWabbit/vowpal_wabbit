@@ -117,6 +117,8 @@ base_learner* csoaa_setup(vw& all)
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>,
                                    predict_or_learn<false>, c.num_classes);
   all.p->lp = cs_label;
+  all.label_type = label_type::cs;
+
   l.set_finish_example(finish_example);
   l.set_finish(finish);
   all.cost_sensitive = make_base(l);
@@ -433,9 +435,10 @@ void do_actual_learning(ldf& data, base_learner& base)
     if (start_K > 0)
     { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
     }
+	auto& a_s0 = *data.ec_seq[0]->pred.a_s;
     for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
-    data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
+	  a_s0.push_back(data.a_s[k-start_K]);
     }
   }
   else
@@ -754,10 +757,10 @@ base_learner* csldf_setup(vw& all)
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
     *all.file_options << " --csoaa_rank";
-    all.delete_prediction = delete_action_scores;
   }
 
   all.p->lp = COST_SENSITIVE::cs_label;
+  all.label_type = label_type::cs;
 
   ld.treat_as_classifier = false;
   ld.is_singleline = false;

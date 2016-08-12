@@ -180,9 +180,13 @@ base_learner* cb_algs_setup(vw& all)
 
   base_learner* base = setup_base(all);
   if (eval)
-    all.p->lp = CB_EVAL::cb_eval;
+  { all.p->lp = CB_EVAL::cb_eval;
+	all.label_type = label_type::cb_eval;
+  }
   else
-    all.p->lp = CB::cb_label;
+  { all.p->lp = CB::cb_label;
+	all.label_type = label_type::cb;
+  }
 
   learner<cb>* l;
   if (eval)
