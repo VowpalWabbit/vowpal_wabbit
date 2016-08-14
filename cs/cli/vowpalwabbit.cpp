@@ -707,23 +707,20 @@ namespace VW
 	  // using jagged array to enable LINQ
 	  auto K = (int)m_vw->lda;
 	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
-	  for (int k = 0; k < K; k++)
-		  allocation[k] = gcnew List<VowpalWabbitFeature^>(top);
 
 	  // TODO: better way of peaking into lda?
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 	  
-	  v_array<tuple<weight, uint64_t>> top_weights;
-
+	  std::vector<feature> top_weights;
 	  // over topics
 	  for (int topic = 0; topic < K; topic++)
 	  {
 		  get_top_weights(m_vw, top, topic, top_weights);
 
-		  auto clr_weights = gcnew List<VowpalWabbitFeature^>();
+		  auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
 		  allocation[topic] = clr_weights;
 		  for (auto& pair : top_weights)
-			  clr_weights->Add(gcnew VowpalWabbitFeature(nullptr, std::get<0>(pair), std::get<1>(pair)));
+			  clr_weights->Add(gcnew VowpalWabbitFeature(this, pair.x, pair.weight_index));
 	  }
 
 	  return allocation;

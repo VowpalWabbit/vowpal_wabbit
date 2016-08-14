@@ -682,7 +682,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     { brw = 0;
       size_t K = all->lda;
 
-	  msg << i << " ";
+	  if (!read && text)
+		  msg << i << " ";
+
 	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
 		brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
 	  else
@@ -698,13 +700,15 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
         { uint64_t ndx = stride * i + k;
 
           weight *v = &(all->reg.weight_vector[ndx]);
-          msg << *v + l.lda_rho << " ";
+		  if (!read && text)
+			msg << *v + l.lda_rho << " ";
 
           brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
         }
       if (text)
         {
-          msg << "\n";
+		  if (!read)
+			  msg << "\n";
           brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
         }
       if (!read)
@@ -901,29 +905,29 @@ struct feature_pair
 	{}
 };
 
-void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
+void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output)
 {
 	weight* weight_vector = all->reg.weight_vector;
 	uint64_t length = (uint64_t)1 << all->num_bits;
 	uint64_t stride = (uint64_t)1 << all->reg.stride_shift;
 
 	// get top features for this topic
-	auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
-	std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
+	auto cmp = [](feature left, feature right) { return left.x > right.x; };
+	std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
 	for (uint64_t i = 0; i < min(top_words_count, length); i++)
 	{
 		weight v = weight_vector[(stride * i) + topic];
-		top_features.push(std::make_tuple(v, i));
+		top_features.push({ v, i });
 	}
 
 	for (uint64_t i = top_words_count; i < length; i++)
 	{
 		weight v = weight_vector[(stride * i) + topic];
 
-		if (v > std::get<0>(top_features.top()))
+		if (v > top_features.top().x)
 		{
 			top_features.pop();
-			top_features.push(std::make_tuple(v, i));
+			top_features.push({ v, i });
 		}
 	}
 

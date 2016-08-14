@@ -17,6 +17,7 @@ namespace VW
   using namespace VW::Labels;
 
   ref class VowpalWabbitExample;
+  ref class VowpalWabbit;
 
     [System::Diagnostics::DebuggerDisplay("{m_weight_index}:{m_x}")]
     public ref struct VowpalWabbitFeature
@@ -25,9 +26,11 @@ namespace VW
       feature_value m_x;
       uint64_t m_weight_index;
 	  VowpalWabbitExample^ m_example;
+	  VowpalWabbit^ m_vw;
 
     public:
-      VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index);
+		VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index);
+		VowpalWabbitFeature(VowpalWabbit^ vw, feature_value x, uint64_t weight_index);
 
       property feature_value X
       {
