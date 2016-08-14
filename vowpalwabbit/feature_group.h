@@ -326,7 +326,7 @@ struct features {
   { copy_array(values, src.values);
     copy_array(indicies, src.indicies);
     free_space_names(0);
-    copy_array(space_names, src.space_names);
+    copy_array_no_memcpy(space_names, src.space_names);
     sum_feat_sq = src.sum_feat_sq;
   }
 };

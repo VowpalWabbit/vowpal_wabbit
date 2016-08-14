@@ -168,6 +168,13 @@ template<class T> void copy_array(v_array<T>& dst, const v_array<T>& src)
   push_many(dst, src._begin, src.size());
 }
 
+// use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
+template<class T> void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
+{ dst.erase();
+  for (T*item = src._begin; item != src._end; ++item)
+    dst.push_back(*item);
+}
+
 template<class T> void copy_array(v_array<T>& dst, const v_array<T>& src, T(*copy_item)(T&))
 { dst.erase();
   for (T*item = src._begin; item != src._end; ++item)
