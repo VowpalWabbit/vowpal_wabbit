@@ -45,7 +45,6 @@ private:
     new_ec->num_features = 0;
     new_ec->partial_prediction = 0.;
     new_ec->updated_prediction = 0.;
-    new_ec->topic_predictions.erase();
     new_ec->passthrough = nullptr;
     new_ec->loss = 0.;
     new_ec->total_sum_feat_sq = 0.;

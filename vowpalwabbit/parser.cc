@@ -946,7 +946,7 @@ example* get_example(parser* p)
 }
 
 float get_topic_prediction(example* ec, size_t i)
-{ return ec->topic_predictions[i]; }
+{ return ec->pred.scalars[i]; }
 
 float get_label(example* ec)
 { return ec->l.simple.label; }
