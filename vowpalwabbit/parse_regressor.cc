@@ -37,13 +37,11 @@ public:
 	}
 };
 void random_positive(weight_parameters::iterator& iter, size_t ind)
-{merand48(ind);  
-*iter = (float)(0.1 * frand48());
+{*iter = (float)(0.1 * merand48(ind));
 }
 
 void random_weights(weight_parameters::iterator& iter, size_t ind)
-{merand48(ind);  
-*iter = (float)(frand48() - 0.5);
+{*iter = (float)(merand48(ind) - 0.5);
 }
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
