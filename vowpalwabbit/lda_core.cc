@@ -338,13 +338,13 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
 void vexpdigammify_2(vw &all, weight_parameters::iterator gamma, const float *norm, const float underflow_threshold)
 { weight_parameters::iterator fp = gamma;
   const float *np;
-  weight_parameters::iterator fpend = gamma + all.lda;
+  uint32_t count = 0;
 
-  for (np = norm; fp != fpend && !is_aligned16(&(*fp)); ++fp, ++np)
+  for (np = norm; count < all.lda && !is_aligned16(&(*fp)); ++fp, ++np, ++count)
   { *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
   }
 
-  for (; is_aligned16(&(*fp)) && fp + 4 != fpend; fp += 4, np += 4)
+  for (; is_aligned16(&(*fp)) && count + 4 < all.lda; fp += 4, np += 4, count += 4)
   { v4sf arg = _mm_load_ps(&(*fp));
     arg = vfastdigamma(arg);
     v4sf vnorm = _mm_loadu_ps(np);
@@ -354,7 +354,7 @@ void vexpdigammify_2(vw &all, weight_parameters::iterator gamma, const float *no
     _mm_store_ps(&(*fp), arg);
   }
 
-  for (; fp != fpend; ++fp, ++np)
+  for (; count < all.lda ; ++fp, ++np, ++count)
   { *fp = fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
   }
 }
