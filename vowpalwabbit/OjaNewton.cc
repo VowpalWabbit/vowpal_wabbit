@@ -73,7 +73,7 @@ struct OjaNewton {
 	    const double PI2 = 2.f * 3.1415927f;
 		for (weight_parameters::iterator i = weights.begin(0); i != weights.end(); ++i)
 		  for (weight_parameters::iterator::w_iter j = i.begin() + 1; j != i.end(m + 1); ++j)
-		  {  double r1 = frand48() + 1e-6;
+		  {  double r1 = frand48();
 		     double r2 = frand48();
 			 *j = sqrt(-2.f * log(r1)) * cos(PI2 * r2);
 		  }
