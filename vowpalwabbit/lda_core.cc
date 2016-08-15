@@ -636,10 +636,10 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, weight *weights, exa
   }
   while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
-  ec->topic_predictions.erase();
-  ec->topic_predictions.resize(l.topics);
-  memcpy(ec->topic_predictions.begin(), new_gamma.begin(), l.topics * sizeof(float));
-  ec->topic_predictions.end() = ec->topic_predictions.begin() + l.topics;
+  ec->pred.scalars.erase();
+  ec->pred.scalars.resize(l.topics);
+  memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
+  ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
 
@@ -723,12 +723,12 @@ void learn_batch(lda &l)
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
       {
-	l.examples[d]->topic_predictions.erase();
-	l.examples[d]->topic_predictions.resize(l.topics);
-	memset(l.examples[d]->topic_predictions.begin(), 0, l.topics * sizeof(float));
-	l.examples[d]->topic_predictions.end() = l.examples[d]->topic_predictions.begin() + l.topics;
+	l.examples[d]->pred.scalars.erase();
+	l.examples[d]->pred.scalars.resize(l.topics);
+	memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
+	l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
-	l.examples[d]->topic_predictions.erase();
+	l.examples[d]->pred.scalars.erase();
 	return_simple_example(*l.all, nullptr, *l.examples[d]);
       }
     l.examples.erase();
@@ -1177,6 +1177,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   po::variables_map &vm = all.vm;
 
   all.lda = vm["lda"].as<uint32_t>();
+  all.delete_prediction = delete_scalars;
 
   lda &ld = calloc_or_throw<lda>();
 
