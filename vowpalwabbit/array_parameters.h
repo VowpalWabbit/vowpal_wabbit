@@ -125,6 +125,41 @@ public:
 	uint64_t mask()
 	{ return _weight_mask;
 	}
+
+	template<void(*T)(iterator&)>
+	inline void set_default()
+	{
+		for (iterator iter = begin(0); iter != end(); ++iter)
+			T(iter);
+	}
+	template<void(*T)(iterator&, weight)> //for setting weights to all.initial_t
+	inline void set_default(weight value)
+	{
+		for (iterator iter = begin(0); iter != end(); ++iter)
+			T(iter, value);
+	}
+
+	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
+	inline void set_default()
+	{  uint32_t stride = 1 << _stride_shift;
+	   iterator iter = begin(0);
+	   for (size_t i = 0; iter != end(); ++iter, i += stride)
+			T(iter, i);
+	}
+
+	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
+	inline void set_default()
+	{ uint32_t stride = 1 << _stride_shift;
+	iterator iter = begin(0);
+	  for (size_t i = 0; iter != end(); ++iter, i += stride)
+			T(iter, i, stride);
+	}
+
+	void set_zero(size_t offset)
+	{
+		for (iterator iter = begin(offset); iter != end(offset); ++iter)
+			*iter = 0;
+	}
 	
 	#ifndef _WIN32
 	void share(size_t length)

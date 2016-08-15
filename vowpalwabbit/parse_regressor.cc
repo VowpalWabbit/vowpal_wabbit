@@ -25,6 +25,21 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
+
+void initial_t(weight_parameters::iterator& iter, weight value)
+{
+	*iter = value;
+}
+
+void random_positive(weight_parameters::iterator& iter, size_t ind)
+{   merand48(ind);
+	*iter = (float)(0.1 * frand48());
+}
+
+void random_weights(weight_parameters::iterator& iter, size_t ind)
+{  merand48(ind);
+   *iter = (float)(frand48() - 0.5);
+}
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
   if (all.weights != nullptr)
@@ -39,14 +54,11 @@ void initialize_regressor(vw& all)
   if (all.weights == nullptr)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-    for (weight_parameters::iterator j = all.weights->begin(0); j != all.weights->end(); ++j)
-      *j = all.initial_weight;
+	  all.weights->set_default<initial_t>(all.initial_t);
   else if (all.random_positive_weights)
-	for (weight_parameters::iterator j = all.weights->begin(0); j != all.weights->end(); ++j)
-      *j = (float)(0.1 * frand48());
+	  all.weights->set_default<random_positive>();
   else if (all.random_weights)
-	for (weight_parameters::iterator j = all.weights->begin(0); j != all.weights->end(); ++j)
-	  *j = (float)(frand48() - 0.5);
+	  all.weights->set_default<random_weights>();
 }
 
 const size_t default_buf_size = 512;

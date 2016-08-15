@@ -191,16 +191,21 @@ void mf_train(gdmf& d, example& ec)
     THROW("cannot use triples in matrix factorization");
 }
 
+void set_rand(weight_parameters::iterator& iter, size_t index, uint32_t stride)
+{ 
+	for (weight_parameters::iterator::w_iter w = iter.begin(); w != iter.end(stride); ++w, ++index)
+	{  merand48(index);
+	  *w = (float)(0.1 * frand48());
+	}
+}
+
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
   if(read)
   { initialize_regressor(*all);
-    if (all->random_weights)
-	{ weight_parameters& w = *(all->weights);
-	  for (weight_parameters::iterator j = w.begin(); j != w.end(); ++j)
-		  *j = (float)(0.1 * frand48());
-    }  
+  if (all->random_weights)
+	  all->weights->set_default<set_rand>();
   }
 
   if (model_file.files.size() > 0)

@@ -106,16 +106,12 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 
 void zero_derivative(vw& all)
 { //set derivative to 0.
-  weight_parameters& weights = *all.weights;
-  for (weight_parameters::iterator i = weights.begin(W_GT); i != weights.end(W_GT); ++i)
-	  *i = 0;
+	all.weights->set_zero(W_GT);
 }
 
 void zero_preconditioner(vw& all)
 { //set derivative to 0.
-	weight_parameters& weights = *all.weights;
-  for (weight_parameters::iterator i = weights.begin(W_COND); i != weights.end(W_COND); ++i)
-	  *i = 0;
+	all.weights->set_zero(W_COND);
 }
 
 void reset_state(vw& all, bfgs& b, bool zero)
@@ -503,15 +499,10 @@ void regularizer_to_weight(vw& all, bfgs& b)
 }
 
 void zero_state(vw& all)
-{ weight_parameters& weights = *all.weights;
-  weight_parameters::iterator w_gt = weights.begin(W_GT);
-  weight_parameters::iterator w_dir = weights.begin(W_DIR);
-  weight_parameters::iterator w_cond = weights.begin(W_COND);
-  for(; w_gt != weights.end(W_GT); ++w_gt, ++w_dir, ++w_cond)
-  { *w_gt = 0;
-    *w_dir = 0;
-    *w_cond = 0;
-  }
+{
+  all.weights->set_zero(W_GT);
+  all.weights->set_zero(W_DIR);
+  all.weights->set_zero(W_COND);
 }
 
 double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
