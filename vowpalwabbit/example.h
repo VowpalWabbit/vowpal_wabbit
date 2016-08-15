@@ -36,6 +36,11 @@ typedef union
   MULTILABEL::labels multilabels;
 } polylabel;
 
+inline void delete_scalars(void* v)
+{ v_array<float>* preds = (v_array<float>*)v;
+  preds->delete_v();
+}
+
 typedef union
 { float scalar;
   v_array<float> scalars;//a sequence of scalar predictions
@@ -89,7 +94,6 @@ struct example // core example datatype.
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
-  v_array<float> topic_predictions;
   float loss;
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
