@@ -194,7 +194,8 @@ void mf_train(gdmf& d, example& ec)
 void set_rand(weight_parameters::iterator& iter, size_t index, uint32_t stride)
 { 
 	for (weight_parameters::iterator::w_iter w = iter.begin(); w != iter.end(stride); ++w, ++index)
-	{  *w = (float)(0.1 * merand48(index));
+	{merand48(index);  
+	*w = (float)(0.1 * frand48());
 	}
 }
 

@@ -670,7 +670,8 @@ public:
 	void operator()(weight_parameters::iterator& iter, size_t index)
 	{ if (_random)
 	  { for (weight_parameters::iterator::w_iter k = iter.begin(); k != iter.end(_lda); ++k, ++index)
-	    {  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
+	    {  	   merand48(index);
+		   *k = (float)(-log(frand48() + 1e-6) + 1.0f);
 		   *k *= _initial_random;
 		}
 	  }
