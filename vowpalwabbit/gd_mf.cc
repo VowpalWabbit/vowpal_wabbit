@@ -26,6 +26,7 @@ using namespace LEARNER;
 
 struct gdmf
 { vw* all;//regressor, printing
+  v_array<float> scalars;
   uint32_t rank;
   size_t no_win_counter;
   uint64_t early_stop_thres;
@@ -86,7 +87,7 @@ float mf_predict(gdmf& d, example& ec)
   }
 
   // clear stored predictions
-  ec.topic_predictions.erase();
+  d.scalars.erase();
 
   float linear_prediction = 0.;
   // linear terms
@@ -95,7 +96,7 @@ float mf_predict(gdmf& d, example& ec)
 
   // store constant + linear prediction
   // note: constant is now automatically added
-  ec.topic_predictions.push_back(linear_prediction);
+  d.scalars.push_back(linear_prediction);
 
   prediction += linear_prediction;
 
@@ -117,8 +118,8 @@ float mf_predict(gdmf& d, example& ec)
         prediction += x_dot_l * x_dot_r;
 
         // store prediction from interaction terms
-        ec.topic_predictions.push_back(x_dot_l);
-        ec.topic_predictions.push_back(x_dot_r);
+        d.scalars.push_back(x_dot_l);
+        d.scalars.push_back(x_dot_r);
       }
     }
   }
@@ -126,7 +127,7 @@ float mf_predict(gdmf& d, example& ec)
   if (all.triples.begin() != all.triples.end())
     THROW("cannot use triples in matrix factorization");
 
-  // ec.topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ...
+  // d.scalars has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ...
 
   ec.partial_prediction = prediction;
 
@@ -173,14 +174,14 @@ void mf_train(gdmf& d, example& ec)
       // update l^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // r^k \cdot x_r
-        float r_dot_x = ec.topic_predictions[2*k];
+        float r_dot_x = d.scalars[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
         sd_offset_update(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
-        float l_dot_x = ec.topic_predictions[2*k-1];
+        float l_dot_x = d.scalars[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
         sd_offset_update(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
       }
@@ -268,6 +269,8 @@ void learn(gdmf& d, base_learner&, example& ec)
     mf_train(d, ec);
 }
 
+void finish(gdmf& d) { d.scalars.delete_v();}
+
 base_learner* gd_mf_setup(vw& all)
 { if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
@@ -313,6 +316,7 @@ base_learner* gd_mf_setup(vw& all)
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
+  l.set_finish(finish);
 
   return make_base(l);
 }
