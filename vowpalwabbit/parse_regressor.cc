@@ -26,19 +26,22 @@ using namespace std;
 #include "vw_versions.h"
 
 
-void initial_t(weight_parameters::iterator& iter, weight value)
-{
-	*iter = value;
-}
-
+struct initial_t
+{private:
+	weight _initial;
+public:
+	initial_t(weight initial) : _initial(initial){}
+	void operator()(weight_parameters::iterator& iter, size_t /*index*/)
+	{
+		*iter = _initial;
+	}
+};
 void random_positive(weight_parameters::iterator& iter, size_t ind)
-{   merand48(ind);
-	*iter = (float)(0.1 * frand48());
+{  *iter = (float)(0.1 * merand48(ind));
 }
 
 void random_weights(weight_parameters::iterator& iter, size_t ind)
-{  merand48(ind);
-   *iter = (float)(frand48() - 0.5);
+{  *iter = (float)(merand48(ind) - 0.5);
 }
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
@@ -54,7 +57,10 @@ void initialize_regressor(vw& all)
   if (all.weights == nullptr)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-	  all.weights->set_default<initial_t>(all.initial_t);
+  {
+	  initial_t init(all.initial_t);
+	  all.weights->set_default<initial_t>(init);
+  }
   else if (all.random_positive_weights)
 	  all.weights->set_default<random_positive>();
   else if (all.random_weights)

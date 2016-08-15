@@ -656,23 +656,38 @@ size_t next_pow2(size_t x)
   return ((size_t)1) << i;
 }
 
+struct initial_weights
+{
+private:
+	weight _initial;
+	weight _initial_random;
+	bool _random;
+	uint32_t _lda;
+public:
+	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda ) 
+		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
+	{}
+	void operator()(weight_parameters::iterator& iter, size_t index)
+	{ if (_random)
+	  { for (weight_parameters::iterator::w_iter k = iter.begin(); k != iter.end(_lda); ++k, ++index)
+	    {  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
+		   *k *= _initial_random;
+		}
+	  }
+	weight_parameters::iterator::w_iter w_lda = iter.begin() + _lda;
+	*w_lda = _initial;
+	}
+};
+
+
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw *all = l.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
   if (read)
   { initialize_regressor(*all);
-    weight_parameters& weights = *(all->weights);
-	weight_parameters::iterator j = weights.begin(0);
-	weight_parameters::iterator w_lda = weights.begin(all->lda);
-	for (; j != weights.end(); ++j, ++w_lda)
-	{ for (weight_parameters::iterator::w_iter k = j.begin(); k != j.end(all->lda); ++k)
-	  { if (all->random_weights)
-	    { *k = (float)(-log(frand48() + 1e-6) + 1.0f);
-		  *k *= (float)(l.lda_D / all->lda / all->length() * 200);
-	    }
-	  }
-	  *w_lda = all->initial_t;
-	}
+    initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
+    all->weights->set_default<initial_weights>(init);
+
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
