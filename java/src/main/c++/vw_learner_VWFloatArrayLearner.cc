@@ -3,7 +3,7 @@
 #include "vw_learner_VWFloatArrayLearner.h"
 
 jfloatArray floatArrayPredictor(example* vec, JNIEnv *env)
-{ v_array<float> predictions = vec->topic_predictions;
+{ v_array<float> predictions = vec->pred.scalars;
   size_t num_predictions = predictions.size();
   jfloatArray r = env->NewFloatArray(num_predictions);
   env->SetFloatArrayRegion(r, 0, num_predictions, predictions.begin());
