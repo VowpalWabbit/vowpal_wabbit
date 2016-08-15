@@ -88,7 +88,7 @@ struct lda
   inline float lgamma(float x);
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
-  inline void expdigammify_2(vw &all, float *gamma, float *norm);
+  inline void expdigammify_2(vw &all, weight_parameters::iterator gamma, float *norm);
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -436,12 +436,12 @@ template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, flo
 }
 
 template <typename T, const lda_math_mode mtype>
-inline void expdigammify_2(vw &all, T *gamma, T *norm, const T threshold)
+inline void expdigammify_2(vw &all, weight_parameters::iterator gamma, T *norm, const T threshold)
 { std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n)
   { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
   });
 }
-template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, float *gamma, float *norm, const float threshold)
+template <> inline void expdigammify_2<float, USE_SIMD>(vw &all, weight_parameters::iterator gamma, float *norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
   vexpdigammify_2(all, gamma, norm, threshold);
@@ -524,7 +524,7 @@ void lda::expdigammify(vw &all, float *gamma)
   }
 }
 
-void lda::expdigammify_2(vw &all, float *gamma, float *norm)
+void lda::expdigammify_2(vw &all, weight_parameters::iterator gamma, float *norm)
 { switch (mmode)
   { case USE_FAST_APPROX:
       ldamath::expdigammify_2<float, USE_FAST_APPROX>(all, gamma, norm, underflow_threshold());
@@ -796,17 +796,19 @@ void learn_batch(lda &l)
   { if (last_weight_index == s->f.weight_index)
       continue;
     last_weight_index = s->f.weight_index;
-    float *weights_for_w = &(weights[s->f.weight_index]);
+    //float *weights_for_w = &(weights[s->f.weight_index]);
+	weight_parameters::iterator weights_for_w = weights.begin() + (s->f.weight_index & weights.mask());
     float decay_component =
-      l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + weights_for_w[l.all->lda])];
+      l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + *(weights_for_w + l.all->lda))];
     float decay = fmin(1.0f, correctedExp(decay_component));
-    float *u_for_w = weights_for_w + l.all->lda + 1;
+     weight_parameters::iterator u_for_w = weights_for_w + l.all->lda + 1;
 
-    weights_for_w[l.all->lda] = (float)l.example_t;
-    for (size_t k = 0; k < l.all->lda; k++)
-    { weights_for_w[k] *= decay;
-      u_for_w[k] = weights_for_w[k] + l.lda_rho;
+    *(weights_for_w + l.all->lda) = (float)l.example_t;
+    for (size_t k = 0; k < l.all->lda; k++, ++weights_for_w, ++u_for_w)
+    { *weights_for_w *= decay;
+      *u_for_w = *weights_for_w + l.lda_rho;
     }
+	u_for_w = weights.begin() + (s->f.weight_index & weights.mask()) +l.all->lda + 1;
     l.expdigammify_2(*l.all, u_for_w, l.digammas.begin());
   }
 
