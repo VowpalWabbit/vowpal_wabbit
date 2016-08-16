@@ -534,7 +534,7 @@ struct vw
   std::string final_regressor_name;
 
   uint32_t stride_shift;
-  weight_parameters* weights;
+  weight_parameters weights;
 
   size_t max_examples; // for TLC
 

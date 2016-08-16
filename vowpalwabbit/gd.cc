@@ -134,9 +134,9 @@ void end_pass(gd& g)
   sync_weights(all);
   if (all.all_reduce != nullptr)
   { if (all.adaptive)
-      accumulate_weighted_avg(all, *all.weights);
+      accumulate_weighted_avg(all, all.weights);
     else
-      accumulate_avg(all, *all.weights, 0);
+      accumulate_avg(all, all.weights, 0);
   }
   all.eta *= all.eta_decay_rate;
   if (all.save_per_pass)
@@ -210,7 +210,7 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 { 
-  weight_parameters& weights = *dat.all.weights;
+  weight_parameters& weights = dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = dat.all.stride_shift;
 
@@ -247,7 +247,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 }
 
 void print_features(vw& all, example& ec)
-{ weight_parameters& weights = *all.weights;
+{ weight_parameters& weights = all.weights;
 
   if (all.lda > 0)
   { size_t count = 0;
@@ -348,8 +348,8 @@ void predict(gd& g, base_learner&, example& ec)
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{ weight_parameters::iterator w = mp.weights->begin();
-  w += (fi & mp.weights->mask()); //TODO: get rid of mask()
+{ weight_parameters::iterator w = mp.weights.begin();
+  w += (fi & mp.weights.mask()); //TODO: get rid of mask()
   for (size_t c=0; c<mp.count; c++)
   { mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
     w += mp.step;
@@ -564,7 +564,7 @@ void learn(gd& g, base_learner& base, example& ec)
 void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin(0);
   for(; w != weights.end() && all.reg_mode; ++w)
     *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
@@ -574,7 +574,7 @@ void sync_weights(vw& all)
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 { uint64_t length = (uint64_t)1 << all.num_bits;
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   uint64_t i = 0;
   uint32_t old_i = 0;
   size_t brw = 1;
@@ -736,7 +736,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
   uint64_t length = (uint64_t)1 << all.num_bits;
 
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   uint32_t i = 0;
   size_t brw = 1;
   do
@@ -819,7 +819,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
   if (all.adaptive && all.initial_t > 0){
 	  initial_t init(all.initial_t);
-	  all.weights->set_default<initial_t>(init); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+	  all.weights.set_default<initial_t>(init); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
         //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...

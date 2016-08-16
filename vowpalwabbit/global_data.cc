@@ -322,7 +322,6 @@ vw::vw()
   add_constant = true;
   audit = false;
   stride_shift = 0;
-  weights = nullptr;
   pass_length = (size_t)-1;
   passes_complete = 0;
 

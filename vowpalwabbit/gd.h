@@ -24,11 +24,11 @@ void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; weight_parameters* weights; /* & for l1: */ float gravity; };
+struct multipredict_info { size_t count; size_t step; polyprediction* pred; weight_parameters& weights; /* & for l1: */ float gravity; };
 
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 { if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  weight_parameters& w = *mp.weights;
+  weight_parameters& w = mp.weights;
   uint64_t mask = w.mask(); 
   polyprediction* p = mp.pred;
   weight_parameters::iterator iter = w.begin();
@@ -74,7 +74,7 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
 
 for (features& f : ec)
-    foreach_feature<R,T>(*all.weights, f, dat, offset);
+    foreach_feature<R,T>(all.weights, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }

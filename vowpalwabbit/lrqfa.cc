@@ -40,7 +40,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   unsigned int k = lrq.k;
   float sqrtk = (float) sqrt(k);
-  weight_parameters& w = *all.weights;
+  weight_parameters& w = all.weights;
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa

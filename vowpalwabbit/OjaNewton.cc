@@ -53,8 +53,7 @@ struct OjaNewton {
     bool random_init;
 
 	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
-	{  weight_parameters& weights = *(all->weights);
-       uint32_t length = 1 << all->num_bits;
+	{  weight_parameters& weights = all->weights;
 	   if (normalize) { // initialize normalization part
 		 for (weight_parameters::iterator i = weights.begin(NORM2); i != weights.end(NORM2); ++i)
 		   *i = 0.1f;
@@ -274,7 +273,7 @@ struct OjaNewton {
 
         uint32_t length = 1 << all->num_bits;
         //size_t stride_shift = all->stride_shift;
-        weight_parameters& weights = *(all->weights);
+        weight_parameters& weights = all->weights;
 		for (weight_parameters::iterator i = weights.begin(0); i != weights.end(); ++i)
 		{  weight_parameters::iterator::w_iter w_j = i.begin() + 1;
 		   for (int j = 1; j <= m; ++j, ++w_j)

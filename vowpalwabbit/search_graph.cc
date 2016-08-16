@@ -175,11 +175,11 @@ void run_bfs(task_data &D, vector<example*>& ec)
 void setup(Search::search& sch, vector<example*>& ec)
 { task_data& D = *sch.get_task_data<task_data>();
 
-  D.mask = sch.get_vw_pointer_unsafe().weights->mask();
+  D.mask = sch.get_vw_pointer_unsafe().weights.mask();
   D.wpp  = sch.get_vw_pointer_unsafe().wpp;
   D.ss   = sch.get_vw_pointer_unsafe().stride_shift;
   D.multiplier = D.wpp << D.ss;
-  D.weights = sch.get_vw_pointer_unsafe().weights;
+  D.weights = &sch.get_vw_pointer_unsafe().weights;
 
   D.N = 0;
   D.E = 0;

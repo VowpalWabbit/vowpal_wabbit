@@ -98,13 +98,15 @@ public:
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
 		_stride_shift(stride_shift)
-	{ }
-
+		{ }
+ weight_parameters()
+   : _begin(nullptr), _weight_mask(0), _stride_shift(0) 
+	  {}
+	
+	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
 	//disable copy, move constructor and assignment
 	weight_parameters(const weight_parameters &) = delete;
 	weight_parameters(weight_parameters &&) = delete;
-	weight_parameters& operator=(const weight_parameters &) = delete;
-	weight_parameters& operator=(weight_parameters &&) = delete;
 
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
@@ -121,6 +123,11 @@ public:
 	const_iterator cend(size_t offset) { return const_iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+	void shallow_copy(const weight_parameters& input)
+	{ _begin = input._begin;
+	  _weight_mask = input._weight_mask;
+	  _stride_shift = input._stride_shift;
+	}
 
 	uint64_t mask()
 	{ return _weight_mask;
