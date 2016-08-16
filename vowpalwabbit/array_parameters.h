@@ -133,15 +133,6 @@ public:
 			T(iter);
 	}
 
-	/**
-	template<void(*T)(iterator&, weight)> //for setting weights to all.initial_t
-	inline void set_default(weight value)
-	{
-		for (iterator iter = begin(0); iter != end(); ++iter)
-			T(iter, value);
-	}
-	**/
-
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
