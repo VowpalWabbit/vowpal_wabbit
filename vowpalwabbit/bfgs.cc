@@ -106,12 +106,12 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 
 void zero_derivative(vw& all)
 { //set derivative to 0.
-	all.weights->set_zero(W_GT);
+	all.weights.set_zero(W_GT);
 }
 
 void zero_preconditioner(vw& all)
 { //set derivative to 0.
-	all.weights->set_zero(W_COND);
+	all.weights.set_zero(W_COND);
 }
 
 void reset_state(vw& all, bfgs& b, bool zero)
@@ -189,7 +189,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
   if (regularizer == 0.)
     return ret;
 
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   
   if (b.regularizers == nullptr)
 	  for (weight_parameters::iterator i = weights.begin(W_DIR); i != weights.end(W_DIR); ++i)
@@ -206,7 +206,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
 
 float direction_magnitude(vw& all)
 { //compute direction magnitude
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   double ret = 0.;
   for (weight_parameters::iterator i = weights.begin(W_DIR); i != weights.end(W_DIR); ++i)
 	  ret += (*i) * (*i);
@@ -214,7 +214,7 @@ float direction_magnitude(vw& all)
 }
 
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
-{ weight_parameters& w = *all.weights;
+{ weight_parameters& w = all.weights;
   double g1_Hg1 = 0.;
   double g1_g1 = 0.;
 
@@ -242,7 +242,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int &origin)
 {
-	weight_parameters& w = *all.weights;
+	weight_parameters& w = all.weights;
 
   float* mem0 = mem;
 
@@ -373,7 +373,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1)
 {
-	weight_parameters& w = *all.weights;
+	weight_parameters& w = all.weights;
 
   double g0_d = 0.;
   double g1_d = 0.;
@@ -403,7 +403,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 double add_regularization(vw& all, bfgs& b, float regularization)
 { //compute the derivative difference
   double ret = 0.;
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin(0);
   weight_parameters::iterator w_gt = weights.begin(W_GT);
 
@@ -427,7 +427,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 {
-	weight_parameters& weights = *all.weights;
+	weight_parameters& weights = all.weights;
   float max_hessian = 0.f;
   weight_parameters::iterator w_cond = weights.begin(W_COND);
   uint32_t i = 0;
@@ -459,7 +459,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 { uint32_t length = 1 << all.num_bits;
-weight_parameters& weights = *all.weights;
+weight_parameters& weights = all.weights;
   weight_parameters::iterator w_cond = weights.begin(W_COND);
   uint32_t i = 0;
   if (b.regularizers == nullptr)
@@ -486,7 +486,7 @@ weight_parameters& weights = *all.weights;
 }
 
 void regularizer_to_weight(vw& all, bfgs& b)
-{ weight_parameters& weights = *all.weights;
+{ weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin(0);
   weight_parameters::iterator w_cond = weights.begin(W_COND);
   uint32_t i = 0;
@@ -500,14 +500,14 @@ void regularizer_to_weight(vw& all, bfgs& b)
 
 void zero_state(vw& all)
 {
-  all.weights->set_zero(W_GT);
-  all.weights->set_zero(W_DIR);
-  all.weights->set_zero(W_COND);
+  all.weights.set_zero(W_GT);
+  all.weights.set_zero(W_DIR);
+  all.weights.set_zero(W_COND);
 }
 
 double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 { double ret = 0.;
-  weight_parameters& w = *all.weights;
+  weight_parameters& w = all.weights;
   weight_parameters::iterator w_dir = w.begin(W_DIR);
 
   for(; w_dir != w.end(W_DIR); mem+=b.mem_stride, ++w_dir)
@@ -516,7 +516,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 }
 
 void update_weight(vw& all, float step_size)
-{ weight_parameters& w = *all.weights;
+{ weight_parameters& w = all.weights;
   weight_parameters::iterator w_xt = w.begin(W_XT);
   weight_parameters::iterator w_dir = w.begin(W_DIR);
   for(; w_xt != w.end(W_XT); ++w_xt, ++w_dir)
@@ -532,7 +532,7 @@ int process_pass(vw& all, bfgs& b)
   /********************************************************************/
     if (b.first_pass) 
     { if(all.all_reduce != nullptr)
-      { accumulate(all, *all.weights, W_COND); //Accumulate preconditioner
+      { accumulate(all, all.weights, W_COND); //Accumulate preconditioner
         float temp = (float)b.importance_weight_sum;
         b.importance_weight_sum = accumulate_scalar(all, temp);
       }
@@ -540,7 +540,7 @@ int process_pass(vw& all, bfgs& b)
       if(all.all_reduce != nullptr) 
       {	float temp = (float)b.loss_sum;
 	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
-	accumulate(all, *all.weights, 1); //Accumulate gradients from all nodes
+	accumulate(all, all.weights, 1); //Accumulate gradients from all nodes
       }
     if (all.l2_lambda > 0.)
       b.loss_sum += add_regularization(all, b, all.l2_lambda);
@@ -574,7 +574,7 @@ int process_pass(vw& all, bfgs& b)
     { if(all.all_reduce != nullptr)
       { float t = (float)b.loss_sum;
         b.loss_sum = accumulate_scalar(all, t);  //Accumulate loss_sums
-        accumulate(all, *all.weights, 1); //Accumulate gradients from all nodes
+        accumulate(all, all.weights, 1); //Accumulate gradients from all nodes
       }
       if (all.l2_lambda > 0.)
         b.loss_sum += add_regularization(all, b, all.l2_lambda);
@@ -702,7 +702,7 @@ int process_pass(vw& all, bfgs& b)
 
   if (b.output_regularizer)//need to accumulate and place the regularizer.
   { if(all.all_reduce != nullptr)
-      accumulate(all, *all.weights, W_COND); //Accumulate preconditioner
+      accumulate(all, all.weights, W_COND); //Accumulate preconditioner
     //preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
   ftime(&b.t_end_global);

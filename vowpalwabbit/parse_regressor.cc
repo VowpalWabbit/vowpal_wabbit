@@ -45,26 +45,25 @@ void random_weights(weight_parameters::iterator& iter, size_t ind)
 }
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
-  if (all.weights != nullptr)
-  { return;
-  }
+  if (all.weights.not_null())
+    return;
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { all.weights = new weight_parameters(length, all.stride_shift); }
+    { new(&all.weights) weight_parameters(length, all.stride_shift); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (all.weights == nullptr)
+  if (!all.weights.not_null())
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  all.weights->set_default<initial_t>(init);
+	  all.weights.set_default<initial_t>(init);
   }
   else if (all.random_positive_weights)
-	  all.weights->set_default<random_positive>();
+	  all.weights.set_default<random_positive>();
   else if (all.random_weights)
-	  all.weights->set_default<random_weights>();
+	  all.weights.set_default<random_weights>();
 }
 
 const size_t default_buf_size = 512;
@@ -505,7 +504,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  weight_parameters& w = *all.weights;
+	  weight_parameters& w = all.weights;
       for (weight_parameters::iterator j = w.begin(0); j != w.begin(); ++j)
       { *j = 0.;
       }

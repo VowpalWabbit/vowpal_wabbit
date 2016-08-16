@@ -449,7 +449,7 @@ void print_update(search_private& priv)
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
-{ uint64_t mask = priv.all->weights->mask();
+{ uint64_t mask = priv.all->weights.mask();
   size_t ss   = priv.all->stride_shift;
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
@@ -505,7 +505,7 @@ void add_neighbor_features(search_private& priv)
         add_new_feature(priv, 1., 3824917 << priv.all->stride_shift);
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
-        GD::foreach_feature<search_private,add_new_feature>(*all.weights, other.feature_space[ns], priv, me.ft_offset);
+        GD::foreach_feature<search_private,add_new_feature>(all.weights, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
@@ -2471,7 +2471,7 @@ void search::get_test_action_sequence(vector<action>& V)
 void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
 void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
-uint64_t search::get_mask() { return this->priv->all->weights->mask();}
+uint64_t search::get_mask() { return this->priv->all->weights.mask();}
 size_t search::get_stride_shift() { return this->priv->all->stride_shift;}
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 

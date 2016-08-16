@@ -686,14 +686,14 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   if (read)
   { initialize_regressor(*all);
     initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
-    all->weights->set_default<initial_weights>(init);
+    all->weights.set_default<initial_weights>(init);
 
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
     stringstream msg;
     size_t brw = 1;
-	weight_parameters& weights = *(all->weights);
+	weight_parameters& weights = all->weights;
     do
     { brw = 0;
 	  weight_parameters::iterator iter = weights.begin(0);
@@ -757,7 +757,7 @@ void learn_batch(lda &l)
       l.total_lambda.push_back(0.f);
 
     size_t stride = 1 << l.all->stride_shift;
-	weight_parameters& weights = *(l.all->weights);
+	weight_parameters& weights = l.all->weights;
 	weight_parameters::iterator iter = weights.begin(0);
 	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{
@@ -789,7 +789,7 @@ void learn_batch(lda &l)
   { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
   }
 
-  weight_parameters& weights = *(l.all->weights);
+  weight_parameters& weights = l.all->weights;
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)
@@ -887,7 +887,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   { // build feature to example map
-	auto weight_mask = l.all->weights->mask();
+	auto weight_mask = l.all->weights.mask();
     auto stride_shift = l.all->stride_shift;
     
     for (features& fs : ec)
@@ -928,7 +928,7 @@ struct feature_pair
 
 void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
 {
-	weight_parameters& weights = *(all->weights);
+	weight_parameters& weights = all->weights;
 	uint64_t length = (uint64_t)1 << all->num_bits;
 
 	// get top features for this topic
@@ -958,7 +958,7 @@ void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weig
 
 void compute_coherence_metrics(lda &l)
 {
-	weight_parameters& weights = *(l.all->weights);
+	weight_parameters& weights = l.all->weights;
 	uint64_t length = (uint64_t)1 << l.all->num_bits;
 
 	std::vector<std::vector<feature_pair>> topics_word_pairs;
@@ -1137,7 +1137,7 @@ void end_pass(lda &l)
 }
 
 void end_examples(lda &l)
-{  weight_parameters& w = *(l.all->weights);
+{  weight_parameters& w = l.all->weights;
    weight_parameters::iterator i = w.begin(l.all->lda);
    weight_parameters::iterator j = w.begin(0);
    for (; i != w.end(l.all->lda); ++i, ++j)

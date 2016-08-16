@@ -46,7 +46,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
 
 inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
 {
-    weight_parameters& weights = *dat.all->weights;
+    weight_parameters& weights = dat.all->weights;
 
 	if (weights[ft_idx] != 0)
         ++dat.values_audited;
@@ -78,7 +78,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
     if (all.lda > 0)
     {
         ostringstream tempstream;
-        weight_parameters& weights = *all.weights;
+        weight_parameters& weights = all.weights;
         for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
         {
             features& fs = ec.feature_space[*i];
@@ -205,7 +205,7 @@ void init_driver(audit_regressor_data& dat)
     }
 
     // count non-null feature values in regressor
-	weight_parameters& w = *dat.all->weights;
+	weight_parameters& w = dat.all->weights;
 	for (weight_parameters::iterator iter = w.begin(); iter != w.end(); iter += dat.increment)
 		if (*iter != 0) dat.loaded_regressor_values++;
 

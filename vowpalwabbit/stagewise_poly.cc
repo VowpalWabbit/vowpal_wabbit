@@ -92,11 +92,11 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
 }
 
 inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{ return wid & poly.all->weights->mask();
+{ return wid & poly.all->weights.mask();
 }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
-{ return stride_un_shift(poly, wid & poly.all->weights->mask());
+{ return stride_un_shift(poly, wid & poly.all->weights.mask());
 }
 
 inline uint64_t constant_feat(const stagewise_poly &poly)
@@ -172,7 +172,7 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights->operator[](wid)) > 0) );
+    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0) );
     //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
@@ -269,8 +269,8 @@ void sort_data_update_support(stagewise_poly &poly)
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
-    { float weightsal = (fabsf(poly.all->weights->operator[](wid))
-                    * poly.all->weights->operator[](poly.all->normalized_idx + (wid)))
+      { float weightsal = (fabsf(poly.all->weights[wid])
+			   * poly.all->weights[poly.all->normalized_idx + (wid)])
                    /*
                     * here's some depth penalization code.  It was found to not improve
                     * statistical performance, and meanwhile it is verified as giving

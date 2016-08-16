@@ -121,7 +121,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
-  weight_parameters& weights = *all.weights;
+  weight_parameters& weights = all.weights;
 
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
