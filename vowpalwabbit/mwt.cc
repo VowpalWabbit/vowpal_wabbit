@@ -223,11 +223,6 @@ namespace MWT {
 }
 using namespace MWT;
 
-void delete_scalars(void* v)
-{ v_array<float>* preds = (v_array<float>*)v;
-  preds->delete_v();
-}
-
 base_learner* mwt_setup(vw& all)
 { if (missing_option<string, true>(all, "multiworld_test", "Evaluate features as a policies"))
     return nullptr;

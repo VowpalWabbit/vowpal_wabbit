@@ -73,7 +73,6 @@ void copy_example_data(bool audit, example* dst, example* src)
 
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
   { dst->passthrough = new features;
@@ -195,7 +194,6 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
 
   ec.tag.delete_v();
 
-  ec.topic_predictions.delete_v();
   if (ec.passthrough)
   { ec.passthrough->delete_v();
     delete ec.passthrough;

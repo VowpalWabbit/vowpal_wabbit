@@ -162,7 +162,7 @@ namespace VW
 			throw gcnew ArgumentNullException("ex");
 
         auto values = gcnew cli::array<float>(vw->lda);
-        Marshal::Copy(IntPtr(ex->topic_predictions.begin()), values, 0, vw->lda);
+        Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->lda);
 
         return values;
     }
