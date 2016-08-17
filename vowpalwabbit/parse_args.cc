@@ -1402,8 +1402,6 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   new_model->weights.shallow_copy(vw_model->weights); // regressor
   new_model->sd = vw_model->sd; // shared data
 
-  new_model->seeded = true;
-
   return new_model;
 }
 
@@ -1487,14 +1485,12 @@ void finish(vw& all, bool delete_all)
     free_it(all.l);
   }
   
-  if (!all.seeded && all.weights.not_null()) // don't free weight vector if it is shared with another instance
-    all.weights.~weight_parameters();
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.seeded)
+  if (!all.weights.seeded())
   { delete(all.sd->ldict);
     free(all.sd);
   }
