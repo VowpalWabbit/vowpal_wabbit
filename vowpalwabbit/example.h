@@ -73,6 +73,8 @@ struct example // core example datatype.
       return *this;
     }
 
+    namespace_index index(){ return *_index; }
+
     bool operator==(const iterator& rhs) { return _index == rhs._index; }
     bool operator!=(const iterator& rhs) { return _index != rhs._index; }
   };
