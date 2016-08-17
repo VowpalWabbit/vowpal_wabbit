@@ -26,6 +26,7 @@ namespace cs_unittest
                 validator.Validate("|a foo:2.3", "{\"a\":{\"foo\":2.3}}");
                 validator.Validate("|a foo:2.3 bar", "{\"a\":{\"foo\":2.3, \"bar\":true}}");
                 validator.Validate("|a foo:1 |bcd Age25_old", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25 old\"}}");
+                validator.Validate("|a x{abc}", "{\"a\":{\"x\":\"{abc}\"}}");
             }
         }
 

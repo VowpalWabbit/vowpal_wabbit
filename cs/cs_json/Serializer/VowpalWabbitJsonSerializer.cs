@@ -384,6 +384,9 @@ namespace VW.Serializer
             // check if the outer example found a label
             if (this.ExampleBuilder.Label != null)
             {
+                if (this.ExampleBuilder.LabelIndex >= this.ExampleBuilders.Count)
+                    throw new InvalidDataException($"Label index {this.ExampleBuilder.LabelIndex} is invalid. Only {this.ExampleBuilders.Count} examples available.");
+
                 VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(
                     this.ExampleBuilders[this.ExampleBuilder.LabelIndex].DefaultNamespaceContext,
                     this.ExampleBuilder.Label);
