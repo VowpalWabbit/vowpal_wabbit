@@ -804,7 +804,7 @@ void learn_batch(lda &l)
     { *weights_for_w *= decay;
       *u_for_w = *weights_for_w + l.lda_rho;
     }
-	u_for_w = weights.begin() + (s->f.weight_index & weights.mask()) +l.all->lda + 1;
+	u_for_w = weights.change_begin() + (s->f.weight_index & weights.mask()) +l.all->lda + 1;
     l.expdigammify_2(*l.all, u_for_w, l.digammas.begin());
   }
 
@@ -842,7 +842,7 @@ void learn_batch(lda &l)
 			  float *v_s = &(l.v[s->document * l.all->lda]);
 			  weight_parameters::iterator u_for_w = weights.change_begin() + (s->f.weight_index & weights.mask()) + l.all->lda + 1;
 			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-			  word_weights = weights.begin() + (s->f.weight_index & weights.mask());
+			  word_weights = weights.change_begin() + (s->f.weight_index & weights.mask());
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
 			  {   
 				  float new_value = *u_for_w * v_s[k] * c_w;

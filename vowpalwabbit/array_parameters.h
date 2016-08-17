@@ -133,7 +133,7 @@ public:
 	template<void(*T)(iterator&)>
 	inline void set_default()
 	  {
-	    for (iterator iter = begin(0); iter != end(); ++iter)
+	    for (iterator iter = begin(); iter != end(); ++iter)
 	      T(iter);
 	  }
 	
