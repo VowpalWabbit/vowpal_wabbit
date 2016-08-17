@@ -36,6 +36,11 @@ namespace cs_unittest
                 vw.Validate("", new ExampleString() { });
                 vw.Validate("", new ExampleString() { Location = "" });
             }
+
+            using (var vw = new VowpalWabbitExampleValidator<ExampleString4>(string.Empty))
+            {
+                vw.Validate("| VideoTitleRich_Homie_Quan_-_\"Blah_Blah_Blah\"___Behind_The_Scenes", new ExampleString4 { Value = "VideoTitleRich Homie Quan - \"Blah Blah Blah\" | Behind The Scenes" });
+            }
         }
 
         [TestMethod]
@@ -385,6 +390,12 @@ namespace cs_unittest
     {
         [Feature(Namespace = "bc")]
         public string Location { get; set; }
+    }
+
+    public class ExampleString4
+    {
+        [Feature(StringProcessing = StringProcessing.Escape)]
+        public string Value { get; set; }
     }
 
     public enum Age
