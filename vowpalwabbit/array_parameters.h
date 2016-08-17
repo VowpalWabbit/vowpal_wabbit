@@ -134,12 +134,12 @@ public:
 	}
 
 	template<void(*T)(iterator&)>
-	inline void set_default()
-	{
-		for (iterator iter = begin(0); iter != end(); ++iter)
-			T(iter);
-	}
-
+	  inline void set_default()
+	  {
+	    for (iterator iter = begin(0); iter != end(); ++iter)
+	      T(iter);
+	  }
+	
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;

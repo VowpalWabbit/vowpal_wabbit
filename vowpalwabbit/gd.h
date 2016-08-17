@@ -43,12 +43,10 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 		  p->scalar += fx * (*iter);
   }
   else    // TODO: this could be faster by unrolling into two loops
-  { iter += fi;
-    for (size_t c=0; c<mp.count; ++c, iter += (uint64_t)mp.step, ++p)
-    { 
-      p->scalar += fx * (*iter);
+    for (size_t c=0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
+    { fi &= mask;
+      p->scalar += fx * (*(iter+fi));
     }
-  }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)
