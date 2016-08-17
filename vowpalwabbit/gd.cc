@@ -348,11 +348,10 @@ void predict(gd& g, base_learner&, example& ec)
 }
 
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{ weight_parameters::iterator w = mp.weights.begin();
-  w += (fi & mp.weights.mask()); //TODO: get rid of mask()
-  for (size_t c=0; c<mp.count; c++)
-  { mp.pred[c].scalar += fx * trunc_weight(*w, mp.gravity);
-    w += mp.step;
+{  weight_parameters w = mp.weights;
+  size_t index = fi;
+  for (size_t c=0; c<mp.count; c++, index += mp.step)
+  { mp.pred[c].scalar += fx * trunc_weight(w[index], mp.gravity); //TODO: figure out how to use weight_parameters::iterator (not change_begin)
   }
   
 }
@@ -565,7 +564,7 @@ void sync_weights(vw& all)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
   weight_parameters& weights = all.weights;
-  weight_parameters::iterator w = weights.begin(0);
+  weight_parameters::iterator w = weights.begin();
   for(; w != weights.end() && all.reg_mode; ++w)
     *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
@@ -581,13 +580,13 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   
   if(all.print_invert)   //write readable model with feature names
   { 
-	weight_parameters::iterator v = weights.begin(0);
+	weight_parameters::iterator v = weights.begin();
 	stringstream msg;
     typedef std::map< std::string, size_t> str_int_map;
     
     for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
     { 
-	  v = weights.begin(0) + it->second; 
+	  v = weights.begin() + it->second; 
       if(*v != 0.)
       {
         msg << it->first;
@@ -603,7 +602,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
   do
   { brw = 1;
-    weight_parameters::iterator v = weights.begin(0);
+    weight_parameters::iterator v = weights.begin();
     if (read)
       { if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
@@ -741,7 +740,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   size_t brw = 1;
   do
   { brw = 1;
-    weight_parameters::iterator v = weights.begin(0);
+    weight_parameters::iterator v = weights.begin();
     if (read)
     { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -800,9 +799,7 @@ private:
 public:
 	initial_t(weight initial) : _initial(initial){}
 	void operator()(weight_parameters::iterator& iter, size_t /*index*/) 
-	{
-		weight_parameters::iterator::w_iter w = iter.begin();
-		*(w + 1) = _initial;
+	{  (&(*iter))[1] = _initial;
 	}
 };
 

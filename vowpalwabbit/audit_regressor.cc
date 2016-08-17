@@ -206,7 +206,7 @@ void init_driver(audit_regressor_data& dat)
 
     // count non-null feature values in regressor
 	weight_parameters& w = dat.all->weights;
-	for (weight_parameters::iterator iter = w.begin(); iter != w.end(); iter += dat.increment)
+	for (weight_parameters::iterator iter = w.change_begin(); iter != w.end(); iter += dat.increment) //TODO:modify
 		if (*iter != 0) dat.loaded_regressor_values++;
 
     if (dat.loaded_regressor_values == 0)

@@ -743,7 +743,7 @@ namespace VW
 
 	  // over weights
 	  weight_parameters& weights = m_vw->weights;
-	  weight_parameters::iterator iter = weights.begin(0);
+	  weight_parameters::iterator iter = weights.begin();
 	  for (uint64_t i = 0; i < length; i++, ++iter)
 	  {   // over topics
 		  weight_parameters::iterator::w_iter v = iter.begin();

@@ -104,23 +104,20 @@ public:
 	  {}
 	
 	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
-	//disable copy, move constructor and assignment
+
 	weight_parameters(const weight_parameters &other) { shallow_copy(other); }
 	weight_parameters(weight_parameters &&) = delete;
 
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
-	iterator begin() { return iterator(_begin, 1); }
-	iterator end() { return iterator(_begin + _weight_mask + 1, 1); }
-	//iterator with stride and offset
-	iterator begin(size_t offset) { return iterator(_begin + offset, (1<<_stride_shift)); }
-	iterator end(size_t offset) { return iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
+	//iterator with stride 
+	iterator begin() { return iterator(_begin, (1<<_stride_shift)); }
+	iterator end() { return iterator(_begin + _weight_mask + 1, (1 << _stride_shift)); }
 
-	//const iterators
-	const_iterator cbegin() { return const_iterator(_begin, 1); }
-	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, 1); }
-	const_iterator cbegin(size_t offset) { return const_iterator(_begin + offset, (1 << _stride_shift)); }
-	const_iterator cend(size_t offset) { return const_iterator(_begin + _weight_mask + 1 + offset, (1 << _stride_shift)); }
+	iterator change_begin() { return iterator(_begin, 1); }
+	//const iterator
+	const_iterator cbegin() { return const_iterator(_begin, (1 << _stride_shift)); }
+	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, (1 << _stride_shift)); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 	void shallow_copy(const weight_parameters& input)
@@ -139,7 +136,7 @@ public:
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
-	   iterator iter = begin(0);
+	   iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i += stride)
 			T(iter, i);
 	}
@@ -147,7 +144,7 @@ public:
 	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
-	iterator iter = begin(0);
+	iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride)
 			T(iter, i, stride);
 	}
@@ -155,7 +152,7 @@ public:
 	template <typename T>
 	void set_default(T t)
 	{ uint32_t stride = 1 << _stride_shift;
-	  iterator iter = begin(0);
+	  iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i+= stride)
 			t(iter, i); 
 	}
@@ -163,8 +160,8 @@ public:
 
 	void set_zero(size_t offset)
 	{
-		for (iterator iter = begin(offset); iter != end(offset); ++iter)
-			*iter = 0;
+		for (iterator iter = begin(); iter != end(); ++iter)
+			(&(*iter))[offset] = 0;
 	}
 	
 	uint64_t mask()

@@ -504,10 +504,8 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  weight_parameters& w = all.weights;
-      for (weight_parameters::iterator j = w.begin(0); j != w.end(); ++j)
-      { *j = 0.;
-      }
+	  weight_parameters& weights = all.weights;
+	  weights.set_zero(0);
     }
     else
     { // If no initial regressor, just clear out the options loaded from the header.

@@ -31,21 +31,19 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
   weight_parameters& w = mp.weights;
   uint64_t mask = w.mask(); 
   polyprediction* p = mp.pred;
-  weight_parameters::iterator iter = w.begin();
   fi &= mask;
   uint64_t top = fi + (uint64_t)((mp.count-1) * mp.step);
   uint64_t i = 0;
   if (top <= mask)
   {
 	  i += fi;
-	  iter += fi;
-	  for (; i <= top; i+= mp.step, iter += mp.step, ++p)
-		  p->scalar += fx * (*iter);
+	  for (; i <= top; i+= mp.step, ++p)
+		  p->scalar += fx * w[i]; //TODO: figure out how to use weight_parameters::iterator (not using change_begin())
   }
   else    // TODO: this could be faster by unrolling into two loops
     for (size_t c=0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
     { fi &= mask;
-      p->scalar += fx * (*(iter+fi));
+      p->scalar += fx * w[fi]; 
     }
 }
 

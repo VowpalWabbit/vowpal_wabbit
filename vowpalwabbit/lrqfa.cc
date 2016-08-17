@@ -55,14 +55,14 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
           { features& fs = ec.feature_space[left];
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
-			weight_parameters::iterator iter = w.begin(lindex);
+			weight_parameters::iterator iter = w.begin();
             for (unsigned int n = 1; n <= k; ++n)
               { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.weights.stride_shift())); // a feature has k weights in each field
-			    iter += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
+				(&(*iter))[lindex] += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
                 // perturb away from saddle point at (0, 0)
-                if (is_learn && ! example_is_test (ec) && *iter == 0)
-                  { *iter = cheesyrand(lwindex) * 0.5f / sqrtk; 
-                  }
+				if (is_learn && !example_is_test(ec) && (&(*iter))[lindex] == 0)
+				{  (&(*iter))[lindex] = cheesyrand(lwindex) * 0.5f / sqrtk;
+                }
 
                 for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
                   { features& rfs = ec.feature_space[right];
@@ -72,7 +72,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                     uint64_t rindex = rfs.indicies[rfn];
                     uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.weights.stride_shift()));
 
-                    rfs.push_back(*iter * lfx * rfx, rwindex);
+					rfs.push_back((&(*iter))[lindex] * lfx * rfx, rwindex);
                     if (all.audit || all.hash_inv)
                       { std::stringstream new_feature_buffer;
                         new_feature_buffer << right << '^'
