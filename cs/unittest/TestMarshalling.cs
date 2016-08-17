@@ -40,6 +40,7 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitExampleValidator<ExampleString4>(string.Empty))
             {
                 vw.Validate("| VideoTitleRich_Homie_Quan_-_\"Blah_Blah_Blah\"___Behind_The_Scenes", new ExampleString4 { Value = "VideoTitleRich Homie Quan - \"Blah Blah Blah\" | Behind The Scenes" });
+                vw.Validate("| VideoTitleIt's_Official__Your_vibrator_Can_be_Hacked", new ExampleString4 { Value = "VideoTitleIt's Official: Your vibrator Can be Hacked" });
             }
         }
 
