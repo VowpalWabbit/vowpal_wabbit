@@ -1487,7 +1487,7 @@ void finish(vw& all, bool delete_all)
     free_it(all.l);
   }
   
-  if (!all.seeded) // don't free weight vector if it is shared with another instance
+  if (!all.seeded && all.weights.not_null()) // don't free weight vector if it is shared with another instance
     all.weights.~weight_parameters();
   free_parser(all);
   finalize_source(all.p);

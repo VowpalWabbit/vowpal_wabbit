@@ -742,8 +742,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   do
   { brw = 1;
     weight_parameters::iterator v = weights.begin(0);
-    weight_parameters::iterator v1 = weights.begin(1);
-    weight_parameters::iterator v2 = weights.begin(2);
     if (read)
     { 
       brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -752,8 +750,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
         }
 	    v += i;
-		v1 += i;
-		v2 += i;
         if (g == NULL || (! g->adaptive && ! g->normalized))
           brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
@@ -767,8 +763,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
     else // write binary or text
     { 
 	  v += i;
-      v1 += i;
-	  v2 += i;
       if (*v != 0.)
       { 
         msg << i;
@@ -781,13 +775,13 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
         }
         else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
         { //either adaptive or normalized
-          msg << ":"<< *v << " "<< *(v1)<< "\n";
+          msg << ":"<< *v << " "<< (&(*v))[1]<< "\n";
 		  brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
                                      msg, text);
         }
         else
           { //adaptive and normalized
-            msg << ":"<< *v << " "<< *(v1)<< " "<< *(v2)<< "\n";
+            msg << ":"<< *v << " "<< (&(*v))[1] << " "<< (&(*v))[2]<< "\n";
 			brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
                                        msg, text);
         }
