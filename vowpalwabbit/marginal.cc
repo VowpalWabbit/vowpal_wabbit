@@ -5,7 +5,7 @@ using namespace std;
 
 namespace MARGINAL {
 
-  typedef pair<float,float> marginal;
+  typedef pair<double,double> marginal;
 
 struct data
 { 
