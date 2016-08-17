@@ -554,9 +554,9 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_throw<float>(ON.m+1);
     ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-	all.stride_shift = (uint32_t)ceil(log2(ON.m + 2));
+	all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-    learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.stride_shift);
+	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.weights.stride_shift());
 
     l.set_predict(predict);
     l.set_save_load(save_load);

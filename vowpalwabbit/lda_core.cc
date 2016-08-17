@@ -756,8 +756,8 @@ void learn_batch(lda &l)
   { for (size_t k = 0; k < l.all->lda; k++)
       l.total_lambda.push_back(0.f);
 
-    size_t stride = 1 << l.all->stride_shift;
 	weight_parameters& weights = l.all->weights;
+	size_t stride = 1 << weights.stride_shift();
 	weight_parameters::iterator iter = weights.begin(0);
 	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{
@@ -888,7 +888,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
   if (l.all->passes_complete == 0)
   { // build feature to example map
 	auto weight_mask = l.all->weights.mask();
-    auto stride_shift = l.all->stride_shift;
+    auto stride_shift = l.all->weights.stride_shift();
     
     for (features& fs : ec)
     { for (features::iterator& f : fs)
@@ -1218,7 +1218,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  all.stride_shift = (size_t)temp;
+  all.weights.stride_shift((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -1239,7 +1239,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.stride_shift);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift());
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

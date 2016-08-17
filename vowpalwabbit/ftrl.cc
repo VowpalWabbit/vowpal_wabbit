@@ -261,7 +261,7 @@ base_learner* ftrl_setup(vw& all)
   b.data.l1_lambda = b.all->l1_lambda;
   b.data.l2_lambda = b.all->l2_lambda;
 
-  all.stride_shift = 2; // NOTE: for more parameter storage
+  all.weights.stride_shift(2); // NOTE: for more parameter storage
 
   if (!all.quiet)
   { cerr << "Enabling FTRL based optimization" << endl;
@@ -276,7 +276,7 @@ base_learner* ftrl_setup(vw& all)
       b.early_stop_thres = vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.stride_shift);
+  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.weights.stride_shift());
   if (all.audit || all.hash_inv)
     l.set_predict(predict<true>);
   else

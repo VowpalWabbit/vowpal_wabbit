@@ -418,7 +418,7 @@ namespace VW
 	uint64_t VowpalWabbitFeature::WeightIndex::get()
 	{
 		vw* vw = m_example->Owner->Native->m_vw;
-		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->stride_shift) & vw->parse_mask;
+		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
 	}
 
 	float VowpalWabbitFeature::Weight::get()

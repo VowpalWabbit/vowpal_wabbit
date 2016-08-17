@@ -109,7 +109,7 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
 		 *weights_0 = 0;
 	  }
 	  
-  all_reduce<float, add_float>(all, weights.first(), length*all.stride_shift); 
+  all_reduce<float, add_float>(all, weights.first(), length*weights.stride_shift()); 
 
 }
 

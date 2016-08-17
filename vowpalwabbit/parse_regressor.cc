@@ -49,7 +49,7 @@ void initialize_regressor(vw& all)
     return;
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { new(&all.weights) weight_parameters(length, all.stride_shift); }
+    { new(&all.weights) weight_parameters(length, all.weights.stride_shift()); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }

@@ -90,7 +90,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 		  weight_parameters& w = all.weights;
 		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.stride_shift));
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.weights.stride_shift()));
 		        weight_parameters::iterator lw = w.begin() + (lwindex & w.mask());
 
 				// perturb away from saddle point at (0, 0)
@@ -104,7 +104,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                     { // NB: ec.ft_offset added by base learner
                       float rfx = right_fs.values[rfn];
                       uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << all.stride_shift));
+                      uint64_t rwindex = (uint64_t)(rindex + (n << all.weights.stride_shift()));
 
                       right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 

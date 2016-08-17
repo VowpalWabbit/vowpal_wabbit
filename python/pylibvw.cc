@@ -330,7 +330,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     }
   }
 
-  uint32_t multiplier = all.wpp << all.stride_shift;
+  uint32_t multiplier = all.wpp << all.weights.stride_shift();
   if(multiplier != 1)   //make room for per-feature information.
     for (auto ns : ae->indices)
       for (auto& idx : ae->feature_space[ns].indicies)

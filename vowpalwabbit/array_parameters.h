@@ -129,12 +129,8 @@ public:
 	  _stride_shift = input._stride_shift;
 	}
 
-	uint64_t mask()
-	{ return _weight_mask;
-	}
-
 	template<void(*T)(iterator&)>
-	  inline void set_default()
+	inline void set_default()
 	  {
 	    for (iterator iter = begin(0); iter != end(); ++iter)
 	      T(iter);
@@ -171,7 +167,18 @@ public:
 			*iter = 0;
 	}
 	
+	uint64_t mask()
+	{ return _weight_mask;
+	}
+
+
+	uint32_t stride_shift()
+	{ return _stride_shift;		
+	}		
 	
+	void stride_shift(uint32_t stride_shift)		
+	{ _stride_shift = stride_shift;		
+	}
 	
 	#ifndef _WIN32
 	void share(size_t length)
