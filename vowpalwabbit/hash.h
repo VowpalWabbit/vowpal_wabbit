@@ -19,7 +19,15 @@ license as described in the file LICENSE.
 #   include <stdint.h>   // defines uint32_t etc
 
 inline uint32_t rotl32(uint32_t x, int8_t r)
-{ return (x << r) | (x >> (32 - r));
+{
+#if defined(__GNU__)
+    __asm__("rolb   %%cl, %0"
+            : "=r"(x)
+            : "0"(x), "c"(r));
+    return value;
+#else
+    return (x << r) | (x >> (32 - r));
+#endif
 }
 
 #   define ROTL32(x,y)     rotl32(x,y)
