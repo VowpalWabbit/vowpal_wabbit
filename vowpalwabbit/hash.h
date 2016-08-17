@@ -24,7 +24,7 @@ inline uint32_t rotl32(uint32_t x, int8_t r)
     __asm__("rolb   %%cl, %0"
             : "=r"(x)
             : "0"(x), "c"(r));
-    return value;
+    return x;
 #else
     return (x << r) | (x >> (32 - r));
 #endif
