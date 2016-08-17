@@ -89,6 +89,7 @@ private:
 	weight* _begin;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
+	bool _seeded; // whether the instance is sharing model state with others
 
 public:
 	typedef weights_iterator<weight> iterator;
@@ -97,10 +98,12 @@ public:
 	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
-		_stride_shift(stride_shift)
+		_stride_shift(stride_shift),
+		_seeded(false)
 		{ }
+
  weight_parameters()
-   : _begin(nullptr), _weight_mask(0), _stride_shift(0) 
+	 : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false)
 	  {}
 	
 	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
@@ -124,6 +127,7 @@ public:
 	{ _begin = input._begin;
 	  _weight_mask = input._weight_mask;
 	  _stride_shift = input._stride_shift;
+	  _seeded = true;
 	}
 
 	template<void(*T)(iterator&)>
@@ -168,6 +172,9 @@ public:
 	{ return _weight_mask;
 	}
 
+	uint64_t seeded()
+	{  return _seeded;
+	}
 
 	uint32_t stride_shift()
 	{ return _stride_shift;		
@@ -191,7 +198,7 @@ public:
 	#endif
 	
 	~weight_parameters()
-	{  if (_begin != nullptr)
+	{  if (_begin != nullptr && !_seeded)  // don't free weight vector if it is shared with another instance
 	   {  free(_begin);
 	      _begin = nullptr;
 	   }
