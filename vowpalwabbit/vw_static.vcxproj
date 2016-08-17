@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -344,6 +344,7 @@
       <FileType>CppHeader</FileType>
     </ClCompile>
     <ClInclude Include="active_cover.h" />
+    <ClCompile Include="marginal.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
@@ -372,6 +373,7 @@
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="label_dictionary.h" />
+    <ClInclude Include="marginal.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />

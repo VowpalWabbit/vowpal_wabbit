@@ -2153,6 +2153,20 @@ namespace cs_unittest
 				"pred-sets/ref/cbe_adf_cover.predict");
         }
 
+        [TestMethod]
+        [Description(@"cb_explore_adf with cover exploration + double robust")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test139()
+        {
+            RunTestsHelper.ExecuteTest(
+				139,
+				"--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict",
+				"train-sets/cb_test.ldf",
+				"train-sets/ref/cbe_adf_cover_dr.stderr",
+				"pred-sets/ref/cbe_adf_cover_dr.predict");
+        }
+
     }
 }
 
