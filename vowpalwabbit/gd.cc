@@ -737,7 +737,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   uint64_t length = (uint64_t)1 << all.num_bits;
 
   weight_parameters& weights = all.weights;
-  uint32_t i = 0;
+  uint64_t i = 0;
   size_t brw = 1;
   do
   { brw = 1;

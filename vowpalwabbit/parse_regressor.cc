@@ -505,7 +505,7 @@ void parse_mask_regressor_args(vw& all)
 
       // Re-zero the weights, in case weights of initial regressor use different indices
 	  weight_parameters& w = all.weights;
-      for (weight_parameters::iterator j = w.begin(0); j != w.begin(); ++j)
+      for (weight_parameters::iterator j = w.begin(0); j != w.end(); ++j)
       { *j = 0.;
       }
     }
