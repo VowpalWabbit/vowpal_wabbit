@@ -105,7 +105,7 @@ public:
 	
 	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
 	//disable copy, move constructor and assignment
-	weight_parameters(const weight_parameters &) = delete;
+	weight_parameters(const weight_parameters &other) { shallow_copy(other); }
 	weight_parameters(weight_parameters &&) = delete;
 
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.

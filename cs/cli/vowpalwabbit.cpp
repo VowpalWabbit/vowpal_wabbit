@@ -742,7 +742,7 @@ namespace VW
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
 	  // over weights
-	  weight_parameters& weights = *(m_vw->weights);
+	  weight_parameters& weights = m_vw->weights;
 	  weight_parameters::iterator iter = weights.begin(0);
 	  for (uint64_t i = 0; i < length; i++, ++iter)
 	  {   // over topics
