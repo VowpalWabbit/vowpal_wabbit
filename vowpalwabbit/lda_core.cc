@@ -669,7 +669,7 @@ public:
 	{}
 	void operator()(weight_parameters::iterator& iter, size_t index)
 	{ if (_random)
-	  { for (weight_parameters::iterator::w_iter k = iter.begin(); k != iter.end(_lda); ++k, ++index)
+	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
 		   *k *= _initial_random;
 		}
@@ -709,7 +709,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 	  }
 
 	  if (brw != 0)	  
-		for (weight_parameters::iterator::w_iter v = iter.begin(); v != iter.end(all->lda); ++v)
+		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
         { msg << *v + l.lda_rho << " ";
           brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
         }
@@ -759,7 +759,7 @@ void learn_batch(lda &l)
 	size_t stride = 1 << weights.stride_shift();
 	weight_parameters::iterator iter = weights.begin();
 	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
-	{  weight_parameters::iterator::w_iter k_iter = iter.begin();
+	{  weights_iterator_iterator<weight> k_iter = iter.begin();
 	   for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
 			l.total_lambda[k] += *k_iter;
 	}   
@@ -1137,7 +1137,7 @@ void end_examples(lda &l)
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
-	for (weight_parameters::iterator::w_iter k = iter.begin(); k != iter.end(l.all->lda); ++k)
+	for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(l.all->lda); ++k)
       *k *= decay;
    }
 }

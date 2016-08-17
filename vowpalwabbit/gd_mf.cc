@@ -194,7 +194,7 @@ void mf_train(gdmf& d, example& ec)
 
 void set_rand(weight_parameters::iterator& iter, size_t index, uint32_t stride)
 { 
-	for (weight_parameters::iterator::w_iter w = iter.begin(); w != iter.end(stride); ++w, ++index)
+	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 	  *w = (float)(0.1 * merand48(index));
 }
 
@@ -220,7 +220,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
                                        "", read, msg, text);
 	  if (brw != 0)
 	  { weight_parameters::iterator iter = w.begin()+ i;
-		for (weight_parameters::iterator::w_iter v = iter.begin(); v != iter.end(K); ++v)
+		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
 		{  msg << &(*v) << " ";
 		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
 				  "", read, msg, text);

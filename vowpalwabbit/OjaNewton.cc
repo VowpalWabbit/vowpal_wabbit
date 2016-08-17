@@ -62,7 +62,7 @@ struct OjaNewton {
             // simple initialization
 		  weight_parameters::iterator iter = weights.begin() + 1;
 		  for (int i = 1; i <= m; ++i, ++iter)
-		  { weight_parameters::iterator::w_iter j = iter.begin() + i;
+		  { weights_iterator_iterator<weight> j = iter.begin() + i;
 			*j = 1.f;
 		  }
         }
@@ -71,7 +71,7 @@ struct OjaNewton {
 
 	    const double PI2 = 2.f * 3.1415927f;
 		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
-		  for (weight_parameters::iterator::w_iter j = i.begin() + 1; j != i.end(m + 1); ++j)
+		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
 		  {  double r1 = frand48();
 		     double r2 = frand48();
 			 *j = sqrt(-2.f * log(r1)) * cos(PI2 * r2);
@@ -274,7 +274,7 @@ struct OjaNewton {
         //size_t stride_shift = all->stride_shift;
         weight_parameters& weights = all->weights;
 		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
-		{  weight_parameters::iterator::w_iter w_j = i.begin() + 1;
+		{  weights_iterator_iterator<weight> w_j = i.begin() + 1;
 		   for (int j = 1; j <= m; ++j, ++w_j)
 		     *i += *w_j * b[j] * D[j];
 		}
@@ -287,11 +287,11 @@ struct OjaNewton {
         for (uint32_t i = 0; i < length; ++i, ++iter) {
             memset(tmp, 0, sizeof(float) * (m+1));
 			for (int j = 1; j <= m; j++)
-			{ weight_parameters::iterator::w_iter w_k = iter.begin() + 1;
+			{ weights_iterator_iterator<weight> w_k = iter.begin() + 1;
 			  for (int h = 1; h <= m; ++h, ++w_k)
 			    tmp[j] += A[j][h] * D[h] * (*w_k);
 			}
-			weight_parameters::iterator::w_iter w_j = iter.begin() + 1;
+			weights_iterator_iterator<weight> w_j = iter.begin() + 1;
             for (int j = 1; j <= m; ++j, ++w_j) {
 		      //norm = max(norm, fabs(tmp[j]));
                *w_j = tmp[j];
