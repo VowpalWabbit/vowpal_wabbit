@@ -1501,3 +1501,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict
     train-sets/ref/cbe_adf_cover_dr.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
+
+# Test 140: marginal features
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --holdout_off -c -k --passes 100
+    train-sets/ref/marginal.stderr
