@@ -338,7 +338,7 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
 
 template<class W>
 void vexpdigammify_2(vw &all, W& gamma, const float *norm, const float underflow_threshold)
-{ T::iterator fp = gamma;
+{ typename T::iterator fp = gamma;
   const float *np;
   uint32_t count = 0;
 
@@ -656,8 +656,8 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, T& weights, example 
     doc_length = 0;
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
-	     {  T::iterator u_for_w = weights.change_begin() + (f.index() & weights.mask()) + l.topics + 1;
-            float c_w = find_cw<T::iterator>(l, u_for_w, v);
+	     {  typename T::iterator u_for_w = weights.change_begin() + (f.index() & weights.mask()) + l.topics + 1;
+            float c_w = find_cw<typename T::iterator>(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
             size_t max_k = l.topics;
@@ -733,7 +733,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   if (read)
   { initialize_regressor(*all);
     initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
-    all->weights.set_default<initial_weights>(init);
+    all->weights.template set_default<initial_weights>(init);
 
   }
   if (model_file.files.size() > 0)
@@ -742,7 +742,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
     size_t brw = 1;
     do
     { brw = 0;
-	  T::iterator iter = weights.begin();
+	  typename T::iterator iter = weights.begin();
 
 	  msg << i << " ";
 	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
@@ -812,7 +812,7 @@ void learn_batch(lda &l, T& weights)
       l.total_lambda.push_back(0.f);
 
 	size_t stride = 1 << weights.stride_shift();
-	T::iterator iter = weights.begin();
+	typename T::iterator iter = weights.begin();
 	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{  weights_iterator_iterator<weight> k_iter = iter.begin();
 	   for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
@@ -846,11 +846,11 @@ void learn_batch(lda &l, T& weights)
       continue;
     last_weight_index = s->f.weight_index;
     //float *weights_for_w = &(weights[s->f.weight_index]);
-	T::iterator weights_for_w = weights.change_begin() + (s->f.weight_index & weights.mask());
+	typename T::iterator weights_for_w = weights.change_begin() + (s->f.weight_index & weights.mask());
     float decay_component =
       l.decay_levels.end()[-2] - l.decay_levels.end()[(int)(-1 - l.example_t + *(weights_for_w + l.all->lda))];
     float decay = fmin(1.0f, correctedExp(decay_component));
-     T::iterator u_for_w = weights_for_w + l.all->lda + 1;
+     typename T::iterator u_for_w = weights_for_w + l.all->lda + 1;
 
     *(weights_for_w + l.all->lda) = (float)l.example_t;
     for (size_t k = 0; k < l.all->lda; k++, ++weights_for_w, ++u_for_w)
@@ -883,7 +883,7 @@ void learn_batch(lda &l, T& weights)
 			  next++;
 
 		  //float *word_weights = &(weights[s->f.weight_index]);
-		  T::iterator word_weights = weights.change_begin() + (s->f.weight_index & weights.mask());
+		  typename T::iterator word_weights = weights.change_begin() + (s->f.weight_index & weights.mask());
 		  for (size_t k = 0; k < l.all->lda; k++, ++word_weights)
 		  {
 			  float new_value = minuseta * *word_weights;
@@ -893,8 +893,8 @@ void learn_batch(lda &l, T& weights)
 		  for (; s != next; s++)
 		  {
 			  float *v_s = &(l.v[s->document * l.all->lda]);
-			  T::iterator u_for_w = weights.change_begin() + (s->f.weight_index & weights.mask()) + l.all->lda + 1;
-			  float c_w = eta * find_cw<T::iterator>(l, u_for_w, v_s) * s->f.x;
+			  typename T::iterator u_for_w = weights.change_begin() + (s->f.weight_index & weights.mask()) + l.all->lda + 1;
+			  float c_w = eta * find_cw<typename T::iterator>(l, u_for_w, v_s) * s->f.x;
 			  word_weights = weights.change_begin() + (s->f.weight_index & weights.mask());
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
 			  {   
@@ -991,7 +991,7 @@ void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weig
 	// get top features for this topic
 	auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
 	std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
-	T::iterator iter = weights.begin();
+	typename T::iterator iter = weights.begin();
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
 		top_features.push(std::make_tuple((&(*iter))[topic], i));
 
@@ -1066,7 +1066,7 @@ void compute_coherence_metrics(lda &l, T& weights)
 		// get top features for this topic
 		auto cmp = [](feature& left, feature& right) { return left.x > right.x; };
 		std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
-		T::iterator iter = weights.begin();
+		typename T::iterator iter = weights.begin();
 		for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
 			top_features.push(feature((&(*iter))[topic], i));
 		
@@ -1208,7 +1208,7 @@ void end_pass(lda &l)
 
 template<class T>
 void end_examples(lda &l, T& weights)
-{ for (T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+{ for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
    { float decay_component =
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));

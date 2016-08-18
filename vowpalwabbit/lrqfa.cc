@@ -55,7 +55,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec, T& w)
           { features& fs = ec.feature_space[left];
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
-			T::iterator iter = w.begin();
+			typename T::iterator iter = w.begin();
             for (unsigned int n = 1; n <= k; ++n)
               { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.weights.stride_shift())); // a feature has k weights in each field
 				(&(*iter))[lindex] += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()

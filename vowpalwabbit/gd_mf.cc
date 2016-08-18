@@ -240,7 +240,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
   if(read)
   { initialize_regressor(*all);
   if (all->random_weights)
-	  w.set_default<set_rand>();
+	  w.template set_default<set_rand>();
   }
 
   if (model_file.files.size() > 0)
@@ -254,7 +254,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { T::iterator iter = w.begin()+ i;
+	  { typename T::iterator iter = w.begin()+ i;
 		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
 		{  msg << &(*v) << " ";
 		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),

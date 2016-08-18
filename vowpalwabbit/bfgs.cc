@@ -187,12 +187,12 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
 {
 	double ret = 0.;
 	if (b.regularizers == nullptr)
-		for (T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+		for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
 			ret += regularizer* (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 
 	else
 	{
-		T::iterator iter = weights.begin();
+		typename T::iterator iter = weights.begin();
 		uint32_t i = 0;
 		for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
 			ret += b.regularizers[2 * i] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
@@ -217,7 +217,7 @@ template<class T>
 float direction_magnitude(vw& all, T& weights)
 { //compute direction magnitude
 	double ret = 0.;
-	for (T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
 		ret += (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 
 	return (float)ret;
@@ -237,7 +237,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 	double g1_Hg1 = 0.;
 	double g1_g1 = 0.;
 
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 
 	origin = 0;
 	for (; w != weights.end(); mem += b.mem_stride, ++w)
@@ -276,7 +276,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		double g_Hg = 0.;
 		double y = 0.;
 
-		T::iterator w = weights.begin();
+		typename T::iterator w = weights.begin();
 		for (; w != weights.end(); mem += b.mem_stride, ++w)
 		{
 			y = (&(*w))[W_GT] - mem[(MEM_GT + origin) % b.mem_stride];
@@ -315,7 +315,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	double y_Hy = 0.;
 	double s_q = 0.;
 
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	for (; w != weights.end(); mem += b.mem_stride, ++w)
 	{
 		mem[(MEM_YT + origin) % b.mem_stride] = (&(*w))[W_GT] - mem[(MEM_GT + origin) % b.mem_stride];
@@ -414,7 +414,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 	double g1_Hg1 = 0.;
 	double g1_g1 = 0.;
 
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	for (; w != weights.end(); mem += b.mem_stride, ++w)
 	{
 		g0_d += mem[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
@@ -444,7 +444,7 @@ template<class T>
 double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
 {//compute the derivative difference
 	double ret = 0.;
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 
 	if (b.regularizers == nullptr)
 	{
@@ -480,7 +480,7 @@ template <class T>
 void finalize_preconditioner(vw& all, bfgs& b, float regularization, T& weights)
 {
 	float max_hessian = 0.f;
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	uint32_t i = 0;
 	if (b.regularizers == nullptr)
 		for (; w != weights.end(); ++w)
@@ -522,7 +522,7 @@ template<class T>
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& weights)
 {
 	uint32_t length = 1 << all.num_bits;
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	uint32_t i = 0;
 	if (b.regularizers == nullptr)
 	{
@@ -561,7 +561,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 template<class T>
 void regularizer_to_weight(vw& all, bfgs& b, T& weights)
 {
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	uint32_t i = 0;
 	if (b.regularizers != nullptr)
 	{
@@ -603,7 +603,7 @@ template<class T>
 double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& weights)
 {
 	double ret = 0.;
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	for (; w != weights.end(); mem += b.mem_stride, ++w)
 		ret += mem[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
 	return ret;
@@ -621,7 +621,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 template<class T>
 void update_weight(vw& all, float step_size, T& w)
 {
-	T::iterator iter = w.begin();
+	typename T::iterator iter = w.begin();
 	for (; iter != w.end(); ++iter)
 		(&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR];
 }

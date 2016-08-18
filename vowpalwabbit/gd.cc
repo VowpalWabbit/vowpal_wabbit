@@ -591,7 +591,7 @@ void sync_weights(vw& all, T& weights)
 {
 	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
 		return;
-	T::iterator w = weights.begin();
+	typename T::iterator w = weights.begin();
 	for (; w != weights.end() && all.reg_mode; ++w)
 		*w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
 	all.sd->gravity = 0.;
@@ -615,7 +615,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 
 	if (all.print_invert)   //write readable model with feature names
 	{
-		T::iterator v = weights.begin();
+		typename T::iterator v = weights.begin();
 		stringstream msg;
 		typedef std::map< std::string, size_t> str_int_map;
 
@@ -638,7 +638,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 	do
 	{
 		brw = 1;
-		T::iterator v = weights.begin();
+		typename T::iterator v = weights.begin();
 		if (read)
 		{
 			if (all.num_bits < 31)//backwards compatible
@@ -702,7 +702,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	do
 	{
 		brw = 1;
-		T::iterator v = weights.begin();
+		typename T::iterator v = weights.begin();
 		if (read)
 		{
 			brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
@@ -876,9 +876,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   if (all.adaptive && all.initial_t > 0){
 	  initial_t init(all.initial_t);
 	  if (all.sparse)
-		  all.sparse_weights.set_default<initial_t>(init);
+		  all.sparse_weights.template set_default<initial_t>(init);
 	  else
-		  all.weights.set_default<initial_t>(init); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+		  all.weights.template set_default<initial_t>(init); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
         //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...

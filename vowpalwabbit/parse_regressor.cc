@@ -73,12 +73,12 @@ void initialize_regressor(vw& all, T& weights)
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  weights.set_default<initial_t>(init);
+	  weights.template set_default<initial_t>(init);
   }
   else if (all.random_positive_weights)
-	  weights.set_default<random_positive>();
+	  weights.template set_default<random_positive>();
   else if (all.random_weights)
-	  weights.set_default<random_weights>();
+	  weights.template set_default<random_weights>();
 }
 
 void initialize_regressor(vw& all)
