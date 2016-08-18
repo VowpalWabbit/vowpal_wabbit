@@ -338,7 +338,7 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
 
 template<class W>
 void vexpdigammify_2(vw &all, W& gamma, const float *norm, const float underflow_threshold)
-{ typename T::iterator fp = gamma;
+{ W fp = gamma;
   const float *np;
   uint32_t count = 0;
 

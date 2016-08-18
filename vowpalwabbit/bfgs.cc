@@ -193,7 +193,6 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
 	else
 	{
 		typename T::iterator iter = weights.begin();
-		uint32_t i = 0;
 		for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
 			ret += b.regularizers[2 * i] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 	}
