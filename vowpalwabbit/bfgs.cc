@@ -106,12 +106,18 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 
 void zero_derivative(vw& all)
 { //set derivative to 0.
-	all.weights.set_zero(W_GT);
+	if (all.sparse)
+		all.sparse_weights.set_zero(W_GT);
+	else
+		all.sparse_weights.set_zero(W_GT);
 }
 
 void zero_preconditioner(vw& all)
 { //set derivative to 0.
-	all.weights.set_zero(W_COND);
+	if (all.sparse)
+		all.sparse_weights.set_zero(W_COND);
+	else
+		all.weights.set_zero(W_COND);
 }
 
 void reset_state(vw& all, bfgs& b, bool zero)
@@ -994,8 +1000,14 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.rho = calloc_or_throw<double>(m);
     b.alpha = calloc_or_throw<double>(m);
 
+	uint32_t stride_shift;
+	if (all->sparse)
+		stride_shift = all->sparse_weights.stride_shift();
+	else
+		stride_shift = all->weights.stride_shift();
+
     if (!all->quiet)
-    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->weights.stride_shift())) >> 20);
+    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << stride_shift)) >> 20);
     }
 
     b.net_time = 0.0;
@@ -1035,7 +1047,8 @@ void init_driver(bfgs& b)
 { b.backstep_on = true;
 }
 
-base_learner* bfgs_setup(vw& all)
+template<class T>
+base_learner* bfgs_setup(vw& all, T& weights)
 { if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
       missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
     return nullptr;
@@ -1087,9 +1100,9 @@ base_learner* bfgs_setup(vw& all)
   }
 
   all.bfgs = true;
-  all.weights.stride_shift(2);
+  weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(&b, learn, 1 << all.weights.stride_shift());
+  learner<bfgs>& l = init_learner(&b, learn, 1 << weights.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
@@ -1098,3 +1111,14 @@ base_learner* bfgs_setup(vw& all)
 
   return make_base(l);
 }
+
+base_learner* bfgs_setup(vw& all)
+{
+	if (all.sparse)
+		return bfgs_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return bfgs_setup<weight_parameters>(all, all.weights);
+}
+
+
+

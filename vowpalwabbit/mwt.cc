@@ -55,7 +55,11 @@ namespace MWT {
       cout << "error " << val << " is not a valid action " << endl;
 
     uint32_t value = (uint32_t) val;
-    uint64_t new_index = ((index & c.all->weights.mask()) >> c.all->weights.stride_shift());
+	uint64_t new_index;
+	if (c.all->sparse)
+		new_index = ((index & c.all->sparse_weights.mask()) >> c.all->sparse_weights.stride_shift());
+	else
+		new_index = ((index & c.all->weights.mask()) >> c.all->weights.stride_shift());
 
     if (!c.evals[new_index].seen)
       {

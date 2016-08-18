@@ -1263,7 +1263,10 @@ void parse_sources(vw& all, io_buf& model)
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all.wpp = (1 << i) >> all.weights.stride_shift();
+  if (all.sparse)
+	all.wpp = (1 << i) >> all.sparse_weights.stride_shift();
+  else
+	  all.wpp = (1 << i) >> all.weights.stride_shift();
 
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
@@ -1492,7 +1495,12 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.weights.seeded())
+  bool seeded;
+  if (all.sparse)
+	  seeded = all.sparse_weights.seeded();
+  else
+	  seeded = all.weights.seeded();
+  if (!seeded)
   { delete(all.sd->ldict);
     free(all.sd);
   }

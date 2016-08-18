@@ -733,7 +733,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   if (read)
   { initialize_regressor(*all);
     initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
-    all->weights.template set_default<initial_weights>(init);
+    weights.template set_default<initial_weights>(init);
 
   }
   if (model_file.files.size() > 0)
@@ -942,11 +942,18 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 
 void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 {
+	uint32_t stride_shift;
+	uint64_t weight_mask;
   if (l.all->passes_complete == 0)
   { // build feature to example map
-	auto weight_mask = l.all->weights.mask();
-    auto stride_shift = l.all->weights.stride_shift();
-    
+	  if (l.all->sparse){
+		  weight_mask = l.all->sparse_weights.mask();
+		  stride_shift = l.all->sparse_weights.stride_shift();
+	  }
+	  else{
+		  weight_mask = l.all->weights.mask();
+		  stride_shift = l.all->weights.stride_shift();
+	  }
     for (features& fs : ec)
     { for (features::iterator& f : fs)
       { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
@@ -1256,7 +1263,8 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(vw &all)
+template<class T>
+LEARNER::base_learner *lda_setup(vw &all, T& weights)
 { if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
   new_options(all, "Lda options")
@@ -1293,7 +1301,8 @@ LEARNER::base_learner *lda_setup(vw &all)
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  all.weights.stride_shift((size_t)temp);
+  
+  weights.stride_shift((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -1314,7 +1323,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift());
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift());
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
@@ -1323,4 +1332,12 @@ LEARNER::base_learner *lda_setup(vw &all)
   l.set_finish(finish);
 
   return make_base(l);
+}
+
+LEARNER::base_learner *lda_setup(vw &all)
+{
+	if (all.sparse)
+		return lda_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return lda_setup<weight_parameters>(all, all.weights);
 }

@@ -449,8 +449,18 @@ void print_update(search_private& priv)
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
-{ uint64_t mask = priv.all->weights.mask();
-size_t ss = priv.all->weights.stride_shift();
+{
+	uint64_t mask;
+	size_t ss;
+	if (priv.all->sparse)
+	{ mask = priv.all->sparse_weights.mask();
+	  ss = priv.all->sparse_weights.stride_shift();
+	}
+	else
+	{
+		mask = priv.all->weights.mask();
+		ss = priv.all->weights.stride_shift();
+	}
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
@@ -666,7 +676,10 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
           priv.dat_new_feature_idx = fid;
           priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
-		  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+		  if (priv.all->sparse)
+			  add_new_feature(priv, 1., 4398201 << priv.all->sparse_weights.stride_shift());
+		  else
+			  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;

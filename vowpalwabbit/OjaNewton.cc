@@ -489,7 +489,8 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text) {
     }
 }
 
-base_learner* OjaNewton_setup(vw& all) {
+template<class T>
+base_learner* OjaNewton_setup(vw& all, T& weights) {
     if (missing_option(all, false, "OjaNewton", "Online Newton with Oja's Sketch"))
         return nullptr;
 
@@ -569,13 +570,20 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_throw<float>(ON.m+1);
     ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-	all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
+	weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.weights.stride_shift());
+	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << weights.stride_shift());
 
     l.set_predict(predict);
     l.set_save_load(save_load);
     l.set_finish_example(keep_example);
     l.set_finish(finish);
     return make_base(l);
+}
+base_learner* OjaNewton_setup(vw& all)
+{
+	if (all.sparse)
+		return OjaNewton_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return OjaNewton_setup<weight_parameters>(all, all.weights);
 }

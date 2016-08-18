@@ -212,7 +212,7 @@ template<class T>
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx, T& weights)
 {
 	uint64_t index = ft_idx & weights.mask();
-	size_t stride_shift = dat.all.weights.stride_shift();
+	size_t stride_shift = weights.stride_shift();
 
 	string ns_pre;
 	for (string& s : dat.ns_pre) ns_pre += s;
@@ -962,7 +962,8 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(vw& all)
+template<class T>
+base_learner* setup(vw& all, T& weights)
 { new_options(all, "Gradient Descent options")
   ("sgd", "use regular stochastic gradient descent update.")
   ("adaptive", "use adaptive, individual learning rates.")
@@ -1049,9 +1050,9 @@ base_learner* setup(vw& all)
     stride = set_learn<false>(all, feature_mask_off, g);
   if (!all.training)
     stride = 1;
-  all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
+  weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));
+  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << weights.stride_shift()));
   ret.set_predict(g.predict);
   ret.set_sensitivity(g.sensitivity);
   ret.set_multipredict(g.multipredict);
@@ -1059,5 +1060,14 @@ base_learner* setup(vw& all)
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
   return make_base(ret);
+}
+
+base_learner* setup(vw& all)
+{
+	if (all.sparse)
+		return setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return setup<weight_parameters>(all, all.weights);
+
 }
 }

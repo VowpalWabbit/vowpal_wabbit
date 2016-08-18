@@ -206,7 +206,8 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(vw& all)
+template<class T>
+base_learner* ftrl_setup(vw& all, T& weights)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning")){
     return nullptr;
@@ -261,7 +262,7 @@ base_learner* ftrl_setup(vw& all)
   b.data.l1_lambda = b.all->l1_lambda;
   b.data.l2_lambda = b.all->l2_lambda;
 
-  all.weights.stride_shift(2); // NOTE: for more parameter storage
+  weights.stride_shift(2); // NOTE: for more parameter storage
 
   if (!all.quiet)
   { cerr << "Enabling FTRL based optimization" << endl;
@@ -276,7 +277,7 @@ base_learner* ftrl_setup(vw& all)
       b.early_stop_thres = vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.weights.stride_shift());
+  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << weights.stride_shift());
   if (all.audit || all.hash_inv)
     l.set_predict(predict<true>);
   else
@@ -289,4 +290,12 @@ base_learner* ftrl_setup(vw& all)
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   return make_base(l);
+}
+
+base_learner* ftrl_setup(vw& all)
+{
+	if (all.sparse)
+		return ftrl_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return ftrl_setup<weight_parameters>(all, all.weights);
 }

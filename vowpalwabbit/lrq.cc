@@ -89,7 +89,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
 		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.weights.stride_shift()));
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << w.stride_shift()));
 		        typename T::iterator lw = w.change_begin() + (lwindex & w.mask());
 
 				// perturb away from saddle point at (0, 0)
@@ -103,7 +103,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
                     { // NB: ec.ft_offset added by base learner
                       float rfx = right_fs.values[rfn];
                       uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << all.weights.stride_shift()));
+                      uint64_t rwindex = (uint64_t)(rindex + (n << w.stride_shift()));
 
                       right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 
