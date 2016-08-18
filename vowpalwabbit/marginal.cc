@@ -85,7 +85,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 
   void save_load(data& sm, io_buf& io, bool read, bool text)
   {
-    uint64_t stride_shift = sm.all->reg.stride_shift;
+    uint64_t stride_shift = sm.all->weights.stride_shift();
     if (io.files.size() == 0) 
       return;
     stringstream msg;
