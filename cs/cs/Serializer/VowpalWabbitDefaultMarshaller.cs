@@ -96,7 +96,7 @@ namespace VW.Serializer
             context.AppendStringExample(feature.Dictify, " {0}", stringValue);
         }
 
-        private static Regex escapeCharacters = new Regex("[ |:]", RegexOptions.Compiled);
+        private static Regex escapeCharacters = new Regex("[ \t|:]", RegexOptions.Compiled);
 
         /// <summary>
         /// Marshals the supplied string into VW native space. Spaces are escaped using '_'.

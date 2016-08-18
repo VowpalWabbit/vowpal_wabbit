@@ -2167,6 +2167,20 @@ namespace cs_unittest
 				"pred-sets/ref/cbe_adf_cover_dr.predict");
         }
 
+        [TestMethod]
+        [Description(@"marginal features")]
+
+		[TestCategory("Command Line")]
+        public void CommandLine_Test140()
+        {
+            RunTestsHelper.ExecuteTest(
+				140,
+				"--marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --holdout_off -c -k --passes 100 -f marginal_model",
+				"train-sets/marginal_features",
+				"train-sets/ref/marginal.stderr",
+				"");
+        }
+
     }
 }
 

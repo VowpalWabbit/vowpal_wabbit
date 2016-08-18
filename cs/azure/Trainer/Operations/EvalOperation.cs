@@ -108,7 +108,11 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
                 yield break;
             }
-            
+
+
+            var pi_a_x = trainerResult.ProbabilitiesOrderedByRanking[trainerResult.Label.Action - 1];
+            var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);
+
             yield return new EvalData
             {
                 PolicyName = "Latest Policy",
@@ -118,10 +122,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                         name = "Latest Policy",
                         // calcuate expectation under current randomized policy (using current exploration strategy)
                         // VW action is 0-based, label Action is 1 based
-                        cost = trainerResult.ProgressivePrediction
-                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, ap.Action + 1, trainerResult.Label.Cost, trainerResult.Label.Probability)),
-                        prob = trainerResult.ProgressivePrediction
-                            .Sum(ap => ap.Score / (trainerResult.Probabilities[ap.Action] * (1 - trainerResult.ProbabilityOfDrop)))
+                        cost = (trainerResult.Label.Cost * pi_a_x) / p_a_x,
+                        prob = pi_a_x / p_a_x
                     })
             };
 

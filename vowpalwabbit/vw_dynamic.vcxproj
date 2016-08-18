@@ -346,7 +346,6 @@
     </ClCompile>
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
-    <ClCompile Include="marginal.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="autolink.h" />
@@ -373,7 +372,6 @@
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
     <ClInclude Include="label_dictionary.h" />
-    <ClInclude Include="marginal.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
     <ClInclude Include="cost_sensitive.h" />
