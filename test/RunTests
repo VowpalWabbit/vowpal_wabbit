@@ -1127,8 +1127,8 @@ echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
-./daemon-test.sh
-    test-sets/ref/vw-daemon.stdout
+#./daemon-test.sh
+#    test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
 {VW} --ksvm --l2 1 --reprocess 5 -b 18 -p ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat

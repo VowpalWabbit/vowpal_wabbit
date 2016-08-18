@@ -109,7 +109,7 @@ void zero_derivative(vw& all)
 	if (all.sparse)
 		all.sparse_weights.set_zero(W_GT);
 	else
-		all.sparse_weights.set_zero(W_GT);
+		all.weights.set_zero(W_GT);
 }
 
 void zero_preconditioner(vw& all)
