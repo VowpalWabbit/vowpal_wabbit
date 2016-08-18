@@ -112,15 +112,6 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
-
- template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
- inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
- {
-	 if (all.sparse)
-		 generate_interactions<R, S, T, audit, audit_func, sparse_weight_parameters>(all, ec, dat, all.sparse_weights);
-	 else
-		 generate_interactions<R, S, T, audit, audit_func, weight_parameters>(all, ec, dat, all.sparse_weights);
- }
  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W> // nullptr func can't be used as template param in old compilers
  inline void generate_interactions(vw& all, example& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
  {
@@ -372,6 +363,15 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   } // foreach interaction in all.interactions
 
   state_data.delete_v();
+}
+
+template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
+inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
+{
+	if (all.sparse)
+		generate_interactions<R, S, T, audit, audit_func, sparse_weight_parameters>(all, ec, dat, all.sparse_weights);
+	else
+		generate_interactions<R, S, T, audit, audit_func, weight_parameters>(all, ec, dat, all.weights);
 }
 
 template <class R>

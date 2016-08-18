@@ -26,16 +26,6 @@ example_is_test (example& ec)
 { return ec.l.simple.label == FLT_MAX;
 }
 
-template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
-{
-	vw& all = *lrq.all;
-	if (all.sparse)
-		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
-	else
-		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
-}
-
 template <bool is_learn, class T>
 void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec, T& w)
 { vw& all = *lrq.all;
@@ -134,6 +124,15 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec, T& w)
   }
 }
 
+template <bool is_learn>
+void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
+{
+	vw& all = *lrq.all;
+	if (all.sparse)
+		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	else
+		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+}
 
 LEARNER::base_learner* lrqfa_setup(vw& all)
 { if (missing_option<string>(all, "lrqfa", "use low rank quadratic features with field aware weights"))

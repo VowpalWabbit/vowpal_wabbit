@@ -208,49 +208,70 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
   }
 }
 
+template<class T>
+inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx, T& weights)
+{
+	uint64_t index = ft_idx & weights.mask();
+	size_t stride_shift = dat.all.weights.stride_shift();
+
+	string ns_pre;
+	for (string& s : dat.ns_pre) ns_pre += s;
+
+	if (dat.all.audit)
+	{
+		ostringstream tempstream;
+		tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
+			<< ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
+
+		if (dat.all.adaptive)
+			tempstream << '@' << weights[index + 1];
+
+
+		string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
+		dat.results.push_back(sv);
+	}
+
+	if (dat.all.current_pass == 0 && dat.all.hash_inv)
+	{ //for invert_hash
+
+		if (dat.offset != 0)
+		{ // otherwise --oaa output no features for class > 0.
+			ostringstream tempstream;
+			tempstream << '[' << (dat.offset >> stride_shift) << ']';
+			ns_pre += tempstream.str();
+		}
+
+		if (!dat.all.name_index_map.count(ns_pre))
+			dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+	}
+
+}
+
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 {  if (dat.all.sparse)
 		audit_feature<sparse_weight_parameters>(dat, ft_weight, ft_idx, dat.all.sparse_weights);
 	else
 		audit_feature<weight_parameters>(dat, ft_weight, ft_idx, dat.all.weights);
 }
+
 template<class T>
-inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx, T& weights)
+void print_features(vw& all, example& ec, T& weights)
 {
-  uint64_t index = ft_idx & weights.mask();
-  size_t stride_shift = dat.all.weights.stride_shift();
-
-  string ns_pre;
-  for (string& s : dat.ns_pre) ns_pre += s;
-
-  if(dat.all.audit)
-  { ostringstream tempstream;
-    tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
-               << ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
-
-    if(dat.all.adaptive)
-      tempstream << '@' << weights[index+1];
-
-
-    string_value sv = {weights[index]*ft_weight, ns_pre+tempstream.str()};
-    dat.results.push_back(sv);
-  }
-
-  if(dat.all.current_pass == 0 && dat.all.hash_inv)
-  { //for invert_hash
-
-    if (dat.offset != 0)
-    { // otherwise --oaa output no features for class > 0.
-      ostringstream tempstream;
-      tempstream << '[' << (dat.offset >> stride_shift) << ']';
-      ns_pre += tempstream.str();
-    }
-
-    if(!dat.all.name_index_map.count(ns_pre))
-      dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
-  }
-
+	size_t count = 0;
+	for (features& fs : ec)
+		count += fs.size();
+	for (features& fs : ec)
+	{
+		for (features::iterator_all& f : fs.values_indices_audit())
+		{
+			cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride_shift()) & all.parse_mask) << ':' << f.value();
+			for (size_t k = 0; k < all.lda; k++)
+				cout << ':' << weights[(f.index() + k)];
+		}
+	}
+	cout << " total of " << count << " features." << endl;
 }
+
 
 void print_features(vw& all, example& ec)
 { if (all.lda > 0)
@@ -287,22 +308,6 @@ void print_features(vw& all, example& ec)
   }
 }
 
-template<class T>
-void print_features(vw& all, example& ec, T& weights)
-{  size_t count = 0;
-   for (features& fs : ec)
-		count += fs.size();
-	for (features& fs : ec)
-	{
-		for (features::iterator_all& f : fs.values_indices_audit())
-		{
-			cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride_shift()) & all.parse_mask) << ':' << f.value();
-			for (size_t k = 0; k < all.lda; k++)
-				cout << ':' << weights[(f.index() + k)];
-		}
-	}
-	cout << " total of " << count << " features." << endl;
-}
 
 void print_audit_features(vw& all, example& ec)
 { if(all.audit)
@@ -360,20 +365,21 @@ void predict(gd& g, base_learner&, example& ec)
     print_audit_features(all, ec);
 }
 
+template<class T>
+inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
+{
+	size_t index = fi;
+	for (size_t c = 0; c<mp.count; c++, index += mp.step)
+	{
+		mp.pred[c].scalar += fx * trunc_weight(w[index], mp.gravity); //TODO: figure out how to use weight_parameters::iterator (not change_begin)
+	}
+}
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 {
 	if (mp.sparse)
 		vec_add_trunc_multipredict<sparse_weight_parameters>(mp, fx, fi, mp.sparse_weights);
 	else
 		vec_add_trunc_multipredict<weight_parameters>(mp, fx, fi, mp.weights);
-}
-template<class T>
-inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
-{
-  size_t index = fi;
-  for (size_t c=0; c<mp.count; c++, index += mp.step)
-  { mp.pred[c].scalar += fx * trunc_weight(w[index], mp.gravity); //TODO: figure out how to use weight_parameters::iterator (not change_begin)
-  }
 }
 
 template<bool l1, bool audit>
@@ -579,6 +585,18 @@ void learn(gd& g, base_learner& base, example& ec)
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
+
+template<class T>
+void sync_weights(vw& all, T& weights)
+{
+	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
+		return;
+	T::iterator w = weights.begin();
+	for (; w != weights.end() && all.reg_mode; ++w)
+		*w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	all.sd->gravity = 0.;
+	all.sd->contraction = 1.;
+}
 void sync_weights(vw& all)
 {
 	if (all.sparse)
@@ -586,15 +604,84 @@ void sync_weights(vw& all)
 	else
 		sync_weights<weight_parameters>(all, all.weights);
 }
-template<class T> 
-void sync_weights(vw& all, T& weights)
-{ if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
-    return;
-  T::iterator w = weights.begin();
-  for(; w != weights.end() && all.reg_mode; ++w)
-    *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
-  all.sd->gravity = 0.;
-  all.sd->contraction = 1.;
+
+template<class T>
+void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
+{
+	uint64_t length = (uint64_t)1 << all.num_bits;
+	uint64_t i = 0;
+	uint32_t old_i = 0;
+	size_t brw = 1;
+
+	if (all.print_invert)   //write readable model with feature names
+	{
+		T::iterator v = weights.begin();
+		stringstream msg;
+		typedef std::map< std::string, size_t> str_int_map;
+
+		for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
+		{
+			v = weights.begin() + it->second;
+			if (*v != 0.)
+			{
+				msg << it->first;
+				brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
+					msg, true);
+
+				msg << ":" << it->second << ":" << *v << "\n";
+				bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, true);
+			}
+		}
+		return;
+	}
+
+	do
+	{
+		brw = 1;
+		T::iterator v = weights.begin();
+		if (read)
+		{
+			if (all.num_bits < 31)//backwards compatible
+			{
+				brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
+				i = old_i;
+			}
+			else
+				brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+			if (brw > 0)
+			{
+				if (i >= length)
+				{
+					THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
+				}
+				v += i;
+				brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
+			}
+		}
+		else// write binary or text
+		{
+			v += i;
+			if (*v != 0.)
+			{
+				stringstream msg;
+				msg << i;
+
+				if (all.num_bits < 31)
+				{
+					old_i = (uint32_t)i;
+					brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
+				}
+				else
+					brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
+
+				msg << ":" << *v << "\n";
+				brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text);
+			}
+		}
+
+		if (!read)
+			++i;
+	} while ((!read && i < length) || (read && brw >0));
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
@@ -606,76 +693,67 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 }
 
 template<class T>
-void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
-{ uint64_t length = (uint64_t)1 << all.num_bits;
-  uint64_t i = 0;
-  uint32_t old_i = 0;
-  size_t brw = 1;
-  
-  if(all.print_invert)   //write readable model with feature names
-  { 
-	T::iterator v = weights.begin();
-	stringstream msg;
-    typedef std::map< std::string, size_t> str_int_map;
-    
-    for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
-    { 
-	  v = weights.begin() + it->second; 
-      if(*v != 0.)
-      {
-        msg << it->first;
-        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
-                                   msg, true);
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, T& weights)
+{
+	uint64_t length = (uint64_t)1 << all.num_bits;
 
-        msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, true);
-      }
-    }
-    return;
-  }
-
-  do
-  { brw = 1;
-    T::iterator v = weights.begin();
-    if (read)
-      { if (all.num_bits < 31)//backwards compatible
-	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
-	    i = old_i;
-	  }
-	else
-	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
-      if (brw > 0)
-      { if (i >= length)
-        { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-        }
-	    v += i;
-        brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); 
-      }
-    }
-    else// write binary or text
-    {
-	  v += i;
-      if (*v != 0.)
-        { stringstream msg;
-          msg << i;
-
-          if (all.num_bits < 31)
-            {
-              old_i = (uint32_t)i;
-              brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
-            }
-          else
-            brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
-
-          msg << ":"<< *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text); 
-        }
-    }
-
-	if (!read)
-		++i;
-  }
-  while ((!read && i < length) || (read && brw >0));
+	uint64_t i = 0;
+	size_t brw = 1;
+	do
+	{
+		brw = 1;
+		T::iterator v = weights.begin();
+		if (read)
+		{
+			brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+			if (brw > 0)
+			{
+				if (i >= length)
+				{
+					THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
+				}
+				v += i;
+				if (g == NULL || (!g->adaptive && !g->normalized))
+					brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
+				else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+					brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
+				else //adaptive and normalized
+					brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
+				/*        if (!all.training)
+				v[1] = v[2] = 0.;*/
+			}
+		}
+		else // write binary or text
+		{
+			v += i;
+			if (*v != 0.)
+			{
+				msg << i;
+				brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
+					msg, text);
+				if (g == nullptr || (!g->adaptive && !g->normalized))
+				{
+					msg << ":" << *v << "\n";
+					brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+						msg, text);
+				}
+				else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+				{ //either adaptive or normalized
+					msg << ":" << *v << " " << (&(*v))[1] << "\n";
+					brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
+						msg, text);
+				}
+				else
+				{ //adaptive and normalized
+					msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+					brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
+						msg, text);
+				}
+			}
+		}
+		if (!read)
+			++i;
+	} while ((!read && i < length) || (read && brw >0));
 }
 
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
@@ -768,71 +846,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->total_features = 0;
 	}
 	if (all.sparse)
-		save_load_online_state<sparse_weight_parameters>(all, model_file, read, text, g, all.sparse_weights);
+		save_load_online_state<sparse_weight_parameters>(all, model_file, read, text, g, msg, all.sparse_weights);
 	else
-		save_load_online_state<weight_parameters>(all, model_file, read, text, g, all.weights);
+		save_load_online_state<weight_parameters>(all, model_file, read, text, g, msg, all.weights);
 }
 
-template<class T>
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, T& weights)
-{
-  uint64_t length = (uint64_t)1 << all.num_bits;
 
-  uint64_t i = 0;
-  size_t brw = 1;
-  do
-  { brw = 1;
-    T::iterator v = weights.begin();
-    if (read)
-    { 
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
-      if (brw > 0)
-      { if (i >= length)
-        { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-        }
-	    v += i;
-        if (g == NULL || (! g->adaptive && ! g->normalized))
-          brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
-        else //adaptive and normalized
-			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
-        /*        if (!all.training)
-                  v[1] = v[2] = 0.;*/
-      }
-    }
-    else // write binary or text
-    { 
-	  v += i;
-      if (*v != 0.)
-      { 
-        msg << i;
-        brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
-                                   msg, text);
-        if (g == nullptr || (! g->adaptive && ! g->normalized))
-          { msg << ":" << *v << "\n";
-		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v),
-                                      msg, text);
-        }
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-        { //either adaptive or normalized
-          msg << ":"<< *v << " "<< (&(*v))[1]<< "\n";
-		  brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
-                                     msg, text);
-        }
-        else
-          { //adaptive and normalized
-            msg << ":"<< *v << " "<< (&(*v))[1] << " "<< (&(*v))[2]<< "\n";
-			brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
-                                       msg, text);
-        }
-      }
-    }
-	if (!read)
-	  ++i;
-  }
-  while ((!read && i < length) || (read && brw >0));
-}
 
 struct initial_t
 {
@@ -840,9 +859,12 @@ private:
 	weight _initial;
 public:
 	initial_t(weight initial) : _initial(initial){}
-	template<class T>
-	void operator()(T::iterator& iter, size_t /*index*/) 
+	void operator()(weight_parameters::iterator& iter, size_t /*index*/) 
 	{  (&(*iter))[1] = _initial;
+	}
+	void operator()(sparse_weight_parameters::iterator& iter, size_t /*index*/)
+	{
+		(&(*iter))[1] = _initial;
 	}
 };
 

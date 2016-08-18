@@ -26,6 +26,29 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, G
 
 struct multipredict_info { size_t count; size_t step; polyprediction* pred; bool sparse; weight_parameters& weights; sparse_weight_parameters& sparse_weights; /* & for l1: */ float gravity; };
 
+template<class T>
+inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
+{
+	if ((-1e-10 < fx) && (fx < 1e-10)) return;
+	uint64_t mask = w.mask();
+	polyprediction* p = mp.pred;
+	fi &= mask;
+	uint64_t top = fi + (uint64_t)((mp.count - 1) * mp.step);
+	uint64_t i = 0;
+	if (top <= mask)
+	{
+		i += fi;
+		for (; i <= top; i += mp.step, ++p)
+			p->scalar += fx * w[i]; //TODO: figure out how to use weight_parameters::iterator (not using change_begin())
+	}
+	else    // TODO: this could be faster by unrolling into two loops
+		for (size_t c = 0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
+		{
+			fi &= mask;
+			p->scalar += fx * w[fi];
+		}
+}
+
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 {
 	if (mp.sparse)
@@ -33,27 +56,6 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 	else
 		vec_add_multipredict<weight_parameters>(mp, fx, fi, mp.weights);
 
-}
-template<class T>
-inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
-{
-  if ((-1e-10 < fx) && (fx < 1e-10)) return;
-  uint64_t mask = w.mask(); 
-  polyprediction* p = mp.pred;
-  fi &= mask;
-  uint64_t top = fi + (uint64_t)((mp.count-1) * mp.step);
-  uint64_t i = 0;
-  if (top <= mask)
-  {
-	  i += fi;
-	  for (; i <= top; i+= mp.step, ++p)
-		  p->scalar += fx * w[i]; //TODO: figure out how to use weight_parameters::iterator (not using change_begin())
-  }
-  else    // TODO: this could be faster by unrolling into two loops
-    for (size_t c=0; c<mp.count; ++c, fi += (uint64_t)mp.step, ++p)
-    { fi &= mask;
-      p->scalar += fx * w[fi]; 
-    }
 }
 
 // iterate through one namespace (or its part), callback function T(some_data_R, feature_value_x, feature_weight)

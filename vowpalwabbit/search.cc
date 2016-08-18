@@ -476,14 +476,6 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.erase();
 }
-void add_neighbor_features(search_private& priv)
-{
-	vw& all = *priv.all;
-	if (all.sparse)
-		add_neighbor_features<sparse_weight_parameters>(priv, all.sparse_weights);
-	else
-		add_neighbor_features<weight_parameters>(priv, all.weights);
-}
 
 template<class T>
 void add_neighbor_features(search_private& priv, T& weights)
@@ -530,6 +522,14 @@ void add_neighbor_features(search_private& priv, T& weights)
   }
 }
 
+void add_neighbor_features(search_private& priv)
+{
+	vw& all = *priv.all;
+	if (all.sparse)
+		add_neighbor_features<sparse_weight_parameters>(priv, all.sparse_weights);
+	else
+		add_neighbor_features<weight_parameters>(priv, all.weights);
+}
 void del_neighbor_features(search_private& priv)
 { if (priv.neighbor_features.size() == 0) return;
   for (size_t n=0; n<priv.ec_seq.size(); n++)

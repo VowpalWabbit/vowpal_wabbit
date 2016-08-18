@@ -50,15 +50,6 @@ reset_seed (LRQstate& lrq)
     lrq.seed = lrq.initial_seed;
 }
 
-template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
-{
-	vw& all = *lrq.all;
-	if (all.sparse)
-		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
-	else
-		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
-}
 template <bool is_learn, class T>
 void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 { vw& all = *lrq.all;
@@ -161,6 +152,15 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
   }
 }
 
+template <bool is_learn>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+{
+	vw& all = *lrq.all;
+	if (all.sparse)
+		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	else
+		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+}
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner* lrq_setup(vw& all)

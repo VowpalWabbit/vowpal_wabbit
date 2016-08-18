@@ -35,24 +35,27 @@ public:
 	{
 		*iter = _initial;
 	}
+	void operator()(sparse_weight_parameters::iterator& iter, size_t /*index*/)
+	{
+		*iter = _initial;
+	}
 };
 
-template<class T>
-void random_positive(T::iterator& iter, size_t ind)
+void random_positive(weight_parameters::iterator& iter, size_t ind)
 {*iter = (float)(0.1 * merand48(ind));
 }
 
-template<class T>
-void random_weights(T::iterator& iter, size_t ind)
+void random_positive(sparse_weight_parameters::iterator& iter, size_t ind)
+{
+	*iter = (float)(0.1 * merand48(ind));
+}
+void random_weights(weight_parameters::iterator& iter, size_t ind)
 {*iter = (float)(merand48(ind) - 0.5);
 }
 
-void initialize_regressor(vw& all)
+void random_weights(sparse_weight_parameters::iterator& iter, size_t ind)
 {
-	if (all.sparse)
-		initialize_regressor<sparse_weight_parameters>(all, all.sparse_weights);
-	else
-		initialize_regressor<weight_parameters>(all, all.weights);
+	*iter = (float)(merand48(ind) - 0.5);
 }
 template<class T>
 void initialize_regressor(vw& all, T& weights)
@@ -70,12 +73,20 @@ void initialize_regressor(vw& all, T& weights)
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  weights.set_default<initial_t<T>>(init);
+	  weights.set_default<initial_t>(init);
   }
   else if (all.random_positive_weights)
-	  weights.set_default<random_positive<T>>();
+	  weights.set_default<random_positive>();
   else if (all.random_weights)
-	  weights.set_default<random_weights<T>>();
+	  weights.set_default<random_weights>();
+}
+
+void initialize_regressor(vw& all)
+{
+	if (all.sparse)
+		initialize_regressor<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		initialize_regressor<weight_parameters>(all, all.weights);
 }
 
 const size_t default_buf_size = 512;
@@ -487,6 +498,12 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
   }
 }
 
+template<class T>
+void zero_weights(T& weights)
+{
+	weights.set_zero(0);
+}
+
 void parse_mask_regressor_args(vw& all)
 { po::variables_map& vm = all.vm;
   if (vm.count("feature_mask"))
@@ -526,12 +543,6 @@ void parse_mask_regressor_args(vw& all)
       all.file_options->str("");
     }
   }
-}
-
-template<class T>
-void zero_weights(T& weights)
-{
-	weights.set_zero(0);
 }
 
 namespace VW

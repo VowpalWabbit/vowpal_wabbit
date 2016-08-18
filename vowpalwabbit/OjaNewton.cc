@@ -52,13 +52,6 @@ struct OjaNewton {
     bool normalize;
     bool random_init;
 
-	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
-	{
-		if (all->sparse)
-			initialize_Z<sparse_weight_parameters>(all->sparse_weights);
-		else
-			initialize_Z<weight_parameters>(all->weights);
-	}
 	template<class T>
 	void initialize_Z(T& weights)
 	{ 
@@ -110,6 +103,13 @@ struct OjaNewton {
 	    }
     }
 
+	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
+	{
+		if (all->sparse)
+			initialize_Z<sparse_weight_parameters>(all->sparse_weights);
+		else
+			initialize_Z<weight_parameters>(all->weights);
+	}
     void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
@@ -236,13 +236,6 @@ struct OjaNewton {
         }
     }
 
-	void check()
-	{
-		if (all->sparse)
-			check<sparse_weight_parameters>(all->sparse_weights);
-		else
-			check<weight_parameters>(all->weights);
-	}
 	template<class T>
 	void check(T& weights)
     {
@@ -320,6 +313,14 @@ struct OjaNewton {
             A[i][i] = 1;
         }
     }
+
+	void check()
+	{
+		if (all->sparse)
+			check<sparse_weight_parameters>(all->sparse_weights);
+		else
+			check<weight_parameters>(all->weights);
+	}
 };
 
 void keep_example(vw& all, OjaNewton& ON, example& ec) {

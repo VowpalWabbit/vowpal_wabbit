@@ -234,7 +234,7 @@ public:
 		return *this;
 	}
 
-	sparse_weights_iterator operator+(size_t index) { return weights_iterator(_current + (index*_stride), _stride); }
+	sparse_weights_iterator operator+(size_t index) { return sparse_weights_iterator(_current + (index*_stride), _stride); }
 
 	sparse_weights_iterator& operator+=(size_t index)
 	{
@@ -302,7 +302,7 @@ public:
 	inline void set_default()
 	{
 		for (iterator iter = begin(); iter != end(); ++iter)
-			T<sparse_weight_parameters>(iter);
+			T(iter);
 	}
 
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
@@ -311,7 +311,7 @@ public:
 		uint32_t stride = 1 << _stride_shift;
 		iterator iter = begin();
 		for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T<sparse_weight_parameters>(iter, i);
+			T(iter, i);
 	}
 
 	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
@@ -320,11 +320,11 @@ public:
 		uint32_t stride = 1 << _stride_shift;
 		iterator iter = begin();
 		for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T<sparse_weight_parameters>(iter, i, stride);
+			T(iter, i, stride);
 	}
 
 	template <typename T>
-	void set_default(T<sparse_weight_parameters> t)
+	void set_default(T t)
 	{
 		uint32_t stride = 1 << _stride_shift;
 		iterator iter = begin();

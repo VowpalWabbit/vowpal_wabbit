@@ -336,8 +336,8 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
   }
 }
 
-template<class T>
-void vexpdigammify_2(vw &all, T::iterator& gamma, const float *norm, const float underflow_threshold)
+template<class W>
+void vexpdigammify_2(vw &all, W& gamma, const float *norm, const float underflow_threshold)
 { T::iterator fp = gamma;
   const float *np;
   uint32_t count = 0;
@@ -438,21 +438,33 @@ template <> inline void expdigammify<float, USE_SIMD>(vw &all, float *gamma, flo
 }
 
 template <typename T, const lda_math_mode mtype, class W>
-inline void expdigammify_2(vw &all, W::iterator& gamma, T *norm, const T threshold)
+inline void expdigammify_2(vw &all, W& gamma, T *norm, const T threshold)
 { std::transform(gamma, gamma + all.lda, norm, gamma, [threshold](float g, float n)
   { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n));
   });
 }
-template <class W> 
-inline void expdigammify_2<float, USE_SIMD>(vw &all, W::iterator& gamma, float *norm, const float threshold)
+template <> 
+inline void expdigammify_2<float, USE_SIMD, weight_parameters::iterator>(vw &all, weight_parameters::iterator& gamma, float *norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
-  vexpdigammify_2<T>(all, gamma, norm, threshold);
+	vexpdigammify_2<weight_parameters::iterator>(all, gamma, norm, threshold);
 #else
   // Do something sensible if SIMD math isn't available:
-  expdigammify_2<float, USE_FAST_APPROX, W>(all, gamma, norm, threshold);
+	expdigammify_2<float, USE_FAST_APPROX, weight_parameters::iterator>(all, gamma, norm, threshold);
 #endif
 }
+
+template <>
+inline void expdigammify_2<float, USE_SIMD, sparse_weight_parameters::iterator>(vw &all, sparse_weight_parameters::iterator& gamma, float *norm, const float threshold)
+{
+#if defined(HAVE_SIMD_MATHMODE)
+	vexpdigammify_2<sparse_weight_parameters::iterator>(all, gamma, norm, threshold);
+#else
+	// Do something sensible if SIMD math isn't available:
+	expdigammify_2<float, USE_FAST_APPROX, sparse_weight_parameters::iterator>(all, gamma, norm, threshold);
+#endif
+}
+ // namespace ldamath
 } // namespace ldamath
 
 float lda::digamma(float x)
@@ -530,13 +542,13 @@ void lda::expdigammify(vw &all, float *gamma)
 void lda::expdigammify_2(vw &all, weight_parameters::iterator& gamma, float *norm)
 { switch (mmode)
   { case USE_FAST_APPROX:
-	  ldamath::expdigammify_2<float, USE_FAST_APPROX, weight_parameters>(all, gamma, norm, underflow_threshold());
+	  ldamath::expdigammify_2<float, USE_FAST_APPROX, weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
       break;
     case USE_PRECISE:
-		ldamath::expdigammify_2<float, USE_PRECISE, weight_parameters>(all, gamma, norm, underflow_threshold());
+		ldamath::expdigammify_2<float, USE_PRECISE, weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
       break;
     case USE_SIMD:
-		ldamath::expdigammify_2<float, USE_SIMD, weight_parameters>(all, gamma, norm, underflow_threshold());
+		ldamath::expdigammify_2<float, USE_SIMD, weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -549,13 +561,13 @@ void lda::expdigammify_2(vw &all, sparse_weight_parameters::iterator& gamma, flo
 	switch (mmode)
 	{
 	case USE_FAST_APPROX:
-		ldamath::expdigammify_2<float, USE_FAST_APPROX, sparse_weight_parameters>(all, gamma, norm, underflow_threshold());
+		ldamath::expdigammify_2<float, USE_FAST_APPROX, sparse_weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
 		break;
 	case USE_PRECISE:
-		ldamath::expdigammify_2<float, USE_PRECISE, sparse_weight_parameters>(all, gamma, norm, underflow_threshold());
+		ldamath::expdigammify_2<float, USE_PRECISE, sparse_weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
 		break;
 	case USE_SIMD:
-		ldamath::expdigammify_2<float, USE_SIMD, sparse_weight_parameters>(all, gamma, norm, underflow_threshold());
+		ldamath::expdigammify_2<float, USE_SIMD, sparse_weight_parameters::iterator>(all, gamma, norm, underflow_threshold());
 		break;
 	default:
 		std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -600,7 +612,7 @@ float theta_kl(lda &l, v_array<float> &Elogtheta, float *gamma)
 }
 
 template<class T>
-static inline float find_cw(lda &l, T::iterator& u_for_w, float *v)
+static inline float find_cw(lda &l, T& u_for_w, float *v)
 { return 1.0f / std::inner_product(u_for_w, u_for_w + l.topics, v, 0.0f);
 }
 
@@ -645,7 +657,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, T& weights, example 
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
 	     {  T::iterator u_for_w = weights.change_begin() + (f.index() & weights.mask()) + l.topics + 1;
-            float c_w = find_cw<T>(l, u_for_w, v);
+            float c_w = find_cw<T::iterator>(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
             size_t max_k = l.topics;
@@ -700,17 +712,20 @@ public:
 	  }
 	(&(*iter))[_lda] = _initial;
 	}
+	void operator()(sparse_weight_parameters::iterator& iter, size_t index)
+	{
+		if (_random)
+		{
+			for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
+			{
+				*k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
+				*k *= _initial_random;
+			}
+		}
+		(&(*iter))[_lda] = _initial;
+	}
 };
 
-
-void save_load(lda &l, io_buf &model_file, bool read, bool text)
-{
-	if (l.all->sparse)
-		save_load<sparse_weight_parameters>(l, model_file, read, text, l.all->sparse_weights);
-	else
-		save_load<weight_parameters>(l, model_file, read, text, l.all->weights);
-
-}
 template<class T>
 void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 { vw *all = l.all;
@@ -759,14 +774,14 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   }
 }
 
-void learn_batch(lda &l)
+void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
 	if (l.all->sparse)
-		learn_batch<sparse_weight_parameters>(l, l.all->sparse_weights);
+		save_load<sparse_weight_parameters>(l, model_file, read, text, l.all->sparse_weights);
 	else
-		learn_batch<weight_parameters>(l, l.all->weights);
-}
+		save_load<weight_parameters>(l, model_file, read, text, l.all->weights);
 
+}
 template<class T>
 void learn_batch(lda &l, T& weights)
 { if (l.sorted_features.empty()) // FAST-PASS for real "true"
@@ -879,7 +894,7 @@ void learn_batch(lda &l, T& weights)
 		  {
 			  float *v_s = &(l.v[s->document * l.all->lda]);
 			  T::iterator u_for_w = weights.change_begin() + (s->f.weight_index & weights.mask()) + l.all->lda + 1;
-			  float c_w = eta * find_cw<T>(l, u_for_w, v_s) * s->f.x;
+			  float c_w = eta * find_cw<T::iterator>(l, u_for_w, v_s) * s->f.x;
 			  word_weights = weights.change_begin() + (s->f.weight_index & weights.mask());
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
 			  {   
@@ -899,6 +914,14 @@ void learn_batch(lda &l, T& weights)
 
   l.examples.erase();
   l.doc_lengths.erase();
+}
+
+void learn_batch(lda &l)
+{
+	if (l.all->sparse)
+		learn_batch<sparse_weight_parameters>(l, l.all->sparse_weights);
+	else
+		learn_batch<weight_parameters>(l, l.all->weights);
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
@@ -960,13 +983,6 @@ struct feature_pair
 	{}
 };
 
-void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
-{
-	if (all->sparse)
-		get_top_weights<sparse_weight_parameters>(all, top_words_count, topic, output, all->sparse_weights);
-	else
-		get_top_weights<weight_parameters>(all, top_words_count, topic, output, all->weights);
-}
 template<class T>
 void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output, T& weights)
 {
@@ -996,14 +1012,14 @@ void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weig
 	}
 }
 
-void compute_coherence_metrics(lda &l)
+void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
 {
-	if (l.all->sparse)
-		compute_coherence_metrics<sparse_weight_parameters>(l, l.all->sparse_weights);
+	if (all->sparse)
+		get_top_weights<sparse_weight_parameters>(all, top_words_count, topic, output, all->sparse_weights);
 	else
-		compute_coherence_metrics<weight_parameters>(l, l.all->weights);
-
+		get_top_weights<weight_parameters>(all, top_words_count, topic, output, all->weights);
 }
+
 template<class T>
 void compute_coherence_metrics(lda &l, T& weights)
 {   uint64_t length = (uint64_t)1 << l.all->num_bits;
@@ -1170,6 +1186,14 @@ void compute_coherence_metrics(lda &l, T& weights)
 	printf("Avg topic coherence: %f\n", avg_coherence);
 }
 
+void compute_coherence_metrics(lda &l)
+{
+	if (l.all->sparse)
+		compute_coherence_metrics<sparse_weight_parameters>(l, l.all->sparse_weights);
+	else
+		compute_coherence_metrics<weight_parameters>(l, l.all->weights);
+
+}
 void end_pass(lda &l)
 { 
 	if (l.examples.size())
@@ -1182,13 +1206,6 @@ void end_pass(lda &l)
 	}
 }
 
-void end_examples(lda &l)
-{
-	if (l.all->sparse)
-		end_examples<sparse_weight_parameters>(l, l.all->sparse_weights);
-	else
-		end_examples<weight_parameters>(l, l.all->weights);
-}
 template<class T>
 void end_examples(lda &l, T& weights)
 { for (T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
@@ -1199,6 +1216,14 @@ void end_examples(lda &l, T& weights)
 	for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(l.all->lda); ++k)
       *k *= decay;
    }
+}
+
+void end_examples(lda &l)
+{
+	if (l.all->sparse)
+		end_examples<sparse_weight_parameters>(l, l.all->sparse_weights);
+	else
+		end_examples<weight_parameters>(l, l.all->weights);
 }
 
 void finish_example(vw&, lda&, example &) {}

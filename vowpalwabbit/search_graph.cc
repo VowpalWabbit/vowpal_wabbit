@@ -178,7 +178,7 @@ void setup(Search::search& sch, vector<example*>& ec)
 	task_data& D = *sch.get_task_data<task_data>();
 	D.multiplier = D.wpp << D.ss;
 	D.wpp = sch.get_vw_pointer_unsafe().wpp;
-	if (sch.get_vw_pointer_unsafe.sparse)
+	if (sch.get_vw_pointer_unsafe().sparse)
 	{	D.mask = sch.get_vw_pointer_unsafe().sparse_weights.mask();
 		D.ss = sch.get_vw_pointer_unsafe().sparse_weights.stride_shift();
 		D.sparse_weights = &sch.get_vw_pointer_unsafe().sparse_weights;
