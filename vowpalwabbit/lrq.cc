@@ -52,6 +52,15 @@ reset_seed (LRQstate& lrq)
 
 template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+{
+	vw& all = *lrq.all;
+	if (all.sparse)
+		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	else
+		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+}
+template <bool is_learn, class T>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 { vw& all = *lrq.all;
 
   // Remember original features
@@ -87,11 +96,10 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-		  weight_parameters& w = all.weights;
 		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
 		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.weights.stride_shift()));
-		        weight_parameters::iterator lw = w.change_begin() + (lwindex & w.mask());
+		        T::iterator lw = w.change_begin() + (lwindex & w.mask());
 
 				// perturb away from saddle point at (0, 0)
 		        if (is_learn && ! example_is_test (ec) && *lw == 0)

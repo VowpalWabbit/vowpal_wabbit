@@ -31,39 +31,52 @@ struct initial_t
 	weight _initial;
 public:
 	initial_t(weight initial) : _initial(initial){}
-	void operator()(weight_parameters::iterator& iter, size_t /*index*/)
+	template<class T>
+	void operator()(T& iter, size_t /*index*/)
 	{
 		*iter = _initial;
 	}
 };
-void random_positive(weight_parameters::iterator& iter, size_t ind)
+
+template<class T>
+void random_positive(T::iterator& iter, size_t ind)
 {*iter = (float)(0.1 * merand48(ind));
 }
 
-void random_weights(weight_parameters::iterator& iter, size_t ind)
+template<class T>
+void random_weights(T::iterator& iter, size_t ind)
 {*iter = (float)(merand48(ind) - 0.5);
 }
+
 void initialize_regressor(vw& all)
+{
+	if (all.sparse)
+		initialize_regressor<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		initialize_regressor<weight_parameters>(all, all.weights);
+}
+template<class T>
+void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
-  if (all.weights.not_null())
+  if (weights.not_null())
     return;
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { new(&all.weights) weight_parameters(length, all.weights.stride_shift()); }
+    { new(&weights) T(length, weights.stride_shift()); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (!all.weights.not_null())
+  if (!weights.not_null())
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  all.weights.set_default<initial_t>(init);
+	  weights.set_default<initial_t>(init);
   }
   else if (all.random_positive_weights)
-	  all.weights.set_default<random_positive>();
+	  weights.set_default<random_positive>();
   else if (all.random_weights)
-	  all.weights.set_default<random_weights>();
+	  weights.set_default<random_weights>();
 }
 
 const size_t default_buf_size = 512;
@@ -504,14 +517,22 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  weight_parameters& weights = all.weights;
-	  weights.set_zero(0);
+	  if (all.sparse)
+		  zero_weights<sparse_weight_parameters>(all.sparse_weights);
+	  else
+		  zero_weights<weight_parameters>(all.weights);
     }
     else
     { // If no initial regressor, just clear out the options loaded from the header.
       all.file_options->str("");
     }
   }
+}
+
+template<class T>
+void zero_weights(T& weights)
+{
+	weights.set_zero(0);
 }
 
 namespace VW

@@ -33,6 +33,16 @@ struct gdmf
 };
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
+{
+	if ((*d.all).sparse)
+		mf_print_offset_features<sparse_weight_parameters>(d, ec, offset, (*d.all).sparse_weights);
+	else
+		mf_print_offset_features<weight_parameters>(d, ec, offset, (*d.all).weights);
+
+}
+
+template<class T>
+void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 { vw& all = *d.all;
   weight_parameters& weights = all.weights;
   uint64_t mask = weights.mask();
@@ -144,15 +154,23 @@ float mf_predict(gdmf& d, example& ec)
   return ec.pred.scalar;
 }
 
-
-void sd_offset_update(weight_parameters& weights, features& fs, uint64_t offset, float update, float regularization)
+template<class T>
+void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
     weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
 }
 
 void mf_train(gdmf& d, example& ec)
+{ 
+	if ((*d.all).sparse)
+		mf_train<sparse_weight_parameters>(d, ec, (*d.all).sparse_weights);
+	else
+		mf_train<weight_parameters>(d, ec, (*d.all).weights);
+}
+
+template<class T>
+void mf_train(gdmf& d, example& ec, T& weights)
 { vw& all = *d.all;
-  weight_parameters& weights = all.weights;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -164,7 +182,7 @@ void mf_train(gdmf& d, example& ec)
 
   // linear update
   for (features& fs: ec)
-    sd_offset_update(weights, fs, 0, update, regularization);
+    sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
   for (string& i : all.pairs)
@@ -176,14 +194,14 @@ void mf_train(gdmf& d, example& ec)
       { // r^k \cdot x_r
         float r_dot_x = d.scalars[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
+        sd_offset_update<T>(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
         float l_dot_x = d.scalars[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
+        sd_offset_update<T>(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
       }
 
     }
@@ -192,25 +210,35 @@ void mf_train(gdmf& d, example& ec)
     THROW("cannot use triples in matrix factorization");
 }
 
-void set_rand(weight_parameters::iterator& iter, size_t index, uint32_t stride)
+template<class T>
+void set_rand(T::iterator& iter, size_t index, uint32_t stride)
 { 
 	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 	  *w = (float)(0.1 * merand48(index));
 }
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+{
+	if ((*d.all).sparse)
+		save_load<sparse_weight_parameters>(d, model_file, read, text, (*d.all).sparse_weights);
+	else
+		save_load<weight_parameters>(d, model_file, read, text, (*d.all).weights);
+
+}
+
+template<class T>
+void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& weights)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
   if(read)
   { initialize_regressor(*all);
   if (all->random_weights)
-	  all->weights.set_default<set_rand>();
+	  weights.set_default<set_rand<T>>();
   }
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-	 weight_parameters& w = all->weights;
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -219,7 +247,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { weight_parameters::iterator iter = w.begin()+ i;
+	  { T::iterator iter = w.begin()+ i;
 		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
 		{  msg << &(*v) << " ";
 		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),

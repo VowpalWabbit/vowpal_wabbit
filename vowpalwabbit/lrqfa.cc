@@ -28,6 +28,16 @@ example_is_test (example& ec)
 
 template <bool is_learn>
 void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
+{
+	vw& all = *lrq.all;
+	if (all.sparse)
+		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	else
+		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+}
+
+template <bool is_learn, class T>
+void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec, T& w)
 { vw& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
@@ -40,7 +50,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
   unsigned int k = lrq.k;
   float sqrtk = (float) sqrt(k);
-  weight_parameters& w = all.weights;
+
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -55,7 +65,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
           { features& fs = ec.feature_space[left];
             float lfx = fs.values[lfn];
             uint64_t lindex = fs.indicies[lfn];
-			weight_parameters::iterator iter = w.begin();
+			T::iterator iter = w.begin();
             for (unsigned int n = 1; n <= k; ++n)
               { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.weights.stride_shift())); // a feature has k weights in each field
 				(&(*iter))[lindex] += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()

@@ -53,14 +53,22 @@ struct OjaNewton {
     bool random_init;
 
 	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
-	{  weight_parameters& weights = all->weights;
+	{
+		if (all->sparse)
+			initialize_Z<sparse_weight_parameters>(all->sparse_weights);
+		else
+			initialize_Z<weight_parameters>(all->weights);
+	}
+	template<class T>
+	void initialize_Z(T& weights)
+	{ 
 	   if (normalize) { // initialize normalization part
-		 for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+		 for (T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
 		   (&(*iter))[NORM2] = 0.1f;
 	    }
         if(!random_init) {
             // simple initialization
-		  weight_parameters::iterator iter = weights.begin() + 1;
+		  T::iterator iter = weights.begin() + 1;
 		  for (int i = 1; i <= m; ++i, ++iter)
 		  { weights_iterator_iterator<weight> j = iter.begin() + i;
 			*j = 1.f;
@@ -70,7 +78,7 @@ struct OjaNewton {
             // more complicated initialization: orthgonal basis of a random matrix
 
 	    const double PI2 = 2.f * 3.1415927f;
-		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+		for (T::iterator i = weights.begin(); i != weights.end(); ++i)
 		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
 		  {  double r1 = frand48();
 		     double r2 = frand48();
@@ -82,7 +90,7 @@ struct OjaNewton {
              for (int k = 1; k <= j - 1; k++) {
 	            double tmp = 0;
 				
-				weight_parameters::iterator w = weights.begin();
+				T::iterator w = weights.begin();
 		        for (; w != weights.end(); ++w) 
 					tmp += (&(*w))[j] * (&(*w))[k];
 
@@ -91,7 +99,7 @@ struct OjaNewton {
 					(&(*w))[j] -= (float)tmp * (&(*w))[k];
 	         }
 	        double norm = 0;
-			weight_parameters::iterator w = weights.begin();
+			T::iterator w = weights.begin();
 			for (; w != weights.end(); ++w)
 				norm += (&(*w))[j] * (&(*w))[j];
             norm = sqrt(norm);
@@ -228,7 +236,15 @@ struct OjaNewton {
         }
     }
 
-    void check()
+	void check()
+	{
+		if (all->sparse)
+			check<sparse_weight_parameters>(all->sparse_weights);
+		else
+			check<weight_parameters>(all->weights);
+	}
+	template<class T>
+	void check(T& weights)
     {
     	double max_norm = 0;
         for (int i = 1; i <= m; i++)
@@ -272,8 +288,7 @@ struct OjaNewton {
 
         uint32_t length = 1 << all->num_bits;
         //size_t stride_shift = all->stride_shift;
-        weight_parameters& weights = all->weights;
-		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+		for (T::iterator i = weights.begin(); i != weights.end(); ++i)
 		{  weights_iterator_iterator<weight> w_j = i.begin() + 1;
 		   for (int j = 1; j <= m; ++j, ++w_j)
 		     *i += *w_j * b[j] * D[j];
@@ -283,7 +298,7 @@ struct OjaNewton {
         //third step: Z <- ADZ, A, D <- Identity
 
 	    //double norm = 0;
-		weight_parameters::iterator iter = weights.begin();
+		T::iterator iter = weights.begin();
         for (uint32_t i = 0; i < length; ++i, ++iter) {
             memset(tmp, 0, sizeof(float) * (m+1));
 			for (int j = 1; j <= m; j++)

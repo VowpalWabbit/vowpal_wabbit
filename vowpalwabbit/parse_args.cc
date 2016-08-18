@@ -1394,8 +1394,10 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   }
 
   vw* new_model = VW::initialize(init_args.str().c_str());
-
-  new_model->weights.~weight_parameters();
+  if (new_model->sparse)
+	new_model->sparse_weights.~sparse_weight_parameters();
+  else
+	new_model->weights.~weight_parameters();
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance

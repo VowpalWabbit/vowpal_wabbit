@@ -89,6 +89,7 @@ struct lda
   inline float powf(float x, float p);
   inline void expdigammify(vw &all, float *gamma);
   inline void expdigammify_2(vw &all, weight_parameters::iterator gamma, float *norm);
+  inline void expdigammify_2(vw &all, sparse_weight_parameters::iterator gamma, float *norm);
 };
 
 // #define VW_NO_INLINE_SIMD
@@ -335,8 +336,9 @@ void vexpdigammify(vw &all, float *gamma, const float underflow_threshold)
   }
 }
 
-void vexpdigammify_2(vw &all, weight_parameters::iterator gamma, const float *norm, const float underflow_threshold)
-{ weight_parameters::iterator fp = gamma;
+template<class T>
+void vexpdigammify_2(vw &all, T::iterator gamma, const float *norm, const float underflow_threshold)
+{ T::iterator fp = gamma;
   const float *np;
   uint32_t count = 0;
 
