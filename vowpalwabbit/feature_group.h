@@ -256,7 +256,6 @@ struct features {
     sum_feat_sq = 0.f;
     values.erase();
     indicies.erase();
-    free_space_names(0);
     space_names.erase();
   }
 
@@ -288,7 +287,6 @@ struct features {
   {
     values.delete_v();
     indicies.delete_v();
-    free_space_names(0);
     space_names.delete_v();
   }
   void push_back(feature_value v, feature_index i)
@@ -325,7 +323,6 @@ struct features {
   void deep_copy_from(const features& src)
   { copy_array(values, src.values);
     copy_array(indicies, src.indicies);
-    free_space_names(0);
     copy_array_no_memcpy(space_names, src.space_names);
     sum_feat_sq = src.sum_feat_sq;
   }
