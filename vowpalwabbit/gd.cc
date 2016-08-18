@@ -391,12 +391,11 @@ inline float compute_rate_decay(power_data& s, float& fw)
 { weight* w = &fw;
   float rate_decay = 1.f;
   if(adaptive)
-  { if (sqrt_rate)
-    { rate_decay = InvSqrt(w[adaptive]);
+    { if (sqrt_rate)
+	rate_decay = InvSqrt(w[adaptive]);
+      else
+	rate_decay = powf(w[adaptive],s.minus_power_t);
     }
-    else
-      rate_decay = powf(w[adaptive],s.minus_power_t);
-  }
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
@@ -467,9 +466,7 @@ float get_pred_per_update(gd& g, example& ec)
   if (grad_squared == 0 && !stateless) return 1.;
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
@@ -535,6 +532,7 @@ float compute_update(gd& g, example& ec)
 
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
+
   return update;
 }
 
@@ -599,12 +597,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     }
     return;
   }
-
   do
   { brw = 1;
     weight_parameters::iterator v = weights.begin();
     if (read)
-      { if (all.num_bits < 31)//backwards compatible
+      { 
+	if (all.num_bits < 31)//backwards compatible
 	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
 	    i = old_i;
 	  }
@@ -620,11 +618,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
     }
     else// write binary or text
     {
+
 	  v += i;
+
       if (*v != 0.)
         { stringstream msg;
           msg << i;
-
           if (all.num_bits < 31)
             {
               old_i = (uint32_t)i;

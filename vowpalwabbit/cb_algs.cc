@@ -194,9 +194,6 @@ base_learner* cb_algs_setup(vw& all)
                       problem_multiplier);
     l->set_finish_example(finish_example);
   }
-  // preserve the increment of the base learner since we are
-  // _adding_ to the number of problems rather than multiplying.
-  l->increment = base->increment;
   c.scorer = all.scorer;
 
   l->set_finish(finish);

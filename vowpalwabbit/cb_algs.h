@@ -35,7 +35,6 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   }
   else
     scorer->predict(ec, index-1+base);
-
   float pred = ec.pred.scalar;
   ec.pred = p;
 
