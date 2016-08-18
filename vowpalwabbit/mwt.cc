@@ -65,9 +65,17 @@ namespace MWT {
 
     c.evals[new_index].action = value;
   }
-
   template <bool learn, bool exclude, bool is_learn>
   void predict_or_learn(mwt& c, base_learner& base, example& ec)
+  {
+	  if (c.all->sparse)
+		  predict_or_learn(c, base, ec, c.all->sparse_weights);
+	  else
+		  predict_or_learn(c, base, ec, c.all->sparse_weights);
+  }
+
+  template <bool learn, bool exclude, bool is_learn, class T>
+  void predict_or_learn(mwt& c, base_learner& base, example& ec, T& weights)
   {
     c.observation = get_observed_cost(ec.l.cb);
 

@@ -381,7 +381,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, g.all->weights, (float)all.sd->gravity };
+  multipredict_info mp = { count, step, pred, g.all->sparse, g.all->weights,g.all->sparse_weights, (float)all.sd->gravity };
   if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
   else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
   if (all.sd->contraction != 1.)
@@ -579,12 +579,18 @@ void learn(gd& g, base_learner& base, example& ec)
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
-
 void sync_weights(vw& all)
+{
+	if (all.sparse)
+		sync_weights<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		sync_weights<weight_parameters>(all, all.weights);
+}
+template<class T> 
+void sync_weights(vw& all, T& weights)
 { if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
-  weight_parameters& weights = all.weights;
-  weight_parameters::iterator w = weights.begin();
+  T::iterator w = weights.begin();
   for(; w != weights.end() && all.reg_mode; ++w)
     *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;

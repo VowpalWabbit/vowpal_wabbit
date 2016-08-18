@@ -44,7 +44,6 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 template<class T>
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 { vw& all = *d.all;
-  weight_parameters& weights = all.weights;
   uint64_t mask = weights.mask();
   for (features& fs : ec)
   { bool audit = !fs.space_names.empty();
@@ -86,6 +85,16 @@ void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 }
 
 float mf_predict(gdmf& d, example& ec)
+{
+	vw& all = *d.all;
+	if (all.sparse)
+		return mf_predict<sparse_weight_parameters>(d, ec, all.sparse_weights);
+	else
+		return mf_predict<weight_parameters>(d, ec, all.weights);
+}
+
+template<class T>
+float mf_predict(gdmf& d, example& ec, T& weights)
 { vw& all = *d.all;
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
@@ -101,8 +110,9 @@ float mf_predict(gdmf& d, example& ec)
 
   float linear_prediction = 0.;
   // linear terms
+
   for (features& fs : ec)
-    GD::foreach_feature<float, GD::vec_add>(all.weights, fs, linear_prediction);
+	GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -118,12 +128,12 @@ float mf_predict(gdmf& d, example& ec)
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(all.weights, ec.feature_space[(int)i[0]], x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add, T>(weights, ec.feature_space[(int)i[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(all.weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add, T>(weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -300,6 +310,15 @@ void learn(gdmf& d, base_learner&, example& ec)
 void finish(gdmf& d) { d.scalars.delete_v();}
 
 base_learner* gd_mf_setup(vw& all)
+{
+	if (all.sparse)
+		return gd_mf_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return gd_mf_setup<weight_parameters>(all, all.weights);
+}
+
+template <class T>
+base_learner* gd_mf_setup(vw& all, T& weights)
 { if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
@@ -320,7 +339,7 @@ base_learner* gd_mf_setup(vw& all)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.weights.stride_shift((size_t) temp);
+  weights.stride_shift((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -340,7 +359,7 @@ base_learner* gd_mf_setup(vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << all.weights.stride_shift());
+  learner<gdmf>& l = init_learner(&data, learn, 1 << weights.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);

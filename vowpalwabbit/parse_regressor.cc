@@ -31,8 +31,7 @@ struct initial_t
 	weight _initial;
 public:
 	initial_t(weight initial) : _initial(initial){}
-	template<class T>
-	void operator()(T& iter, size_t /*index*/)
+	void operator()(weight_parameters::iterator& iter, size_t /*index*/)
 	{
 		*iter = _initial;
 	}
@@ -71,12 +70,12 @@ void initialize_regressor(vw& all, T& weights)
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  weights.set_default<initial_t>(init);
+	  weights.set_default<initial_t<T>>(init);
   }
   else if (all.random_positive_weights)
-	  weights.set_default<random_positive>();
+	  weights.set_default<random_positive<T>>();
   else if (all.random_weights)
-	  weights.set_default<random_weights>();
+	  weights.set_default<random_weights<T>>();
 }
 
 const size_t default_buf_size = 512;
