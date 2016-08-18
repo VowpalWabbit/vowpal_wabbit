@@ -155,7 +155,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     {
                         name = name,
                         cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
-                        prob = trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)
+                        prob = trainerResult.Label.Action == action ? 1 / (trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
                     })
                 };
             }
