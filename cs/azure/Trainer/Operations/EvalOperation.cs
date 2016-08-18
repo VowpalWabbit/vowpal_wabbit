@@ -110,7 +110,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
             }
 
 
-            var pi_a_x = trainerResult.ProbabilitiesOrderedByRanking[trainerResult.Label.Action - 1];
+            var pi_a_x = trainerResult.Probabilities[trainerResult.Label.Action - 1];
             var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);
 
             yield return new EvalData
