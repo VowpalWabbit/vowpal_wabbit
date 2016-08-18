@@ -90,7 +90,6 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   { gen_cs_example_ips(examples, mydata.cs_labels);
     GEN_CS::call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels);
     swap(examples[0]->pred.a_s, mydata.a_s);
-	examples[0]->prediction_type = prediction_type::action_scores;
   }
   //second train on _one_ action (which requires up to 3 examples).
   //We must go through the cost sensitive classifier layer to get
@@ -103,7 +102,6 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
   swap(examples[0]->pred.a_s, mydata.a_s);
-  examples[0]->prediction_type = prediction_type::action_scores;
 }
 
 bool test_adf_sequence(cb_adf& data)
@@ -401,7 +399,8 @@ base_learner* cb_adf_setup(vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier);
+  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
+	  prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   ld.gen_cs.scorer = all.scorer;

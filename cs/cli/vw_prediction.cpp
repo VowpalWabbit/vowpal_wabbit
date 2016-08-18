@@ -11,12 +11,15 @@ license as described in the file LICENSE.
 
 namespace VW
 {
-	void CheckExample(example* ex, prediction_type::prediction_type_t type)
+	void CheckExample(vw* vw, example* ex, prediction_type::prediction_type_t type)
 	{
+		if (vw == nullptr)
+			throw gcnew ArgumentNullException("vw");
+
 		if (ex == nullptr)
 			throw gcnew ArgumentNullException("ex");
 
-		auto ex_pred_type = ex->prediction_type;
+		auto ex_pred_type = vw->l->pred_type;
 		if (ex_pred_type != type)
 		{
 			auto sb = gcnew StringBuilder();
@@ -31,7 +34,7 @@ namespace VW
 
 	float VowpalWabbitScalarPredictionFactory::Create(vw* vw, example* ex)
     {
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
         try
         {
@@ -43,7 +46,7 @@ namespace VW
 
     VowpalWabbitScalar VowpalWabbitScalarConfidencePredictionFactory::Create(vw* vw, example* ex)
     {
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
 		try
 		{
@@ -59,7 +62,7 @@ namespace VW
 
     cli::array<float>^ VowpalWabbitScalarsPredictionFactory::Create(vw* vw, example* ex)
     {
-	  CheckExample(ex, PredictionType);
+	  CheckExample(vw, ex, PredictionType);
 
       try
       {
@@ -76,14 +79,14 @@ namespace VW
 
 	float VowpalWabbitProbabilityPredictionFactory::Create(vw* vw, example* ex)
 	{
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
 		return ex->pred.prob;
 	}
 
 	cli::array<float>^ VowpalWabbitProbabilitiesPredictionFactory::Create(vw* vw, example* ex)
 	{
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
 		try
 		{
@@ -98,7 +101,7 @@ namespace VW
 
     float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
     {
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
         try
         {
@@ -109,14 +112,14 @@ namespace VW
 
 	uint32_t VowpalWabbitMulticlassPredictionFactory::Create(vw* vw, example* ex)
 	{
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
 		return ex->pred.multiclass;
 	}
 
 	cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(vw* vw, example* ex)
     {
-		CheckExample(ex, prediction_type::multilabels);
+		CheckExample(vw, ex, prediction_type::multilabels);
 
         size_t length;
         uint32_t* labels;
@@ -140,7 +143,7 @@ namespace VW
 
     cli::array<ActionScore>^ VowpalWabbitActionScorePredictionFactory::Create(vw* vw, example* ex)
     {
-		CheckExample(ex, PredictionType);
+		CheckExample(vw, ex, PredictionType);
 
 		auto& a_s = ex->pred.a_s;
 		auto values = gcnew cli::array<ActionScore>((int)a_s.size());
@@ -172,7 +175,7 @@ namespace VW
 		if (ex == nullptr)
 			throw gcnew ArgumentNullException("ex");
 
-		switch (ex->prediction_type)
+		switch (vw->l->pred_type)
 		{
 		case prediction_type::scalar:
 			return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
@@ -192,7 +195,7 @@ namespace VW
 			{
 				auto sb = gcnew StringBuilder();
 				sb->Append("Unsupported prediction type: ");
-				sb->Append(gcnew String(prediction_type::to_string(ex->prediction_type)));
+				sb->Append(gcnew String(prediction_type::to_string(vw->l->pred_type)));
 				throw gcnew ArgumentException(sb->ToString());
 			}
 		}

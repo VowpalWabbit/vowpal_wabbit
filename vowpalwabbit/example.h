@@ -27,21 +27,6 @@ const unsigned char conditioning_namespace = 134;// this is \x86
 const unsigned char dictionary_namespace  = 135; // this is \x87
 const unsigned char node_id_namespace  = 136; // this is \x88
 
-namespace prediction_type 
-{
-  enum prediction_type_t
-  { scalar,
-    scalars,
-    action_scores,
-    multiclass,
-    multilabels,
-    probs,
-    prob
-  };
-  
-  const char* to_string(prediction_type_t prediction_type);
-}
-
 typedef union
 { label_data simple;
   MULTICLASS::label_t multi;
@@ -97,7 +82,6 @@ struct example // core example datatype.
 
   //output prediction
   polyprediction pred;
-  prediction_type::prediction_type_t prediction_type;
 
   // input fields
   polylabel l;

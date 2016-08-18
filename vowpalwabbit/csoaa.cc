@@ -93,7 +93,6 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   }
 
   ec.pred.multiclass = prediction;
-  ec.prediction_type = prediction_type::multiclass;
   ec.l.cs = ld;
 }
 
@@ -116,7 +115,7 @@ base_learner* csoaa_setup(vw& all)
   c.pred = calloc_or_throw<polyprediction>(c.num_classes);
 
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>,
-                                   predict_or_learn<false>, c.num_classes);
+                                   predict_or_learn<false>, c.num_classes, prediction_type::multiclass);
   all.p->lp = cs_label;
   all.label_type = label_type::cs;
 
@@ -435,11 +434,9 @@ void do_actual_learning(ldf& data, base_learner& base)
   { data.stored_preds[0].erase();
     if (start_K > 0)
     { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
-	data.ec_seq[0]->prediction_type = prediction_type::action_scores;
     }
 	for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
-	  data.ec_seq[k]->prediction_type = prediction_type::action_scores;
       data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
   }
@@ -450,7 +447,6 @@ void do_actual_learning(ldf& data, base_learner& base)
         data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
-	  data.ec_seq[k]->prediction_type = prediction_type::action_scores;
 	}
   }
   /////////////////////// remove header
@@ -468,13 +464,11 @@ void do_actual_learning(ldf& data, base_learner& base)
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
       float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
 	  data.ec_seq[k]->pred.prob = prob;
-	  data.ec_seq[k]->prediction_type = prediction_type::prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (size_t k=start_K; k<K; k++)
 	{ data.ec_seq[k]->pred.prob /= sum_prob;
-	  data.ec_seq[k]->prediction_type = prediction_type::prob;
 	}
   }
 }
@@ -735,22 +729,22 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
 
 base_learner* csldf_setup(vw& all)
 { if (missing_option<string, true>(all, "csoaa_ldf", "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-      && missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
-    return nullptr;
-  new_options(all, "LDF Options")
-  ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-  ("csoaa_rank", "Return actions sorted by score order")
-  ("probabilities", "predict probabilites of all classes");
-  add_options(all);
+		&& missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
+		return nullptr;
+	new_options(all, "LDF Options")
+		("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
+		("csoaa_rank", "Return actions sorted by score order")
+		("probabilities", "predict probabilites of all classes");
+	add_options(all);
 
-  po::variables_map& vm = all.vm;
-  ldf& ld = calloc_or_throw<ldf>();
+	po::variables_map& vm = all.vm;
+	ldf& ld = calloc_or_throw<ldf>();
 
-  ld.all = &all;
-  ld.need_to_clear = true;
-  ld.first_pass = true;
+	ld.all = &all;
+	ld.need_to_clear = true;
+	ld.first_pass = true;
 
-  string ldf_arg;
+	string ldf_arg;
 
   if( vm.count("csoaa_ldf") )
   { ldf_arg = vm["csoaa_ldf"].as<string>();
@@ -763,16 +757,16 @@ base_learner* csldf_setup(vw& all)
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
-    *all.file_options << " --csoaa_rank";
-	all.delete_prediction = delete_action_scores;
-  }
+		*all.file_options << " --csoaa_rank";
+		all.delete_prediction = delete_action_scores;
+	}
 
-  all.p->lp = COST_SENSITIVE::cs_label;
-  all.label_type = label_type::cs;
+	all.p->lp = COST_SENSITIVE::cs_label;
+	all.label_type = label_type::cs;
 
-  ld.treat_as_classifier = false;
-  ld.is_singleline = false;
-  if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
+	ld.treat_as_classifier = false;
+	ld.is_singleline = false;
+if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
   { ld.treat_as_classifier = false;
   }
   else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0)
@@ -807,18 +801,26 @@ base_learner* csldf_setup(vw& all)
   { ld.is_probabilities = false;
   }
 
-  all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
+	all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-  /*if (all.add_constant) {
-    all.add_constant = false;
-    }*/
-  features fs;
-  ld.label_features.init(256, fs, LabelDict::size_t_eq);
-  ld.label_features.get(1, 94717244); // TODO: figure this out
+	/*if (all.add_constant) {
+	  all.add_constant = false;
+	  }*/
+	features fs;
+	ld.label_features.init(256, fs, LabelDict::size_t_eq);
+	ld.label_features.get(1, 94717244); // TODO: figure this out
+	prediction_type::prediction_type_t pred_type;
+
+	if (ld.rank)
+		pred_type = prediction_type::multiclass;
+	else if (ld.is_probabilities)
+		pred_type = prediction_type::prob;
+	else
+		pred_type = prediction_type::action_scores;
 
   ld.read_example_this_loop = 0;
   ld.need_to_clear = false;
-  learner<ldf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+  learner<ldf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1, pred_type);
   if (ld.is_singleline)
     l.set_finish_example(finish_singleline_example);
   else

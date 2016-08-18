@@ -282,7 +282,6 @@ void predict(log_multi& b,  base_learner& base, example& ec)
     depth ++;
   }
   ec.pred.multiclass = b.nodes[cn].max_count_label;
-  ec.prediction_type = prediction_type::multiclass;
   ec.l.multi = mc;
 }
 
@@ -308,7 +307,6 @@ void learn(log_multi& b, base_learner& base, example& ec)
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
     ec.pred.multiclass = start_pred;
-	ec.prediction_type = prediction_type::multiclass;
 	ec.l.multi = mc;
   }
 }

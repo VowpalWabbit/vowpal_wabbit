@@ -13,7 +13,6 @@ void predict_or_learn(char&, LEARNER::base_learner& base, example& ec)
     ec.pred.scalar = 1;
   else
     ec.pred.scalar = -1;
-  ec.prediction_type = prediction_type::scalar;
 
   if (ec.l.simple.label != FLT_MAX)
   { if (fabs(ec.l.simple.label) != 1.f)

@@ -143,7 +143,6 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
       }
     else
       { ec.pred.scalar = first_prediction;
-	    ec.prediction_type = prediction_type::scalar;
         ec.loss = first_loss;
         ec.confidence = first_uncertainty;
       }
@@ -218,7 +217,7 @@ base_learner* lrq_setup(vw& all)
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
-                                      predict_or_learn<false>, 1 + maxk);
+	  predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);
 

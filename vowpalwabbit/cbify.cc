@@ -81,7 +81,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.cb_label.costs.erase();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
-  ec.prediction_type = prediction_type::action_scores;
 
   //Call the cb_explore algorithm. It returns a vector of probabilities for each action
   base.predict(ec);
@@ -105,7 +104,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
   ec.pred.multiclass = action;
-  ec.prediction_type = prediction_type::multiclass;
 }
 
 base_learner* cbify_setup(vw& all)

@@ -77,7 +77,6 @@ void learn_eval(cb& data, base_learner&, example& ec)
     ld.event.costs[i].partial_prediction = data.cb_cs_ld.costs[i].partial_prediction;
 
   ec.pred.multiclass = ec.l.cb_eval.action;
-  ec.prediction_type = prediction_type::multiclass;
 }
 
 void output_example(vw& all, cb& data, example& ec, CB::label& ld)
@@ -191,12 +190,12 @@ base_learner* cb_algs_setup(vw& all)
 
   learner<cb>* l;
   if (eval)
-  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier);
+  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   { l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>,
-                      problem_multiplier);
+                      problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
   c.scorer = all.scorer;

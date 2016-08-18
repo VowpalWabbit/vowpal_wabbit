@@ -130,7 +130,6 @@ namespace MWT {
       preds.push_back((float)c.evals[index].cost / (float)c.total);
 
     ec.pred.scalars = preds;
-	ec.prediction_type = prediction_type::scalars;
   }
 
   void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
@@ -167,10 +166,8 @@ namespace MWT {
       {
 	v_array<float> temp = ec.pred.scalars;
 	ec.pred.multiclass = (uint32_t)temp[0];
-	ec.prediction_type = prediction_type::multiclass;
 	CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
 	ec.pred.scalars = temp;
-	ec.prediction_type = prediction_type::scalars;
 	}
     VW::finish_example(all, &ec);
   }
@@ -261,11 +258,11 @@ base_learner* mwt_setup(vw& all)
   learner<mwt>* l;
   if (c.learn)
     if (all.vm.count("exclude_eval"))
-      l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1);
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
     else
-      l = &init_learner(&c, setup_base(all), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1);
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
   else
-    l = &init_learner(&c, setup_base(all), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1);
+    l = &init_learner(&c, setup_base(all), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

@@ -33,24 +33,6 @@ float collision_cleanup(features& fs)
   return sum_sq;
 }
 
-namespace prediction_type
-{
-#define CASE(type) case type: return #type; 
-
-  const char* to_string(prediction_type_t prediction_type)
-  { switch (prediction_type)
-    { CASE(scalar)
-      CASE(scalars)
-      CASE(action_scores)
-      CASE(multiclass)
-      CASE(multilabels)
-      CASE(probs)
-      CASE(prob)
-      default: return "<unsupported>";
-    }
-  }
-}
-
 namespace VW
 {
 	void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))

@@ -41,7 +41,6 @@ void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec)
     cout << "label " << multilabels.label_v[multilabel_index] << " is not in {0," << o.k-1 << "} This won't work right." << endl;
 
   ec.pred.multilabels = preds;
-  ec.prediction_type = prediction_type::multilabels;
   ec.l.multilabels = multilabels;
 }
 
@@ -58,7 +57,7 @@ LEARNER::base_learner* multilabel_oaa_setup(vw& all)
   data.k = all.vm["multilabel_oaa"].as<size_t>();
 
   LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>,
-                                   predict_or_learn<false>, data.k);
+                                   predict_or_learn<false>, data.k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
   all.label_type = label_type::multi;

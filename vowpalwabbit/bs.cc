@@ -30,7 +30,6 @@ struct bs
 
 void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
 { ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-  ec.prediction_type = prediction_type::scalar;
   ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
 
@@ -107,7 +106,6 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
 
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
   ec.pred.scalar = (float)current_label;
-  ec.prediction_type = prediction_type::scalar;
 
   // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes" and getLoss()
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;

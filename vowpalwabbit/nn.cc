@@ -301,7 +301,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
           ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
-		  ec.prediction_type = prediction_type::scalar;
 		  if (ec.l.simple.label != hidden_units[i].scalar)
             base.update(ec, i);
         }
@@ -334,7 +333,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   ec.partial_prediction = save_partial_prediction;
   ec.pred.scalar = save_final_prediction;
-  ec.prediction_type = prediction_type::scalar;
   ec.loss = save_ec_loss;
 
   n.all->sd = save_sd;

@@ -718,7 +718,6 @@ void process_example(vw& all, bfgs& b, example& ec)
   /********************************************************************/
   if (b.gradient_pass)
   { ec.pred.scalar = predict_and_gradient(all, ec);//w[0] & w[1]
-    ec.prediction_type = prediction_type::scalar;
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
@@ -731,7 +730,6 @@ void process_example(vw& all, bfgs& b, example& ec)
     if (b.example_number >= b.predictions.size())//Make things safe in case example source is strange.
       b.example_number = b.predictions.size()-1;
     ec.pred.scalar = b.predictions[b.example_number];
-	ec.prediction_type = prediction_type::scalar;
     ec.partial_prediction = b.predictions[b.example_number];
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld.label);
@@ -793,7 +791,6 @@ void end_pass(bfgs& b)
 void predict(bfgs& b, base_learner&, example& ec)
 { vw* all = b.all;
   ec.pred.scalar = bfgs_predict(*all,ec);
-  ec.prediction_type = prediction_type::scalar;
 }
 
 void learn(bfgs& b, base_learner& base, example& ec)

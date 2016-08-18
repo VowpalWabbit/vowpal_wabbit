@@ -104,7 +104,6 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
     }
     else
     { ec.pred.scalar = first_prediction;
-	  ec.prediction_type = prediction_type::scalar;
       ec.loss = first_loss;
     }
 
