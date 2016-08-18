@@ -716,11 +716,8 @@ void setup_example(vw& all, example* ae)
   if (all.ignore_some)
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
       if (all.ignore[*i])
-      { //delete namespace
-        ae->feature_space[*i].erase();
-        memmove(i, i + 1, (ae->indices.end() - (i + 1))*sizeof(*i));
-        ae->indices.end()--;
-        i--;
+      { //ignore this namespace
+        ae->feature_space[*i].ignored = 1;      
       }
 
   if(all.ngram_strings.size() > 0)
@@ -740,8 +737,11 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   for (features& fs : *ae)
-  { ae->num_features += fs.size();
-    ae->total_sum_feat_sq += fs.sum_feat_sq;
+  { 
+    if (!fs.ignored) {
+      ae->num_features += fs.size();
+      ae->total_sum_feat_sq += fs.sum_feat_sq;
+    }
   }
 
   size_t new_features_cnt;
