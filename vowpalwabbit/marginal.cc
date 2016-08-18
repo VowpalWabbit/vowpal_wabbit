@@ -21,7 +21,7 @@ struct data
 template <bool is_learn>
 void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 {
-  uint64_t mask = sm.all->reg.weight_mask;
+  uint64_t mask = sm.all->weights.mask();
   for (example::iterator i = ec.begin(); i!= ec.end(); ++i)
     {
       namespace_index n = i.index();
