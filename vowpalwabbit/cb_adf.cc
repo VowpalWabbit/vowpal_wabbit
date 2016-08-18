@@ -404,7 +404,6 @@ base_learner* cb_adf_setup(vw& all)
   learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
-  l.increment = base->increment;
   ld.gen_cs.scorer = all.scorer;
 
   l.set_finish(CB_ADF::finish);
