@@ -94,7 +94,7 @@ learner<T>& init_learner(T*, base_learner*, void(*learn)(T&, base_learner&, exam
 	void(*predict)(T&, base_learner&, example&), size_t ws = 1);
 template<class T>
 learner<T>& init_learner(T*, base_learner*, void (*learn)(T&, base_learner&, example&),
-                         void (*predict)(T&, base_learner&, example&), size_t ws);
+                         void (*predict)(T&, base_learner&, example&), size_t ws, prediction_type::prediction_type_t);
 
 template<class T>
 struct learner
