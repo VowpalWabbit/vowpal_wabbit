@@ -161,29 +161,6 @@ namespace VW
 			}
 		};
 
-		/// <summary>
-		/// A scalar prediction result.
-		/// </summary>
-		public ref class VowpalWabbitProbabilitiesPredictionFactory sealed : IVowpalWabbitPredictionFactory<cli::array<float>^>
-		{
-		public:
-			/// <summary>
-			/// Extracts prediction results from example.
-			/// </summary>
-			virtual cli::array<float>^ Create(vw* vw, example* ex) sealed;
-
-			/// <summary>
-			/// Returns the supported prediction type.
-			/// </summary>
-			property prediction_type::prediction_type_t PredictionType
-			{
-				virtual prediction_type::prediction_type_t get() sealed
-				{
-					return prediction_type::probs;
-				}
-			}
-		};
-
         /// <summary>
         /// A cost sensitive prediction result.
         /// </summary>
@@ -364,11 +341,5 @@ namespace VW
 			/// Use for dynamicially determined predictions.
 			/// </summary>
 			static initonly VowpalWabbitProbabilityPredictionFactory^ Probability = gcnew VowpalWabbitProbabilityPredictionFactory;
-			
-			/// <summary>
-			/// Use for dynamicially determined predictions.
-			/// </summary>
-			static initonly VowpalWabbitProbabilitiesPredictionFactory^ Probabilities = gcnew VowpalWabbitProbabilitiesPredictionFactory;
-			
         };
 }

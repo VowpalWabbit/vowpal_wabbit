@@ -25,31 +25,45 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
+
+struct initial_t
+{private:
+	weight _initial;
+public:
+	initial_t(weight initial) : _initial(initial){}
+	void operator()(weight_parameters::iterator& iter, size_t /*index*/)
+	{
+		*iter = _initial;
+	}
+};
+void random_positive(weight_parameters::iterator& iter, size_t ind)
+{*iter = (float)(0.1 * merand48(ind));
+}
+
+void random_weights(weight_parameters::iterator& iter, size_t ind)
+{*iter = (float)(merand48(ind) - 0.5);
+}
 void initialize_regressor(vw& all)
 { // Regressor is already initialized.
-  if (all.reg.weight_vector != nullptr)
-  { return;
-  }
-
+  if (all.weights.not_null())
+    return;
   size_t length = ((size_t)1) << all.num_bits;
-  all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
   try
-    { all.reg.weight_vector = calloc_mergable_or_throw<weight>(length << all.reg.stride_shift);
-    }
+    { new(&all.weights) weight_parameters(length, all.weights.stride_shift()); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (all.reg.weight_vector == nullptr)
+  if (!all.weights.not_null())
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-    for (size_t j = 0; j < length << all.reg.stride_shift; j+= ( ((size_t)1) << all.reg.stride_shift))
-      all.reg.weight_vector[j] = all.initial_weight;
+  {
+	  initial_t init(all.initial_t);
+	  all.weights.set_default<initial_t>(init);
+  }
   else if (all.random_positive_weights)
-    for (size_t j = 0; j < length; j++)
-      all.reg.weight_vector[j << all.reg.stride_shift] = (float)(0.1 * frand48());
+	  all.weights.set_default<random_positive>();
   else if (all.random_weights)
-    for (size_t j = 0; j < length; j++)
-      all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
+	  all.weights.set_default<random_weights>();
 }
 
 const size_t default_buf_size = 512;
@@ -464,8 +478,7 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
 void parse_mask_regressor_args(vw& all)
 { po::variables_map& vm = all.vm;
   if (vm.count("feature_mask"))
-  { size_t length = ((size_t)1) << all.num_bits;
-    string mask_filename = vm["feature_mask"].as<string>();
+  { string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor"))
     { vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0])   //-i and -mask are from same file, just generate mask
@@ -491,9 +504,8 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-      for (size_t j = 0; j < length; j++)
-      { all.reg.weight_vector[j << all.reg.stride_shift] = 0.;
-      }
+	  weight_parameters& weights = all.weights;
+	  weights.set_zero(0);
     }
     else
     { // If no initial regressor, just clear out the options loaded from the header.

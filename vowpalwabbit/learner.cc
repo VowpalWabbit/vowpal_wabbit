@@ -24,7 +24,6 @@ namespace prediction_type
 				CASE(action_scores)
 				CASE(multiclass)
 				CASE(multilabels)
-				CASE(probs)
 				CASE(prob)
 		default: return "<unsupported>";
 		}

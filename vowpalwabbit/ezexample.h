@@ -165,7 +165,7 @@ public:
   { if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->reg.stride_shift);
+    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;
