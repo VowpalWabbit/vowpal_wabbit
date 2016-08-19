@@ -113,7 +113,8 @@ namespace cs_unittest
                     Foo = 1,
                     Age = "25",
                     DontConsider = "XXX",
-                    EscapeCharacterString = "test: how | if\tremoved"
+                    EscapeCharacterString = "a: a | a\ta",
+                    EscapeCharactersText = "b: b | b\tb"
                 },
                 Ns2 = new Namespace2
                 {
@@ -130,7 +131,7 @@ namespace cs_unittest
                 EnableThreadSafeExamplePooling = true
             }))
             {
-                validator.Validate("25  |  Clicks:5 MoreClicks:0  |a Bar:1 Age25 EscapeCharacterStringtest__how___if_removed  |b Marker",
+                validator.Validate("25  |  Clicks:5 MoreClicks:0  |a Bar:1 Age25 EscapeCharacterStringa__a___a_a b_ b _ b b  |b Marker",
                     jsonContextString,
                     VowpalWabbitLabelComparator.Simple);
             }

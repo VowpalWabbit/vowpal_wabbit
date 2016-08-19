@@ -167,7 +167,7 @@ namespace VW.Serializer
             var words = value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in words)
             {
-                var featureHash = context.VW.HashFeature(s.Replace('|', '_'), ns.NamespaceHash);
+                var featureHash = context.VW.HashFeature(escapeCharacters.Replace(s, "_"), ns.NamespaceHash);
                 context.NamespaceBuilder.AddFeature(featureHash, 1f);
             }
 
@@ -178,7 +178,7 @@ namespace VW.Serializer
 
             foreach (var s in words)
             {
-                context.AppendStringExample(feature.Dictify, " {0}", s);
+                context.AppendStringExample(feature.Dictify, " {0}", escapeCharacters.Replace(s, "_"));
             }
         }
 

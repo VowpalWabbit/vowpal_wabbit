@@ -310,6 +310,9 @@ namespace cs_unittest
 
         [JsonProperty]
         public string EscapeCharacterString { get; set; }
+
+        [JsonProperty("_text")]
+        public string EscapeCharactersText { get; set; }
     }
 
     public class Namespace2
