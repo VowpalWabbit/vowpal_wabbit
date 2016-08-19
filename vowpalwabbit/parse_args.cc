@@ -68,6 +68,7 @@ license as described in the file LICENSE.
 #include "vw_allreduce.h"
 #include "OjaNewton.h"
 #include "audit_regressor.h"
+#include "marginal.h"
 
 using namespace std;
 //
@@ -1063,6 +1064,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(marginal_setup);
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
   all.reduction_stack.push_back(lrqfa_setup);
@@ -1263,7 +1265,7 @@ void parse_sources(vw& all, io_buf& model)
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all.wpp = (1 << i) >> all.reg.stride_shift;
+  all.wpp = (1 << i) >> all.weights.stride_shift();
 
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
@@ -1395,14 +1397,12 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
   vw* new_model = VW::initialize(init_args.str().c_str());
 
-  free_it(new_model->reg.weight_vector);
+  new_model->weights.~weight_parameters();
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
-  new_model->reg = vw_model->reg; // regressor
+  new_model->weights.shallow_copy(vw_model->weights); // regressor
   new_model->sd = vw_model->sd; // shared data
-
-  new_model->seeded = true;
 
   return new_model;
 }
@@ -1486,14 +1486,13 @@ void finish(vw& all, bool delete_all)
   { all.l->finish();
     free_it(all.l);
   }
-  if (all.reg.weight_vector != nullptr && !all.seeded) // don't free weight vector if it is shared with another instance
-    free(all.reg.weight_vector);
+  
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.seeded)
+  if (!all.weights.seeded())
   { delete(all.sd->ldict);
     free(all.sd);
   }

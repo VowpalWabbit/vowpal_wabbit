@@ -63,7 +63,7 @@ namespace VW.Serializer
 
             var exampleType = typeof(TExample);
             if (!exampleType.IsVisible)
-                throw new ArgumentException($"Type '{typeof(TExample)}' must be public and all enclosing types must be public.");
+                throw new ArgumentException("Type '{typeof(TExample)}' must be public and all enclosing types must be public.");
 
             this.serializerFunc = compiler.Func(vw);
 

@@ -140,7 +140,7 @@ namespace VW
 
     System::String^ FormatFeature(vw* vw, feature_value& f1, feature_index& i1)
     {
-        uint64_t masked_weight_index1 = i1 & vw->reg.weight_mask;
+		uint64_t masked_weight_index1 = i1 & vw->weights.mask();
 
         return System::String::Format(
             "weight_index = {0}/{1}, x = {2}",
@@ -184,8 +184,8 @@ namespace VW
         vector<size_t> fa_missing;
         for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
         {
-            auto masked_weight_index = fa.indicies[ia] & vw->reg.weight_mask;
-            auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+            auto masked_weight_index = fa.indicies[ia] & vw->weights.mask();
+            auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
 
             /*System::Diagnostics::Debug::WriteLine(System::String::Format("{0} -> {1} vs {2} -> {3}",
               fa.indicies[ia], masked_weight_index,
@@ -201,7 +201,7 @@ namespace VW
                 bool found = false;
                 for (ib = 0; ib < fb.values.size(); ib++)
                 {
-                    auto other_masked_weight_index = fb.indicies[ib] & vw->reg.weight_mask;
+                    auto other_masked_weight_index = fb.indicies[ib] & vw->weights.mask();
                     if (masked_weight_index == other_masked_weight_index)
                     {
                         if (!FloatEqual(fa.values[ia], fb.values[ib]))
@@ -231,7 +231,7 @@ namespace VW
             for (size_t& ia : fa_missing)
             {
                 diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
-                    fa.indicies[ia] & vw->reg.weight_mask,
+                    fa.indicies[ia] & vw->weights.mask(),
                     fa.values[ia]);
             }
 
@@ -402,8 +402,12 @@ namespace VW
     }
 
     VowpalWabbitFeature::VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index)
-      : m_example(example), m_x(x), m_weight_index(weight_index)
+      : m_example(example), m_vw(m_example->Owner->Native), m_x(x), m_weight_index(weight_index)
     { }
+
+	VowpalWabbitFeature::VowpalWabbitFeature(VowpalWabbit^ vw, feature_value x, uint64_t weight_index)
+      : m_vw(vw), m_x(x), m_weight_index(weight_index)
+	{ }
 
     float VowpalWabbitFeature::X::get()
     {
@@ -417,22 +421,28 @@ namespace VW
 
 	uint64_t VowpalWabbitFeature::WeightIndex::get()
 	{
+		if (m_example == nullptr)
+			throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
+
 		vw* vw = m_example->Owner->Native->m_vw;
-		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->reg.stride_shift) & vw->parse_mask;
+		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
 	}
 
 	float VowpalWabbitFeature::Weight::get()
 	{
+		if (m_example == nullptr)
+			throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
+
 		vw* vw = m_example->Owner->Native->m_vw;
 
-		uint64_t weightIndex = (m_weight_index + m_example->m_example->ft_offset) & vw->reg.weight_mask;
-		return vw->reg.weight_vector[weightIndex];
+		uint64_t weightIndex = m_weight_index + m_example->m_example->ft_offset;
+		return vw->weights[weightIndex];
 	}
 
 
 	float VowpalWabbitFeature::AuditWeight::get()
 	{
-		vw* vw = m_example->Owner->Native->m_vw;
+		vw* vw = m_vw->m_vw;
 
 		return GD::trunc_weight(Weight, (float)vw->sd->gravity) * (float)vw->sd->contraction;
 	}

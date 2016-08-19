@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 namespace po = boost::program_options;
 
 #include "v_array.h"
+#include "array_parameters.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
 #include "comp_io.h"
@@ -117,12 +118,6 @@ struct version_struct
 const version_struct version(PACKAGE_VERSION);
 
 typedef float weight;
-
-struct regressor
-{ weight* weight_vector;
-  uint64_t weight_mask; // (stride*(1 << num_bits) -1)
-  uint32_t stride_shift;
-};
 
 typedef v_hashmap< substring, features* > feature_dict;
 
@@ -396,6 +391,18 @@ enum AllReduceType
 
 class AllReduce;
 
+// avoid name clash
+namespace label_type
+{ enum label_type_t
+  {	simple,
+    cb, // contextual-bandit
+    cb_eval, // contextual-bandit evaluation
+    cs, // cost-sensitive
+    multi,
+    mc
+  };
+}
+
 struct vw
 { shared_data* sd;
 
@@ -487,8 +494,7 @@ struct vw
   std::vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   std::vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
 
-  void (*delete_prediction)(void*);
-  bool audit;//should I print lots of debugging information?
+  void(*delete_prediction)(void*);bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
   bool active;
@@ -537,7 +543,8 @@ struct vw
   time_t init_time;
 
   std::string final_regressor_name;
-  regressor reg;
+
+  weight_parameters weights;
 
   size_t max_examples; // for TLC
 
@@ -548,10 +555,10 @@ struct vw
   bool  progress_add;   // additive (rather than multiplicative) progress dumps
   float progress_arg;   // next update progress dump multiplier
 
-  bool seeded; // whether the instance is sharing model state with others
-
   std::map< std::string, size_t> name_index_map;
 
+  label_type::label_type_t label_type;
+  
   vw();
 };
 

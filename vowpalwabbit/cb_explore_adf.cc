@@ -451,7 +451,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   data.all = &all;
   if (count(all.args.begin(), all.args.end(), "--cb_adf") == 0)
     all.args.push_back("--cb_adf");
-
+  
   all.delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
@@ -507,6 +507,7 @@ base_learner* cb_explore_adf_setup(vw& all)
 
   base_learner* base = setup_base(all);
   all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
 
   learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier);
 

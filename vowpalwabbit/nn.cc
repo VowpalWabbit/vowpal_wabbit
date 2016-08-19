@@ -72,7 +72,7 @@ void finish_setup (nn& n, vw& all)
 
   memset (&n.output_layer, 0, sizeof (n.output_layer));
   n.output_layer.indices.push_back(nn_output_namespace);
-  uint64_t nn_index = nn_constant << all.reg.stride_shift;
+  uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)
@@ -301,7 +301,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
           ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
-          if (ec.l.simple.label != hidden_units[i].scalar)
+		  if (ec.l.simple.label != hidden_units[i].scalar)
             base.update(ec, i);
         }
       }

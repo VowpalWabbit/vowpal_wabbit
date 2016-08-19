@@ -42,13 +42,13 @@ inline void delete_scalars(void* v)
 }
 
 typedef union
-{ float scalar;
-  v_array<float> scalars;//a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.  Also used for probabilities.
-  uint32_t multiclass;
-  MULTILABEL::labels multilabels;
-  float* probs; // for --probabilities --oaa
-  float prob; // for --probabilities --csoaa_ldf=mc
+{
+	float scalar;
+	v_array<float> scalars;//a sequence of scalar predictions
+	ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.  Also used for probabilities.
+	uint32_t multiclass;
+	MULTILABEL::labels multilabels;
+	float prob; // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
 typedef unsigned char namespace_index;
@@ -72,6 +72,8 @@ struct example // core example datatype.
     { _index++;
       return *this;
     }
+
+    namespace_index index(){ return *_index; }
 
     bool operator==(const iterator& rhs) { return _index == rhs._index; }
     bool operator!=(const iterator& rhs) { return _index != rhs._index; }

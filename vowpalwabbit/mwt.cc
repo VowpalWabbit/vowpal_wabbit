@@ -55,7 +55,7 @@ namespace MWT {
       cout << "error " << val << " is not a valid action " << endl;
 
     uint32_t value = (uint32_t) val;
-    uint64_t new_index = ((index & c.all->reg.weight_mask) >> c.all->reg.stride_shift);
+    uint64_t new_index = ((index & c.all->weights.mask()) >> c.all->weights.stride_shift());
 
     if (!c.evals[new_index].seen)
       {
@@ -77,7 +77,7 @@ namespace MWT {
 	//For each nonzero feature in observed namespaces, check it's value.
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
-	    GD::foreach_feature<mwt, value_policy>(c.all->reg.weight_vector, c.all->reg.weight_mask, ec.feature_space[ns], c);
+	    GD::foreach_feature<mwt, value_policy>(c.all->weights, ec.feature_space[ns], c);
 	for (uint64_t policy : c.policies)
 	  {
 	    c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action);
@@ -94,10 +94,9 @@ namespace MWT {
 	      if (learn)
 		{
 		  c.feature_space[ns].erase();
-		  uint32_t stride_shift = c.all->reg.stride_shift;
+		  uint32_t stride_shift = c.all->weights.stride_shift();
 		  for ( features::iterator& f : ec.feature_space[ns])
-		    {
-		      uint64_t new_index=((f.index()& c.all->reg.weight_mask) >> stride_shift)*c.num_classes +(uint64_t)f.value();
+		    { uint64_t new_index=((f.index()& c.all->weights.mask()) >> stride_shift)*c.num_classes +(uint64_t)f.value();
 		      c.feature_space[ns].push_back(1, new_index << stride_shift);
 		    }
 		}
@@ -168,7 +167,7 @@ namespace MWT {
 	ec.pred.multiclass = (uint32_t)temp[0];
 	CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
 	ec.pred.scalars = temp;
-      }
+	}
     VW::finish_example(all, &ec);
   }
 
@@ -240,6 +239,8 @@ base_learner* mwt_setup(vw& all)
 
   all.delete_prediction = delete_scalars;
   all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
+
   if (all.vm.count("learn"))
     {
       c.num_classes = all.vm["learn"].as<uint32_t>();
@@ -256,11 +257,11 @@ base_learner* mwt_setup(vw& all)
   learner<mwt>* l;
   if (c.learn)
     if (all.vm.count("exclude_eval"))
-      l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1);
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
     else
-      l = &init_learner(&c, setup_base(all), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1);
+      l = &init_learner(&c, setup_base(all), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
   else
-    l = &init_learner(&c, setup_base(all), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1);
+    l = &init_learner(&c, setup_base(all), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

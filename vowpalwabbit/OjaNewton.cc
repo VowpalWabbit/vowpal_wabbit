@@ -52,51 +52,54 @@ struct OjaNewton {
     bool normalize;
     bool random_init;
 
-    void initialize_Z()
-    {
-        size_t stride_shift = all->reg.stride_shift;
-        weight* weights = all->reg.weight_vector;
-
-        uint32_t length = 1 << all->num_bits;
-        if(normalize) { // initialize normalization part
-	    for (uint32_t i = 0; i < length; i++)
-	        weights[(i << stride_shift) + NORM2] = 0.1f;
-        }
-
+	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
+	{  weight_parameters& weights = all->weights;
+	   if (normalize) { // initialize normalization part
+		 for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+		   (&(*iter))[NORM2] = 0.1f;
+	    }
         if(!random_init) {
             // simple initialization
-            for (int i = 1; i <= m; i++)
-                weights[(i << stride_shift) + i] = 1.f;
+		  weight_parameters::iterator iter = weights.begin() + 1;
+		  for (int i = 1; i <= m; ++i, ++iter)
+		  { weights_iterator_iterator<weight> j = iter.begin() + i;
+			*j = 1.f;
+		  }
         }
-	else {
+	    else {
             // more complicated initialization: orthgonal basis of a random matrix
-		const float PI2 = 2.f * 3.1415927f;
 
-            for (uint32_t i = 0; i < length; i++) {
-                for (int j = 1; j <= m; j++) {
-	           float r1 = frand48();
-	           float r2 = frand48();
-	           weights[(i << stride_shift) + j] = sqrtf(-2.f * logf(r1)) * cos(PI2 * r2);
-	        }
-	    }
+	    const double PI2 = 2.f * 3.1415927f;
+		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
+		  {  float r1 = frand48();
+		     float r2 = frand48();
+			 *j = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+		  }
 
             // Gram-Schmidt
-            for (int j = 1; j <= m; j++) {
-                for (int k = 1; k <= j - 1; k++) {
+          for (int j = 1; j <= m; j++) {
+             for (int k = 1; k <= j - 1; k++) {
 	            double tmp = 0;
-		    for (uint32_t i = 0; i < length; i++) 
-		        tmp += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + k];
-		    for (uint32_t i = 0; i < length; i++) 
-		        weights[(i << stride_shift) + j] -= (float)tmp * weights[(i << stride_shift) + k];
-	        }
+				
+				weight_parameters::iterator w = weights.begin();
+		        for (; w != weights.end(); ++w) 
+					tmp += (&(*w))[j] * (&(*w))[k];
+
+				w = weights.begin();
+				for (; w != weights.end(); ++w)
+					(&(*w))[j] -= (float)tmp * (&(*w))[k];
+	         }
 	        double norm = 0;
-	        for (uint32_t i = 0; i < length; i++)
-                    norm += weights[(i << stride_shift) + j] * weights[(i << stride_shift) + j];
-                norm = sqrt(norm);
-	        for (uint32_t i = 0; i < length; i++)
-	   	    weights[(i << stride_shift) + j] /= (float)norm;
+			weight_parameters::iterator w = weights.begin();
+			for (; w != weights.end(); ++w)
+				norm += (&(*w))[j] * (&(*w))[j];
+            norm = sqrt(norm);
+			w = weights.begin();
+			for (; w != weights.end(); ++w)
+				(&(*w))[j] /= (float)norm;
+	       }
 	    }
-	}
     }
 
     void compute_AZx()
@@ -268,27 +271,31 @@ struct OjaNewton {
 	//second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
         uint32_t length = 1 << all->num_bits;
-        size_t stride_shift = all->reg.stride_shift;
-        weight* weights = all->reg.weight_vector;
-
-        for (uint32_t i = 0; i < length; i++)
-            for (int j = 1; j <= m; j++)
-            weights[(i << stride_shift)] += weights[(i << stride_shift) + j] * b[j] * D[j];
-
+        //size_t stride_shift = all->stride_shift;
+        weight_parameters& weights = all->weights;
+		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+		{  weights_iterator_iterator<weight> w_j = i.begin() + 1;
+		   for (int j = 1; j <= m; ++j, ++w_j)
+		     *i += *w_j * b[j] * D[j];
+		}
         memset(b, 0, sizeof(double) * (m+1));
 
         //third step: Z <- ADZ, A, D <- Identity
-	//double norm = 0;
-        for (uint32_t i = 0; i < length; i++) {
+
+	    //double norm = 0;
+		weight_parameters::iterator iter = weights.begin();
+        for (uint32_t i = 0; i < length; ++i, ++iter) {
             memset(tmp, 0, sizeof(float) * (m+1));
-            
-            for (int j = 1; j <= m; j++)
-                for (int h = 1; h <= m; h++)
-                    tmp[j] += A[j][h] * D[h] * weights[(i << stride_shift) + h];
-            for (int j = 1; j <= m; j++) {
-		//norm = max(norm, fabs(tmp[j]));
-                weights[(i << stride_shift) + j] = tmp[j];
-	    }
+			for (int j = 1; j <= m; j++)
+			{ weights_iterator_iterator<weight> w_k = iter.begin() + 1;
+			  for (int h = 1; h <= m; ++h, ++w_k)
+			    tmp[j] += A[j][h] * D[h] * (*w_k);
+			}
+			weights_iterator_iterator<weight> w_j = iter.begin() + 1;
+            for (int j = 1; j <= m; ++j, ++w_j) {
+		      //norm = max(norm, fabs(tmp[j]));
+               *w_j = tmp[j];
+	        }
         }
         //printf("|Z| = %f\n", norm);
 
@@ -346,7 +353,6 @@ void predict(OjaNewton& ON, base_learner&, example& ec) {
     ec.partial_prediction = (float)ON.data.prediction;
     ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ec.partial_prediction);
 }
-
 
 void update_Z_and_wbar(update_data& data, float x, float& wref) {   
     float* w = &wref;
@@ -546,9 +552,9 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_throw<float>(ON.m+1);
     ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-    all.reg.stride_shift = (uint32_t)ceil(log2(ON.m + 2));
+	all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-    learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.reg.stride_shift);
+	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.weights.stride_shift());
 
     l.set_predict(predict);
     l.set_save_load(save_load);

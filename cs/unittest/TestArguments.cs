@@ -45,5 +45,43 @@ namespace cs_unittest
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("--csoaa_rank"));
             }
         }
+
+        [TestMethod]
+        public void TestQuietAndTestArguments()
+        {
+            using (var vw = new VowpalWabbit("--quiet -t"))
+            {
+                vw.SaveModel("args.model");
+            }
+
+            using (var vw = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
+            {
+                Assert.IsFalse(vw.Arguments.CommandLine.Contains("--quiet"));
+                Assert.IsFalse(vw.Arguments.CommandLine.Contains("-t"));
+
+                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings("-t") { Model = vw }))
+                {
+                    Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("--quiet"));
+                    Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("-t"));
+                }
+            }
+
+            using (var vw = new VowpalWabbit(""))
+            {
+                vw.SaveModel("args.model");
+            }
+
+            using (var vw = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
+            {
+                Assert.IsFalse(vw.Arguments.CommandLine.Contains("--quiet"));
+                Assert.IsFalse(vw.Arguments.CommandLine.Contains("-t"));
+
+                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings("-t") { Model = vw }))
+                {
+                    Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("--quiet"));
+                    Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("-t"));
+                }
+            }
+        }
     }
 }

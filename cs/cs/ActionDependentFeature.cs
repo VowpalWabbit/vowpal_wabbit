@@ -25,6 +25,12 @@ namespace VW
     /// </summary>
     public int Index { get; private set; }
 
+
+    /// <summary>
+    /// The index within the multi-line example.
+    /// </summary>
+    public float Probability { get; set; }
+
     /// <summary>
     /// The feature object.
     /// </summary>

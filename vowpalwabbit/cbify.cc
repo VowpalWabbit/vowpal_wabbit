@@ -129,7 +129,7 @@ base_learner* cbify_setup(vw& all)
     all.args.push_back(ss.str());
   }
   base_learner* base = setup_base(all);
-
+  
   all.delete_prediction = nullptr;
   learner<cbify>* l;
   l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
