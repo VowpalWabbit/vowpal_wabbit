@@ -34,7 +34,7 @@ final public class VWLearners {
      * NOTE: It is very important to note that if this method results in a {@link java.lang.ClassCastException} then there
      * WILL be a memory leak as the exception occurs in the calling method not this method due to type erasures.  It is therefore
      * imperative that if the caller of this method is unsure of the type returned that it should specify <code>T</code>
-     * as {@link VWLearnerBase} and do the casting on it's side so that closing the method can be guaranteed.
+     * as {@link vw.learner.VWBase} and do the casting on it's side so that closing the method can be guaranteed.
      * @param command The VW initialization command.
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
      * @return A VW Learner
