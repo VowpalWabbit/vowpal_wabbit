@@ -22,7 +22,6 @@ namespace prediction_type
 		action_scores,
 		multiclass,
 		multilabels,
-		probs,
 		prob
 	};
 
