@@ -68,7 +68,7 @@ void initialize_regressor(vw& all, T& weights)
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
-  if (!weights.not_null())
+  if (weights.mask() == 0)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
   {

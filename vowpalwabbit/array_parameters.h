@@ -270,6 +270,7 @@ private:
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
 	bool _seeded; // whether the instance is sharing model state with others
+	bool _delete = false;
 
 public:
 	typedef sparse_weights_iterator<weight> iterator;
@@ -324,7 +325,7 @@ public:
 			else if (fun_3 != nullptr){
 				fun_3(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift);
 			}
-			else{
+			else if (fun_4 != nullptr){
 				fun_4(iterator(*this, index, _stride_shift), index << _stride_shift);
 			}
 		}
@@ -352,7 +353,7 @@ public:
 			else if (fun_3 != nullptr){
 				fun_3(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift);
 			}
-			else{
+			else if (fun_4 != nullptr){
 				fun_4(iterator(*this, index, _stride_shift), index << _stride_shift);
 			}
 		}
@@ -437,10 +438,10 @@ public:
 #endif
 
 	~sparse_weight_parameters()
-	{if (!_seeded)  // don't free weight vector if it is shared with another instance
+	{if (!_delete && !_seeded)  // don't free weight vector if it is shared with another instance
 		{
-		 _map.~unordered_map();
-		
+		 _map.clear();
+		 _delete = true;
 		}
 	}
 };
