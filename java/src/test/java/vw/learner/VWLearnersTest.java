@@ -43,7 +43,7 @@ public class VWLearnersTest extends VWTestHelper {
     public void testAlreadyClosed() {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
-        VWScalarsLearner s = VWLearners.create("--quiet");
+        VWScalarLearner s = VWLearners.create("--quiet");
         s.close();
         s.predict("1 | ");
     }
@@ -80,7 +80,7 @@ public class VWLearnersTest extends VWTestHelper {
         data.put("1 | 7", 0.172148f);
 
         final String model = temporaryFolder.newFile().getAbsolutePath();
-        VWScalarsLearner learn = VWLearners.create("--quiet --loss_function logistic -f " + model);
+        VWScalarLearner learn = VWLearners.create("--quiet --loss_function logistic -f " + model);
         for (String d : data.keySet()) {
             learn.learn(d);
         }

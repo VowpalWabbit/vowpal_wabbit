@@ -17,7 +17,7 @@ final public class VWLearners {
     private static final Lock STATIC_LOCK = new ReentrantLock();
 
     private enum VWReturnType {
-        Unknown, ActionScores, Multiclass, Multilabels, Prob, Probs, Scalar, Scalars
+        Unknown, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars
     }
 
     private VWLearners() {}
@@ -49,7 +49,6 @@ final public class VWLearners {
             case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
             case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);
             case Prob: return (T)new VWProbLearner(nativePointer);
-            case Probs: return (T)new VWProbsLearner(nativePointer);
             case Scalar: return (T)new VWScalarLearner(nativePointer);
             case Scalars: return (T)new VWScalarsLearner(nativePointer);
             case Unknown:

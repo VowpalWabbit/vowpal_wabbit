@@ -30,8 +30,7 @@ JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, 
 { jclass clVWReturnType = env->FindClass(RETURN_TYPE);
   jfieldID field;
   vw* vwInstance = (vw*)vwPtr;
-  /*
-  switch (vwInstance->pred_type)
+  switch (vwInstance->l->pred_type)
   { case prediction_type::prediction_type_t::action_scores:
       field = env->GetStaticFieldID(clVWReturnType , "ActionScores", RETURN_TYPE_INSTANCE);
       break;
@@ -44,17 +43,13 @@ JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType(JNIEnv *env, 
     case prediction_type::prediction_type_t::prob:
       field = env->GetStaticFieldID(clVWReturnType , "Prob", RETURN_TYPE_INSTANCE);
       break;
-    case prediction_type::prediction_type_t::probs:
-      field = env->GetStaticFieldID(clVWReturnType , "Probs", RETURN_TYPE_INSTANCE);
-      break;
     case prediction_type::prediction_type_t::scalar:
       field = env->GetStaticFieldID(clVWReturnType , "Scalar", RETURN_TYPE_INSTANCE);
       break;
     case prediction_type::prediction_type_t::scalars:
       field = env->GetStaticFieldID(clVWReturnType , "Scalars", RETURN_TYPE_INSTANCE);
       break;
-  }*/
-  field = env->GetStaticFieldID(clVWReturnType , "Probs", RETURN_TYPE_INSTANCE);
+  }
 
   return env->GetStaticObjectField(clVWReturnType, field);
 }
