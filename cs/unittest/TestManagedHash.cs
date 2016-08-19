@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
+using System.Text;
 using TrainSet0002Dat;
 using VW;
 
@@ -116,6 +117,20 @@ namespace cs_unittest
             {
                 Assert.AreEqual(0ul, vw.HashSpace(" "));
                 Assert.AreEqual(0ul, vw.HashSpace("0"));
+            }
+        }
+
+        [TestMethod]
+        public void TestHashUnicodeSpace()
+        {
+            using (var vw = new VowpalWabbit(""))
+            {
+                var value = "ArticleTitleThe_25_Biggest_Art_Moments_of_2012" + (char)160;
+                // Encoding.UTF8.GetMaxByteCount
+                var nativeHash = vw.HashSpaceNative(value);
+                var managedHash = vw.HashSpace(value);
+
+                Assert.AreEqual(nativeHash, managedHash);
             }
         }
 

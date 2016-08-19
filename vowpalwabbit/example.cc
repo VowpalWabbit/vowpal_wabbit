@@ -35,7 +35,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
+	void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
 { if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else

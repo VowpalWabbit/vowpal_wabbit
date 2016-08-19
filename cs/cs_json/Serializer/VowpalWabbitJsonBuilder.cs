@@ -67,7 +67,7 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
         /// </summary>
-        public VowpalWabbitJsonBuilder(VowpalWabbitJsonSerializer serializer, IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer)
+        public VowpalWabbitJsonBuilder(VowpalWabbitJsonSerializer serializer, IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer, int multiIndex = -1)
         {
             Contract.Requires(serializer != null);
             Contract.Requires(vw != null);
@@ -77,7 +77,8 @@ namespace VW.Serializer
             this.extensionState = new VowpalWabbitJsonParseState
             {
                 JsonBuilder = this,
-                VW = vwPool.Native
+                VW = vwPool.Native,
+                MultiIndex = multiIndex
             };
 
             this.namespaceStrings = new List<string>();

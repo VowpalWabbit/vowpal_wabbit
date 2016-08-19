@@ -241,6 +241,7 @@ vw::vw()
   p = new_parser();
   p->emptylines_separate_examples = false;
   p->lp = simple_label;
+  label_type = label_type::simple;
 
   l = nullptr;
   scorer = nullptr;

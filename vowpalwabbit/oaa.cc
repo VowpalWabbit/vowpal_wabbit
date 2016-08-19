@@ -77,7 +77,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
   { for (uint32_t i=1; i<=o.k; i++)
     { ec.l.simple = { (mc_label_data.label == i) ? 1.f : -1.f, 0.f, 0.f };
       ec.pred.scalar = o.pred[i-1].scalar;
-      base.update(ec, i-1);
+	  base.update(ec, i-1);
     }
   }
 
@@ -89,16 +89,18 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 
   if (is_probabilities)
   { float sum_prob = 0;
-    ec.pred.probs = calloc_or_throw<float>(o.k);
+    float* probs = calloc_or_throw<float>(o.k);
     for (uint32_t i=0; i<o.k; i++)
     { // probability of class (i+1) = logistic_link_function(raw_prediction)
       float prob = 1.f / (1.f + exp(- o.pred[i].scalar));
-      ec.pred.probs[i] = prob;
+      probs[i] = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (uint32_t i=0; i<o.k; i++)
-      ec.pred.probs[i] /= sum_prob;
+      probs[i] /= sum_prob;
+
+	ec.pred.probs = probs;
   }
   else
   { ec.pred.multiclass = prediction;
@@ -223,15 +225,15 @@ LEARNER::base_learner* oaa_setup(vw& all)
       cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     // the three boolean template parameters are: is_learn, print_all and is_probabilities
     l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true>,
-                                          predict_or_learn<false, false, true>, all.p, data.k);
+                                          predict_or_learn<false, false, true>, all.p, data.k, prediction_type::probs);
     l->set_finish_example(finish_example_probabilities);
   }
   else if (all.raw_prediction > 0)
     l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true, false>,
-                                          predict_or_learn<false, true, false>, all.p, data.k);
+                                          predict_or_learn<false, true, false>, all.p, data.k, prediction_type::multiclass);
   else
     l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false, false>,
-                                          predict_or_learn<false, false, false>, all.p, data.k);
+                                          predict_or_learn<false, false, false>, all.p, data.k, prediction_type::multiclass);
 
   if (data.num_subsample > 0)
     l->set_learn(learn_randomized);

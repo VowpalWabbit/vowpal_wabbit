@@ -44,7 +44,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	    }
 	  if (sm.marginals.find(second_index) == sm.marginals.end())//need to initialize things.
 	    sm.marginals.insert(make_pair(second_index,make_pair(sm.initial_numerator, sm.initial_denominator)));
-	  f.begin().value() = sm.marginals[second_index].first / sm.marginals[second_index].second;
+	  f.begin().value() = (feature_value)(sm.marginals[second_index].first / sm.marginals[second_index].second);
 	  sm.temp[n]={second_value,second_index};
 	  if (!f.space_names.empty())
 	    sm.asp[n]=f.space_names[1];

@@ -391,6 +391,18 @@ enum AllReduceType
 
 class AllReduce;
 
+// avoid name clash
+namespace label_type
+{ enum label_type_t
+  {	simple,
+    cb, // contextual-bandit
+    cb_eval, // contextual-bandit evaluation
+    cs, // cost-sensitive
+    multi,
+    mc
+  };
+}
+
 struct vw
 { shared_data* sd;
 
@@ -482,8 +494,7 @@ struct vw
   std::vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   std::vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
 
-  void (*delete_prediction)(void*);
-  bool audit;//should I print lots of debugging information?
+  void(*delete_prediction)(void*);bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
   bool active;
@@ -546,6 +557,8 @@ struct vw
 
   std::map< std::string, size_t> name_index_map;
 
+  label_type::label_type_t label_type;
+  
   vw();
 };
 

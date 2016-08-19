@@ -131,7 +131,7 @@ namespace VW
         /// Performs the following steps to reset the learning state:
         ///
         /// - Save model to in-memory buffer
-        /// - Dipose existing instance
+        /// - Dispose existing instance
         /// - Initialize new instance from in-memory buffer
         /// </summary>
         void Reload([System::Runtime::InteropServices::Optional] String^ args);
