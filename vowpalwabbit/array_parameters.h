@@ -263,6 +263,7 @@ public:
 	w_iter end(size_t offset) { return w_iter(&_map.iter_helper(_index) + offset); }
 };
 
+
 class sparse_weight_parameters
 {
 private:
@@ -373,42 +374,33 @@ public:
 	template<void(*T)(iterator&)>
 	inline void set_default()
 	{
-		for (iterator iter = begin(); iter != end(); ++iter)
-			T(iter);
+		fun_1 = T;
 	}
 
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{
-		uint32_t stride = 1 << _stride_shift;
-		iterator iter = begin();
-		for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T(iter, i);
+		fun_2 = T;
 	}
 
 	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{
-		uint32_t stride = 1 << _stride_shift;
-		iterator iter = begin();
-		for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T(iter, i, stride);
+		fun_3 = T;
 	}
 
 	template <typename T>
 	void set_default(T t)
 	{
-		uint32_t stride = 1 << _stride_shift;
-		iterator iter = begin();
-		for (size_t i = 0; iter != end(); ++iter, i += stride)
-			t(iter, i);
+		fun_4 = t;
 	}
 
 
 	void set_zero(size_t offset)
 	{
-		for (iterator iter = begin(); iter != end(); ++iter)
-			(&(*iter))[offset] = 0;
+		for (weight_map::iterator iter = _map.begin(); iter != _map.end(); ++iter){
+			(&(*(iter->second)))[offset] = 0;
+		}
 	}
 
 	uint64_t mask()
