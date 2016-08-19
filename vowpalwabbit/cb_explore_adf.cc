@@ -172,7 +172,10 @@ namespace CB_EXPLORE_ADF{
 	multiline_learn(base, examples);
       }
     else
-      multiline_predict(base, examples);
+      {
+	GEN_CS::gen_cs_example_ips(examples, data.cs_labels);
+	multiline_predict(base, examples);
+      }
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
     uint32_t num_actions = (uint32_t)preds.size();
