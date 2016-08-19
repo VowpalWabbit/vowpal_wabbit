@@ -20,7 +20,7 @@ static const uint32_t indicator_bit = 128;
 static const uint32_t default_depth = 127;
 
 struct sort_data
-{ float wval;
+{ float weightsal;
   uint64_t wid;
 };
 
@@ -66,11 +66,13 @@ struct stagewise_poly
 
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
-{ return idx << poly.all->reg.stride_shift;
+{
+	return idx << poly.all->weights.stride_shift();
 }
 
 inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
-{ return idx >> poly.all->reg.stride_shift;
+{
+	return idx >> poly.all->weights.stride_shift();
 }
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
@@ -85,18 +87,19 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
     return idx;
   else
   { while (idx < poly.synth_ec.ft_offset)
-    { idx += poly.all->length() << poly.all->reg.stride_shift;
+  {
+	  idx += poly.all->length() << poly.all->weights.stride_shift();
     }
     return idx - poly.synth_ec.ft_offset;
   }
 }
 
 inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{ return wid & poly.all->reg.weight_mask;
+{ return wid & poly.all->weights.mask();
 }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
-{ return stride_un_shift(poly, wid & poly.all->reg.weight_mask);
+{ return stride_un_shift(poly, wid & poly.all->weights.mask());
 }
 
 inline uint64_t constant_feat(const stagewise_poly &poly)
@@ -172,8 +175,8 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
-    //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0) );
+    //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
   }
@@ -230,12 +233,12 @@ void sort_data_destroy(stagewise_poly &poly)
 
 #ifdef DEBUG
 int sort_data_compar(const void *a_v, const void *b_v)
-{ return 2 * ( ((sort_data *) a_v)->wval < ((sort_data *) b_v)->wval ) - 1;
+{ return 2 * ( ((sort_data *) a_v)->weightsal < ((sort_data *) b_v)->weightsal ) - 1;
 }
 #endif //DEBUG
 
 int sort_data_compar_heap(sort_data &a_v, sort_data &b_v)
-{ return (a_v.wval > b_v.wval);
+{ return (a_v.weightsal > b_v.weightsal);
 }
 
 /*
@@ -269,8 +272,8 @@ void sort_data_update_support(stagewise_poly &poly)
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
-    { float wval = (fabsf(poly.all->reg.weight_vector[wid])
-                    * poly.all->reg.weight_vector[poly.all->normalized_idx + (wid)])
+      { float weightsal = (fabsf(poly.all->weights[wid])
+			   * poly.all->weights[poly.all->normalized_idx + (wid)])
                    /*
                     * here's some depth penalization code.  It was found to not improve
                     * statistical performance, and meanwhile it is verified as giving
@@ -280,11 +283,11 @@ void sort_data_update_support(stagewise_poly &poly)
                     * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
                     */
                    ;
-      if (wval > tolerance)
+      if (weightsal > tolerance)
       { assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
 
-        if (heap_end - poly.sd == (int)num_new_features && poly.sd->wval < wval)
+        if (heap_end - poly.sd == (int)num_new_features && poly.sd->weightsal < weightsal)
         { pop_heap(poly.sd, heap_end, sort_data_compar_heap);
           --heap_end;
         }
@@ -293,7 +296,7 @@ void sort_data_update_support(stagewise_poly &poly)
         assert(heap_end < poly.sd + poly.sd_len);
 
         if (heap_end - poly.sd < (int)num_new_features)
-        { heap_end->wval = wval;
+        { heap_end->weightsal = weightsal;
           heap_end->wid = wid;
           ++heap_end;
           push_heap(poly.sd, heap_end, sort_data_compar_heap);
@@ -310,14 +313,14 @@ void sort_data_update_support(stagewise_poly &poly)
 
   for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   { assert(!parent_get(poly, poly.sd[pos].wid)
-           && poly.sd[pos].wval > tolerance
+           && poly.sd[pos].weightsal > tolerance
            && poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
     cout
         << "Adding feature " << pos << "/" << num_new_features
         << " || wid " << poly.sd[pos].wid
-        << " || sort value " << poly.sd[pos].wval
+        << " || sort value " << poly.sd[pos].weightsal
         << endl;
 #endif //DEBUG
   }
@@ -387,9 +390,9 @@ void synthetic_decycle(stagewise_poly &poly)
     }
 }
 
-void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
+void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint64_t)((&w - poly.all->reg.weight_vector))));
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex)); 
   uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -434,7 +437,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
 #ifdef DEBUG
       poly.max_depth = (poly.max_depth > poly.cur_depth) ? poly.max_depth : poly.cur_depth;
 #endif //DEBUG
-      GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
+      GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
       --poly.cur_depth;
       poly.synth_rec_f = parent_f;
     }
@@ -454,7 +457,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
    * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
    * Problem with this is if there is a collision with the root...
    */
-  GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+  GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
   poly.synth_ec.total_sum_feat_sq = poly.synth_ec.feature_space[tree_atomics].sum_feat_sq;
 
