@@ -263,7 +263,17 @@ public:
 	w_iter end(size_t offset) { return w_iter(&_map.iter_helper(_index) + offset); }
 };
 
-
+struct proxy_object{
+	sparse_weight_parameters& _map;
+	size_t _i;
+	proxy_object(sparse_weight_parameters& map, size_t i) : _map(map), _i(i){};
+	proxy_object &operator=(weight &value) {
+		_map.write(_i, value);
+	}
+	operator weight() {
+		_map.read(_i);
+	}
+};
 class sparse_weight_parameters
 {
 private:
@@ -286,7 +296,9 @@ public:
 		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
 		_seeded(false)
-	{ }
+	{
+		_map.insert(std::make_pair(0, calloc_mergable_or_throw<weight>(_stride_shift)));
+	}
 
 	sparse_weight_parameters()
 		: _map(), _weight_mask(0), _stride_shift(0), _seeded(false)
@@ -308,14 +320,45 @@ public:
 	const_iterator cbegin() { return const_iterator(*this, 0, (1 << _stride_shift)); }
 	const_iterator cend() { return const_iterator(*this, _weight_mask + 1, (1 << _stride_shift)); }
 
-	inline weight& operator[](size_t i) 
+	
+	inline weight& operator[](size_t i)
 	{
-		size_t index = floor((i & _weight_mask)/ _stride_shift);
+		return proxy_object(*this, i);
+	}
+	weight& read(size_t i){
+		size_t index = ceil((i & _weight_mask)/ _stride_shift);
 		weight_map::iterator iter = _map.find(index);
 		weight_map::iterator end = _map.end();
 		if (iter == end) 
-		{
+		{ 
+			iter = _map.find(0);
+			memset(iter->second, 0, _stride_shift);
+			if (fun_1 != nullptr){
+				fun_1(iterator(*this, 0, _stride_shift));
+			}
+			else if (fun_2 != nullptr){
+				fun_2(iterator(*this, 0, _stride_shift), index << _stride_shift);
+			}
+			else if (fun_3 != nullptr){
+				fun_3(iterator(*this, 0, _stride_shift), index << _stride_shift, _stride_shift);
+			}
+			else if (fun_4 != nullptr){
+				fun_4(iterator(*this, 0, _stride_shift), index << _stride_shift);
+			}
+		}
+		 /* Found, i->first is f, i->second is ++-- */
+			weight* it = iter->second;
+			size_t offset = (i & _weight_mask) % _stride_shift;
+			return (&(*it))[offset];
 		
+	}
+	weight& write(size_t i, weight& value){
+		size_t index = ceil((i & _weight_mask) / _stride_shift);
+		weight_map::iterator iter = _map.find(index);
+		weight_map::iterator end = _map.end();
+		if (iter == end)
+		{
+
 			_map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
 			if (fun_1 != nullptr){
 				fun_1(iterator(*this, index, _stride_shift));
@@ -331,13 +374,12 @@ public:
 			}
 		}
 		iter = _map.find(index);
-		 /* Found, i->first is f, i->second is ++-- */
-			weight* it = iter->second;
-			size_t offset = (i & _weight_mask) % _stride_shift;
-			return (&(*it))[offset];
-		
-	}
+		/* Found, i->first is f, i->second is ++-- */
+		weight* it = iter->second;
+		size_t offset = (i & _weight_mask) % _stride_shift;
+		(&(*it))[offset] = value;
 
+	}
 	//definitely need to change this
 	inline weight& iter_helper(size_t index)
 	{
@@ -437,5 +479,7 @@ public:
 		}
 	}
 };
+
+
 
 
