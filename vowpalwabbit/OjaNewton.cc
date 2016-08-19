@@ -72,9 +72,9 @@ struct OjaNewton {
 	    const double PI2 = 2.f * 3.1415927f;
 		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
 		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
-		  {  double r1 = frand48();
-		     double r2 = frand48();
-			 *j = sqrt(-2.f * log(r1)) * cos(PI2 * r2);
+		  {  float r1 = frand48();
+		     float r2 = frand48();
+			 *j = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
 		  }
 
             // Gram-Schmidt

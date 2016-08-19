@@ -84,21 +84,6 @@ namespace VW
 		return ex->pred.prob;
 	}
 
-	cli::array<float>^ VowpalWabbitProbabilitiesPredictionFactory::Create(vw* vw, example* ex)
-	{
-		CheckExample(vw, ex, PredictionType);
-
-		try
-		{
-			int k = (int)vw->vm["oaa"].as<size_t>();
-			auto values = gcnew cli::array<float>(k);
-			System::Runtime::InteropServices::Marshal::Copy(IntPtr(ex->pred.probs), values, 0, k);
-
-			return values;
-		}
-		CATCHRETHROW
-	}
-
     float VowpalWabbitCostSensitivePredictionFactory::Create(vw* vw, example* ex)
     {
 		CheckExample(vw, ex, PredictionType);
@@ -189,8 +174,6 @@ namespace VW
 			return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
 		case prediction_type::prob:
 			return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-		case prediction_type::probs:
-			return VowpalWabbitPredictionType::Probabilities->Create(vw, ex);
 		default:
 			{
 				auto sb = gcnew StringBuilder();
