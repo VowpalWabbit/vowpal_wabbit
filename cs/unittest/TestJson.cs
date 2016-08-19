@@ -112,7 +112,8 @@ namespace cs_unittest
                 {
                     Foo = 1,
                     Age = "25",
-                    DontConsider = "XXX"
+                    DontConsider = "XXX",
+                    EscapeCharacterString = "test: how | if\tremoved"
                 },
                 Ns2 = new Namespace2
                 {
@@ -122,9 +123,14 @@ namespace cs_unittest
             };
 
             var jsonContextString = JsonConvert.SerializeObject(jsonContext);
-            using (var validator = new VowpalWabbitExampleJsonValidator(""))
+            using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
             {
-                validator.Validate("25 |a Bar:1 Age25 |b Marker | Clicks:5 MoreClicks:0",
+                EnableStringExampleGeneration = true,
+                EnableStringFloatCompact = true,
+                EnableThreadSafeExamplePooling = true
+            }))
+            {
+                validator.Validate("25  |  Clicks:5 MoreClicks:0  |a Bar:1 Age25 EscapeCharacterStringtest__how___if_removed  |b Marker",
                     jsonContextString,
                     VowpalWabbitLabelComparator.Simple);
             }

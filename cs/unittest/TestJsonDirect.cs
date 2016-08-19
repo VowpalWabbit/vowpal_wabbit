@@ -307,6 +307,9 @@ namespace cs_unittest
 
         [JsonIgnore]
         public string DontConsider { get; set; }
+
+        [JsonProperty]
+        public string EscapeCharacterString { get; set; }
     }
 
     public class Namespace2
