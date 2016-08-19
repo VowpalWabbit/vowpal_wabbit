@@ -16,8 +16,8 @@ final public class VWLearners {
     private volatile static boolean loadedNativeLibrary = false;
     private static final Lock STATIC_LOCK = new ReentrantLock();
 
-    enum VWReturnType {
-        Unknown, VWFloatType, VWIntType, VWIntArrayType, VWFloatArrayType
+    private enum VWReturnType {
+        Unknown, ActionScores, Multiclass, Multilabels, Prob, Probs, Scalar, Scalars
     }
 
     private VWLearners() {}
@@ -27,14 +27,14 @@ final public class VWLearners {
      * which will return the correct output type given the command specified.
      * <pre>
      * {@code
-     *     VWIntLearner vw = VWFactory.createVWLearner("--cb 4");
+     *     VWMulticlassLearner vw = VWFactory.createVWLearner("--cb 4");
      * }
      * </pre>
      *
      * NOTE: It is very important to note that if this method results in a {@link java.lang.ClassCastException} then there
      * WILL be a memory leak as the exception occurs in the calling method not this method due to type erasures.  It is therefore
      * imperative that if the caller of this method is unsure of the type returned that it should specify <code>T</code>
-     * as {@link VWLearner} and do the casting on it's side so that closing the method can be guaranteed.
+     * as {@link VWLearnerBase} and do the casting on it's side so that closing the method can be guaranteed.
      * @param command The VW initialization command.
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
      * @return A VW Learner
@@ -43,13 +43,15 @@ final public class VWLearners {
     public static <T extends VWLearner> T create(final String command) {
         long nativePointer = initializeVWJni(command);
         VWReturnType returnType = getReturnType(nativePointer);
-        long predictionFunctionPointer = getPredictionFunction(nativePointer, returnType.name());
 
         switch (returnType) {
-            case VWFloatType: return (T)new VWFloatLearner(nativePointer, predictionFunctionPointer);
-            case VWIntType: return (T)new VWIntLearner(nativePointer, predictionFunctionPointer);
-            case VWFloatArrayType: return (T)new VWFloatArrayLearner(nativePointer, predictionFunctionPointer);
-            case VWIntArrayType: return (T)new VWIntArrayLearner(nativePointer, predictionFunctionPointer);
+            case ActionScores: return (T)new VWActionScoresLearner(nativePointer);
+            case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
+            case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);
+            case Prob: return (T)new VWProbLearner(nativePointer);
+            case Probs: return (T)new VWProbsLearner(nativePointer);
+            case Scalar: return (T)new VWScalarLearner(nativePointer);
+            case Scalars: return (T)new VWScalarsLearner(nativePointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.
@@ -100,7 +102,6 @@ final public class VWLearners {
 
     private static native long initialize(String command);
     private static native VWReturnType getReturnType(long nativePointer);
-    private static native long getPredictionFunction(long nativePointer, String vWReturnType);
 
     // Closing needs to be done here when initialization fails and by VWBase
     static native void closeInstance(long nativePointer);

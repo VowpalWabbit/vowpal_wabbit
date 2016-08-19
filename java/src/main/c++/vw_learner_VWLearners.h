@@ -32,14 +32,6 @@ JNIEXPORT void JNICALL Java_vw_learner_VWLearners_closeInstance
 JNIEXPORT jobject JNICALL Java_vw_learner_VWLearners_getReturnType
 (JNIEnv *, jobject, jlong);
 
-/*
- * Class:     vw_learner_VWLearners
- * Method:    getPredictionFunction
- * Signature: (J)V
- */
-JNIEXPORT jlong JNICALL Java_vw_learner_VWLearners_getPredictionFunction
-(JNIEnv *, jobject, jlong, jstring);
-
 #ifdef __cplusplus
 }
 #endif

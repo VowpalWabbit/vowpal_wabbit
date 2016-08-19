@@ -47,9 +47,8 @@ T base_predict(
   jstring example_string,
   jboolean learn,
   jlong vwPtr,
-  jlong predictorPtr)
+  const F& predictor)
 { vw* vwInstance = (vw*)vwPtr;
-  F* predictor = (F*)predictorPtr;
   example* ex = read_example(env, example_string, vwInstance);
   return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
@@ -60,9 +59,8 @@ T base_predict(
   jobjectArray example_strings,
   jboolean learn,
   jlong vwPtr,
-  jlong predictorPtr)
+  const F& predictor)
 { vw* vwInstance = (vw*)vwPtr;
-  F* predictor = (F*)predictorPtr;
   int example_count = env->GetArrayLength(example_strings);
 
   // When doing multiline prediction the final result is stored in the FIRST example parsed.

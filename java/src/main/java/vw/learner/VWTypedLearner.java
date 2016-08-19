@@ -5,7 +5,7 @@ package vw.learner;
  * may provided <em>additional methods</em> when the cost of boxing a primitive to an object is
  * too expensive.
  *
- * The recommended way of using this interface is to extend {@link vw.learner.VWLearnerBase}.
+ * The recommended way of using this interface is to extend {@link VWLearnerBase}.
  * See its documentation for more details.
  *
  * @author deak
