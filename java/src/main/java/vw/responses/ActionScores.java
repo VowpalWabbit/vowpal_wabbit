@@ -7,6 +7,8 @@ import java.util.Arrays;
  */
 public class ActionScores {
 
+    // Although this is modifiable it is not intended to be updated by the user.  This data structure mimics the
+    // C data structure.
     private final ActionScore[] actionScores;
 
     public ActionScores(final ActionScore[] actionScores) {

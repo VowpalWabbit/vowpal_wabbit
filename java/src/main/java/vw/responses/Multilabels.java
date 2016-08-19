@@ -7,6 +7,8 @@ import java.util.Arrays;
  */
 public class Multilabels {
 
+    // Although this is modifiable it is not intended to be updated by the user.  This data structure mimics the
+    // C data structure.
     private final int[] labels;
 
     public Multilabels(final int[] labels) {
