@@ -348,6 +348,7 @@
     <ClInclude Include="action_score.h" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="vw_validate.cc" />
+    <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />

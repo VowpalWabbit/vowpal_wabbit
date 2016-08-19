@@ -33,7 +33,7 @@ my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes --leak
 
 # -- timeout is part of GNU coreutils, some systems may not have it
 my $TimeOut = '';
-my $TimeOutSec = 30;    # max allowed time for single vw command run
+my $TimeOutSec = 80;    # max allowed time for single vw command run
 
 # By default, we run all tests in the list
 my $FullRun = 1;
