@@ -136,7 +136,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     {
                         name = "Deployed Policy",
                         cost = trainerResult.Label.Cost,
-                        prob = trainerResult.Label.Probability
+                        prob = 1 / trainerResult.Label.Probability
                     })
             };
 
