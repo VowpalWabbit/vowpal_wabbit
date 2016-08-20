@@ -149,23 +149,6 @@ struct ldf
   v_array<action_scores > stored_preds;
 };
 
-int cmp(size_t a, size_t b)
-{ if (a == b) return 0;
-  if (a > b) return 1;
-  return -1;
-}
-
-int score_comp(const void* p1, const void* p2)
-{ action_score* s1 = (action_score*)p1;
-  action_score* s2 = (action_score*)p2;
-  // Most sorting algos do not guarantee the output order of elements that compare equal.
-  // Tie-breaking on the index ensures that the result is deterministic across platforms.
-  // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
-  if(s2->score == s1->score) return cmp(s1->action, s2->action);
-  else if(s2->score >= s1->score) return -1;
-  else return 1;
-}
-
 bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
 { if (ec.indices.size() < 1) return false;
   if (ec.indices[0] != 'l') return false;

@@ -166,6 +166,7 @@ namespace CB_EXPLORE_ADF{
       }
 
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
+    qsort((void*) data.action_probs.begin(), data.action_probs.size(), sizeof(action_score), reverse_order);
 
     for (size_t i = 0; i < num_actions; i++) 
       preds[i] = data.action_probs[i];
@@ -195,6 +196,7 @@ namespace CB_EXPLORE_ADF{
     probs.erase();
     for(uint32_t i = 0;i < num_actions;i++)
       probs.push_back({i,0.});
+    
     probs[preds[0].action].score += additive_probability;
     
     uint32_t shared = CB::ec_is_example_header(*examples[0]) ? 1 : 0;
@@ -215,6 +217,7 @@ namespace CB_EXPLORE_ADF{
 	  }
 	else
 	  GEN_CS::call_cs_ldf<false>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset, i+1);
+
 	uint32_t action = preds[0].action;
 	if (probs[action].score < min_prob)
 	  norm += max(0, additive_probability - (min_prob - probs[action].score));
@@ -224,8 +227,10 @@ namespace CB_EXPLORE_ADF{
       }
     
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
-    for (size_t i = 0; i < num_actions; i++) 
-      preds[i].score = probs[preds[i].action].score;
+
+    qsort((void*) probs.begin(), probs.size(), sizeof(action_score), reverse_order);
+    for (size_t i = 0; i < num_actions; i++)
+      preds[i] = probs[i];
   }
  
   template <bool is_learn>
@@ -491,7 +496,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   if (vm.count("cover"))
     { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
       data.explore_type = COVER;
-      problem_multiplier = data.cover_size;
+      problem_multiplier = data.cover_size+1;
       sprintf(type_string, "%lu", data.cover_size);
       *all.file_options << " --cover " << type_string;
 
@@ -559,7 +564,6 @@ base_learner* cb_explore_adf_setup(vw& all)
       else
 	std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
     }
-  l.increment = base->increment;
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);  
   l.set_finish(CB_EXPLORE_ADF::finish);
