@@ -155,6 +155,7 @@ namespace VW
         {
             if (m_vw != nullptr)
             {
+                reset_source(*m_vw, m_vw->num_bits);
                 release_parser_datastructures(*m_vw);
 
                 // make sure don't try to free m_vw twice in case VW::finish throws.
@@ -199,6 +200,8 @@ namespace VW
 
         try
         {
+            reset_source(*m_vw, m_vw->num_bits);
+
             VW::save_predictor(*m_vw, mem_buf);
             mem_buf.flush();
 
