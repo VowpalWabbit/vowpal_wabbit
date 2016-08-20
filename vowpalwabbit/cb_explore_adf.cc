@@ -157,9 +157,9 @@ namespace CB_EXPLORE_ADF{
       }
 
     CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
-    
+
     for (size_t i = 0; i < num_actions; i++) 
-      preds[i].score = data.action_probs[preds[i].action].score;
+      preds[i] = data.action_probs[i];
   }
 
   template <bool is_learn>
@@ -380,26 +380,39 @@ namespace CB_EXPLORE_ADF{
 	  THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
 	}
     else
-      switch (data.explore_type)
-	{
-	case EXPLORE_FIRST:
-	  predict_or_learn_first<is_learn>(data, base, data.ec_seq);
-	  break;
-	case EPS_GREEDY:
-	  predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
-	  break;
-	case SOFTMAX:
-	  predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
-	  break;
-	case BAG_EXPLORE:
-	  predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
-	  break;
-	case COVER:
-	  predict_or_learn_cover<is_learn>(data, base, data.ec_seq);
-	  break;
-	default:
-	  THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
-	}
+      {
+	/*	v_array<float> temp_probs;
+	temp_probs = v_init<float>();
+	do_actual_learning<false>(data,base);
+	for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++) 
+	  temp_probs.push_back(data.ec_seq[0]->pred.a_s[i].score);
+	*/
+	switch (data.explore_type)
+	  {
+	  case EXPLORE_FIRST:
+	    predict_or_learn_first<is_learn>(data, base, data.ec_seq);
+	    break;
+	  case EPS_GREEDY:
+	    predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
+	    break;
+	  case SOFTMAX:
+	    predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
+	    break;
+	  case BAG_EXPLORE:
+	    predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
+	    break;
+	  case COVER:
+	    predict_or_learn_cover<is_learn>(data, base, data.ec_seq);
+	    break;
+	  default:
+	    THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+	  }
+	/*	
+	for (size_t i = 0; i < temp_probs.size(); i++) 
+	  if (temp_probs[i] != data.ec_seq[0]->pred.a_s[i].score)
+	    cout << "problem! " << temp_probs[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " << data.ec_seq[0]->pred.a_s[i].action << endl;
+	    temp_probs.delete_v();*/
+      }
   }
 
 
