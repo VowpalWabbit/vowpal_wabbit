@@ -144,9 +144,9 @@ struct ldf
 
   bool rank;
   action_scores a_s;
+  uint64_t ft_offset;
 
   v_array<action_scores > stored_preds;
-  base_learner* base;
 };
 
 int cmp(size_t a, size_t b)
@@ -240,7 +240,10 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   ec.l.simple = simple_label;
+  uint64_t old_offset = ec.ft_offset;
+  ec.ft_offset = data.ft_offset;
   base.predict(ec); // make a prediction
+  ec.ft_offset = old_offset;
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
@@ -301,7 +304,10 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
+      uint64_t old_offset = ec1->ft_offset;
+      ec1->ft_offset = data.ft_offset;
       base.learn(*ec1);
+      ec1->ft_offset = old_offset;
       unsubtract_example(ec1);
 
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
@@ -353,7 +359,10 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    uint64_t old_offset = ec->ft_offset;
+    ec->ft_offset = data.ft_offset;
     base.learn(*ec);
+    ec->ft_offset = old_offset;
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
@@ -367,6 +376,7 @@ template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 { if (data.ec_seq.size() <= 0) return;  // nothing to do
   /////////////////////// handle label definitions
+
   if (ec_seq_is_label_definition(data.ec_seq))
   {
     for (size_t i=0; i<data.ec_seq.size(); i++)
@@ -399,7 +409,6 @@ void do_actual_learning(ldf& data, base_learner& base)
     data.stored_preds.erase();
     if (start_K > 0)
       data.stored_preds.push_back(data.ec_seq[0]->pred.a_s);
-
     for (uint32_t k=start_K; k<K; k++)
     { data.stored_preds.push_back(data.ec_seq[k]->pred.a_s);
       example *ec = data.ec_seq[k];
@@ -694,7 +703,7 @@ void finish(ldf& data)
 template <bool is_learn>
 void predict_or_learn(ldf& data, base_learner& base, example &ec)
 { vw* all = data.all;
-  data.base = &base;
+  data.ft_offset = ec.ft_offset;
   bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
 
