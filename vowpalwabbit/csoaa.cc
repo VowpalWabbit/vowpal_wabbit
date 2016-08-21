@@ -234,7 +234,8 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
 }
 
 bool check_ldf_sequence(ldf& data, size_t start_K)
-{ bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+{ 
+  bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   { example *ec = data.ec_seq[k];
     // Each sub-example must have just one cost
@@ -345,7 +346,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
     base.learn(*ec);
-    ec->ft_offset = old_offset;
+     ec->ft_offset = old_offset;
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
@@ -384,7 +385,6 @@ void do_actual_learning(ldf& data, base_learner& base)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
   bool isTest = check_ldf_sequence(data, start_K);
-
   /////////////////////// do prediction
   uint32_t predicted_K = start_K;
   if(data.rank)

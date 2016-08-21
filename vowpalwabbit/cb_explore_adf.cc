@@ -46,6 +46,9 @@ namespace CB_EXPLORE_ADF{
     COST_SENSITIVE::label cs_labels;
     v_array<CB::label> cb_labels;
 
+    CB::label action_label;
+    CB::label empty_label;
+
     COST_SENSITIVE::label cs_labels_2;
 
     v_array<COST_SENSITIVE::label> prepped_cs_labels;
@@ -70,10 +73,11 @@ namespace CB_EXPLORE_ADF{
 	ec->ft_offset = old_offset;
       }
   }
-
-  bool test_adf_sequence(cb_explore_adf& data)
+  
+  example* test_adf_sequence(cb_explore_adf& data)
   {
     uint32_t count = 0;
+    example* ret = nullptr;
     for (size_t k = 0; k < data.ec_seq.size(); k++)
     {
       example *ec = data.ec_seq[k];
@@ -82,16 +86,17 @@ namespace CB_EXPLORE_ADF{
         THROW("cb_adf: badly formatted example, only one cost can be known.");
 
       if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
-        count += 1;
+	{
+	  ret = ec;
+	  count += 1;
+	}
 
       if (CB::ec_is_example_header(*ec))
         if (k != 0)
           THROW("warning: example headers at position " << k << ": can only have in initial position!");
     }
-    if (count == 0)
-      return true;
-    else if (count == 1)
-      return false;
+    if (count == 0 || count == 1)
+      return ret;
     else
       THROW("cb_adf: badly formatted example, only one line can have a cost");
   }
@@ -99,7 +104,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore tau times, then act according to optimal.
-    if (is_learn && data.gen_cs.known_cost.probability < 1 && !test_adf_sequence(data))
+    if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(data) != nullptr)
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -124,7 +129,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore uniform random an epsilon fraction of the time.
-    if (is_learn && !test_adf_sequence(data))
+    if (is_learn && test_adf_sequence(data) != nullptr)
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -150,7 +155,7 @@ namespace CB_EXPLORE_ADF{
     for (uint32_t i = 0; i < num_actions; i++)
       data.action_probs[i] = {i,0.};
     float prob = 1.f / (float)data.bag_size;
-    bool test_sequence = test_adf_sequence(data);
+    bool test_sequence = test_adf_sequence(data) == nullptr;
     for (uint32_t i = 0; i < data.bag_size; i++) 
       {
 	uint32_t count = BS::weight_gen();
@@ -236,7 +241,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   {
-    if (is_learn && !test_adf_sequence(data)) 
+    if (is_learn && test_adf_sequence(data) != nullptr) 
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -369,30 +374,39 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
-    bool isTest = test_adf_sequence(data);
+    example* label_example=test_adf_sequence(data);
     data.gen_cs.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
-    if (isTest || !is_learn)
-      switch (data.explore_type)
-	{
-	case EXPLORE_FIRST:
-	  predict_or_learn_first<false>(data, base, data.ec_seq);
-	  break;
-	case EPS_GREEDY:
-	  predict_or_learn_greedy<false>(data, base, data.ec_seq);
-	  break;
-	case SOFTMAX:
-	  predict_or_learn_softmax<false>(data, base, data.ec_seq);
-	  break;
-	case BAG_EXPLORE:
-	  predict_or_learn_bag<false>(data, base, data.ec_seq);
-	  break;
-	case COVER:
-	  predict_or_learn_cover<false>(data, base, data.ec_seq);
-	  break;
-	default:
-	  THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
-	}
+    if (label_example == nullptr || !is_learn)
+      {
+	if (label_example != nullptr)//extract label
+	  {
+	    data.action_label = label_example->l.cb;
+	    label_example->l.cb = data.empty_label;
+	  }
+	switch (data.explore_type)
+	  {
+	  case EXPLORE_FIRST:
+	    predict_or_learn_first<false>(data, base, data.ec_seq);
+	    break;
+	  case EPS_GREEDY:
+	    predict_or_learn_greedy<false>(data, base, data.ec_seq);
+	    break;
+	  case SOFTMAX:
+	    predict_or_learn_softmax<false>(data, base, data.ec_seq);
+	    break;
+	  case BAG_EXPLORE:
+	    predict_or_learn_bag<false>(data, base, data.ec_seq);
+	    break;
+	  case COVER:
+	    predict_or_learn_cover<false>(data, base, data.ec_seq);
+	    break;
+	  default:
+	    THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+	  }
+	if (label_example != nullptr)	//restore label
+	  label_example->l.cb = data.action_label;
+      }
     else
       {
 	/*	v_array<float> temp_probs;
