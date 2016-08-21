@@ -192,7 +192,7 @@ void mf_train(gdmf& d, example& ec)
     THROW("cannot use triples in matrix factorization");
 }
 
-void set_rand(weight_parameters::iterator& iter, size_t index, uint32_t stride)
+void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride)
 { 
 	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 	  *w = (float)(0.1 * merand48(index));
