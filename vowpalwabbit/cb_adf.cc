@@ -80,7 +80,7 @@ void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
-  gen_cs_example_dr(mydata.gen_cs, examples, mydata.cs_labels);
+  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
   GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
@@ -130,31 +130,40 @@ bool test_adf_sequence(cb_adf& data)
 
 template <bool is_learn>
 void do_actual_learning(cb_adf& data, base_learner& base)
-{ bool isTest = test_adf_sequence(data);
-  data.gen_cs.known_cost = get_observed_cost(data.ec_seq);
-
-  if (isTest || !is_learn)
-  { gen_cs_example_ips(data.ec_seq, data.cs_labels);//create test labels.
-    call_cs_ldf<false>(base, data.ec_seq, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset);
-  }
-  else
-  { switch (data.gen_cs.cb_type)
-    { case CB_TYPE_IPS:
-        learn_IPS(data, base, data.ec_seq);
-        break;
-      case CB_TYPE_DR:
-        learn_DR(data, base, data.ec_seq);
-        break;
-      case CB_TYPE_MTR:
-        if (data.predict)
-          learn_MTR<true>(data, base, data.ec_seq);
-        else
-          learn_MTR<false>(data, base, data.ec_seq);
-        break;
-      default:
-        THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
+{
+  data.gen_cs.known_cost = get_observed_cost(data.ec_seq);//need to set for test case
+  if (is_learn && !test_adf_sequence(data))
+    {  /*	v_array<float> temp_scores;
+	temp_scores = v_init<float>();
+	do_actual_learning<false>(data,base);
+	for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++) 
+	temp_scores.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
+	switch (data.gen_cs.cb_type)
+	  { case CB_TYPE_IPS:
+	      learn_IPS(data, base, data.ec_seq);
+	      break;
+	  case CB_TYPE_DR:
+	    learn_DR(data, base, data.ec_seq);
+	    break;
+	  case CB_TYPE_MTR:
+	    if (data.predict)
+	      learn_MTR<true>(data, base, data.ec_seq);
+	    else
+	      learn_MTR<false>(data, base, data.ec_seq);
+	    break;
+	  default:
+	    THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
+	  }
+	
+	/*      for (size_t i = 0; i < temp_scores.size(); i++) 
+	if (temp_scores[i] != data.ec_seq[0]->pred.a_s[i].score)
+	  cout << "problem! " << temp_scores[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " << data.ec_seq[0]->pred.a_s[i].action << endl;
+	  temp_scores.delete_v();*/
     }
-  }
+  else 
+    { gen_cs_test_example(data.ec_seq, data.cs_labels);//create test labels.
+      call_cs_ldf<false>(base, data.ec_seq, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset);
+    }
 }
 
 void global_print_newline(vw& all)
