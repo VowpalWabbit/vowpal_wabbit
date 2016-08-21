@@ -131,13 +131,13 @@ bool test_adf_sequence(cb_adf& data)
 template <bool is_learn>
 void do_actual_learning(cb_adf& data, base_learner& base)
 {
+  data.gen_cs.known_cost = get_observed_cost(data.ec_seq);//need to set for test case
   if (is_learn && !test_adf_sequence(data))
     {  /*	v_array<float> temp_scores;
 	temp_scores = v_init<float>();
 	do_actual_learning<false>(data,base);
 	for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++) 
 	temp_scores.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
-	data.gen_cs.known_cost = get_observed_cost(data.ec_seq);
 	switch (data.gen_cs.cb_type)
 	  { case CB_TYPE_IPS:
 	      learn_IPS(data, base, data.ec_seq);
