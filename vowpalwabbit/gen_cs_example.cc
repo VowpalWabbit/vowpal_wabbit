@@ -7,7 +7,6 @@
 
 #include "vw.h"
 #include "reductions.h"
-#include "cb_algs.h"
 #include "vw_exception.h"
 #include "gen_cs_example.h"
 
@@ -29,49 +28,6 @@ cb_class* get_observed_cost(CB::label& ld)
   return nullptr;
 }
 
-  void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
-{ //size_t mysize = examples.size();
-  c.pred_scores.costs.erase();
-  bool shared = CB::ec_is_example_header(*examples[0]);
-  int startK = 0;
-  if (shared) startK = 1;
-
-  cs_labels.costs.erase();
-  for (size_t i = 0; i < examples.size(); i++)
-  { if (example_is_newline_not_header(*examples[i])) continue;
-
-    COST_SENSITIVE::wclass wc = {0.,0,0.,0.};
-
-    if (c.known_cost.action + startK == i)
-    { int known_index = c.known_cost.action;
-      c.known_cost.action = 0;
-      //get cost prediction for this label
-      // num_actions should be 1 effectively.
-      // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
-      c.known_cost.action = known_index;
-    }
-    else
-      wc.x = CB_ALGS::get_cost_pred<true>(c.scorer, nullptr, *(examples[i]), 0, 2);
-
-    if (shared)
-      wc.class_index = (uint32_t)i - 1;
-    else
-      wc.class_index = (uint32_t)i;
-    c.pred_scores.costs.push_back(wc); // done
-
-    //add correction if we observed cost for this action and regressor is wrong
-    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
-      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
-    cs_labels.costs.push_back(wc);
-  }
-
-  if (shared)//take care of shared examples
-  { cs_labels.costs[0].class_index = 0;
-    cs_labels.costs[0].x = -FLT_MAX;
-  }
-}
-
 //Multiline version
 void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
 { 
@@ -85,6 +41,25 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
       wc.class_index = (uint32_t)i-1;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
       wc.x = ld.costs[0].cost / ld.costs[0].probability;
+    cs_labels.costs.push_back(wc);
+  }
+
+  if (shared)//take care of shared examples
+    { cs_labels.costs[0].class_index = 0;
+      cs_labels.costs[0].x = -FLT_MAX;
+    }
+}
+
+//Multiline version
+void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+{ 
+  cs_labels.costs.erase();
+  bool shared = CB::ec_is_example_header(*examples[0]);
+  for (uint32_t i = 0; i < examples.size()-1; i++)
+  { 
+    COST_SENSITIVE::wclass wc = {FLT_MAX,i,0.,0.};
+    if (shared && i > 0)
+      wc.class_index = (uint32_t)i-1;
     cs_labels.costs.push_back(wc);
   }
 

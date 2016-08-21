@@ -177,11 +177,55 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
     }
 }
 
+ void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
+
  void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
 
  void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels);
 
- void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> ec_seq, COST_SENSITIVE::label& cs_labels);
+ template <bool is_learn>
+  void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+{ //size_t mysize = examples.size();
+  c.pred_scores.costs.erase();
+  bool shared = CB::ec_is_example_header(*examples[0]);
+  int startK = 0;
+  if (shared) startK = 1;
+
+  cs_labels.costs.erase();
+  for (size_t i = 0; i < examples.size(); i++)
+    { if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
+
+    COST_SENSITIVE::wclass wc = {0.,0,0.,0.};
+
+    if (c.known_cost.action + startK == i)
+    { int known_index = c.known_cost.action;
+      c.known_cost.action = 0;
+      //get cost prediction for this label
+      // num_actions should be 1 effectively.
+      // my get_cost_pred function will use 1 for 'index-1+base'
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, &(c.known_cost), *(examples[i]), 0, 2);
+      c.known_cost.action = known_index;
+    }
+    else
+      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, nullptr, *(examples[i]), 0, 2);
+
+    if (shared)
+      wc.class_index = (uint32_t)i - 1;
+    else
+      wc.class_index = (uint32_t)i;
+    c.pred_scores.costs.push_back(wc); // done
+
+    //add correction if we observed cost for this action and regressor is wrong
+    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
+      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
+    cs_labels.costs.push_back(wc);
+  }
+
+  if (shared)//take care of shared examples
+  { cs_labels.costs[0].class_index = 0;
+    cs_labels.costs[0].x = -FLT_MAX;
+  }
+}
 
  template <bool is_learn>
    void gen_cs_example(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels)
@@ -192,7 +236,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 	 gen_cs_example_ips(ec_seq, cs_labels);
 	 break;
        case CB_TYPE_DR:
-	 gen_cs_example_dr(c, ec_seq, cs_labels);
+	 gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
 	 break;
        case CB_TYPE_MTR:
 	 gen_cs_example_mtr(c, ec_seq, cs_labels);
