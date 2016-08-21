@@ -31,16 +31,16 @@ struct initial_t
 	weight _initial;
 public:
 	initial_t(weight initial) : _initial(initial){}
-	void operator()(weight_parameters::iterator& iter, size_t /*index*/)
+	void operator()(weight_parameters::iterator& iter, uint64_t /*index*/)
 	{
 		*iter = _initial;
 	}
 };
-void random_positive(weight_parameters::iterator& iter, size_t ind)
+void random_positive(weight_parameters::iterator& iter, uint64_t ind)
 {*iter = (float)(0.1 * merand48(ind));
 }
 
-void random_weights(weight_parameters::iterator& iter, size_t ind)
+void random_weights(weight_parameters::iterator& iter, uint64_t ind)
 {*iter = (float)(merand48(ind) - 0.5);
 }
 void initialize_regressor(vw& all)
