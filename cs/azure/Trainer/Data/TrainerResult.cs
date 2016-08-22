@@ -16,24 +16,17 @@ namespace VowpalWabbit.Azure.Trainer.Data
 {
     internal sealed class TrainerResult
     {
-        internal TrainerResult(int[] actions, float[] probabilities)
+        internal TrainerResult(ActionScore[] progressivePrediction)
         {
-            if (actions == null)
-                throw new ArgumentNullException(nameof(actions));
-            if (probabilities == null)
-                throw new ArgumentNullException(nameof(probabilities));
+            if (progressivePrediction == null)
+                throw new ArgumentNullException(nameof(progressivePrediction));
 
-            if (actions.Length != probabilities.Length)
-                throw new ArgumentException($"Actions (length: {actions.Length}) and probabilities (length: {probabilities.Length}) must be of equal length"); 
-
-            this.Ranking = actions;
-            this.ProbabilitiesOrderedByRanking = probabilities;
-            this.Probabilities = new float[actions.Length];
-            for (int i = 0; i < actions.Length; i++)
-                this.Probabilities[actions[i] - 1] = probabilities[i];
+            this.Ranking = progressivePrediction.Select(a => (int)a.Action).ToArray();
+            this.ProbabilitiesOrderedByRanking = progressivePrediction.Select(a => a.Score).ToArray();
+            this.Probabilities = new float[ProbabilitiesOrderedByRanking.Length];
+            for (int i = 0; i < ProbabilitiesOrderedByRanking.Length; i++)
+                this.Probabilities[Ranking[i] - 1] = ProbabilitiesOrderedByRanking[i];
         }
-
-        internal ActionScore[] ProgressivePrediction { get; set; }
 
         internal ContextualBanditLabel Label { get; set; }
 

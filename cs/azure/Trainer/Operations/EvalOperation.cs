@@ -103,9 +103,9 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 yield break;
             }
 
-            if (trainerResult.ProgressivePrediction == null)
+            if (trainerResult.Probabilities == null)
             {
-                this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.Probabilities is null");
                 yield break;
             }
 
@@ -140,7 +140,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     })
             };
 
-            for (int action = 1; action <= trainerResult.ProgressivePrediction.Length; action++)
+            for (int action = 1; action <= trainerResult.Ranking.Length; action++)
             {
                 string tag;
                 if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
