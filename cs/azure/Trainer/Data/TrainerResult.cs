@@ -36,7 +36,7 @@ namespace VowpalWabbit.Azure.Trainer.Data
                 this.ProgressiveProbabilities[ProgressiveRanking[i]] = probabilitiesOrderedByRanking[i]; // Ranking is 0-based
 
             this.ObservedRanking = observedActions;
-            this.ObservedProbabilities = new float[ObservedProbabilities.Length];
+            this.ObservedProbabilities = new float[observedProbabilities.Length];
             for (int i = 0; i < observedActions.Length; i++)
                 this.ObservedProbabilities[observedActions[i] - 1] = observedProbabilities[i];
         }
