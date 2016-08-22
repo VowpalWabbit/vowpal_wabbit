@@ -18,7 +18,7 @@ public class VWProbLearnerTest extends VWTestHelper {
             new String[]{"1:1.0 | a_1 b_1 c_1", "3:2.0 | a_3 b_3 c_3"}
         };
 
-        VWProbLearner vw = VWLearners.create("--quiet --csoaa_ldf=mc --loss_function=logistic --probabilities");
+        ProbLearner vw = VowpalWabbitLearners.create("--quiet --csoaa_ldf=mc --loss_function=logistic --probabilities");
         float[] pred = new float[data.length];
         for (int i=0; i<data.length; ++i) {
             pred[i] = vw.learn(data[i]);

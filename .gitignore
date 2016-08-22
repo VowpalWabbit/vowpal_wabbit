@@ -31,16 +31,6 @@ test/*.cmp
 t_*
 bin
 vw
-!java/
-!java/src/
-!java/src/main/
-!java/src/main/java/
-!java/src/main/java/vw/
-!java/src/main/java/vw/learner/
-!java/src/test
-!java/src/test/java
-!java/src/test/java/vw
-!java/src/test/java/vw/learner
 .*
 vw.1
 *.cache

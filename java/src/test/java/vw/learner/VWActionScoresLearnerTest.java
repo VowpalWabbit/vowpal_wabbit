@@ -35,7 +35,7 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
                 "3:1.5:0.7 | a d"
         };
 
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_explore 4");
+        ActionScoresLearner vw = VowpalWabbitLearners.create("--quiet --cb_explore 4");
         ActionScores[] trainPreds = new ActionScores[cbTrain.length];
         for (int i=0; i<cbTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbTrain[i]);
@@ -78,7 +78,7 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
     @Test
     public void testCBADFWithRank() throws IOException {
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_adf --rank_all");
+        ActionScoresLearner vw = VowpalWabbitLearners.create("--quiet --cb_adf --rank_all");
         ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
@@ -107,7 +107,7 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
     @Test
     public void testCBADFExplore() throws IOException {
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_explore_adf");
+        ActionScoresLearner vw = VowpalWabbitLearners.create("--quiet --cb_explore_adf");
         ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
@@ -136,7 +136,7 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
 
     @Test
     public void testCBADF() throws IOException {
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_adf");
+        ActionScoresLearner vw = VowpalWabbitLearners.create("--quiet --cb_adf");
         ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);

@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotEquals;
  * Created by jmorra on 11/24/14.
  */
 public class VWScalarLearnerTest extends VWTestHelper {
-    private VWScalarLearner houseScorer;
+    private ScalarLearner houseScorer;
 
     @Before
     public void setup() throws IOException {
@@ -26,12 +26,12 @@ public class VWScalarLearnerTest extends VWTestHelper {
                 "0 | price:.23 sqft:.25 age:.05 2006",
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
-        VWScalarLearner learner = VWLearners.create(" --quiet -f " + houseModel);
+        ScalarLearner learner = VowpalWabbitLearners.create(" --quiet -f " + houseModel);
         for (String d : houseData) {
             learner.learn(d);
         }
         learner.close();
-        houseScorer = VWLearners.create("--quiet -t -i " + houseModel);
+        houseScorer = VowpalWabbitLearners.create("--quiet -t -i " + houseModel);
     }
 
     @After
@@ -55,7 +55,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
 
     @Test
     public void testLearn() {
-        VWScalarLearner learner = VWLearners.create("--quiet");
+        ScalarLearner learner = VowpalWabbitLearners.create("--quiet");
         String heightData = "|f height:0.23 weight:0.25 width:0.05";
         float firstPrediction = learner.learn("0.1 " + heightData);
         float secondPrediction = learner.learn("0.9 " + heightData);
@@ -67,7 +67,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     public void testManySamples() {
         File model = new File("basic.model");
         model.deleteOnExit();
-        VWScalarLearner m = VWLearners.create("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
+        ScalarLearner m = VowpalWabbitLearners.create("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
         for (int i=0; i<100; ++i) {
             m.learn("-1 | ");
             m.learn("1 | ");
@@ -75,14 +75,14 @@ public class VWScalarLearnerTest extends VWTestHelper {
         m.close();
 
         float expVwOutput = 0.50419676f;
-        m = VWLearners.create("--quiet -i " + model.getAbsolutePath());
+        m = VowpalWabbitLearners.create("--quiet -i " + model.getAbsolutePath());
         assertEquals(expVwOutput, m.predict("| "), 0.0001);
     }
 
     @Test
     public void twoModelTest() {
-        VWScalarLearner m1 = VWLearners.create("--quiet");
-        VWScalarLearner m2 = VWLearners.create("--quiet");
+        ScalarLearner m1 = VowpalWabbitLearners.create("--quiet");
+        ScalarLearner m2 = VowpalWabbitLearners.create("--quiet");
 
         float a = m1.predict("-1 | ");
         m1.close();
