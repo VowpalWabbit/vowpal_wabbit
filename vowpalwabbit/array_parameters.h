@@ -137,14 +137,14 @@ public:
 	}
 
 	template<void(*T)(iterator&)>
-	inline void set_default()
+    inline void set_default()
 	  {
 	    for (iterator iter = begin(); iter != end(); ++iter)
 	      T(iter);
 	  }
 	
 	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
-	inline void set_default()
+    inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
 	   iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i += stride)
@@ -152,7 +152,7 @@ public:
 	}
 
 	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
-	inline void set_default()
+    inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride)
@@ -160,7 +160,7 @@ public:
 	}
 
 	template <typename T>
-	void set_default(T t)
+    void set_default(T t)
 	{ uint32_t stride = 1 << _stride_shift;
 	  iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i+= stride)
