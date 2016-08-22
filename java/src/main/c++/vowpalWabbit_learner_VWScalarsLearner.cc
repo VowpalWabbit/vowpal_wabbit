@@ -1,6 +1,6 @@
+#include "vowpalWabbit_learner_VWScalarsLearner.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "jni_base_learner.h"
-#include "vowpalWabbit_learner_VWScalarsLearner.h"
 
 jfloatArray scalars_predictor(example* vec, JNIEnv *env)
 { v_array<float> scalars = vec->pred.scalars;
@@ -10,10 +10,10 @@ jfloatArray scalars_predictor(example* vec, JNIEnv *env)
   return r;
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_ScalarsLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
+JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_VWScalarsLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 { return base_predict<jfloatArray>(env, example_string, learn, vwPtr, scalars_predictor);
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_ScalarsLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
+JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_VWScalarsLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
 { return base_predict<jfloatArray>(env, example_strings, learn, vwPtr, scalars_predictor);
 }

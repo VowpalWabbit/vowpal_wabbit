@@ -2,8 +2,8 @@
 #include <jni.h>
 /* Header for class vowpalWabbit_learner_VWLearners */
 
-#ifndef _Included_vowpalwabbit_learner_VWLearners
-#define _Included_vowpalwabbit_learner_VWLearners
+#ifndef _Included_vowpalWabbit_learner_VWLearners
+#define _Included_vowpalWabbit_learner_VWLearners
 #ifdef __cplusplus
 extern "C" {
 #endif

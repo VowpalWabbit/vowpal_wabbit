@@ -13,4 +13,6 @@ final public class VWProbLearner extends VWFloatLearner {
 
     @Override
     protected native float predictMultiline(String[] example, boolean learn, long nativePointer);
+
+    public static native String version();
 }

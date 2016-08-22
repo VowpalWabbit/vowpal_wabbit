@@ -1,3 +1,4 @@
+#include "vowpalWabbit_learner_VWLearners.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "jni_base_learner.h"
 

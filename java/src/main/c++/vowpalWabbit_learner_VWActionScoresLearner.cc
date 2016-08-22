@@ -1,9 +1,9 @@
+#include "vowpalWabbit_learner_VWActionScoresLearner.h"
 #include "../../../../vowpalwabbit/vw.h"
 #include "jni_base_learner.h"
-#include "vowpalWabbit_learner_VWActionScoresLearner.h"
 
 jobject action_scores_prediction(example* vec, JNIEnv *env)
-{ jclass action_score_class = env->FindClass("vw/responses/ActionScore");
+{ jclass action_score_class = env->FindClass("vowpalWabbit/responses/ActionScore");
   jmethodID action_score_constructor = env->GetMethodID(action_score_class, "<init>", "(IF)V");
 
   ACTION_SCORE::action_scores a_s = vec->pred.a_s;
@@ -20,10 +20,10 @@ jobject action_scores_prediction(example* vec, JNIEnv *env)
   return env->NewObject(action_scores_class, action_scores_constructor, j_action_scores);
 }
 
-JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_ActionScoresLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
+JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionScoresLearner_predict(JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 { return base_predict<jobject>(env, example_string, learn, vwPtr, action_scores_prediction);
 }
 
-JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_ActionScoresLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
+JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionScoresLearner_predictMultiline(JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
 { return base_predict<jobject>(env, example_strings, learn, vwPtr, action_scores_prediction);
 }

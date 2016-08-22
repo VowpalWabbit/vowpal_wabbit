@@ -98,7 +98,6 @@ final public class VWLearners {
             }
         }
     }
-
     private static native long initialize(String command);
     private static native VWReturnType getReturnType(long nativePointer);
 
