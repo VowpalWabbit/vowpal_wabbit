@@ -42,9 +42,10 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	      cout << "warning: bad id features, must have value 1." << endl;
 	      continue;
 	    }
-	  if (sm.marginals.find(second_index) == sm.marginals.end())//need to initialize things.
-	    sm.marginals.insert(make_pair(second_index,make_pair(sm.initial_numerator, sm.initial_denominator)));
-	  f.begin().value() = (feature_value)(sm.marginals[second_index].first / sm.marginals[second_index].second);
+	  uint64_t key = second_index + ec.ft_offset;
+	  if (sm.marginals.find(key) == sm.marginals.end())//need to initialize things.
+	    sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
+	  f.begin().value() = (feature_value)(sm.marginals[key].first / sm.marginals[key].second);
 	  sm.temp[n]={second_value,second_index};
 	  if (!f.space_names.empty())
 	    sm.asp[n]=f.space_names[1];
@@ -73,8 +74,9 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	      if (is_learn)
 		{
 		  uint64_t second_index = (++(f.begin())).index();
-		  sm.marginals[second_index].first += ec.l.simple.label * ec.weight;
-		  sm.marginals[second_index].second += ec.weight;
+		  uint64_t key = second_index + ec.ft_offset;
+		  sm.marginals[key].first += ec.l.simple.label * ec.weight;
+		  sm.marginals[key].second += ec.weight;
 		}
 	    }
 	}
