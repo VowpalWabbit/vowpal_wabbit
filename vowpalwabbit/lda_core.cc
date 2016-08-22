@@ -667,7 +667,7 @@ public:
 	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda ) 
 		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
 	{}
-	void operator()(weight_parameters::iterator& iter, size_t index)
+	void operator()(weight_parameters::iterator& iter, uint64_t index)
 	{ if (_random)
 	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
