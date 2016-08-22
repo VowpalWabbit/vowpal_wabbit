@@ -24,7 +24,7 @@ public:
 	weights_iterator_iterator(T* cur)
 		: _cur(cur)
 	{ }
- 
+	
 	T& operator*() { return *_cur; }
 
 	weights_iterator_iterator& operator++()
