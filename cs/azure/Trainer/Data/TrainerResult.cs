@@ -25,7 +25,7 @@ namespace VowpalWabbit.Azure.Trainer.Data
             this.ProbabilitiesOrderedByRanking = progressivePrediction.Select(a => a.Score).ToArray();
             this.Probabilities = new float[ProbabilitiesOrderedByRanking.Length];
             for (int i = 0; i < ProbabilitiesOrderedByRanking.Length; i++)
-                this.Probabilities[Ranking[i] - 1] = ProbabilitiesOrderedByRanking[i];
+                this.Probabilities[Ranking[i]] = ProbabilitiesOrderedByRanking[i]; // Ranking is 0-based
         }
 
         internal ContextualBanditLabel Label { get; set; }
