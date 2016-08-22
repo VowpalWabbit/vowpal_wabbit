@@ -15,7 +15,7 @@ typedef float weight;
 
 class weight_parameters;
 
-template <typename T> 
+template <typename T>
 class weights_iterator_iterator
 {
 private:
@@ -24,7 +24,7 @@ public:
 	weights_iterator_iterator(T* cur)
 		: _cur(cur)
 	{ }
-	
+
 	T& operator*() { return *_cur; }
 
 	weights_iterator_iterator& operator++()
@@ -61,7 +61,7 @@ public:
 	typedef  T& reference;
 
 	typedef weights_iterator_iterator<T> w_iter;
-	
+
 	weights_iterator(T* current, uint32_t stride)
 		: _current(current), _stride(stride)
 	{ }
@@ -89,7 +89,7 @@ public:
 	w_iter end(size_t offset) { return w_iter(_current + offset); }
 };
 
-class weight_parameters 
+class weight_parameters
 {
 private:
 	weight* _begin;
@@ -103,7 +103,7 @@ public:
 
 	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
-		_weight_mask((length << stride_shift) - 1),	
+		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
 		_seeded(false)
 		{ }
@@ -111,15 +111,15 @@ public:
  weight_parameters()
 	 : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false)
 	  {}
-	
+
 	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
 
 	weight_parameters(const weight_parameters &other) { shallow_copy(other); }
 	weight_parameters(weight_parameters &&) = delete;
 
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
-	
-	//iterator with stride 
+
+	//iterator with stride
 	iterator begin() { return iterator(_begin, (1<<_stride_shift)); }
 	iterator end() { return iterator(_begin + _weight_mask + 1, (1 << _stride_shift)); }
 
@@ -137,22 +137,22 @@ public:
 	}
 
 	template<void(*T)(iterator&)>
-    inline void set_default()
+  inline void set_default()
 	  {
 	    for (iterator iter = begin(); iter != end(); ++iter)
 	      T(iter);
 	  }
-	
-	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride) 
-    inline void set_default()
+
+	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride)
+  inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
 	   iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i += stride)
 			T(iter, i);
 	}
 
-	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector 
-    inline void set_default()
+	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector
+  inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride)
@@ -160,20 +160,20 @@ public:
 	}
 
 	template <typename T>
-    void set_default(T t)
+  void set_default(T t)
 	{ uint32_t stride = 1 << _stride_shift;
 	  iterator iter = begin();
 	   for (size_t i = 0; iter != end(); ++iter, i+= stride)
-			t(iter, i); 
+			t(iter, i);
 	}
-	
+
 
 	void set_zero(size_t offset)
 	{
 		for (iterator iter = begin(); iter != end(); ++iter)
 			(&(*iter))[offset] = 0;
 	}
-	
+
 	uint64_t mask()
 	{ return _weight_mask;
 	}
@@ -183,13 +183,13 @@ public:
 	}
 
 	uint32_t stride_shift()
-	{ return _stride_shift;		
-	}		
-	
-	void stride_shift(uint32_t stride_shift)		
-	{ _stride_shift = stride_shift;		
+	{ return _stride_shift;
 	}
-	
+
+	void stride_shift(uint32_t stride_shift)
+	{ _stride_shift = stride_shift;
+	}
+
 	#ifndef _WIN32
 	void share(size_t length)
 	{
@@ -202,7 +202,7 @@ public:
       	  _begin = dest;
 	}
 	#endif
-	
+
 	~weight_parameters()
 	{  if (_begin != nullptr && !_seeded)  // don't free weight vector if it is shared with another instance
 	   {  free(_begin);

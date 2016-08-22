@@ -61,9 +61,9 @@ void initialize_regressor(vw& all)
 	  all.weights.set_default<initial_t>(init);
   }
   else if (all.random_positive_weights)
-    all.weights.set_default<random_positive>();
+	  all.weights.set_default<random_positive>();
   else if (all.random_weights)
-    all.weights.set_default<random_weights>();
+	  all.weights.set_default<random_weights>();
 }
 
 const size_t default_buf_size = 512;
