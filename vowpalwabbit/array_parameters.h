@@ -181,15 +181,15 @@ public:
 	uint64_t seeded()
 	{  return _seeded;
 	}
-
-	uint32_t stride_shift()
-	{ return _stride_shift;
-	}
 	
 	void stride_shift(uint32_t stride_shift)
 	{ _stride_shift = stride_shift;
 	}
-
+	
+	uint32_t stride_shift()
+	{ return _stride_shift;
+	}
+	
 	#ifndef _WIN32
 	void share(size_t length)
 	{
