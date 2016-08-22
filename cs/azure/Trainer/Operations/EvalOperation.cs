@@ -103,14 +103,14 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 yield break;
             }
 
-            if (trainerResult.Probabilities == null)
+            if (trainerResult.ProgressiveProbabilities == null)
             {
                 this.telemetry.TrackTrace($"Received invalid data: trainerResult.Probabilities is null");
                 yield break;
             }
 
 
-            var pi_a_x = trainerResult.Probabilities[trainerResult.Label.Action - 1];
+            var pi_a_x = trainerResult.ProgressiveProbabilities[trainerResult.Label.Action - 1];
             var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);
 
             yield return new EvalData
@@ -140,7 +140,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     })
             };
 
-            for (int action = 1; action <= trainerResult.Ranking.Length; action++)
+            for (int action = 1; action <= trainerResult.ProgressiveRanking.Length; action++)
             {
                 string tag;
                 if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
@@ -155,7 +155,7 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     {
                         name = name,
                         cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
-                        prob = trainerResult.Label.Action == action ? 1 / (trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
+                        prob = trainerResult.Label.Action == action ? 1 / (trainerResult.ObservedProbabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
                     })
                 };
             }
