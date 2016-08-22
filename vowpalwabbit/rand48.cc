@@ -20,14 +20,6 @@ float merand48(uint64_t& initial) {
   return bits_to_float(temp) - 1;
 }
 
-#ifdef __APPLE__
-float merand48(unsigned long& initial) {
-    initial = a * initial + c;
-    int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
-    return bits_to_float(temp) - 1;
-}
-#endif
-
 uint64_t v = c;
 
 void msrand48(uint64_t initial) { v = initial; }
