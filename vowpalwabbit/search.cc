@@ -116,6 +116,7 @@ std::ostream& operator << (std::ostream& os, const action_cache& x) { os << x.k 
 struct search_private
 { vw* all;
 
+  uint64_t offset;
   bool auto_condition_features;  // do you want us to automatically add conditioning features?
   bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do it for you!
   bool examples_dont_change;     // set to true if you don't do any internal example munging
@@ -1000,11 +1001,15 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
 
     polylabel old_label = ecs[a].l;
     ecs[a].l.cs = priv.ldf_test_label;
+    uint64_t old_offset = ecs[a].ft_offset;
+    ecs[a].ft_offset = priv.offset;
     priv.base_learner->predict(ecs[a], policy);
-
+    ecs[a].ft_offset = old_offset;
+    
     priv.empty_example->in_use = true;
+    priv.empty_example->ft_offset = priv.offset;
     priv.base_learner->predict(*priv.empty_example);
-
+    
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
 
     if (override_action != (action)-1)
@@ -1185,12 +1190,15 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         lab.costs[0].x = losses.cs.costs[a-start_K].x;
         //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
         ec.in_use = true;
+	uint64_t old_offset = ec.ft_offset;
+	ec.ft_offset = priv.offset;
         priv.base_learner->learn(ec, learner);
+	ec.ft_offset = old_offset;
 
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
       }
-
+      priv.empty_example->ft_offset = priv.offset;
       priv.base_learner->learn(*priv.empty_example, learner);
       cdbg << "generate_training_example called learn on empty_example" << endl;
     }
@@ -1791,6 +1799,7 @@ void do_actual_learning(vw&all, search& sch)
 template <bool is_learn>
 void search_predict_or_learn(search& sch, base_learner& base, example& ec)
 { search_private& priv = *sch.priv;
+  priv.offset = ec.ft_offset;
   vw* all = priv.all;
   priv.base_learner = &base;
   bool is_real_example = true;
