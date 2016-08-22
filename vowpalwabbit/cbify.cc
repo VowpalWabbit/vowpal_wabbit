@@ -18,19 +18,15 @@ class vw_scorer : public IScorer<example>
 {
  public:
   vector<float> Score_Actions(example& ctx);
-  
 };
-
 
 struct vw_recorder : public IRecorder<example>
 { void Record(example& context, u32 a, float p, string /*unique_key*/)
-  {
-  }
+  { }
 
   virtual ~vw_recorder()
   { }
 };
-
 
 struct cbify
 { CB::label cb_label;
@@ -51,7 +47,6 @@ vector<float> vw_scorer::Score_Actions(example& ctx)
     probs_vec.push_back(ctx.pred.a_s[i].score);
   return probs_vec;
 }
-
 
 float loss(uint32_t label, uint32_t final_prediction)
 {
