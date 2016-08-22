@@ -103,7 +103,7 @@ public:
 
 	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
-		_weight_mask((length << stride_shift) - 1), 
+		_weight_mask((length << stride_shift) - 1),	
 		_stride_shift(stride_shift),
 		_seeded(false)
 		{ }
@@ -142,8 +142,8 @@ public:
 	    for (iterator iter = begin(); iter != end(); ++iter)
 	      T(iter);
 	  }
-
-	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride)
+	
+	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
 	   iterator iter = begin();
@@ -151,7 +151,7 @@ public:
 			T(iter, i);
 	}
 
-	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector
+	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
