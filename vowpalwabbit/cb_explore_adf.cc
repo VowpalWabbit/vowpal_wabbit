@@ -74,13 +74,13 @@ namespace CB_EXPLORE_ADF{
       }
   }
   
-  example* test_adf_sequence(cb_explore_adf& data)
+  example* test_adf_sequence(v_array<example*>& ec_seq)
   {
     uint32_t count = 0;
     example* ret = nullptr;
-    for (size_t k = 0; k < data.ec_seq.size(); k++)
+    for (size_t k = 0; k < ec_seq.size(); k++)
     {
-      example *ec = data.ec_seq[k];
+      example *ec = ec_seq[k];
 
       if (ec->l.cb.costs.size() > 1)
         THROW("cb_adf: badly formatted example, only one cost can be known.");
@@ -104,7 +104,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore tau times, then act according to optimal.
-    if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(data) != nullptr)
+    if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(data.ec_seq) != nullptr)
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -129,7 +129,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   { //Explore uniform random an epsilon fraction of the time.
-    if (is_learn && test_adf_sequence(data) != nullptr)
+    if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -155,7 +155,7 @@ namespace CB_EXPLORE_ADF{
     for (uint32_t i = 0; i < num_actions; i++)
       data.action_probs[i] = {i,0.};
     float prob = 1.f / (float)data.bag_size;
-    bool test_sequence = test_adf_sequence(data) == nullptr;
+    bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
     for (uint32_t i = 0; i < data.bag_size; i++) 
       {
 	uint32_t count = BS::weight_gen();
@@ -241,7 +241,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
   {
-    if (is_learn && test_adf_sequence(data) != nullptr) 
+    if (is_learn && test_adf_sequence(data.ec_seq) != nullptr) 
       multiline_learn_or_predict<true>(base, examples, data.offset);
     else
       multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -266,8 +266,6 @@ namespace CB_EXPLORE_ADF{
     if (data.need_to_clear)
       data.ec_seq.erase();
   }
-
-  template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
   void finish(cb_explore_adf& data)
   {
@@ -374,7 +372,7 @@ namespace CB_EXPLORE_ADF{
   template <bool is_learn>
   void do_actual_learning(cb_explore_adf& data, base_learner& base)
   {
-    example* label_example=test_adf_sequence(data);
+    example* label_example=test_adf_sequence(data.ec_seq);
     data.gen_cs.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
     if (label_example == nullptr || !is_learn)

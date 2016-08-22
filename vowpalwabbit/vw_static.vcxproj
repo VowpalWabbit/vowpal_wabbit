@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -358,6 +358,7 @@
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_explore_adf.h" />
+    <ClInclude Include="cbify.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -366,6 +367,7 @@
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
+    <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="gen_cs_example.h" />
@@ -453,6 +455,7 @@
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
+    <ClCompile Include="explore_eval.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="audit_regressor.cc" />
