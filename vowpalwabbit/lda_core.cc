@@ -667,7 +667,7 @@ public:
 	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda ) 
 		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
 	{}
-	void operator()(weight_parameters::iterator& iter, size_t index)
+	void operator()(weight_parameters::iterator& iter, uint64_t index)
 	{ if (_random)
 	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
@@ -1234,7 +1234,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift());
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

@@ -5,6 +5,12 @@
 #include <sys/mman.h>
 #endif
 
+// It appears that on OSX MAP_ANONYMOUS is mapped to MAP_ANON
+// https://github.com/leftmike/foment/issues/4
+#ifdef __APPLE__
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 typedef float weight;
 
 class weight_parameters;
@@ -137,7 +143,7 @@ public:
 	      T(iter);
 	  }
 	
-	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
+	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride) 
 	inline void set_default()
 	{  uint32_t stride = 1 << _stride_shift;
 	   iterator iter = begin();
@@ -145,7 +151,7 @@ public:
 			T(iter, i);
 	}
 
-	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
+	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
