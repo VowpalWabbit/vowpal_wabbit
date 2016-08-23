@@ -346,8 +346,6 @@
     </ClCompile>
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
-    <ClCompile Include="primitives.cc" />
-    <ClCompile Include="vw_validate.cc" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
@@ -360,7 +358,7 @@
     <ClInclude Include="cb_explore_adf.h" />
     <ClInclude Include="gen_cs_example.h" />
     <ClInclude Include="cb_adf.h" />
-    <ClCompile Include="cbify.h" />
+    <ClInclude Include="cbify.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -368,7 +366,7 @@
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
-    <ClCompile Include="explore_eval.h" />
+    <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="interactions.h" />
@@ -488,6 +486,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="OjaNewton.cc" />
@@ -516,6 +515,7 @@
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="vw_exception.cc" />
+    <ClCompile Include="vw_validate.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
