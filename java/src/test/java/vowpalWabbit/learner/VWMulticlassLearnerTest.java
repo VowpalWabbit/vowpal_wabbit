@@ -17,6 +17,34 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
+    public void testCBADF() throws IOException {
+        String[][] cbADFTrain = new String[][]{
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
+        };
+        String model = temporaryFolder.newFile().getAbsolutePath();
+        VWMulticlassLearner vw = VWLearners.create("--quiet --cb_adf -f " + model);
+        int[] trainPreds = new int[cbADFTrain.length];
+        for (int i=0; i<cbADFTrain.length; ++i) {
+            trainPreds[i] = vw.learn(cbADFTrain[i]);
+        }
+        int[] expectedTrainPreds = new int[]{0, 0, 0, 1};
+
+        vw.close();
+        assertArrayEquals(expectedTrainPreds, trainPreds);
+
+        vw = VWLearners.create("--quiet -t -i " + model);
+        int[] testPreds = new int[]{vw.predict(cbADFTrain[0])};
+
+        int[] expectedTestPreds = new int[]{0};
+
+        vw.close();
+        assertArrayEquals(expectedTestPreds, testPreds);
+    }
+
+    @Test
     public void testContextualBandits() throws IOException {
         // Note that the expected values in this test were obtained by running
         // vw from the command line as follows

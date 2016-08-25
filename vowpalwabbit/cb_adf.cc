@@ -146,7 +146,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 	    learn_DR(data, base, data.ec_seq);
 	    break;
 	  case CB_TYPE_MTR:
-	    if (data.predict)
+        if (data.predict)
 	      learn_MTR<true>(data, base, data.ec_seq);
 	    else
 	      learn_MTR<false>(data, base, data.ec_seq);
@@ -188,6 +188,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   float loss = 0.;
 
   uint32_t action = ec.pred.a_s[0].action;
+  ec.pred.multiclass = action;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
       num_features += (*ec_seq)[i]->num_features;
@@ -411,7 +412,7 @@ base_learner* cb_adf_setup(vw& all)
   all.label_type = label_type::cb;
 
   learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
-	  prediction_type::action_scores);
+      prediction_type::multiclass);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   ld.gen_cs.scorer = all.scorer;

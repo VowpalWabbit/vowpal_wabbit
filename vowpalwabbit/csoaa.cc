@@ -750,7 +750,7 @@ base_learner* csldf_setup(vw& all)
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
 		*all.file_options << " --csoaa_rank";
-		all.delete_prediction = delete_action_scores;
+        all.delete_prediction = delete_action_scores;
 	}
 
 	all.p->lp = COST_SENSITIVE::cs_label;
