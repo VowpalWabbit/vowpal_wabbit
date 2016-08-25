@@ -220,7 +220,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, true);
+  CB::print_update(all, is_test, ec, ec_seq, false);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
