@@ -1488,7 +1488,7 @@ void finish(vw& all, bool delete_all)
   { all.l->finish();
     free_it(all.l);
   }
-
+  
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();

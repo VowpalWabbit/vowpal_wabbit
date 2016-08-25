@@ -146,7 +146,7 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 	    learn_DR(data, base, data.ec_seq);
 	    break;
 	  case CB_TYPE_MTR:
-        if (data.predict)
+	    if (data.predict)
 	      learn_MTR<true>(data, base, data.ec_seq);
 	    else
 	      learn_MTR<false>(data, base, data.ec_seq);
