@@ -178,47 +178,4 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         vw.close();
         assertArrayEquals(expectedTestPreds, testPreds);
     }
-
-    @Test
-    public void testCBADF() throws IOException {
-        String model = temporaryFolder.newFile().getAbsolutePath();
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_adf -f " + model);
-        ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
-        for (int i=0; i<cbADFTrain.length; ++i) {
-            trainPreds[i] = vw.learn(cbADFTrain[i]);
-        }
-        ActionScores[] expectedTrainPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0),
-                new ActionScore(1, 0)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.14991696f),
-                new ActionScore(1, 0.14991696f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.27180168f),
-                new ActionScore(1, 0.31980497f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(1, 0.35295868f),
-                new ActionScore(0, 0.3869971f)
-            })
-        };
-        vw.close();
-        assertArrayEquals(expectedTrainPreds, trainPreds);
-
-        vw = VWLearners.create("--quiet -t -i " + model);
-        ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
-
-        ActionScores[] expectedTestPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.33543912f),
-                new ActionScore(1, 0.37897447f)
-            }),
-        };
-
-        vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds);
-    }
 }
