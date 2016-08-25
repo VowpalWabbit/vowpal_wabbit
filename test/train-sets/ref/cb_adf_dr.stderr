@@ -8,8 +8,8 @@ Reading datafile = train-sets/cb_test.ldf
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-2.000000 2.000000            1            1.0    known        0       19
-0.905402 -0.189197            2            2.0    known        1        9
+2.000000 2.000000            1            1.0    known        0:0...       19
+0.905402 -0.189197            2            2.0    known        1:-0.0207921...        9
 
 finished run
 number of examples per pass = 3
