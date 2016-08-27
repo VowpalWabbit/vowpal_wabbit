@@ -95,7 +95,7 @@ namespace CB_EXPLORE{
     for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
       probs.push_back({i,0.});
     float prob = 1.f/(float)data.bag_size;
-    for(int i = 0;i < data.bag_size;i++) {
+    for(size_t i = 0;i < data.bag_size;i++) {
       uint32_t count = BS::weight_gen();
       if (is_learn && count > 0)
 	base.learn(ec,i);
