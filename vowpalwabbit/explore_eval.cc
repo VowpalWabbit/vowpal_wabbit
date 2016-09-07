@@ -196,7 +196,20 @@ namespace EXPLORE_EVAL {
 	
 	if (frand48() < threshold)
 	  {
+        example* ec_found = nullptr;
+        for (example*& ec : data.ec_seq)
+        {
+          if (ec->l.cb.costs.size() == 1 &&
+            ec->l.cb.costs[0].cost != FLT_MAX &&
+            ec->l.cb.costs[0].probability > 0)
+          {
+            ec_found = ec;
+          }
+        }
+        ec_found->l.cb.costs[0].probability = action_probability;
+
 	    multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
+        ec_found->l.cb.costs[0].probability = data.known_cost.probability;
 	    data.update_count++;
 	  }
       }
