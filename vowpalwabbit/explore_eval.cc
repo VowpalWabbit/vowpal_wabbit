@@ -191,7 +191,7 @@ namespace EXPLORE_EVAL {
 	
 	threshold *= data.multiplier;
 	
-	if (threshold > 1.)
+	if (threshold > 1. + 1e-6)
 	  data.violations++;
 	
 	if (frand48() < threshold)
