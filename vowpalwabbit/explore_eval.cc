@@ -275,7 +275,7 @@ base_learner* explore_eval_setup(vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  learner<explore_eval>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, 1);
+  learner<explore_eval>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);  
   l.set_finish(finish);
