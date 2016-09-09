@@ -411,7 +411,7 @@ base_learner* cb_adf_setup(vw& all)
   all.label_type = label_type::cb;
 
   learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
-	prediction_type::action_scores);
+	  prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   ld.gen_cs.scorer = all.scorer;
