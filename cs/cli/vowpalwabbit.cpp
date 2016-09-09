@@ -614,6 +614,8 @@ namespace VW
   {
 	  int offset = 0;
 	  int end = s->Length;
+	  if (end == 0)
+		  return u;
 
 	  //trim leading whitespace but not UTF-8
 	  for (;offset < s->Length && s[offset] <= 0x20;offset++);

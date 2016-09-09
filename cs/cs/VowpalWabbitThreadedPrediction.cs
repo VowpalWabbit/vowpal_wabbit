@@ -31,6 +31,15 @@ namespace VW
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
+        {
+        }
+
+        /// <summary>
         /// Returns the same instance as no wrapping is required.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
@@ -60,6 +69,15 @@ namespace VW
         /// <param name="model">The model used by each pool instance.</param>
         public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
         {
         }
 
@@ -94,6 +112,15 @@ namespace VW
         /// <param name="model">The model used by each pool instance.</param>
         public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
         {
         }
 
