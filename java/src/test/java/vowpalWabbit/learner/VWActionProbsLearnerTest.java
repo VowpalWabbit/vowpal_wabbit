@@ -18,22 +18,15 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private String[][] cbADFTrain = new String[][]{
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
-    };
-
     @Test
     public void testCBExplore() throws IOException {
         String model = temporaryFolder.newFile().getAbsolutePath();
         String[] cbTrain = new String[]{
-                "1:2:0.4 | a c",
-                "3:0.5:0.2 | b d",
-                "4:1.2:0.5 | a b c",
-                "2:1:0.3 | b c",
-                "3:1.5:0.7 | a d"
+            "1:2:0.4 | a c",
+            "3:0.5:0.2 | b d",
+            "4:1.2:0.5 | a b c",
+            "2:1:0.3 | b c",
+            "3:1.5:0.7 | a d"
         };
 
         VWActionProbsLearner vw = VWLearners.create("--quiet --cb_explore 4 -f " + model);
@@ -94,6 +87,12 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
 
     @Test
     public void testCBADFExplore() throws IOException {
+        String[][] cbADFTrain = new String[][]{
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
+            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
+        };
         String model = temporaryFolder.newFile().getAbsolutePath();
         VWActionProbsLearner vw = VWLearners.create("--quiet --cb_explore_adf -f " + model);
         ActionProbs[] trainPreds = new ActionProbs[cbADFTrain.length];

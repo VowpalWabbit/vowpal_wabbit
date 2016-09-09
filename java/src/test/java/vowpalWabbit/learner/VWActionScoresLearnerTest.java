@@ -44,37 +44,36 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
         }
-        vw.close();
 
         ActionScores[] expectedTrainPreds = new ActionScores[]{
-                new ActionScores(new ActionScore[]{
-                        new ActionScore(0, 0),
-                        new ActionScore(1, 0)
-                }),
-                new ActionScores(new ActionScore[]{
-                        new ActionScore(0, 0.14991696f),
-                        new ActionScore(1, 0.14991696f)
-                }),
-                new ActionScores(new ActionScore[]{
-                        new ActionScore(0, 0.27180168f),
-                        new ActionScore(1, 0.31980497f)
-                }),
-                new ActionScores(new ActionScore[]{
-                        new ActionScore(1, 0.35295868f),
-                        new ActionScore(0, 0.3869971f)
-                })
+            new ActionScores(new ActionScore[]{
+                new ActionScore(0, 0),
+                new ActionScore(1, 0)
+            }),
+            new ActionScores(new ActionScore[]{
+                new ActionScore(0, 0.14991696f),
+                new ActionScore(1, 0.14991696f)
+            }),
+            new ActionScores(new ActionScore[]{
+                new ActionScore(0, 0.27180168f),
+                new ActionScore(1, 0.31980497f)
+            }),
+            new ActionScores(new ActionScore[]{
+                new ActionScore(1, 0.35295868f),
+                new ActionScore(0, 0.3869971f)
+            })
         };
-
+        vw.close();
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
         vw = VWLearners.create("--quiet -t -i " + model);
         ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
-                new ActionScores(new ActionScore[]{
-                        new ActionScore(0, 0.33543912f),
-                        new ActionScore(1, 0.37897447f)
-                })
+            new ActionScores(new ActionScore[]{
+                new ActionScore(0, 0.33543912f),
+                new ActionScore(1, 0.37897447f)
+            })
         };
 
         vw.close();
