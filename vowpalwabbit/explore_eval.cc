@@ -191,12 +191,25 @@ namespace EXPLORE_EVAL {
 	
 	threshold *= data.multiplier;
 	
-	if (threshold > 1.)
+	if (threshold > 1. + 1e-6)
 	  data.violations++;
 	
 	if (frand48() < threshold)
 	  {
+        example* ec_found = nullptr;
+        for (example*& ec : data.ec_seq)
+        {
+          if (ec->l.cb.costs.size() == 1 &&
+            ec->l.cb.costs[0].cost != FLT_MAX &&
+            ec->l.cb.costs[0].probability > 0)
+          {
+            ec_found = ec;
+          }
+        }
+        ec_found->l.cb.costs[0].probability = action_probability;
+
 	    multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
+        ec_found->l.cb.costs[0].probability = data.known_cost.probability;
 	    data.update_count++;
 	  }
       }
@@ -262,7 +275,7 @@ base_learner* explore_eval_setup(vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  learner<explore_eval>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, 1);
+  learner<explore_eval>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);  
   l.set_finish(finish);

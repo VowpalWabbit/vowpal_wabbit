@@ -18,161 +18,63 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private String[][] cbADFTrain = new String[][]{
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"},
-            new String[] {"| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"},
-            new String[] {"shared | s_1 s_2", "0:1.0:0.5 | a:1 b:1 c:1", "| a:0.5 b:2 c:1"}
-    };
-
     @Test
-    public void testCBExplore() throws IOException {
-        String model = temporaryFolder.newFile().getAbsolutePath();
-        String[] cbTrain = new String[]{
-                "1:2:0.4 | a c",
-                "3:0.5:0.2 | b d",
-                "4:1.2:0.5 | a b c",
-                "2:1:0.3 | b c",
-                "3:1.5:0.7 | a d"
-        };
-
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_explore 4 -f " + model);
-        ActionScores[] trainPreds = new ActionScores[cbTrain.length];
-        for (int i=0; i<cbTrain.length; ++i) {
-            trainPreds[i] = vw.learn(cbTrain[i]);
-        }
-        ActionScores[] expectedTrainPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.9625f),
-                new ActionScore(1, 0.0125f),
-                new ActionScore(2, 0.0125f),
-                new ActionScore(3, 0.0125f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.0125f),
-                new ActionScore(1, 0.9625f),
-                new ActionScore(2, 0.0125f),
-                new ActionScore(3, 0.0125f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.0125f),
-                new ActionScore(1, 0.9625f),
-                new ActionScore(2, 0.0125f),
-                new ActionScore(3, 0.0125f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.0125f),
-                new ActionScore(1, 0.9625f),
-                new ActionScore(2, 0.0125f),
-                new ActionScore(3, 0.0125f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.0125f),
-                new ActionScore(1, 0.9625f),
-                new ActionScore(2, 0.0125f),
-                new ActionScore(3, 0.0125f)
-            })
-        };
-        vw.close();
-        assertArrayEquals(expectedTrainPreds, trainPreds);
-
-        vw = VWLearners.create("--quiet -t -i " + model);
-        ActionScores[] testPreds = new ActionScores[]{vw.predict(cbTrain[0])};
-
-        ActionScores[] expectedTestPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.0125f),
-                new ActionScore(1, 0.0125f),
-                new ActionScore(2, 0.9625f),
-                new ActionScore(3, 0.0125f)
-            }),
-        };
-
-        vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds);
-
+    public void testCBADF() throws IOException {
+        testCBADF(false);
     }
 
     @Test
     public void testCBADFWithRank() throws IOException {
-        String model = temporaryFolder.newFile().getAbsolutePath();
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_adf --rank_all -f " + model);
-        ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
-        for (int i=0; i<cbADFTrain.length; ++i) {
-            trainPreds[i] = vw.learn(cbADFTrain[i]);
-        }
-        ActionScores[] expectedTrainPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0),
-                new ActionScore(1, 0)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.14991696f),
-                new ActionScore(1, 0.14991696f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.27180168f),
-                new ActionScore(1, 0.31980497f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(1, 0.35295868f),
-                new ActionScore(0, 0.3869971f)
-            })
-        };
-        vw.close();
-        assertArrayEquals(expectedTrainPreds, trainPreds);
-
-        vw = VWLearners.create("--quiet -t -i " + model);
-        ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
-
-        ActionScores[] expectedTestPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.33543912f),
-                new ActionScore(1, 0.37897447f)
-            }),
-        };
-
-        vw.close();
-        assertArrayEquals(expectedTestPreds, testPreds);
+        testCBADF(true);
     }
 
-    @Test
-    public void testCBADFExplore() throws IOException {
+    private void testCBADF(boolean withRank) throws IOException {
+        String[][] cbADFTrain = new String[][]{
+            new String[]{"| a:1 b:0.5","0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[]{"shared | s_1 s_2","0:1.0:0.5 | a:1 b:1 c:1","| a:0.5 b:2 c:1"},
+            new String[]{"| a:1 b:0.5","0:0.1:0.75 | a:0.5 b:1 c:2"},
+            new String[]{"shared | s_1 s_2","0:1.0:0.5 | a:1 b:1 c:1","| a:0.5 b:2 c:1"}
+        };
         String model = temporaryFolder.newFile().getAbsolutePath();
-        VWActionScoresLearner vw = VWLearners.create("--quiet --cb_explore_adf -f " + model);
+        String cli = "--quiet --cb_adf -f " + model;
+        if (withRank)
+            cli += " --rank_all";
+        VWActionScoresLearner vw = VWLearners.create(cli);
         ActionScores[] trainPreds = new ActionScores[cbADFTrain.length];
         for (int i=0; i<cbADFTrain.length; ++i) {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
         }
+        vw.close();
+
         ActionScores[] expectedTrainPreds = new ActionScores[]{
                 new ActionScores(new ActionScore[]{
-                    new ActionScore(0, 0.97499996f),
-                    new ActionScore(1, 0.025f)
+                        new ActionScore(0, 0),
+                        new ActionScore(1, 0)
                 }),
                 new ActionScores(new ActionScore[]{
-                    new ActionScore(0, 0.97499996f),
-                    new ActionScore(1, 0.025f)
+                        new ActionScore(0, 0.14991696f),
+                        new ActionScore(1, 0.14991696f)
                 }),
                 new ActionScores(new ActionScore[]{
-                    new ActionScore(0, 0.97499996f),
-                    new ActionScore(1, 0.025f)
+                        new ActionScore(0, 0.27180168f),
+                        new ActionScore(1, 0.31980497f)
                 }),
                 new ActionScores(new ActionScore[]{
-                    new ActionScore(1, 0.97499996f),
-                    new ActionScore(0, 0.025f)
+                        new ActionScore(1, 0.35295868f),
+                        new ActionScore(0, 0.3869971f)
                 })
         };
-        vw.close();
+
         assertArrayEquals(expectedTrainPreds, trainPreds);
 
         vw = VWLearners.create("--quiet -t -i " + model);
         ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.97499996f),
-                new ActionScore(1, 0.025f)
-            }),
+                new ActionScores(new ActionScore[]{
+                        new ActionScore(0, 0.33543912f),
+                        new ActionScore(1, 0.37897447f)
+                })
         };
 
         vw.close();

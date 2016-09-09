@@ -551,7 +551,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_scores);
+  learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   //Extract from lower level reductions.
   data.gen_cs.scorer = all.scorer;

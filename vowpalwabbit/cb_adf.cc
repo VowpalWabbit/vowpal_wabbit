@@ -188,8 +188,6 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   float loss = 0.;
 
   uint32_t action = ec.pred.a_s[0].action;
-  ec.pred.a_s.delete_v();
-  ec.pred.multiclass = action;
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
       num_features += (*ec_seq)[i]->num_features;
@@ -220,7 +218,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, false);
+  CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
@@ -390,6 +388,7 @@ base_learner* cb_adf_setup(vw& all)
   { ld.rank_all = true;
     *all.file_options << " --rank_all";
   }
+  all.delete_prediction = ACTION_SCORE::delete_action_scores;
 
   if (all.vm.count("no_predict"))
     ld.predict = false;
@@ -411,18 +410,8 @@ base_learner* cb_adf_setup(vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  prediction_type::prediction_type_t pred_type;
-  if (ld.rank_all)
-  { pred_type = prediction_type::action_scores;
-    all.delete_prediction = ACTION_SCORE::delete_action_scores;
-  }
-  else
-  { pred_type = prediction_type::multiclass;
-    all.delete_prediction = nullptr;
-  }
-
   learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
-      pred_type);
+      prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   ld.gen_cs.scorer = all.scorer;

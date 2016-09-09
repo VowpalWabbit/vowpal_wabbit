@@ -31,7 +31,10 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
   jfieldID field;
   vw* vwInstance = (vw*)vwPtr;
   switch (vwInstance->l->pred_type)
-  { case prediction_type::prediction_type_t::action_scores:
+  { case prediction_type::prediction_type_t::action_probs:
+      field = env->GetStaticFieldID(clVWReturnType , "ActionProbs", RETURN_TYPE_INSTANCE);
+      break;
+    case prediction_type::prediction_type_t::action_scores:
       field = env->GetStaticFieldID(clVWReturnType , "ActionScores", RETURN_TYPE_INSTANCE);
       break;
     case prediction_type::prediction_type_t::multiclass:

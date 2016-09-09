@@ -90,4 +90,4 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libvw.pc libvw_c_wrapper.pc
 
 test: all
-	cd test && ./RunTests -f -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw
+	cd test && ./RunTests -d -f -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw
