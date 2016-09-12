@@ -20,6 +20,7 @@ namespace prediction_type
 		scalar,
 		scalars,
 		action_scores,
+		action_probs,
 		multiclass,
 		multilabels,
 		prob
