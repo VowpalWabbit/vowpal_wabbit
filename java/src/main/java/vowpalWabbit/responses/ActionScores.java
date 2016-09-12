@@ -20,6 +20,13 @@ public class ActionScores {
     }
 
     @Override
+    public String toString() {
+        return "ActionScores{" +
+                "actionScores=" + Arrays.toString(actionScores) +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
