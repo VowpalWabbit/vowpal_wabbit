@@ -4,6 +4,10 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import vowpalWabbit.responses.ActionProb;
+import vowpalWabbit.responses.ActionProbs;
+import vowpalWabbit.responses.ActionScore;
+import vowpalWabbit.responses.ActionScores;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,5 +36,21 @@ public class VWTestHelper {
                 // Do nothing as this means that the library should be loaded as part of the jar
             }
         }
+    }
+
+    public ActionScores actionScores(ActionScore... actionScores) {
+        return new ActionScores(actionScores);
+    }
+
+    public ActionProbs actionProbs(ActionProb... actionProbs) {
+        return new ActionProbs(actionProbs);
+    }
+
+    public ActionScore actionScore(int action, float score) {
+        return new ActionScore(action, score);
+    }
+
+    public ActionProb actionProb(int action, float prob) {
+        return new ActionProb(action, prob);
     }
 }

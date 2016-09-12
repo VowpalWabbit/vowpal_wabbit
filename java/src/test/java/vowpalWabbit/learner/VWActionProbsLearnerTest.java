@@ -4,7 +4,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
-import vowpalWabbit.responses.ActionProb;
 import vowpalWabbit.responses.ActionProbs;
 
 import java.io.IOException;
@@ -35,36 +34,36 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
             trainPreds[i] = vw.learn(cbTrain[i]);
         }
         ActionProbs[] expectedTrainPreds = new ActionProbs[]{
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.9625f),
-                new ActionProb(1, 0.0125f),
-                new ActionProb(2, 0.0125f),
-                new ActionProb(3, 0.0125f)
-            }),
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.0125f),
-                new ActionProb(1, 0.9625f),
-                new ActionProb(2, 0.0125f),
-                new ActionProb(3, 0.0125f)
-            }),
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.0125f),
-                new ActionProb(1, 0.9625f),
-                new ActionProb(2, 0.0125f),
-                new ActionProb(3, 0.0125f)
-            }),
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.0125f),
-                new ActionProb(1, 0.9625f),
-                new ActionProb(2, 0.0125f),
-                new ActionProb(3, 0.0125f)
-            }),
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.0125f),
-                new ActionProb(1, 0.9625f),
-                new ActionProb(2, 0.0125f),
-                new ActionProb(3, 0.0125f)
-            })
+            actionProbs(
+                actionProb(0, 0.9625f),
+                actionProb(1, 0.0125f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f)
+            ),
+            actionProbs(
+                actionProb(0, 0.0125f),
+                actionProb(1, 0.9625f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f)
+            ),
+            actionProbs(
+                actionProb(0, 0.0125f),
+                actionProb(1, 0.9625f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f)
+            ),
+            actionProbs(
+                actionProb(0, 0.0125f),
+                actionProb(1, 0.9625f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f)
+            ),
+            actionProbs(
+                actionProb(0, 0.0125f),
+                actionProb(1, 0.9625f),
+                actionProb(2, 0.0125f),
+                actionProb(3, 0.0125f)
+            )
         };
         vw.close();
         assertArrayEquals(expectedTrainPreds, trainPreds);
@@ -73,12 +72,12 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
         ActionProbs[] testPreds = new ActionProbs[]{vw.predict(cbTrain[0])};
 
         ActionProbs[] expectedTestPreds = new ActionProbs[]{
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.0125f),
-                new ActionProb(1, 0.0125f),
-                new ActionProb(2, 0.9625f),
-                new ActionProb(3, 0.0125f)
-            })
+            actionProbs(
+                actionProb(0, 0.0125f),
+                actionProb(1, 0.0125f),
+                actionProb(2, 0.9625f),
+                actionProb(3, 0.0125f)
+            )
         };
 
         vw.close();
@@ -100,22 +99,22 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
             trainPreds[i] = vw.learn(cbADFTrain[i]);
         }
         ActionProbs[] expectedTrainPreds = new ActionProbs[]{
-                new ActionProbs(new ActionProb[]{
-                    new ActionProb(0, 0.97499996f),
-                    new ActionProb(1, 0.025f)
-                }),
-                new ActionProbs(new ActionProb[]{
-                    new ActionProb(0, 0.97499996f),
-                    new ActionProb(1, 0.025f)
-                }),
-                new ActionProbs(new ActionProb[]{
-                    new ActionProb(0, 0.97499996f),
-                    new ActionProb(1, 0.025f)
-                }),
-                new ActionProbs(new ActionProb[]{
-                    new ActionProb(1, 0.97499996f),
-                    new ActionProb(0, 0.025f)
-                })
+                actionProbs(
+                    actionProb(0, 0.97499996f),
+                    actionProb(1, 0.025f)
+                ),
+                actionProbs(
+                    actionProb(0, 0.97499996f),
+                    actionProb(1, 0.025f)
+                ),
+                actionProbs(
+                    actionProb(0, 0.97499996f),
+                    actionProb(1, 0.025f)
+                ),
+                actionProbs(
+                    actionProb(1, 0.97499996f),
+                    actionProb(0, 0.025f)
+                )
         };
         vw.close();
         assertArrayEquals(expectedTrainPreds, trainPreds);
@@ -124,10 +123,10 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
         ActionProbs[] testPreds = new ActionProbs[]{vw.predict(cbADFTrain[0])};
 
         ActionProbs[] expectedTestPreds = new ActionProbs[]{
-            new ActionProbs(new ActionProb[]{
-                new ActionProb(0, 0.97499996f),
-                new ActionProb(1, 0.025f)
-            })
+            actionProbs(
+                actionProb(0, 0.97499996f),
+                actionProb(1, 0.025f)
+            )
         };
 
         vw.close();

@@ -4,7 +4,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
-import vowpalWabbit.responses.ActionScore;
 import vowpalWabbit.responses.ActionScores;
 
 import java.io.IOException;
@@ -46,22 +45,22 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         }
 
         ActionScores[] expectedTrainPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0),
-                new ActionScore(1, 0)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.14991696f),
-                new ActionScore(1, 0.14991696f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.27180168f),
-                new ActionScore(1, 0.31980497f)
-            }),
-            new ActionScores(new ActionScore[]{
-                new ActionScore(1, 0.35295868f),
-                new ActionScore(0, 0.3869971f)
-            })
+            actionScores(
+                actionScore(0, 0),
+                actionScore(1, 0)
+            ),
+            actionScores(
+                actionScore(0, 0.14991696f),
+                actionScore(1, 0.14991696f)
+            ),
+            actionScores(
+                actionScore(0, 0.27180168f),
+                actionScore(1, 0.31980497f)
+            ),
+            actionScores(
+                actionScore(1, 0.35295868f),
+                actionScore(0, 0.3869971f)
+            )
         };
         vw.close();
         assertArrayEquals(expectedTrainPreds, trainPreds);
@@ -70,10 +69,10 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
         ActionScores[] testPreds = new ActionScores[]{vw.predict(cbADFTrain[0])};
 
         ActionScores[] expectedTestPreds = new ActionScores[]{
-            new ActionScores(new ActionScore[]{
-                new ActionScore(0, 0.33543912f),
-                new ActionScore(1, 0.37897447f)
-            })
+            actionScores(
+                actionScore(0, 0.33543912f),
+                actionScore(1, 0.37897447f)
+            )
         };
 
         vw.close();
