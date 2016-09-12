@@ -1255,8 +1255,10 @@ void parse_modules(vw& all, io_buf& model)
   }
 }
 
-void parse_sources(vw& all, io_buf& model)
-{ load_input_model(all, model);
+void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
+{ 
+  if (!skipModelLoad)
+	load_input_model(all, model);
 
   parse_source(all);
 
@@ -1333,14 +1335,14 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(string s, io_buf* model)
+vw* initialize(string s, io_buf* model, bool skipModelLoad)
 {
   int argc = 0;
   char** argv = get_argv_from_string(s,argc);
   vw* ret = nullptr;
   
   try
-  { ret = initialize(argc, argv, model); }
+  { ret = initialize(argc, argv, model, skipModelLoad); }
   catch(...)
   { free_args(argc, argv);
     throw;
@@ -1350,7 +1352,7 @@ vw* initialize(string s, io_buf* model)
   return ret;
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model)
+vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad)
 { vw& all = parse_args(argc, argv);
 
   try
@@ -1362,7 +1364,7 @@ vw* initialize(int argc, char* argv[], io_buf* model)
     }
 
     parse_modules(all, *model);
-    parse_sources(all, *model);
+    parse_sources(all, *model, skipModelLoad);
 
     initialize_parser_datastructures(all);
 
@@ -1397,7 +1399,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
     init_args << model_args[i] << " ";
   }
 
-  vw* new_model = VW::initialize(init_args.str().c_str());
+  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
 
   new_model->weights.~weight_parameters();
   free_it(new_model->sd);

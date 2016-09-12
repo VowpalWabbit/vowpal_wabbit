@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 
 namespace VW
@@ -50,12 +51,18 @@ namespace VW
                         if (m == null)
                             return default(TVowpalWabbit);
 
-                        var newSettings = (VowpalWabbitSettings)this.settings.Clone();
-                        newSettings.Model = m;
-                        // avoid duplicate arguments (e.g. -i) and force testing mode
-                        newSettings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
-                        return this.InternalCreate(new VowpalWabbit(newSettings));
+                        return CreateVowpalWabbitChild(m);
                     }));
+        }
+
+        private TVowpalWabbit CreateVowpalWabbitChild(VowpalWabbitModel model)
+        {
+            var newSettings = (VowpalWabbitSettings)this.settings.Clone();
+            newSettings.Model = model;
+            // avoid duplicate arguments (e.g. -i) and force testing mode
+            newSettings.Arguments = model.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
+            var vw = new VowpalWabbit(newSettings);
+            return this.InternalCreate(vw);
         }
 
         /// <summary>
@@ -73,14 +80,7 @@ namespace VW
         {
             this.vwPool.UpdateFactory(ObjectFactory.Create(
                 model,
-                m =>
-                {
-                    var newSettings = (VowpalWabbitSettings)this.settings.Clone();
-                    newSettings.Model = m;
-                    // avoid duplicate arguments (e.g. -i) and force testing mode
-                    newSettings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
-                    return this.InternalCreate(new VowpalWabbit(newSettings));
-                }));
+                this.CreateVowpalWabbitChild));
         }
 
         /// <summary>

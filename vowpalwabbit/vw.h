@@ -26,8 +26,8 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-  vw* initialize(std::string s, io_buf* model=nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model=nullptr);
+  vw* initialize(std::string s, io_buf* model=nullptr, bool skipModelLoad=false);
+vw* initialize(int argc, char* argv[], io_buf* model=nullptr, bool skipModelLoad = false);
  vw* seed_vw_model(vw* vw_model, std::string extra_args);
 
  void cmd_string_replace_value( std::stringstream*& ss, std::string flag_to_replace, std::string new_value );
