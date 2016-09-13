@@ -20,6 +20,13 @@ public class Multilabels {
     }
 
     @Override
+    public String toString() {
+        return "Multilabels{" +
+                "labels=" + Arrays.toString(labels) +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

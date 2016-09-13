@@ -5,24 +5,24 @@ import java.util.Arrays;
 /**
  * Created by jmorra on 8/12/16.
  */
-public class ActionScores {
+public class ActionProbs {
 
     // Although this is modifiable it is not intended to be updated by the user.  This data structure mimics the
     // C data structure.
-    private final ActionScore[] actionScores;
+    private final ActionProb[] actionProbs;
 
-    public ActionScores(final ActionScore[] actionScores) {
-        this.actionScores = actionScores;
+    public ActionProbs(final ActionProb[] actionProbs) {
+        this.actionProbs = actionProbs;
     }
 
-    public ActionScore[] getActionScores() {
-        return actionScores;
+    public ActionProb[] getActionProbs() {
+        return actionProbs;
     }
 
     @Override
     public String toString() {
-        return "ActionScores{" +
-                "actionScores=" + Arrays.toString(actionScores) +
+        return "ActionProbs{" +
+                "actionProbs=" + Arrays.toString(actionProbs) +
                 '}';
     }
 
@@ -31,15 +31,15 @@ public class ActionScores {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ActionScores that = (ActionScores) o;
+        ActionProbs that = (ActionProbs) o;
 
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        return Arrays.equals(actionScores, that.actionScores);
+        return Arrays.equals(actionProbs, that.actionProbs);
 
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(actionScores);
+        return Arrays.hashCode(actionProbs);
     }
 }

@@ -3,29 +3,29 @@ package vowpalWabbit.responses;
 /**
  * Created by jmorra on 8/12/16.
  */
-public class ActionScore {
+public class ActionProb {
 
     private final int action;
-    private final float score;
+    private final float probability;
 
-    public ActionScore(final int action, final float score) {
+    public ActionProb(final int action, final float probability) {
         this.action = action;
-        this.score = score;
+        this.probability = probability;
     }
 
     public int getAction() {
         return action;
     }
 
-    public float getScore() {
-        return score;
+    public float getProbability() {
+        return probability;
     }
 
     @Override
     public String toString() {
-        return "ActionScore{" +
+        return "ActionProb{" +
                 "action=" + action +
-                ", score=" + score +
+                ", probability=" + probability +
                 '}';
     }
 
@@ -34,17 +34,17 @@ public class ActionScore {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ActionScore that = (ActionScore) o;
+        ActionProb that = (ActionProb) o;
 
         if (action != that.action) return false;
-        return Float.compare(that.score, score) == 0;
+        return Float.compare(that.probability, probability) == 0;
 
     }
 
     @Override
     public int hashCode() {
         int result = action;
-        result = 31 * result + (score != +0.0f ? Float.floatToIntBits(score) : 0);
+        result = 31 * result + (probability != +0.0f ? Float.floatToIntBits(probability) : 0);
         return result;
     }
 }
