@@ -64,7 +64,7 @@ T base_predict(
   int example_count = env->GetArrayLength(example_strings);
 
   // When doing multiline prediction the final result is stored in the FIRST example parsed.
-  example* first_example;
+  example* first_example = NULL;
   for (int i=0; i<example_count; i++) {
     jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
