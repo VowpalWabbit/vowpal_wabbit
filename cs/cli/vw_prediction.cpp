@@ -126,7 +126,7 @@ namespace VW
         return values;
     }
 
-    cli::array<ActionScore>^ VowpalWabbitActionScorePredictionFactory::Create(vw* vw, example* ex)
+    cli::array<ActionScore>^ VowpalWabbitActionScoreBasePredictionFactory::Create(vw* vw, example* ex)
     {
 		CheckExample(vw, ex, PredictionType);
 
@@ -172,6 +172,8 @@ namespace VW
 			return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
 		case prediction_type::action_scores:
 			return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
+		case prediction_type::action_probs:
+			return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
 		case prediction_type::prob:
 			return VowpalWabbitPredictionType::Probability->Create(vw, ex);
 		default:

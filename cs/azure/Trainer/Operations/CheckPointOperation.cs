@@ -30,14 +30,18 @@ namespace VowpalWabbit.Azure.Trainer
         internal CheckpointData CreateCheckpointData(bool updateClientModel)
         {
             // TODO: checkpoint resolver state.
+
             var data = new CheckpointData
             {
                 TrackbackList = string.Join("\n", this.trackbackList),
-                State = JsonConvert.SerializeObject(this.State),
                 Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture),
                 UpdateClientModel = updateClientModel
             };
-            
+
+            // store the model name
+            this.state.ModelName = $"{data.Timestamp}/model";
+            data.State = JsonConvert.SerializeObject(this.State);
+
             this.trackbackList.Clear();
 
             var modelId = Guid.NewGuid().ToString();

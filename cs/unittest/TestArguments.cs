@@ -57,9 +57,9 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Assert.IsFalse(vw.Arguments.CommandLine.Contains("--quiet"));
-                Assert.IsFalse(vw.Arguments.CommandLine.Contains("-t"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("-t"));
 
-                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings("-t") { Model = vw }))
+                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings { Model = vw }))
                 {
                     Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("--quiet"));
                     Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("-t"));
@@ -74,9 +74,9 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Assert.IsFalse(vw.Arguments.CommandLine.Contains("--quiet"));
-                Assert.IsFalse(vw.Arguments.CommandLine.Contains("-t"));
+                Assert.IsTrue(vw.Arguments.CommandLine.Contains("-t"));
 
-                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings("-t") { Model = vw }))
+                using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings { Model = vw }))
                 {
                     Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("--quiet"));
                     Assert.IsTrue(vwSub.Arguments.CommandLine.Contains("-t"));

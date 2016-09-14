@@ -20,11 +20,12 @@ namespace prediction_type
 		switch (prediction_type)
 		{
 			CASE(scalar)
-				CASE(scalars)
-				CASE(action_scores)
-				CASE(multiclass)
-				CASE(multilabels)
-				CASE(prob)
+			CASE(scalars)
+			CASE(action_scores)
+			CASE(action_probs)
+			CASE(multiclass)
+			CASE(multilabels)
+			CASE(prob)
 		default: return "<unsupported>";
 		}
 	}

@@ -96,7 +96,7 @@ namespace VW
         /// <param name="vw">The wrapped vw instance.</param>
         protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
         {
-            if (CompiledSerializer == null)
+            if (this.CompiledSerializer == null)
                 this.CompiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
 
             return new VowpalWabbit<TExample>(vw, this.CompiledSerializer);

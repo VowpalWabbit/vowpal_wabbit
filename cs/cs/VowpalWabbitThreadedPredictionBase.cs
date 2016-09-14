@@ -59,8 +59,6 @@ namespace VW
         {
             var newSettings = (VowpalWabbitSettings)this.settings.Clone();
             newSettings.Model = model;
-            // avoid duplicate arguments (e.g. -i) and force testing mode
-            newSettings.Arguments = model.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
             var vw = new VowpalWabbit(newSettings);
             return this.InternalCreate(vw);
         }
