@@ -274,7 +274,7 @@ class vw_lda(object):
         self.populate_hash()
         self.f = open(self.hashed_lda_model, "r")
         lines = self.f.readlines()
-        p = re.compile("^options")
+        p = re.compile("^Checksum")
         got_data = 0
         topics = []
         line_count = 0
