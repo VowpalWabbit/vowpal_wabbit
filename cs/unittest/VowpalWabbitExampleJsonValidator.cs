@@ -25,7 +25,7 @@ namespace cs_unittest
             this.vw = new VowpalWabbit(settings);
         }
 
-        public void Validate(string line, VowpalWabbitExampleCollection example, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
+        public void Validate(string line, VowpalWabbitExampleCollection example, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, bool validateVowpalWabbitString = true)
         {
             Assert.IsNotNull(example);
 
@@ -33,22 +33,35 @@ namespace cs_unittest
             Assert.IsNotNull(jsonExample);
 
             using (var strExample = this.vw.ParseLine(line))
-            using (var strJsonExample = this.vw.ParseLine(jsonExample.Example.VowpalWabbitString))
             {
                 var diff = strExample.Diff(this.vw, jsonExample.Example, labelComparator);
                 Assert.IsNull(diff, diff + " generated string: '" + jsonExample.VowpalWabbitString + "'");
 
-                diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
-                Assert.IsNull(diff, diff);
+                if (validateVowpalWabbitString)
+                {
+                    using (var strJsonExample = this.vw.ParseLine(jsonExample.Example.VowpalWabbitString))
+                    {
+                        diff = strExample.Diff(this.vw, strJsonExample, labelComparator);
+                        Assert.IsNull(diff, diff);
+                    }
+                }
             }
         }
 
-        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null)
+        public void Validate(string line, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, bool enableNativeJsonValidation = true)
         {
             using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
             using (var jsonExample = jsonSerializer.ParseAndCreate(json, label))
             {
                 this.Validate(line, jsonExample, labelComparator, label);
+
+                if (enableNativeJsonValidation)
+                {
+                    using (var jsonNativeExample = new VowpalWabbitSingleLineExampleCollection(this.vw, this.vw.ParseJson(json)))
+                    {
+                        this.Validate(line, jsonNativeExample, labelComparator, label, validateVowpalWabbitString: false);
+                    }
+                }
             }
         }
 

@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"
+#include "parse_example_json.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -257,6 +258,45 @@ namespace VW
       return prediction;
     }
     CATCHRETHROW
+  }
+
+  VowpalWabbitExample^ VowpalWabbit::ParseJson(String^ line)
+  {
+#if _DEBUG
+	  if (line == nullptr)
+		  throw gcnew ArgumentNullException("line");
+#endif
+
+	  auto ex = GetOrCreateNativeExample();
+	  auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+	  auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+	  try
+	  {
+		  try
+		  {
+			  VW::read_line_json(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+
+			  // finalize example
+			  VW::parse_atomic_example(*m_vw, ex->m_example, false);
+			  VW::setup_example(*m_vw, ex->m_example);
+
+			  // remember the input string for debugging purposes
+			  ex->VowpalWabbitString = line;
+
+			  return ex;
+		  }
+		  catch (...)
+		  {
+			  delete ex;
+			  throw;
+		  }
+	  }
+	  CATCHRETHROW
+		  finally
+	  {
+		  valueHandle.Free();
+	  }
   }
 
   VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)

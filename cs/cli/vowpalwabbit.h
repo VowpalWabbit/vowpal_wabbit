@@ -71,6 +71,14 @@ namespace VW
         /// </returns>
         VowpalWabbitExample^ ParseLine(String^ line);
 
+		/// <summary>
+		/// Parses <paramref name="line"/> using the C++ parser.
+		/// </summary>
+		/// <returns>
+		/// Returns a <see cref="VowpalWabbitExample"/> ready to be used for <see cref="Learn(VowpalWabbitExample^)"/> or <see cref="Predict(VowpalWabbitExample^)"/>.
+		/// </returns>
+		VowpalWabbitExample^ ParseJson(String^ line);
+
         /// <summary>
         /// Hashes the given namespace <paramref name="s"/>.
         /// </summary>

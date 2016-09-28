@@ -36,9 +36,11 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
-                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":{\"abc\":{\"def\":3}}}");
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":5}");
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":\"\"}");
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":{\"abc\":{\"def\":3}}}");
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":[1,2,[3,4],2]}");
+                validator.Validate("|a foo:1 | b:1", "{\"a\":{\"foo\":1},\"_aux\":{\"a\":\"{\\\"} \"}, \"b\":1}");
             }
         }
 
@@ -69,7 +71,7 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
-                validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+                validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple, enableNativeJsonValidation: false);
                 validator.Validate("1 |a foo:1", "{\"_label\":\"1\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
             }
         }
