@@ -305,7 +305,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
           ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
-          if (ec.l.simple.label != hidden_units[i].scalar)
+		  if (ec.l.simple.label != hidden_units[i].scalar)
             base.update(ec, i);
         }
       }

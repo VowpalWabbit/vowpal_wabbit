@@ -456,7 +456,7 @@ void learn (recall_tree& b, base_learner& base, example& ec)
 
           ec.l.multi = mc;
           ec.pred.multiclass = save_pred;
-        }
+	  }
     }
 }
 

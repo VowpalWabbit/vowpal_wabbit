@@ -11,6 +11,7 @@ using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
@@ -107,7 +108,11 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
                 yield break;
             }
-            
+
+
+            var pi_a_x = trainerResult.Probabilities[trainerResult.Label.Action - 1];
+            var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);
+
             yield return new EvalData
             {
                 PolicyName = "Latest Policy",
@@ -117,10 +122,8 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                         name = "Latest Policy",
                         // calcuate expectation under current randomized policy (using current exploration strategy)
                         // VW action is 0-based, label Action is 1 based
-                        cost = trainerResult.ProgressivePrediction
-                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, ap.Action + 1, trainerResult.Label.Cost, trainerResult.Label.Probability)),
-                        prob = trainerResult.ProgressivePrediction
-                            .Sum(ap => ap.Score / (trainerResult.Probabilities[ap.Action] * (1 - trainerResult.ProbabilityOfDrop)))
+                        cost = (trainerResult.Label.Cost * pi_a_x) / p_a_x,
+                        prob = pi_a_x / p_a_x
                     })
             };
 
@@ -138,17 +141,24 @@ namespace VowpalWabbit.Azure.Trainer.Operations
             };
 
             for (int action = 1; action <= trainerResult.ProgressivePrediction.Length; action++)
+            {
+                string tag;
+                if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
+                    tag = action.ToString(CultureInfo.InvariantCulture);
+
+                var name = $"Constant Policy {tag}";
                 yield return new EvalData
                 {
-                    PolicyName = $"Constant Policy {action}",
+                    PolicyName = name,
                     JSON = JsonConvert.SerializeObject(
                     new
                     {
-                        name = $"Constant Policy {action}",
+                        name = name,
                         cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
-                        prob = trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)
+                        prob = trainerResult.Label.Action == action ? 1 / (trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
                     })
                 };
+            }
         }
 
         private void UploadEvaluation(IList<EvalData> batch)

@@ -82,7 +82,7 @@ namespace CB_EXPLORE{
     uint32_t chosen = ec.pred.multiclass-1;
     probs[chosen].score += (1-data.epsilon);
     
-    ec.pred.a_s = probs;    
+	ec.pred.a_s = probs;
   }
 
   template <bool is_learn>
@@ -95,7 +95,7 @@ namespace CB_EXPLORE{
     for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
       probs.push_back({i,0.});
     float prob = 1.f/(float)data.bag_size;
-    for(int i = 0;i < data.bag_size;i++) {
+    for(size_t i = 0;i < data.bag_size;i++) {
       uint32_t count = BS::weight_gen();
       if (is_learn && count > 0)
 	base.learn(ec,i);
@@ -108,7 +108,7 @@ namespace CB_EXPLORE{
 	  base.learn(ec,i);
     }
 
-    ec.pred.a_s = probs;
+	ec.pred.a_s = probs;
   }
 
   void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
@@ -229,7 +229,7 @@ namespace CB_EXPLORE{
     }
 
     ec.l.cb = data.cb_label;
-    ec.pred.a_s = probs;
+	ec.pred.a_s = probs;
   }
 
   void finish(cb_explore& data)
@@ -322,8 +322,8 @@ base_learner* cb_explore_setup(vw& all)
 
   char type_string[30];
 
-  data.cbcs.cb_type = CB_TYPE_DR;
   all.delete_prediction = delete_action_scores;
+  data.cbcs.cb_type = CB_TYPE_DR;
   //ALEKH: Others TBD later
   // if (count(all.args.begin(), all.args.end(), "--cb_type") == 0)
   //   data.cbcs->cb_type = CB_TYPE_DR;
@@ -350,19 +350,19 @@ base_learner* cb_explore_setup(vw& all)
       data.preds.resize(data.cover_size);
       sprintf(type_string, "%f", data.epsilon);
       *all.file_options << " --epsilon " << type_string;
-      l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1);
+      l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1, prediction_type::action_probs);
     }
   else if (vm.count("bag"))
     { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
       sprintf(type_string, "%lu", data.bag_size);
       *all.file_options << " --bag "<<type_string;
-      l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size);
+      l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
     }
   else if (vm.count("first") )
     { data.tau = (uint32_t)vm["first"].as<size_t>();
       sprintf(type_string, "%lu", data.tau);
       *all.file_options << " --first "<<type_string;
-      l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1);
+      l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
     }
   else
     { data.epsilon = 0.05f;
@@ -370,7 +370,7 @@ base_learner* cb_explore_setup(vw& all)
 	data.epsilon = vm["epsilon"].as<float>();
       sprintf(type_string, "%f", data.epsilon);
       *all.file_options << " --epsilon "<<type_string;
-      l = &init_learner(&data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1);
+      l = &init_learner(&data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
     }
   data.cbcs.scorer = all.scorer;
   l->set_finish(finish);

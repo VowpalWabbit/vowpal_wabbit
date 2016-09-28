@@ -402,8 +402,12 @@ namespace VW
     }
 
     VowpalWabbitFeature::VowpalWabbitFeature(VowpalWabbitExample^ example, feature_value x, uint64_t weight_index)
-      : m_example(example), m_x(x), m_weight_index(weight_index)
+      : m_example(example), m_vw(m_example->Owner->Native), m_x(x), m_weight_index(weight_index)
     { }
+
+	VowpalWabbitFeature::VowpalWabbitFeature(VowpalWabbit^ vw, feature_value x, uint64_t weight_index)
+      : m_vw(vw), m_x(x), m_weight_index(weight_index)
+	{ }
 
     float VowpalWabbitFeature::X::get()
     {
@@ -417,12 +421,18 @@ namespace VW
 
 	uint64_t VowpalWabbitFeature::WeightIndex::get()
 	{
+		if (m_example == nullptr)
+			throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
+
 		vw* vw = m_example->Owner->Native->m_vw;
 		return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
 	}
 
 	float VowpalWabbitFeature::Weight::get()
 	{
+		if (m_example == nullptr)
+			throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
+
 		vw* vw = m_example->Owner->Native->m_vw;
 
 		uint64_t weightIndex = m_weight_index + m_example->m_example->ft_offset;
@@ -432,7 +442,7 @@ namespace VW
 
 	float VowpalWabbitFeature::AuditWeight::get()
 	{
-		vw* vw = m_example->Owner->Native->m_vw;
+		vw* vw = m_vw->m_vw;
 
 		return GD::trunc_weight(Weight, (float)vw->sd->gravity) * (float)vw->sd->contraction;
 	}

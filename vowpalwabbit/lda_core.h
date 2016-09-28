@@ -8,4 +8,4 @@ license as described in the file LICENSE.
 
 LEARNER::base_learner* lda_setup(vw&);
 
-void get_top_weights(vw* all, int top_words_count, int topic, v_array<std::tuple<weight, uint64_t>>& output);
+void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output);

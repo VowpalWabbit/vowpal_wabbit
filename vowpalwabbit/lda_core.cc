@@ -703,7 +703,7 @@ public:
 	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda ) 
 		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
 	{}
-	void operator()(weight_parameters::iterator& iter, size_t index)
+	void operator()(weight_parameters::iterator& iter, uint64_t index)
 	{ if (_random)
 	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
@@ -744,7 +744,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
     { brw = 0;
 	  typename T::iterator iter = weights.begin();
 
-	  msg << i << " ";
+	  if (!read && text)
+		  msg << i << " ";
+
 	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
 		brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
 	  else
@@ -754,15 +756,17 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 		  brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
 		  i = j;
 	  }
-
+	  
 	  if (brw != 0)	  
-		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
-        { msg << *v + l.lda_rho << " ";
-          brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
-        }
+	    for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
+	      { if (!read && text) 
+		  msg << *v + l.lda_rho << " ";
+		brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
+	      }
       if (text)
         {
-          msg << "\n";
+		  if (!read)
+			  msg << "\n";
           brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
         }
 	  if (!read){
@@ -957,7 +961,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
     for (features& fs : ec)
     { for (features::iterator& f : fs)
       { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-        l.feature_counts[idx] += f.value();
+        l.feature_counts[idx] += (uint32_t)f.value();
         l.feature_to_example_map[idx].push_back(ec.example_counter);
       }
     }
@@ -991,35 +995,36 @@ struct feature_pair
 };
 
 template<class T>
-void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output, T& weights)
+void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output, T&weights)
 {
 	uint64_t length = (uint64_t)1 << all->num_bits;
 
 	// get top features for this topic
-	auto cmp = [](tuple<weight, uint64_t> left, tuple<weight, uint64_t> right) { return std::get<0>(left) > std::get<0>(right); };
-	std::priority_queue<tuple<weight, uint64_t>, std::vector<tuple<weight, uint64_t>>, decltype(cmp)> top_features(cmp);
+	auto cmp = [](feature left, feature right) { return left.x > right.x; };
+	std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
 	typename T::iterator iter = weights.begin();
+
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
-		top_features.push(std::make_tuple((&(*iter))[topic], i));
+	  top_features.push({(&(*iter))[topic], i});
 
 	iter = weights.begin() + top_words_count;
 	for (uint64_t i = top_words_count; i < length; i++, ++iter)
-	{  if ((&(*iter))[topic] > std::get<0>(top_features.top()))
+	  {  if ((&(*iter))[topic] > top_features.top().x)
 		{ top_features.pop();
-		  top_features.push(std::make_tuple((&(*iter))[topic], i));
+		  top_features.push({(&(*iter))[topic], i});
 		}
 	}
 
 	// extract idx and sort descending
 	output.resize(top_features.size());
-	for (int i = top_features.size() - 1; i >= 0; i--)
+	for (int i = (int)top_features.size() - 1; i >= 0; i--)
 	{
 		output[i] = top_features.top();
 		top_features.pop();
 	}
 }
 
-void get_top_weights(vw* all, int top_words_count, int topic, v_array<tuple<weight, uint64_t>>& output)
+void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output)
 {
 	if (all->sparse)
 		get_top_weights<sparse_weight_parameters>(all, top_words_count, topic, output, all->sparse_weights);
@@ -1088,7 +1093,7 @@ void compute_coherence_metrics(lda &l, T& weights)
 		// extract idx and sort descending
 		vector<uint64_t> top_features_idx;
 		top_features_idx.resize(top_features.size());
-		for (int i = top_features.size() - 1; i >= 0; i--)
+		for (int i = (int)top_features.size() - 1; i >= 0; i--)
 		{
 			top_features_idx[i] = top_features.top().weight_index;
 			top_features.pop();
@@ -1323,7 +1328,11 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
   ld.decay_levels.push_back(0.f);
 
+<<<<<<< HEAD
   LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift());
+=======
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
+>>>>>>> ce02eae17b1bc0a667cc79fadc23898e063f3835
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

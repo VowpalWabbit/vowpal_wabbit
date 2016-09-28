@@ -68,6 +68,8 @@ license as described in the file LICENSE.
 #include "vw_allreduce.h"
 #include "OjaNewton.h"
 #include "audit_regressor.h"
+#include "marginal.h"
+#include "explore_eval.h"
 
 using namespace std;
 //
@@ -1063,6 +1065,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
+  all.reduction_stack.push_back(marginal_setup);
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
   all.reduction_stack.push_back(lrqfa_setup);
@@ -1090,6 +1093,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(cb_explore_setup);
   all.reduction_stack.push_back(cb_explore_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
+  all.reduction_stack.push_back(explore_eval_setup);
 
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);

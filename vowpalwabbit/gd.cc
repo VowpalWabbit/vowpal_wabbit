@@ -417,12 +417,11 @@ inline float compute_rate_decay(power_data& s, float& fw)
 { weight* w = &fw;
   float rate_decay = 1.f;
   if(adaptive)
-  { if (sqrt_rate)
-    { rate_decay = InvSqrt(w[adaptive]);
+    { if (sqrt_rate)
+	rate_decay = InvSqrt(w[adaptive]);
+      else
+	rate_decay = powf(w[adaptive],s.minus_power_t);
     }
-    else
-      rate_decay = powf(w[adaptive],s.minus_power_t);
-  }
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
@@ -493,9 +492,7 @@ float get_pred_per_update(gd& g, example& ec)
   if (grad_squared == 0 && !stateless) return 1.;
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
-
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
@@ -561,6 +558,7 @@ float compute_update(gd& g, example& ec)
 
   if (sparse_l2)
     update -= g.sparse_l2 * ec.pred.scalar;
+
   return update;
 }
 
@@ -604,6 +602,7 @@ void sync_weights(vw& all)
 	else
 		sync_weights<weight_parameters>(all, all.weights);
 }
+
 
 template<class T>
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
@@ -683,6 +682,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 			++i;
 	} while ((!read && i < length) || (read && brw >0));
 }
+
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {

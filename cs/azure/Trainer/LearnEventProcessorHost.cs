@@ -83,6 +83,11 @@ namespace VowpalWabbit.Azure.Trainer
                     action().Wait(TimeSpan.FromMinutes(3));
                 }
             }
+            catch (AggregateException ex)
+            {
+                foreach (var innerEx in ex.Flatten().InnerExceptions)
+                    this.telemetry.TrackException(innerEx);
+            }
             catch (Exception ex)
             {
                 this.telemetry.TrackException(ex);
@@ -101,10 +106,17 @@ namespace VowpalWabbit.Azure.Trainer
             }
 
             var msg = "Online Trainer resetting";
+            bool updateClientModel = false;
             if (state != null)
+            {
                 msg += "; state supplied";
+                updateClientModel = true;
+            }
             if (model != null)
-                msg += "; model supplied";
+            {
+                msg += $"; model of size {model.Length} supplied.";
+                updateClientModel = true;
+            }
 
             this.telemetry.TrackTrace(msg, SeverityLevel.Information);
 
@@ -118,12 +130,15 @@ namespace VowpalWabbit.Azure.Trainer
             await this.StartInternalAsync(settings, state, model);
 
             // make sure we store this fresh model, in case we die we don't loose the reset
-            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent());
+            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent { UpdateClientModel = updateClientModel });
 
-            // delete the currently deployed model, so the clients don't use the hold one
-            var latestModel = await this.trainer.GetLatestModelBlob();
-            this.telemetry.TrackTrace($"Resetting client visible model: {latestModel.Uri}", SeverityLevel.Information);
-            await latestModel.UploadFromByteArrayAsync(new byte[0], 0, 0);
+            if (!updateClientModel)
+            {
+                // delete the currently deployed model, so the clients don't use the hold one
+                var latestModel = await this.trainer.GetLatestModelBlob();
+                this.telemetry.TrackTrace($"Resetting client visible model: {latestModel.Uri}", SeverityLevel.Information);
+                await latestModel.UploadFromByteArrayAsync(new byte[0], 0, 0);
+            }
         }
 
         private async Task RestartInternalAsync(OnlineTrainerSettingsInternal settings)

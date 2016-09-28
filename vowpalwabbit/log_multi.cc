@@ -307,7 +307,7 @@ void learn(log_multi& b, base_learner& base, example& ec)
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
     ec.pred.multiclass = start_pred;
-    ec.l.multi = mc;
+	ec.l.multi = mc;
   }
 }
 

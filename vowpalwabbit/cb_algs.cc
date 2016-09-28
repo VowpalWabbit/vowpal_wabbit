@@ -180,23 +180,24 @@ base_learner* cb_algs_setup(vw& all)
 
   base_learner* base = setup_base(all);
   if (eval)
-    all.p->lp = CB_EVAL::cb_eval;
+  { all.p->lp = CB_EVAL::cb_eval;
+	all.label_type = label_type::cb_eval;
+  }
   else
-    all.p->lp = CB::cb_label;
+  { all.p->lp = CB::cb_label;
+	all.label_type = label_type::cb;
+  }
 
   learner<cb>* l;
   if (eval)
-  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier);
+  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   { l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>,
-                      problem_multiplier);
+                      problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  // preserve the increment of the base learner since we are
-  // _adding_ to the number of problems rather than multiplying.
-  l->increment = base->increment;
   c.scorer = all.scorer;
 
   l->set_finish(finish);

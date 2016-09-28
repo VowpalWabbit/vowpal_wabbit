@@ -45,6 +45,11 @@ namespace VW.Serializer
         public List<VowpalWabbitJsonParseContext> Path { get; set; }
 
         /// <summary>
+        /// The current _multi element index.
+        /// </summary>
+        public int MultiIndex { get; set; }
+
+        /// <summary>
         /// Triggers parsing at the current state of the <see cref="Reader"/> using the default namespace.
         /// </summary>
         public void Parse()
@@ -320,6 +325,8 @@ namespace VW.Serializer
             if (this.ExampleBuilders == null)
                 this.ExampleBuilders = new List<VowpalWabbitJsonBuilder>();
 
+            state.MultiIndex = 0;
+
             while (reader.Read())
             {
                 switch (reader.TokenType)
@@ -329,7 +336,7 @@ namespace VW.Serializer
 
                         try
                         {
-                            builder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer);
+                            builder = new VowpalWabbitJsonBuilder(this, this.vwPool, VowpalWabbitDefaultMarshaller.Instance, this.jsonSerializer, state.MultiIndex);
                             this.ExampleBuilders.Add(builder);
                         }
                         catch (Exception)
@@ -340,6 +347,8 @@ namespace VW.Serializer
 
                         // pass the label to the selected example
                         builder.Parse(reader, index != null && index == this.ExampleBuilders.Count - 1 ? label : null, this.extensions);
+
+                        state.MultiIndex++;
                         break;
                     case JsonToken.EndArray:
                         return true;
@@ -372,9 +381,12 @@ namespace VW.Serializer
             // only pass the label if it's not targeted at a particular index
             this.ExampleBuilder.Parse(reader, index == null ? label : null, this.extensions);
 
-            // check if the outer example foudn a label
+            // check if the outer example found a label
             if (this.ExampleBuilder.Label != null)
             {
+                if (this.ExampleBuilder.LabelIndex >= this.ExampleBuilders.Count)
+                    throw new InvalidDataException($"Label index {this.ExampleBuilder.LabelIndex} is invalid. Only {this.ExampleBuilders.Count} examples available.");
+
                 VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(
                     this.ExampleBuilders[this.ExampleBuilder.LabelIndex].DefaultNamespaceContext,
                     this.ExampleBuilder.Label);

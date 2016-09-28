@@ -115,7 +115,7 @@ python/.coverage
 /compile
 /cs/Serializer/Visitors/VowpalWabbitNativeVisitorExt.cs
 /cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
-/cs_unittest/RunTests.cs
+/cs/unittest/RunTests.cs
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs

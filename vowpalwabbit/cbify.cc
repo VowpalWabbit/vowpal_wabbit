@@ -18,19 +18,15 @@ class vw_scorer : public IScorer<example>
 {
  public:
   vector<float> Score_Actions(example& ctx);
-  
 };
-
 
 struct vw_recorder : public IRecorder<example>
 { void Record(example& context, u32 a, float p, string /*unique_key*/)
-  {
-  }
+  { }
 
   virtual ~vw_recorder()
   { }
 };
-
 
 struct cbify
 { CB::label cb_label;
@@ -51,7 +47,6 @@ vector<float> vw_scorer::Score_Actions(example& ctx)
     probs_vec.push_back(ctx.pred.a_s[i].score);
   return probs_vec;
 }
-
 
 float loss(uint32_t label, uint32_t final_prediction)
 {
@@ -129,7 +124,7 @@ base_learner* cbify_setup(vw& all)
     all.args.push_back(ss.str());
   }
   base_learner* base = setup_base(all);
-
+  
   all.delete_prediction = nullptr;
   learner<cbify>* l;
   l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
