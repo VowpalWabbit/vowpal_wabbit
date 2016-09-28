@@ -223,12 +223,12 @@ void mf_train(gdmf& d, example& ec)
 	else
 		mf_train<weight_parameters>(d, ec, (*d.all).weights);
 }
-void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride)
+void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
 { 
 	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 	  *w = (float)(0.1 * merand48(index));
 }
-void set_rand(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t stride)
+void set_rand(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
 {
 	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 		*w = (float)(0.1 * merand48(index));

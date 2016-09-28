@@ -27,37 +27,38 @@ using namespace std;
 
 
 struct initial_t
-{private:
-	weight _initial;
-public:
-	initial_t(weight initial) : _initial(initial){}
-	void operator()(weight_parameters::iterator& iter, uint64_t /*index*/)
-	{
-		*iter = _initial;
-	}
-	void operator()(sparse_weight_parameters::iterator& iter, size_t /*index*/)
-	{
-		*iter = _initial;
-	}
+{  weight _initial;
+   initial_t(weight initial) : _initial(initial){}
 };
+	
+void set_initial(weight_parameters::iterator& iter, uint64_t /*index*/, uint32_t /*stride*/, void* set_struct)
+{
+	*iter = static_cast<initial_t*>(set_struct)->_initial;
+}
+	
+void set_initial(sparse_weight_parameters::iterator& iter, uint64_t /*index*/, uint32_t /*stride*/, void* set_struct)
+{
+	*iter = static_cast<initial_t*>(set_struct)->_initial;
+}
 
 
-void random_positive(weight_parameters::iterator& iter, uint64_t ind)
+
+void random_positive(weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
 {*iter = (float)(0.1 * merand48(ind));
 }
 
-void random_positive(sparse_weight_parameters::iterator& iter, uint64_t ind)
-{
-	*iter = (float)(0.1 * merand48(ind));
-}
-void random_weights(weight_parameters::iterator& iter, uint64_t ind)
-{*iter = (float)(merand48(ind) - 0.5);
+void random_positive(sparse_weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
+{  *iter = (float)(0.1 * merand48(ind));
 }
 
-void random_weights(sparse_weight_parameters::iterator& iter, size_t ind)
-{
-	*iter = (float)(merand48(ind) - 0.5);
+void random_weights(weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
+{  *iter = (float)(merand48(ind) - 0.5);
 }
+
+void random_weights(sparse_weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
+{	*iter = (float)(merand48(ind) - 0.5);
+}
+
 template<class T>
 void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
@@ -74,7 +75,8 @@ void initialize_regressor(vw& all, T& weights)
   else if (all.initial_weight != 0.)
   {
 	  initial_t init(all.initial_t);
-	  weights.template set_default<initial_t>(init);
+	  all.weights.set_struct = &init;
+	  weights.template set_default<set_initial>();
   }
   else if (all.random_positive_weights)
 	  weights.template set_default<random_positive>();

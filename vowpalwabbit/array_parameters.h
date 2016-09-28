@@ -102,7 +102,7 @@ private:
 public:
 	typedef weights_iterator<weight> iterator;
 	typedef weights_iterator<const weight> const_iterator;
-
+	void* set_struct;
 	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
@@ -138,37 +138,13 @@ public:
 	  _seeded = true;
 	}
 
-	template<void(*T)(iterator&)>
-	inline void set_default()
-	  {
-	    for (iterator iter = begin(); iter != end(); ++iter)
-	      T(iter);
-	  }
-	
-	template<void(*T)(iterator&, uint64_t)> //for random initialization of weights (with stride) 
-	inline void set_default()
-	{  uint32_t stride = 1 << _stride_shift;
-	   iterator iter = begin();
-	   for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T(iter, i);
-	}
-
-	template<void(*T)(iterator&, uint64_t, uint32_t)> //for random initialization of the entire weight_vector 
+	template<void(*T)(iterator&, uint64_t, uint32_t, void*)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride)
-			T(iter, i, stride);
+			T(iter, i, stride, set_struct);
 	}
-
-	template <typename T>
-	void set_default(T t)
-	{ uint32_t stride = 1 << _stride_shift;
-	  iterator iter = begin();
-	   for (size_t i = 0; iter != end(); ++iter, i+= stride)
-			t(iter, i); 
-	}
-	
 
 	void set_zero(size_t offset)
 	{
@@ -269,17 +245,7 @@ public:
 	w_iter end(size_t offset) { return w_iter(&_map.iter_helper(_index) + offset); }
 };
 
-struct proxy_object{
-	sparse_weight_parameters& _map;
-	size_t _i;
-	proxy_object(sparse_weight_parameters& map, size_t i) : _map(map), _i(i){};
-	proxy_object &operator=(weight &value) {
-		_map.write(_i, value);
-	}
-	operator weight() {
-		_map.read(_i);
-	}
-};
+
 class sparse_weight_parameters
 {
 private:
@@ -292,19 +258,14 @@ private:
 public:
 	typedef sparse_weights_iterator<weight> iterator;
 	typedef sparse_weights_iterator<const weight> const_iterator;
-	void(*fun_1)(iterator&) = nullptr;
-	void(*fun_2)(iterator&, size_t) = nullptr;
-	void(*fun_3)(iterator&, size_t, uint32_t) = nullptr;
-	std::function<void(iterator&, size_t)> fun_4 = nullptr;
-
+	void(*fun)(iterator&, uint64_t, uint32_t, void*) = nullptr;
+	void* set_struct;
 	sparse_weight_parameters(size_t length, uint32_t stride_shift = 0)
 		: _map(),//_begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
 		_seeded(false)
-	{
-		_map.insert(std::make_pair(0, calloc_mergable_or_throw<weight>(_stride_shift)));
-	}
+	{}
 
 	sparse_weight_parameters()
 		: _map(), _weight_mask(0), _stride_shift(0), _seeded(false)
@@ -328,62 +289,20 @@ public:
 
 	
 	inline weight& operator[](size_t i)
-	{
-		return proxy_object(*this, i);
-	}
-	weight& read(size_t i){
-		size_t index = ceil((i & _weight_mask)/ _stride_shift);
+	{   uint64_t index = floor((i & _weight_mask)/ _stride_shift);
 		weight_map::iterator iter = _map.find(index);
 		weight_map::iterator end = _map.end();
 		if (iter == end) 
-		{ 
-			iter = _map.find(0);
-			memset(iter->second, 0, _stride_shift);
-			if (fun_1 != nullptr){
-				fun_1(iterator(*this, 0, _stride_shift));
-			}
-			else if (fun_2 != nullptr){
-				fun_2(iterator(*this, 0, _stride_shift), index << _stride_shift);
-			}
-			else if (fun_3 != nullptr){
-				fun_3(iterator(*this, 0, _stride_shift), index << _stride_shift, _stride_shift);
-			}
-			else if (fun_4 != nullptr){
-				fun_4(iterator(*this, 0, _stride_shift), index << _stride_shift);
-			}
-		}
-		 /* Found, i->first is f, i->second is ++-- */
-			weight* it = iter->second;
-			size_t offset = (i & _weight_mask) % _stride_shift;
-			return (&(*it))[offset];
-		
-	}
-	weight& write(size_t i, weight& value){
-		size_t index = ceil((i & _weight_mask) / _stride_shift);
-		weight_map::iterator iter = _map.find(index);
-		weight_map::iterator end = _map.end();
-		if (iter == end)
-		{
-
-			_map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
-			if (fun_1 != nullptr){
-				fun_1(iterator(*this, index, _stride_shift));
-			}
-			else if (fun_2 != nullptr){
-				fun_2(iterator(*this, index, _stride_shift), index << _stride_shift);
-			}
-			else if (fun_3 != nullptr){
-				fun_3(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift);
-			}
-			else if (fun_4 != nullptr){
-				fun_4(iterator(*this, index, _stride_shift), index << _stride_shift);
-			}
+		{   _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
+			if (fun != nullptr)
+				fun(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
+			
 		}
 		iter = _map.find(index);
 		/* Found, i->first is f, i->second is ++-- */
 		weight* it = iter->second;
 		size_t offset = (i & _weight_mask) % _stride_shift;
-		(&(*it))[offset] = value;
+		return (&(*it))[offset];
 
 	}
 	//definitely need to change this
@@ -393,18 +312,8 @@ public:
 		weight_map::iterator end = _map.end();
 		if (iter == end)
 		{  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
-			if (fun_1 != nullptr){
-				fun_1(iterator(*this, index, _stride_shift));
-			}
-			else if (fun_2 != nullptr){
-				fun_2(iterator(*this, index, _stride_shift), index << _stride_shift);
-			}
-			else if (fun_3 != nullptr){
-				fun_3(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift);
-			}
-			else if (fun_4 != nullptr){
-				fun_4(iterator(*this, index, _stride_shift), index << _stride_shift);
-			}
+			if (fun != nullptr)
+				fun(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
 		}
 		iter = _map.find(index);
 		/* Found, i->first is f, i->second is ++-- */
@@ -419,30 +328,11 @@ public:
 		_seeded = true;
 	}
 
-	template<void(*T)(iterator&)>
+	template<void(*T)(iterator&, uint64_t, uint32_t, void*)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{
-		fun_1 = T;
+		fun = T;
 	}
-
-	template<void(*T)(iterator&, size_t)> //for random initialization of weights (with stride) 
-	inline void set_default()
-	{
-		fun_2 = T;
-	}
-
-	template<void(*T)(iterator&, size_t, uint32_t)> //for random initialization of the entire weight_vector 
-	inline void set_default()
-	{
-		fun_3 = T;
-	}
-
-	template <typename T>
-	void set_default(T t)
-	{
-		fun_4 = t;
-	}
-
 
 	void set_zero(size_t offset)
 	{

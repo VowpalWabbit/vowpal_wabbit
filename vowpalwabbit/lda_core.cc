@@ -694,37 +694,40 @@ size_t next_pow2(size_t x)
 
 struct initial_weights
 {
-private:
 	weight _initial;
 	weight _initial_random;
 	bool _random;
 	uint32_t _lda;
-public:
-	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda ) 
+	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda)
 		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
 	{}
-	void operator()(weight_parameters::iterator& iter, uint64_t index)
-	{ if (_random)
-	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
+};
+
+void set_initial_lda(weight_parameters::iterator& iter, uint64_t index, uint32_t /*stride*/, void* set_struct)
+{
+	uint32_t lda = static_cast<initial_weights*>(set_struct)->_lda;
+	weight initial_random = static_cast<initial_weights*>(set_struct)->_initial_random;
+	if (static_cast<initial_weights*>(set_struct)->_random)
+	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
-		   *k *= _initial_random;
+		   *k *= initial_random;
 		}
 	  }
-	(&(*iter))[_lda] = _initial;
-	}
-	void operator()(sparse_weight_parameters::iterator& iter, size_t index)
-	{
-		if (_random)
-		{
-			for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(_lda); ++k, ++index)
-			{
-				*k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
-				*k *= _initial_random;
-			}
+	(&(*iter))[lda] = static_cast<initial_weights*>(set_struct)->_initial;
+}
+void set_initial_lda(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t /*stride*/, void* set_struct)
+{
+	uint32_t lda = static_cast<initial_weights*>(set_struct)->_lda;
+	weight initial_random = static_cast<initial_weights*>(set_struct)->_initial_random;
+	if (static_cast<initial_weights*>(set_struct)->_random)
+	{  for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
+		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
+			*k *= initial_random;
 		}
-		(&(*iter))[_lda] = _initial;
 	}
-};
+		(&(*iter))[lda] = static_cast<initial_weights*>(set_struct)->_initial;
+}
+
 
 template<class T>
 void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
@@ -733,7 +736,8 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   if (read)
   { initialize_regressor(*all);
     initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
-    weights.template set_default<initial_weights>(init);
+	all->weights.set_struct = &init;
+	weights.template set_default<set_initial_lda>();
 
   }
   if (model_file.files.size() > 0)
@@ -1328,11 +1332,8 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
   ld.decay_levels.push_back(0.f);
 
-<<<<<<< HEAD
   LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift());
-=======
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
->>>>>>> ce02eae17b1bc0a667cc79fadc23898e063f3835
+
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
