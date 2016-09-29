@@ -45,7 +45,6 @@ private:
     new_ec->num_features = 0;
     new_ec->partial_prediction = 0.;
     new_ec->updated_prediction = 0.;
-    new_ec->topic_predictions.erase();
     new_ec->passthrough = nullptr;
     new_ec->loss = 0.;
     new_ec->total_sum_feat_sq = 0.;
@@ -166,7 +165,7 @@ public:
   { if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->reg.stride_shift);
+    ec->feature_space[(int)to_ns].push_back(v, fint << vw_ref->weights.stride_shift());
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;

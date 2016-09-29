@@ -18,24 +18,25 @@ namespace VowpalWabbit.Azure.Trainer
     {
         private readonly TelemetryClient telemetry;
 
-        /// <summary>
-        /// During start/stop/restart operations the objects below gets reset.
-        /// Make sure this is done in a consistent manner.
-        /// </summary>
-        private readonly ConcurrentExclusiveSchedulerPair exclusiveScheduler;
-        private readonly TaskFactory exclusiveTaskFactory;
+        private readonly object managementLock = new object();
         private TrainEventProcessorFactory trainProcessorFactory;
         private EventProcessorHost eventProcessorHost;
         private Learner trainer;
         private PerformanceCounters perfCounters;
         private SafeTimer perfUpdater;
+        private DateTime? eventHubStartDateTimeUtc;
 
         public LearnEventProcessorHost()
         {
             this.telemetry = new TelemetryClient();
-            this.exclusiveScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, 1);
-            this.exclusiveTaskFactory = new TaskFactory(exclusiveScheduler.ExclusiveScheduler);
+            
+            // by default read from the beginning of Event Hubs event stream.
+            this.eventHubStartDateTimeUtc = null;
         }
+
+        public PerformanceCounters PerformanceCounters { get { return this.perfCounters; } }
+
+        public DateTime LastStartDateTimeUtc { get; private set; }
 
         internal object InitialOffsetProvider(string partition)
         {
@@ -43,7 +44,8 @@ namespace VowpalWabbit.Azure.Trainer
             if (this.trainer.State.Partitions.TryGetValue(partition, out offset))
                 return offset;
 
-            return DateTime.UtcNow;
+            // either DateTime.UtcNow on reset or null if start the first time
+            return this.eventHubStartDateTimeUtc;
         }
 
         public async Task StartAsync(OnlineTrainerSettingsInternal settings)
@@ -61,9 +63,9 @@ namespace VowpalWabbit.Azure.Trainer
             await this.SafeExecute(async () => await this.RestartInternalAsync(settings));
         }
 
-        public async Task ResetModelAsync(OnlineTrainerState state = null)
+        public async Task ResetModelAsync(OnlineTrainerState state = null, byte[] model = null)
         {
-            await this.SafeExecute(async () => await this.ResetInternalAsync(state));
+            await this.SafeExecute(async () => await this.ResetInternalAsync(state, model));
         }
 
         public async Task CheckpointAsync()
@@ -75,18 +77,48 @@ namespace VowpalWabbit.Azure.Trainer
         {
             try
             {
-                return exclusiveTaskFactory.StartNew(action).Unwrap();
+                // need to do a lock as child tasks are interleaving
+                lock (this.managementLock)
+                {
+                    action().Wait(TimeSpan.FromMinutes(3));
+                }
+            }
+            catch (AggregateException ex)
+            {
+                foreach (var innerEx in ex.Flatten().InnerExceptions)
+                    this.telemetry.TrackException(innerEx);
             }
             catch (Exception ex)
             {
                 this.telemetry.TrackException(ex);
                 throw ex;
             }
+
+            return Task.FromResult(true);
         }
         
-        private async Task ResetInternalAsync(OnlineTrainerState state = null)
+        private async Task ResetInternalAsync(OnlineTrainerState state = null, byte[] model = null)
         {
-            this.telemetry.TrackTrace("Online Trainer resetting", SeverityLevel.Information);
+            if (this.trainer == null)
+            {
+                this.telemetry.TrackTrace("Online Trainer resetting skipped as trainer hasn't started yet.", SeverityLevel.Information);
+                return;
+            }
+
+            var msg = "Online Trainer resetting";
+            bool updateClientModel = false;
+            if (state != null)
+            {
+                msg += "; state supplied";
+                updateClientModel = true;
+            }
+            if (model != null)
+            {
+                msg += $"; model of size {model.Length} supplied.";
+                updateClientModel = true;
+            }
+
+            this.telemetry.TrackTrace(msg, SeverityLevel.Information);
 
             var settings = this.trainer.Settings;
 
@@ -95,15 +127,18 @@ namespace VowpalWabbit.Azure.Trainer
             settings.ForceFreshStart = true;
             settings.CheckpointPolicy.Reset();
 
-            await this.StartInternalAsync(settings, state);
+            await this.StartInternalAsync(settings, state, model);
 
             // make sure we store this fresh model, in case we die we don't loose the reset
-            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent());
+            await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent { UpdateClientModel = updateClientModel });
 
-            // delete the currently deployed model, so the clients don't use the hold one
-            var latestModel = await this.trainer.GetLatestModelBlob();
-            this.telemetry.TrackTrace($"Resetting client visible model: {latestModel.Uri}", SeverityLevel.Information);
-            await latestModel.UploadFromByteArrayAsync(new byte[0], 0, 0);
+            if (!updateClientModel)
+            {
+                // delete the currently deployed model, so the clients don't use the hold one
+                var latestModel = await this.trainer.GetLatestModelBlob();
+                this.telemetry.TrackTrace($"Resetting client visible model: {latestModel.Uri}", SeverityLevel.Information);
+                await latestModel.UploadFromByteArrayAsync(new byte[0], 0, 0);
+            }
         }
 
         private async Task RestartInternalAsync(OnlineTrainerSettingsInternal settings)
@@ -112,18 +147,22 @@ namespace VowpalWabbit.Azure.Trainer
 
             await this.StopInternalAsync();
 
+            // make sure we ignore previous events
+            this.eventHubStartDateTimeUtc = DateTime.UtcNow;
+
             await this.StartInternalAsync(settings);
         }
 
-        private async Task StartInternalAsync(OnlineTrainerSettingsInternal settings, OnlineTrainerState state = null)
+        private async Task StartInternalAsync(OnlineTrainerSettingsInternal settings, OnlineTrainerState state = null, byte[] model = null)
         {
+            this.LastStartDateTimeUtc = DateTime.UtcNow;
             this.perfCounters = new PerformanceCounters(settings.Metadata.ApplicationID);
 
             // setup trainer
             this.trainer = new Learner(settings, this.DelayedExampleCallback, this.perfCounters);
 
-            if (settings.ForceFreshStart)
-                this.trainer.FreshStart(state);
+            if (settings.ForceFreshStart || model != null)
+                this.trainer.FreshStart(state, model);
             else
                 await this.trainer.FindAndResumeFromState();
 
@@ -160,14 +199,18 @@ namespace VowpalWabbit.Azure.Trainer
 
         private void UpdatePerformanceCounters()
         {
-            try
+            lock (this.managementLock)
             {
-                this.trainer.UpdatePerformanceCounters();
-                this.trainProcessorFactory.UpdatePerformanceCounters();
-            }
-            catch (Exception ex)
-            {
-                this.telemetry.TrackException(ex);
+                // make sure this is thread safe w.r.t reset/start/stop/...
+                try
+                {
+                    this.trainer.UpdatePerformanceCounters();
+                    this.trainProcessorFactory.UpdatePerformanceCounters();
+                }
+                catch (Exception ex)
+                {
+                    this.telemetry.TrackException(ex);
+                }
             }
         }
 

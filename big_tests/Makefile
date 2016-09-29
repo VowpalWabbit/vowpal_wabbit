@@ -21,14 +21,22 @@ MAKEFLAGS+=r
 .PHONY:	default all stub help valid expected pretend run startTimer clean spotless %.valid %.expected %.run %.clean %.deps %.depsWrapper %.depsStart %.depsEnd %.stub
 
 TOP_MK_DIR := $(patsubst %/,%,$(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+
+ifdef TIMING
+TIMING_SUFFIX = WithTiming
 MIPS_HELP := $(shell lscpu | grep -i bogomips)
 MIPS := $(word $(words $(MIPS_HELP)),$(MIPS_HELP))
 ARCH ?= $(subst /,_,$(shell uname -o)_$(MIPS))
 # can't use the architecture as directory name, cuz that produces different expected files on different platforms
 # stageDir := $(ARCH)
-stageDir := runs
-dataDir := dataSets
-expDir := expected
+TIME ?= env time -f "%U"
+TIME_DIFF_TOLERANCE_REL ?= 0.05
+TIME_DIFF_TOLERANCE_ABS ?= 1.0
+endif
+
+stageDir ?= runs
+dataDir ?= dataSets
+expDir ?= expected
 testCodeDir := $(TOP_MK_DIR)/testCode
 
 allTests := $(patsubst %/,%,$(shell ls $(expDir)))
@@ -38,22 +46,16 @@ allTests := $(patsubst %/,%,$(shell ls $(expDir)))
 # make EXEC=myProgram all
 # alas, $(realpath ...) doesn't seem to work here on make 3.81 for some reason
 EXEC ?= ../vowpalwabbit/vw
-TIME ?= env time -f "%U"
 ACC_DIFF_TOLERANCE_REL ?= 0.001
 ACC_DIFF_TOLERANCE_ABS ?= 0.001
-TIME_DIFF_TOLERANCE_REL ?= 0.05
-TIME_DIFF_TOLERANCE_ABS ?= 1.0
 DIFF ?= $(testCodeDir)/floatingTolerance.pl
 GREP ?= grep
 DEFAULT_STDOUT_COMPARATOR_REGEXP ?= "."
 DEFAULT_STDERR_COMPARATOR_REGEXP ?= "average loss"
 ARF ?= vwBigtests.tz2
 # you can uncomment the next line to get the data from a cache by default, but we don't recommend it
-# URL ?= https://vowpalwabbitdata.blob.core.windows.net/bigtests/vwBigtests.tz2
+URL ?= https://vowpalwabbitdata.blob.core.windows.net/bigtests/vwBigtests.tz2
 
-ifdef TIMING
-TIMING_SUFFIX = WithTiming
-endif
 
 all:	valid ;
 

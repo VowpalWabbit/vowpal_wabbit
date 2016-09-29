@@ -33,27 +33,48 @@ namespace VW.Serializer
             }
         }
 
-        private static bool IsFeatureTypeSupported(Type type)
+        private static readonly Type[] SupportedTypes;
+        private static readonly Type[] DictTypes;
+
+        static JsonTypeInspector()
         {
-            return IsNumericType(type)
-                    || type == typeof(char)
-                    || type == typeof(bool)
-                    || type == typeof(string)
-                    || (type.IsArray && IsNumericType(type.GetElementType()));
+            var numericElementTypes = new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(Int32), typeof(UInt16), typeof(UInt32), typeof(float), typeof(Int64), typeof(UInt64), typeof(double) };
+            var enumerableType = typeof(IEnumerable<string>).GetGenericTypeDefinition();
+            var dictType = typeof(IDictionary<string, int>).GetGenericTypeDefinition();
+
+            SupportedTypes = new[]
+            {
+                typeof(char),
+                typeof(bool),
+                typeof(string),
+                typeof(double),
+                typeof(float),
+                typeof(byte),
+                typeof(decimal),
+                typeof(UInt16),
+                typeof(UInt32),
+                typeof(UInt64),
+                typeof(Int16),
+                typeof(Int32),
+                typeof(Int64),
+            }
+            .Union(numericElementTypes.Select(valueType => enumerableType.MakeGenericType(valueType)))
+            .Union(numericElementTypes.Select(valueType => valueType.MakeArrayType()))
+            .ToArray();
+
+            DictTypes = numericElementTypes
+                .Select(valueType => dictType.MakeGenericType(typeof(string), valueType))
+                .ToArray();
         }
 
-        private static bool IsNumericType(Type type)
+        private static bool IsTypeSupported(Type type)
         {
-            return type == typeof(double)
-                    || type == typeof(float)
-                    || type == typeof(byte)
-                    || type == typeof(decimal)
-                    || type == typeof(UInt16)
-                    || type == typeof(UInt32)
-                    || type == typeof(UInt64)
-                    || type == typeof(Int16)
-                    || type == typeof(Int32)
-                    || type == typeof(Int64);
+            return SupportedTypes.Any(t => t.IsAssignableFrom(type));
+        }
+
+        private static bool IsDictType(Type type)
+        {
+            return DictTypes.Any(t => t.IsAssignableFrom(type));
         }
 
         /// <summary>
@@ -95,7 +116,9 @@ namespace VW.Serializer
                 // removing any JsonIgnore properties
                 where !ns.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let nsAttr = (JsonPropertyAttribute)ns.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
-                where !IsFeatureTypeSupported(ns.PropertyType) &&
+                where
+                    !IsDictType(ns.PropertyType) &&  
+                    !IsTypeSupported(ns.PropertyType) &&
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
                 let namespaceRawValue = nsAttr != null && nsAttr.PropertyName != null ? nsAttr.PropertyName : ns.Name
@@ -108,7 +131,7 @@ namespace VW.Serializer
                 // removing any JsonIgnore properties
                 where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
-                where IsFeatureTypeSupported(p.PropertyType) &&
+                where IsTypeSupported(p.PropertyType) &&
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
@@ -144,9 +167,9 @@ namespace VW.Serializer
                 // filter all aux properties, except for special props
                 where propertyConfiguration.IsSpecialProperty(name) ||
                    !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
-                // filterint labels for now
+                // filtering labels for now
                 where name != propertyConfiguration.LabelProperty
-                where IsFeatureTypeSupported(p.PropertyType) ||
+                where IsTypeSupported(p.PropertyType) ||
                     // _multi can be any list type that JSON.NET supports
                     name == propertyConfiguration.MultiProperty ||
                     // labels must be ILabel or string
@@ -162,6 +185,32 @@ namespace VW.Serializer
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     featureGroup: VowpalWabbitConstants.DefaultNamespace);
+
+            // find all top-level dictionaries
+            var topLevelDictionaries =
+                from p in type.GetProperties()
+                    // removing any JsonIgnore properties
+                where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
+                let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
+                where
+                    // model OptIn/OptOut
+                    (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
+                where IsDictType(p.PropertyType)
+                let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
+                let namespaceRawValue = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
+                // filter all aux properties
+                where !namespaceRawValue.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
+                let featureGroup = namespaceRawValue[0]
+                let namespaceValue = namespaceRawValue.Length > 1 ? namespaceRawValue.Substring(1) : null
+                select new FeatureExpression(
+                    featureType: p.PropertyType,
+                    name: name,
+                    // CODE example.FeatureProperty
+                    valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
+                    // CODE example != null
+                    valueValidExpressionFactories: new List<Func<Expression, Expression>> { valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
+                    @namespace: namespaceValue,
+                    featureGroup: featureGroup);
 
             // find label
             var labelProperties =
@@ -195,7 +244,9 @@ namespace VW.Serializer
             return new Schema
             {
                 Label = labelProperties.FirstOrDefault(),
-                Features = namespaceFeatures.Union(defaultNamespaceFeatures).ToList()
+                Features = namespaceFeatures
+                    .Union(defaultNamespaceFeatures)
+                    .Union(topLevelDictionaries).ToList()
             };
         }
     }

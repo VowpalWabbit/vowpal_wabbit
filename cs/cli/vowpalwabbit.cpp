@@ -13,8 +13,10 @@ license as described in the file LICENSE.
 #include "vw_allreduce.h"
 #include "vw_builder.h"
 #include "clr_io.h"
+#include "lda_core.h"
 
 using namespace System;
+using namespace System::Collections::Generic;
 using namespace System::Text;
 
 namespace VW
@@ -162,7 +164,7 @@ namespace VW
     }
   }
 
-  uint64_t VowpalWabbit::HashFeatureNative(String^ s, size_t u)
+  uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
   {
     auto bytes = System::Text::Encoding::UTF8->GetBytes(s);
     auto handle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
@@ -525,11 +527,11 @@ namespace VW
   /// <param name="u">Hash offset.</param>
   /// <returns>The resulting hash code.</returns>
   //template<bool replaceSpace>
-  uint64_t hashall(String^ s, uint64_t u)
+  uint64_t hashall(String^ s, int offset, int count, uint64_t u)
   { // get raw bytes from string
-    auto keys = Encoding::UTF8->GetBytes(s);
-    int length = keys->Length;
-
+	auto keys = gcnew cli::array<unsigned char>(Encoding::UTF8->GetMaxByteCount(count));
+    int length = Encoding::UTF8->GetBytes(s, offset, count, keys, 0);
+	
     // TOOD: benchmark and verify correctness
     //if (replaceSpace)
     //{
@@ -597,6 +599,11 @@ namespace VW
     return MURMUR_HASH_3::fmix(h1);
   }
 
+  uint64_t hashall(String^ s, uint64_t u)
+  {
+	  return hashall(s, 0, s->Length, u);
+  }
+
   /// <summary>
   /// Hashes the given value <paramref name="s"/>.
   /// </summary>
@@ -605,17 +612,24 @@ namespace VW
   /// <returns>The resulting hash code.</returns>
   size_t hashstring(String^ s, size_t u)
   {
-    s = s->Trim();
+	  int offset = 0;
+	  int end = s->Length;
 
-    int sInt = 0;
-    if (int::TryParse(s, sInt))
-    {
-      return sInt + u;
-    }
-    else
-    {
-      return hashall(s, u);
-    }
+	  //trim leading whitespace but not UTF-8
+	  for (;offset < s->Length && s[offset] <= 0x20;offset++);
+	  for (;end >= offset && s[end - 1] <= 0x20;end--);
+
+	  int sInt = 0;
+	  for (int i = offset;i < end;i++)
+	  {
+		  auto c = s[i];
+		  if (c >= '0' && c <= '9')
+			  sInt = 10 * sInt + (c - '0');
+		  else
+			  return hashall(s, offset, end - offset, u);
+	  }
+
+	  return sInt + u;
   }
 
   Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
@@ -695,5 +709,57 @@ namespace VW
     else // this should not happen as m_vw is already set to null
       throw gcnew ObjectDisposedException("VowpalWabbitExample was disposed after the owner is disposed");
 #endif
+  }
+  
+  cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
+  {
+	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	  // using jagged array to enable LINQ
+	  auto K = (int)m_vw->lda;
+	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
+
+	  // TODO: better way of peaking into lda?
+	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+	  
+	  std::vector<feature> top_weights;
+	  // over topics
+	  for (int topic = 0; topic < K; topic++)
+	  {
+		  get_top_weights(m_vw, top, topic, top_weights);
+
+		  auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
+		  allocation[topic] = clr_weights;
+		  for (auto& pair : top_weights)
+			  clr_weights->Add(gcnew VowpalWabbitFeature(this, pair.x, pair.weight_index));
+	  }
+
+	  return allocation;
+  }
+
+
+  cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+  {
+	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
+
+	  // using jagged array to enable LINQ
+	  auto K = (int)m_vw->lda;
+	  auto allocation = gcnew cli::array<cli::array<float>^>(K);
+	  for (int k = 0; k < K; k++)
+		  allocation[k] = gcnew cli::array<float>((int)length);
+
+	  // TODO: better way of peaking into lda?
+	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+
+	  // over weights
+	  weight_parameters& weights = m_vw->weights;
+	  weight_parameters::iterator iter = weights.begin();
+	  for (uint64_t i = 0; i < length; i++, ++iter)
+	  {   // over topics
+		  weight_parameters::iterator::w_iter v = iter.begin();
+		  for (uint64_t k = 0; k < K; k++, ++v)
+		    allocation[(int)k][(int)i] = *v + lda_rho;
+	  }
+
+	  return allocation;
   }
 }

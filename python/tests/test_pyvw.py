@@ -21,6 +21,14 @@ class TestVW:
         vw.learn(ex)
         assert vw.predict(ex) > init
 
+    def test_get_tag(self, vw):
+        ex = vw.example("1 foo| a b c")
+        assert ex.get_tag() == 'foo'
+        ex = vw.example("1 1.0 bar| a b c")
+        assert ex.get_tag() == 'bar'
+        ex = vw.example("1 'baz | a b c")
+        assert ex.get_tag() == 'baz'
+
     def test_num_weights(self, vw):
         assert vw.num_weights() == 2**BIT_SIZE
 

@@ -11,6 +11,7 @@ using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
@@ -35,9 +36,12 @@ namespace VowpalWabbit.Azure.Trainer.Operations
         private TransformManyBlock<object, EvalData> evalBlock;
         private IDisposable evalBlockDisposable;
         private TelemetryClient telemetry;
+        private PerformanceCounters performanceCounters;
 
-        internal EvalOperation(OnlineTrainerSettingsInternal settings) 
+        internal EvalOperation(OnlineTrainerSettingsInternal settings, PerformanceCounters performanceCounters) 
         {
+            this.performanceCounters = performanceCounters;
+
             this.telemetry = new TelemetryClient();
 
             // evaluation pipeline 
@@ -51,18 +55,13 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     BoundedCapacity = 1024
                 });
 
-            this.evalBlock.Completion.ContinueWith(t =>
-            {
-                this.telemetry.TrackTrace($"Stage 3 - Evaluation pipeline completed: {t.Status}");
-                if (t.IsFaulted)
-                    this.telemetry.TrackException(t.Exception);
-            });
+            this.evalBlock.Completion.Trace(this.telemetry, "Stage 4 - Evaluation pipeline");
 
-            // batch output together to match EventHub throughput by maintaining maximum latency of 5 seconds
+            // batch output together to match EventHub throughput by maintaining maximum latency of 1 seconds
             this.evalBlockDisposable = this.evalBlock.AsObservable()
                 .GroupBy(k => k.PolicyName)
                    .Select(g =>
-                        g.Window(TimeSpan.FromSeconds(5))
+                        g.Window(TimeSpan.FromSeconds(1))
                          .Select(w => w.Buffer(245 * 1024, e => Encoding.UTF8.GetByteCount(e.JSON)))
                          .SelectMany(w => w)
                          .Subscribe(this.UploadEvaluation))
@@ -72,28 +71,47 @@ namespace VowpalWabbit.Azure.Trainer.Operations
 
         internal ITargetBlock<object> TargetBlock { get { return this.evalBlock; } }
 
-        private static EvalData Create(ContextualBanditLabel label, string policyName, uint actionTaken)
+        private List<EvalData> OfflineEvaluate(object trainerResult)
         {
-            return new EvalData
+            try
             {
-                PolicyName = policyName,
-                JSON = JsonConvert.SerializeObject(
-                    new
-                    {
-                        name = policyName,
-                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(label.Action, actionTaken, label.Cost, label.Probability)
-                    })
-            };
+                return this.OfflineEvaluateInternal(trainerResult as TrainerResult)
+                    .ToList();
+            }
+            catch (Exception e)
+            {
+                this.telemetry.TrackException(e);
+
+                return new List<EvalData>();
+            }
         }
 
-        private IEnumerable<EvalData> OfflineEvaluate(object trainerResult)
+        private IEnumerable<EvalData> OfflineEvaluateInternal(TrainerResult trainerResult)
         {
-            var tr = trainerResult as TrainerResult;
-            if (tr == null)
+            this.performanceCounters.Stage4_Evaluation_PerSec.Increment();
+            this.performanceCounters.Stage4_Evaluation_Total.Increment();
+
+            if (trainerResult == null)
             {
-                this.telemetry.TrackTrace($"Received invalid data: {trainerResult}");
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult is null");
                 yield break;
             }
+
+            if (trainerResult.Label == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.Label is null");
+                yield break;
+            }
+
+            if (trainerResult.ProgressivePrediction == null)
+            {
+                this.telemetry.TrackTrace($"Received invalid data: trainerResult.ProgressivePrediction is null");
+                yield break;
+            }
+
+
+            var pi_a_x = trainerResult.Probabilities[trainerResult.Label.Action - 1];
+            var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);
 
             yield return new EvalData
             {
@@ -103,8 +121,9 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     {
                         name = "Latest Policy",
                         // calcuate expectation under current randomized policy (using current exploration strategy)
-                        cost = tr.ProgressivePrediction
-                            .Sum(ap => ap.Score * VowpalWabbitContextualBanditUtil.GetUnbiasedCost(tr.Label.Action, ap.Action, tr.Label.Cost, tr.Label.Probability))
+                        // VW action is 0-based, label Action is 1 based
+                        cost = (trainerResult.Label.Cost * pi_a_x) / p_a_x,
+                        prob = pi_a_x / p_a_x
                     })
             };
 
@@ -116,18 +135,39 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                     new
                     {
                         name = "Deployed Policy",
-                        cost = tr.Label.Cost
+                        cost = trainerResult.Label.Cost,
+                        prob = trainerResult.Label.Probability
                     })
             };
 
-            for (int action = 1; action <= tr.ProgressivePrediction.Length; action++)
-                yield return Create(tr.Label, $"Constant Policy {action}", (uint)action);
+            for (int action = 1; action <= trainerResult.ProgressivePrediction.Length; action++)
+            {
+                string tag;
+                if (!trainerResult.ActionsTags.TryGetValue(action, out tag))
+                    tag = action.ToString(CultureInfo.InvariantCulture);
+
+                var name = $"Constant Policy {tag}";
+                yield return new EvalData
+                {
+                    PolicyName = name,
+                    JSON = JsonConvert.SerializeObject(
+                    new
+                    {
+                        name = name,
+                        cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
+                        prob = trainerResult.Label.Action == action ? 1 / (trainerResult.Probabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
+                    })
+                };
+            }
         }
 
         private void UploadEvaluation(IList<EvalData> batch)
         {
             try
             {
+                this.performanceCounters.Stage4_Evaluation_Total.Increment();
+                this.performanceCounters.Stage4_Evaluation_BatchesPerSec.Increment();
+
                 var eventData = new EventData(Encoding.UTF8.GetBytes(string.Join("\n", batch.Select(b => b.JSON))))
                 {
                     PartitionKey = batch.First().PolicyName

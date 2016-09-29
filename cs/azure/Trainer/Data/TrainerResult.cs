@@ -7,6 +7,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using VW;
 using VW.Labels;
 
@@ -14,12 +16,39 @@ namespace VowpalWabbit.Azure.Trainer.Data
 {
     internal sealed class TrainerResult
     {
-        public ActionScore[] ProgressivePrediction { get; set; }
+        internal TrainerResult(int[] actions, float[] probabilities)
+        {
+            if (actions == null)
+                throw new ArgumentNullException(nameof(actions));
+            if (probabilities == null)
+                throw new ArgumentNullException(nameof(probabilities));
 
-        public ContextualBanditLabel Label { get; set; }
+            if (actions.Length != probabilities.Length)
+                throw new ArgumentException($"Actions (length: {actions.Length}) and probabilities (length: {probabilities.Length}) must be of equal length"); 
 
-        public TimeSpan Latency { get; set; }
+            this.Ranking = actions;
+            this.ProbabilitiesOrderedByRanking = probabilities;
+            this.Probabilities = new float[actions.Length];
+            for (int i = 0; i < actions.Length; i++)
+                this.Probabilities[actions[i] - 1] = probabilities[i];
+        }
 
-        public string PartitionKey { get; set; }
+        internal ActionScore[] ProgressivePrediction { get; set; }
+
+        internal ContextualBanditLabel Label { get; set; }
+
+        internal TimeSpan Latency { get; set; }
+
+        internal string PartitionKey { get; set; }
+
+        internal int[] Ranking { get; private set; }
+
+        internal float[] Probabilities { get; private set; }
+
+        internal float[] ProbabilitiesOrderedByRanking { get; private set; }
+
+        internal float ProbabilityOfDrop { get; set; }
+
+        internal Dictionary<int, string> ActionsTags { get; set; }
     }
 }

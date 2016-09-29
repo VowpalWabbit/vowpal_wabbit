@@ -74,20 +74,21 @@ namespace cs_unittest
                         {
                             if (!string.IsNullOrWhiteSpace(predictFile) && File.Exists(predictFile))
                             {
-                                float actualValue;
+                                object actualValue;
                                 if (args.Contains("-t")) // test only
-                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Scalar);
+                                    actualValue = vw.Predict(dataLine, VowpalWabbitPredictionType.Dynamic);
                                 else
-                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Scalar);
+                                    actualValue = vw.Learn(dataLine, VowpalWabbitPredictionType.Dynamic);
                             }
                             else
                                 vw.Learn(dataLine);
                         }
                     }
 
-
-                    if (vw.Arguments.NumPasses > 0)
+                    if (vw.Arguments.NumPasses > 1)
                         vw.RunMultiPass();
+                    else
+                        vw.EndOfPass();
 
                     if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                         VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);

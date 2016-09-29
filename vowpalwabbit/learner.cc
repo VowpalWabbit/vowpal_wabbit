@@ -11,6 +11,26 @@ void dispatch_example(vw& all, example& ec)
   all.l->finish_example(all, ec);
 }
 
+namespace prediction_type
+{
+#define CASE(type) case type: return #type; 
+
+	const char* to_string(prediction_type_t prediction_type)
+	{
+		switch (prediction_type)
+		{
+			CASE(scalar)
+				CASE(scalars)
+				CASE(action_scores)
+				CASE(multiclass)
+				CASE(multilabels)
+				CASE(prob)
+				CASE(multiclassprobs)
+		default: return "<unsupported>";
+		}
+	}
+}
+
 namespace LEARNER
 {
 void process_example(vw& all, example* ec)

@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using VW;
 
 namespace VowpalWabbit.Azure.Trainer.Data
@@ -22,6 +23,17 @@ namespace VowpalWabbit.Azure.Trainer.Data
         internal string EventId { get; set; }
 
         internal DateTime Timestamp { get; set; }
+
+        internal int[] Actions { get; set; }
+
+        internal float[] Probabilities { get; set; }
+
+        internal float ProbabilityOfDrop { get; set; }
+
+        /// <summary>
+        /// 1-based action mapping to tag.
+        /// </summary>
+        internal Dictionary<int, string> ActionsTags { get; set; } = new Dictionary<int, string>();
 
         public VowpalWabbitExampleCollection Example { get; set; }
     }

@@ -115,6 +115,10 @@
       <HintPath>..\..\vowpalwabbit\packages\Microsoft.Owin.3.0.1\lib\net45\Microsoft.Owin.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Owin.Cors, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\Microsoft.Owin.Cors.3.0.1\lib\net45\Microsoft.Owin.Cors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Owin.Host.HttpListener, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\vowpalwabbit\packages\Microsoft.Owin.Host.HttpListener.3.0.1\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
       <Private>True</Private>
@@ -207,8 +211,16 @@
       <HintPath>..\..\vowpalwabbit\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\Microsoft.AspNet.Cors.5.2.3\lib\net45\System.Web.Cors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\vowpalwabbit\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Http.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\vowpalwabbit\packages\Microsoft.AspNet.WebApi.Cors.5.2.3\lib\net45\System.Web.Http.Cors.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Web.Http.Owin, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -262,6 +274,7 @@
     <Compile Include="Trainer\OnlineTrainerSettings.cs" />
     <Compile Include="Worker\OnlineTrainerSettingsWatcher.cs" />
     <Compile Include="Worker\ResetController.cs" />
+    <Compile Include="Worker\StatusController.cs" />
     <Compile Include="Worker\WorkerRole.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -291,13 +304,14 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Import Project="$(ProjectDir)\..\version.props" />
+ <Target Name="BeforeBuild">
+    <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Vowpal Wabbit" AssemblyDescription="Vowpal Wabbit" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="false" Guid="6a577997-af00-4ca0-8453-fdc8bbdf2a57" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
   </Target>
   <Target Name="AfterBuild">
+    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings"
+          Condition="'$(BuildNuget)' == 'true'" />
   </Target>
-  -->
   <PropertyGroup>
     <!-- Setting AutoUnifyAssemblyReferences to false will allow the ResolveAssemblyReferences task to 
     create warnings when detecting version missmatches among references.
@@ -305,6 +319,7 @@
     <AutoUnifyAssemblyReferences>false</AutoUnifyAssemblyReferences>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -312,7 +327,6 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <Target Name="AfterBuild">
-    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings"
-          Condition="'$(BuildNuget)' == 'true'" />
+    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
 </Project>

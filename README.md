@@ -140,7 +140,8 @@ brew install vowpal-wabbit
 brew install libtool
 brew install autoconf
 brew install automake
-brew install boost --with-python
+brew install boost
+brew install boost-python
 ```
 
 #### OSX Dependencies (if using MacPorts):
@@ -159,7 +160,7 @@ $ port install boost +no_single +no_static +openmpi +python27
 *Mac OS X 10.8 and below*: ``configure.cxx_stdlib=libc++`` and ``configure.cxx=clang++`` ensure that ``clang++`` uses
 the correct C++11 functionality while building Boost. Ordinarily, ``clang++`` relies on the older GNU ``g++`` 4.2 series
 header files and ``stdc++`` library; ``libc++`` is the ``clang`` replacement that provides newer C++11 functionality. If
-these flags aren't present, you will likely encounter compilation errors when compiling _vowpalrabbit/cbify.cc_. These
+these flags aren't present, you will likely encounter compilation errors when compiling _vowpalwabbit/cbify.cc_. These
 error messages generally contain complaints about ``std::to_string`` and ``std::unique_ptr`` types missing.
 
 To compile:

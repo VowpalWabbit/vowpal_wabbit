@@ -35,7 +35,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
+	void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
 { if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else
@@ -55,7 +55,6 @@ void copy_example_data(bool audit, example* dst, example* src)
 
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
   { dst->passthrough = new features;
@@ -91,8 +90,8 @@ namespace VW
 {
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
-  fs.stride_shift = all.reg.stride_shift;
-  fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
+  fs.stride_shift = all.weights.stride_shift();
+  fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -129,8 +128,11 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.stride_shift = all.reg.stride_shift;
-  ffs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
+  ffs.stride_shift = all.weights.stride_shift();
+  if (all.weights.not_null())  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
+    ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  else
+    ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   fec.fs = ffs.fs;
@@ -177,7 +179,6 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
 
   ec.tag.delete_v();
 
-  ec.topic_predictions.delete_v();
   if (ec.passthrough)
   { ec.passthrough->delete_v();
     delete ec.passthrough;

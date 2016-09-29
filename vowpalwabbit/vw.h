@@ -82,7 +82,7 @@ float get_importance(example*ec);
 float get_initial(example*ec);
 float get_prediction(example*ec);
 float get_cost_sensitive_prediction(example*ec);
-v_array<float> get_cost_sensitive_prediction_confidence_scores(example* ec, size_t& len);
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec);
 uint32_t* get_multilabel_predictions(example* ec, size_t& len);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
@@ -124,7 +124,7 @@ void save_predictor(vw& all, io_buf& buf);
   return (uint32_t)getHasher(hash)(ss, hash_base);
 }
 //Then use it as the seed for hashing features.
- inline uint32_t hash_feature(vw& all, std::string s, unsigned long u)
+ inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
@@ -146,14 +146,20 @@ inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-{ return all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)];}
+{
+	return all.weights[(index << all.weights.stride_shift()) + offset];
+}
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-{ all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)] = value;}
+{
+	all.weights[(index << all.weights.stride_shift()) + offset] = value;
+}
 
 inline uint32_t num_weights(vw& all)
 { return (uint32_t)all.length();}
 
 inline uint32_t get_stride(vw& all)
-{ return (uint32_t)(1 << all.reg.stride_shift);}
+{
+	return (uint32_t)(1 << all.weights.stride_shift());
+}
 }

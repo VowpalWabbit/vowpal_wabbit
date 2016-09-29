@@ -46,28 +46,25 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
 
 inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
 {
-    size_t index = ft_idx & dat.all->reg.weight_mask;
-    weight* weights = dat.all->reg.weight_vector;
+    weight_parameters& weights = dat.all->weights;
 
-    if (weights[index] != 0)
+	if (weights[ft_idx] != 0)
         ++dat.values_audited;
     else return;
-
-    size_t stride_shift = dat.all->reg.stride_shift;
 
     string ns_pre;
     for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
     ostringstream tempstream;
-    tempstream << ':' << (index >> stride_shift) << ':' << weights[index];
+	tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
     string temp = ns_pre+tempstream.str() + '\n';
     if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
         temp = to_string(dat.cur_class) + ':' + temp;
 
-    bin_write_fixed(*dat.out_file, temp.c_str(), temp.size());
+    bin_write_fixed(*dat.out_file, temp.c_str(), (uint32_t)temp.size());
 
-    weights[index] = 0.; //mark value audited
+	weights[ft_idx] = 0.; //mark value audited
 }
 
 // This is a learner which does nothing with examples.
@@ -81,15 +78,15 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
     if (all.lda > 0)
     {
         ostringstream tempstream;
-        weight* weights = all.reg.weight_vector;
+        weight_parameters& weights = all.weights;
         for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
         {
             features& fs = ec.feature_space[*i];
             for (size_t j = 0; j < fs.size(); ++j)
-            { tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> all.reg.stride_shift) & all.parse_mask);
+            { tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
                 for (size_t k = 0; k < all.lda; k++)
                 {
-                    weight& w = weights[(fs.indicies[j]+k) & all.reg.weight_mask];
+                    weight& w = weights[(fs.indicies[j]+k)];
                     tempstream << ':' << w;
                     w = 0.;
                 }
@@ -97,7 +94,7 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
             }
         }
 
-        bin_write_fixed(*rd.out_file, tempstream.str().c_str(), tempstream.str().size());
+        bin_write_fixed(*rd.out_file, tempstream.str().c_str(), (uint32_t)tempstream.str().size());
 
     } else {
 
@@ -159,7 +156,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
     if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
     {
         print_ex(ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
-        all.sd->weighted_examples = ec.example_counter+1; //used in update_dump_interval
+        all.sd->weighted_examples = (double)(ec.example_counter+1); //used in update_dump_interval
         all.sd->update_dump_interval(all.progress_add, all.progress_arg);
         printed = true;
     }
@@ -208,13 +205,12 @@ void init_driver(audit_regressor_data& dat)
     }
 
     // count non-null feature values in regressor
-    weight* reg_end = dat.all->reg.weight_vector + (((size_t)1) << (dat.all->num_bits + dat.all->reg.stride_shift));
-    for (weight* w = dat.all->reg.weight_vector; w < reg_end; w += dat.increment)
-        if (*w != 0) dat.loaded_regressor_values++;
+	weight_parameters& w = dat.all->weights;
+	for (weight_parameters::iterator iter = w.change_begin(); iter != w.end(); iter += dat.increment) //TODO:modify
+		if (*iter != 0) dat.loaded_regressor_values++;
 
     if (dat.loaded_regressor_values == 0)
         THROW("regressor has no non-zero weights. Nothing to audit.");
-
 
     if (!dat.all->quiet)
     {

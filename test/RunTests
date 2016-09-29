@@ -33,7 +33,7 @@ my $Valgrind = 'valgrind --quiet --error-exitcode=100 --track-origins=yes --leak
 
 # -- timeout is part of GNU coreutils, some systems may not have it
 my $TimeOut = '';
-my $TimeOutSec = 30;    # max allowed time for single vw command run
+my $TimeOutSec = 80;    # max allowed time for single vw command run
 
 # By default, we run all tests in the list
 my $FullRun = 1;
@@ -1491,3 +1491,26 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --audit -d train-sets/audit.dat --noconstant
     train-sets/ref/audit.stderr
     train-sets/ref/audit.stdout
+
+# Test 138: cb_explore_adf with cover exploration
+{VW} --cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover.predict
+    train-sets/ref/cbe_adf_cover.stderr
+    pred-sets/ref/cbe_adf_cover.predict
+
+# Test 139: cb_explore_adf with cover exploration + double robust
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.ldf --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.stderr
+    pred-sets/ref/cbe_adf_cover_dr.predict
+
+# Test 140: marginal features
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --holdout_off -c -k --passes 100 -f marginal_model
+    train-sets/ref/marginal.stderr
+
+# Test 141: marginal features test
+{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t 
+    train-sets/ref/marginal_test.stderr
+
+# Test 142: Evaluate exploration on contextal bandit data
+{VW} --explore_eval --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p explore_eval.predict
+    train-sets/ref/explore_eval.stderr
+    pred-sets/ref/explore_eval.predict

@@ -145,7 +145,7 @@ namespace VW.Serializer
                 }
                 else
                 {
-                    this.StringExample.AppendFormat(outputString);
+                    this.StringExample.Append(outputString);
                 }
             }
         }

@@ -13,15 +13,16 @@ struct feature {//sparse feature definition for the library interface
 };
 
 struct feature_slice{ //a helper struct for functions using the set {v,i,space_name}
-  feature_value v;
-  feature_index i;
+  feature_value x;
+  feature_index weight_index;
   audit_strings space_name;
 };
 
+template<class T>
 inline int order_features(const void* first, const void* second)
-{ if (((feature_slice*)first)->i != ((feature_slice*)second)->i)
-    return (int)(((feature_slice*)first)->i - ((feature_slice*)second)->i);
-  else if (((feature_slice*)first)->v > ((feature_slice*)second)->v)
+{ if (((T*)first)->weight_index != ((T*)second)->weight_index)
+    return (int)(((T*)first)->weight_index - ((T*)second)->weight_index);
+  else if (((T*)first)->x > ((T*)second)->x)
     return 1;
   else
     return -1;
@@ -256,7 +257,6 @@ struct features {
     sum_feat_sq = 0.f;
     values.erase();
     indicies.erase();
-    free_space_names(0);
     space_names.erase();
   }
 
@@ -288,7 +288,6 @@ struct features {
   {
     values.delete_v();
     indicies.delete_v();
-    free_space_names(0);
     space_names.delete_v();
   }
   void push_back(feature_value v, feature_index i)
@@ -302,31 +301,47 @@ struct features {
   {
     if (indicies.size() == 0)
       return false;
-    v_array<feature_slice> slice = v_init<feature_slice>();
-    for (size_t i = 0; i < indicies.size(); i++)
+
+    if (space_names.size() != 0)
       {
-        feature_slice temp = { values[i], indicies[i] & parse_mask, audit_strings("", "") };
-        if (space_names.size() != 0)
-          temp.space_name = *space_names[i].get();
-        slice.push_back(temp);
+	v_array<feature_slice> slice = v_init<feature_slice>();
+	for (size_t i = 0; i < indicies.size(); i++)
+	  {
+	    feature_slice temp = { values[i], indicies[i] & parse_mask, *space_names[i].get()};
+	    slice.push_back(temp);
+	  }
+	qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
+	for (size_t i = 0; i < slice.size(); i++)
+	  {
+	    values[i] = slice[i].x;
+	    indicies[i] = slice[i].weight_index;
+	    *space_names[i].get() = slice[i].space_name;
+	  }
+	slice.delete_v();
       }
-    qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features);
-    for (size_t i = 0; i < slice.size(); i++)
+    else
       {
-        values[i] = slice[i].v;
-        indicies[i] = slice[i].i;
-        if (space_names.size() > 0)
-          *space_names[i].get() = slice[i].space_name;
+	v_array<feature> slice = v_init<feature>();
+	for (size_t i = 0; i < indicies.size(); i++)
+	  {
+	    feature temp = { values[i], indicies[i] & parse_mask};
+	    slice.push_back(temp);
+	  }
+	qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
+	for (size_t i = 0; i < slice.size(); i++)
+	  {
+	    values[i] = slice[i].x;
+	    indicies[i] = slice[i].weight_index;
+	  }
+	slice.delete_v();
       }
-    slice.delete_v();
     return true;
   }
 
   void deep_copy_from(const features& src)
   { copy_array(values, src.values);
     copy_array(indicies, src.indicies);
-    free_space_names(0);
-    copy_array(space_names, src.space_names);
+    copy_array_no_memcpy(space_names, src.space_names);
     sum_feat_sq = src.sum_feat_sq;
   }
 };

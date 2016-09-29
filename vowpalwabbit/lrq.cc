@@ -87,16 +87,15 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-
-          for (unsigned int n = 1; n <= k; ++n)
+		  weight_parameters& w = all.weights;
+		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-                { uint64_t lwindex = (uint64_t)(lindex + (n << all.reg.stride_shift));
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.weights.stride_shift()));
+		        weight_parameters::iterator lw = w.change_begin() + (lwindex & w.mask());
 
-                  float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
-
-                  // perturb away from saddle point at (0, 0)
-                  if (is_learn && ! example_is_test (ec) && *lw == 0)
-                    *lw = cheesyrand (lwindex);
+				// perturb away from saddle point at (0, 0)
+		        if (is_learn && ! example_is_test (ec) && *lw == 0)
+                    *lw = cheesyrand (lwindex); //not sure if lw needs a weight mask?
 
                   features& right_fs = ec.feature_space[right];
                   for (unsigned int rfn = 0;
@@ -105,7 +104,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
                     { // NB: ec.ft_offset added by base learner
                       float rfx = right_fs.values[rfn];
                       uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << all.reg.stride_shift));
+                      uint64_t rwindex = (uint64_t)(rindex + (n << all.weights.stride_shift()));
 
                       right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 
@@ -168,7 +167,7 @@ base_learner* lrq_setup(vw& all)
     return nullptr;
 
   LRQstate& lrq = calloc_or_throw<LRQstate>();
-  size_t maxk = 0;
+  uint32_t maxk = 0;
   lrq.all = &all;
 
   vector<string> arg = all.vm["lrq"].as<vector<string> > ();
@@ -217,7 +216,7 @@ base_learner* lrq_setup(vw& all)
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
-                                      predict_or_learn<false>, 1 + maxk);
+	  predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);
 

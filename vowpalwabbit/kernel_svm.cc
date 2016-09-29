@@ -376,7 +376,7 @@ void predict(svm_params& params, base_learner &, example& ec)
     float score;
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
-    sec->~svm_example();
+	sec->~svm_example();
     free(sec);
   }
 }
@@ -722,7 +722,7 @@ void learn(svm_params& params, base_learner&, example& ec)
     float score = 0;
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
-    ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
+	ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
     params.loss_sum += ec.loss;
     if(params.all->training && ec.example_counter % 100 == 0)
       trim_cache(params);
@@ -872,8 +872,8 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else
     params.kernel_type = SVM_KER_LIN;
 
-  params.all->reg.weight_mask = (uint64_t)LONG_MAX;
-  params.all->reg.stride_shift = 0;
+  //params.all->weights->mask((uint64_t)LONG_MAX); 
+  params.all->weights.stride_shift(0);
 
   learner<svm_params>& l = init_learner(&params, learn, 1);
   l.set_predict(predict);

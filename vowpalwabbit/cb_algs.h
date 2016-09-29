@@ -10,6 +10,7 @@ LEARNER::base_learner* cb_algs_setup(vw& all);
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
+#define CB_TYPE_MTR 3
 
 namespace CB_ALGS
 {
@@ -34,7 +35,6 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   }
   else
     scorer->predict(ec, index-1+base);
-
   float pred = ec.pred.scalar;
   ec.pred = p;
 

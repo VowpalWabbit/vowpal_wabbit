@@ -344,8 +344,7 @@
       <FileType>CppHeader</FileType>
     </ClCompile>
     <ClInclude Include="active_cover.h" />
-    <ClCompile Include="primitives.cc" />
-    <ClCompile Include="vw_validate.cc" />
+    <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="action_score.h" />
@@ -357,6 +356,7 @@
     <ClInclude Include="cb_adf.h" />
     <ClInclude Include="cb_explore.h" />
     <ClInclude Include="cb_explore_adf.h" />
+    <ClInclude Include="cbify.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="confidence.h" />
     <ClInclude Include="constant.h" />
@@ -365,6 +365,7 @@
     <ClInclude Include="csoaa.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
+    <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
     <ClInclude Include="gen_cs_example.h" />
@@ -390,6 +391,7 @@
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="learner.h" />
     <ClInclude Include="loss_functions.h" />
+    <ClInclude Include="marginal.h" />
     <ClInclude Include="multilabel.h" />
     <ClInclude Include="multilabel_oaa.h" />
     <ClInclude Include="network.h" />
@@ -451,6 +453,7 @@
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
+    <ClCompile Include="explore_eval.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="audit_regressor.cc" />
@@ -477,11 +480,13 @@
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
     <ClCompile Include="loss_functions.cc" />
+    <ClCompile Include="marginal.cc" />
     <ClCompile Include="multilabel.cc" />
     <ClCompile Include="multilabel_oaa.cc" />
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="OjaNewton.cc" />
@@ -510,6 +515,7 @@
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="vw_exception.cc" />
+    <ClCompile Include="vw_validate.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
