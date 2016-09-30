@@ -235,23 +235,31 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("JSON")]
-        public void TestJsonConvertible()
+        public void TestJsonConvertibleMulti()
         {
-            using (var vw = new VowpalWabbitExampleValidator<JsonRawString>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
+            using (var vw = new VowpalWabbitExampleValidator<JsonRawAdfString>(new VowpalWabbitSettings("--cb_adf") { TypeInspector = JsonTypeInspector.Default }))
             {
-                vw.Validate("| Foo:2 |Value abc:3 def:4 |b def",
-                new JsonRawString
+                vw.Validate(new[] {
+                    "shared | Bar:5",
+                    " | Foo:1 |Value test:1.2",
+                    " | Foo:2 |Value test:2.3",
+                },
+                new JsonRawAdfString
                 {
-                    Foo = 2,
-                    Value = JsonConvert.SerializeObject(new
+                    Bar = 5,
+                    _multi = new []
                     {
-                        abc = 3,
-                        b = new
+                        new JsonRawString
                         {
-                            d = "ef"
+                            Foo = 1,
+                            Value = JsonConvert.SerializeObject(new { test = 1.2 })
                         },
-                        def = 4
-                    })
+                        new JsonRawString
+                        {
+                            Foo = 2,
+                            Value = JsonConvert.SerializeObject(new { test = 2.3 })
+                        }
+                    }
                 });
             }
         }
@@ -263,6 +271,13 @@ namespace cs_unittest
 
         [JsonConverter(typeof(JsonRawStringConverter))]
         public string Value { get; set; }
+    }
+
+    public class JsonRawAdfString
+    {
+        public int Bar { get; set; }
+
+        public JsonRawString[] _multi { get; set; }
     }
 
     public class JsonText
