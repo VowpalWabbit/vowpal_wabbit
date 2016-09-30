@@ -278,7 +278,6 @@ namespace VW
 			  VW::read_line_json(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
 
 			  // finalize example
-			  VW::parse_atomic_example(*m_vw, ex->m_example, false);
 			  VW::setup_example(*m_vw, ex->m_example);
 
 			  // remember the input string for debugging purposes
@@ -317,7 +316,6 @@ namespace VW
         VW::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
 
         // finalize example
-        VW::parse_atomic_example(*m_vw, ex->m_example, false);
         VW::setup_example(*m_vw, ex->m_example);
 
         // remember the input string for debugging purposes

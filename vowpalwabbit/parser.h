@@ -19,7 +19,7 @@ struct parser
   v_array<substring> name;
 
   io_buf* input; //Input source(s)
-  int (*reader)(void*, example* ae);
+  int (*reader)(vw*, v_array<example*>& examples);
   hash_func_t hasher;
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.

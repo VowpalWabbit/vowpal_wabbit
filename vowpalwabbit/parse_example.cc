@@ -352,27 +352,6 @@ void substring_to_example(vw* all, example* ae, substring example)
     TC_parser<false> parser_line(bar_location,example.end,*all,ae);
 }
 
-int read_features(void* in, example* ex)
-{ vw* all = (vw*)in;
-  example* ae = (example*)ex;
-  char *line=nullptr;
-  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
-  if (num_chars_initial < 1)
-    return (int)num_chars_initial;
-  size_t num_chars = num_chars_initial;
-  if (line[0] =='\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
-  { line += 3;
-    num_chars -= 3;
-  }
-  if (line[num_chars-1] == '\n')
-    num_chars--;
-  if (line[num_chars-1] == '\r')
-    num_chars--;
-  substring example = {line, line + num_chars};
-  substring_to_example(all, ae, example);
-
-  return (int)num_chars_initial;
-}
 
 namespace VW
 {

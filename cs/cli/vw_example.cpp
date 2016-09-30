@@ -104,7 +104,6 @@ namespace VW
       char empty = '\0';
       VW::read_line(*vw->m_vw, m_example, &empty);
 
-      VW::parse_atomic_example(*vw->m_vw, m_example, false);
       VW::setup_example(*vw->m_vw, m_example);
     }
 
