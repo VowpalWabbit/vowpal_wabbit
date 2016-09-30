@@ -232,6 +232,37 @@ namespace cs_unittest
                 });
             }
         }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonConvertible()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonRawString>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
+            {
+                vw.Validate("| Foo:2 |Value abc:3 def:4 |b def",
+                new JsonRawString
+                {
+                    Foo = 2,
+                    Value = JsonConvert.SerializeObject(new
+                    {
+                        abc = 3,
+                        b = new
+                        {
+                            d = "ef"
+                        },
+                        def = 4
+                    })
+                });
+            }
+        }
+    }
+
+    public class JsonRawString
+    {
+        public int Foo { get; set; }
+
+        [JsonConverter(typeof(JsonRawStringConverter))]
+        public string Value { get; set; }
     }
 
     public class JsonText

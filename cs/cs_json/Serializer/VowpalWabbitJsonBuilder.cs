@@ -30,6 +30,8 @@ namespace VW.Serializer
         private readonly VowpalWabbit vw;
         private readonly VowpalWabbitDefaultMarshaller defaultMarshaller;
         private readonly JsonSerializer jsonSerializer;
+
+        // required for reference resolution
         private readonly VowpalWabbitJsonSerializer serializer;
         private readonly VowpalWabbitJsonReferenceResolver referenceResolver;
         private readonly List<string> namespaceStrings;
@@ -67,6 +69,14 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
         /// </summary>
+        public VowpalWabbitJsonBuilder(IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer, int multiIndex = -1)
+            : this(null, vwPool, defaultMarshaller, jsonSerializer, multiIndex)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitJsonBuilder"/>.
+        /// </summary>
         public VowpalWabbitJsonBuilder(VowpalWabbitJsonSerializer serializer, IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer, int multiIndex = -1)
         {
             Contract.Requires(serializer != null);
@@ -83,7 +93,8 @@ namespace VW.Serializer
 
             this.namespaceStrings = new List<string>();
             this.foundMulti = false;
-            this.referenceResolver = serializer.ReferenceResolver;
+            if (serializer != null)
+                this.referenceResolver = serializer.ReferenceResolver;
             this.serializer = serializer;
             this.vw = vwPool.Native;
             this.defaultMarshaller = defaultMarshaller;
@@ -147,6 +158,67 @@ namespace VW.Serializer
         internal void Parse(List<VowpalWabbitJsonParseContext> path, VowpalWabbitMarshalContext namespaceContext, Namespace ns)
         {
             this.featureCount = this.defaultMarshaller.MarshalNamespace(namespaceContext, ns, () => this.ParseProperties(path)) + this.featureCount;
+        }
+
+        public void Parse(JsonReader reader, VowpalWabbitMarshalContext context, Namespace ns, List<VowpalWabbitJsonExtension> extensions = null)
+        {
+            this.reader = reader;
+            this.extensions = extensions;
+
+            // handle the case when the reader is already positioned at JsonToken.StartObject
+            if (reader.TokenType == JsonToken.None && !reader.Read())
+                return;
+
+            if (reader.TokenType != JsonToken.StartObject)
+                throw new VowpalWabbitJsonException(this.reader,
+                    string.Format("Expected start object. Found '{0}' and value '{1}'",
+                    reader.TokenType, reader.Value));
+
+            // re-direct default namespace to the one passed
+            var saveDefaultNamespaceContext = this.DefaultNamespaceContext;
+            try
+            {
+                using (this.DefaultNamespaceContext = new VowpalWabbitMarshalContext(this.vw, context.ExampleBuilder))
+                {
+                    VowpalWabbitJsonParseContext localContext = null;
+                    try
+                    {
+                        // setup current namespace
+                        localContext = new VowpalWabbitJsonParseContext
+                        {
+                            Namespace = ns,
+                            Context = new VowpalWabbitMarshalContext(this.vw, context.ExampleBuilder),
+                            JsonProperty = ns.Name
+                        };
+                        {
+                            this.defaultMarshaller.MarshalNamespace(
+                                localContext.Context,
+                                ns,
+                                () => this.ParseProperties(new List<VowpalWabbitJsonParseContext> { localContext }));
+
+                            // append string features if we found some
+                            if (this.vw.Settings.EnableStringExampleGeneration)
+                            {
+                                context.StringExample
+                                    .Append(localContext.Context.StringExample)
+                                    .Append(string.Join(" ", this.namespaceStrings));
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        if (localContext != null && localContext.Context != null)
+                        {
+                            localContext.Context.Dispose();
+                            localContext.Context = null;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                this.DefaultNamespaceContext = saveDefaultNamespaceContext;
+            }
         }
 
         /// <summary>
@@ -363,7 +435,7 @@ namespace VW.Serializer
                     return;
                 case "$ref":
                     {
-                        if (this.referenceResolver == null)
+                        if (this.referenceResolver == null || this.serializer == null)
                             return;
 
                         var id = (string)reader.Value;

@@ -278,24 +278,35 @@ namespace VW.Serializer
             Contract.Requires(feature != null);
 
             if (value == null)
-            {
                 return;
-            }
 
             foreach (var item in value)
-            {
                 context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item.Replace(' ', '_'), ns.NamespaceHash), 1f);
-            }
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             foreach (var item in value)
-            {
                 context.AppendStringExample(feature.Dictify, " {0}", item);
-            }
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IVowpalWabbitSerializable value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+                return;
+
+            value.Marshal(context, ns, feature);
         }
 
         /// <summary>
