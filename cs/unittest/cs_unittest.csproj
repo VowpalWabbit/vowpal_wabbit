@@ -91,6 +91,7 @@
       <DependentUpon>RunTests.tt</DependentUpon>
     </Compile>
     <Compile Include="RunTestsHelper.cs" />
+    <Compile Include="TestMultiClassPredictionFactory.cs" />
     <Compile Include="TestWiki.cs" />
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestArguments.cs" />
