@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "parse_primitives.h"
 #include "example.h"
+#include "parse_example_json.h"
 
 //example processing
 typedef enum
@@ -44,7 +45,8 @@ int read_features(vw* all, v_array<example*>& examples)
   }
   else if (ft == JsonFeatures)
   {
-	  return 0;
+	  VW::read_line_json(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+	  return 1;
   }
   else
 	  assert(false);

@@ -260,6 +260,22 @@ namespace VW
     CATCHRETHROW
   }
 
+  public ref struct ParseJsonState
+  {
+	  VowpalWabbit^ vw;
+	  List<VowpalWabbitExample^>^ examples;
+  };
+
+  example* get_example_from_pool(void* v)
+  {
+	  ParseJsonState^ state = (ParseJsonState^)Marshal::PtrToStructure(IntPtr(v), ParseJsonState::typeid);
+
+	  auto ex = state->vw->GetOrCreateNativeExample();
+	  state->examples->Add(ex);
+
+	  return ex->m_example;
+  }
+
   VowpalWabbitExample^ VowpalWabbit::ParseJson(String^ line)
   {
 #if _DEBUG
@@ -275,10 +291,24 @@ namespace VW
 	  {
 		  try
 		  {
-			  VW::read_line_json(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+			  ParseJsonState^ state = gcnew ParseJsonState();
+			  state->vw = this;
+			  state->examples = gcnew List<VowpalWabbitExample^>();
+			  state->examples->Add(ex);
+
+			  v_array<example*> examples = v_init<example*>();
+			  example* native_example = ex->m_example;
+			  examples.push_back(native_example);
+
+			  VW::read_line_json(
+				  *m_vw, 
+				  examples,
+				  reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()),
+				  get_example_from_pool,
+				  &state);
 
 			  // finalize example
-			  VW::setup_example(*m_vw, ex->m_example);
+			  VW::setup_examples(*m_vw, examples);
 
 			  // remember the input string for debugging purposes
 			  ex->VowpalWabbitString = line;
