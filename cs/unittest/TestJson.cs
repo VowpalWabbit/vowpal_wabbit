@@ -27,6 +27,7 @@ namespace cs_unittest
                 validator.Validate("|a foo:2.3 bar", "{\"a\":{\"foo\":2.3, \"bar\":true}}");
                 validator.Validate("|a foo:1 |bcd Age25_old", "{\"a\":{\"foo\":1},\"bcd\":{\"Age\":\"25 old\"}}");
                 validator.Validate("|a x{abc}", "{\"a\":{\"x\":\"{abc}\"}}");
+                validator.Validate("|a x{abc}", "{\"a\":{\"x\":\"{abc}\",\"y\":null}}");
             }
         }
 
@@ -40,7 +41,42 @@ namespace cs_unittest
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":\"\"}");
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":{\"abc\":{\"def\":3}}}");
                 validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":[1,2,[3,4],2]}");
+                validator.Validate("|a foo:1", "{\"a\":{\"foo\":1},\"_aux\":[1,2,[3,[1],{\"ab,\":3}],2]}");
                 validator.Validate("|a foo:1 | b:1", "{\"a\":{\"foo\":1},\"_aux\":{\"a\":\"{\\\"} \"}, \"b\":1}");
+            }
+        }
+
+        private void AssertThrow(Action action, Type expectedException = null)
+        {
+            if (expectedException == null)
+                expectedException = typeof(VowpalWabbitException);
+
+            try
+            {
+                action();
+                Assert.Fail("Expected exception " + expectedException);
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, expectedException);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonInvalid()
+        {
+            using (var vw = new VowpalWabbit(""))
+            {
+                AssertThrow(() => vw.ParseJson("{\"_label\":true,\"a\":{\"foo\":1}}"));
+                AssertThrow(() => vw.ParseJson("{\"_labelfoo\":1,\"a\":{\"foo\":1}}"));
+                AssertThrow(() => vw.ParseJson("{\"_label_foo\":1,\"a\":{\"foo\":1}}"));
+                AssertThrow(() => vw.ParseJson("{\"_label\":{\"label\":{\"a\":1}},\"a\":{\"foo\":1}}"));
+            }
+
+            using (var vw = new VowpalWabbit("--cb_adf"))
+            {
+                AssertThrow(() => vw.ParseJson("{\"_label_Action\":1,\"_label_Cost\":-2,\"_label_Probability\":0.3,\"_multi\":[{\"foo\":1}],\"foo\":2,\"_labelIndex\":1}"));
             }
         }
 
@@ -53,6 +89,11 @@ namespace cs_unittest
                 validator.Validate("| :1 :2.3 :4", "{\"a\":[1,2.3,4]}");
                 validator.Validate("|a :1 :2.3 :4", "{\"a\":{\"b\":[1,2.3,4]}}");
             }
+
+            using (var vw = new VowpalWabbit(""))
+            {
+                AssertThrow(() => vw.ParseJson("{\"a\":{\"b\":[1,[1,2],4]}}"));
+            }
         }
 
         [TestMethod]
@@ -62,6 +103,8 @@ namespace cs_unittest
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
                 validator.Validate("1 |a foo:1", "{\"_label\":{\"Label\":1},\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+                validator.Validate("1.2 |a foo:1", "{\"_label\":1.2,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
+                validator.Validate("1.2 |a foo:1", "{\"_label\":1.2,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
             }
         }
 
@@ -71,7 +114,7 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
-                validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple, enableNativeJsonValidation: false);
+                validator.Validate("1 |a foo:1", "{\"_label\":1,\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
                 validator.Validate("1 |a foo:1", "{\"_label\":\"1\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple);
             }
         }
@@ -83,7 +126,8 @@ namespace cs_unittest
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
                 validator.Validate("2 |a foo:1", "{\"_label\":{\"Label\":1},\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.Simple,
-                    new SimpleLabel { Label = 2 });
+                    new SimpleLabel { Label = 2 },
+                    enableNativeJsonValidation: false /* vw.Parse(json) doesn't support label overwrite */);
             }
         }
 
@@ -93,10 +137,34 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator("--cb 2 --cb_type dr"))
             {
-                //validator.Validate("1:-2:.3 |a foo:1",
-                //    "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":.3},\"a\":{\"foo\":1}}",
-                //    VowpalWabbitLabelComparator.ContextualBandit);
-                validator.Validate("1:2:.5 |a foo:1", "{\"_label\":\"1:2:.5\",\"a\":{\"foo\":1}}", VowpalWabbitLabelComparator.ContextualBandit);
+                validator.Validate("1:2:.5 |a foo:1",
+                    "{\"_label\":\"1:2:.5\",\"a\":{\"foo\":1}}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+
+                validator.Validate("1:-2:.3 |a foo:1",
+                    "{\"_label\":{\"Action\":1,\"Cost\":-2,\"Probability\":0.3},\"a\":{\"foo\":1}}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+
+                validator.Validate("1:-2:.3 |a foo:1",
+                    "{\"_label_Action\":1,\"_label_Cost\":-2,\"_label_Probability\":0.3,\"a\":{\"foo\":1}}",
+                    VowpalWabbitLabelComparator.ContextualBandit);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonADF()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator("--cb_adf"))
+            {
+                validator.Validate(new[] 
+                    {
+                        "shared | foo:2",
+                        "1:-2:.3 | foo:1"
+                    },
+                    "{\"_label_Action\":1,\"_label_Cost\":-2,\"_label_Probability\":0.3,\"_multi\":[{\"foo\":1}],\"foo\":2,\"_labelIndex\":0}",
+                    VowpalWabbitLabelComparator.ContextualBandit,
+                    index: 1);
             }
         }
 
@@ -180,7 +248,8 @@ namespace cs_unittest
                      "2:-1:.3 | w2 w3"
                     },
                     "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\",\"theLabel\":\"2:-1:.3\"}]}",
-                    VowpalWabbitLabelComparator.ContextualBandit);
+                    VowpalWabbitLabelComparator.ContextualBandit,
+                    enableNativeJsonValidation: false /* remapping of special properties is not supported in native JSON */);
             }
         }
 
@@ -221,6 +290,7 @@ namespace cs_unittest
             using (var validator = new VowpalWabbitExampleJsonValidator(""))
             {
                 validator.Validate("1 | a:2 ", "{\"a\":2,\"_label_Label\":1}");
+                validator.Validate("1:2:3 | a:2 ", "{\"a\":2,\"_label_Label\":1,\"_label_Initial\":2,\"_label_weight\":3}");
             }
 
             using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
@@ -240,7 +310,8 @@ namespace cs_unittest
                      "0:-1:.3 | w2 w3"
                     },
                     "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3}",
-                    VowpalWabbitLabelComparator.ContextualBandit);
+                    VowpalWabbitLabelComparator.ContextualBandit,
+                    enableNativeJsonValidation: false);
 
                 // all lower case (ASA issue)
                 validator.Validate(new[] {
@@ -248,7 +319,8 @@ namespace cs_unittest
                      "0:-1:.3 | w2 w3"
                     },
                      "{\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelindex\":1, \"_label_cost\":-1, \"_label_probability\":0.3}",
-                     VowpalWabbitLabelComparator.ContextualBandit);
+                     VowpalWabbitLabelComparator.ContextualBandit,
+                     enableNativeJsonValidation: false);
 
                 validator.Validate(new[] {
                      "shared | Age:25",
@@ -256,7 +328,8 @@ namespace cs_unittest
                      " | w2 w3"
                     },
                      "{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelindex\":null}",
-                     VowpalWabbitLabelComparator.ContextualBandit);
+                     VowpalWabbitLabelComparator.ContextualBandit,
+                     enableNativeJsonValidation: false);
             }
         }
 
