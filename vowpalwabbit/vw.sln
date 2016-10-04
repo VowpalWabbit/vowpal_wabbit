@@ -77,9 +77,6 @@ EndProject
 Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "azure_service", "..\cs\azure_service\azure_service.ccproj", "{7263F536-3ABE-4A8E-BA66-1341D6A53579}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		DebugLeakCheck|x64 = DebugLeakCheck|x64
