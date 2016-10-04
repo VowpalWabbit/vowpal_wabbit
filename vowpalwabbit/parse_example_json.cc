@@ -5,6 +5,7 @@ license as described in the file LICENSE.
 */
 
 // TODO: check ifdefs...
+// seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
 
@@ -818,4 +819,3 @@ namespace VW
 			  "State: " << (current_state ? current_state->name : "null"));
 	}
 }
-
