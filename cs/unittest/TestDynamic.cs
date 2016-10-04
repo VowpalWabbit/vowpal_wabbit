@@ -22,7 +22,7 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit("--cb_adf --rank_all"))
             using (var vwDynamic = new VowpalWabbitDynamic(new VowpalWabbitSettings("--cb_adf --rank_all") { TypeInspector = JsonTypeInspector.Default }))
             {
-                var expected = vw.Learn(new[] { "| q:1", "2:-3:0.9 | q:2", "| q:3" }, VowpalWabbitPredictionType.ActionScore);
+                var expected = vw.Learn(new[] { "| q:1", "2:-3:0.9 | q:2", "| q:3" }, VowpalWabbitPredictionType.ActionProbabilities);
                 var actual = vwDynamic.Learn(
                     new
                     {
@@ -38,7 +38,7 @@ namespace cs_unittest
                     1);
                 AssertAreEqual(expected, actual);
 
-                expected = vw.Learn(new[] { "| q:1", "2:-5:0.9 | q:2", "| q:3" }, VowpalWabbitPredictionType.ActionScore);
+                expected = vw.Learn(new[] { "| q:1", "2:-5:0.9 | q:2", "| q:3" }, VowpalWabbitPredictionType.ActionProbabilities);
                 actual = vwDynamic.Learn(
                     new
                     {
@@ -54,7 +54,7 @@ namespace cs_unittest
                     1);
                 AssertAreEqual(expected, actual);
 
-                expected = vw.Learn(new[] { "| q:1", "| q:2", "3:-2:0.8 | q:3" }, VowpalWabbitPredictionType.ActionScore);
+                expected = vw.Learn(new[] { "| q:1", "| q:2", "3:-2:0.8 | q:3" }, VowpalWabbitPredictionType.ActionProbabilities);
                 actual = vwDynamic.Learn(
                     new
                     {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -383,6 +383,7 @@
     <ClInclude Include="lrq.h" />
     <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
+    <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
@@ -472,6 +473,7 @@
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="parse_example_json.cc" />
     <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
@@ -530,6 +532,7 @@
     <Import Project="packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets" Condition="Exists('packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets')" />
     <Import Project="packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets" Condition="Exists('packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets')" />
     <Import Project="packages\zlib.1.2.8.7\build\native\zlib.targets" Condition="Exists('packages\zlib.1.2.8.7\build\native\zlib.targets')" />
+    <Import Project="packages\rapidjson.1.0.2\build\native\rapidjson.targets" Condition="Exists('packages\rapidjson.1.0.2\build\native\rapidjson.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -541,5 +544,6 @@
     <Error Condition="!Exists('packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_program_options-vc120.1.58.0.0\build\native\boost_program_options-vc120.targets'))" />
     <Error Condition="!Exists('packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_filesystem-vc120.1.58.0.0\build\native\boost_filesystem-vc120.targets'))" />
     <Error Condition="!Exists('packages\zlib.1.2.8.7\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\zlib.1.2.8.7\build\native\zlib.targets'))" />
+    <Error Condition="!Exists('packages\rapidjson.1.0.2\build\native\rapidjson.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\rapidjson.1.0.2\build\native\rapidjson.targets'))" />
   </Target>
 </Project>

@@ -44,7 +44,6 @@ void sync_stats(vw& all);
 void start_parser(vw& all);
 void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
-bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
 struct primitive_feature_space   //just a helper definition.
 { unsigned char name;
@@ -57,7 +56,7 @@ struct primitive_feature_space   //just a helper definition.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
 example* read_example(vw& all, char* example_line);
- example* read_example(vw& all, std::string example_line);
+example* read_example(vw& all, std::string example_line);
 
 //The more complex way to create an example.
 
@@ -72,7 +71,8 @@ example* read_example(vw& all, char* example_line);
 example *alloc_examples(size_t, size_t);
 void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
- void parse_example_label(vw&all, example&ec, std::string label);
+void parse_example_label(vw&all, example&ec, std::string label);
+void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
 example* get_example(parser* pf);

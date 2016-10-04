@@ -131,6 +131,7 @@
     <Compile Include="Serializer\Intermediate\Feature.cs" />
     <Compile Include="Serializer\Intermediate\Namespace.cs" />
     <Compile Include="Serializer\Intermediate\PreHashedFeature.cs" />
+    <Compile Include="Serializer\IVowpalWabbitConverter.cs" />
     <Compile Include="Serializer\IVowpalWabbitMultiExampleSerializerCompiler.cs" />
     <Compile Include="Serializer\IVowpalWabbitSerializer.cs" />
     <Compile Include="Serializer\VowpalWabbitConstants.cs" />
@@ -205,9 +206,7 @@
     <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Vowpal Wabbit" AssemblyDescription="Vowpal Wabbit" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="false" Guid="6a577997-af00-4ca0-8453-fdc8bbdf2a57" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
   </Target>
   <Target Name="AfterBuild">
-    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings"
-          Condition="'$(BuildNuget)' == 'true'" />
-    <Exec Command="..\..\vowpalwabbit\.nuget\nuget pack $(ProjectDir)\$(ProjectName).nuspec -Version $(VowpalWabbitAssemblyVersion) -Prop &quot;Configuration=Release;Platform=x64&quot; -Prop SolutionDir=$(SolutionDir) -OutputDirectory $(SolutionDir)\$(Platform)\$(Configuration)"
-          Condition="'$(BuildNuget)' == 'true'" />
+    <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings" Condition="'$(BuildNuget)' == 'true'" />
+    <Exec Command="..\..\vowpalwabbit\.nuget\nuget pack $(ProjectDir)\$(ProjectName).nuspec -Version $(VowpalWabbitAssemblyVersion) -Prop &quot;Configuration=Release;Platform=x64&quot; -Prop SolutionDir=$(SolutionDir) -OutputDirectory $(SolutionDir)\$(Platform)\$(Configuration)" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
 </Project>
