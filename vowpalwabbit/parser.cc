@@ -567,7 +567,8 @@ child:
         }
       }
 
-      all.p->reader = read_features<StringFeatures>;
+	  all.p->reader = all.vm.count("json") ?
+		  read_features<JsonFeatures> : read_features<StringFeatures>;
       all.p->resettable = all.p->write_cache;
     }
   }
