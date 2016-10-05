@@ -19,8 +19,6 @@ struct vw;
 struct BaseState;
 struct Context;
 
-using namespace rapidjson;
-
 struct Namespace
 {
 	char feature_group;
@@ -44,12 +42,12 @@ struct BaseState
 	virtual BaseState* Bool(Context& ctx, bool b);
 	virtual BaseState* Float(Context& ctx, float v);
 	virtual BaseState* Uint(Context& ctx, unsigned v);
-	virtual BaseState* String(Context& ctx, const char* str, SizeType len, bool);
+	virtual BaseState* String(Context& ctx, const char* str, rapidjson::SizeType len, bool);
 	virtual BaseState* StartObject(Context& ctx);
-	virtual BaseState* Key(Context& ctx, const char* str, SizeType len, bool copy);
-	virtual BaseState* EndObject(Context& ctx, SizeType);
+	virtual BaseState* Key(Context& ctx, const char* str, rapidjson::SizeType len, bool copy);
+	virtual BaseState* EndObject(Context& ctx, rapidjson::SizeType);
 	virtual BaseState* StartArray(Context& ctx);
-	virtual BaseState* EndArray(Context& ctx, SizeType);
+	virtual BaseState* EndArray(Context& ctx, rapidjson::SizeType);
 };
 
 class LabelObjectState : public BaseState
@@ -67,10 +65,10 @@ public:
 	void init(vw* all);
 
 	BaseState* StartObject(Context& ctx);
-	BaseState* Key(Context& ctx, const char* str, SizeType len, bool copy);
+	BaseState* Key(Context& ctx, const char* str, rapidjson::SizeType len, bool copy);
 	BaseState* Float(Context& ctx, float v);
 	BaseState* Uint(Context& ctx, unsigned v);
-	BaseState* EndObject(Context& ctx, SizeType);
+	BaseState* EndObject(Context& ctx, rapidjson::SizeType);
 };
 
 // "_label_*":
@@ -100,7 +98,7 @@ struct LabelState : BaseState
 	LabelState();
 
 	BaseState* StartObject(Context& ctx);
-	BaseState* String(Context& ctx, const char* str, SizeType len, bool copy);
+	BaseState* String(Context& ctx, const char* str, rapidjson::SizeType len, bool copy);
 	BaseState* Float(Context& ctx, float v);
 	BaseState* Uint(Context& ctx, unsigned v);
 };
@@ -109,7 +107,7 @@ struct TextState : BaseState
 {
 	TextState();
 
-	BaseState* String(Context& ctx, const char* str, SizeType length, bool copy);
+	BaseState* String(Context& ctx, const char* str, rapidjson::SizeType length, bool copy);
 };
 
 struct MultiState : BaseState
@@ -118,7 +116,7 @@ struct MultiState : BaseState
 
 	BaseState* StartArray(Context& ctx);
 	BaseState* StartObject(Context& ctx);
-	BaseState* EndArray(Context& ctx, SizeType);
+	BaseState* EndArray(Context& ctx, rapidjson::SizeType);
 };
 
 // "...":[Numbers only]
@@ -133,7 +131,7 @@ public:
 	BaseState* StartArray(Context &ctx);
 	BaseState* Float(Context& ctx, float f);
 	BaseState* Uint(Context& ctx, unsigned f);
-	BaseState* EndArray(Context& ctx, SizeType elementCount);
+	BaseState* EndArray(Context& ctx, rapidjson::SizeType elementCount);
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
@@ -147,18 +145,18 @@ struct IgnoreState : BaseState
 class DefaultState : public BaseState
 {
 private:
-	BaseState* Ignore(Context& ctx, SizeType length);
+	BaseState* Ignore(Context& ctx, rapidjson::SizeType length);
 
 	void InsertNamespace(Context& ctx);
 
 public:
 	DefaultState();
 
-	BaseState* Key(Context& ctx, const char* str, SizeType length, bool copy);
-	BaseState* String(Context& ctx, const char* str, SizeType length, bool copy);
+	BaseState* Key(Context& ctx, const char* str, rapidjson::SizeType length, bool copy);
+	BaseState* String(Context& ctx, const char* str, rapidjson::SizeType length, bool copy);
 	BaseState* Bool(Context& ctx, bool b);
 	BaseState* StartObject(Context& ctx);
-	BaseState* EndObject(Context& ctx, SizeType memberCount);
+	BaseState* EndObject(Context& ctx, rapidjson::SizeType memberCount);
 	BaseState* Float(Context& ctx, float f);
 	BaseState* Uint(Context& ctx, unsigned f);
 	BaseState* StartArray(Context& ctx);
@@ -171,7 +169,7 @@ struct Context
 
 	// last "<key>": encountered
 	const char* key;
-	SizeType key_length;
+	rapidjson::SizeType key_length;
 
 	BaseState* current_state;
 	BaseState* previous_state;
@@ -181,7 +179,7 @@ struct Context
 
 	v_array<example*>* examples;
 	example* ex;
-	InsituStringStream* stream;
+	rapidjson::InsituStringStream* stream;
 
 	VW::example_factory_t example_factory;
 	void* example_factory_context;
@@ -208,11 +206,11 @@ struct Context
 	bool TransitionState(BaseState* next_state);
 };
 
-struct VWReaderHandler : public BaseReaderHandler<UTF8<>, VWReaderHandler>
+struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler>
 {
 	Context ctx;
 
-	void init(vw* all, v_array<example*>* examples, InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context);
+	void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context);
 
 	// virtual dispatch to current state
 	bool Bool(bool v);
@@ -221,18 +219,18 @@ struct VWReaderHandler : public BaseReaderHandler<UTF8<>, VWReaderHandler>
 	bool Int64(int64_t v);
 	bool Uint64(uint64_t v);
 	bool Double(double v);
-	bool String(const Ch* str, SizeType len, bool copy);
+	bool String(const Ch* str, rapidjson::SizeType len, bool copy);
 	bool StartObject();
-	bool Key(const Ch* str, SizeType len, bool copy);
-	bool EndObject(SizeType count);
+	bool Key(const Ch* str, rapidjson::SizeType len, bool copy);
+	bool EndObject(rapidjson::SizeType count);
 	bool StartArray();
-	bool EndArray(SizeType count);
+	bool EndArray(rapidjson::SizeType count);
 
 	bool Null();
 	bool Default();
 
 	// alternative to above if we want to re-use the VW float parser...
-	bool RawNumber(const Ch* str, SizeType length, bool copy);
+	bool RawNumber(const Ch* str, rapidjson::SizeType length, bool copy);
 
 	std::stringstream& error();
 
@@ -241,6 +239,6 @@ struct VWReaderHandler : public BaseReaderHandler<UTF8<>, VWReaderHandler>
 
 struct json_parser
 {
-	Reader reader;
+	rapidjson::Reader reader;
 	VWReaderHandler handler;
 };

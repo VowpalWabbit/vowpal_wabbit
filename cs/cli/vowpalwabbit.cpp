@@ -14,7 +14,7 @@ license as described in the file LICENSE.
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "lda_core.h"
-#include "parse_example_json.h"
+#include "parse_example.h"
 
 using namespace System;
 using namespace System::Collections::Generic;

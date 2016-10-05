@@ -14,7 +14,7 @@ namespace cs_unittest
     {
         private VowpalWabbit vw;
 
-        internal VowpalWabbitExampleJsonValidator(string args = null) : this(new VowpalWabbitSettings(args))
+        internal VowpalWabbitExampleJsonValidator(string args = null) : this(new VowpalWabbitSettings((args??"") + " --json"))
         {
         }
 

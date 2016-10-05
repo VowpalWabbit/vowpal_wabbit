@@ -66,7 +66,7 @@ namespace cs_unittest
         [TestCategory("JSON")]
         public void TestJsonInvalid()
         {
-            using (var vw = new VowpalWabbit(""))
+            using (var vw = new VowpalWabbit("--json"))
             {
                 AssertThrow(() => vw.ParseJson("{\"_label\":true,\"a\":{\"foo\":1}}"));
                 AssertThrow(() => vw.ParseJson("{\"_labelfoo\":1,\"a\":{\"foo\":1}}"));
@@ -74,7 +74,7 @@ namespace cs_unittest
                 AssertThrow(() => vw.ParseJson("{\"_label\":{\"label\":{\"a\":1}},\"a\":{\"foo\":1}}"));
             }
 
-            using (var vw = new VowpalWabbit("--cb_adf"))
+            using (var vw = new VowpalWabbit("--cb_adf --json"))
             {
                 AssertThrow(() => vw.ParseJson("{\"_label_Action\":1,\"_label_Cost\":-2,\"_label_Probability\":0.3,\"_multi\":[{\"foo\":1}],\"foo\":2,\"_labelIndex\":1}"));
             }
@@ -90,7 +90,7 @@ namespace cs_unittest
                 validator.Validate("|a :1 :2.3 :4", "{\"a\":{\"b\":[1,2.3,4]}}");
             }
 
-            using (var vw = new VowpalWabbit(""))
+            using (var vw = new VowpalWabbit("--json"))
             {
                 AssertThrow(() => vw.ParseJson("{\"a\":{\"b\":[1,[1,2],4]}}"));
             }
@@ -196,6 +196,7 @@ namespace cs_unittest
             var jsonContextString = JsonConvert.SerializeObject(jsonContext);
             using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
             {
+                Arguments = "--json",
                 EnableStringExampleGeneration = true,
                 EnableStringFloatCompact = true,
                 EnableThreadSafeExamplePooling = true
