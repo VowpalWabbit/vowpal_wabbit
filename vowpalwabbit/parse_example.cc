@@ -14,6 +14,48 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+size_t read_features(vw* all, char*& line, size_t& num_chars)
+{ line=nullptr;
+  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
+  if (num_chars_initial < 1)
+    return num_chars_initial;
+  num_chars = num_chars_initial;
+  if (line[0] =='\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
+  { line += 3;
+    num_chars -= 3;
+  }
+  if (line[num_chars-1] == '\n')
+    num_chars--;
+  if (line[num_chars-1] == '\r')
+    num_chars--;
+  return num_chars_initial;
+}
+
+int read_features_string(vw* all, v_array<example*>& examples)
+{ char* line;
+  size_t num_chars;
+  size_t num_chars_initial = read_features(all, line, num_chars);
+  if (num_chars_initial < 1)
+    return (int)num_chars_initial;
+
+  substring example = { line, line + num_chars };
+  substring_to_example(all, examples[0], example);
+
+  return (int)num_chars_initial;
+}
+
+int read_features_json(vw* all, v_array<example*>& examples)
+{ char* line;
+  size_t num_chars;
+  size_t num_chars_initial = read_features(all, line, num_chars);
+  if (num_chars_initial < 1)
+    return (int)num_chars_initial;
+
+  line[num_chars] = '\0';
+  VW::read_line_json(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+  return 1;
+}
+ 
 template<bool audit>
 class TC_parser
 {

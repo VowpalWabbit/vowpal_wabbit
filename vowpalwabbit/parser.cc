@@ -259,7 +259,7 @@ void reset_source(vw& all, size_t numbits)
         all.print = binary_print_result;
       }
       else
-      { all.p->reader = read_features<StringFeatures>;
+      { all.p->reader = read_features_string;
         all.print = print_result;
       }
     }
@@ -532,14 +532,14 @@ child:
 
     all.p->max_fd++;
     if(all.active)
-      all.p->reader = read_features<StringFeatures>;
+      all.p->reader = read_features_string;
     else
     { if (isbinary(*(all.p->input)))
       { all.p->reader = read_cached_features;
         all.print = binary_print_result;
       }
       else
-      { all.p->reader = read_features<StringFeatures>;
+      { all.p->reader = read_features_string;
       }
       all.p->sorted_cache = true;
     }
@@ -568,7 +568,7 @@ child:
       }
 
 	  all.p->reader = all.vm.count("json") ?
-		  read_features<JsonFeatures> : read_features<StringFeatures>;
+		  read_features_json : read_features_string;
       all.p->resettable = all.p->write_cache;
     }
   }

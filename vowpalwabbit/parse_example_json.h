@@ -163,8 +163,6 @@ struct IgnoreState : BaseState
 class DefaultState : public BaseState
 {
 private:
-	v_array<char> string_buffer;
-
 	BaseState* Ignore(Context& ctx, SizeType length);
 
 	void InsertNamespace(Context& ctx);
@@ -223,6 +221,7 @@ struct Context
 	ArrayState array_state;
 
 	Context(vw* pall);
+	~Context();
 
 	void PushNamespace(const char* ns, BaseState* return_state);
 
