@@ -194,7 +194,7 @@ BaseState* LabelObjectState::Float(Context& ctx, float v)
 	// CB
 	else if (boost::iequals(ctx.key, "Action"))
 	{
-		cb_label.action = v;
+		cb_label.action = (uint32_t)v;
 		found_cb = true;
 	}
 	else if (boost::iequals(ctx.key, "Cost"))
@@ -216,7 +216,7 @@ BaseState* LabelObjectState::Float(Context& ctx, float v)
 	return this;
 }
 
-BaseState* LabelObjectState::Uint(Context& ctx, unsigned v) { return Float(ctx, v); }
+BaseState* LabelObjectState::Uint(Context& ctx, unsigned v) { return Float(ctx, (float)v); }
 
 BaseState* LabelObjectState::EndObject(Context& ctx, SizeType)
 { 
@@ -303,7 +303,7 @@ BaseState* LabelState::Float(Context& ctx, float v)
 BaseState* LabelState::Uint(Context& ctx, unsigned v)
 {
 	// TODO: once we introduce label types, check here
-	ctx.ex->l.simple.label = v;
+	ctx.ex->l.simple.label = (float)v;
 	return ctx.previous_state;
 }
 
@@ -418,7 +418,7 @@ BaseState* ArrayState::Float(Context& ctx, float f)
 	return this;
 }
 
-BaseState* ArrayState::Uint(Context& ctx, unsigned f) { return Float(ctx, f); }
+BaseState* ArrayState::Uint(Context& ctx, unsigned f) { return Float(ctx, (float)f); }
 
 BaseState* ArrayState::EndArray(Context& ctx, SizeType elementCount) { return return_state; }
 
@@ -639,7 +639,7 @@ BaseState* DefaultState::Float(Context& ctx, float f)
 	return this;
 }
 
-BaseState* DefaultState::Uint(Context& ctx, unsigned f) { return Float(ctx, f); }
+BaseState* DefaultState::Uint(Context& ctx, unsigned f) { return Float(ctx, (float)f); }
 
 BaseState* DefaultState::StartArray(Context& ctx) {  return ctx.array_state.StartArray(ctx); }
 
@@ -658,11 +658,11 @@ void VWReaderHandler::init(vw* all, v_array<example*>* examples, InsituStringStr
 
 // virtual dispatch to current state
 bool VWReaderHandler::Bool(bool v) { return ctx.TransitionState(ctx.current_state->Bool(ctx, v)); }
-bool VWReaderHandler::Int(int v) { return ctx.TransitionState(ctx.current_state->Float(ctx, v)); }
+bool VWReaderHandler::Int(int v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
 bool VWReaderHandler::Uint(unsigned v) { return ctx.TransitionState(ctx.current_state->Uint(ctx, v));}
-bool VWReaderHandler::Int64(int64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, v)); }
-bool VWReaderHandler::Uint64(uint64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, v)); }
-bool VWReaderHandler::Double(double v) { return ctx.TransitionState(ctx.current_state->Float(ctx, v)); }
+bool VWReaderHandler::Int64(int64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
+bool VWReaderHandler::Uint64(uint64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
+bool VWReaderHandler::Double(double v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
 bool VWReaderHandler::String(const Ch* str, SizeType len, bool copy) { return ctx.TransitionState(ctx.current_state->String(ctx, str, len, copy)); }
 bool VWReaderHandler::StartObject() { return ctx.TransitionState(ctx.current_state->StartObject(ctx)); }
 bool VWReaderHandler::Key(const Ch* str, SizeType len, bool copy) { return ctx.TransitionState(ctx.current_state->Key(ctx, str, len, copy)); }
