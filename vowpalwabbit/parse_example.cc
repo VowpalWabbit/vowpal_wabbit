@@ -53,6 +53,12 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
   line[num_chars] = '\0';
   VW::read_line_json(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+
+  if (examples.size() > 1) {
+	// insert empty example at the end
+	examples.push_back(VW::get_unused_example(all));
+  }
+
   return 1;
 }
  

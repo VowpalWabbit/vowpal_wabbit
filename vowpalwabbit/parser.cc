@@ -886,7 +886,7 @@ void *main_parse_loop(void *in)
 #endif
 { vw* all = (vw*) in;
   size_t example_number = 0;  // for variable-size batch learning algorithms
-
+  size_t examples_available;
   v_array<example*> examples = v_init<example*>();
   while(!all->p->done)
   { examples.push_back(VW::get_unused_example(all)); // need at least 1 example
@@ -894,6 +894,7 @@ void *main_parse_loop(void *in)
         && all->p->reader(all, examples) > 0)
     { VW::setup_examples(*all, examples);
       example_number+=examples.size();
+      examples_available=examples.size();
     }
     else
     { reset_source(*all, all->num_bits);
@@ -911,9 +912,10 @@ void *main_parse_loop(void *in)
         mutex_unlock(&all->p->examples_lock);
       }
       example_number = 0;
+      examples_available=1;
     }
     mutex_lock(&all->p->examples_lock);
-    all->p->end_parsed_examples++;
+    all->p->end_parsed_examples+=examples_available;
     condition_variable_signal_all(&all->p->example_available);
     mutex_unlock(&all->p->examples_lock);
 	examples.erase();

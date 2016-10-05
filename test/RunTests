@@ -1521,3 +1521,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
+# Test 144: cb_explore_adf with cover exploration + double robust
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.stderr
+    pred-sets/ref/cbe_adf_cover_dr.predict
+
+
