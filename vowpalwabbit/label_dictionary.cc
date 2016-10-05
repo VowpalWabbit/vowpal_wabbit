@@ -55,7 +55,9 @@ void add_example_namespaces_from_example(example& target, example& source)
 }
 
 void del_example_namespaces_from_example(example& target, example& source)
-{ namespace_index* idx = source.indices.end();
+{ if (source.indices.size() == 0) // making sure we can deal with empty shared example
+    return;
+  namespace_index* idx = source.indices.end();
   idx--;
   for (; idx>=source.indices.begin(); idx--)
     { if (*idx == constant_namespace) continue;
