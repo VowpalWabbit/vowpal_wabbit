@@ -148,6 +148,7 @@ parser* new_parser()
   ret.ring_size = 1 << 8;
   ret.done = false;
   ret.used_index = 0;
+  ret.jsonp = nullptr;
 
   return &ret;
 }
@@ -287,6 +288,8 @@ void finalize_source(parser* p)
   delete p->input;
   p->output->close_files();
   delete p->output;
+  if (p->jsonp)
+	delete p->jsonp;
 }
 
 void make_write_cache(vw& all, string &newname, bool quiet)
@@ -567,8 +570,13 @@ child:
         }
       }
 
-	  all.p->reader = all.vm.count("json") ?
-		  read_features_json : read_features_string;
+      if (all.vm.count("json"))
+      { all.p->reader = read_features_json;
+        all.p->jsonp = new json_parser;
+      }
+      else
+	all.p->reader = read_features_string;
+		  
       all.p->resettable = all.p->write_cache;
     }
   }

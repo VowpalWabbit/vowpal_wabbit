@@ -23,9 +23,6 @@ namespace VW
 example* get_unused_example(vw* all);
 void read_line(vw& all, example* ex, char* line);//read example from the line.
 
-// can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
-typedef example* (*example_factory_t)(void*);
-
 void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context);
 }
 

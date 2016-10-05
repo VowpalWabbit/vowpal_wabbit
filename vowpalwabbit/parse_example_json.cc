@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
 */
 
+#include "vw.h"
 #include "parse_example_json.h"
 
 #include <rapidjson/error/en.h>
@@ -32,10 +33,19 @@ void Namespace::AddFeature(vw* all, const char* str)
 	feature_count++;
 }
 
-Context::Context(vw* pall) : all(pall), key(" "), key_length(1), previous_state(nullptr), label_object_state(pall)
+Context::Context()
 {
 	namespace_path = v_init<Namespace>();
 	current_state = &default_state;
+}
+
+void Context::init(vw* pall) 
+{
+	all = pall;
+	key = " ";
+	key_length = 1;
+	previous_state = nullptr;
+	label_object_state.init(pall);
 }
 
 Context::~Context()
@@ -132,7 +142,10 @@ BaseState* BaseState::EndArray(Context& ctx, SizeType)
 }
 
 // LabelObjectState
-LabelObjectState::LabelObjectState(vw* all) : BaseState("LabelObject")
+LabelObjectState::LabelObjectState() : BaseState("LabelObject")
+{ }
+
+void LabelObjectState::init(vw* all)
 {
 	found = found_cb = false;
 	all->p->lp.default_label(&label);
@@ -631,9 +644,9 @@ BaseState* DefaultState::Uint(Context& ctx, unsigned f) { return Float(ctx, f); 
 BaseState* DefaultState::StartArray(Context& ctx) {  return ctx.array_state.StartArray(ctx); }
 
 // VWReaderHandler 
-VWReaderHandler::VWReaderHandler(vw* all, v_array<example*>* examples, InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context)
-	: ctx(all)
+void VWReaderHandler::init(vw* all, v_array<example*>* examples, InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context)
 {
+	ctx.init(all);
 	ctx.examples = examples;
 	ctx.ex = (*examples)[0];
 	all->p->lp.default_label(&ctx.ex->l);
@@ -671,14 +684,13 @@ namespace VW
 {
 	void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
 	{
-		// reader can be re-used
-		Reader reader;
-
 		// destructive parsing
 		InsituStringStream ss(line);
 
-		VWReaderHandler handler(&all, &examples, &ss, example_factory, ex_factory_context);
-		ParseResult result = reader.Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler>(ss, handler);
+		VWReaderHandler& handler = all.p->jsonp->handler;
+	        handler.init(&all, &examples, &ss, example_factory, ex_factory_context);
+		
+		ParseResult result = all.p->jsonp->reader.Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler>(ss, handler);
 		if (!result.IsError())
 			return;
 		

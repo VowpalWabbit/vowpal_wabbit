@@ -6,8 +6,7 @@ license as described in the file LICENSE.
 
 #pragma once
 
-#include "parse_example.h"
-#include "vw.h"
+#include "parse_primitives.h"
 #include "v_array.h"
 
 // seems to help with skipping spaces
@@ -16,6 +15,7 @@ license as described in the file LICENSE.
 
 #include <rapidjson/reader.h>
 
+struct vw;
 struct BaseState;
 struct Context;
 
@@ -41,20 +41,14 @@ struct BaseState
 	BaseState(const char* pname);
 
 	virtual BaseState* Null(Context& ctx);
-
 	virtual BaseState* Bool(Context& ctx, bool b);
 	virtual BaseState* Float(Context& ctx, float v);
-
 	virtual BaseState* Uint(Context& ctx, unsigned v);
-
 	virtual BaseState* String(Context& ctx, const char* str, SizeType len, bool);
 	virtual BaseState* StartObject(Context& ctx);
-
 	virtual BaseState* Key(Context& ctx, const char* str, SizeType len, bool copy);
-
 	virtual BaseState* EndObject(Context& ctx, SizeType);
 	virtual BaseState* StartArray(Context& ctx);
-
 	virtual BaseState* EndArray(Context& ctx, SizeType);
 };
 
@@ -68,16 +62,14 @@ private:
 	bool found_cb;
 
 public:
-	LabelObjectState(vw* all);
+	LabelObjectState();
+
+	void init(vw* all);
 
 	BaseState* StartObject(Context& ctx);
-
 	BaseState* Key(Context& ctx, const char* str, SizeType len, bool copy);
-
 	BaseState* Float(Context& ctx, float v);
-
 	BaseState* Uint(Context& ctx, unsigned v);
-
 	BaseState* EndObject(Context& ctx, SizeType);
 };
 
@@ -108,11 +100,8 @@ struct LabelState : BaseState
 	LabelState();
 
 	BaseState* StartObject(Context& ctx);
-
 	BaseState* String(Context& ctx, const char* str, SizeType len, bool copy);
-
 	BaseState* Float(Context& ctx, float v);
-
 	BaseState* Uint(Context& ctx, unsigned v);
 };
 
@@ -128,9 +117,7 @@ struct MultiState : BaseState
 	MultiState();
 
 	BaseState* StartArray(Context& ctx);
-
 	BaseState* StartObject(Context& ctx);
-
 	BaseState* EndArray(Context& ctx, SizeType);
 };
 
@@ -144,11 +131,8 @@ public:
 	ArrayState();
 
 	BaseState* StartArray(Context &ctx);
-
 	BaseState* Float(Context& ctx, float f);
-
 	BaseState* Uint(Context& ctx, unsigned f);
-
 	BaseState* EndArray(Context& ctx, SizeType elementCount);
 };
 
@@ -171,19 +155,12 @@ public:
 	DefaultState();
 
 	BaseState* Key(Context& ctx, const char* str, SizeType length, bool copy);
-
 	BaseState* String(Context& ctx, const char* str, SizeType length, bool copy);
-
 	BaseState* Bool(Context& ctx, bool b);
-
 	BaseState* StartObject(Context& ctx);
-
 	BaseState* EndObject(Context& ctx, SizeType memberCount);
-
 	BaseState* Float(Context& ctx, float f);
-
 	BaseState* Uint(Context& ctx, unsigned f);
-
 	BaseState* StartArray(Context& ctx);
 };
 
@@ -220,8 +197,9 @@ struct Context
 	IgnoreState ignore_state;
 	ArrayState array_state;
 
-	Context(vw* pall);
+	Context();
 	~Context();
+	void init(vw* all);
 
 	void PushNamespace(const char* ns, BaseState* return_state);
 
@@ -234,7 +212,7 @@ struct VWReaderHandler : public BaseReaderHandler<UTF8<>, VWReaderHandler>
 {
 	Context ctx;
 
-	VWReaderHandler(vw* all, v_array<example*>* examples, InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context);
+	void init(vw* all, v_array<example*>* examples, InsituStringStream* stream, VW::example_factory_t example_factory, void* example_factory_context);
 
 	// virtual dispatch to current state
 	bool Bool(bool v);
@@ -259,4 +237,10 @@ struct VWReaderHandler : public BaseReaderHandler<UTF8<>, VWReaderHandler>
 	std::stringstream& error();
 
 	BaseState* current_state();
+};
+
+struct json_parser
+{
+	Reader reader;
+	VWReaderHandler handler;
 };

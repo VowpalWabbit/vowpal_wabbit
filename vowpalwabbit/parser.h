@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
+#include "parse_example_json.h"
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -54,6 +55,8 @@ struct parser
   v_array<substring> parse_name;
 
   label_parser lp;  // moved from vw
+
+  json_parser* jsonp;
 };
 
 parser* new_parser();
