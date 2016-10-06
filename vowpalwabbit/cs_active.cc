@@ -16,7 +16,6 @@ struct cs_active
 { // active learning algorithm parameters
   float c0; // mellowness controlling the width of the set of good functions
   float c1; // multiplier on the threshold for the cost range test
-  float alpha; // noise parameter
   float cost_max; // max cost
   float cost_min; // min cost
 
@@ -26,6 +25,8 @@ struct cs_active
   size_t min_labels;
   size_t max_labels;
 
+  bool is_baseline;  
+
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
 };
@@ -34,8 +35,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 { float maxw = min(fhat/sens,FLT_MAX);
   
   if(maxw*fhat*fhat <= delta)
-  { //cerr << " max w is returned." ;
-    return maxw;
+  { return maxw;
   }
 
   float l = 0, u = maxw, w, v;
@@ -54,7 +54,6 @@ float binarySearch(float fhat, float delta, float sens, float tol)
     }
   }
 
-  //cerr << " w = " << l << "."; 
   return l;
 }
 
@@ -69,9 +68,6 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
     ec.weight = 1.;
     if (is_simulation)
     { // In simulation mode 
-      // Use the true cost of this label if these two conditions hold:
-      // (1) query = true, meaning there is more than one good prediction and some of them have large cost ranges.
-      // (2) this label is a good prediction, i.e., its cost range overlaps with that of the label with the min max cost.
       if(query_this_label)
       { ec.l.simple.label = cost;
         all.sd->queries += 1;
@@ -122,22 +118,15 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
   float sens = base.sensitivity(ec, i-1);
   
   if (cs_a.t <= 1 || nanpattern(sens) || infpattern(sens))
-  { //if(cs_a.t > 1)
-    //{ cerr << "Warning: sensitivity=" << sens << endl;      
-    //}
-    min_pred = cs_a.cost_min;
+  { min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;
     is_range_large = true;
   }
   else
   { // finding max_pred and min_pred by binary search
-    //cerr << "find cost range for " << i-1 << ", sens=" << sens << ", cost_max: "; 
     max_pred =  min(ec.pred.scalar + sens*binarySearch(cs_a.cost_max-ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    //cerr << " max_pred=" << max_pred << ", cost_min: ";
     min_pred =  max(ec.pred.scalar - sens*binarySearch(ec.pred.scalar-cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
-    //cerr << " min_pred=" << min_pred;
     is_range_large = (max_pred-min_pred > eta);
-    //cerr << " is_range_large=" << is_range_large;
   }
 }
 
@@ -155,6 +144,21 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   
     // Double label query budget	
     cs_a.min_labels *= 2;
+    for (size_t i=0; i<cs_a.all->sd->examples_by_queries.size(); i++)
+    {  cerr << endl << "examples with " << i << " labels queried = " << cs_a.all->sd->examples_by_queries[i];
+    }
+
+    cerr << endl << "labels outside of cost range = " << cs_a.all->sd->labels_outside_range;
+    cerr << endl << "average distance to range = " << cs_a.all->sd->distance_to_range/((float)cs_a.all->sd->labels_outside_range);
+    cerr << endl << "average range = " << cs_a.all->sd->range/((float)cs_a.all->sd->labels_outside_range);
+ 
+    /*
+    for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
+    {  cerr << endl << "label " << i << ", average distance to range = " << cs_a.all->sd->distance_to_range[i]/((float)(cs_a.t-1));
+    }*/
+
+    cerr << endl << endl;
+
   }
 
   if(cs_a.all->sd->queries >= cs_a.max_labels*cs_a.num_classes)
@@ -169,7 +173,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   float t = (float)cs_a.t; // ec.example_t;  // current round
   float t_prev = t-1.; // ec.weight; // last round
 
-  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/pow(t,1.f/(cs_a.alpha+2.f)); // threshold on cost range
+  float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/sqrt(t); // threshold on cost range
   float delta = cs_a.c0*log((float)(cs_a.num_classes*max(t_prev,1.f)))*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
@@ -178,24 +182,32 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
       { find_cost_range(cs_a, base, ec, cl.class_index, delta, eta, cl.min_pred, cl.max_pred, cl.is_range_large);
         min_max_cost = min(min_max_cost, cl.max_pred);
       }
+    }
 
-      //bool large_range = false;
-      for (COST_SENSITIVE::wclass& cl : ld.costs)
-      { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
-        n_overlapped += (uint32_t)(cl.is_range_overlapped); 
+    for (COST_SENSITIVE::wclass& cl : ld.costs)
+    { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
+      n_overlapped += (uint32_t)(cl.is_range_overlapped); 
         //large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
         //if(cl.is_range_overlapped && is_learn)
         //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ", is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
         //}
-        cs_a.all->sd->overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
+      cs_a.all->sd->overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
+      if(cl.x > cl.max_pred || cl.x < cl.min_pred)
+      {  cs_a.all->sd->labels_outside_range++;
+         //cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+         cs_a.all->sd->distance_to_range += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+         cs_a.all->sd->range += cl.max_pred - cl.min_pred;
       }
+
     }
-      //bool query = (n_overlapped > 1 && large_range);
+    
     bool query = (n_overlapped > 1);
-       
+    size_t queries = cs_a.all->sd->queries;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && cl.is_range_overlapped && cl.is_range_large), cl.query_needed);
+    { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large))), cl.query_needed);
     }
+
+    cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
 
     ec.partial_prediction = score;
     if(is_learn)
@@ -203,8 +215,8 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     }
   }
   else
-  { float temp;
-    bool temp2, temp3;
+  { float temp = 0.f;
+    bool temp2=false, temp3=false;
     for (uint32_t i = 1; i <= cs_a.num_classes; i++)
     { inner_loop<false,is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3);
     }
@@ -225,9 +237,9 @@ base_learner* cs_active_setup(vw& all)
 
   new_options(all, "cost-sensitive active Learning options")
   ("simulation", "cost-sensitive active learning simulation mode")
+  ("baseline", "cost-sensitive active learning baseline")
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 0.1.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
-  ("alpha", po::value<float>(),"Non-negative noise condition parameter. Larger value means less noise. Default 0.")
   ("max_labels", po::value<float>(), "maximum number of label queries.")
   ("min_labels", po::value<float>(), "minimum number of label queries.")
   ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
@@ -239,13 +251,17 @@ base_learner* cs_active_setup(vw& all)
   data.num_classes = (uint32_t)all.vm["cs_active"].as<size_t>();
   data.c0 = 0.1;
   data.c1 = 0.5;
-  data.alpha = 0.f;
   data.all = &all;
   data.cost_max = 1.f;
   data.cost_min = 0.f;
   data.t = 1;
   data.max_labels = (size_t)-1;
-  data.min_labels = (size_t)-1; 
+  data.min_labels = (size_t)-1;
+  data.is_baseline = false; 
+  
+  if(all.vm.count("baseline"))
+  { data.is_baseline = true;
+  }
   
   if(all.vm.count("mellowness"))
   { data.c0 = all.vm["mellowness"].as<float>();
@@ -253,10 +269,6 @@ base_learner* cs_active_setup(vw& all)
 
   if(all.vm.count("range_c"))
   { data.c1 = all.vm["range_c"].as<float>();
-  }
-  
-  if(all.vm.count("alpha"))
-  { data.alpha = all.vm["alpha"].as<float>();
   }
   
   if(all.vm.count("cost_max"))
@@ -304,15 +316,23 @@ base_learner* cs_active_setup(vw& all)
   learner<cs_active>* l; 
 
   if (all.vm.count("simulation"))
-     l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
+    l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
   else
-     l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+    l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
 
   all.set_minmax(all.sd,data.cost_max);
   all.set_minmax(all.sd,data.cost_min);
   //cerr << "cs_active data = " << & data << endl;
 
   all.p->lp = cs_label; // assigning the label parser
+  for (uint32_t i=0; i<data.num_classes+1; i++)
+    all.sd->examples_by_queries.push_back(0); 
+
+  /*
+  for (uint32_t i=0; i<data.num_classes; i++)
+    all.sd->distance_to_range.push_back(0.f); 
+  */
+
   l->set_finish_example(finish_example);
   base_learner* b = make_base(*l);
   all.cost_sensitive = b;
