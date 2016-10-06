@@ -1,0 +1,7 @@
+*.results
+*.results.model
+*.results.model.txt
+ml-1m
+ml-1m.ratings.train.vw
+ml-1m.ratings.test.vw
+ml-1m.zip

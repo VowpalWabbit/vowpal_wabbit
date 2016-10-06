@@ -1,0 +1,9 @@
+#!/bin/sh
+# A simplest-possible example of parallel code at work on a single machine.
+./spanning_tree
+# This isn't actually useful---to do something useful, you would need to partition the dataset amongst the VW instances
+head -n 100 ../test/train-sets/0001.dat > head_data
+tail -n 100 ../test/train-sets/0001.dat > tail_data
+../vowpalwabbit/vw --total 2 --node 0 --unique_id 0 -d head_data --cache_file c0 -k --passes 100 --span_server localhost --holdout_off > node_0 2>&1 &
+../vowpalwabbit/vw --total 2 --node 1 --unique_id 0 -d tail_data --cache_file c1 -k --passes 100 --span_server localhost --holdout_off
+killall spanning_tree

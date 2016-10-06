@@ -1,0 +1,12 @@
+<configuration>
+    <system.runtime.caching>
+        <memoryCache>
+            <namedCaches>
+                <add name="VowpalWabbitJsonExampleCache" 
+                     cacheMemoryLimitMegabytes="512" 
+                     pollingInterval="00:00:30" />
+            </namedCaches>
+        </memoryCache>
+    </system.runtime.caching>
+</configuration>
+

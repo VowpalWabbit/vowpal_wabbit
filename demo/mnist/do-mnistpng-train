@@ -1,0 +1,28 @@
+#! /bin/zsh
+
+test -e train-images-idx3-ubyte.gz || {
+  echo "ERROR: you need to download train-image-idx3-ubyte.gz" 1>&2
+  echo "ERROR: from http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz" 1>&2
+  exit 1
+}
+
+test -e train-labels-idx1-ubyte.gz || {
+  echo "ERROR: you need to download train-labels-idx1-ubyte.gz" 1>&2
+  echo "ERROR: from http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz" 1>&2
+  exit 1
+}
+
+SHUFFLE='BEGIN { srand 69; };
+         $i = int rand 1000;
+         print $b[$i] if $b[$i];
+         $b[$i] = $_; } { print grep { defined $_ } @b;'
+
+paste -d' '                                                             \
+  <(gunzip -c train-labels-idx1-ubyte.gz | ./extract-labels)            \
+  <(gunzip -c train-images-idx3-ubyte.gz | ./extractpixels) |           \
+perl -ne ${SHUFFLE} |                                                   \
+./roundrobin ./pixelngrams 2 |                                          \
+time ../../vowpalwabbit/vw --oaa 10 -f mnistpng.model                   \
+   -b 20 --adaptive --invariant --holdout_off                           \
+   -l 0.05 --passes 15 -k --compressed --cache_file mnistpng.cache &&   \
+   rm -f mnistpng.cache

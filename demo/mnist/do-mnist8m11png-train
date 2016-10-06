@@ -1,0 +1,28 @@
+#! /bin/zsh
+
+test -e train8m-images-idx3-ubyte.gz || {
+  echo "ERROR: you need to download train8m-image-idx3-ubyte.gz" 1>&2
+  echo "ERROR: from http://ml.nec-labs.com/download/data/mnist8m/train8m-images-idx3-ubyte.gz" 1>&2
+  exit 1
+}
+
+test -e train8m-labels-idx1-ubyte.gz || {
+  echo "ERROR: you need to download train8m-labels-idx1-ubyte.gz" 1>&2
+  echo "ERROR: from http://ml.nec-labs.com/download/data/mnist8m/train8m-labels-idx1-ubyte.gz" 1>&2
+  exit 1
+}
+
+SHUFFLE='BEGIN { srand 69; };
+         $i = int rand 1000;
+         print $b[$i] if $b[$i];
+         $b[$i] = $_; } { print grep { defined $_ } @b;'
+
+paste -d' '                                                             \
+  <(gunzip -c train8m-labels-idx1-ubyte.gz | ./extract-labels)          \
+  <(gunzip -c train8m-images-idx3-ubyte.gz | ./extractpixels) |         \
+perl -ne ${SHUFFLE} |                                                   \
+./roundrobin ./pixelngrams 3 |                                          \
+time ../../vowpalwabbit/vw --oaa 10 -f mnist8m11png.model               \
+   -b 20 --adaptive --invariant --holdout_off                           \
+   --nn 5 --inpass                                                      \
+   -l 0.05

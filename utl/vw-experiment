@@ -1,0 +1,149 @@
+#!/usr/bin/env perl
+# Wrapper for measuring test loss and train loss with Vowpal Wabbit.
+# Simple usage example:
+#  vw-experiment --train=train.vw.gz --test=dtest.vw.gz  --  -c --holdout_off --passes=2 [other vw parameters]
+#
+# Example usage on SGE cluster:
+#  qsub -cwd -v PATH -j y -b y vw-experiment --train=train.vw.gz --test=dtest.vw.gz -d -- -c --holdout_off --passes=2 [other vw parameters]
+
+use strict;
+use warnings;
+use autodie;
+use Getopt::Long;
+
+my $USAGE = <<'END';
+vw-experiment [vw-experiment opts] -- [vw opts]
+ vw-experiment opts:
+  --train filename        ... training data (to be passed to vw -d)
+  --test filename         ... test data
+  --log filename          ... log file (append mode) or 0 [STDERR]
+  --model filename        ... where to store the model [M_\$opts.model]
+  --results filename      ... file for storing all results [vw-experiment.results]
+  --train_loss_examples N ... number of examples for computing train loss [all]
+  --vw path               ... alternative path to vw executable [vw]
+  --delete_model          ... delete the model after training? [no]
+ vw opts:
+  --holdout_off           ... don't use part of training data as holdout with more passes
+  --passes N              ... number of training passes (requires --cache aka -c if more than 1)
+  See `vw -h` for more vw options.
+END
+
+my $TRAIN               = undef;
+my $TEST                = undef;
+my $TRAIN_LOSS_EXAMPLES = 'all';
+my $VW                  = 'vw';
+my $HELP;
+my $LOG = 'STDERR';
+my $MODEL;
+my $RESULTS      = 'vw-experiment.results';
+my $DELETE_MODEL = 0;
+
+GetOptions(
+    'train=s'               => \$TRAIN,
+    'test=s'                => \$TEST,
+    'train_loss_examples=s' => \$TRAIN_LOSS_EXAMPLES,
+    'vw=s'                  => \$VW,
+    'help|h'                => \$HELP,
+    'log=s'                 => \$LOG,
+    'model=s'               => \$MODEL,
+    'results=s'             => \$RESULTS,
+    'd|delete_model'        => \$DELETE_MODEL,
+);
+
+die $USAGE if $HELP;
+die 'No --train file provided (to be passed to vw -d)' if !defined $TRAIN;
+
+my $L;
+if ($LOG) {
+    if ( $LOG eq 'STDERR' ) {
+        $L = *STDERR;
+    }
+    elsif ( $LOG eq 'STDOUT' || $LOG eq '-' ) {
+        $L = *STDOUT;
+    }
+    else {
+        open $L, '>>', $LOG;
+    }
+}
+
+sub run_vw {
+    my ($options)  = @_;
+    my $command    = "$VW $options";
+    my $time_start = time;
+    my $output     = `$command 2>&1`;
+    my $time_end   = time;
+    my ($loss)     = ( $output =~ /^average loss = (.*)$/m );
+    print {$L} "\$ $command\n$output\n" if $L;
+    $loss = defined $loss ? sprintf( '%.9f', $loss ) : 'error';
+    my $time = sprintf '%7d', $time_end - $time_start;
+    return ( $loss, $time );
+}
+
+my $vw_opts = "@ARGV";
+if ( !defined $MODEL ) {
+    my $str_opts = $vw_opts;
+    $str_opts =~
+      s/--?([A-Za-z_]+)([ =]([^-][^ ]*))?/defined $3 ? "$1=$3" : $1/eg;
+    $str_opts =~ s/ /,/g;
+    $MODEL = "M_d=${TRAIN},${str_opts}.model";
+}
+
+my ( $loss_prog,  $loss_train,      $loss_test ) = ('N/A') x 3;
+my ( $time_train, $time_train_loss, $time_test ) = ('N/A') x 3;
+
+( $loss_prog, $time_train ) = run_vw("-d $TRAIN -f $MODEL $vw_opts");
+print "$loss_prog\tprogressive validation loss\t${time_train}s\n";
+
+if ($TRAIN_LOSS_EXAMPLES) {
+    my $examples_cmd = '';
+    if ( $TRAIN_LOSS_EXAMPLES ne 'all' ) {
+        $examples_cmd = "--examples $TRAIN_LOSS_EXAMPLES";
+    }
+    ( $loss_train, $time_train_loss ) =
+      run_vw("-t -d $TRAIN -i $MODEL $examples_cmd");
+    print "$loss_train\ttrain loss\t${time_train_loss}s\n";
+}
+
+if ( defined $TEST ) {
+    ( $loss_test, $time_test ) = run_vw("-t -d $TEST -i $MODEL");
+    print "$loss_test\ttest loss\t${time_test}s\n";
+}
+
+if ($RESULTS) {
+    my $file_empty = !-s $RESULTS;
+    open my $R, '>>', $RESULTS;
+    print {$R} "test_loss    train_loss   progre_loss  train_time  options\n"
+      if $file_empty;
+    print {$R} "$loss_test  $loss_train  $loss_prog  ${time_train}s  @ARGV\n";
+}
+
+unlink $MODEL if $DELETE_MODEL;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+vw-experiment - for experiments with Vowpal Wabbit
+
+=head1 SYNOPSIS
+
+ vw-experiment --train=train.vw.gz --test=dtest.vw.gz  --  -c --holdout_off --passes=2 [other vw parameters]
+ 
+ vw-experiment -h # see all options
+
+=head1 DESCRIPTION
+
+Wrapper for measuring test loss and train loss with Vowpal Wabbit.
+All experiments' results are logged in file 'vw-experiment.results' (can be overriden with --results).
+Individual experiments are logged to STDERR (can be overriden with --log).
+
+=head1 AUTHOR
+
+Martin Popel <popel@ufal.mff.cuni.cz>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright © 2014 by Institute of Formal and Applied Linguistics, Charles University in Prague.
+This script is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

@@ -1,0 +1,29 @@
+#! /bin/zsh
+
+learner() {
+  ./quaddna2vw |                                                        \
+  ../../vowpalwabbit/vw -f dnasmash.model.$1                            \
+     --loss_function logistic                                           \
+     --compressed --cache_file dnacache.$1                              \
+     -b 20 -l 0.06 --adaptive --invariant --passes 10                   \
+     --total $2 --node $1 --unique_id 0 --span_server localhost         \
+     --nn 4 --inpass
+}
+
+../../cluster/spanning_tree dnasmash_spanning_tree.pid 
+
+paste -d' '					\
+  <(bzcat dna_train.lab.bz2) 			\
+  <(bzcat dna_train.dat.bz2) |	                \
+tail -n +1000000 |				\
+./map 						\
+  >(learner 0 4)                                \
+  >(learner 1 4 >/dev/null 2>/dev/null)         \
+  >(learner 2 4 >/dev/null 2>/dev/null)         \
+  >(learner 3 4 >/dev/null 2>/dev/null)
+
+kill $(cat dnasmash_spanning_tree.pid)
+wait
+rm dnasmash_spanning_tree.pid
+mv dnasmash.model.0 dnasmash.model
+rm -f dnasmash.model.*

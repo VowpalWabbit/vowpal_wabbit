@@ -1,0 +1,6 @@
+1:1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme
+2:0 |s p^the_man w^the w^man |t p^le_homme w^le w^homme
+
+1:0 |s p^a_man w^a w^man |t p^un_homme w^un w^homme
+2:1 |s p^a_man w^a w^man |t p^le_homme w^le w^homme
+

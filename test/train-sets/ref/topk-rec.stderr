@@ -1,0 +1,32 @@
+creating quadratic features for pairs: MF 
+predictions = topk-rec.predict
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/topk.vw
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000003 0.000003            1            1.0   3.0000   2.9982        4
+0.000005 0.000007            2            2.0   0.0000   0.0026        4
+0.000003 0.000000            3            3.0   2.0000   1.9998        4
+0.000003 0.000000            4            4.0  unknown   0.0000        1
+0.000003 0.000004            5            5.0   0.0000   0.0019        4
+0.000005 0.000014            6            6.0   3.0000   2.9963        4
+0.000004 0.000001            7            7.0   1.0000   1.0009        4
+0.000004 0.000000            8            8.0  unknown   0.0000        1
+0.000003 0.000000            9            9.0   2.0000   2.0004        4
+0.000003 0.000000           10           10.0   1.0000   1.0003        4
+0.000003 0.000000           11           11.0   3.0000   2.9996        4
+0.000002 0.000000           12           12.0  unknown   0.0000        1
+
+finished run
+number of examples per pass = 12
+passes used = 1
+weighted example sum = 12.000000
+weighted label sum = 15.000000
+average loss = 0.000002
+best constant = 1.250000
+total feature number = 39

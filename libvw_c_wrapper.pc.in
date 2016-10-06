@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Vowpal Wabbit (C wrapper)
+Description: Vowpal Wabbit Machine Learning System (C wrapper)
+URL: @PACKAGE_URL@
+Version: @VERSION@
+Requires: libvw
+Libs: -L${libdir} -lvw_c_wrapper
+Cflags: -I${includedir}

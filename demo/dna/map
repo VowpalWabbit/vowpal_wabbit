@@ -1,0 +1,17 @@
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+use IO::File;
+
+my @mappers = map { $_->autoflush (0); $_ } 
+              map { new IO::File $_, "w" or die "$_: $!" } 
+              @ARGV;
+
+while (defined ($_ = <STDIN>))
+  {
+    my $fh = $mappers[$. % @mappers];
+
+    print $fh $_;
+  }

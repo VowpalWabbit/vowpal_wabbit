@@ -1,0 +1,154 @@
+#!/usr/bin/perl -w
+#
+# Simple script to convert from vw (dense) format to CSV
+# (e.g. for loading into muscor/ridge regression, or OpenCV/ML/random-forest)
+# Supports both inputs:
+#   - training files
+#   - test files
+# Assumes all lines have the same features (dense)
+#
+# (c) 2012 - ariel faigon for vowpal-wabbit
+# This software may be distributed under the same terms as vowpal-wabbit
+#
+use Getopt::Std;
+use vars qw($opt_h $opt_c $opt_t $opt_b $opt_l);
+
+my $Sep = ',';
+my $Ext = 'csv';
+
+my %Feature2Idx;
+my @Idx2feature;
+
+sub usage(@) {
+    print STDERR @_, "\n" if (@_);
+    die "Usage: $0 [options] <files>...
+    Options:
+	-l	leave tag (row identifier) as 1st column
+	-h	don't generate a 1st line header of feature names
+	-t	generate TSV instead of CSV
+	-b	convert label from [0..1] to binary {-1,1} 
+";
+}
+
+sub init() {
+    $0 =~ s{.*/}{};
+    getopts('lhtcb') || usage();
+    if ($opt_t || $0 =~ /tsv/) {
+	$Sep = "\t";
+	$Ext = 'tsv';
+    }
+    usage("Need vw train/test files as args") unless (@ARGV);
+}
+
+#
+# This routine only figures out the names of the features and their
+# indices and maps one to the other and vice versa.
+#
+sub populate_features($) {
+    my $line = shift;
+
+    my $idx = 0;
+    if ($line =~ /^-?[0-9.]/) {
+	push(@Idx2feature, 'label');
+	$Feature2Idx{'label'} = $idx++;
+    } else {
+	die "$0: no label found in 1st line: $_\n";
+    }
+
+    #
+    # Ugly: this is too specific:
+    #	1) we always tag the lines
+    #	2) all our features are numeric and they always include a ':'
+    #	3) No collisions in feature names (only one namespace is used)
+    while ($line =~ /\s([^\s:]+):(\S+)/g) {
+	my ($feature, $value) = ($1, $2);
+	push(@Idx2feature, $feature);
+	$Feature2Idx{$feature} = $idx++;
+    }
+}
+
+sub generate_header() {
+    print OF join($Sep, @Idx2feature), "\n";
+}
+
+sub print_values($) {
+    my $line = shift;
+    my ($label, $tag, $sep) = ('', '', '');
+
+    if ($line =~ /^(\S+)/) {
+	my $label = $1;
+
+	if ($opt_b) {
+	    # binary classification
+	    $label = ($label >= 0.5) ? 1 : -1;
+	}
+	if ($' =~ /.*?(\S+)\|/) {
+	    $tag = $1;
+	}
+	if ($opt_l && $tag) {
+	    printf OF "%s", $tag;
+	    $sep = $Sep;
+	}
+
+	printf OF "%s%s", $sep, $label;
+
+    } else {
+	die "$0: no label found in 1st line: $_\n";
+    }
+
+    #
+    # Ugly: this is TCA specific:
+    #	1) we always tag the lines
+    #	2) all our features are numeric and they always include a ':'
+    #	3) No collisions in feature names (only one namespace is used)
+    #	4) Features appear in the same order on all lines
+    #	5) No sparse features are used: all lines have all features...
+    while ($line =~ /\s([^\s:]+):(\S+)/g) {
+	my ($feature, $value) = ($1, $2);
+	printf OF "%s%s", $Sep, $value;
+    }
+    print OF "\n";
+}
+
+sub clear_features() {
+    @Idx2feature = ();
+    foreach my $k (keys %Feature2Idx) {
+	delete $Feature2Idx{$k};
+    }
+}
+
+sub do_file($) {
+    my $file = shift;
+    my $outfile = "$file.$Ext";
+
+    # Fresh file: clear feature inventory
+    clear_features();
+
+    open(IF, ($file =~ /\.gz$/) ? "gunzip -c $file|" : $file)
+        || die "$0: $file: $!\n";
+
+    open(OF, ">$outfile") || die "$0: >$outfile: $!\n";
+    while (<IF>) {
+	chomp;
+	if ($. == 1) {
+	    populate_features($_);
+	    generate_header() unless ($opt_h);
+	}
+	print_values($_);
+    }
+    close IF;
+    close OF;
+}
+
+sub do_files(@) {
+    foreach my $arg (@_) {
+	do_file($arg);
+    }
+}
+
+# --- main
+init();
+do_files(@ARGV);
+
+
+

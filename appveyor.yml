@@ -1,0 +1,22 @@
+version: 1.0.{build}
+os: Windows Server 2012 R2
+configuration:
+- Release
+platform: x64
+shallow_clone: true
+clone_folder: C:\vowpal_wabbit
+# need to install nuget packages before Visual Studio starts to make ANTLR targets available.
+build_script:
+- cd c:\vowpal_wabbit
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\unittest\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages vowpalwabbit\packages.config
+- '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal /p:Configuration=Release;Platform=x64'
+test_script:
+- ps: >-
+    if($env:PLATFORM -eq "x64")
+
+    {
+       cd c:\vowpal_wabbit
+       vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll
+    }

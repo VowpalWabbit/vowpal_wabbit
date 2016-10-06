@@ -1,0 +1,359 @@
+#!/bin/bash
+#
+# Vowpal Wabbit interactive demo of noise-resistance
+#
+# Requires the following to be installed on your machine:
+#
+#   1) vw - the vowpal-wabbit executable
+#   2) R + ggplot2 - for all the beautiful charts
+#   3) A few scripts included with this one:
+#       3a) random-poly - a perl script for generating random data-sets
+#       3b) distrib.r - Density distribution plot utility, written in R
+#       3c) x-vs-y.r  - X vs Y correleation plot utility, written in R
+#
+export PATH=.:$PATH
+Pager='less'
+ImgViewCandidates="gwenview display irfanview xee preview"
+ImgViewer=
+Poly='a + 2b - 5c + 7'
+
+find_ggplot2() {
+    err=`Rscript -e 'library(ggplot2)' 2>&1 | grep 'Error.*ggplot'`
+    case "$err" in
+        *rror*)
+            echo "Couldn't find the R ggplot2 library. Is it installed?" 1>&2
+            echo -- "$err" 1>&2
+            exit 1
+            ;;
+    esac
+}
+
+find_image_viewer() {
+    # Please add your favorite OS image viewer here
+    for exe in $ImgViewCandidates; do
+        case `which $exe` in
+            '') : keep going...
+                ;;
+            *)  ImgViewer=$exe
+                : found image viewer: $ImgViewer
+                break
+                ;;
+        esac
+    done
+    case "$ImgViewer" in
+        '') echo "Sorry: coudn't find an image viewer in PATH=$PATH
+Please add your viewer to 'ImgViewCandidates' in the '$0' script." 1>&2
+            exit 1 ;;
+    esac
+}
+
+check_prereqs() {
+    missing=0
+    find_image_viewer
+
+    for exe in vw R Rscript random-poly distrib.r x-vs-y.r; do
+        case `which $exe` in
+            '') echo "$0: can't find $exe in PATH=$PATH - please install it"
+                missing=$(($missing+1)) ;;
+            *)  : found $exe - cool ;;
+        esac
+    done
+    case $missing in
+        0) : ;;
+        *) exit 1 ;;
+    esac
+    find_ggplot2
+}
+
+#
+# demo_cmd is the work-horse of our presentation.
+# 'main' can be simply a sequence of multiple calls to it.
+# It has 3 goals:
+#   1) Ensure we get all the little details right and never
+#      make a mistake during the actual presentation
+#   2) Save time typing stuff
+#   3) Anyone else can reproduce what we did perfectly in their
+#      own env.
+
+#
+# demo_cmd [options] 'header/explanation string'  'command string'
+#   options:
+#       -p  don't pause for user to hit [enter]
+#       -h  don't print the header-string
+#       -s  don't advance the step
+#       -e  don't echo the command (be silent), just execute
+#       -c  don't execute the command
+#
+demo_cmd() {
+    # by default we do all of them
+    opt_p=1; opt_h=1; opt_s=1; opt_e=1 opt_c=1
+
+    # Must initialize OPTIND since it doesn't reset between
+    # calls to 'demo_cmd()'!
+    OPTIND=1
+    while getopts 'phsec' opt; do
+        case "$opt" in
+            p) opt_p= ;;
+            h) opt_h= ;;
+            s) opt_s= ;;
+            e) opt_e= ;;
+            c) opt_c= ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    header="$1"
+    cmd="$2"
+    # echo "demo_cmd: args: |$@| header=|$header| cmd=|$cmd| OPTIND=$OPTIND"
+
+    case $opt_s in 1)
+        step=$(($step+1)) ;;
+    esac
+
+    case $opt_h in 1)
+        echo "=== $step: $header" ;;
+    esac
+
+    case $opt_p in
+        1)  # read the command-line in, but allow real-time edits
+            # via GNU readline
+            read -ep "\$ " -i "$cmd" ans
+            ;;
+        *)  case $opt_e in 1)
+                # If we have no readline/prompt we need to print
+                # the command so it can be seen by the audience
+                echo -n "\$ $cmd" ;;
+            esac
+            ;;
+    esac
+
+    case $opt_c in 1)
+        case $opt_p in
+        1) eval "$ans" ;;
+        *) eval "$cmd" ;;
+        esac
+        echo
+        ;;
+    esac
+}
+
+label_column() {
+    data_file="$1"
+    label_file="$2"
+
+    cut -d' ' -f1 $data_file > $label_file
+}
+
+y_density() {
+    data_file=$1
+    chart_title=$2
+
+    label_file="Ys/$data_file"
+
+    label_column "$data_file" "$label_file"
+    distrib.r $label_file "$chart_title"
+    $ImgViewer $label_file.density.png 2>/dev/null
+}
+
+clean_slate() {
+    /bin/rm -f r.* Ys 2>/dev/null
+    mkdir -p Ys
+}
+
+#
+# demo_session
+#   full session of random-data-generation, training, testing...
+#
+demo_session() {
+    mode="$1"
+    step=0
+
+    clean_slate
+
+    # --- train-set generation
+    case $mode in
+        globalnoise)  rand='-r -1,1'; msg=' (w/ global noise)' ;;
+        varnoise)     rand='-R -.5,.5'; msg=' (w/ per-var noise)' ;;
+        regularize)   rand='-R -.5,.5'; msg=' (w/ per-var noise)' ;;
+        clean)        rand='-r 0,0'; msg='' ;; # no noise added
+    esac
+    demo_cmd "Generate a training data-set$msg & inspect it
+       (-n N                is number of data-points (examples)
+        -pN                 is data precision
+        -r min,max          is global added noise
+        -R min,max          is per-variable added noise):" \
+            "random-poly -n 50000 -p6 $rand $Poly > r.train"
+
+    case $mode in 'clean')
+        # Only do this the 1st time, othewise it is getting tedious
+        demo_cmd -s "inspect the training-set (use 'q' to exit $Pager):" \
+             "$Pager r.train" ;;
+    esac
+
+    demo_cmd "Visualize train-set Ys (labels) density [~5 secs to generate chart]:" \
+        "y_density r.train 'Train-set random expression distribution: $Poly'"
+
+    case $mode in
+        # --- in the case where we added noise,
+        # --- add a step of showing how big is the noise
+        *noise)
+            echo '+-----------------------------------------------------+'
+            echo '|           visualize the added random noise          |'
+            echo '+-----------------------------------------------------+'
+            # -- Prepare the reference Ys (without the noise)
+            case $mode in
+                globalnoise)
+                    random-poly -n 50000 -p6 -r 0,0 $Poly | \
+                        cut -d' ' -f1 > Ys/r.train.nonoise
+                    ;;
+                varnoise)
+                    random-poly -n 50000 -p6 -R 0,0 $Poly | \
+                        cut -d' ' -f1 > Ys/r.train.nonoise
+                    ;;
+            esac
+ 
+            demo_cmd -p "Generate plot of clean vs NOISY Ys (labels)" \
+                'x-vs-y.r Ys/r.train.nonoise  Ys/r.train  X-vs-Y.png'
+
+            demo_cmd -p "View plot of CLEAN (X) vs NOISE-filled (Y) values " \
+                "$ImgViewer X-vs-Y.png 2>/dev/null"
+            ;;
+    esac
+
+    # --- Training
+    case $mode in
+        globalnoise)
+            vw_args=''
+            msg1='Train: let VW build a model on noisy -1/+1 train-set'
+            msg2='Train: look at the model weights'
+            ;;
+        varnoise)
+            vw_args=''
+            msg1='Train: let VW build a model (w/ per var noise)'
+            msg2='Train: look at the model weights (w/ per var noise)'
+            ;;
+        regularize)
+            vw_args='--l2 0.000001'
+            msg1='Train: let VW build a model (w/ anti-noise --l2)'
+            msg2='Train: look at the model weights (w/ anti-noise --l2)'
+            ;;
+        clean)  # vanilla
+            vw_args='-l 5'
+            msg1='Train: let VW build a model from the train-set'
+            msg2='Train: look at the model weights'
+            ;;
+    esac
+    demo_cmd "$msg1"  "vw -k $vw_args r.train -f r.model"
+    echo '+------------------------------------------------------------------+'
+    echo '# Notice how fast training took to complete (about 0.1 sec).'
+    echo '# vw is faster processing data than all other programs in this demo.'
+    echo '#'
+    echo '# Since learning is faster than IO, and runs in a separate thread,'
+    echo '# vw training speed is limited only by the time to read the data.'
+    echo '+------------------------------------------------------------------+'
+
+    demo_cmd "$msg2"  "vw-varinfo -k $vw_args r.train"
+
+    echo '+------------------------------------------------------------------+'
+    echo '# Notice how accurate the model is: model weights are exactly,'
+    echo "# or very close to our target linear expression: $Poly"
+    echo '+------------------------------------------------------------------+'
+
+    # --- test-set generation
+    demo_cmd "Generate a test data-set (note different random seed: -s)" \
+            "random-poly -n 50000 -p6 -s 1313131 $Poly > r.test"
+
+    demo_cmd "Show that train and test data-sets are different" \
+        'diff <(head -9 r.train) <(head -9 r.test)'
+
+    demo_cmd "Visualize test-set Ys (labels) density [~5 sec to generate chart]:" \
+        "y_density r.test 'Test-set random expression distribution: $Poly'"
+
+    demo_cmd -p "Clear the Ys (labels) from the test-set" \
+        'perl -i -pe "s/\S+/0/" r.test'
+
+    case $mode in 'clean')
+        # Only do this the 1st time, othewise it is getting tedious
+        demo_cmd -s "inspect test-set to see Ys (labels) are gone (hit 'q' to exit $Pager):" \
+            "$Pager r.test"
+    esac
+
+    # --- prediction of test-set Ys using trained-model
+    demo_cmd "Predict: VW uses the model to predict the test-set Ys (labels)" \
+        'vw -t -i r.model r.test -p r.predict'
+    echo '+-----------------------------------------------------------+'
+    echo '# Since Ys (labels) have been zeroed - the reported error'
+    echo '# is large even though predictions are, in fact, accurate.'
+    echo '# We are also running vw with "-t" (test-only) so no weights'
+    echo '# are being updated in-memory during the prediction run.'
+    echo '+-----------------------------------------------------------+'
+
+    demo_cmd -p "Extract 1st column (Ys) of prediction set
+	(label_column is an internal func defined in $0)" \
+        'label_column r.predict Ys/r.predict'
+
+    # --- Check prediction (vs. actual) quality
+
+    # textual eyeball inspection
+    demo_cmd "Compare predictions with actual values side-by-side
+        Note how close they are, since the model weights are near-perfect:" \
+        "diff -y -W 24 Ys/r.predict Ys/r.test | $Pager"
+
+    demo_cmd -p "Plot predictions vs actual (test) values [~5 secs to generate chart]:" \
+            'x-vs-y.r Ys/r.predict Ys/r.test X-vs-Y.png'
+
+    demo_cmd "Look at plot of predicted vs actual (test) values:" \
+        "$ImgViewer X-vs-Y.png 2>/dev/null"
+
+}
+
+
+#
+# -- main
+# 
+check_prereqs
+
+case "$@" in
+    # support passing an initial expression for the whole demo
+    # from the command line
+    *[0-9a-zA-Z]*) Poly="$@" ;;
+esac
+
+echo '+-----------------------------------------------------------------+'
+echo '|       Demo of vw ability to separate signal from noise          |'
+echo '|                                                                 |'
+echo '| 1) Create a random data-set & learn from it (perfectly).        |'
+echo '| 2) Add global noise to each example, and finally,               |'
+echo '| 3) Add a separate noise component to each input feature.        |'
+echo '|                                                                 |'
+echo '| Goal: demonstrate how vw creates near perfect models            |'
+echo '| despite various forms of noise.                                 |'
+echo '| At each of the 3 steps we visualized he data-set label density, |'
+echo '| the noise, and the model prediction quality using R+ggplot2.    |'
+echo '+-----------------------------------------------------------------+'
+
+echo '+-----------------------------------------------------------------+'
+echo '|  1) First session warm-up: in a "perfect" world (no noise)...   |'
+echo '+-----------------------------------------------------------------+'
+demo_session clean
+echo '+-----------------------------------------------------------------+'
+echo '|  2)       Repeat session + added GLOBAL random noise            |'
+echo '+-----------------------------------------------------------------+'
+demo_session globalnoise
+echo '+-----------------------------------------------------------------+'
+echo '|  3)   Repeat session + added PER VARIABLE random noise          |'
+echo '+-----------------------------------------------------------------+'
+demo_session varnoise
+
+echo "
+
+-----> Q.E.D"
+
+# --- Demo using regularization
+#     Not done here. We need a more challenging data-set to
+#     demonstrate effective use of regularization.
+# echo '+-----------------------------------------------------------------+'
+# echo '|       Repeat session + added anti-random noise (w/ --l2)        |'
+# echo '+-----------------------------------------------------------------+'
+# demo_session regularize
+

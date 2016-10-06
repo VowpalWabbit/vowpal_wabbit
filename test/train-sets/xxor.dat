@@ -1,0 +1,8 @@
+1 |a x |b x |c x
+0 |a x |b x |c y
+0 |a x |b y |c x
+1 |a x |b y |c y
+0 |a y |b x |c x
+1 |a y |b x |c y
+1 |a y |b y |c x
+0 |a y |b y |c y

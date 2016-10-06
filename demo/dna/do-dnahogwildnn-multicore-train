@@ -1,0 +1,47 @@
+#! /bin/zsh
+
+rm -f dnahogwildnn.model
+
+set -e
+
+nukeem() { \
+  trap - INT QUIT TERM 
+  pkill -9 -f 'vw.*--port 26544'
+}
+
+learner() {
+  ./quaddna2vw |                                                        \
+  netcat localhost 26544 > /dev/null
+}
+
+{
+  ../../vowpalwabbit/vw -f dnahogwildnn.model                           \
+     --loss_function logistic --nn 1 --inpass                           \
+     -b 18 -l 0.015  --adaptive --invariant                             \
+     --daemon --num_children 4 --port 26544 2>&1 |                      \
+     perl -lane 'print $_ unless $c{$F[2]}++;'
+} &
+
+trap 'nukeem; exit 1' INT QUIT TERM 
+
+while ! netcat -z localhost 26544
+  do
+    sleep 1
+  done
+
+paste -d' '					\
+  <(bzcat dna_train.lab.bz2) 			\
+  <(bzcat dna_train.dat.bz2) |	                \
+tail -n +1000000 |				\
+./map 						\
+  >(learner)                                    \
+  >(learner)                                    \
+  >(learner)                                    \
+  >(learner)
+
+pkill -f 'vw.*--port 26544'
+
+while test ! -s dnahogwildnn.model
+  do
+    sleep 1
+  done

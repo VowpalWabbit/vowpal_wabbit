@@ -1,0 +1,2 @@
+EntryPoint=VowpalWabbit.Azure.dll
+TargetFrameWorkVersion=v4.0

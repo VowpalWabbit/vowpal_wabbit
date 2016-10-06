@@ -1,0 +1,210 @@
+#!/usr/bin/perl -w
+# vim: ts=4 sw=4 expandtab
+#
+# Generate a random data-set matching a linear expression
+# TODO: support real polynomial expressions with x^n
+#
+use Getopt::Std;
+use Scalar::Util qw(looks_like_number);
+
+use vars qw($opt_v $opt_D
+            $opt_n
+            $opt_c $opt_t
+            $opt_s $opt_p $opt_w
+            $opt_r $opt_R);
+
+my $DefaultN = 10;          # number of generated examples
+my @DeafultExpr = ('a');
+my $DefaultFloatPrec = 6;   # of decimal points for floating point values
+
+my $Sep = ' ';
+my $ConstStr = '_CONST_';
+
+sub v {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+# Undocumented, for debugging
+sub D {
+    return unless $opt_D;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+
+sub usage(@) {
+    print STDERR @_, "\n" if @_;
+    die "Usage: $0 [Options] expression...
+    Options:
+        -v              verbose
+        -n<N>           Generate <N> rows (data-set examples)
+        -s<seed>        Call srand(<seed>) at start
+        -p<P>           Set data-set feature precision to <P> digits
+        -w              Add weight to examples
+        -r<min,max>     Add uniform random noise in range [<min>, <max>]
+        -R<min,max>     Add per-feature uniform random noise in range [<min>, <max>]
+        -c              output in CSV format (label is 1st column)
+        -t              output in TSV format (label is 1st column)
+
+        Default format is VW (vowpal-wabbit)
+
+    Examples of expression:
+        2x + 5y - 4
+        w +x +y +z
+        ...
+";
+}
+
+#
+# Convert to a list of easily parsable terms, e.g:
+#       "2x+70y-1"   =>   2x  +70y  -1
+#
+sub argv_2_terms(@) {
+    my $one_arg = "@_";
+    $one_arg =~ tr/ //d;
+    $one_arg =~ s/([-+])/ $1/g;
+    my @term_list = split(' ', $one_arg);
+    v("argv_2_terms($one_arg) -> @term_list\n");
+    @term_list;
+}
+
+sub init {
+    $0 =~ s{.*/}{};
+    getopts('vDn:ctwp:s:r:R:');
+    $Sep =  ($opt_c) ? ','
+            : $opt_t ? "\t"
+            : ' ';
+    $opt_n = $DefaultN unless ($opt_n);
+    $opt_p = $DefaultFloatPrec unless (defined $opt_p);
+
+    # srand($opt_s ? $$^time : 0);
+    srand($opt_s ? $opt_s : 0);
+
+    if ($opt_r) {
+        my ($min, $max) = split(/[\s,;]+/, $opt_r);
+        usage("-r: bad expresssion, expecting numeric <min>,<max>")
+            unless (looks_like_number($min) && looks_like_number($max));
+        usage("-r: bad expresssion, <min> > <max>")
+            unless ($min <= $max);
+
+        # Turn opt_r into a function using currying
+        $opt_r = sub {
+            my $r = shift;
+            return $min + ($r * ($max - $min));
+        }
+    }
+    if ($opt_R) {
+        my ($min, $max) = split(/[\s,;]+/, $opt_R);
+        usage("-R: bad expresssion, expecting numeric <min>,<max>")
+            unless (looks_like_number($min) && looks_like_number($max));
+        usage("-R: bad expresssion, <min> > <max>")
+            unless ($min <= $max);
+
+        my $range = ($max - $min);
+
+        # Turn opt_R into a function using currying
+        $opt_R = sub {
+            my $r = shift;
+            my $r2 = rand(1.0);
+            # make the random noise
+            #   - Make it a multiplier on the original $r
+            #   - multiplier is a random $r2 point in the range (max - min)
+            #   - Make it work both ways
+            my $noise = $min + $r2 * $range;
+            my $retval = $r * $noise;
+
+            v("\topt_R: r2=%g*(min,max)=(%g,%g) noise=%g * \$r=%g => %g\n",
+                    $r2, $min, $max, $noise, $r, $retval);
+
+            return $retval;
+        }
+    }
+
+    @ARGV = @DeafultExpr unless (@ARGV);
+    @ARGV = argv_2_terms(@ARGV);
+}
+
+sub parse_expr(@) {
+    my @expr = ();
+    foreach my $term (@_) {
+        if ($term =~ /^([-+]?)(\d*(?:\.\d*)?)\*?([A-Za-z]*)$/) {
+            my ($sign, $coeff, $varname) = ($1, $2, $3);
+            $sign = ($sign eq '-') ? -1.0 : 1.0;
+            $coeff = 1.0 unless ($coeff);
+            $coeff *= $sign;
+            $varname = $ConstStr unless ($varname);
+            push(@expr, [$coeff, $varname]);
+            v("parse_expr: [coeff, varname]: [%s, %s]\n", $coeff, $varname);
+        } else {
+            usage("bad term: '$term': expecting <num><varname>: e.g. 2.3x");
+        }
+    }
+    @expr;
+}
+
+sub gen_dataset(@) {
+    my (@expr) = @_;
+
+    for ($i = 1; $i <= $opt_n; $i++) {
+        my $result = 0;
+        my $feature_str = '';
+        for ($nvar = 0; $nvar < @expr; $nvar++) {
+            my ($coeff, $varname) = @{$expr[$nvar]};
+            my ($r, $term_value);
+            if ($varname eq $ConstStr) {
+                $r = $coeff;
+                $term_value = $coeff;
+            } else {
+                $r = rand(1.0);
+                $term_value = $r;
+
+                if (defined $opt_R) {
+                    my $random_add = $opt_R->($r);
+                    v("\topt_R: r: %g -> random_add: %g\n", $r, $random_add);
+                    $term_value += $random_add;
+                }
+
+                $term_value *= $coeff;
+            }
+            v("\tgen_dataset: [%s%s] r:%.*f => %.*f\n",
+                 $coeff, $varname, $opt_p, $r, $opt_p, $term_value);
+
+            if ($varname ne $ConstStr) {
+                # Don't add constant to the input features
+                # Add it only to the label
+                $feature_str .=
+                    ($opt_c || $opt_t)
+                        ? sprintf("%s%.*f", $Sep, $opt_p, $r)
+                        : sprintf("%s%s:%.*f", $Sep, $varname, $opt_p, $r);
+            }
+
+            $result += $term_value;
+        }
+        if (defined $opt_r) {
+            my $random_noise = $opt_r->(rand(1.0));
+            # v("random_noise: %g\n", $random_noise);
+            $result += $random_noise;
+        }
+        if ($opt_c || $opt_t) {
+            printf "%.*f%s\n", $opt_p, $result, $feature_str;
+        } elsif ($opt_w) {   # -- add weight
+            printf "%.*f %s %s|f%s\n", $opt_p, $result, 1, $i, $feature_str;
+        } else {
+            printf "%.*f '%s|f%s\n", $opt_p, $result, $i, $feature_str;
+        }
+    }
+}
+
+# -- main
+init();
+my @expr = parse_expr(@ARGV);
+gen_dataset(@expr);
+

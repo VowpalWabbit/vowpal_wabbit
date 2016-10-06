@@ -1,0 +1,31 @@
+Generating 3-grams for all namespaces.
+Generating 1-skips for all namespaces.
+only testing
+predictions = 0001.predict
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0   1.0000   1.0000      290
+0.000000 0.000000            2            2.0   0.0000   0.0000      608
+0.000000 0.000000            4            4.0   0.0000   0.0000      794
+0.000000 0.000000            8            8.0   0.0000   0.0000      860
+0.000000 0.000000           16           16.0   1.0000   1.0000      128
+0.000000 0.000000           32           32.0   0.0000   0.0000      176
+0.000000 0.000000           64           64.0   0.0000   0.0000      350
+0.000000 0.000000          128          128.0   1.0000   1.0000      620
+
+finished run
+number of examples per pass = 200
+passes used = 1
+weighted example sum = 200.000000
+weighted label sum = 91.000000
+average loss = 0.000000
+best constant = 0.455000
+best constant's loss = 0.247975
+total feature number = 89692

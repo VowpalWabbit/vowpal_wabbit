@@ -1,0 +1,46 @@
+This is the Splice Site recognition dataset from the 2008 Pascal Large
+Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
+
+=== WARNINGS ===
+
+  * you need a beefy machine to comfortably run these demos 
+      4 cores or more
+      SSD or lots of RAM because the demo is I/O bound
+  * the demos are intolerably slow under cygwin (pipes do not work well)
+
+=== INSTRUCTIONS ===
+
+  * make dna.perf
+      downloads the dna dataset, trains a 4-gram logistic regression
+      in parallel on 4 cores and computes test set statistics
+        disk space requirements: about 3 gigabytes
+        training time requirements: about 7 cores for about 15 minutes
+          ultimately I/O bound: bzcat is the limiting factor
+        memory requirements: less than 512 megabytes
+      results in APR of 0.512
+
+  * make dnann.perf
+      same as dna.perf, but with additionally 1 neural network hidden node 
+      slower (by circa 60 seconds) but better
+      results in APR of 0.532
+
+  * make dnasmash.perf
+      as above but builds a better model
+      uses 10 iteratons of parallel sgd with 4 neural network nodes
+        disk space requirements: about 10 gigabytes
+          additional 7 gigabytes of vw cache on top of original data
+        training time requirements:
+          16 minutes to build cache over first (ever) pass
+          subsequently, 6 minute per pass if you have SSD or enough RAM cache
+            10 passes = 60 minutes (x 6 cores)
+      results in APR of 0.545
+
+  * make dnahogwild.perf
+      same as dna.perf, but trained via lock-free multicore sgd ("hogwild") 
+        rather than parallel sgd + averaging
+      nondeterministic, but a typical result is APR of 0.516
+
+  * make dnahogwildnn.perf
+      same as dnann.perf, but trained via lock-free multicore sgd ("hogwild")
+        rather than parallel sgd + averaging
+      nondeterministic, but a typical result is APR of 0.536

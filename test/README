@@ -1,0 +1,17 @@
+Test suite for vw:
+------------------
+
+You may add arbitrary (train/test/varying-options) tests
+by adding:
+    1) Data (train, test, predict) files
+    2) vw command to run using the above data files
+    3) Expected (reference) STDOUT, STDERR, and predictions-file
+       for the command.
+
+Additional tests can be added below the __DATA__ section in RunTests.
+
+See the comment above __DATA__ in 'RunTests' for full details on
+how to add more tests or simply refer to the examples therein.
+
+--ariel
+

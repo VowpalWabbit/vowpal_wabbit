@@ -1,0 +1,189 @@
+﻿<#@ template debug="false" hostspecific="True" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Globalization" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+
+<#
+var testRoot = Path.Combine(Path.GetDirectoryName(Host.TemplateFile), @"..\..\test");
+
+var lines = File.ReadAllLines(Path.Combine(testRoot, "RunTests"))
+    .SkipWhile(l => l != "__DATA__")
+    .ToList();
+
+var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
+	25, 26, // crash
+	92, 95, 96, 98,	91, 99, 118, 119, 120,
+	14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
+	71 // --examples to test parser
+	};
+
+var outputModels = new Dictionary<string, TestCase>();
+
+var testcases = new Dictionary<int, TestCase>();
+testcase = new TestCase();
+
+Match match;
+for (var i = 0; i < lines.Count; i++)
+{
+    var line = lines[i];
+
+    if (line.Trim().Length == 0)
+    {
+        if (skipTest)
+        {
+            Reset();
+            continue;
+        }
+
+        // resolve dependencies
+        if (!string.IsNullOrEmpty(testcase.FinalRegressor))
+            outputModels[testcase.FinalRegressor] = testcase;
+
+        if (!string.IsNullOrEmpty(testcase.InitialRegressor))
+        {
+			TestCase dep;
+			if (outputModels.TryGetValue(testcase.InitialRegressor, out dep))
+				testcase.Dependency = dep;
+			else
+				throw new Exception("Missing dependency: '" + testcase.InitialRegressor + "' for test case " + testcase.Id);
+        }
+
+		// if (testcase.Id == 31)
+			// testcase.Dependency = outputModels["models/mask.model"];
+
+		if (testcases.ContainsKey(testcase.Id))
+			throw new Exception("Testcase IDs must be unique: duplicate # Test " + testcase.Id + " in line " + i);
+
+        testcases.Add(testcase.Id, testcase);
+
+        Reset();
+    }
+    else if ((match = Regex.Match(line, @"^#\s*Test\s+(?<nr>\d+):?(?<comment>.*)?$")).Success)
+    {
+        var nr = int.Parse(match.Groups["nr"].Value);
+        testcase.Id = nr;
+        testcase.Comment = match.Groups["comment"].Value.Replace("\"", "\"\"");
+    }
+    else if ((match = Regex.Match(line, @"^\{VW\} (?<args>.*)$")).Success)
+    {
+        var args = match.Groups["args"].Value;
+
+        while (args.EndsWith("\\"))
+        {
+            args = args.Substring(0, args.Length - 1);
+            args = args.Trim() + " " + lines[++i].Trim();
+        }
+
+        testcase.Arguments = args;
+        testcase.InputData = MatchArgument(args, "-d");
+        testcase.InitialRegressor = MatchArgument(args, "-i");
+        testcase.FinalRegressor = MatchArgument(args, "-f");
+    }
+    else if (line.EndsWith(".stderr"))
+    {
+        testcase.Stderr = line.Trim();
+    }
+    else if (line.EndsWith(".predict"))
+    {
+        testcase.Predict = line.Trim();
+    }
+    else if (line.StartsWith("#") && line.Contains("SkipC#"))
+    {
+        skipTest = true;
+    }
+}
+#>
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
+using System.IO.Compression;
+using VW;
+
+namespace cs_unittest
+{
+    [TestClass]
+    public partial class RunTests : TestBase
+    {
+<# foreach (var mainTestcase in testcases.Values) { #>
+        [TestMethod]
+        [Description(@"<#=(mainTestcase.Comment ?? "").Trim()#>")]
+
+<# if (skipList.Contains(mainTestcase.Id)) { #>
+		[Ignore]
+<# } #>
+		[TestCategory("Command Line")]
+        public void CommandLine_Test<#=mainTestcase.Id#>()
+        {
+<# foreach (var tc in mainTestcase.InDependencyOrder()) { #>
+            RunTestsHelper.ExecuteTest(
+				<#=tc.Id#>,
+				"<#=tc.Arguments#>",
+				"<#=tc.InputData#>",
+				"<#=tc.Stderr#>",
+				"<#=tc.Predict#>");
+<# } #>
+        }
+
+<# } #>
+    }
+}
+
+<#+
+class TestCase
+{
+    public int Id;
+
+    public string Arguments = "";
+
+    public string InitialRegressor;
+
+    public string FinalRegressor;
+
+    public string InputData = "";
+
+    public string Stderr = "";
+
+    public string Predict = "";
+
+    public string Comment;
+
+    public TestCase Dependency;
+
+    public List<TestCase> InDependencyOrder()
+    {
+        var tests = new List<TestCase>();
+
+        var dep = this;
+        while (dep != null)
+        {
+            tests.Add(dep);
+            dep = dep.Dependency;
+        }
+
+        tests.Reverse();
+        return tests;
+    }
+}
+
+TestCase testcase;
+
+bool skipTest = false;
+
+private void Reset()
+{
+    testcase = new TestCase();
+    skipTest = false;
+}
+
+private string MatchArgument(string args, string option)
+{
+    var match = Regex.Match(args, Regex.Escape(option) + @"\s+(?<value>\S+)");
+    return match.Success ? match.Groups["value"].Value : "";
+}
+
+#>

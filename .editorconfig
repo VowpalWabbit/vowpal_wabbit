@@ -1,0 +1,49 @@
+# See http://EditorConfig.org
+# Please, either use an editor supporting editorconfig
+# or set up your editor style according to this file manually
+# or use `astyle --lineend=linux --indent=spaces=2 *.cc *.h`
+# (see http://astyle.sourceforge.net/).
+
+# This is the top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C++ files
+[*.{cc,h}]
+indent_style = space
+indent_size = 2
+indent_brace_style = Horstmann
+
+# Makefiles need tab indentation
+[Makefile]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false
+
+# If not set this breaks class feature blocks
+[*.tt]
+insert_final_newline = false
+
+[*.cs]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = false
+
+# The following line results in warning/error:
+#
+# { /// <summary>
+#
+# Does reverting to Allman
+[vw_clr/*.{cpp,h}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+indent_brace_style = Allman

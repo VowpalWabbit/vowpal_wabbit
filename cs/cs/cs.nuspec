@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <title>Vowpal Wabbit</title>
+    <id>VowpalWabbit</id>
+    <tags>vw vowpal wabbit langford ml machine learning</tags>
+    <authors>John Langford et al</authors>
+    <version>$version$</version>
+    <projectUrl>https://github.com/JohnLangford/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
+    <licenseUrl>https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Official Vowpal Wabbit library including C# interface</description>
+    <copyright>Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+  </metadata>
+  <files>
+	  <!-- despite warning this is still required -->
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.dll" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.pdb" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.xml" target="lib\net45" />
+
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Common.dll" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Common.pdb" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Common.xml" target="lib\net45" />
+
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Core.dll" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Core.pdb" target="lib\net45" />
+	  <file src="$SolutionDir$x64\$Configuration$\VowpalWabbit.Core.xml" target="lib\net45" />
+
+	  <!-- The VowpalWabbitCore.dll is compiled specifically with dynamic linkage,
+	       thus I opted to include the dll directly and not go through dependencies -->
+	  <file src="$SolutionDir$x64\$Configuration$\zlib.dll" target="build\native" />
+	  <file src="VowpalWabbit.targets" target="build" />
+
+	  <file src="**\*.cs" target="src\cs" exclude="**\obj\**\*.cs" />
+	  <file src="..\common\**\*.cs" target="src\common" exclude="**\obj\**\*.cs" />
+	  <file src="..\cli\*.cpp" target="src\cli" />
+	  <file src="..\cli\*.h" target="src\cli" />
+	  <file src="$SolutionDir$*.cc" target="src\vowpalwabbit" />
+	  <file src="$SolutionDir$*.h" target="src\vowpalwabbit" />
+
+  	  <file src="web.config.transform" target="content"/>
+  </files>
+</package>
+

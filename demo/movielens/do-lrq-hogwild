@@ -1,0 +1,43 @@
+#! /bin/zsh
+
+nukeem() { \
+  trap - INT QUIT TERM
+  pkill -9 -f 'vw.*--port 26542'
+}
+
+if which netcat 2>/dev/null; then
+  netcat=netcat
+elif which nc 2>/dev/null; then
+  netcat=nc
+else
+  echo "Install netcat or nc" >&2
+  exit 1
+fi
+
+rm -f "$1"
+
+{ ../../vowpalwabbit/vw --loss_function quantile -l 0.45 -b 24 --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f "$1" --daemon --num_children 4 --port 26542 2>&1 | perl -lane 'print $_ unless $c{$F[2]}++; ' } &
+
+trap 'nukeem; exit 1' INT QUIT TERM
+
+while ! $netcat -z localhost 26542
+  do
+    sleep 1
+  done
+
+for pass in $(seq 1 100)
+  do
+    cat ml-1m.ratings.train.vw
+  done |                                                \
+./map                                                   \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)
+
+pkill -f 'vw.*--port 26542'
+
+while test ! -s "$1"
+  do
+    sleep 1
+  done

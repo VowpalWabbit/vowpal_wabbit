@@ -1,0 +1,18 @@
+predictions = cb_eval2.preds
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_eval2
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+
+finished run
+number of examples per pass = 4
+passes used = 1
+weighted example sum = 4
+weighted label sum = 0
+average loss = 0
+total feature number = 12

@@ -1,0 +1,144 @@
+#!/usr/bin/env ruby
+#
+#Copyright (c) 2012  Ben Gimpert, http://blog.someben.com/
+#
+#Permission is hereby granted, free of charge, to any person obtaining a
+#copy of this software and associated documentation files (the "Software"),
+#to deal in the Software without restriction, including without limitation
+#the rights to use, copy, modify, merge, publish, distribute, sublicense,
+#and/or sell copies of the Software, and to permit persons to whom the
+#Software is furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in
+#all copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+#THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+#WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+#OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#
+#Except as contained in this notice, the name of the Ben Gimpert shall not
+#be used in advertising or otherwise to promote the sale, use or other dealings
+#in this Software without prior written authorization from Ben Gimpert.
+#
+
+require 'optparse'
+
+opt_map = {}
+OptionParser.new do |opts|
+  opts.banner = <<EOF_BANNER
+*** Vowpal Wabbit Regression Utilities ***
+Usage: #{File.basename(__FILE__, ".rb")} [options]
+
+EOF_BANNER
+
+  opts.on("-v", "--ex_val_desc", "Describe the distribution of example labels (to STDERR)") do |opt_val|
+    opt_map[:ex_val_desc] = true
+  end
+  opts.on("-L", "--vals", "Output only example labels") do |opt_val|
+    opt_map[:labels] = true
+  end
+  opts.on("-x", "--min_ex_val=X", "Output only those examples with labels greater than or equal to X") do |opt_val|
+    opt_map[:min_ex_val] = opt_val.to_f
+  end
+  opts.on("-X", "--max_ex_val=X", "Output only those examples with labels less than or equal to X") do |opt_val|
+    opt_map[:max_ex_val] = opt_val.to_f
+  end
+  opts.on("-n", "--min_num_feats=X", "Output only those examples with no less than X features across all namespaces") do |opt_val|
+    opt_map[:min_num_feats] = opt_val.to_i
+  end
+  opts.on("-N", "--max_num_feats=X", "Output only those examples with no more than X features across all namespaces") do |opt_val|
+    opt_map[:max_num_feats] = opt_val.to_i
+  end
+  opts.on("-p", "--pos_ex_val_imp=X", "Set importance of examples with positive labels to X") do |opt_val|
+    opt_map[:pos_ex_val_imp] = opt_val.to_f
+  end
+  opts.on("-P", "--neg_ex_val_imp=X", "Set importance of examples with negative labels to X") do |opt_val|
+    opt_map[:neg_ex_val_imp] = opt_val.to_f
+  end
+  opts.on("-c", "--to_class", "Convert positive (negative) example labels to +1 (-1) labels") do |opt_val|
+    opt_map[:to_class] = true
+  end
+end.parse!
+
+ex_labels = nil
+until $stdin.eof?
+  ex_line = $stdin.gets
+  next if ex_line.to_s.strip.empty?
+  ex_line_pipe_segs = ex_line.split("|")
+  ex_label_seg = ex_line_pipe_segs.first
+  ex_label, ex_imp, ex_init_pred, ex_tag = ex_label_seg.split(" ")
+
+  if opt_map.has_key?(:ex_val_desc)
+    ex_labels = [] if ex_labels.nil?
+    ex_labels << ex_label.to_f
+  end
+
+  if opt_map.has_key?(:labels)
+    $stdout.puts ex_label
+    next
+  end
+
+  if opt_map.has_key?(:min_ex_val)
+    next if ex_label.to_f < opt_map[:min_ex_val]
+  end
+  if opt_map.has_key?(:max_ex_val)
+    next if ex_label.to_f > opt_map[:max_ex_val]
+  end
+
+  if opt_map.has_key?(:min_num_feats) || opt_map.has_key?(:max_num_feats)
+    num_features = 0
+    ex_line_pipe_segs[1..-1].each do |ex_line_feature_seg|
+      num_features = ex_line_feature_seg.split(" ").length - 1  # -1 for the namespace
+    end
+    if opt_map.has_key?(:min_num_feats)
+      next if num_features < opt_map[:min_num_feats]
+    else # if opt_map.has_key?(:max_num_feats)
+      next if num_features > opt_map[:max_num_feats]
+    end
+  end
+
+  if opt_map.has_key?(:pos_ex_val_imp) && (ex_label.to_f > 0)
+    ex_imp = opt_map[:pos_ex_val_imp]
+  elsif opt_map.has_key?(:neg_ex_val_imp) && (ex_label.to_f < 0)
+    ex_imp = opt_map[:neg_ex_val_imp]
+  end
+
+  if opt_map.has_key?(:to_class)
+    ex_label = (ex_label.to_f > 0) ? +1 : -1
+  end
+
+  new_ex_line = ex_label.to_s
+  new_ex_line += " #{ex_imp}" unless ex_imp.nil?
+  new_ex_line += " #{ex_init_pred}" unless ex_init_pred.nil?
+  new_ex_line += " #{ex_tag}" unless ex_tag.nil?
+  new_ex_line += " |" + ex_line_pipe_segs[1..-1].join("|")
+  $stdout.puts new_ex_line
+end
+
+if opt_map.has_key?(:ex_val_desc)
+  pos_count = ex_labels.select { |ex_label| ex_label > 0 }.length
+  neg_count = ex_labels.select { |ex_label| ex_label < 0 }.length
+
+  av_ex_label = 0
+  ex_labels.each { |ex_label| av_ex_label += ex_label }
+  av_ex_label /= ex_labels.length
+
+  sd_ex_label = 0
+  ex_labels.each { |ex_label| sd_ex_label += (ex_label - av_ex_label) ** 2 }
+  sd_ex_label /= ex_labels.length
+  sd_ex_label = sd_ex_label ** 0.5
+
+  $stderr.puts <<EOF_EX_VAL_DESC
+ExLabelCount=#{ex_labels.length}
+ExLabelPosCount=#{pos_count}
+ExLabelNegCount=#{neg_count}
+ExLabelAverage=#{av_ex_label}
+ExLabelStDev=#{sd_ex_label}
+
+EOF_EX_VAL_DESC
+end
+

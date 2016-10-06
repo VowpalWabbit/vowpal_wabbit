@@ -1,0 +1,25 @@
+Num weight bits = 13
+learning rate = 1
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/wiki256.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+10.148774 10.148774            1            1.0  unknown   0.0000      732
+10.226535 10.304296            2            2.0  unknown   0.0000       27
+10.227066 10.227597            4            4.0  unknown   0.0000       53
+10.307679 10.388292            8            8.0  unknown   0.0000       60
+10.331668 10.355656           16           16.0  unknown   0.0000       26
+10.458058 10.584448           32           32.0  unknown   0.0000      125
+10.474538 10.491018           64           64.0  unknown   0.0000      313
+10.403606 10.332674          128          128.0  unknown   0.0000       50
+9.956974 9.510342          256          256.0  unknown   0.0000       33
+
+finished run
+number of examples = 256
+weighted example sum = 256.000000
+weighted label sum = 0.000000
+average loss = 9.956974
+total feature number = 22158

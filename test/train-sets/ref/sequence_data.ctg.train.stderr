@@ -1,0 +1,23 @@
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/sequence_data.cache
+Reading datafile = train-sets/sequence_data
+num sources = 1
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+4.000000   4.000000          1  [5 4 3 2 1           ] [1 1 1 1 1           ]     0     0        5        0        5  0.000000
+4.000000   4.000000          2  [5 4 3 2 1           ] [1 1 1 1 1           ]     1     0       10        0       10  0.000000
+2.000000   0.000000          4  [5 4 3 2 1           ] [5 4 3 2 1           ]     3     0       20        0       20  0.000000
+1.000000   0.000000          8  [5 4 3 2 1           ] [5 4 3 2 1           ]     7     0       40        0       40  0.000000
+0.500000   0.000000         16  [5 4 3 2 1           ] [5 4 3 2 1           ]    15     0       80        0       80  0.000000
+
+finished run
+number of examples per pass = 1
+passes used = 20
+weighted example sum = 20
+weighted label sum = 0
+average loss = 0.4
+total feature number = 300

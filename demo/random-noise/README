@@ -1,0 +1,106 @@
+Demo of vowpal wabbit's ability to separate signal from noise.
+--------------------------------------------------------------
+
+Prerequisites:
+--------------
+
+    All the components below must be present and located somewhere
+    in your $PATH in order to run the demo.
+
+    1) A reasonable Unix-like env, with standard utilities including:
+
+            GNU less
+            GNU diff
+            bash
+            perl
+            GNU make (not needed if you run 'vw-demo' directly)
+
+    2) The following executables (from your vw distribution):
+
+            vw
+            vw-varinfo
+
+    3) The following are used to estimate 'goodness' of model
+       and create density & correlation charts:
+
+            R
+            ggplot2 (R library. Can be installed from within R
+                     see http://ggplot2.org/)
+
+
+Main idea of this demo:
+-----------------------
+
+As long as noise is random, it cannot bias a model.  If it was
+biased, and could affect the model we're building - it would't be
+called "noise."
+
+    The linear expression used in the demo is:
+
+        y = a + 2b - 5c + 7
+
+    (It is a parameter you can actually pass to the main script to
+    change the default).
+
+    Each demo sequence consists of the following steps:
+
+        Generate a random train set in which the label y is a perfect
+        linear combination (a + 2b - 5c + 7) of the input features.
+
+        Generate a model from this random train-set.
+
+        Generate a _separate_ train-set using the same linear
+        combination formula, but with a different random seed.
+        so the two sets are completely different, even though they
+        are based on the same formula (and model.)
+
+        Train a model on the train set.
+
+        Test the model on the test-set, while ignoring the existing labels.
+
+        The predicted results should equal the actual test set labels.
+
+The demo has 3 parts:
+---------------------
+    1) Ideal conditions.  No noise added.
+
+    2) Global noise in the range [-1, 1] added to the continuous label
+       y in the train-set.
+
+    3) Per input-feature noise of +/-50% of each variable range
+       is added to the train set. This affects the label in a
+       3-modal dispersed way (as shown in a chart produced by the demo)
+
+The noise is generated using the standard perl 'rand' function,
+roughly simulating a uniform distribution, using a simple
+pseudo-random number generator.
+
+We demonstrate that despite the noise, the (almost) perfect model
+is being learned in each of the 3 parts of the demo.
+
+In fact, the small imprecisions in the model are due to us
+deliberately limiting the precision of the data sets to 6-digits
+after the decimal point (for brevity and readability purposes).
+You may change this by passing '-p N' where N is different than 6
+to the 'random-poly' script.
+
+The whole demo is scripted.
+---------------------------
+
+All you need to do is:
+
+    1) call './vw-demo' (or type 'make') from the shell
+    2) Hit Enter (repeatedly) to go to the next step
+       In cases the pager (less) is called, you need
+       to hit 'q' to exit the pager.
+
+Read the presentation:
+----------------------
+A presentation (set of slides) including this demo in both pdf
+and ppt formats can be found here:
+
+    http://finance.yendor.com/ML/VW/
+
+--
+ariel faigon - aug 2013
+

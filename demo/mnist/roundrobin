@@ -1,0 +1,83 @@
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+use IO::File;
+use IO::Pipe;
+use IO::Select;
+
+sub setup_child ($$$)
+{
+  my ($command, $n, $t) = @_;
+  
+  my $pipec2p = new IO::Pipe;
+  my $pipep2c = new IO::Pipe;
+  my $pid = fork ();
+
+  if ($pid)     # parent
+    {
+      $pipec2p->reader ();
+      $pipep2c->writer ();
+      
+      return [ $pipec2p, $pipep2c ];
+    }
+  else          # child
+    {
+      $pipec2p->writer ();
+      $pipep2c->reader ();
+      my $writefno = $pipec2p->fileno ();
+      my $readfno = $pipep2c->fileno ();
+
+      open STDIN, "<&$readfno" or die "can't dup $readfno to STDIN";
+      open STDOUT, ">&$writefno" or die "can't dup $writefno to STDOUT";
+
+      exec $command, $n, $t or die "can't exec $command";
+    }
+}
+
+my $command = shift @ARGV or die;
+my $total = shift @ARGV or die;
+
+my @mappers = map { setup_child ($command, $_, $total) } 1 .. $total;
+my @read = map { my $s = new IO::Select (); 
+                 $s->add ($_->[0]); 
+                 $s } 
+               @mappers;
+my @write = map { my $s = new IO::Select (); 
+                  $s->add ($_->[1]); 
+                  $s } 
+                @mappers;
+
+my $in = 0;
+my $out = 0;
+
+while (defined ($_ = <STDIN>))
+  {
+    while (! $write[$out % @write]->can_write (0.001))
+      {
+        while ($read[$in % @read]->can_read (0))
+          {
+            my $fh = $mappers[$in % @mappers]->[0];
+            print $fh->getline ();
+            ++$in;
+          }
+      }
+
+    my $fh = $mappers[$out % @write]->[1];
+    $fh->printflush ($_);
+    ++$out;
+  }
+
+foreach my $m (@mappers)
+  {
+    my $fh = $m->[1];
+    $fh->close ();
+  }
+
+while ($in < $out)
+  {
+    my $fh = $mappers[$in % @mappers]->[0];
+    print $fh->getline ();
+    ++$in;
+  }

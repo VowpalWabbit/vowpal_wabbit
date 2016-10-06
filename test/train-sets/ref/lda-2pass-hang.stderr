@@ -1,0 +1,27 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/lda-2pass-hang.dat.cache
+Reading datafile = train-sets/lda-2pass-hang.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+12.813775 12.813775            1            1.0  unknown   0.0000      201
+12.946867 13.079960            2            2.0  unknown   0.0000      220
+13.718190 14.489512            4            4.0  unknown   0.0000      136
+14.787531 15.856872            8            8.0  unknown   0.0000      371
+15.934851 17.082171           16           16.0  unknown   0.0000      138
+17.209260 18.483669           32           32.0  unknown   0.0000      276
+17.163311 17.117362           64           64.0  unknown   0.0000       55
+16.494666 15.826021          128          128.0  unknown   0.0000      131
+15.918044 15.341423          256          256.0  unknown   0.0000      433
+15.281657 14.645270          512          512.0  unknown   0.0000       61
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
+average loss = 14.297953
+total feature number = 193156

@@ -1,0 +1,70 @@
+mnist (http://yann.lecun.com/exdb/mnist/) is the traditional
+set for testing neural network implementations.  mnist8m
+(http://leon.bottou.org/papers/loosli-canu-bottou-2006) is a variant of
+the original mnist training set augmented with deformations.
+
+see the dna demo directory for an example of distributed neural network
+training.
+
+=== INSTRUCTIONS ===
+
+--- starting from raw pixels ---
+
+  * make mnist.test.confusion
+      this will download the mnist training and test sets
+      train a neural network model on mnist from raw pixels
+      evaluate on the original mnist test set and report a confusion matrix
+      results in test errors: 219 out of 10000
+        disk requirements: about 10 megabytes
+        training time requirements: about 5 minutes on 1 core
+        memory requirements: less than 256 megabytes
+
+  * make mnisthogwild.test.confusion
+      same as above but "hogwild" training (uses all cores)
+      results in test errors: 203 out of 10000 (typically, but not deterministic)
+        disk requirements: about 10 megabytes
+        training time requirements: about 3 minutes on 4 cores
+        memory requirements: less than 256 megabytes
+
+  * make mnist8m.test.confusion
+      this will download the mnist test set and the mnist8m training set
+      train a neural network model on mnist8m from raw pixels
+      evaluate on the original mnist test set and report a confusion matrix
+      results in test errors: 152 out of 10000
+        disk requirements: about 2 gigabytes
+        training time requirements: about an hour on one core
+        memory requirements: about 1.6g (to run infinimist)
+
+--- pixel n-grams ---
+
+  * make mnistpng.test.confusion
+      this will download the mnist training and test sets
+      train a model on mnist linear in pixel n-grams
+      evaluate on the original mnist test set and report a confusion matrix
+      results in test errors: 175 out of 10000
+        disk requirements: about 10 megabytes
+        training time requirements: about a minute on 3 cores
+        memory requirements: less than 256 megabytes
+
+  * make mnist11png.test.confusion
+      ibid with 2 neural network hidden units ("goes to eleven")
+      results in test errors: 166 out of 10000
+        disk requirements: about 10 megabytes
+        training time requirements: about 3 minutes on 3 cores
+        memory requirements: less than 256 megabytes
+
+  * make mnist8mpng.test.confusion
+      this will download the mnist test set and the mnist8m training set
+      train a model on mnist8m linear in pixel n-grams
+      evaluate on the original mnist test set and report a confusion matrix
+      results in test errors: 140 out of 10000
+        disk requirements: about 2 gigabytes
+        training time requirements: about an hour on 4 cores
+        memory requirements: less than 256 megabytes
+
+  * make mnist8m11png.test.confusion
+      ibid with 5 neural network hidden units ("goes to eleven")
+      results in test errors: 107 out of 10000
+        disk requirements: about 2 gigabytes
+        training time requirements: about two hours on 4 cores
+        memory requirements: less than 256 megabytes
