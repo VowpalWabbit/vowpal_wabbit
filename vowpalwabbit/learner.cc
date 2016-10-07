@@ -26,6 +26,7 @@ namespace prediction_type
 			CASE(multiclass)
 			CASE(multilabels)
 			CASE(prob)
+			CASE(multiclassprobs)
 		default: return "<unsupported>";
 		}
 	}

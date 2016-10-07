@@ -967,6 +967,10 @@ float get_prediction(example* ec)
 float get_cost_sensitive_prediction(example* ec)
 { return (float)ec->pred.multiclass; }
 
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) {
+	return ec->pred.scalars;
+}
+
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 { MULTILABEL::labels labels = ec->pred.multilabels;
   len = labels.label_v.size();
