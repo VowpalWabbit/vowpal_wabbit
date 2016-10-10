@@ -268,7 +268,7 @@ struct eval_gen_data
   eval_gen_data(size_t& features_cnt, float& features_value): new_features_cnt(features_cnt), new_features_value(features_value) {}
 };
 
-void ft_cnt(eval_gen_data& dat, float fx, uint32_t )
+void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t )
 { ++ dat.new_features_cnt;
   dat.new_features_value += fx * fx;
 }
@@ -332,7 +332,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
     size_t correct_features_cnt = 0;
     float correct_features_value = 0.;
     eval_gen_data dat(correct_features_cnt, correct_features_value);
-    generate_interactions<eval_gen_data, uint32_t, ft_cnt>(all, ec, dat);
+    generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
     for (v_string& inter : all.interactions)

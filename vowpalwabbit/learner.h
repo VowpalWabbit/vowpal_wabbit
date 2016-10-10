@@ -23,7 +23,8 @@ namespace prediction_type
 		action_probs,
 		multiclass,
 		multilabels,
-		prob
+		prob,
+		multiclassprobs
 	};
 
 	const char* to_string(prediction_type_t prediction_type);
