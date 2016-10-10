@@ -393,9 +393,11 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay = powf(w[adaptive],s.minus_power_t);
   }
+  //cerr << "w[adaptive]=" << w[adaptive] << " rate_decay=" << rate_decay;
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
+      //cerr << " inv_norm=" << inv_norm;
       if (adaptive)
         rate_decay *= inv_norm;
       else
@@ -404,6 +406,8 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
   }
+  //rate_decay = std::min(rate_decay, 1e6f);
+  //cerr << " rate_decay=" << rate_decay << endl;
   return rate_decay;
 }
 
@@ -443,9 +447,12 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
         }
         w[normalized] = x_abs;
       }
-      nd.norm_x += x2 / (w[normalized] * w[normalized]);
+      //cerr << "x2=" << x2 << " w[normalized]=" << w[normalized] << endl;
+      if (w[normalized] != 0)
+        nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
+    //cerr << "x2=" << x2 << " w[spare]=" << w[spare] << endl;
     nd.pred_per_update += x2 * w[spare];
   }
 }
@@ -465,8 +472,11 @@ float get_pred_per_update(gd& g, example& ec)
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
 
+  //cerr << "normalized=" << normalized << " stateless=" << stateless << " nsnx=" << g.all->normalized_sum_norm_x << " ec.weight=" << ec.weight << " norm_x=" << nd.norm_x << endl;
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
 
+  //cerr << "normalized=" << normalized << " stateless=" << stateless << " nsnx=" << g.all->normalized_sum_norm_x << " ec.weight=" << ec.weight << " norm_x=" << nd.norm_x << endl;
+  
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
@@ -475,7 +485,9 @@ float get_pred_per_update(gd& g, example& ec)
     g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
     nd.pred_per_update *= g.update_multiplier;
   }
-
+  //cerr << "g.update_multiplier=" << g.update_multiplier << " nd.pred_per_update=" << nd.pred_per_update << endl;
+  if (nanpattern(nd.pred_per_update) || infpattern(nd.pred_per_update))
+    return 1.;
   return nd.pred_per_update;
 }
 
@@ -500,8 +512,10 @@ float get_scale(gd& g, example& ec, float weight)
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& base, example& ec)
 { //return 1000.;
-  return get_scale<adaptive>(g, ec, 1.)
-         * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
+  float scale = get_scale<adaptive>(g, ec, 1.);
+  float sens  = sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
+  //cerr << "scale=" << scale << " sens=" << sens << endl;
+  return scale * sens;
 }
 
 template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>

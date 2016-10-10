@@ -6,7 +6,7 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
-#define B_SEARCH_MAX_ITER 20
+#define B_SEARCH_MAX_ITER 50
 
 using namespace LEARNER;
 using namespace std;
@@ -113,7 +113,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
 }
 
 inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
-{ float tol = 1e-6;
+{ float tol = 1e-20;
 
   base.predict(ec, i-1);
   float sens = base.sensitivity(ec, i-1);
