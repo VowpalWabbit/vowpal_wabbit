@@ -454,12 +454,12 @@ bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
-  label_data& ld = ec.l.simple;
+  //label_data& ld = ec.l.simple;
   vw& all = *g.all;
 
   float grad_squared = ec.weight; 
-  if (count(all.args.begin(), all.args.end(),"--cs_active") == 0)
-     grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+  //if (count(all.args.begin(), all.args.end(),"--cs_active") == 0)
+  //   grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
 
   if (grad_squared == 0 && !stateless) return 1.;
 
@@ -489,10 +489,7 @@ float sensitivity(gd& g, example& ec)
 
 template<size_t adaptive>
 float get_scale(gd& g, example& ec, float weight)
-{  
-  cerr << "all = " << g.all << endl;
-cerr << "eta = " << g.all->eta << endl;
-float update_scale = g.all->eta * weight;
+{ float update_scale = g.all->eta * weight;
   if(!adaptive)
   { float t = (float)(ec.example_t - g.all->sd->weighted_holdout_examples);
     update_scale *= powf(t, g.neg_power_t);

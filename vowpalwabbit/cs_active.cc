@@ -122,14 +122,16 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
   { min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;
     is_range_large = true;
-    cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
+    if (cs_a.print_debug_stuff)
+      cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
   }
   else
   { // finding max_pred and min_pred by binary search
     max_pred =  min(ec.pred.scalar + sens*binarySearch(cs_a.cost_max-ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
     min_pred =  max(ec.pred.scalar - sens*binarySearch(ec.pred.scalar-cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred-min_pred > eta);
-    cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
+    if (cs_a.print_debug_stuff)
+      cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
   }
 }
 
@@ -322,13 +324,17 @@ base_learner* cs_active_setup(vw& all)
     THROW("error: you can't use --cs_active and --csoaa at the same time");
   }
 
-  learner<cs_active>* l; 
+  //learner<cs_active>* l; 
+  //if (all.vm.count("simulation"))
+  //  l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
+  //else
+  //  l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
 
-  if (all.vm.count("simulation"))
-    l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
-  else
-    l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
-
+  learner<cs_active>& l =
+      (all.vm.count("simulation") > 0)
+       ? init_learner(&data, setup_base(all), predict_or_learn<true,true> , predict_or_learn<false,true >, data.num_classes)
+       : init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+  
   all.set_minmax(all.sd,data.cost_max);
   all.set_minmax(all.sd,data.cost_min);
   //cerr << "cs_active data = " << & data << endl;
@@ -342,8 +348,8 @@ base_learner* cs_active_setup(vw& all)
     all.sd->distance_to_range.push_back(0.f); 
   */
 
-  l->set_finish_example(finish_example);
-  base_learner* b = make_base(*l);
+  l.set_finish_example(finish_example);
+  base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
 }
