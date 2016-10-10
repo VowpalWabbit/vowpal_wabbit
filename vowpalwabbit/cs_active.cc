@@ -25,6 +25,7 @@ struct cs_active
   size_t min_labels;
   size_t max_labels;
 
+  bool print_debug_stuff;
   bool is_baseline;  
 
   vw* all;//statistics, loss
@@ -121,12 +122,14 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
   { min_pred = cs_a.cost_min;
     max_pred = cs_a.cost_max;
     is_range_large = true;
+    cerr << "  find_cost_rangeA: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
   }
   else
   { // finding max_pred and min_pred by binary search
     max_pred =  min(ec.pred.scalar + sens*binarySearch(cs_a.cost_max-ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
     min_pred =  max(ec.pred.scalar - sens*binarySearch(ec.pred.scalar-cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred-min_pred > eta);
+    cerr << "  find_cost_rangeB: i=" << i << " pp=" << ec.partial_prediction << " sens=" << sens << " eta=" << eta << " [" << min_pred << ", " << max_pred << "] = " << (max_pred-min_pred) << endl;
   }
 }
 
@@ -204,7 +207,10 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large))), cl.query_needed);
+    { bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
+      inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, query_label, cl.query_needed);
+      if (cs_a.print_debug_stuff)
+        cerr << "label=" << cl.class_index << " x=" << cl.x << " prediction=" << prediction << " score=" << score << " pp=" << cl.partial_prediction << " ql=" << query_label << " qn=" << cl.query_needed << " ro=" << cl.is_range_overlapped << " rl=" << cl.is_range_large << " [" << cl.min_pred << ", " << cl.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
     cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
@@ -243,7 +249,9 @@ base_learner* cs_active_setup(vw& all)
   ("max_labels", po::value<float>(), "maximum number of label queries.")
   ("min_labels", po::value<float>(), "minimum number of label queries.")
   ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
-  ("cost_min",po::value<float>(),"cost lower bound. Default 0.");
+  ("cost_min",po::value<float>(),"cost lower bound. Default 0.")
+  ("csa_debug", "print debug stuff for cs_active");
+    ;
   add_options(all);
 
   cs_active& data = calloc_or_throw<cs_active>();
@@ -258,6 +266,7 @@ base_learner* cs_active_setup(vw& all)
   data.max_labels = (size_t)-1;
   data.min_labels = (size_t)-1;
   data.is_baseline = false; 
+  data.print_debug_stuff = all.vm.count("csa_debug") > 0;
   
   if(all.vm.count("baseline"))
   { data.is_baseline = true;

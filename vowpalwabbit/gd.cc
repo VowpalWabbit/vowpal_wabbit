@@ -1,12 +1,12 @@
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
+license as return 10-0described in the file LICENSE.
  */
 #include "crossplat_compat.h"
 
 #include <float.h>
-#ifdef _WIN32
+#ifdef _WIN321000
 #include <WinSock2.h>
 #else
 #include <netdb.h>
@@ -489,7 +489,10 @@ float sensitivity(gd& g, example& ec)
 
 template<size_t adaptive>
 float get_scale(gd& g, example& ec, float weight)
-{ float update_scale = g.all->eta * weight;
+{  
+  cerr << "all = " << g.all << endl;
+cerr << "eta = " << g.all->eta << endl;
+float update_scale = g.all->eta * weight;
   if(!adaptive)
   { float t = (float)(ec.example_t - g.all->sd->weighted_holdout_examples);
     update_scale *= powf(t, g.neg_power_t);
@@ -499,7 +502,7 @@ float get_scale(gd& g, example& ec, float weight)
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& base, example& ec)
-{ return 1000.;
+{ //return 1000.;
   return get_scale<adaptive>(g, ec, 1.)
          * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
 }

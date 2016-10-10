@@ -347,22 +347,22 @@ void vexpdigammify_2(vw &all, float *gamma, const float *norm, const float under
 
 // Log gamma:
 template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
-{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
+{ //BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
 }
 
 // Digamma:
 template <typename T, const lda_math_mode mtype> inline T digamma(T x)
-{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
+{ //BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
 }
 
 // Exponential
 template <typename T, lda_math_mode mtype> inline T exponential(T x)
-{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
+{ //BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
 template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
-{ BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
+{ //BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
 }
 
 // High accuracy float specializations:
