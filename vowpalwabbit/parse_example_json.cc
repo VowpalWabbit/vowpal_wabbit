@@ -377,7 +377,6 @@ BaseState* MultiState::StartObject(Context& ctx)
 	// allocate new example
 	ctx.ex = (*ctx.example_factory)(ctx.example_factory_context);
 	ctx.examples->push_back(ctx.ex);
-	// ctx.all->p->lp.default_label(&ctx.ex->l);
 
 	// setup default namespace
 	ctx.PushNamespace(" ", this);
