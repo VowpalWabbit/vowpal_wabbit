@@ -260,7 +260,7 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator(""))
             {
-                validator.Validate("| a b c |a d e f", "{\"_text\":\"a b c\",\"a\":{\"_text\":\"d e f\"}}");
+                validator.Validate("| a b c |a d e f", "{\"_text\":\"a  b c\",\"a\":{\"_text\":\"d e f\"}}");
             }
         }
 

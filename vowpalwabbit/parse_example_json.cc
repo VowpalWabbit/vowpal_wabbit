@@ -329,7 +329,8 @@ BaseState* TextState::String(Context& ctx, const char* str, SizeType length, boo
 		case ' ':
 		case '\t':
 			*p = '\0';
-			ns.AddFeature(ctx.all, start);
+			if (p - start > 0)
+				ns.AddFeature(ctx.all, start);
 
 			start = p + 1;
 			break;
