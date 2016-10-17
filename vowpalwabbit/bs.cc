@@ -30,7 +30,8 @@ struct bs
 
 void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
 { ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-  ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
+    ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
 
 void bs_predict_vote(example& ec, vector<double> &pred_vec)
