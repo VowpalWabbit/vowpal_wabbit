@@ -467,6 +467,7 @@ float get_pred_per_update(gd& g, example& ec)
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
+
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
@@ -952,6 +953,12 @@ base_learner* setup(vw& all)
       all.eta *= powf((float)(all.sd->t), all.power_t);
     }
   }
+  else
+    {
+      all.adaptive = all.training;
+      all.invariant_updates = all.training;
+      all.normalized_updates = all.training;
+    }
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
@@ -978,8 +985,7 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
-  if (!all.training)
-    stride = 1;
+
   all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));
