@@ -131,7 +131,7 @@ public class NativeUtils {
         List<String> osFamilies = getOsFamilies();
         String osDependentLib = null;
         for (String osFamily : osFamilies) {
-            String currentOsDependentLib = path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
+            String currentOsDependentLib = "/home/matt/workspace/activeFAQ/vowpal_wabbit/java/target/vw_jni.lib";//path + "." + osFamily + "." + System.getProperty("os.arch") + suffix;
             if (NativeUtils.class.getResource(currentOsDependentLib) != null) {
                 osDependentLib = currentOsDependentLib;
                 break;

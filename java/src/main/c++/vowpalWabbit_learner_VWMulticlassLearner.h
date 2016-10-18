@@ -23,6 +23,15 @@ JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predict
 JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictMultiline
   (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
 
+
+/*
+ * Class:     vowpalWabbit_learner_VWMulticlassLearner
+ * Method:    rawPredictions
+ * Signature: ([Ljava/lang/String;ZJ)I
+ */
+JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_rawPredict
+  (JNIEnv *, jobject, jstring, jboolean, jlong);
+
 #ifdef __cplusplus
 }
 #endif

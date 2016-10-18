@@ -13,4 +13,7 @@ final public class VWMulticlassLearner extends VWIntLearner {
 
     @Override
     protected native int predictMultiline(String[] example, boolean learn, long nativePointer);
+
+    @Override
+    protected native float[] rawPredict(String example, boolean learn, long nativePointer);
 }
