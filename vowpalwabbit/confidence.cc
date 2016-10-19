@@ -11,19 +11,17 @@ struct confidence
 template <bool is_learn, bool is_confidence_after_training>
 void predict_or_learn_with_confidence(confidence& c, base_learner& base, example& ec)
 { float threshold = 0.f;
-  float sensitivity;
-  if (!is_confidence_after_training){
-	  sensitivity = base.sensitivity(ec);
-  }
-
+  float sensitivity = 0.f;
+  if (!is_confidence_after_training)
+    sensitivity = base.sensitivity(ec);
+  
   if (is_learn)
     base.learn(ec);
   else
     base.predict(ec);
 
-  if (is_confidence_after_training){
-	  sensitivity = base.sensitivity(ec);
-  }
+  if (is_confidence_after_training)
+    sensitivity = base.sensitivity(ec);
 
   ec.confidence = fabsf(ec.pred.scalar - threshold) / sensitivity;
 }
@@ -68,13 +66,18 @@ void return_confidence_example(vw& all, confidence& c, example& ec)
 
 base_learner* confidence_setup(vw& all)
 { //parse and set arguments
-
   new_options(all, "confidence options") ("confidence_after_training", "Confidence after training");
   add_options(all);
   po::variables_map& vm = all.vm;
 
   if(missing_option(all, false, "confidence", "Get confidence for binary predictions")) return nullptr;
 
+  if(!all.training)
+    {
+      cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when saving the model and avoid --test_only" << endl;
+      return nullptr;
+    }
+  
   confidence& data = calloc_or_throw<confidence>();
   data.all=&all;
 
