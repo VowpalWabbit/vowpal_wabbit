@@ -110,7 +110,10 @@ namespace cs_unittest
     [TestClass]
     public partial class RunTests : TestBase
     {
-<# foreach (var mainTestcase in testcases.Values) { #>
+<# foreach (var mainTestcase in testcases.Values) { 
+		if (mainTestcase.Id == 0) 
+			continue;
+#>
         [TestMethod]
         [Description(@"<#=(mainTestcase.Comment ?? "").Trim()#>")]
 
