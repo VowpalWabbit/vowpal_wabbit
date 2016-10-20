@@ -665,7 +665,7 @@ void feature_limit(vw& all, example* ex)
 
 namespace VW
 {
-example* get_unused_example(vw* all)
+example& get_unused_example(vw* all)
 { parser* p = all->p;
   while (true)
   { mutex_lock(&p->examples_lock);
@@ -673,7 +673,7 @@ example* get_unused_example(vw* all)
     { example& ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
       ret.in_use = true;
       mutex_unlock(&p->examples_lock);
-      return &ret;
+      return ret;
     }
     else
       condition_variable_wait(&p->example_unused, &p->examples_lock);
@@ -756,14 +756,14 @@ void setup_example(vw& all, example* ae)
 namespace VW
 {
 example* new_unused_example(vw& all)
-{ example* ec = get_unused_example(&all);
+{ example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
   ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
 }
 example* read_example(vw& all, char* example_line)
-{ example* ret = get_unused_example(&all);
+{ example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
@@ -790,7 +790,7 @@ void add_label(example* ec, float label, float weight, float base)
 }
 
 example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
-{ example* ret = get_unused_example(&all);
+{ example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
 
   if (label.length() > 0)
@@ -889,7 +889,7 @@ void *main_parse_loop(void *in)
   size_t examples_available;
   v_array<example*> examples = v_init<example*>();
   while(!all->p->done)
-  { examples.push_back(VW::get_unused_example(all)); // need at least 1 example
+  { examples.push_back(&VW::get_unused_example(all)); // need at least 1 example
 	if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
         && all->p->reader(all, examples) > 0)
     { VW::setup_examples(*all, examples);

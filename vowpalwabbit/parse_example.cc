@@ -61,12 +61,12 @@ int read_features_json(vw* all, v_array<example*>& examples)
 
   if (examples.size() > 1) 
   { // insert new line example at the end
-	example* ae = VW::get_unused_example(all);
+	example& ae = VW::get_unused_example(all);
     char empty = '\0';
     substring example = { &empty, &empty };
-    substring_to_example(all, ae, example);
+    substring_to_example(all, &ae, example);
     
-	examples.push_back(ae);
+	examples.push_back(&ae);
   }
 
   return 1;

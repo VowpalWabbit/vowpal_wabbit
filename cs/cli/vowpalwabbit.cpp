@@ -266,14 +266,14 @@ namespace VW
 	  List<VowpalWabbitExample^>^ examples;
   };
 
-  example* get_example_from_pool(void* v)
+  example& get_example_from_pool(void* v)
   {
 	  interior_ptr<ParseJsonState^> state = (interior_ptr<ParseJsonState^>)v;
 
 	  auto ex = (*state)->vw->GetOrCreateNativeExample();
 	  (*state)->examples->Add(ex);
 
-	  return ex->m_example;
+	  return *ex->m_example;
   }
 
   List<VowpalWabbitExample^>^ VowpalWabbit::ParseJson(String^ line)

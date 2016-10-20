@@ -375,7 +375,7 @@ BaseState* MultiState::StartArray(Context& ctx)
 BaseState* MultiState::StartObject(Context& ctx)
 {
 	// allocate new example
-	ctx.ex = (*ctx.example_factory)(ctx.example_factory_context);
+	ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
 	ctx.examples->push_back(ctx.ex);
 
 	// setup default namespace
