@@ -1514,3 +1514,9 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --explore_eval --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p explore_eval.predict
     train-sets/ref/explore_eval.stderr
     pred-sets/ref/explore_eval.predict
+
+# Test 143: mix labeled and unlabeled examples with --bootstrap bug:
+# https://github.com/JohnLangford/vowpal_wabbit/issues/1111
+{VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
+    train-sets/ref/labeled-unlabeled-mix.stderr
+
