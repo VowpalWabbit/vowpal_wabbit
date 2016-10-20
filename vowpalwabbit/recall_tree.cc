@@ -575,6 +575,7 @@ base_learner* recall_tree_setup(vw& all)
   po::variables_map& vm = all.vm;
 
   recall_tree& tree = calloc_or_throw<recall_tree> ();
+  tree.bern_hyper = vm["bern_hyper"].as<float> ();   
   tree.all = &all;
   tree.k = (uint32_t)vm["recall_tree"].as<size_t>();
   tree.node_only = vm["node_only"].as<bool> ();
