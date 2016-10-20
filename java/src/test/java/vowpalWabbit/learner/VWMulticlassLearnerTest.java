@@ -135,24 +135,24 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
             "product shipping return_and_exchange order payment settings conversation | I need to change the address for my subscription"
         };
 
-        float[] expectedTestPreds1 = new float[]{0.755454F, 1.45879F, 0.721972F, 1.01461F, 1.41322F, 0.642049F, 1.87484F};
-        float[] expectedTestPreds2 = new float[]{0.982791F, 1.66577F, -0.146446F, 1.29745F, 1.54971F, 1.25542F, 2.86067F};
-        float[] expectedTestPreds3 = new float[]{0.922538F,0.920442F, 0.761036F, 0.480921F, 0.89217F, 0.867562F, 1.0385F};
-        float[] expectedTestPreds4 = new float[]{1.03581F, 1.01326F, 1.34347F, 1.3972F, 0.542562F, 0.72871F, 1.23015F};
-        float[] expectedTestPreds5 = new float[]{1.10763F, 1.09224F, 0.6842F, 0.717893F, 1.17313F, 0.236427F, 1.50063F};
-        float[] testPreds1 = vw_multi.rawPredict(testData[0]);
-        float[] testPreds2 = vw_multi.rawPredict(testData[1]);
-        float[] testPreds3 = vw_multi.rawPredict(testData[2]);
-        float[] testPreds4 = vw_multi.rawPredict(testData[3]);
-        float[] testPreds5 = vw_multi.rawPredict(testData[4]);
+        double[] expectedTestPreds1 = new double[]{0.755454D, 1.45879D, 0.721972D, 1.01461D, 1.41322D, 0.642049D, 1.87484D};
+        double[] expectedTestPreds2 = new double[]{0.982791D, 1.66577D, -0.146446D, 1.29745D, 1.54971D, 1.25542D, 2.86067D};
+        double[] expectedTestPreds3 = new double[]{0.922538D,0.920442D, 0.761036D, 0.480921D, 0.89217D, 0.867562D, 1.0385D};
+        double[] expectedTestPreds4 = new double[]{1.03581D, 1.01326D, 1.34347D, 1.3972D, 0.542562D, 0.72871D, 1.23015D};
+        double[] expectedTestPreds5 = new double[]{1.10763D, 1.09224D, 0.6842D, 0.717893D, 1.17313D, 0.236427D, 1.50063D};
+        double[] testPreds1 = vw_multi.rawPredict(testData[0]);
+        double[] testPreds2 = vw_multi.rawPredict(testData[1]);
+        double[] testPreds3 = vw_multi.rawPredict(testData[2]);
+        double[] testPreds4 = vw_multi.rawPredict(testData[3]);
+        double[] testPreds5 = vw_multi.rawPredict(testData[4]);
 
         vw_multi.close();
 
-        assertArrayEquals(expectedTestPreds1, testPreds1, 0.0001F);
-        assertArrayEquals(expectedTestPreds2, testPreds2, 0.0001F);
-        assertArrayEquals(expectedTestPreds3, testPreds3, 0.0001F);
-        assertArrayEquals(expectedTestPreds4, testPreds4, 0.0001F);
-        assertArrayEquals(expectedTestPreds5, testPreds5, 0.0001F);
+        assertArrayEquals(expectedTestPreds1, testPreds1, 0.001F);
+        assertArrayEquals(expectedTestPreds2, testPreds2, 0.001F);
+        assertArrayEquals(expectedTestPreds3, testPreds3, 0.001F);
+        assertArrayEquals(expectedTestPreds4, testPreds4, 0.001F);
+        assertArrayEquals(expectedTestPreds5, testPreds5, 0.001F);
 
 
     }

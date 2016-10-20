@@ -26,10 +26,10 @@ JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictMult
 
 /*
  * Class:     vowpalWabbit_learner_VWMulticlassLearner
- * Method:    rawPredictions
+ * Method:    rawPredict
  * Signature: ([Ljava/lang/String;ZJ)I
  */
-JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_rawPredict
+JNIEXPORT jdoubleArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_rawPredict
   (JNIEnv *, jobject, jstring, jboolean, jlong);
 
 #ifdef __cplusplus

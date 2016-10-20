@@ -4,12 +4,12 @@
 
 jint multiclass_predictor(example* vec, JNIEnv *env){ return vec->pred.multiclass;}
 
-jfloatArray multiclass_raw_predictor(example* vec, JNIEnv *env){
+jdoubleArray multiclass_raw_predictor(example* vec, JNIEnv *env){
   size_t num_values = vec->l.cs.costs.size();
-  jfloatArray j_labels = env->NewFloatArray(num_values);
+  jdoubleArray j_labels = env->NewDoubleArray(num_values);
   for(int i=0;i<num_values;i++) {
-    jfloat f[] = {vec->l.cs.costs[i].partial_prediction};
-    env->SetFloatArrayRegion(j_labels, i, 1, (float*)f);
+    jdouble f[] = {vec->l.cs.costs[i].partial_prediction};
+    env->SetDoubleArrayRegion(j_labels, i, 1, (double*)f);
   }
   return j_labels;
 }
@@ -22,8 +22,8 @@ JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictMult
 { return base_predict<jint>(env, example_strings, learn, vwPtr, multiclass_predictor);
 }
 
-JNIEXPORT jfloatArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_rawPredict
+JNIEXPORT jdoubleArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_rawPredict
   (JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 {
-  return base_predict<jfloatArray>(env, example_string, learn, vwPtr, multiclass_raw_predictor);
+  return base_predict<jdoubleArray>(env, example_string, learn, vwPtr, multiclass_raw_predictor);
 }

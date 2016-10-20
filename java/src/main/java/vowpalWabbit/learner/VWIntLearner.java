@@ -35,7 +35,7 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
      * @param learn whether to call the learn or predict VW functions.
      * @return an <em>UNBOXED</em> prediction.
      */
-    private float[] rawLearnOrPredict(final String example, final boolean learn) {
+    private double[] rawLearnOrPredict(final String example, final boolean learn) {
         lock.lock();
         try {
             if (isOpen()) {
@@ -84,7 +84,7 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
      * @param example a single vw example string
      * @return A prediction
      */
-    public float[] rawPredict(final String example) {
+    public double[] rawPredict(final String example) {
         return rawLearnOrPredict(example, false);
     }
 
@@ -117,6 +117,6 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
     public int learn(final String[] example) { return learnOrPredict(example, true); }
 
     protected abstract int predict(String example, boolean learn, long nativePointer);
-    protected abstract float[] rawPredict(String example, boolean learn, long nativePointer);
+    protected abstract double[] rawPredict(String example, boolean learn, long nativePointer);
     protected abstract int predictMultiline(String[] example, boolean learn, long nativePointer);
 }
