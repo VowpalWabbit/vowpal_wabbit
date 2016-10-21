@@ -151,9 +151,6 @@ void LabelObjectState::init(vw* all)
 	found = found_cb = false;
 
 	cb_label = {0.,0,0.,0.};
-	// memset(&label, 0, sizeof(label));
-	// memset(&cb_label, 0, sizeof(label));
-	// all->p->lp.default_label(&label);
 }
 
 BaseState* LabelObjectState::StartObject(Context& ctx)

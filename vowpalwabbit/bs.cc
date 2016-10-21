@@ -24,12 +24,12 @@ struct bs
   size_t bs_type;
   float lb;
   float ub;
-  vector<double> pred_vec;
+  vector<double>* pred_vec;
   vw* all; // for raw prediction and loss
 };
 
 void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
-{ ec.pred.scalar = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+{ ec.pred.scalar = (float)accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)/pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 }
@@ -143,11 +143,11 @@ void output_example(vw& all, bs& d, example& ec)
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   { d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
-    for (unsigned i = 0; i < d.pred_vec.size(); i++)
-    { if(d.pred_vec[i] > d.ub)
-        d.ub = (float)d.pred_vec[i];
-      if(d.pred_vec[i] < d.lb)
-        d.lb = (float)d.pred_vec[i];
+	for (double v : *d.pred_vec)
+    { if(v > d.ub)
+        d.ub = (float)v;
+      if(v < d.lb)
+        d.lb = (float)v;
     }
   }
 
@@ -165,7 +165,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
   float weight_temp = ec.weight;
 
   stringstream outputStringStream;
-  d.pred_vec.clear();
+  d.pred_vec->clear();
 
   for (size_t i = 1; i <= d.B; i++)
   { ec.weight = weight_temp * (float) BS::weight_gen();
@@ -175,7 +175,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
     else
       base.predict(ec, i-1);
 
-    d.pred_vec.push_back(ec.pred.scalar);
+    d.pred_vec->push_back(ec.pred.scalar);
 
     if (shouldOutput)
     { if (i > 1) outputStringStream << ' ';
@@ -187,10 +187,10 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
 
   switch(d.bs_type)
   { case BS_TYPE_MEAN:
-      bs_predict_mean(all, ec, d.pred_vec);
+      bs_predict_mean(all, ec, *d.pred_vec);
       break;
     case BS_TYPE_VOTE:
-      bs_predict_vote(ec, d.pred_vec);
+      bs_predict_vote(ec, *d.pred_vec);
       break;
     default:
       THROW("Unknown bs_type specified: " << d.bs_type);
@@ -206,7 +206,7 @@ void finish_example(vw& all, bs& d, example& ec)
 }
 
 void finish(bs& d)
-{ d.pred_vec.~vector(); }
+{ delete d.pred_vec; }
 
 base_learner* bs_setup(vw& all)
 { if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
@@ -239,7 +239,8 @@ base_learner* bs_setup(vw& all)
     data.bs_type = BS_TYPE_MEAN;
   *all.file_options << " --bs_type " << type_string;
 
-  data.pred_vec.reserve(data.B);
+  data.pred_vec = new vector<double>();
+  data.pred_vec->reserve(data.B);
   data.all = &all;
 
   learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>,

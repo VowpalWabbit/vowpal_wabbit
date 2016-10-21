@@ -21,4 +21,4 @@ test_script:
        vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll
     }
 on_failure:
-- ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\.\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+- ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
