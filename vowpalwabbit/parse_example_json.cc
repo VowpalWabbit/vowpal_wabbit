@@ -143,12 +143,17 @@ BaseState* BaseState::EndArray(Context& ctx, SizeType)
 
 // LabelObjectState
 LabelObjectState::LabelObjectState() : BaseState("LabelObject")
-{ }
+{ 
+}
 
 void LabelObjectState::init(vw* all)
 {
 	found = found_cb = false;
-	all->p->lp.default_label(&label);
+
+	cb_label = {0.,0,0.,0.};
+	// memset(&label, 0, sizeof(label));
+	// memset(&cb_label, 0, sizeof(label));
+	// all->p->lp.default_label(&label);
 }
 
 BaseState* LabelObjectState::StartObject(Context& ctx)
@@ -178,17 +183,17 @@ BaseState* LabelObjectState::Float(Context& ctx, float v)
 	// simple
 	if (boost::iequals(ctx.key, "Label"))
 	{
-		label.simple.label = v;
+		ctx.ex->l.simple.label = v;
 		found = true;
 	}
 	else if (boost::iequals(ctx.key, "Initial"))
 	{
-		label.simple.initial = v;
+		ctx.ex->l.simple.initial = v;
 		found = true;
 	}
 	else if (boost::iequals(ctx.key, "Weight"))
 	{
-		label.simple.weight = v;
+		ctx.ex->l.simple.weight = v;
 		found = true;
 	}
 	// CB
@@ -226,15 +231,13 @@ BaseState* LabelObjectState::EndObject(Context& ctx, SizeType)
 		ld->costs.push_back(cb_label);
 
 		found_cb = false;
-		ctx.all->p->lp.default_label(&label);
+		cb_label = {0.,0,0.,0.};
 	}
 	else if (found)
 	{
-		ctx.ex->l = label;
-		count_label(label.simple.label);
+		count_label(ctx.ex->l.simple.label);
 
 		found = false;
-		ctx.all->p->lp.default_label(&label);
 	}
 
 	return return_state; 

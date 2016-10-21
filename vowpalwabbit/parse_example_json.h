@@ -54,7 +54,6 @@ class LabelObjectState : public BaseState
 {
 private:
 	BaseState* return_state;
-	polylabel label;
 	CB::cb_class cb_label;
 	bool found;
 	bool found_cb;

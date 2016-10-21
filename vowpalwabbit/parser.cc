@@ -920,6 +920,7 @@ void *main_parse_loop(void *in)
     mutex_unlock(&all->p->examples_lock);
 	examples.erase();
   }
+  examples.delete_v();
   return 0L;
 }
 
