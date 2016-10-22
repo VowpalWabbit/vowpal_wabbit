@@ -148,7 +148,7 @@ namespace VW
 		return values;
 	}
 
-    cli::array<ActionScore>^ VowpalWabbitActionScorePredictionFactory::Create(vw* vw, example* ex)
+    cli::array<ActionScore>^ VowpalWabbitActionScoreBasePredictionFactory::Create(vw* vw, example* ex)
     {
         CheckExample(vw, ex, PredictionType);
 
@@ -182,29 +182,31 @@ namespace VW
         if (ex == nullptr)
             throw gcnew ArgumentNullException("ex");
 
-        switch (vw->l->pred_type)
-        {
-        case prediction_type::scalar:
-            return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
-        case prediction_type::scalars:
-            return VowpalWabbitPredictionType::Scalars->Create(vw, ex);
-        case prediction_type::multiclass:
-            return VowpalWabbitPredictionType::Multiclass->Create(vw, ex);
-        case prediction_type::multilabels:
-            return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
-        case prediction_type::action_scores:
-            return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
-        case prediction_type::prob:
-            return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-        case prediction_type::multiclassprobs:
-            return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
-        default:
-        {
-            auto sb = gcnew StringBuilder();
-            sb->Append("Unsupported prediction type: ");
-            sb->Append(gcnew String(prediction_type::to_string(vw->l->pred_type)));
-            throw gcnew ArgumentException(sb->ToString());
-        }
-        }
-    }
+		switch (vw->l->pred_type)
+		{
+		case prediction_type::scalar:
+			return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
+		case prediction_type::scalars:
+			return VowpalWabbitPredictionType::Scalars->Create(vw, ex);
+		case prediction_type::multiclass:
+			return VowpalWabbitPredictionType::Multiclass->Create(vw, ex);
+		case prediction_type::multilabels:
+			return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
+		case prediction_type::action_scores:
+			return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
+		case prediction_type::action_probs:
+			return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
+		case prediction_type::prob:
+			return VowpalWabbitPredictionType::Probability->Create(vw, ex);
+		case prediction_type::multiclassprobs:
+			return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
+		default:
+			{
+				auto sb = gcnew StringBuilder();
+				sb->Append("Unsupported prediction type: ");
+				sb->Append(gcnew String(prediction_type::to_string(vw->l->pred_type)));
+				throw gcnew ArgumentException(sb->ToString());
+			}
+		}
+	}
 }

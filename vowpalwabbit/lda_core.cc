@@ -693,9 +693,8 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     stringstream msg;
     size_t brw = 1;
 	weight_parameters& weights = all->weights;
-    do
+	do
     { brw = 0;
-	  weight_parameters::iterator iter = weights.begin();
 
 	  if (!read && text)
 		  msg << i << " ";
@@ -710,22 +709,22 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 		  i = j;
 	  }
 	  
-	  if (brw != 0)	  
-	    for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
-	      { if (!read && text) 
-		  msg << *v + l.lda_rho << " ";
-		brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
-	      }
+	  if (brw != 0)
+	  { weight_parameters::iterator iter = weights.begin() + i;
+		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
+		{ if (!read && text)
+		    msg << *v + l.lda_rho << " ";
+		  brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
+		}
+	  }
       if (text)
         {
 		  if (!read)
 			  msg << "\n";
           brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
         }
-	  if (!read){
+	  if (!read)
 		  ++i;
-		  ++iter;
-	  }
     }
     while ((!read && i < length) || (read && brw > 0));
   }
@@ -938,11 +937,12 @@ void get_top_weights(vw* all, int top_words_count, int topic, std::vector<featur
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
 	  top_features.push({(&(*iter))[topic], i});
 
-	iter = weights.begin() + top_words_count;
 	for (uint64_t i = top_words_count; i < length; i++, ++iter)
-	  {  if ((&(*iter))[topic] > top_features.top().x)
+	{  
+		weight v = (&(*iter))[topic];
+		if (v > top_features.top().x)
 		{ top_features.pop();
-		  top_features.push({(&(*iter))[topic], i});
+		  top_features.push({v, i});
 		}
 	}
 

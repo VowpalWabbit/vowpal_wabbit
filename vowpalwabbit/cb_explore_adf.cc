@@ -152,8 +152,9 @@ namespace CB_EXPLORE_ADF{
       num_actions--;
 
     data.action_probs.resize(num_actions);
+    data.action_probs.erase();
     for (uint32_t i = 0; i < num_actions; i++)
-      data.action_probs[i] = {i,0.};
+      data.action_probs.push_back({ i,0. });
     float prob = 1.f / (float)data.bag_size;
     bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
     for (uint32_t i = 0; i < data.bag_size; i++) 

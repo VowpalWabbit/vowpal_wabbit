@@ -373,6 +373,7 @@ void parse_source(vw& all)
   ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
   ("cache,c", "Use a cache.  The default is <data>.cache")
   ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
+  ("json", "Enable JSON parsing.")
   ("kill_cache,k", "do not reuse existing cache: create a new one always")
   ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
   ("no_stdin", "do not default to reading from stdin");
@@ -1255,8 +1256,10 @@ void parse_modules(vw& all, io_buf& model)
   }
 }
 
-void parse_sources(vw& all, io_buf& model)
-{ load_input_model(all, model);
+void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
+{ 
+  if (!skipModelLoad)
+	load_input_model(all, model);
 
   parse_source(all);
 
@@ -1333,14 +1336,14 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(string s, io_buf* model)
+vw* initialize(string s, io_buf* model, bool skipModelLoad)
 {
   int argc = 0;
   char** argv = get_argv_from_string(s,argc);
   vw* ret = nullptr;
   
   try
-  { ret = initialize(argc, argv, model); }
+  { ret = initialize(argc, argv, model, skipModelLoad); }
   catch(...)
   { free_args(argc, argv);
     throw;
@@ -1350,7 +1353,7 @@ vw* initialize(string s, io_buf* model)
   return ret;
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model)
+vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad)
 { vw& all = parse_args(argc, argv);
 
   try
@@ -1362,7 +1365,7 @@ vw* initialize(int argc, char* argv[], io_buf* model)
     }
 
     parse_modules(all, *model);
-    parse_sources(all, *model);
+    parse_sources(all, *model, skipModelLoad);
 
     initialize_parser_datastructures(all);
 
@@ -1397,7 +1400,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
     init_args << model_args[i] << " ";
   }
 
-  vw* new_model = VW::initialize(init_args.str().c_str());
+  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
 
   new_model->weights.~weight_parameters();
   free_it(new_model->sd);

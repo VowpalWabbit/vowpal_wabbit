@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 vw& parse_args(int argc, char *argv[]);
 void parse_modules(vw& all, io_buf& model);
-void parse_sources(vw& all, io_buf& model);
+void parse_sources(vw& all, io_buf& model, bool skipModelLoad = false);
 
 LEARNER::base_learner* setup_base(vw& all);
 

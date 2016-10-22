@@ -112,8 +112,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       stringstream msg;
       msg << "Version " << version.to_string() << "\n";
       memcpy(buff2, version.to_string().c_str(), min(v_length, buf2_size));
-      if (read)
-        v_length = (uint32_t)buf2_size;
+	  if (read)
+	  { v_length = (uint32_t)buf2_size;
+		if (v_length > 0) // all.model_file_ver = buff2; uses scanf which doesn't accept a maximum buffer length, but just expects valid zero terminated string
+			buff2[min(v_length, default_buf_size) - 1] = '\0';
+	  }
       bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                                               "", read, msg, text);
       all.model_file_ver = buff2; //stored in all to check save_resume fix in gd

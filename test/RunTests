@@ -1515,7 +1515,19 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/explore_eval.stderr
     pred-sets/ref/explore_eval.predict
 
-# Test 143: mix labeled and unlabeled examples with --bootstrap bug:
+# Test 143: Test 1 using JSON
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
+    -f models/0001.model -c --passes 8 --invariant \
+    --ngram 3 --skips 1 --holdout_off
+        train-sets/ref/0001.json.stderr
+
+# Test 144: cb_explore_adf with cover exploration + double robust
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test.json --json --noconstant -p cbe_adf_cover_dr.predict
+    train-sets/ref/cbe_adf_cover_dr.json.stderr
+    pred-sets/ref/cbe_adf_cover_dr.predict
+
+
+# Test 145: mix labeled and unlabeled examples with --bootstrap bug:
 # https://github.com/JohnLangford/vowpal_wabbit/issues/1111
 {VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
     train-sets/ref/labeled-unlabeled-mix.stderr

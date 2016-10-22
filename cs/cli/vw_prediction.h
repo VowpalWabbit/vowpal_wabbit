@@ -263,29 +263,64 @@ namespace VW
             property float Score;
         };
 
+		/// <summary>
+		/// A action score/probability result.
+		/// </summary>
+		public ref class VowpalWabbitActionScoreBasePredictionFactory abstract
+			: IVowpalWabbitPredictionFactory<cli::array<ActionScore>^> 
+		{
+		public:
+			/// <summary>
+			/// Extracts multilabel prediction results from example.
+			/// </summary>
+			virtual cli::array<ActionScore>^ Create(vw* vw, example* ex) sealed;
+
+			/// <summary>
+			/// Returns the supported prediction type.
+			/// </summary>
+			property prediction_type::prediction_type_t PredictionType
+			{
+				virtual prediction_type::prediction_type_t get() abstract;
+			}
+		};
+
         /// <summary>
-        /// A multi label prediction result.
+        /// A action score prediction result.
         /// </summary>
         public ref class VowpalWabbitActionScorePredictionFactory sealed
-            : IVowpalWabbitPredictionFactory<cli::array<ActionScore>^>
+          : public VowpalWabbitActionScoreBasePredictionFactory
         {
         public:
-            /// <summary>
-            /// Extracts multilabel prediction results from example.
-            /// </summary>
-            virtual cli::array<ActionScore>^ Create(vw* vw, example* ex) sealed;
-
-            /// <summary>
-            /// Returns the supported prediction type.
-            /// </summary>
-            property prediction_type::prediction_type_t PredictionType
-            {
-                virtual prediction_type::prediction_type_t get() sealed
-                {
-                    return prediction_type::action_scores;
-                }
-            }
+		  /// <summary>
+		  /// Returns the supported prediction type.
+		  /// </summary>
+		  property prediction_type::prediction_type_t PredictionType
+		  {
+			  virtual prediction_type::prediction_type_t get() override sealed
+			  {
+				  return prediction_type::action_scores;
+			  }
+		  }
         };
+
+		/// <summary>
+		/// A multi label prediction result.
+		/// </summary>
+		public ref class VowpalWabbitActionProbabilitiesPredictionFactory sealed
+			: public VowpalWabbitActionScoreBasePredictionFactory
+		{
+		public:
+			/// <summary>
+			/// Returns the supported prediction type.
+			/// </summary>
+			property prediction_type::prediction_type_t PredictionType
+			{
+				virtual prediction_type::prediction_type_t get() override sealed
+				{
+					return prediction_type::action_probs;
+				}
+			}
+		};
 
         /// <summary>
         /// A topic prediction result.
@@ -350,6 +385,11 @@ namespace VW
             /// Use for action score predictions.
             /// </summary>
             static initonly VowpalWabbitActionScorePredictionFactory^ ActionScore = gcnew VowpalWabbitActionScorePredictionFactory;
+
+			/// <summary>
+			/// Use for action score predictions.
+			/// </summary>
+			static initonly VowpalWabbitActionProbabilitiesPredictionFactory^ ActionProbabilities = gcnew VowpalWabbitActionProbabilitiesPredictionFactory;
 
             /// <summary>
             /// Use for LDA topic predictions.

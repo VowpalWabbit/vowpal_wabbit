@@ -29,6 +29,7 @@ namespace cs_unittest
     {
         private VowpalWabbit<TExample> vw;
         private VowpalWabbit<TExample> vwNative;
+        private VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializer;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
         private IVowpalWabbitSerializer<TExample> factorySerializer;
@@ -55,15 +56,15 @@ namespace cs_unittest
 
             this.vw = new VowpalWabbit<TExample>(stringSettings);
 
-            var compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
-            if (compiler != null)
-                this.serializer = compiler.Func(this.vw.Native);
+            this.compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
+            if (this.compiler != null)
+                this.serializer = this.compiler.Func(this.vw.Native);
 
             this.vwNative = new VowpalWabbit<TExample>(settings);
 
-            compiler = this.vwNative.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
+            this.compiler = this.vwNative.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
             if (compiler != null)
-                this.serializerNative = compiler.Func(this.vwNative.Native);
+                this.serializerNative = this.compiler.Func(this.vwNative.Native);
 
             this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(stringSettings).Create(this.vw.Native);
         }

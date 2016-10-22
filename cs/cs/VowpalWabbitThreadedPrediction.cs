@@ -6,6 +6,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using VW.Serializer;
+
 namespace VW
 {
     /// <summary>
@@ -27,6 +29,15 @@ namespace VW
         /// <param name="model">The model used by each pool instance.</param>
         public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
         {
         }
 
@@ -58,18 +69,37 @@ namespace VW
         /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction{TExample}"/>.
         /// </summary>
         /// <param name="model">The model used by each pool instance.</param>
-        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
+        /// <param name="compiledSerializer">Optional pre-compiled serializer.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitModel model, IVowpalWabbitSerializerCompiler<TExample> compiledSerializer = null)
             : base(model)
         {
+            this.CompiledSerializer = compiledSerializer;
         }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
+        {
+        }
+
+        /// <summary>
+        /// The Serializer used to marshal examples.
+        /// </summary>
+        public IVowpalWabbitSerializerCompiler<TExample> CompiledSerializer { get; private set; }
 
         /// <summary>
         /// Creates a new instance of <see cref="VowpalWabbit{TExample}"/>.
         /// </summary>
         /// <param name="vw">The wrapped vw instance.</param>
-        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw = null)
+        protected override VowpalWabbit<TExample> InternalCreate(VowpalWabbit vw)
         {
-            return new VowpalWabbit<TExample>(vw);
+            if (this.CompiledSerializer == null)
+                this.CompiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
+
+            return new VowpalWabbit<TExample>(vw, this.CompiledSerializer);
         }
     }
 
@@ -94,6 +124,15 @@ namespace VW
         /// <param name="model">The model used by each pool instance.</param>
         public VowpalWabbitThreadedPrediction(VowpalWabbitModel model)
             : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VowpalWabbitThreadedPrediction"/>.
+        /// </summary>
+        /// <param name="settings">The settings used by each pool instance.</param>
+        public VowpalWabbitThreadedPrediction(VowpalWabbitSettings settings)
+            : base(settings)
         {
         }
 

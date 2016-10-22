@@ -49,6 +49,31 @@ void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
   OutputDebugStringA(buffer);
 }
 
+struct StopWatchData
+{
+	LARGE_INTEGER frequency_;
+	LARGE_INTEGER startTime_;
+};
+
+StopWatch::StopWatch() : data(new StopWatchData())
+{
+	if (!::QueryPerformanceFrequency(&data->frequency_)) throw "Error with QueryPerformanceFrequency";
+	::QueryPerformanceCounter(&data->startTime_);
+}
+
+StopWatch::~StopWatch()
+{
+	delete data;
+}
+
+double StopWatch::MilliSeconds() const
+{
+	LARGE_INTEGER now;
+	::QueryPerformanceCounter(&now);
+
+	return double(now.QuadPart - data->startTime_.QuadPart) / (double(data->frequency_.QuadPart) / 1000);
+}
+
 bool launchDebugger()
 { // Get System directory, typically c:\windows\system32
   std::wstring systemDir(MAX_PATH + 1, '\0');

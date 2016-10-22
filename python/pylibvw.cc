@@ -104,7 +104,6 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 example_ptr my_read_example(vw_ptr all, size_t labelType, char*str)
 { example*ec = my_empty_example0(all, labelType);
   VW::read_line(*all, ec, str);
-  VW::parse_atomic_example(*all, ec, false);
   VW::setup_example(*all, ec);
   ec->example_counter = labelType;
   return boost::shared_ptr<example>(ec, my_delete_example);

@@ -65,22 +65,27 @@ namespace VW
         /// </summary>
         /// <param name="vw">The native instance to wrap.</param>
         /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
-        public VowpalWabbit(VowpalWabbit vw)
+        public VowpalWabbit(VowpalWabbit vw) : this(vw, VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
+        /// </summary>
+        /// <param name="vw">The native instance to wrap.</param>
+        /// <param name="compiledSerializer">The per-compiled serializer.</param>
+        /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
+        public VowpalWabbit(VowpalWabbit vw, IVowpalWabbitSerializerCompiler<TExample> compiledSerializer)
         {
             if (vw == null)
-            {
-                throw new ArgumentNullException("vw");
-            }
+                throw new ArgumentNullException(nameof(vw));
+            if (compiledSerializer == null)
+                throw new ArgumentNullException(nameof(compiledSerializer));
             Contract.Ensures(this.serializer != null);
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
-
-            if (this.compiledSerializer == null)
-            {
-                throw new ArgumentException("No features found for " + typeof(TExample));
-            }
+            this.compiledSerializer = compiledSerializer;
 
             this.serializer = this.compiledSerializer.Create(vw);
 

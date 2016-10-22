@@ -195,7 +195,8 @@ namespace VW
                 if (this.Examples != null)
                 {
                     foreach (var ex in this.Examples)
-                        ex.Dispose();
+                        if (ex != null)
+                            ex.Dispose();
 
                     this.Examples = null;
                 }
