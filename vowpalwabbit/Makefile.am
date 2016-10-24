@@ -10,11 +10,12 @@ libvw_c_wrapper_la_SOURCES = vwdll.cpp
 
 # accumulate.cc uses all_reduce
 libvw_la_LIBADD = liballreduce.la
+libvw_c_wrapper_la_LIBADD = libvw.la
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
 AM_CXXFLAGS = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS} -Wall -Wno-unused-local-typedefs
-AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
+LIBS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
 
 CXXOPTIMIZE = 
 
