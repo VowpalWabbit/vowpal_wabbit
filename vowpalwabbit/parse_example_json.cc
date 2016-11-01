@@ -155,6 +155,8 @@ void LabelObjectState::init(vw* all)
 
 BaseState* LabelObjectState::StartObject(Context& ctx)
 {
+	ctx.all->p->lp.default_label(&ctx.ex->l);
+
 	// don't allow { { { } } }
 	if (ctx.previous_state == this)
 	{
@@ -174,9 +176,6 @@ BaseState* LabelObjectState::Key(Context& ctx, const char* str, SizeType len, bo
 	ctx.key_length = len;
 	return this;
 }
-
-
-
 
 BaseState* LabelObjectState::Float(Context& ctx, float v)
 { 
@@ -225,8 +224,6 @@ BaseState* LabelObjectState::Uint(Context& ctx, unsigned v) { return Float(ctx, 
 
 BaseState* LabelObjectState::EndObject(Context& ctx, SizeType)
 { 
-	ctx.all->p->lp.default_label(&ctx.ex->l);
-
 	if (found_cb)
 	{
 		CB::label* ld = (CB::label*)&ctx.ex->l;
