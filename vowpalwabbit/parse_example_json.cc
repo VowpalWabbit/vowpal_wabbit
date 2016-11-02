@@ -177,6 +177,11 @@ BaseState* LabelObjectState::Key(Context& ctx, const char* str, SizeType len, bo
 	return this;
 }
 
+// portability fun
+#ifndef _WIN32
+#define _stricmp strcasecmp 
+#endif
+
 BaseState* LabelObjectState::Float(Context& ctx, float v)
 { 
 	// simple
