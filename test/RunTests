@@ -1532,3 +1532,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
     train-sets/ref/labeled-unlabeled-mix.stderr
 
+# Test 146: cb_explore_adf with cover exploration + double robust (using more than 256 examples)
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
+    train-sets/ref/cbe_adf_cover_dr256.json.stderr
+    pred-sets/ref/cbe_adf_cover_dr256.predict
+
