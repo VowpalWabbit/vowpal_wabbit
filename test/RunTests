@@ -1526,7 +1526,6 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_cover_dr.json.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
-
 # Test 145: mix labeled and unlabeled examples with --bootstrap bug:
 # https://github.com/JohnLangford/vowpal_wabbit/issues/1111
 {VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
