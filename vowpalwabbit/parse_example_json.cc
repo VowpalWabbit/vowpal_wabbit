@@ -155,6 +155,8 @@ void LabelObjectState::init(vw* all)
 
 BaseState* LabelObjectState::StartObject(Context& ctx)
 {
+	ctx.all->p->lp.default_label(&ctx.ex->l);
+
 	// don't allow { { { } } }
 	if (ctx.previous_state == this)
 	{
@@ -175,36 +177,41 @@ BaseState* LabelObjectState::Key(Context& ctx, const char* str, SizeType len, bo
 	return this;
 }
 
+// portability fun
+#ifndef _WIN32
+#define _stricmp strcasecmp 
+#endif
+
 BaseState* LabelObjectState::Float(Context& ctx, float v)
 { 
 	// simple
-	if (boost::iequals(ctx.key, "Label"))
+	if (!_stricmp(ctx.key, "Label"))
 	{
 		ctx.ex->l.simple.label = v;
 		found = true;
 	}
-	else if (boost::iequals(ctx.key, "Initial"))
+	else if (!_stricmp(ctx.key, "Initial"))
 	{
 		ctx.ex->l.simple.initial = v;
 		found = true;
 	}
-	else if (boost::iequals(ctx.key, "Weight"))
+	else if (!_stricmp(ctx.key, "Weight"))
 	{
 		ctx.ex->l.simple.weight = v;
 		found = true;
 	}
 	// CB
-	else if (boost::iequals(ctx.key, "Action"))
+	else if (!_stricmp(ctx.key, "Action"))
 	{
 		cb_label.action = (uint32_t)v;
 		found_cb = true;
 	}
-	else if (boost::iequals(ctx.key, "Cost"))
+	else if (!_stricmp(ctx.key, "Cost"))
 	{
 		cb_label.cost = v;
 		found_cb = true;
 	}
-	else if (boost::iequals(ctx.key, "Probability"))
+	else if (!_stricmp(ctx.key, "Probability"))
 	{
 		cb_label.probability = v;
 		found_cb = true;
@@ -376,6 +383,7 @@ BaseState* MultiState::StartObject(Context& ctx)
 {
 	// allocate new example
 	ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+	ctx.all->p->lp.default_label(&ctx.ex->l);
 	ctx.examples->push_back(ctx.ex);
 
 	// setup default namespace
@@ -539,7 +547,7 @@ BaseState* DefaultState::Key(Context& ctx, const char* str, SizeType length, boo
 				return &ctx.label_single_property_state;
 			else if (ctx.key_length == 6)
 				return &ctx.label_state;
-			else if (boost::iequals(str, "_labelIndex"))
+			else if (ctx.key_length == 11 && !_stricmp(str, "_labelIndex"))
 				return &ctx.label_index_state;
 			else
 			{
@@ -548,11 +556,11 @@ BaseState* DefaultState::Key(Context& ctx, const char* str, SizeType length, boo
 			}
 		}
 
-		if (!strcmp(str, "_text"))
+		if (ctx.key_length == 5 && !strcmp(str, "_text"))
 			return &ctx.text_state;
 
 		// TODO: _multi in _multi... 
-		if (!strcmp(str, "_multi"))
+		if (ctx.key_length == 6 && !strcmp(str, "_multi"))
 			return &ctx.multi_state;
 
 		return Ignore(ctx, length);
