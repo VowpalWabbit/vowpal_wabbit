@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -195,7 +195,6 @@ Global
 		{08636F79-5577-4AF2-8EED-EC8A5BC14AC4}.Release|x64.ActiveCfg = Release|x64
 		{08636F79-5577-4AF2-8EED-EC8A5BC14AC4}.Release|x64.Build.0 = Release|x64
 		{43E32C1D-21D6-4BE3-8FA5-D5BA379CBA53}.Debug|x64.ActiveCfg = Debug|x64
-		{43E32C1D-21D6-4BE3-8FA5-D5BA379CBA53}.Debug|x64.Build.0 = Debug|x64
 		{43E32C1D-21D6-4BE3-8FA5-D5BA379CBA53}.DebugLeakCheck|x64.ActiveCfg = Debug|x64
 		{43E32C1D-21D6-4BE3-8FA5-D5BA379CBA53}.DebugLeakCheck|x64.Build.0 = Debug|x64
 		{43E32C1D-21D6-4BE3-8FA5-D5BA379CBA53}.Release|x64.ActiveCfg = Release|x64

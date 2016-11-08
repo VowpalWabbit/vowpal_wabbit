@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 
 namespace VW
@@ -23,26 +24,43 @@ namespace VW
         /// </summary>
         private ObjectPool<VowpalWabbitModel, TVowpalWabbit> vwPool;
 
+        private VowpalWabbitSettings settings;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitThreadedPredictionBase{TVowpalWabbit}"/> class.
         /// </summary>
         /// <param name="model">The initial model to use.</param>
         protected VowpalWabbitThreadedPredictionBase(VowpalWabbitModel model = null)
+             : this(new VowpalWabbitSettings() { Model = model })
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitThreadedPredictionBase{TVowpalWabbit}"/> class.
+        /// </summary>
+        /// <param name="settings">The initial settings to use.</param>
+        protected VowpalWabbitThreadedPredictionBase(VowpalWabbitSettings settings)
+        {
+            this.settings = settings;
+
             this.vwPool = new ObjectPool<VowpalWabbitModel, TVowpalWabbit>(
                 ObjectFactory.Create(
-                    model,
+                    settings.Model,
                     m =>
                     {
                         if (m == null)
                             return default(TVowpalWabbit);
 
-                        var settings = (VowpalWabbitSettings)m.Settings.Clone();
-                        settings.Model = m;
-                        // avoid duplicate arguments (e.g. -i) and force testing mode
-                        settings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
-                        return this.InternalCreate(new VowpalWabbit(settings));
+                        return CreateVowpalWabbitChild(m);
                     }));
+        }
+
+        private TVowpalWabbit CreateVowpalWabbitChild(VowpalWabbitModel model)
+        {
+            var newSettings = (VowpalWabbitSettings)this.settings.Clone();
+            newSettings.Model = model;
+            var vw = new VowpalWabbit(newSettings);
+            return this.InternalCreate(vw);
         }
 
         /// <summary>
@@ -60,14 +78,7 @@ namespace VW
         {
             this.vwPool.UpdateFactory(ObjectFactory.Create(
                 model,
-                m =>
-                {
-                    var settings = (VowpalWabbitSettings)m.Settings.Clone();
-                    settings.Model = m;
-                    // avoid duplicate arguments (e.g. -i) and force testing mode
-                    settings.Arguments = m.Arguments.CommandLine.Contains("-t") ? string.Empty : "-t";
-                    return this.InternalCreate(new VowpalWabbit(settings));
-                }));
+                this.CreateVowpalWabbitChild));
         }
 
         /// <summary>

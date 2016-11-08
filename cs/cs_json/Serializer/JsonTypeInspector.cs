@@ -9,8 +9,11 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
 using VW.Labels;
 
 namespace VW.Serializer
@@ -93,6 +96,47 @@ namespace VW.Serializer
             return jsonObjectAttr.MemberSerialization;
         }
 
+        private static Func<Expression, Expression> CreateValueExpressionFactory(PropertyInfo namespacePropertyInfo, PropertyInfo featurePropertyInfo)
+        {
+            Func<Expression, Expression> baseExpression = v => namespacePropertyInfo == null ? 
+                v : // CODE example
+                Expression.Property(v, namespacePropertyInfo); // CODE example.NamespaceProperty
+
+            var attr = featurePropertyInfo.GetCustomAttribute(typeof(JsonConverterAttribute), true) as JsonConverterAttribute;
+            if (attr == null)
+                // CODE example.FeatureProperty or example.NamespaceProperty.FeatureProperty
+                return example => Expression.Property(baseExpression(example), featurePropertyInfo);
+
+            // validate
+            var converterCtor =
+                attr.ConverterParameters == null ?
+                attr.ConverterType.GetConstructor(Type.EmptyTypes) :
+                attr.ConverterType.GetConstructor(attr.ConverterParameters.Select(o => o.GetType()).ToArray());
+
+            if (converterCtor == null)
+                throw new ArgumentException($"Unable to find constructor for converter '{attr.ConverterType}' for '{featurePropertyInfo.Name}'");
+
+            var jsonConverter = converterCtor.Invoke(attr.ConverterParameters) as JsonConverter;
+            if (jsonConverter == null)
+                throw new ArgumentException($"JsonConverter '{attr.ConverterType}' for '{featurePropertyInfo.Name}' is not of type JsonConverter");
+
+            if (!jsonConverter.CanConvert(featurePropertyInfo.PropertyType))
+                throw new ArgumentException($"JsonConverter '{attr.ConverterType}' for '{featurePropertyInfo.Name}' does not support property type '{featurePropertyInfo.PropertyType}'");
+
+            // CODE: new JsonConverter*(arg1, arg2,...)
+            var converterExpression =
+                attr.ConverterParameters == null ?
+                Expression.New(converterCtor) :
+                Expression.New(converterCtor, attr.ConverterParameters.Select(o => Expression.Constant(o)));
+            
+            // CODE new VowpalWabbitJsonConverter(object, new JsonConverter(...))
+            return example =>
+                Expression.New(
+                    typeof(VowpalWabbitJsonSerializable).GetConstructor(new[] { typeof(object), typeof(JsonConverter) }),
+                    Expression.Property(baseExpression(example), featurePropertyInfo),
+                    converterExpression);
+        }
+
         /// <summary>
         /// Extracts VW features from given type based on JSON.NET annotation. Basic structure:
         ///
@@ -113,11 +157,11 @@ namespace VW.Serializer
             // find all feature properties under namespace properties
             var namespaceFeatures =
                 from ns in type.GetProperties()
-                // removing any JsonIgnore properties
+                    // removing any JsonIgnore properties
                 where !ns.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let nsAttr = (JsonPropertyAttribute)ns.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
                 where
-                    !IsDictType(ns.PropertyType) &&  
+                    !IsDictType(ns.PropertyType) &&
                     !IsTypeSupported(ns.PropertyType) &&
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
@@ -128,7 +172,7 @@ namespace VW.Serializer
                 let namespaceValue = namespaceRawValue.Length > 1 ? namespaceRawValue.Substring(1) : null
                 let namespaceMemberSerialization = GetMemberSerialiation(ns.PropertyType)
                 from p in ns.PropertyType.GetProperties()
-                // removing any JsonIgnore properties
+                    // removing any JsonIgnore properties
                 where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
                 where IsTypeSupported(p.PropertyType) &&
@@ -138,11 +182,12 @@ namespace VW.Serializer
                 let isTextProperty = name == propertyConfiguration.TextProperty
                 // filter all aux properties
                 where isTextProperty || !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
+                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 select new FeatureExpression(
-                    featureType: p.PropertyType,
+                    featureType: isMarkedWithJsonConverter ? typeof(VowpalWabbitJsonSerializable) : p.PropertyType,
                     name: name,
                     // CODE example.NamespaceProperty.FeatureProperty
-                    valueExpressionFactory: valueExpression => Expression.Property(Expression.Property(valueExpression, ns), p),
+                    valueExpressionFactory: CreateValueExpressionFactory(ns, p),
                     // Note: default to string escaping
                     stringProcessing: isTextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
@@ -175,11 +220,12 @@ namespace VW.Serializer
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
                     (name == propertyConfiguration.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
+                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 select new FeatureExpression(
-                    featureType: p.PropertyType,
+                    featureType: isMarkedWithJsonConverter ? typeof(VowpalWabbitJsonSerializable) : p.PropertyType,
                     name: name,
                     // CODE example.FeatureProperty
-                    valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
+                    valueExpressionFactory: CreateValueExpressionFactory(null, p),
                     // Note: default to string escaping
                     stringProcessing: name == propertyConfiguration.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
@@ -206,7 +252,7 @@ namespace VW.Serializer
                     featureType: p.PropertyType,
                     name: name,
                     // CODE example.FeatureProperty
-                    valueExpressionFactory: valueExpression => Expression.Property(valueExpression, p),
+                    valueExpressionFactory: CreateValueExpressionFactory(null, p),
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>> { valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
                     @namespace: namespaceValue,

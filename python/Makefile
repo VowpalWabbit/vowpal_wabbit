@@ -18,8 +18,15 @@ ifeq ($(PYTHON_LIBS),)
   PYTHON_LIBS = -l boost_python
 endif
 
-PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
-PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
+ifeq ($(VIRTUAL_ENV), )
+  PYTHON_INCLUDE = $(shell python$(PTHON_VERSION)-config --includes)
+  PYTHON_LDFLAGS = $(shell python$(PTHON_VERSION)-config --ldflags)
+else
+  PYTHON_INCLUDE = $(shell python-config --includes)
+  PYTHON_LDFLAGS = $(shell python-config --ldflags)
+endif
+
+JSON_INCLUDE = -I ../rapidjson/include
 
 ifeq (,$(wildcard ../vowpalwabbit/vw.so))
   VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
@@ -50,7 +57,7 @@ $(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
 
 pylibvw.o: pylibvw.cc
 	$(info Using Python $(PYTHON_VERSION))
-	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
+	$(CXX) -std=c++0x $(PYTHON_INCLUDE) $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
 
 clean:
 	rm -f *.o $(PYLIBVW)

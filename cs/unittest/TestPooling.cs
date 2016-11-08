@@ -4,6 +4,8 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
 using VW.Labels;
+using VW.Serializer.Attributes;
+using System.IO;
 
 namespace cs_unittest
 {
@@ -166,6 +168,37 @@ namespace cs_unittest
             }
         }
 
+        public class SimpleData
+        {
+            [Feature]
+            public float Value { get; set; }
+        }
+
+        [TestMethod]
+        [TestCategory("ObjectPool")]
+        public void TestSaveLoadSkip()
+        {
+            using (var vw = new VowpalWabbit<SimpleData>("--binary -f saveload.model"))
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    vw.Learn(new SimpleData { Value = 1 }, new SimpleLabel { Label = 1 });
+                    vw.Learn(new SimpleData { Value = -1 }, new SimpleLabel { Label = -1 });
+                }
+
+                Assert.AreEqual(1, vw.Predict(new SimpleData { Value = 1 }, VowpalWabbitPredictionType.Scalar));
+                Assert.AreEqual(-1, vw.Predict(new SimpleData { Value = -1 }, VowpalWabbitPredictionType.Scalar));
+            }
+
+            using (var model = new VowpalWabbitModel(new VowpalWabbitSettings { Arguments = "--binary", ModelStream = File.Open("saveload.model", FileMode.Open) }))
+            using (var pool = new VowpalWabbitThreadedPrediction<SimpleData>(new VowpalWabbitSettings { Model = model }))
+            {
+                using (var vw = pool.GetOrCreate())
+                {
+                    Assert.AreEqual(-1, vw.Value.Predict(new SimpleData { Value = -1 }, VowpalWabbitPredictionType.Scalar));
+                }
+            }
+        }
 
         public class Disposable : IDisposable
         {

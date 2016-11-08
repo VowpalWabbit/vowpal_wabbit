@@ -148,6 +148,7 @@ parser* new_parser()
   ret.ring_size = 1 << 8;
   ret.done = false;
   ret.used_index = 0;
+  ret.jsonp = nullptr;
 
   return &ret;
 }
@@ -259,7 +260,7 @@ void reset_source(vw& all, size_t numbits)
         all.print = binary_print_result;
       }
       else
-      { all.p->reader = read_features;
+      { all.p->reader = read_features_string;
         all.print = print_result;
       }
     }
@@ -287,6 +288,8 @@ void finalize_source(parser* p)
   delete p->input;
   p->output->close_files();
   delete p->output;
+  if (p->jsonp)
+	delete p->jsonp;
 }
 
 void make_write_cache(vw& all, string &newname, bool quiet)
@@ -532,14 +535,14 @@ child:
 
     all.p->max_fd++;
     if(all.active)
-      all.p->reader = read_features;
+      all.p->reader = read_features_string;
     else
     { if (isbinary(*(all.p->input)))
       { all.p->reader = read_cached_features;
         all.print = binary_print_result;
       }
       else
-      { all.p->reader = read_features;
+      { all.p->reader = read_features_string;
       }
       all.p->sorted_cache = true;
     }
@@ -567,7 +570,13 @@ child:
         }
       }
 
-      all.p->reader = read_features;
+      if (all.vm.count("json"))
+      { all.p->reader = read_features_json;
+        all.p->jsonp = new json_parser;
+      }
+      else
+	all.p->reader = read_features_string;
+		  
       all.p->resettable = all.p->write_cache;
     }
   }
@@ -639,38 +648,6 @@ void generateGrams(vw& all, example* &ex)
   }
 }
 
-example* get_unused_example(vw& all)
-{ while (true)
-  { mutex_lock(&all.p->examples_lock);
-    if (all.p->examples[all.p->begin_parsed_examples % all.p->ring_size].in_use == false)
-    { example& ret = all.p->examples[all.p->begin_parsed_examples++ % all.p->ring_size];
-      ret.in_use = true;
-      mutex_unlock(&all.p->examples_lock);
-      return &ret;
-    }
-    else
-      condition_variable_wait(&all.p->example_unused, &all.p->examples_lock);
-    mutex_unlock(&all.p->examples_lock);
-  }
-}
-
-namespace VW
-{
-bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
-{ if (do_read && all.p->reader(&all, ae) <= 0)
-    return false;
-
-  if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.parse_mask, ae);
-
-  if (all.p->write_cache)
-    { all.p->lp.cache_label(&ae->l,*(all.p->output));
-    cache_features(*(all.p->output), ae, all.parse_mask);
-  }
-  return true;
-}
-}
-
 void end_pass_example(vw& all, example* ae)
 { all.p->lp.default_label(&ae->l);
   ae->end_pass = true;
@@ -688,8 +665,40 @@ void feature_limit(vw& all, example* ex)
 
 namespace VW
 {
+example& get_unused_example(vw* all)
+{ parser* p = all->p;
+  while (true)
+  { mutex_lock(&p->examples_lock);
+    if (p->examples[p->begin_parsed_examples % p->ring_size].in_use == false)
+    { example& ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
+      ret.in_use = true;
+      mutex_unlock(&p->examples_lock);
+      return ret;
+    }
+    else
+      condition_variable_wait(&p->example_unused, &p->examples_lock);
+    mutex_unlock(&p->examples_lock);
+  }
+}
+
+void setup_examples(vw& all, v_array<example*>& examples)
+{
+	for (example* ae : examples)
+		setup_example(all, ae);
+}
+
 void setup_example(vw& all, example* ae)
-{ ae->partial_prediction = 0.;
+{ 
+	if (all.p->sort_features && ae->sorted == false)
+		unique_sort_features(all.parse_mask, ae);
+
+	if (all.p->write_cache)
+	{
+		all.p->lp.cache_label(&ae->l, *(all.p->output));
+		cache_features(*(all.p->output), ae, all.parse_mask);
+	}
+
+  ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
@@ -751,17 +760,16 @@ void setup_example(vw& all, example* ae)
 namespace VW
 {
 example* new_unused_example(vw& all)
-{ example* ec = get_unused_example(all);
+{ example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
   ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
 }
 example* read_example(vw& all, char* example_line)
-{ example* ret = get_unused_example(all);
+{ example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
-  parse_atomic_example(all,ret,false);
   setup_example(all, ret);
   all.p->end_parsed_examples++;
 
@@ -786,7 +794,7 @@ void add_label(example* ec, float label, float weight, float base)
 }
 
 example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
-{ example* ret = get_unused_example(all);
+{ example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
 
   if (label.length() > 0)
@@ -798,7 +806,7 @@ example* import_example(vw& all, string label, primitive_feature_space* features
     for (size_t j = 0; j < features[i].len; j++)
       ret->feature_space[index].push_back(features[i].fs[j].x, features[i].fs[j].weight_index);
   }
-  VW::parse_atomic_example(all,ret,false);
+
   setup_example(all, ret);
   all.p->end_parsed_examples++;
   return ret;
@@ -887,20 +895,22 @@ void *main_parse_loop(void *in)
 #endif
 { vw* all = (vw*) in;
   size_t example_number = 0;  // for variable-size batch learning algorithms
-
-
+  size_t examples_available;
+  v_array<example*> examples = v_init<example*>();
   while(!all->p->done)
-  { example* ae = get_unused_example(*all);
-    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-        && VW::parse_atomic_example(*all, ae) )
-    { VW::setup_example(*all, ae);
-      example_number++;
+  { examples.push_back(&VW::get_unused_example(all)); // need at least 1 example
+	if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
+        && all->p->reader(all, examples) > 0)
+    { VW::setup_examples(*all, examples);
+      example_number+=examples.size();
+      examples_available=examples.size();
     }
     else
     { reset_source(*all, all->num_bits);
       all->do_reset_source = false;
       all->passes_complete++;
-      end_pass_example(*all, ae);
+
+      end_pass_example(*all, examples[0]);
       if (all->passes_complete == all->numpasses && example_number == all->pass_length)
       { all->passes_complete = 0;
         all->pass_length = all->pass_length*2+1;
@@ -911,12 +921,15 @@ void *main_parse_loop(void *in)
         mutex_unlock(&all->p->examples_lock);
       }
       example_number = 0;
+      examples_available=1;
     }
     mutex_lock(&all->p->examples_lock);
-    all->p->end_parsed_examples++;
+    all->p->end_parsed_examples+=examples_available;
     condition_variable_signal_all(&all->p->example_available);
     mutex_unlock(&all->p->examples_lock);
+	examples.erase();
   }
+  examples.delete_v();
   return 0L;
 }
 
@@ -963,6 +976,10 @@ float get_prediction(example* ec)
 
 float get_cost_sensitive_prediction(example* ec)
 { return (float)ec->pred.multiclass; }
+
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) {
+	return ec->pred.scalars;
+}
 
 uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 { MULTILABEL::labels labels = ec->pred.multilabels;

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -283,7 +283,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);..\rapidjson\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -383,6 +383,7 @@
     <ClInclude Include="lrq.h" />
     <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
+    <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
@@ -472,6 +473,7 @@
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="parse_example_json.cc" />
     <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />

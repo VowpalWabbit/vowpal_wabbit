@@ -104,7 +104,6 @@ namespace VW
       char empty = '\0';
       VW::read_line(*vw->m_vw, m_example, &empty);
 
-      VW::parse_atomic_example(*vw->m_vw, m_example, false);
       VW::setup_example(*vw->m_vw, m_example);
     }
 
@@ -179,7 +178,7 @@ namespace VW
         return sb->ToString();
     }
 
-    System::String^ CompareFeatures(vw* vw, features& fa, features& fb)
+    System::String^ CompareFeatures(vw* vw, features& fa, features& fb, unsigned char ns)
     {
         vector<size_t> fa_missing;
         for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
@@ -227,7 +226,8 @@ namespace VW
 
         if (!fa_missing.empty())
         {
-            auto diff = gcnew System::Text::StringBuilder("missing: ");
+			auto diff = gcnew System::Text::StringBuilder();
+			diff->AppendFormat("missing features in ns '{0}'/'{1}': ", ns, gcnew Char(ns));
             for (size_t& ia : fa_missing)
             {
                 diff->AppendFormat("this.weight_index = {0}, x = {1}, ",
@@ -285,11 +285,11 @@ namespace VW
                 return System::String::Format("Feature length differ {0} vs {1}. this({2}) vs other({3})",
                 fa.size(), fb.size(), FormatFeatures(vw->m_vw, fa), FormatFeatures(vw->m_vw, fb));
 
-            auto diff = CompareFeatures(vw->m_vw, fa, fb);
+            auto diff = CompareFeatures(vw->m_vw, fa, fb, *i);
             if (diff != nullptr)
                 return diff;
 
-            diff = CompareFeatures(vw->m_vw, fb, fa);
+            diff = CompareFeatures(vw->m_vw, fb, fa, *i);
             if (diff != nullptr)
                 return diff;
         }

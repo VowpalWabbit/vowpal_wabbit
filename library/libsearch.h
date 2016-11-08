@@ -20,12 +20,10 @@ public:
   SearchTask(vw& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
   { bogus_example = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
     VW::read_line(vw_obj, bogus_example, (char*)"1 | x");
-    VW::parse_atomic_example(vw_obj, bogus_example, false);
     VW::setup_example(vw_obj, bogus_example);
 
     blank_line = VW::alloc_examples(vw_obj.p->lp.label_size, 1);
     VW::read_line(vw_obj, blank_line, (char*)"");
-    VW::parse_atomic_example(vw_obj, blank_line, false);
     VW::setup_example(vw_obj, blank_line);
 
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();

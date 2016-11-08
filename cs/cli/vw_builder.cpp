@@ -42,7 +42,6 @@ namespace VW
         try
         {
             // finalize example
-            VW::parse_atomic_example(*m_vw->Native->m_vw, m_example->m_example, false);
             VW::setup_example(*m_vw->Native->m_vw, m_example->m_example);
         }
         CATCHRETHROW

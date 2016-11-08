@@ -744,30 +744,33 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   { uint64_t i = 0;
     stringstream msg;
     size_t brw = 1;
-    do
-    { brw = 0;
-      weight* w = &(weights.strided_index(i));
-	  size_t K = all->lda;
-	  if (!read && text)
-		  msg << i << " ";
 
-	  if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
-		brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
-	  else
-	  {
-		  // support 32bit build models
-		  uint32_t j;
-		  brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
-		  i = j;
+	do
+	{
+		brw = 0;
+		size_t K = all->lda;
+		if (!read && text)
+			msg << i << " ";
+
+		if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+			brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
+		else
+		{
+			// support 32bit build models
+			uint32_t j;
+			brw += bin_text_read_write_fixed(model_file, (char *)&j, sizeof(j), "", read, msg, text);
+			i = j;
+		}
+
+		if (brw != 0){
+			weight* w = &(weights.strided_index(i));
+			for (uint64_t k = 0; k < K; k++)
+			{  weight* v = w + k;
+				if (!read && text)
+					msg << *v + l.lda_rho << " ";
+				brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
+			}
 	  }
-	  
-	  if (brw != 0)	  
-	    for (uint64_t k = 0; k < K; k++)
-	      {  weight* v = w + k;
-			 if (!read && text) 
-				msg << *v + l.lda_rho << " ";
-		     brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
-	      }
       if (text)
         {
 		  if (!read)
@@ -1010,11 +1013,12 @@ void get_top_weights(vw* all, int top_words_count, int topic, std::vector<featur
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
 	  top_features.push({(&(*iter))[topic], i});
 
-	iter = weights.begin() + top_words_count;
 	for (uint64_t i = top_words_count; i < length; i++, ++iter)
-	  {  if ((&(*iter))[topic] > top_features.top().x)
+	  {
+		weight v = (&(*iter))[topic];
+		if (v > top_features.top().x)
 		{ top_features.pop();
-		  top_features.push({(&(*iter))[topic], i});
+		  top_features.push({ v, i });
 		}
 	}
 
@@ -1331,7 +1335,7 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift());
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift(), prediction_type::scalars);
 
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);

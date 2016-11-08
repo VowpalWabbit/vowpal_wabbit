@@ -4,7 +4,7 @@ import pytest
 
 from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
-from sklearn.utils.validation import NotFittedError
+from sklearn.exceptions import NotFittedError
 from scipy.sparse import csr_matrix
 
 

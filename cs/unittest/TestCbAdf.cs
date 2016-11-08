@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
 using VW.Labels;
 using VW.Serializer.Attributes;
+using Newtonsoft.Json;
 
 namespace cs_unittest
 {
@@ -190,6 +191,93 @@ namespace cs_unittest
                         }
                     }
                 );
+            }
+        }
+
+        [TestMethod]
+        public void TestCbAdfExplore()
+        {
+            var json = JsonConvert.SerializeObject(new
+            {
+                U = new { age = "18" },
+                _multi = new[]
+                {
+                            new
+                            {
+                                G = new { _text = "this rocks" },
+                                K = new { constant = 1, doc = "1" }
+                            },
+                            new
+                            {
+                                G = new { _text = "something NYC" },
+                                K = new { constant = 1, doc = "2" }
+                            },
+                        },
+                _label_Action = 2,
+                _label_Probability = 0.1,
+                _label_Cost = -1,
+                _labelIndex = 1
+            });
+
+            using (var vw = new VowpalWabbitJson("--cb_explore_adf --bag 4 --epsilon 0.0001 --cb_type mtr --marginal K -q UG -b 26 --power_t 0 --l1 1e-9 -l 4e-3"))
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    var pred = vw.Learn(json, VowpalWabbitPredictionType.ActionProbabilities);
+                    Assert.AreEqual(2, pred.Length);
+
+                    if (i > 40)
+                    {
+                        Assert.AreEqual(1, (int)pred[0].Action);
+                        Assert.IsTrue(pred[0].Score > .9);
+
+                        Assert.AreEqual(0, (int)pred[1].Action);
+                        Assert.IsTrue(pred[1].Score < .1);
+                    }
+                }
+
+                vw.Native.SaveModel("cbadfexplore.model");
+            }
+
+            using (var vw = new VowpalWabbitJson(new VowpalWabbitSettings { Arguments = "-t", ModelStream = File.Open("cbadfexplore.model", FileMode.Open) }))
+            {
+                var predObj = vw.Predict(json, VowpalWabbitPredictionType.Dynamic);
+                Assert.IsInstanceOfType(predObj, typeof(ActionScore[]));
+
+                var pred = (ActionScore[])predObj;
+                Assert.AreEqual(1, (int)pred[0].Action);
+                Assert.IsTrue(pred[0].Score > .9);
+
+                Assert.AreEqual(0, (int)pred[1].Action);
+                Assert.IsTrue(pred[1].Score < .1);
+            }
+
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("cbadfexplore.model", FileMode.Open) }))
+            using (var vwSeeded = new VowpalWabbitJson(new VowpalWabbitSettings { Model = vwModel }))
+            {
+                var pred = vwSeeded.Predict(json, VowpalWabbitPredictionType.ActionProbabilities);
+                Assert.AreEqual(1, (int)pred[0].Action);
+                Assert.IsTrue(pred[0].Score > .9);
+
+                Assert.AreEqual(0, (int)pred[1].Action);
+                Assert.IsTrue(pred[1].Score < .1);
+            }
+
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("cbadfexplore.model", FileMode.Open) }))
+            { 
+                using (var vwPool = new VowpalWabbitJsonThreadedPrediction(vwModel))
+                using (var vw = vwPool.GetOrCreate())
+                {
+                    var predObj = vw.Value.Predict(json, VowpalWabbitPredictionType.Dynamic);
+                    Assert.IsInstanceOfType(predObj, typeof(ActionScore[]));
+
+                    var pred = (ActionScore[])predObj;
+                    Assert.AreEqual(1, (int)pred[0].Action);
+                    Assert.IsTrue(pred[0].Score > .9);
+
+                    Assert.AreEqual(0, (int)pred[1].Action);
+                    Assert.IsTrue(pred[1].Score < .1);
+                }
             }
         }
 

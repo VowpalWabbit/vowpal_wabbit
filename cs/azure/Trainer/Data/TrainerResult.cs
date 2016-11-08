@@ -16,24 +16,30 @@ namespace VowpalWabbit.Azure.Trainer.Data
 {
     internal sealed class TrainerResult
     {
-        internal TrainerResult(int[] actions, float[] probabilities)
+        internal TrainerResult(ActionScore[] progressivePrediction, int[] observedActions, float[] observedProbabilities)
         {
-            if (actions == null)
-                throw new ArgumentNullException(nameof(actions));
-            if (probabilities == null)
-                throw new ArgumentNullException(nameof(probabilities));
+            if (progressivePrediction == null)
+                throw new ArgumentNullException(nameof(progressivePrediction));
 
-            if (actions.Length != probabilities.Length)
-                throw new ArgumentException($"Actions (length: {actions.Length}) and probabilities (length: {probabilities.Length}) must be of equal length"); 
+            if (observedActions == null)
+                throw new ArgumentNullException(nameof(observedActions));
+            if (observedProbabilities == null)
+                throw new ArgumentNullException(nameof(observedProbabilities));
 
-            this.Ranking = actions;
-            this.ProbabilitiesOrderedByRanking = probabilities;
-            this.Probabilities = new float[actions.Length];
-            for (int i = 0; i < actions.Length; i++)
-                this.Probabilities[actions[i] - 1] = probabilities[i];
+            if (observedActions.Length != observedProbabilities.Length)
+                throw new ArgumentException($"Actions (length: {observedActions.Length}) and probabilities (length: {observedProbabilities.Length}) must be of equal length");
+
+            this.ProgressiveRanking = progressivePrediction.Select(a => (int)a.Action).ToArray();
+            var probabilitiesOrderedByRanking = progressivePrediction.Select(a => a.Score).ToArray();
+            this.ProgressiveProbabilities = new float[probabilitiesOrderedByRanking.Length];
+            for (int i = 0; i < probabilitiesOrderedByRanking.Length; i++)
+                this.ProgressiveProbabilities[ProgressiveRanking[i]] = probabilitiesOrderedByRanking[i]; // Ranking is 0-based
+
+            this.ObservedRanking = observedActions;
+            this.ObservedProbabilities = new float[observedProbabilities.Length];
+            for (int i = 0; i < observedActions.Length; i++)
+                this.ObservedProbabilities[observedActions[i] - 1] = observedProbabilities[i];
         }
-
-        internal ActionScore[] ProgressivePrediction { get; set; }
 
         internal ContextualBanditLabel Label { get; set; }
 
@@ -41,11 +47,13 @@ namespace VowpalWabbit.Azure.Trainer.Data
 
         internal string PartitionKey { get; set; }
 
-        internal int[] Ranking { get; private set; }
+        internal int[] ProgressiveRanking { get; private set; }
 
-        internal float[] Probabilities { get; private set; }
+        internal float[] ProgressiveProbabilities { get; private set; }
 
-        internal float[] ProbabilitiesOrderedByRanking { get; private set; }
+        internal int[] ObservedRanking { get; private set; }
+
+        internal float[] ObservedProbabilities { get; private set; }
 
         internal float ProbabilityOfDrop { get; set; }
 

@@ -26,8 +26,8 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-  vw* initialize(std::string s, io_buf* model=nullptr);
-vw* initialize(int argc, char* argv[], io_buf* model=nullptr);
+  vw* initialize(std::string s, io_buf* model=nullptr, bool skipModelLoad=false);
+vw* initialize(int argc, char* argv[], io_buf* model=nullptr, bool skipModelLoad = false);
  vw* seed_vw_model(vw* vw_model, std::string extra_args);
 
  void cmd_string_replace_value( std::stringstream*& ss, std::string flag_to_replace, std::string new_value );
@@ -44,7 +44,6 @@ void sync_stats(vw& all);
 void start_parser(vw& all);
 void end_parser(vw& all);
 bool is_ring_example(vw& all, example* ae);
-bool parse_atomic_example(vw& all, example* ae, bool do_read);
 
 struct primitive_feature_space   //just a helper definition.
 { unsigned char name;
@@ -57,7 +56,7 @@ struct primitive_feature_space   //just a helper definition.
 /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
  */
 example* read_example(vw& all, char* example_line);
- example* read_example(vw& all, std::string example_line);
+example* read_example(vw& all, std::string example_line);
 
 //The more complex way to create an example.
 
@@ -72,7 +71,8 @@ example* read_example(vw& all, char* example_line);
 example *alloc_examples(size_t, size_t);
 void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*) = nullptr);
 
- void parse_example_label(vw&all, example&ec, std::string label);
+void parse_example_label(vw&all, example&ec, std::string label);
+void setup_examples(vw& all, v_array<example*>& examples);
 void setup_example(vw& all, example* ae);
 example* new_unused_example(vw& all);
 example* get_example(parser* pf);
@@ -82,6 +82,7 @@ float get_importance(example*ec);
 float get_initial(example*ec);
 float get_prediction(example*ec);
 float get_cost_sensitive_prediction(example*ec);
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec);
 uint32_t* get_multilabel_predictions(example* ec, size_t& len);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);

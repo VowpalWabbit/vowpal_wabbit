@@ -167,7 +167,7 @@ namespace VW.Serializer
             var words = value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in words)
             {
-                var featureHash = context.VW.HashFeature(s.Replace('|', '_'), ns.NamespaceHash);
+                var featureHash = context.VW.HashFeature(escapeCharacters.Replace(s, "_"), ns.NamespaceHash);
                 context.NamespaceBuilder.AddFeature(featureHash, 1f);
             }
 
@@ -178,7 +178,7 @@ namespace VW.Serializer
 
             foreach (var s in words)
             {
-                context.AppendStringExample(feature.Dictify, " {0}", s);
+                context.AppendStringExample(feature.Dictify, " {0}", escapeCharacters.Replace(s, "_"));
             }
         }
 
@@ -278,24 +278,35 @@ namespace VW.Serializer
             Contract.Requires(feature != null);
 
             if (value == null)
-            {
                 return;
-            }
 
             foreach (var item in value)
-            {
                 context.NamespaceBuilder.AddFeature(context.VW.HashFeature(item.Replace(' ', '_'), ns.NamespaceHash), 1f);
-            }
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             foreach (var item in value)
-            {
                 context.AppendStringExample(feature.Dictify, " {0}", item);
-            }
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The actual feature value.</param>
+        public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IVowpalWabbitSerializable value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+            if (value == null)
+                return;
+
+            value.Marshal(context, ns, feature);
         }
 
         /// <summary>

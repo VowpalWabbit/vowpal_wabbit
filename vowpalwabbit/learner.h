@@ -23,7 +23,8 @@ namespace prediction_type
 		action_probs,
 		multiclass,
 		multilabels,
-		prob
+		prob,
+		multiclassprobs
 	};
 
 	const char* to_string(prediction_type_t prediction_type);
@@ -162,7 +163,7 @@ public:
   }
   inline float sensitivity(example& ec, size_t i=0)
   { ec.ft_offset += (uint32_t)(increment*i);
-    float ret = sensitivity_fd.sensitivity_f(learn_fd.data, *learn_fd.base, ec);
+    float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
     return ret;
   }

@@ -58,6 +58,7 @@ def prep():
 
         # add explore
         copytree(path.join(here, '..', 'explore'), path.join(here, 'src', 'explore'))
+        copytree(path.join(here, '..', 'rapidjson'), path.join(here, 'src', 'rapidjson'))
 
         # add folders necessary to run 'make python'
         for folder in ['library', 'vowpalwabbit']:

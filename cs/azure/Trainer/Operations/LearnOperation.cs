@@ -42,8 +42,11 @@ namespace VowpalWabbit.Azure.Trainer
                 if (label == null)
                     this.telemetry.TrackTrace($"Unable to find valid label for event '{example.EventId}'", SeverityLevel.Warning);
 
-                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionScore, this.vw);
-                
+                // predict first then learn to avoid information leak
+                var progressivePrediction = example.Example.Predict(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
+
+                example.Example.Learn(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
+
                 //if (this.vwAllReduce != null)
                 //{
                 //    this.vwAllReduce.Post(vw =>
@@ -81,10 +84,9 @@ namespace VowpalWabbit.Azure.Trainer
                     // this.state.PartitionsDateTime[eventHubExample.PartitionKey] = eventHubExample.Offset;
                 }
 
-                return new TrainerResult(example.Actions, example.Probabilities)
+                return new TrainerResult(progressivePrediction, example.Actions, example.Probabilities)
                 {
                     Label = label,
-                    ProgressivePrediction = progressivePrediction,
                     PartitionKey = example.PartitionKey,
                     Latency = latency,
                     ProbabilityOfDrop = example.ProbabilityOfDrop,
