@@ -589,9 +589,13 @@ void sync_weights(vw& all, T& weights)
 {
 	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
 		return;
-	typename T::iterator w = weights.begin();
-	for (; w != weights.end() && all.reg_mode; ++w)
-		*w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
+
+	uint64_t length = (uint64_t)1 << all.num_bits;
+	for (uint64_t i = 0; i < length && all.reg_mode; i++) {
+		weight w = weights.strided_index(i);
+		w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	}
+
 	all.sd->gravity = 0.;
 	all.sd->contraction = 1.;
 }

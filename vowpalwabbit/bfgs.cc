@@ -343,7 +343,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		s_q = 0.;
 		mem = mem0;
 		w = weights.begin();
-		for (; w != weights.end(); mem += b.mem_stride, ++w)
+		for (; w != weights.end(); mem += b.mem_stride, ++w) //strided_index?
 		{
 			(&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
 			s_q += mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
@@ -354,7 +354,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	double y_r = 0.;
 	mem = mem0;
 	w = weights.begin();
-	for (; w != weights.end(); mem += b.mem_stride, ++w)
+	for (; w != weights.end(); mem += b.mem_stride, ++w) //strided_index?
 	{
 		(&(*w))[W_DIR] -= (float)alpha[lastj] * mem[(2 * lastj + MEM_YT + origin) % b.mem_stride];
 		(&(*w))[W_DIR] *= gamma*((&(*w))[W_COND]);
@@ -369,7 +369,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		y_r = 0.;
 		mem = mem0;
 		w = weights.begin();
-		for (; w != weights.end(); mem += b.mem_stride, ++w)
+		for (; w != weights.end(); mem += b.mem_stride, ++w) //strided_index?
 		{
 			(&(*w))[W_DIR] += (float)coef_j*mem[(2 * j + MEM_ST + origin) % b.mem_stride];
 			y_r += mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);

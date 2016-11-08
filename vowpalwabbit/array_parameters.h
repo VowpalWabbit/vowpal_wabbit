@@ -138,6 +138,8 @@ public:
 	  _seeded = true;
 	}
 
+	inline weight& strided_index(size_t index){	return _begin[index << _stride_shift];}
+
 	template<void(*T)(iterator&, uint64_t, uint32_t, void*)> //for random initialization of the entire weight_vector 
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
@@ -220,7 +222,7 @@ public:
 
 	}
 	T& operator*() { 
-		return _map.iter_helper(_index);
+		return _index;
 	} 
 
 	sparse_weights_iterator& operator++()
@@ -305,21 +307,23 @@ public:
 		return (&(*it))[offset];
 
 	}
-	//definitely need to change this
-	inline weight& iter_helper(size_t index)
+
+	weight& strided_index(size_t index)
 	{
 		weight_map::iterator iter = _map.find(index);
 		weight_map::iterator end = _map.end();
 		if (iter == end)
-		{  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
+		{
+			_map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
 			if (fun != nullptr)
 				fun(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
-		}
-		iter = _map.find(index);
+			iter = _map.find(index);
+		}	
 		/* Found, i->first is f, i->second is ++-- */
-		return *(iter->second);
-
+		weight* it = iter->second;
+		return *it;
 	}
+	
 	void shallow_copy(const sparse_weight_parameters& input)
 	{
 		_map = input._map;

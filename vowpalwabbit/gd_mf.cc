@@ -254,10 +254,11 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { typename T::iterator iter = w.begin()+ i;
-		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
-		{  msg << &(*v) << " ";
-		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+	  { weight* w_i= &(w.strided_index(i));
+		for (uint64_t k = 0; k < K; k++)
+		{  weight* v = w_i + k;
+		   msg << v << " ";
+		   brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v),
 				  "", read, msg, text);
 		}
 	  }

@@ -55,50 +55,46 @@ struct OjaNewton {
 	template<class T>
 	void initialize_Z(T& weights)
 	{ 
+	   uint32_t length = 1 << all->num_bits;
 	   if (normalize) { // initialize normalization part
-		 for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-		   (&(*iter))[NORM2] = 0.1f;
+		   for (uint32_t i = 0; i < length; i++)
+			   (&(weights.strided_index(i)))[NORM2] = 0.1f;
 	    }
         if(!random_init) {
             // simple initialization
-		  typename T::iterator iter = weights.begin() + 1;
-		  for (int i = 1; i <= m; ++i, ++iter)
-		  { weights_iterator_iterator<weight> j = iter.begin() + i;
-			*j = 1.f;
-		  }
+			for (int i = 1; i <= m; i++)
+				(&(weights.strided_index(i)))[i] = 1.f;
         }
 	    else {
             // more complicated initialization: orthgonal basis of a random matrix
 
 	    const double PI2 = 2.f * 3.1415927f;
-		for (typename T::iterator i = weights.begin(); i != weights.end(); ++i)
-		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
-		  {  float r1 = frand48();
-		     float r2 = frand48();
-			 *j = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
-		  }
+		for (uint32_t i = 0; i < length; i++){
+			weight w = weights.strided_index(i);
+			for (int j = 1; j <= m; j++) {
+				float r1 = frand48();
+				float r2 = frand48();
+				(&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+			}
 
+		}
+		
             // Gram-Schmidt
           for (int j = 1; j <= m; j++) {
              for (int k = 1; k <= j - 1; k++) {
 	            double tmp = 0;
 				
-				typename T::iterator w = weights.begin();
-		        for (; w != weights.end(); ++w) 
-					tmp += (&(*w))[j] * (&(*w))[k];
-
-				w = weights.begin();
-				for (; w != weights.end(); ++w)
-					(&(*w))[j] -= (float)tmp * (&(*w))[k];
-	         }
+				for (uint32_t i = 0; i < length; i++)
+					tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
+				for (uint32_t i = 0; i < length; i++)
+					(&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
+			 }
 	        double norm = 0;
-			typename T::iterator w = weights.begin();
-			for (; w != weights.end(); ++w)
-				norm += (&(*w))[j] * (&(*w))[j];
-            norm = sqrt(norm);
-			w = weights.begin();
-			for (; w != weights.end(); ++w)
-				(&(*w))[j] /= (float)norm;
+			for (uint32_t i = 0; i < length; i++)
+				norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
+			norm = sqrt(norm);
+			for (uint32_t i = 0; i < length; i++)
+				(&(weights.strided_index(i)))[j] /= (float)norm;
 	       }
 	    }
     }
@@ -280,29 +276,27 @@ struct OjaNewton {
 	//second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
         uint32_t length = 1 << all->num_bits;
-        //size_t stride_shift = all->stride_shift;
-		for (typename T::iterator i = weights.begin(); i != weights.end(); ++i)
-		{  weights_iterator_iterator<weight> w_j = i.begin() + 1;
-		   for (int j = 1; j <= m; ++j, ++w_j)
-		     *i += *w_j * b[j] * D[j];
+		for (uint32_t i = 0; i < length; i++) {
+			weight w = weights.strided_index(i);
+			for (int j = 1; j <= m; j++)
+				w += (&w)[j] * b[j] * D[j];
 		}
+
         memset(b, 0, sizeof(double) * (m+1));
 
         //third step: Z <- ADZ, A, D <- Identity
 
 	    //double norm = 0;
-		typename T::iterator iter = weights.begin();
-        for (uint32_t i = 0; i < length; ++i, ++iter) {
+        for (uint32_t i = 0; i < length; ++i) {
             memset(tmp, 0, sizeof(float) * (m+1));
+			weight w = weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
-			{ weights_iterator_iterator<weight> w_k = iter.begin() + 1;
-			  for (int h = 1; h <= m; ++h, ++w_k)
-			    tmp[j] += A[j][h] * D[h] * (*w_k);
+			{ for (int h = 1; h <= m; ++h)
+			    tmp[j] += A[j][h] * D[h] * (&w)[h];
 			}
-			weights_iterator_iterator<weight> w_j = iter.begin() + 1;
-            for (int j = 1; j <= m; ++j, ++w_j) {
+            for (int j = 1; j <= m; ++j) {
 		      //norm = max(norm, fabs(tmp[j]));
-               *w_j = tmp[j];
+				(&w)[j] = tmp[j];
 	        }
         }
         //printf("|Z| = %f\n", norm);

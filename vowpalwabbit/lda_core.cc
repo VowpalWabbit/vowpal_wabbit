@@ -746,8 +746,8 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
     size_t brw = 1;
     do
     { brw = 0;
-	  typename T::iterator iter = weights.begin();
-
+      weight* w = &(weights.strided_index(i));
+	  size_t K = all->lda;
 	  if (!read && text)
 		  msg << i << " ";
 
@@ -762,10 +762,11 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 	  }
 	  
 	  if (brw != 0)	  
-	    for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(all->lda); ++v)
-	      { if (!read && text) 
-		  msg << *v + l.lda_rho << " ";
-		brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v), "", read, msg, text);
+	    for (uint64_t k = 0; k < K; k++)
+	      {  weight* v = w + k;
+			 if (!read && text) 
+				msg << *v + l.lda_rho << " ";
+		     brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
 	      }
       if (text)
         {
@@ -773,10 +774,8 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 			  msg << "\n";
           brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
         }
-	  if (!read){
+	  if (!read)
 		  ++i;
-		  ++iter;
-	  }
     }
     while ((!read && i < length) || (read && brw > 0));
   }
