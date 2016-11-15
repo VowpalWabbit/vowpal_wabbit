@@ -13,8 +13,7 @@ struct data
   float initial_denominator;
   float decay;
   bool id_features[256];
-  feature temp[256];//temporary storage when reducing.
-  audit_strings_ptr asp[256];
+  features temp[256];//temporary storage when reducing.
   unordered_map<uint64_t, marginal > marginals;
   vw* all;
 };
@@ -28,29 +27,32 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
       namespace_index n = i.index();
       if (sm.id_features[n])
 	{
+	  std::swap(sm.temp[n],*i);
 	  features& f = *i;
-	  if (f.size() != 2)
+	  f.erase();
+	  for (features::iterator j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
 	    {
-	      cout << "warning: id feature namespace has " << f.size() << " features. Should have a constant then the id" << endl;
-	      continue;
+	      float first_value = j.value();
+	      uint64_t first_index = j.index() & mask;
+	      if (++j == sm.temp[n].end())
+		{
+		  cout << "warning: id feature namespace has " << sm.temp[n].size() << " features. Should be a multiple of 2" << endl;
+		  break;
+		}
+	      float second_value = j.value();
+	      uint64_t second_index = j.index() & mask;
+	      if (first_value != 1. || second_value != 1.)
+		{
+		  cout << "warning: bad id features, must have value 1." << endl;
+		  continue;
+		}
+	      uint64_t key = second_index + ec.ft_offset;
+	      if (sm.marginals.find(key) == sm.marginals.end())//need to initialize things.
+		sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
+	      f.push_back((sm.marginals[key].first / sm.marginals[key].second), first_index);
+	      if (!sm.temp[n].space_names.empty())
+		f.space_names.push_back(sm.temp[n].space_names[2*(f.size()-1)]);
 	    }
-	  features::iterator i = f.begin();
-	  float first_value = i.value();
-	  float second_value = (++i).value();
-	  uint64_t second_index = i.index() & mask;
-	  if (first_value != 1. || second_value != 1.)
-	    {
-	      cout << "warning: bad id features, must have value 1." << endl;
-	      continue;
-	    }
-	  uint64_t key = second_index + ec.ft_offset;
-	  if (sm.marginals.find(key) == sm.marginals.end())//need to initialize things.
-	    sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
-	  f.begin().value() = (feature_value)(sm.marginals[key].first / sm.marginals[key].second);
-	  sm.temp[n]={second_value,second_index};
-	  if (!f.space_names.empty())
-	    sm.asp[n]=f.space_names[1];
-	  f.truncate_to(1);
 	}
     }
   if (is_learn)
@@ -63,29 +65,27 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
       namespace_index n = i.index();
       if (sm.id_features[n])
 	{
-	  features& f = *i;
-	  if (f.size() != 1)
-	    cout << "warning: id feature namespace has " << f.size() << " features. Should have a constant then the id" << endl;
-	  else //do unsubstitution dance
-	    {
-	      f.begin().value() = 1.;
-	      f.push_back(sm.temp[n].x, sm.temp[n].weight_index);
-	      if (!f.space_names.empty())
-		f.space_names.push_back(sm.asp[n]);
-	      if (is_learn)
-		{
-		  uint64_t second_index = (++(f.begin())).index();
-		  uint64_t key = second_index + ec.ft_offset;
-		  marginal& m = sm.marginals[key];
-		  m.first = m.first * (1. - sm.decay) + ec.l.simple.label * ec.weight;
-		  m.second = m.second * (1. - sm.decay) + ec.weight;
-		}
-	    }
+	  if (is_learn)
+	    for (features::iterator j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
+	      {
+		if (++j == sm.temp[n].end())
+		  break;
+		uint64_t second_index = j.index() & mask;
+		uint64_t key = second_index + ec.ft_offset;
+		marginal& m = sm.marginals[key];
+		m.first = m.first * (1. - sm.decay) + ec.l.simple.label * ec.weight;
+		m.second = m.second * (1. - sm.decay) + ec.weight;
+	      }
+	  std::swap(sm.temp[n],*i);
 	}
     }
 }
-
-  void finish(data& sm) { sm.marginals.~unordered_map(); }
+  
+  void finish(data& sm)
+  { sm.marginals.~unordered_map();
+    for (size_t i =0; i < 256; i++)
+      sm.temp[i].delete_v();
+  }
 
   void save_load(data& sm, io_buf& io, bool read, bool text)
   {
