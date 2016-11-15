@@ -11,6 +11,7 @@ struct data
 { 
   float initial_numerator;
   float initial_denominator;
+  float decay;
   bool id_features[256];
   feature temp[256];//temporary storage when reducing.
   audit_strings_ptr asp[256];
@@ -75,8 +76,9 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 		{
 		  uint64_t second_index = (++(f.begin())).index();
 		  uint64_t key = second_index + ec.ft_offset;
-		  sm.marginals[key].first += ec.l.simple.label * ec.weight;
-		  sm.marginals[key].second += ec.weight;
+		  marginal& m = sm.marginals[key];
+		  m.first = m.first * (1. - sm.decay) + ec.l.simple.label * ec.weight;
+		  m.second = m.second * (1. - sm.decay) + ec.weight;
 		}
 	    }
 	}
@@ -137,13 +139,15 @@ LEARNER::base_learner* marginal_setup(vw& all)
 { if (missing_option<string, true>(all, "marginal", "substitute marginal label estimates for ids"))
     return nullptr;
   new_options(all)
-    ("initial_denominator", po::value<float>()->default_value(1.f), "initial default value")
-    ("initial_numerator", po::value<float>()->default_value(0.5f), "initial default value");
+    ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
+    ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
+    ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)");
   add_options(all);
 
   data& d = calloc_or_throw<data>();
   d.initial_numerator = all.vm["initial_numerator"].as<float>();
   d.initial_denominator = all.vm["initial_denominator"].as<float>();
+  d.decay = all.vm["decay"].as<float>();
   d.all = &all;
   string s = (string)all.vm["marginal"].as<string>();
 
