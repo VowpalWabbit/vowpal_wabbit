@@ -181,6 +181,7 @@ namespace VowpalWabbit.Azure.Trainer
 
             try
             {
+                this.startDateTime = DateTime.UtcNow;
                 this.vw = new VW.VowpalWabbit(vwSettings);
                 var cmdLine = vw.Arguments.CommandLine;
 
