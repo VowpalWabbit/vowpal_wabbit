@@ -29,9 +29,9 @@ namespace CB_EXPLORE{
     float epsilon;
     size_t bag_size;
     size_t cover_size;
-    
+
     size_t counter;
-  
+
   };
 
 
@@ -40,16 +40,16 @@ namespace CB_EXPLORE{
   { //Explore tau times, then act according to optimal.
     v_array<action_score> probs = ec.pred.a_s;
 
-    if (is_learn && ec.l.cb.costs[0].probability < 1) 
+    if (is_learn && ec.l.cb.costs[0].probability < 1)
       base.learn(ec);
     else
       base.predict(ec);
 
     probs.erase();
-    if(data.tau > 0) 
+    if(data.tau > 0)
       {
 	float prob = 1.f/(float)data.cbcs.num_actions;
-	for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+	for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
 	  probs.push_back({i,prob});
 	data.tau--;
       }
@@ -59,8 +59,8 @@ namespace CB_EXPLORE{
 	for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
 	  probs.push_back({i,0.});
 	probs[chosen].score = 1.0;
-      }    
-    
+      }
+
     ec.pred.a_s = probs;
   }
 
@@ -77,11 +77,11 @@ namespace CB_EXPLORE{
       base.predict(ec);
 
     float prob = data.epsilon/(float)data.cbcs.num_actions;
-    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
       probs.push_back({i,prob});
     uint32_t chosen = ec.pred.multiclass-1;
     probs[chosen].score += (1-data.epsilon);
-    
+
 	ec.pred.a_s = probs;
   }
 
@@ -92,7 +92,7 @@ namespace CB_EXPLORE{
     v_array<action_score> probs = ec.pred.a_s;
     probs.erase();
 
-    for(uint32_t i = 0;i < data.cbcs.num_actions;i++) 
+    for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
       probs.push_back({i,0.});
     float prob = 1.f/(float)data.bag_size;
     for(size_t i = 0;i < data.bag_size;i++) {
@@ -101,7 +101,7 @@ namespace CB_EXPLORE{
 	base.learn(ec,i);
       else
 	base.predict(ec, i);
-      uint32_t chosen = ec.pred.multiclass-1;	
+      uint32_t chosen = ec.pred.multiclass-1;
       probs[chosen].score += prob;
       if (is_learn)
 	for (uint32_t j = 1; j < count; j++)
@@ -114,6 +114,7 @@ namespace CB_EXPLORE{
   void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
   { //input: a probability distribution
     //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
+    min_prob /= distribution.size();
     float touched_mass = 0.;
     float untouched_mass = 0.;
     for (uint32_t i = 0; i < distribution.size(); i++)
@@ -121,11 +122,11 @@ namespace CB_EXPLORE{
 	{ touched_mass += min_prob;
 	  distribution[i].score = min_prob;
 	}
-      else 
+      else
 	untouched_mass += distribution[i].score;
-    
+
     if (touched_mass > 0.)
-      { 
+      {
 	if (touched_mass > 0.999)
 	  THROW("Cannot safety this distribution");
 	float ratio = (1.f - touched_mass) / untouched_mass;
@@ -136,7 +137,7 @@ namespace CB_EXPLORE{
   }
 
   void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, v_array<action_score>& probs)
-  { 
+  {
     float additive_probability = 1.f / (float)data.cover_size;
     data.preds.erase();
 
@@ -155,11 +156,11 @@ namespace CB_EXPLORE{
       }
     uint32_t num_actions = data.cbcs.num_actions;
     float epsilon = data.epsilon;
-    
+
     float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
-    
-    safety(probs, min_prob, false);
-    
+
+    safety(probs, min_prob*num_actions, false);
+
     data.counter++;
   }
 
@@ -191,7 +192,7 @@ namespace CB_EXPLORE{
 
     ec.l.cs = data.cs_label;
     get_cover_probabilities(data, base, ec, probs);
-	
+
     if (is_learn) {
       ec.l.cb = data.cb_label;
       base.learn(ec);
@@ -257,13 +258,13 @@ namespace CB_EXPLORE{
   { float loss = 0.;
 
     cb_to_cs& c = data.cbcs;
-  
+
     if ((c.known_cost = get_observed_cost(ld)) != nullptr)
       for(uint32_t i = 0;i < ec.pred.a_s.size();i++)
 	loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.a_s[i].score;
-  
+
     all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-    
+
     char temp_str[20];
     stringstream ss, sso;
     float maxprob = 0.;
@@ -281,7 +282,7 @@ namespace CB_EXPLORE{
     sprintf(temp_str, "%d:%f", maxid, maxprob);
     sso << temp_str;
     //cout<<sso.str()<<endl;
-    
+
     for (int sink : all.final_prediction_sink)
       all.print_text(sink, ss.str(), ec.tag);
 
@@ -289,7 +290,7 @@ namespace CB_EXPLORE{
   }
 
   void finish_example(vw& all, cb_explore& c, example& ec)
-  {   
+  {
     output_example(all, c, ec, ec.l.cb);
     VW::finish_example(all, &ec);
   }
