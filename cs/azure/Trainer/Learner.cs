@@ -31,6 +31,7 @@ namespace VowpalWabbit.Azure.Trainer
 
         private readonly Action<VowpalWabbitJsonSerializer> delayedExampleCallback;
 
+        private DateTime startDateTime;
 
         private readonly PerformanceCounters perfCounters;
 
