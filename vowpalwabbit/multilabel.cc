@@ -132,23 +132,6 @@ void print_update(vw& all, bool is_test, example& ec)
   }
 }
 
-void print_multilabel(int f, labels& mls, v_array<char>&)
-{ if (f >= 0)
-  { std::stringstream ss;
-
-    for (size_t i = 0; i < mls.label_v.size(); i++)
-    { if (i > 0)
-        ss << ',';
-      ss << mls.label_v[i];
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
-  }
-}
-
 void output_example(vw& all, example& ec)
 { labels& ld = ec.l.multilabels;
 
@@ -178,10 +161,20 @@ void output_example(vw& all, example& ec)
   }
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-
+  
   for (int sink : all.final_prediction_sink)
-    print_multilabel(sink, ec.pred.multilabels, ec.tag);
-
+    if (sink >= 0)
+      { std::stringstream ss;
+	
+	for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+	  { if (i > 0)
+	      ss << ',';
+	    ss << ec.pred.multilabels.label_v[i];
+	  }
+	ss << ' ';
+	all.print_text(sink, ss.str(), ec.tag);
+      }
+  
   print_update(all, is_test_label(ec.l.multilabels), ec);
 }
 
