@@ -928,7 +928,7 @@ __DATA__
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
-{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict
+{VW} -d train-sets/3parity -t -i models/0021.model -p 0022.predict
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
 
@@ -1536,3 +1536,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_cover_dr256.json.stderr
     pred-sets/ref/cbe_adf_cover_dr256.predict
 
+# Test 147: --scores --oaa
+{VW} -d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict
+   train-sets/ref/oaa_scores.stderr
+   pred-sets/ref/oaa_scores.predict
