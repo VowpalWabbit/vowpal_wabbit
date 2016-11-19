@@ -1,5 +1,4 @@
 predictions = oaa_scores.predict
-WARNING: --probabilities should be used only with --loss_function=logistic
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
