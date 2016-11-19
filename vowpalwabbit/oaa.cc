@@ -12,7 +12,6 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
-
 struct oaa
 { size_t k;
   vw* all; // for raw
