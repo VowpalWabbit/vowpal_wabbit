@@ -53,6 +53,7 @@ class weights_iterator
 {
 private:
 	T* _current;
+	uint32_t _stride_shift;
 	uint32_t _stride;
 
 public:
@@ -64,8 +65,8 @@ public:
 
 	typedef weights_iterator_iterator<T> w_iter;
 	
-	weights_iterator(T* current, uint32_t stride)
-		: _current(current), _stride(stride)
+	weights_iterator(T* current, uint32_t stride_shift)
+		: _current(current), _stride_shift(stride_shift), _stride(1 << stride_shift)
 	{ }
 
 	T& operator*() { return *_current; }
@@ -76,18 +77,12 @@ public:
 		return *this;
 	}
 
-	weights_iterator operator+(size_t index) { return weights_iterator(_current + (index*_stride), _stride); }
-
-	weights_iterator& operator+=(size_t index)
-	{  _current += (index*_stride);
-	   return *this;
-	}
-
 	bool operator==(const weights_iterator& rhs) const { return _current == rhs._current; }
 	bool operator!=(const weights_iterator& rhs) const { return _current != rhs._current; }
 
 	//to iterate within a bucket
 	w_iter begin() { return w_iter(_current); }
+	w_iter end() { return w_iter(_current + _stride_shift); }
 	w_iter end(size_t offset) { return w_iter(_current + offset); }
 };
 
@@ -122,13 +117,13 @@ public:
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
 	//iterator with stride 
-	iterator begin() { return iterator(_begin, (1<<_stride_shift)); }
-	iterator end() { return iterator(_begin + _weight_mask + 1, (1 << _stride_shift)); }
+	iterator begin() { return iterator(_begin, _stride_shift); }
+	iterator end() { return iterator(_begin + _weight_mask + 1, _stride_shift); }
 
 	iterator change_begin() { return iterator(_begin, 1); }
 	//const iterator
-	const_iterator cbegin() { return const_iterator(_begin, (1 << _stride_shift)); }
-	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, (1 << _stride_shift)); }
+	const_iterator cbegin() { return const_iterator(_begin, _stride_shift); }
+	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _stride_shift); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 	void shallow_copy(const weight_parameters& input)
@@ -140,7 +135,7 @@ public:
 
 	inline weight& strided_index(size_t index){	return _begin[index << _stride_shift];}
 
-	template<void(*T)(iterator&, uint64_t, uint32_t, void*)> //for random initialization of the entire weight_vector 
+	template<void(*T)(iterator&, uint64_t, uint32_t, void*)>  
 	inline void set_default()
 	{ uint32_t stride = 1 << _stride_shift;
 	iterator iter = begin();
@@ -177,7 +172,7 @@ public:
 			                  PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
           size_t float_count = length << _stride_shift;
       	  weight* dest = shared_weights;
-	  memcpy(dest, _begin, float_count*sizeof(float));
+		  memcpy(dest, _begin, float_count*sizeof(float));
       	  free(_begin);
       	  _begin = dest;
 	}
@@ -195,10 +190,8 @@ template <typename T>
 class sparse_weights_iterator
 {
 private:
-	size_t _index;
-	//T* _current;
-	uint32_t _stride;
-	sparse_weight_parameters& _map;
+	weight_map::iterator& _iter;
+	uint32_t _stride_shift;
 
 public:
 	typedef std::forward_iterator_tag iterator_category;
@@ -209,42 +202,34 @@ public:
 
 	typedef weights_iterator_iterator<T> w_iter;
 
-	sparse_weights_iterator(sparse_weight_parameters& map, size_t index, uint32_t stride)
-		: _map(map) , _index(index), _stride(stride)
+	sparse_weights_iterator(weight_map::iterator& iter, uint32_t stride_shift)
+		: _iter(iter), _stride_shift(stride_shift)
 	{ }
 
 	sparse_weights_iterator& operator=(const sparse_weights_iterator& other)
 	{
-		_index = other._index;
-		_stride = other._stride;
-		_map = other._map;
+		_iter = other._iter;
+		_stride_shift = other._stride_shift;
 		return *this;
 
 	}
 	T& operator*() { 
-		return _index;
+		return *(_iter->second);
 	} 
 
 	sparse_weights_iterator& operator++()
 	{  
-		_index++;
+		_iter++;
 		return *this;
 	}
 
-	sparse_weights_iterator operator+(size_t ind) { return sparse_weights_iterator(_map, _index + ind, _stride); }
-
-	sparse_weights_iterator& operator+=(size_t ind)
-	{
-		_index += ind;
-		return *this;
-	}
-
-	bool operator==(const sparse_weights_iterator& rhs) const { return _index == rhs._index; }
-	bool operator!=(const sparse_weights_iterator& rhs) const { return _index != rhs._index; }
+	bool operator==(const sparse_weights_iterator& rhs) const { return _iter == rhs._iter; }
+	bool operator!=(const sparse_weights_iterator& rhs) const { return _iter != rhs._iter; }
 
 	//to iterate within a bucket
-	w_iter begin() { return w_iter(&_map.iter_helper(_index));}//&_map[_index*_stride]); }
-	w_iter end(size_t offset) { return w_iter(&_map.iter_helper(_index) + offset); }
+	w_iter begin() { return w_iter(_iter->second);}
+	w_iter end() { return w_iter(_iter->second + _stride_shift); }
+	w_iter end(size_t offset) { return w_iter(_iter->second + offset);}
 };
 
 
@@ -262,8 +247,9 @@ public:
 	typedef sparse_weights_iterator<const weight> const_iterator;
 	void(*fun)(iterator&, uint64_t, uint32_t, void*) = nullptr;
 	void* set_struct;
+
 	sparse_weight_parameters(size_t length, uint32_t stride_shift = 0)
-		: _map(),//_begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
+		: _map(),
 		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
 		_seeded(false)
@@ -278,17 +264,17 @@ public:
 	sparse_weight_parameters(const sparse_weight_parameters &other) { shallow_copy(other); }
 	sparse_weight_parameters(sparse_weight_parameters &&) = delete;
 
-	weight* first() { throw 1; } //TODO: not currently supported in sparse
+	weight* first() { throw 1; } //TODO: Throw better exceptions. Allreduce currently not supported in sparse.
 
 	//iterator with stride 
-	iterator begin() { return iterator(*this, 0, (1 << _stride_shift)); }
-	iterator end() { return iterator(*this, _weight_mask + 1, (1 << _stride_shift)); }
+	iterator begin() { return iterator(_map.begin(), _stride_shift); }
+	iterator end() { return iterator(_map.end(), _stride_shift); }
 
-	iterator change_begin() { return iterator(*this, 0, 1); }
+	iterator change_begin() { throw 1; } //TODO:Remove. Was originally used to iterate without stride
+
 	//const iterator
-	const_iterator cbegin() { return const_iterator(*this, 0, (1 << _stride_shift)); }
-	const_iterator cend() { return const_iterator(*this, _weight_mask + 1, (1 << _stride_shift)); }
-
+	const_iterator cbegin() { return const_iterator(_map.begin(),  _stride_shift); }
+	const_iterator cend() { return const_iterator(_map.end(), _stride_shift); }
 	
 	inline weight& operator[](size_t i)
 	{   uint64_t index = floor((i & _weight_mask)/ _stride_shift);
@@ -296,12 +282,11 @@ public:
 		weight_map::iterator end = _map.end();
 		if (iter == end) 
 		{   _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
+			iter = _map.find(index);
 			if (fun != nullptr)
-				fun(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
-			
+				fun(iterator(iter, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
+			iter = _map.find(index);
 		}
-		iter = _map.find(index);
-		/* Found, i->first is f, i->second is ++-- */
 		weight* it = iter->second;
 		size_t offset = (i & _weight_mask) % _stride_shift;
 		return (&(*it))[offset];
@@ -313,13 +298,11 @@ public:
 		weight_map::iterator iter = _map.find(index);
 		weight_map::iterator end = _map.end();
 		if (iter == end)
-		{
-			_map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
-			if (fun != nullptr)
-				fun(iterator(*this, index, _stride_shift), index << _stride_shift, _stride_shift, set_struct);
-			iter = _map.find(index);
+		{  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride_shift)));
+		   iter = _map.find(index);
+		   if (fun != nullptr)
+				fun(iterator(iter, _stride_shift), index << _stride_shift, _stride_shift, set_struct);		
 		}	
-		/* Found, i->first is f, i->second is ++-- */
 		weight* it = iter->second;
 		return *it;
 	}
