@@ -20,8 +20,8 @@ loss     last          counter         weight    label  predict features
 finished run
 number of examples per pass = 250
 passes used = 1
-weighted example sum = 217.709346
-weighted label sum = 15.483050
+weighted example sum = 217.709347
+weighted label sum = 15.483053
 average loss = 0.264386
 best constant = 0.142477
 best constant's loss = 0.690616

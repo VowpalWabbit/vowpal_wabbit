@@ -35,7 +35,8 @@ namespace VowpalWabbit.Azure.Trainer
             {
                 TrackbackList = string.Join("\n", this.trackbackList),
                 Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture),
-                UpdateClientModel = updateClientModel
+                UpdateClientModel = updateClientModel,
+                StartDateTime = this.startDateTime
             };
 
             // store the model name

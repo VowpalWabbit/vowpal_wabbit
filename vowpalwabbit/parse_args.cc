@@ -540,7 +540,10 @@ void parse_feature_tweaks(vw& all)
   //feature manipulation
   string hash_function("strings");
   if(vm.count("hash"))
-    hash_function = vm["hash"].as<string>();
+    {
+      hash_function = vm["hash"].as<string>();
+      *all.file_options << " --hash " << hash_function;
+    }
   all.p->hasher = getHasher(hash_function);
 
   if (vm.count("spelling"))

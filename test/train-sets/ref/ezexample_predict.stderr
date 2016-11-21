@@ -1,4 +1,4 @@
-initializing with: '-t -q st --hash all --noconstant --ldf_override s --no_stdin -i models/library_train.w'
+initializing with: '-t -q st --noconstant --ldf_override s --no_stdin -i models/library_train.w'
 WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line.
 creating quadratic features for pairs: st 
 only testing
