@@ -14,6 +14,8 @@ license as described in the file LICENSE.
 #include <cmath>
 #include "correctedMath.h"
 #include "vw_versions.h"
+#include "vw.h"
+#include "mwt.h"
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -728,6 +730,27 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
     }
     while ((!read && i < length) || (read && brw > 0));
   }
+}
+
+void return_example(vw& all, example& ec)
+{
+  label_data ld = ec.l.simple;
+  
+  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  if (ld.label != FLT_MAX && !ec.test_only)
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
+  
+  for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
+    { int f = (int)all.final_prediction_sink[i];
+      MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+    }
+  
+ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet)
+   { all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
+			  ec.num_features, all.progress_add, all.progress_arg);
+   }
+  VW::finish_example(all,&ec);
 }
 
 void learn_batch(lda &l)
