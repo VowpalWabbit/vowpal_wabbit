@@ -84,6 +84,12 @@ void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
+void learn_DM(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+{
+  gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels, false);
+  GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+}
+
 template<bool predict>
 void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { //uint32_t action = 0;
@@ -144,6 +150,9 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 	      break;
 	  case CB_TYPE_DR:
 	    learn_DR(data, base, data.ec_seq);
+	    break;
+	  case CB_TYPE_DM:
+	    learn_DM(data, base, data.ec_seq);
 	    break;
 	  case CB_TYPE_MTR:
 	    if (data.predict)
@@ -365,6 +374,10 @@ base_learner* cb_adf_setup(vw& all)
     { ld.gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
     }
+    else if (type_string.compare("dm") == 0)
+    { ld.gen_cs.cb_type = CB_TYPE_DM;
+      problem_multiplier = 2;
+    }
     else if (type_string.compare("ips") == 0)
     { ld.gen_cs.cb_type = CB_TYPE_IPS;
       problem_multiplier = 1;
@@ -374,7 +387,7 @@ base_learner* cb_adf_setup(vw& all)
       problem_multiplier = 1;
     }
     else
-    { std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+    { std::cerr << "warning: cb_type must be in {'ips','dr','dm'}; resetting to ips." << std::endl;
       ld.gen_cs.cb_type = CB_TYPE_IPS;
     }
   }

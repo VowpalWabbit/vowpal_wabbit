@@ -184,7 +184,7 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
  void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels);
 
  template <bool is_learn>
-  void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+  void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels, bool add_correction = true)
 { //size_t mysize = examples.size();
   c.pred_scores.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -216,9 +216,14 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
     c.pred_scores.costs.push_back(wc); // done
 
     //add correction if we observed cost for this action and regressor is wrong
-    if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
-      wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
+    if (add_correction)
+    {
+        if (c.known_cost.probability != -1 && c.known_cost.action + startK == i)
+          wc.x += (c.known_cost.cost - wc.x) / c.known_cost.probability;
+    }
+
     cs_labels.costs.push_back(wc);
+    
   }
 
   if (shared)//take care of shared examples
@@ -237,6 +242,9 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 	 break;
        case CB_TYPE_DR:
 	 gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
+	 break;
+       case CB_TYPE_DM:
+	 gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels, false);
 	 break;
        case CB_TYPE_MTR:
 	 gen_cs_example_mtr(c, ec_seq, cs_labels);
