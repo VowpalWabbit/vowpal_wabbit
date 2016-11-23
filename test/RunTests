@@ -1540,3 +1540,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict
    train-sets/ref/oaa_scores.stderr
    pred-sets/ref/oaa_scores.predict
+
+#Test 148:  check cb_adf with direct method option
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
+    train-sets/ref/cb_adf_dm.stderr
+    pred-sets/ref/cb_adf_dm.predict
