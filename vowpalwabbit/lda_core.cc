@@ -765,7 +765,7 @@ void learn_batch(lda &l)
 	l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
 	l.examples[d]->pred.scalars.erase();
-	return_simple_example(*l.all, nullptr, *l.examples[d]);
+	return_example(*l.all, *l.examples[d]);
       }
     l.examples.erase();
     return;
@@ -840,7 +840,7 @@ void learn_batch(lda &l)
     { l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
-    return_simple_example(*l.all, nullptr, *l.examples[d]);
+    return_example(*l.all, *l.examples[d]);
   }
 
   // -t there's no need to update weights (especially since it's a noop)
