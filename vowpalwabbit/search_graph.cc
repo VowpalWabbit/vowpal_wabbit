@@ -84,6 +84,7 @@ struct task_data
   example*cur_node;       // pointer to the current node for add_edge_features_fn
   float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
   weight_parameters* weights;
+  sparse_weight_parameters* sparse_weights;
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
@@ -173,14 +174,22 @@ void run_bfs(task_data &D, vector<example*>& ec)
 }
 
 void setup(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+	task_data& D = *sch.get_task_data<task_data>();
+	D.multiplier = D.wpp << D.ss;
+	D.wpp = sch.get_vw_pointer_unsafe().wpp;
+	if (sch.get_vw_pointer_unsafe().sparse)
+	{	D.mask = sch.get_vw_pointer_unsafe().sparse_weights.mask();
+		D.ss = sch.get_vw_pointer_unsafe().sparse_weights.stride_shift();
+		D.sparse_weights = &sch.get_vw_pointer_unsafe().sparse_weights;
+	}
+	else
+	{
+		D.mask = sch.get_vw_pointer_unsafe().weights.mask();
+		D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
+		D.weights = &sch.get_vw_pointer_unsafe().weights;
 
-  D.mask = sch.get_vw_pointer_unsafe().weights.mask();
-  D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
-  D.multiplier = D.wpp << D.ss;
-  D.weights = &sch.get_vw_pointer_unsafe().weights;
-
+	}
   D.N = 0;
   D.E = 0;
   for (size_t i=0; i<ec.size(); i++)

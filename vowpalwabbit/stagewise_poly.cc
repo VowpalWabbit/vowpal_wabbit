@@ -67,12 +67,18 @@ struct stagewise_poly
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
 {
-	return idx << poly.all->weights.stride_shift();
+	if (poly.all->sparse)
+		return idx << poly.all->sparse_weights.stride_shift();
+	else
+		return idx << poly.all->weights.stride_shift();
 }
 
 inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 {
-	return idx >> poly.all->weights.stride_shift();
+	if (poly.all->sparse)
+		return idx >> poly.all->sparse_weights.stride_shift();
+	else
+		return idx >> poly.all->weights.stride_shift();
 }
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
@@ -95,11 +101,19 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
 }
 
 inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{ return wid & poly.all->weights.mask();
+{
+	if (poly.all->sparse)
+		return wid & poly.all->sparse_weights.mask();
+	else
+		return wid & poly.all->weights.mask();
 }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
-{ return stride_un_shift(poly, wid & poly.all->weights.mask());
+{
+	if (poly.all->sparse)
+		return stride_un_shift(poly, wid & poly.all->sparse_weights.mask());
+	else
+		return stride_un_shift(poly, wid & poly.all->weights.mask());
 }
 
 inline uint64_t constant_feat(const stagewise_poly &poly)
@@ -175,7 +189,10 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0) );
+	if (poly.all->sparse)
+		assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->sparse_weights[wid]) > 0) );
+	else
+		assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0));
     //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
@@ -272,8 +289,12 @@ void sort_data_update_support(stagewise_poly &poly)
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
-      { float weightsal = (fabsf(poly.all->weights[wid])
-			   * poly.all->weights[poly.all->normalized_idx + (wid)])
+	{
+		float weightsal;
+		if (poly.all->sparse)
+			weightsal = (fabsf(poly.all->sparse_weights[wid]) * poly.all->sparse_weights[poly.all->normalized_idx + (wid)]);
+		else
+			weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->normalized_idx + (wid)]);
                    /*
                     * here's some depth penalization code.  It was found to not improve
                     * statistical performance, and meanwhile it is verified as giving

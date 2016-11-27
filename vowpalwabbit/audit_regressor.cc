@@ -44,28 +44,61 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const audit_s
     }
 }
 
-inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
+template<class T>
+inline void audit_regressor_feature(audit_regressor_data& dat, const uint64_t ft_idx, T& weights)
 {
-    weight_parameters& weights = dat.all->weights;
-
 	if (weights[ft_idx] != 0)
-        ++dat.values_audited;
-    else return;
+		++dat.values_audited;
+	else return;
 
-    string ns_pre;
-    for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
+	string ns_pre;
+	for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
 
-    ostringstream tempstream;
+	ostringstream tempstream;
 	tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
-    string temp = ns_pre+tempstream.str() + '\n';
-    if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
-        temp = to_string(dat.cur_class) + ':' + temp;
+	string temp = ns_pre + tempstream.str() + '\n';
+	if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
+		temp = to_string(dat.cur_class) + ':' + temp;
 
-    bin_write_fixed(*dat.out_file, temp.c_str(), (uint32_t)temp.size());
+	bin_write_fixed(*dat.out_file, temp.c_str(), (uint32_t)temp.size());
 
 	weights[ft_idx] = 0.; //mark value audited
 }
+
+inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
+{  if (dat.all->sparse)
+		audit_regressor_feature<sparse_weight_parameters>(dat, ft_idx, dat.all->sparse_weights);
+	else
+		audit_regressor_feature<weight_parameters>(dat, ft_idx, dat.all->weights);
+}
+
+template<class T>
+void audit_regressor_lda(audit_regressor_data& rd, LEARNER::base_learner& base, example& ec, T& weights)
+{
+	vw& all = *rd.all;
+
+	ostringstream tempstream;
+	for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
+	{
+		features& fs = ec.feature_space[*i];
+		for (size_t j = 0; j < fs.size(); ++j)
+		{
+			tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+			for (size_t k = 0; k < all.lda; k++)
+			{
+				weight& w = weights[(fs.indicies[j] + k)];
+				tempstream << ':' << w;
+				w = 0.;
+			}
+			tempstream << endl;
+		}
+	}
+
+	bin_write_fixed(*rd.out_file, tempstream.str().c_str(), (uint32_t)tempstream.str().size());
+}
+
+
 
 // This is a learner which does nothing with examples.
 //void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
@@ -75,26 +108,12 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
 
     vw& all = *rd.all;
 
-    if (all.lda > 0)
-    {
-        ostringstream tempstream;
-        weight_parameters& weights = all.weights;
-        for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
-        {
-            features& fs = ec.feature_space[*i];
-            for (size_t j = 0; j < fs.size(); ++j)
-            { tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
-                for (size_t k = 0; k < all.lda; k++)
-                {
-                    weight& w = weights[(fs.indicies[j]+k)];
-                    tempstream << ':' << w;
-                    w = 0.;
-                }
-                tempstream << endl;
-            }
-        }
-
-        bin_write_fixed(*rd.out_file, tempstream.str().c_str(), (uint32_t)tempstream.str().size());
+	if (all.lda > 0)
+	{
+		if (all.sparse)
+			audit_regressor_lda<sparse_weight_parameters>(rd, base, ec, all.sparse_weights);
+		else
+			audit_regressor_lda<weight_parameters>(rd, base, ec, all.weights);
 
     } else {
 
@@ -128,7 +147,6 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
         ec.ft_offset = old_offset; // make sure example is not changed.
     }
 }
-
 void end_examples(audit_regressor_data& d)
 {
     d.out_file->flush(); // close_file() should do this for me ...
@@ -178,7 +196,12 @@ void finish(audit_regressor_data& dat)
                 dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
 }
 
-
+template<class T>
+void regressor_values(audit_regressor_data& dat, T& w)
+{  for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
+		for (weights_iterator_iterator<weight> it = iter.begin(); it != iter.end(); ++it)
+			if (*it != 0) dat.loaded_regressor_values++;
+}
 
 void init_driver(audit_regressor_data& dat)
 {   // checks a few settings that might be applied after audit_regressor_setup() is called
@@ -205,9 +228,11 @@ void init_driver(audit_regressor_data& dat)
     }
 
     // count non-null feature values in regressor
-	weight_parameters& w = dat.all->weights;
-	for (weight_parameters::iterator iter = w.change_begin(); iter != w.end(); iter += dat.increment) //TODO:modify
-		if (*iter != 0) dat.loaded_regressor_values++;
+	if (dat.all->sparse)
+		regressor_values<sparse_weight_parameters>(dat, dat.all->sparse_weights);
+	else
+		regressor_values<weight_parameters>(dat, dat.all->weights);
+	
 
     if (dat.loaded_regressor_values == 0)
         THROW("regressor has no non-zero weights. Nothing to audit.");

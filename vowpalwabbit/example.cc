@@ -88,10 +88,11 @@ void vec_store(features_and_source& p, float fx, uint64_t fi)
 
 namespace VW
 {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+template<class T>
+feature* get_features(vw& all, example* ec, size_t& feature_map_len, T& weights)
 { features_and_source fs;
-  fs.stride_shift = all.weights.stride_shift();
-  fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  fs.stride_shift = weights.stride_shift();
+  fs.mask = (uint64_t)weights.mask() >> weights.stride_shift();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -99,6 +100,13 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   return fs.feature_map.begin();
 }
 
+feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+{
+	if (all.sparse)
+		return get_features(all, ec, feature_map_len, all.sparse_weights);
+	else
+		return get_features(all, ec, feature_map_len, all.sparse_weights);
+}
 void return_features(feature* f)
 { free_it (f); }
 }
@@ -112,7 +120,8 @@ struct full_features_and_source
 void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 { p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask); }
 
-flat_example* flatten_example(vw& all, example *ec)
+template<class T>
+flat_example* flatten_example(vw& all, example *ec, T& weights)
 { flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
   fec.l.simple.weight = ec->weight;
@@ -128,18 +137,25 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.stride_shift = all.weights.stride_shift();
-  if (all.weights.not_null())  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
-    ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  ffs.stride_shift = weights.stride_shift();
+  if (weights.not_null())  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
+    ffs.mask = (uint64_t)weights.mask() >> weights.stride_shift();
   else
-    ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
+    ffs.mask = (uint64_t)LONG_MAX >> weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   fec.fs = ffs.fs;
 
   return &fec;
 }
+flat_example* flatten_example(vw& all, example *ec)
+{
+	if (all.sparse)
+		return flatten_example<sparse_weight_parameters>(all, ec, all.sparse_weights);
+	else
+		return flatten_example<weight_parameters>(all, ec, all.weights);
 
+}
 flat_example* flatten_sort_example(vw& all, example *ec)
 { flat_example* fec = flatten_example(all, ec);
   fec->fs.sort(all.parse_mask);

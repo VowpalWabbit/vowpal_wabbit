@@ -733,7 +733,11 @@ void setup_example(vw& all, example* ae)
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
-  uint64_t multiplier = all.wpp << all.weights.stride_shift();
+  uint64_t multiplier;
+  if (all.sparse)
+	  multiplier = all.wpp << all.sparse_weights.stride_shift();
+  else
+	  multiplier= all.wpp << all.weights.stride_shift();
   if(multiplier != 1) //make room for per-feature information.
     for (features& fs : *ae)
       for (auto& j : fs.indicies)
@@ -818,10 +822,15 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 
+	uint32_t stride_shift;
+	if (all.sparse)
+		stride_shift = all.sparse_weights.stride_shift();
+	else
+		stride_shift = all.weights.stride_shift();
     int f_count = 0;
     for (features::iterator& f : ec->feature_space[i])
       { feature t = {f.value(), f.index()};
-        t.weight_index >>= all.weights.stride_shift();
+        t.weight_index >>= stride_shift;
         fs_ptr[fs_count].fs[f_count] = t;
         f_count++;
       }

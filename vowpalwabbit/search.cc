@@ -450,8 +450,18 @@ void print_update(search_private& priv)
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
-{ uint64_t mask = priv.all->weights.mask();
-size_t ss = priv.all->weights.stride_shift();
+{
+	uint64_t mask;
+	size_t ss;
+	if (priv.all->sparse)
+	{ mask = priv.all->sparse_weights.mask();
+	  ss = priv.all->sparse_weights.stride_shift();
+	}
+	else
+	{
+		mask = priv.all->weights.mask();
+		ss = priv.all->weights.stride_shift();
+	}
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
@@ -478,8 +488,9 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
   fs.erase();
 }
 
-void add_neighbor_features(search_private& priv)
-{ vw& all = *priv.all;
+template<class T>
+void add_neighbor_features(search_private& priv, T& weights)
+{ 
   if (priv.neighbor_features.size() == 0) return;
 
   for (size_t n=0; n<priv.ec_seq.size(); n++)    // iterate over every example in the sequence
@@ -501,12 +512,12 @@ void add_neighbor_features(search_private& priv)
 
       //cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
-		  add_new_feature(priv, 1., 925871901 << priv.all->weights.stride_shift());
+		  add_new_feature(priv, 1., 925871901 << weights.stride_shift());
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
-		  add_new_feature(priv, 1., 3824917 << priv.all->weights.stride_shift());
+		  add_new_feature(priv, 1., 3824917 << weights.stride_shift());
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
-        GD::foreach_feature<search_private,add_new_feature>(all.weights, other.feature_space[ns], priv, me.ft_offset);
+        GD::foreach_feature<search_private,add_new_feature, T>(weights, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
@@ -522,6 +533,14 @@ void add_neighbor_features(search_private& priv)
   }
 }
 
+void add_neighbor_features(search_private& priv)
+{
+	vw& all = *priv.all;
+	if (all.sparse)
+		add_neighbor_features<sparse_weight_parameters>(priv, all.sparse_weights);
+	else
+		add_neighbor_features<weight_parameters>(priv, all.weights);
+}
 void del_neighbor_features(search_private& priv)
 { if (priv.neighbor_features.size() == 0) return;
   for (size_t n=0; n<priv.ec_seq.size(); n++)
@@ -629,8 +648,12 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       // add the single bias feature
       if (n < priv.acset.max_bias_ngram_length)
-        add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
-
+	{
+		  if (priv.all->sparse)
+			add_new_feature(priv, 1., 4398201 << priv.all->sparse_weights.stride_shift());
+		  else
+			add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+	}
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
         GD::foreach_feature<search_private,uint64_t,add_new_feature>(*priv.all, ec, priv);
@@ -656,7 +679,10 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
           priv.dat_new_feature_idx = fid;
           priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
-		  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+		  if (priv.all->sparse)
+			  add_new_feature(priv, 1., 4398201 << priv.all->sparse_weights.stride_shift());
+		  else
+			  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;
@@ -2481,8 +2507,18 @@ void search::get_test_action_sequence(vector<action>& V)
 void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
 void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
-uint64_t search::get_mask() { return this->priv->all->weights.mask();}
-size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
+uint64_t search::get_mask() {
+	if (this->priv->all->sparse)
+		return this->priv->all->sparse_weights.mask();
+	else
+		return this->priv->all->weights.mask();
+}
+size_t search::get_stride_shift() { 
+	if (this->priv->all->sparse)
+		return this->priv->all->sparse_weights.stride_shift();
+	else
+		return this->priv->all->weights.stride_shift();
+}
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
 string search::pretty_label(action a)

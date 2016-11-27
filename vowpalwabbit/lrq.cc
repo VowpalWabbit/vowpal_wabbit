@@ -50,8 +50,8 @@ reset_seed (LRQstate& lrq)
     lrq.seed = lrq.initial_seed;
 }
 
-template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+template <bool is_learn, class T>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 { vw& all = *lrq.all;
 
   // Remember original features
@@ -87,48 +87,47 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-		  weight_parameters& w = all.weights;
 		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-		     {  uint64_t lwindex = (uint64_t)(lindex + (n << all.weights.stride_shift()));
-		        weight_parameters::iterator lw = w.change_begin() + (lwindex & w.mask());
-
-				// perturb away from saddle point at (0, 0)
-		        if (is_learn && ! example_is_test (ec) && *lw == 0)
-                    *lw = cheesyrand (lwindex); //not sure if lw needs a weight mask?
-
-                  features& right_fs = ec.feature_space[right];
-                  for (unsigned int rfn = 0;
-                       rfn < lrq.orig_size[right];
-                       ++rfn)
-                    { // NB: ec.ft_offset added by base learner
-                      float rfx = right_fs.values[rfn];
-                      uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << all.weights.stride_shift()));
-
-                      right_fs.push_back(scale **lw * lfx * rfx, rwindex);
-
-                      if (all.audit || all.hash_inv)
-                        { std::stringstream new_feature_buffer;
-                          new_feature_buffer << right << '^'
-                                             << right_fs.space_names[rfn].get()->second << '^'
-                                             << n;
-
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << w.stride_shift()));
+		       weight* lw = &w[lwindex & w.mask()];
+		       
+		       // perturb away from saddle point at (0, 0)
+		       if (is_learn && ! example_is_test (ec) && *lw == 0)
+			 *lw = cheesyrand (lwindex); //not sure if lw needs a weight mask?
+		       
+		       features& right_fs = ec.feature_space[right];
+		       for (unsigned int rfn = 0;
+			    rfn < lrq.orig_size[right];
+			    ++rfn)
+			 { // NB: ec.ft_offset added by base learner
+			   float rfx = right_fs.values[rfn];
+			   uint64_t rindex = right_fs.indicies[rfn];
+			   uint64_t rwindex = (uint64_t)(rindex + (n << w.stride_shift()));
+			   
+			   right_fs.push_back(scale **lw * lfx * rfx, rwindex);
+			   
+			   if (all.audit || all.hash_inv)
+			     { std::stringstream new_feature_buffer;
+			       new_feature_buffer << right << '^'
+						  << right_fs.space_names[rfn].get()->second << '^'
+						  << n;
+			       
 #ifdef _WIN32
-                          char* new_space = _strdup("lrq");
-                          char* new_feature =	_strdup(new_feature_buffer.str().c_str());
+			       char* new_space = _strdup("lrq");
+			       char* new_feature =	_strdup(new_feature_buffer.str().c_str());
 #else
-                          char* new_space = strdup("lrq");
-                          char* new_feature = strdup(new_feature_buffer.str().c_str());
+			       char* new_space = strdup("lrq");
+			       char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                          right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
-                        }
-                    }
-                }
+			       right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
+			     }
+			 }
+		     }
             }
         }
     }
-
+    
     if (is_learn)
       base.learn(ec);
     else
@@ -153,6 +152,15 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   }
 }
 
+template <bool is_learn>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+{
+	vw& all = *lrq.all;
+	if (all.sparse)
+		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	else
+		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+}
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner* lrq_setup(vw& all)

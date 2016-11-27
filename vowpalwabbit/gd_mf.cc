@@ -32,42 +32,55 @@ struct gdmf
   uint64_t early_stop_thres;
 };
 
+template<class T>
+void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
+{
+	vw& all = *d.all;
+	uint64_t mask = weights.mask();
+	for (features& fs : ec)
+	{
+		bool audit = !fs.space_names.empty();
+		for (auto& f : fs.values_indices_audit())
+		{
+			cout << '\t';
+			if (audit)
+				cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
+			cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+			cout << ':' << weights[f.index() + offset];
+		}
+	}
+	for (string& i : all.pairs)
+		if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
+		{ /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
+			for (size_t k = 1; k <= d.rank; k++)
+			{
+				for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
+					for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
+					{
+						cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index() + k)&mask)
+							<< "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+						cout << ':' << weights[(f1.index() + offset + k)];
+
+						cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':' << ((f2.index() + k + d.rank)&mask)
+							<< "(" << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
+						cout << ':' << weights[(f2.index() + offset + k + d.rank)];
+
+						cout << ':' << weights[(f1.index() + offset + k)] * weights[(f2.index() + offset + k + d.rank)];
+					}
+			}
+		}
+	if (all.triples.begin() != all.triples.end())
+		THROW("cannot use triples in matrix factorization");
+	cout << endl;
+}
+
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
-{ vw& all = *d.all;
-  weight_parameters& weights = all.weights;
-  uint64_t mask = weights.mask();
-  for (features& fs : ec)
-  { bool audit = !fs.space_names.empty();
-    for (auto& f : fs.values_indices_audit())
-    { cout << '\t';
-      if (audit)
-        cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
-      cout << f.index() <<"(" << ((f.index() + offset) & mask)  << ")" << ':' << f.value();
-      cout << ':' << weights[f.index() + offset];
-    }
-  }
-  for (string& i : all.pairs)
-    if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
-    { /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
-      for (size_t k = 1; k <= d.rank; k++)
-      {
-        for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
-          for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
-          { cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index()+k)&mask)
-                 <<"(" << ((f1.index() + offset +k) & mask)  << ")" << ':' << f1.value();
-            cout << ':' << weights[(f1.index() + offset + k)];
+{
+	if ((*d.all).sparse)
+		mf_print_offset_features<sparse_weight_parameters>(d, ec, offset, (*d.all).sparse_weights);
+	else
+		mf_print_offset_features<weight_parameters>(d, ec, offset, (*d.all).weights);
 
-            cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':' << ((f2.index() + k + d.rank)&mask)
-                 <<"(" << ((f2.index() + offset +k+d.rank) & mask)  << ")" << ':' << f2.value();
-            cout << ':' << weights[(f2.index() + offset + k+d.rank)];
-
-            cout << ':' <<  weights[(f1.index() + offset + k)] * weights[(f2.index() + offset + k + d.rank)];
-          }
-      }
-    }
-  if (all.triples.begin() != all.triples.end())
-    THROW("cannot use triples in matrix factorization");
-  cout << endl;
 }
 
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
@@ -75,7 +88,8 @@ void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
   mf_print_offset_features(d, ec, offset);
 }
 
-float mf_predict(gdmf& d, example& ec)
+template<class T>
+float mf_predict(gdmf& d, example& ec, T& weights)
 { vw& all = *d.all;
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
@@ -91,8 +105,9 @@ float mf_predict(gdmf& d, example& ec)
 
   float linear_prediction = 0.;
   // linear terms
+
   for (features& fs : ec)
-    GD::foreach_feature<float, GD::vec_add>(all.weights, fs, linear_prediction);
+	GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -108,12 +123,12 @@ float mf_predict(gdmf& d, example& ec)
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add>(all.weights, ec.feature_space[(int)i[0]], x_dot_l, k);
+        GD::foreach_feature<float, GD::vec_add, T>(weights, ec.feature_space[(int)i[0]], x_dot_l, k);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
         float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add>(all.weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        GD::foreach_feature<float,GD::vec_add, T>(weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
 
         prediction += x_dot_l * x_dot_r;
 
@@ -144,15 +159,24 @@ float mf_predict(gdmf& d, example& ec)
   return ec.pred.scalar;
 }
 
+float mf_predict(gdmf& d, example& ec)
+{
+	vw& all = *d.all;
+	if (all.sparse)
+		return mf_predict<sparse_weight_parameters>(d, ec, all.sparse_weights);
+	else
+		return mf_predict<weight_parameters>(d, ec, all.weights);
+}
 
-void sd_offset_update(weight_parameters& weights, features& fs, uint64_t offset, float update, float regularization)
+template<class T>
+void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
     weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
 }
 
-void mf_train(gdmf& d, example& ec)
+template<class T>
+void mf_train(gdmf& d, example& ec, T& weights)
 { vw& all = *d.all;
-  weight_parameters& weights = all.weights;
   label_data& ld = ec.l.simple;
 
   // use final prediction to get update size
@@ -164,7 +188,7 @@ void mf_train(gdmf& d, example& ec)
 
   // linear update
   for (features& fs: ec)
-    sd_offset_update(weights, fs, 0, update, regularization);
+    sd_offset_update<T>(weights, fs, 0, update, regularization);
 
   // quadratic update
   for (string& i : all.pairs)
@@ -176,14 +200,14 @@ void mf_train(gdmf& d, example& ec)
       { // r^k \cdot x_r
         float r_dot_x = d.scalars[2*k];
         // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-        sd_offset_update(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
+        sd_offset_update<T>(weights, ec.feature_space[(int)i[0]], k, update*r_dot_x, regularization);
       }
       // update r^k weights
       for (size_t k = 1; k <= d.rank; k++)
       { // l^k \cdot x_l
         float l_dot_x = d.scalars[2*k-1];
         // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-        sd_offset_update(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
+        sd_offset_update<T>(weights, ec.feature_space[(int)i[1]], k+d.rank, update*l_dot_x, regularization);
       }
 
     }
@@ -192,25 +216,36 @@ void mf_train(gdmf& d, example& ec)
     THROW("cannot use triples in matrix factorization");
 }
 
-void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride)
+void mf_train(gdmf& d, example& ec)
+{
+	if ((*d.all).sparse)
+		mf_train<sparse_weight_parameters>(d, ec, (*d.all).sparse_weights);
+	else
+		mf_train<weight_parameters>(d, ec, (*d.all).weights);
+}
+void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
 { 
 	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
 	  *w = (float)(0.1 * merand48(index));
 }
-
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+void set_rand(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
+{
+	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
+		*w = (float)(0.1 * merand48(index));
+}
+template<class T>
+void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
   if(read)
   { initialize_regressor(*all);
   if (all->random_weights)
-	  all->weights.set_default<set_rand>();
+	  w.template set_default<set_rand>();
   }
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
      size_t brw = 1;
-	 weight_parameters& w = all->weights;
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -219,10 +254,11 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { weight_parameters::iterator iter = w.begin()+ i;
-		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
-		{  msg << &(*v) << " ";
-		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+	  { weight* w_i= &(w.strided_index(i));
+		for (uint64_t k = 0; k < K; k++)
+		{  weight* v = w_i + k;
+		   msg << v << " ";
+		   brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v),
 				  "", read, msg, text);
 		}
 	  }
@@ -240,6 +276,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   }
 }
 
+void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+{
+	if ((*d.all).sparse)
+		save_load<sparse_weight_parameters>(d, model_file, read, text, (*d.all).sparse_weights);
+	else
+		save_load<weight_parameters>(d, model_file, read, text, (*d.all).weights);
+
+}
 void end_pass(gdmf& d)
 { vw* all = d.all;
 
@@ -271,7 +315,8 @@ void learn(gdmf& d, base_learner&, example& ec)
 
 void finish(gdmf& d) { d.scalars.delete_v();}
 
-base_learner* gd_mf_setup(vw& all)
+template <class T>
+base_learner* gd_mf_setup(vw& all, T& weights)
 { if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
@@ -292,7 +337,7 @@ base_learner* gd_mf_setup(vw& all)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.weights.stride_shift((size_t) temp);
+  weights.stride_shift((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -312,11 +357,19 @@ base_learner* gd_mf_setup(vw& all)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << all.weights.stride_shift());
+  learner<gdmf>& l = init_learner(&data, learn, 1 << weights.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);
 
   return make_base(l);
+}
+
+base_learner* gd_mf_setup(vw& all)
+{
+	if (all.sparse)
+		return gd_mf_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	else
+		return gd_mf_setup<weight_parameters>(all, all.weights);
 }

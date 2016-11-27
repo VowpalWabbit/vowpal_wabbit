@@ -1273,7 +1273,10 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all.wpp = (1 << i) >> all.weights.stride_shift();
+  if (all.sparse)
+	all.wpp = (1 << i) >> all.sparse_weights.stride_shift();
+  else
+	  all.wpp = (1 << i) >> all.weights.stride_shift();
 
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
@@ -1403,9 +1406,13 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
     init_args << model_args[i] << " ";
   }
 
-  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
 
-  new_model->weights.~weight_parameters();
+  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
+  if (new_model->sparse)
+	new_model->sparse_weights.~sparse_weight_parameters();
+  else
+	new_model->weights.~weight_parameters();
+
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
@@ -1500,7 +1507,12 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.weights.seeded())
+  bool seeded;
+  if (all.sparse)
+	  seeded = all.sparse_weights.seeded();
+  else
+	  seeded = all.weights.seeded();
+  if (!seeded)
   { delete(all.sd->ldict);
     free(all.sd);
   }

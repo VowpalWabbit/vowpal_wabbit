@@ -873,7 +873,10 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
     params.kernel_type = SVM_KER_LIN;
 
   //params.all->weights->mask((uint64_t)LONG_MAX); 
-  params.all->weights.stride_shift(0);
+  if (params.all->sparse)
+	params.all->sparse_weights.stride_shift(0);
+  else
+	params.all->weights.stride_shift(0);
 
   learner<svm_params>& l = init_learner(&params, learn, 1);
   l.set_predict(predict);

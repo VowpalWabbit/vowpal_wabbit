@@ -544,7 +544,9 @@ struct vw
 
   std::string final_regressor_name;
 
+  bool sparse;
   weight_parameters weights;
+  sparse_weight_parameters sparse_weights;
 
   size_t max_examples; // for TLC
 
