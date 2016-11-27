@@ -242,23 +242,24 @@ private:
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
 	bool _seeded; // whether the instance is sharing model state with others
-	bool _delete = false;
+	bool _delete;
 
 public:
 	typedef sparse_weights_iterator<weight> iterator;
 	typedef sparse_weights_iterator<const weight> const_iterator;
-	void(*fun)(iterator&, uint64_t, uint32_t, void*) = nullptr;
+	void(*fun)(iterator&, uint64_t, uint32_t, void*);
 	void* set_struct;
 
 	sparse_weight_parameters(size_t length, uint32_t stride_shift = 0)
 		: _map(),
 		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
-		_seeded(false)
+		_seeded(false), _delete(false),
+		fun(nullptr)
 	{}
 
 	sparse_weight_parameters()
-		: _map(), _weight_mask(0), _stride_shift(0), _seeded(false)
+		: _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), fun(nullptr)
 	{}
 
 	bool not_null() { return (_weight_mask > 0 && !_map.empty()); }

@@ -624,7 +624,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, T& weights, example 
     doc_length = 0;
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
-	  {  float* u_for_w = &(weights[f.index() & weights.mask()]) + l.topics + 1;
+	  {  float* u_for_w = &(weights[f.index()]) + l.topics + 1;
             float c_w = find_cw(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
@@ -890,7 +890,7 @@ void learn_batch(lda &l, T& weights)
 			  float *v_s = &(l.v[s->document * l.all->lda]);
 			  float* u_for_w = &(weights[s->f.weight_index]) + l.all->lda + 1;
 			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-			  word_weights = &(weights[s->f.weight_index & weights.mask()]);
+			  word_weights = &(weights[s->f.weight_index]);
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
 			  {   
 				  float new_value = *u_for_w * v_s[k] * c_w;

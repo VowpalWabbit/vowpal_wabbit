@@ -90,7 +90,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 		  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
 		     {  uint64_t lwindex = (uint64_t)(lindex + (n << w.stride_shift()));
-		       weight* lw = &w[lwindex & w.mask()];
+		       weight* lw = &w[lwindex];
 		       
 		       // perturb away from saddle point at (0, 0)
 		       if (is_learn && ! example_is_test (ec) && *lw == 0)
