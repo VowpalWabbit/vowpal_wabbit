@@ -75,13 +75,19 @@ struct cb_adf
 
 void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { gen_cs_example_ips(examples, mydata.cs_labels);
-  GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+  call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
 void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 {
   gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
-  GEN_CS::call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+  call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+}
+
+  void learn_DM(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+{
+  gen_cs_example_dm(examples, mydata.cs_labels);
+  call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
 template<bool predict>
@@ -89,7 +95,7 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
 { //uint32_t action = 0;
   if (predict) //first get the prediction to return
   { gen_cs_example_ips(examples, mydata.cs_labels);
-    GEN_CS::call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
+    call_cs_ldf<false>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
     swap(examples[0]->pred.a_s, mydata.a_s);
   }
   //second train on _one_ action (which requires up to 3 examples).
@@ -144,6 +150,9 @@ void do_actual_learning(cb_adf& data, base_learner& base)
 	      break;
 	  case CB_TYPE_DR:
 	    learn_DR(data, base, data.ec_seq);
+	    break;
+	  case CB_TYPE_DM:
+	    learn_DM(data, base, data.ec_seq);
 	    break;
 	  case CB_TYPE_MTR:
 	    if (data.predict)
@@ -373,8 +382,12 @@ base_learner* cb_adf_setup(vw& all)
     { ld.gen_cs.cb_type = CB_TYPE_MTR;
       problem_multiplier = 1;
     }
+    else if (type_string.compare("dm") == 0)
+    { ld.gen_cs.cb_type = CB_TYPE_DM;
+      problem_multiplier = 1;
+    }
     else
-    { std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+    { std::cerr << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
       ld.gen_cs.cb_type = CB_TYPE_IPS;
     }
   }

@@ -181,6 +181,8 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
 
  void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
 
+ void gen_cs_example_dm(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
+ 
  void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels);
 
  template <bool is_learn>

@@ -14,6 +14,8 @@ license as described in the file LICENSE.
 #include <cmath>
 #include "correctedMath.h"
 #include "vw_versions.h"
+#include "vw.h"
+#include "mwt.h"
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -730,6 +732,24 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   }
 }
 
+void return_example(vw& all, example& ec)
+{
+  label_data ld = ec.l.simple;
+  
+  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  if (ld.label != FLT_MAX && !ec.test_only)
+    all.sd->weighted_labels += ld.label * ec.weight;
+  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
+  
+  for (int f: all.final_prediction_sink)
+    MWT::print_scalars(f, ec.pred.scalars, ec.tag);
+  
+  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet)
+    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
+			 ec.num_features, all.progress_add, all.progress_arg);
+  VW::finish_example(all,&ec);
+}
+
 void learn_batch(lda &l)
 { if (l.sorted_features.empty()) // FAST-PASS for real "true"
   { // This can happen when the socket connection is dropped by the client.
@@ -745,7 +765,7 @@ void learn_batch(lda &l)
 	l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
 	l.examples[d]->pred.scalars.erase();
-	return_simple_example(*l.all, nullptr, *l.examples[d]);
+	return_example(*l.all, *l.examples[d]);
       }
     l.examples.erase();
     return;
@@ -820,7 +840,7 @@ void learn_batch(lda &l)
     { l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
     }
-    return_simple_example(*l.all, nullptr, *l.examples[d]);
+    return_example(*l.all, *l.examples[d]);
   }
 
   // -t there's no need to update weights (especially since it's a noop)

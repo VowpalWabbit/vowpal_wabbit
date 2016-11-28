@@ -113,24 +113,6 @@ void print_raw_text(int f, string s, v_array<char> tag)
   }
 }
 
-void print_lda_result(vw& all, int f, float* res, float, v_array<char> tag)
-{ if (f >= 0)
-  { std::stringstream ss;
-    char temp[30];
-    for (size_t k = 0; k < all.lda; k++)
-    { sprintf(temp, "%f ", res[k]);
-      ss << temp;
-    }
-    print_tag(ss, tag);
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-
-    if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
-  }
-}
-
 void set_mm(shared_data* sd, float label)
 { sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
