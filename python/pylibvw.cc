@@ -154,6 +154,8 @@ string my_get_tag(example_ptr ec)
 { return varray_char_to_string(ec->tag);
 }
 
+bool my_get_probabilities(vw_ptr all) { return all->vm.count("probabilities"); }
+
 uint32_t ex_num_namespaces(example_ptr ec)
 { return ec->indices.size();
 }
@@ -353,6 +355,14 @@ float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
+
+py::list ex_get_multiclass_probabilities(example_ptr ec) {
+  py::list probabilities;
+  for (uint32_t i = 0; i < ec->pred.scalars.size(); i++) {
+    probabilities.append(ec->pred.scalars[i]);
+  }
+  return probabilities;
+}
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ec->l.cs.costs.size(); }
@@ -602,6 +612,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
+  .def("get_probabilities", &my_get_probabilities, "get value of probabilities flag")
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
@@ -655,6 +666,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_multiclass_label", &ex_get_multiclass_label, "Assuming a multiclass label type, get the true label")
   .def("get_multiclass_weight", &ex_get_multiclass_weight, "Assuming a multiclass label type, get the importance weight")
   .def("get_multiclass_prediction", &ex_get_multiclass_prediction, "Assuming a multiclass label type, get the prediction")
+  .def("get_multiclass_probabilities", &ex_get_multiclass_probabilities, "Assuming a multiclass label type, get all probabilities")
   .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction, "Assuming a cost_sensitive label type, get the prediction")
   .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs, "Assuming a cost_sensitive label type, get the total number of label/cost pairs")
   .def("get_costsensitive_cost", &ex_get_costsensitive_cost, "Assuming a cost_sensitive label type, get the cost for a given pair (i=0.. get_costsensitive_num_costs)")

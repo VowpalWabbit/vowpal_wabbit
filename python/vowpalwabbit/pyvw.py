@@ -44,27 +44,34 @@ class SearchTask():
         self._call_vw(my_example, isTest=True, useOracle=useOracle);
         return self._output
 
+
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
     the pylibvw.vw structure entirely."""
 
-    def __init__(self, argString=None, **kw):
+    def __init__(self, arg_str=None, **kw):
         """Initialize the vw object. The (optional) argString is the
         same as the command line arguments you'd use to run vw (eg,"--audit").
         you can also use key/value pairs as in:
           pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
         or a combination, for instance:
           pyvw.vw("--audit", b=26)"""
-        def format(key,val):
-            if type(val) is bool and val == False: return ''
-            s = ('-'+key) if len(key) == 1 else ('--'+key)
-            if type(val) is not bool or val != True: s += ' ' + str(val)
+
+        def format_inputs(key, val):
+            if type(val) is bool and not val:
+                s = ''
+            else:
+                prefix = '-' if len(key) == 1 else '--'
+                value = '' if type(val) is bool else ' {}'.format(val)
+                s = '{p}{k}{v}'.format(p=prefix, k=key, v=value)
             return s
-        l = [format(k,v) for k,v in kw.items()]
-        if argString is not None: l = [argString] + l
-        #print ' '.join(l)
-        pylibvw.vw.__init__(self,' '.join(l))
+
+        l = [format_inputs(k, v) for k, v in kw.items()]
+        if arg_str is not None:
+            l = [arg_str] + l
+
+        pylibvw.vw.__init__(self, ' '.join(l))
         self.finished = False
 
     def num_weights(self):
@@ -94,26 +101,35 @@ class vw(pylibvw.vw):
         returns the float/scalar partial prediction from this example, unless
         label type is overridden in which case the appropriate return type is
         guessed and used."""
-        newEC = False
+
+        new_example = False
         if isinstance(ec, str):
             if labelType == pylibvw.vw.lBinary:
                 return self.predict_string(ec)  # the partial prediction is sufficient
             else:
                 ec = self.example(ec, labelType)
                 ec.setup_done = True
-                newEC = True
+                new_example = True
 
         if hasattr(ec, 'setup_done') and not ec.setup_done:
             ec.setup_example()
         pylibvw.vw.predict(self, ec)
 
-        if   labelType == pylibvw.vw.lBinary:           pred = simple_label(ec)
-        elif labelType == pylibvw.vw.lMulticlass:       pred = multiclass_label(ec)
-        elif labelType == pylibvw.vw.lCostSensitive:    pred = cost_sensitive_label(ec)
-        elif labelType == pylibvw.vw.lContextualBandit: pred = cbandits_label(ec)
-        else: raise Exception('cannot extract unknown label type')
+        if labelType == pylibvw.vw.lBinary:
+            pred = simple_label(ec)
+        elif labelType == pylibvw.vw.lMulticlass:
+            if pylibvw.vw.get_probabilities(self):
+                pred = multiclass_probabilities_label(ec)
+            else:
+                pred = multiclass_label(ec)
+        elif labelType == pylibvw.vw.lCostSensitive:
+            pred = cost_sensitive_label(ec)
+        elif labelType == pylibvw.vw.lContextualBandit:
+            pred = cbandits_label(ec)
+        else:
+            raise Exception('cannot extract unknown label type')
 
-        if newEC:
+        if new_example:
             ec.finish()
 
         return pred.prediction
@@ -367,6 +383,23 @@ class multiclass_label(abstract_label):
         if self.weight != 1.:
             s += ':' + self.weight
         return s
+
+class multiclass_probabilities_label(abstract_label):
+    def __init__(self, label, prediction=None):
+        abstract_label.__init__(self)
+        if isinstance(label, example):
+            self.from_example(label)
+        else:
+            self.prediction = prediction
+
+    def from_example(self, ex):
+        self.prediction = ex.get_multiclass_probabilities()
+
+    def __str__(self):
+        s = []
+        for label, prediction in enumerate(self.prediction):
+            s.append('{l}:{p}'.format(l=label + 1, p=prediction))
+        return ','.join(s)
 
 class cost_sensitive_label(abstract_label):
     class wclass:

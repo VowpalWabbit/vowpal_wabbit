@@ -313,7 +313,7 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        y : array-like, shape (n_samples,)
+        y : array-like, shape (n_samples, 1 or n_classes)
             Output vector relative to X.
         """
 
@@ -330,8 +330,12 @@ class VW(BaseEstimator):
         model = self.get_vw()
         label_type = model.get_label_type()
 
-        y = np.empty([num_samples])
-        # add test examples to model
+        shape = [num_samples]
+        if 'oaa' in self.params and 'probabilities' in self.params:
+            shape.append(self.params['oaa'])
+        y = np.empty(shape)
+
+        # predict examples
         for idx, x in enumerate(X):
             y[idx] = model.predict(ec=x, labelType=label_type)
 
