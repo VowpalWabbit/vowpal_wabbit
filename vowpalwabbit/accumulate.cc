@@ -22,16 +22,14 @@ void add_float(float& c1, const float& c2) { c1 += c2; }
 void accumulate(vw& all, weight_parameters& weights, size_t offset)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
   float* local_grad = new float[length];
- 
-  weight_parameters::iterator iter = weights.begin();
-  for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-	local_grad[i] = (&(*iter))[offset];
+
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	local_grad[iter.index()] = (&(*iter))[offset];
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
  
-  iter = weights.begin();
-  for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-	(&(*iter))[offset] = local_grad[i];
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	(&(*iter))[offset] = local_grad[iter.index()];
 
   delete[] local_grad;
 }
@@ -47,15 +45,14 @@ void accumulate_avg(vw& all, weight_parameters& weights, size_t offset)
   float numnodes = (float)all.all_reduce->total;
   float* local_grad = new float[length];
 
-  weight_parameters::iterator iter = weights.begin();
-  for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-	local_grad[i] = (&(*iter))[offset];
+ 
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	local_grad[iter.index()] = (&(*iter))[offset];
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
 
-  iter = weights.begin();
-  for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-	 (&(*iter))[offset] = local_grad[i]/numnodes;
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	 (&(*iter))[offset] = local_grad[iter.index()]/numnodes;
  
   delete[] local_grad;
 }
@@ -82,15 +79,15 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
   float* local_weights = new float[length];
 
-  weight_parameters::iterator iter = weights.begin();
-  for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-	  local_weights[i] = (&(*iter))[1];
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	  local_weights[iter.index()] = (&(*iter))[1];
 
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length); 
 
-  iter = weights.begin(); 
-  for (uint32_t i =0 ; iter != weights.end(); ++i, ++iter)
+  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+  {
+	  uint32_t i = iter.index();
 	if (local_weights[i] > 0)
 	{  float ratio = (&(*iter))[1] / local_weights[i];
 		local_weights[i] = *iter * ratio;
@@ -103,7 +100,7 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
 	  {  local_weights[i] = 0;
 		 *iter = 0;
 	  }
-	  
+  }
   all_reduce<float, add_float>(all, weights.first(), length*weights.stride_shift()); 
   delete[] local_weights;
 }

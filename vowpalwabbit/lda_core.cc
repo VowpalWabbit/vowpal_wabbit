@@ -996,7 +996,7 @@ void get_top_weights(vw* all, int top_words_count, int topic, std::vector<featur
 	typename T::iterator iter = weights.begin();
 
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
-	  top_features.push({(&(*iter))[topic], i});
+	  top_features.push({(&(*iter))[topic], iter.index()});
 
 	for (uint64_t i = top_words_count; i < length; i++, ++iter)
 	  {
@@ -1040,13 +1040,13 @@ void compute_coherence_metrics(lda &l, T& weights)
 		std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
 		typename T::iterator iter = weights.begin();
 		for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
-			top_features.push(feature((&(*iter))[topic], i));
+			top_features.push(feature((&(*iter))[topic], iter.index()));
 		
 		for (typename T::iterator v = weights.begin(); v!= weights.end(); ++v)
 		  if ((&(*v))[topic] > top_features.top().x)
 		    {
 		      top_features.pop();
-		      top_features.push(feature((&(*v))[topic], v-weights.begin()));
+		      top_features.push(feature((&(*v))[topic], v.index()));
 		    }
 
 		// extract idx and sort descending

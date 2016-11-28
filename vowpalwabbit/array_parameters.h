@@ -53,6 +53,7 @@ class weights_iterator
 {
 private:
 	T* _current;
+	size_t _idx;
 	uint32_t _stride;
 
 public:
@@ -64,17 +65,20 @@ public:
 
 	typedef weights_iterator_iterator<T> w_iter;
 	
-	weights_iterator(T* current, uint32_t stride_shift)
-		: _current(current), _stride(1 << stride_shift)
+	weights_iterator(T* current, size_t idx, uint32_t stride_shift )
+		: _current(current), _idx(idx), _stride(1 << stride_shift)
 	{ }
 
 	T& operator*() { return *_current; }
 
 	uint64_t operator-(const weights_iterator& rhs) { return _current - rhs._current;}
+
+	size_t index() { return _idx; }
 	
 	weights_iterator& operator++()
 	{
 		_current += _stride;
+		++_idx;
 		return *this;
 	}
 
@@ -118,12 +122,12 @@ public:
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
 	//iterator with stride 
-	iterator begin() { return iterator(_begin, _stride_shift); }
-	iterator end() { return iterator(_begin + _weight_mask + 1, _stride_shift); }
+	iterator begin() { return iterator(_begin, 0, _stride_shift); }
+	iterator end() { return iterator(_begin + _weight_mask + 1, _weight_mask + 1, _stride_shift); }
 
 	//const iterator
-	const_iterator cbegin() { return const_iterator(_begin, _stride_shift); }
-	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _stride_shift); }
+	const_iterator cbegin() { return const_iterator(_begin, 0,  _stride_shift); }
+	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, floor((_weight_mask + 1)/_stride_shift), _stride_shift); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 	void shallow_copy(const weight_parameters& input)
@@ -213,6 +217,8 @@ public:
 		return *this;
 
 	}
+	size_t index() { return _iter->first; }
+
 	T& operator*() { 
 		return *(_iter->second);
 	} 
