@@ -661,7 +661,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v - weights.begin();
+		i = v.index();
 		stringstream msg;
 		msg << i;
 		
@@ -724,7 +724,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v - weights.begin();
+		i = v.index();
 		msg << i;
 		if (all.num_bits < 31)
 		  {

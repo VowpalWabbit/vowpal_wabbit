@@ -250,7 +250,7 @@ vw::vw()
 
   random_positive_weights = false;
 
-  sparse = true;
+  sparse = false;
 
   set_minmax = set_mm;
 
