@@ -328,7 +328,6 @@ class VW(BaseEstimator):
             X = tovw(X)
 
         model = self.get_vw()
-        label_type = model.get_label_type()
 
         shape = [num_samples]
         if 'oaa' in self.params and 'probabilities' in self.params:
@@ -337,7 +336,7 @@ class VW(BaseEstimator):
 
         # predict examples
         for idx, x in enumerate(X):
-            y[idx] = model.predict(ec=x, labelType=label_type)
+            y[idx] = model.predict(ec=x)
 
         return y
 

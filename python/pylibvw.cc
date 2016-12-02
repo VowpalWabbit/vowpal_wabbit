@@ -26,6 +26,15 @@ const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
 
+const size_t pSCALAR = 0;
+const size_t pSCALARS = 1;
+const size_t pACTION_SCORES = 2;
+const size_t pACTION_PROBS = 3;
+const size_t pMULTICLASS = 4;
+const size_t pMULTILABELS = 5;
+const size_t pPROB = 6;
+const size_t pMULTICLASSPROBS = 7;
+
 
 void dont_delete_me(void*arg) { }
 
@@ -62,8 +71,8 @@ label_parser* get_label_parser(vw*all, size_t labelType)
 
 size_t my_get_label_type(vw*all)
 { label_parser* lp = &all->p->lp;
-  if (lp->parse_label == simple_label.parse_label)
-  { return lBINARY;
+  if (lp->parse_label == simple_label.parse_label) {
+    return lBINARY;
   } else if (lp->parse_label == MULTICLASS::mc_label.parse_label) {
     return lMULTICLASS;
   } else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label) {
@@ -75,6 +84,20 @@ size_t my_get_label_type(vw*all)
   }
 }
 
+size_t my_get_prediction_type(vw_ptr all)
+{ switch (all->l->pred_type)
+  { case prediction_type::scalar:          return pSCALAR;
+    case prediction_type::scalars:         return pSCALARS;
+    case prediction_type::action_scores:   return pACTION_SCORES;
+    case prediction_type::action_probs:    return pACTION_PROBS;
+    case prediction_type::multiclass:      return pMULTICLASS;
+    case prediction_type::multilabels:     return pMULTILABELS;
+    case prediction_type::prob:            return pPROB;
+    case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
+    default: cerr << "unsupported prediction type used" << endl; throw exception();
+  }
+}
+
 void my_delete_example(void*voidec)
 { example* ec = (example*) voidec;
   size_t labelType = ec->example_counter;
@@ -82,7 +105,6 @@ void my_delete_example(void*voidec)
   VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
 }
-
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
@@ -153,8 +175,6 @@ string varray_char_to_string(v_array<char> &a)
 string my_get_tag(example_ptr ec)
 { return varray_char_to_string(ec->tag);
 }
-
-bool my_get_probabilities(vw_ptr all) { return all->vm.count("probabilities"); }
 
 uint32_t ex_num_namespaces(example_ptr ec)
 { return ec->indices.size();
@@ -351,17 +371,40 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
+float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-py::list ex_get_multiclass_probabilities(example_ptr ec) {
-  py::list probabilities;
-  for (uint32_t i = 0; i < ec->pred.scalars.size(); i++) {
-    probabilities.append(ec->pred.scalars[i]);
+py::list ex_get_scalars(example_ptr ec) {
+  py::list values;
+  v_array<float> scalars = ec->pred.scalars;
+
+  for (float s : scalars) {
+    values.append(s);
   }
-  return probabilities;
+  return values;
+}
+
+py::list ex_get_action_scores(example_ptr ec) {
+  py::list values;
+  v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
+
+  for (ACTION_SCORE::action_score s : scores) {
+    values.append(s.score);
+  }
+  return values;
+}
+
+py::list ex_get_multilabel_predictions(example_ptr ec) {
+  py::list values;
+  MULTILABEL::labels labels = ec->pred.multilabels;
+
+  for (uint32_t l : labels.label_v) {
+    values.append(l);
+  }
+  return values;
 }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
@@ -609,10 +652,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_stride", &VW::get_stride, "return the internal stride")
 
   .def("get_label_type", &my_get_label_type, "return parse label type")
-
+  .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
-  .def("get_probabilities", &my_get_probabilities, "get value of probabilities flag")
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
@@ -622,6 +664,15 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
   .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
   .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
+
+  .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
+  .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
+  .def_readonly("pACTION_SCORES", pACTION_SCORES, "Multiple action scores prediction type")
+  .def_readonly("pACTION_PROBS", pACTION_PROBS, "Multiple action probabilities prediction type")
+  .def_readonly("pMULTICLASS", pMULTICLASS, "Multiclass prediction type")
+  .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
+  .def_readonly("pPROB", pPROB, "Probability prediction type")
+  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
   ;
 
   // define the example class
@@ -666,7 +717,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_multiclass_label", &ex_get_multiclass_label, "Assuming a multiclass label type, get the true label")
   .def("get_multiclass_weight", &ex_get_multiclass_weight, "Assuming a multiclass label type, get the importance weight")
   .def("get_multiclass_prediction", &ex_get_multiclass_prediction, "Assuming a multiclass label type, get the prediction")
-  .def("get_multiclass_probabilities", &ex_get_multiclass_probabilities, "Assuming a multiclass label type, get all probabilities")
+  .def("get_prob", &ex_get_prob, "Get probability from example prediction")
+  .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
+  .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
+  .def("get_multilabel_predictions", &ex_get_multilabel_predictions, "Get multilabel predictions from example prediction")
   .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction, "Assuming a cost_sensitive label type, get the prediction")
   .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs, "Assuming a cost_sensitive label type, get the total number of label/cost pairs")
   .def("get_costsensitive_cost", &ex_get_costsensitive_cost, "Assuming a cost_sensitive label type, get the cost for a given pair (i=0.. get_costsensitive_num_costs)")

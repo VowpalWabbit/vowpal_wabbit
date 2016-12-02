@@ -33,24 +33,81 @@ class TestVW:
         assert self.model.get_weight(0, 0) == 0
 
     def test_finish(self):
-        model = vw(quiet=True)
-        assert not model.finished
-        model.finish()
-        assert model.finished
+        assert not self.model.finished
+        self.model.finish()
+        assert self.model.finished
 
-    def test_del(self):
-        model = vw(quiet=True)
-        del model
 
-    def test_oaa(self):
-        model = vw(loss_function='logistic', oaa=3, quiet=True)
-        model.learn('1 | feature:0')
-        model.learn('2 | feature:10')
-        assert isinstance(model.predict(' | feature:0', vw.lMulticlass), int)
+def test_delete():
+    model = vw(quiet=True, b=BIT_SIZE)
+    assert 'model' in locals()
+    del model
+    assert 'model' not in locals()
 
-    def test_oaa_probs(self):
-        model = vw(loss_function='logistic', oaa=3, probabilities=True, quiet=True)
-        model.learn('1 | feature:0')
-        model.learn('2 | feature:10')
-        assert isinstance(model.predict(' | feature:0', vw.lMulticlass), list)
-        del model
+
+# Test prediction types
+
+def test_scalar_prediction_type():
+    model = vw(quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pSCALAR
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, float)
+    del model
+
+
+def test_scalars_prediction_type():
+    n = 3
+    model = vw(loss_function='logistic', oaa=n, probabilities=True, quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pSCALARS
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, list)
+    assert len(prediction) == n
+    del model
+
+
+def test_multiclass_prediction_type():
+    n = 3
+    model = vw(loss_function='logistic', oaa=n, quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pMULTICLASS
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, int)
+    del model
+
+
+def test_prob_prediction_type():
+    model = vw(loss_function='logistic', csoaa_ldf='mc', probabilities=True, quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pPROB
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, float)
+    del model
+
+
+def test_action_scores_prediction_type():
+    model = vw(loss_function='logistic', csoaa_ldf='m', quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pACTION_SCORES
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, list)
+    del model
+
+
+def test_action_probs_prediction_type():
+    model = vw(cb_explore=2, ngram=2, quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pACTION_PROBS
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, list)
+    del model
+
+
+def test_multilabel_prediction_type():
+    model = vw(multilabel_oaa=4, quiet=True)
+    model.learn('1 | a b c')
+    assert model.get_prediction_type() == model.pMULTILABELS
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, list)
+    del model
