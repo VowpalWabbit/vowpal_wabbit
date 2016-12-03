@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="FF4D100F-9833-43CB-B335-E9923812F9B9" Name="setup" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft Research"
+	<Product Id="FF4D100F-9833-43CB-B335-E9923812F9B9" Name="Vowpal Wabbit" Language="1033" Version="$(var.VowpalWabbitAssemblyVersion)" Manufacturer="Microsoft Research"
            UpgradeCode="ddebf366-a8ca-4192-8552-dbf1d3603ae9">
 		<Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" />
 
