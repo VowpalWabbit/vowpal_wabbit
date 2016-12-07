@@ -6,7 +6,7 @@ license as described in the file LICENSE.
  */
 ```
 
-<img src="/logo_assets/vowpal-wabbits-page-logo.png" height="100" width="600" alt="Vowpal Wabbit">
+<img src="/logo_assets/vowpal-wabbits-page-logo@2x.png" height="100" width="600" alt="Vowpal Wabbit">
 
 [![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
