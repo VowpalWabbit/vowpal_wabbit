@@ -98,6 +98,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
+  <Import Project="..\version.props" />
   <Import Project="$(WixTargetsPath)" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -106,6 +107,11 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props'))" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <CreateProperty Condition="$(VowpalWabbitAssemblyVersion) != ''" Value="VowpalWabbitAssemblyVersion=$(VowpalWabbitAssemblyVersion);$(DefineConstants)">
+      <Output TaskParameter="Value" PropertyName="DefineConstants" />
+    </CreateProperty>
   </Target>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

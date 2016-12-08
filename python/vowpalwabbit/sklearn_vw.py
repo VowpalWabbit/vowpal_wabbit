@@ -37,6 +37,9 @@ class VW(BaseEstimator):
     params = dict()
 
     def __init__(self,
+                 rank=None,
+                 lrq=None,
+                 lrqdropout=None,
                  probabilities=None,
                  random_seed=None,
                  ring_size=None,
