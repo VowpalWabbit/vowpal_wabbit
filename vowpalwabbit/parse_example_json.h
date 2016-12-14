@@ -109,6 +109,13 @@ struct TextState : BaseState
 	BaseState* String(Context& ctx, const char* str, rapidjson::SizeType length, bool copy);
 };
 
+struct TagState : BaseState
+{
+	TagState();
+
+	BaseState* String(Context& ctx, const char* str, rapidjson::SizeType length, bool copy);
+};
+
 struct MultiState : BaseState
 {
 	MultiState();
@@ -190,6 +197,7 @@ struct Context
 	LabelSinglePropertyState label_single_property_state;
 	LabelIndexState label_index_state;
 	TextState text_state;
+	TagState tag_state;
 	MultiState multi_state;
 	IgnoreState ignore_state;
 	ArrayState array_state;

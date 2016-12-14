@@ -355,6 +355,20 @@ BaseState* TextState::String(Context& ctx, const char* str, SizeType length, boo
 	return ctx.previous_state;
 }
 
+// "_tag":"abc" 
+TagState::TagState() : BaseState("tag")
+{ }
+
+BaseState* TagState::String(Context& ctx, const char* str, SizeType length, bool copy)
+{
+	// only to be used with copy=false
+	assert(!copy);
+
+	push_many(ctx.ex->tag, str, length);
+
+	return ctx.previous_state;
+}
+
 // MultiState
 MultiState::MultiState() : BaseState("Multi")
 { }
@@ -562,6 +576,9 @@ BaseState* DefaultState::Key(Context& ctx, const char* str, SizeType length, boo
 		// TODO: _multi in _multi... 
 		if (ctx.key_length == 6 && !strcmp(str, "_multi"))
 			return &ctx.multi_state;
+
+		if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
+			return &ctx.tag_state;
 
 		return Ignore(ctx, length);
 	}
