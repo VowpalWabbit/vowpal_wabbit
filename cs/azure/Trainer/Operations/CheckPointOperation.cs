@@ -33,19 +33,20 @@ namespace VowpalWabbit.Azure.Trainer
 
             var data = new CheckpointData
             {
-                TrackbackList = string.Join("\n", this.trackbackList),
                 Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture),
                 UpdateClientModel = updateClientModel,
                 StartDateTime = this.startDateTime
             };
 
+            var modelId = Guid.NewGuid().ToString();
+
             // store the model name
             this.state.ModelName = $"{data.Timestamp}/model";
             data.State = JsonConvert.SerializeObject(this.State);
+            data.TrackbackList = $"modelid: {modelId}\n" + string.Join("\n", this.trackbackList);
 
             this.trackbackList.Clear();
 
-            var modelId = Guid.NewGuid().ToString();
             using (var memStream = new MemoryStream())
             {
                 this.vw.ID = modelId;

@@ -12,6 +12,7 @@ from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
+from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import copy, copytree, rmtree
 
 
@@ -65,7 +66,6 @@ def prep():
             copytree(path.join(here, '..', folder), path.join(here, 'src', folder))
             subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', folder))
 
-
 class Clean(_clean):
     """Clean up after building python package directories """
     def run(self):
@@ -92,22 +92,30 @@ class Sdist(_sdist):
             pass
         _sdist.run(self)
 
-
 class VWBuildExt(_build_ext):
     """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
         prep()
-        env = environ
-        env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
-        env['PYTHON_LIBS'] = '-l {}'.format(find_boost())
-        subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=env)
         target_dir = path.dirname(self.get_ext_fullpath(ext.name))
         if not path.isdir(target_dir):
             makedirs(target_dir)
-        ext_suffix = 'so' if not system == 'Cygwin' else 'dll'
-        copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
-             self.get_ext_fullpath(ext.name))
+        if system == 'Windows':
+            copy(path.join(here, 'bin', 'pyvw.dll'), self.get_ext_fullpath(ext.name))
+            copy(path.join(here, 'bin', 'zlib.dll'), path.join(here, 'zlib.dll'))
+        else:
+            env = environ
+            env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
+            env['PYTHON_LIBS'] = '-l {}'.format(find_boost())
+            subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=env)
+            ext_suffix = 'so' if not system == 'Cygwin' else 'dll'
+            copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
+                 self.get_ext_fullpath(ext.name))
 
+class InstallLib(_install_lib):
+    def build(self):
+       _install_lib.build(self)
+       if system == 'Windows':
+           copy(path.join(here, 'bin', 'zlib.dll'), path.join(self.build_dir, 'zlib.dll'))
 
 class Tox(_test):
     """ Run tox tests with 'python setup.py test' """
@@ -184,7 +192,8 @@ setup(
         'clean': Clean,
         'sdist': Sdist,
         'test': Tox,
+        'install_lib': InstallLib
     },
     # tox.ini handles additional test dependencies
-    tests_require=['tox'],
+    tests_require=['tox']
 )

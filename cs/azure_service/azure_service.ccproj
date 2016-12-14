@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>2.8</ProductVersion>
+    <ProductVersion>2.9</ProductVersion>
     <ProjectGuid>7263f536-3abe-4a8e-ba66-1341d6a53579</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -38,9 +38,9 @@
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\azure\azure.csproj">
+    <ProjectReference Include="..\azure_worker\azure_worker.csproj">
       <Name>OnlineTrainer</Name>
-      <Project>{43e32c1d-21d6-4be3-8fa5-d5ba379cba53}</Project>
+      <Project>{9DE727D8-FD1B-4144-8976-5371663D4C22}</Project>
       <Private>True</Private>
       <RoleType>Worker</RoleType>
       <RoleName>OnlineTrainer</RoleName>
