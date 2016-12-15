@@ -647,6 +647,9 @@ BaseState* DefaultState::EndObject(Context& ctx, SizeType memberCount)
 
 			// apply labelIndex
 			ctx.ex = (*ctx.examples)[label_index];
+
+			// reset for next example
+			ctx.label_index_state.index = -1;
 		}
 
 		// inject label
