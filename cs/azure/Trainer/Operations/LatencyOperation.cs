@@ -8,9 +8,9 @@
 
 using System;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer.Data;
+using VW.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal sealed class LatencyOperation : ThrottledOperation<TrainerResult>
     {

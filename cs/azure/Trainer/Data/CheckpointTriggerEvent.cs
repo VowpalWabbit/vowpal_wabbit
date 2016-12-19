@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace VowpalWabbit.Azure.Trainer.Data
+namespace VW.Azure.Trainer.Data
 {
     internal sealed class CheckpointTriggerEvent
     {

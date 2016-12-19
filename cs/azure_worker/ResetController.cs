@@ -15,9 +15,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     public sealed class ResetController : OnlineTrainerController
     {

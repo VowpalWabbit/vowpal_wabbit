@@ -1,3 +1,11 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="WorkerRole.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -8,16 +16,14 @@ using Microsoft.Practices.Unity;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Owin;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Web.Http;
 using System.Web.Http.Cors;
-using System.Web.Http.ExceptionHandling;
 using Unity.WebApi;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     public class WorkerRole : RoleEntryPoint
     {

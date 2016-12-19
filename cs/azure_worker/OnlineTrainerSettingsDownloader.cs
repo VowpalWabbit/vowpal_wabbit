@@ -1,20 +1,26 @@
-﻿using Microsoft.Azure;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="OnlineTrainerSettingsDownloader.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.Azure;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     internal sealed class OnlineTrainerSettingsDownloader : IDisposable
     {
@@ -98,9 +104,7 @@ namespace VowpalWabbit.Azure.Worker
 
                     Trace.TraceInformation("Retrieved new blob for {0}", this.settingsBlob.Uri);
 
-                    var evt = this.Downloaded;
-                    if (evt != null)
-                        evt(this, ms.ToArray());
+                    this.Downloaded?.Invoke(this, ms.ToArray());
                 }
             }
             catch (Exception ex)
@@ -119,9 +123,7 @@ namespace VowpalWabbit.Azure.Worker
                 else
                     Trace.TraceError("Failed to retrieve '{0}': {1}", uri, ex.Message);
 
-                var evt = this.Failed;
-                if (evt != null)
-                    evt(this, ex);
+                this.Failed?.Invoke(this, ex);
             }
         }
 

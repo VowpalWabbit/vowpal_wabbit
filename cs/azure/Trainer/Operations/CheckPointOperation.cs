@@ -14,9 +14,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer.Data;
+using VW.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner
     {

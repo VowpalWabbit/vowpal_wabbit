@@ -160,6 +160,9 @@ namespace VW.Serializer
             this.featureCount = this.defaultMarshaller.MarshalNamespace(namespaceContext, ns, () => this.ParseProperties(path)) + this.featureCount;
         }
 
+        /// <summary>
+        /// Parse VW JSON
+        /// </summary>
         public void Parse(JsonReader reader, VowpalWabbitMarshalContext context, Namespace ns, List<VowpalWabbitJsonExtension> extensions = null)
         {
             this.reader = reader;

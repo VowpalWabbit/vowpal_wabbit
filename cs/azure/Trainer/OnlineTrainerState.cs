@@ -1,11 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="OnlineTrainerState.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     public class OnlineTrainerState
     {

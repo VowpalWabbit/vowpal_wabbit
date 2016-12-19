@@ -9,9 +9,9 @@
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Web.Http;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     /// <summary>
     /// HTTP Front end to expose performance statistics.

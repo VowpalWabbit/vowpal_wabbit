@@ -12,11 +12,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
-using VowpalWabbit.Azure.Trainer.Data;
-using VW;
+using VW.Azure.Trainer.Data;
 using VW.Labels;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner
     {
@@ -44,8 +43,7 @@ namespace VowpalWabbit.Azure.Trainer
 
                 // predict first then learn to avoid information leak
                 var progressivePrediction = example.Example.Predict(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
-
-                example.Example.Learn(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
+                example.Example.Learn(this.vw);
 
                 //if (this.vwAllReduce != null)
                 //{

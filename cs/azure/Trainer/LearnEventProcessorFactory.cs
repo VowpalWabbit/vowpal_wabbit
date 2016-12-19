@@ -23,12 +23,12 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using VW.Labels;
 using System.Text;
-using VowpalWabbit.Azure.Trainer;
-using VowpalWabbit.Azure.Trainer.Operations;
+using VW.Azure.Trainer;
+using VW.Azure.Trainer.Operations;
 using VW.Serializer;
-using VowpalWabbit.Azure.Trainer.Data;
+using VW.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure
+namespace VW.Azure
 {
     internal sealed class TrainEventProcessorFactory : IEventProcessorFactory, IDisposable
     {

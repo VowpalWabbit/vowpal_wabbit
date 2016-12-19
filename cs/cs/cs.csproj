@@ -172,7 +172,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\vw_key.snk" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -192,13 +194,12 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
   </Target>
   <PropertyGroup>
     <PreBuildEvent>$(SolutionDir)..\cs\transform_all.bat $(ProjectDir)
 </PreBuildEvent>
   </PropertyGroup>
-  <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   -->
@@ -209,4 +210,5 @@
     <Exec Command="..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings" Condition="'$(BuildNuget)' == 'true'" />
     <Exec Command="..\..\vowpalwabbit\.nuget\nuget pack $(ProjectDir)\$(ProjectName).nuspec -Version $(VowpalWabbitAssemblyVersion) -Prop &quot;Configuration=Release;Platform=x64&quot; -Prop SolutionDir=$(SolutionDir) -OutputDirectory $(SolutionDir)\$(Platform)\$(Configuration)" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
+  <Import Project="..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('..\..\vowpalwabbit\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
 </Project>

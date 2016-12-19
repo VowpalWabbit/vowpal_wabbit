@@ -10,7 +10,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal class SafeTimer
     {

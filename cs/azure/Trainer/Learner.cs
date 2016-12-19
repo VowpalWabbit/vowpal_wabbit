@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using VW;
 using VW.Serializer;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner : IDisposable
     {

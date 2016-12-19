@@ -9,9 +9,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     /// <summary>
     /// HTTP Front end to trigger checkpointing
