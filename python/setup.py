@@ -100,8 +100,12 @@ class VWBuildExt(_build_ext):
         if not path.isdir(target_dir):
             makedirs(target_dir)
         if system == 'Windows':
-            copy(path.join(here, 'bin', 'pyvw.dll'), self.get_ext_fullpath(ext.name))
-            copy(path.join(here, 'bin', 'zlib.dll'), path.join(here, 'zlib.dll'))
+            if sys.version_info[0] == 2 and sys.version_info[1] == 7:
+               copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
+            elif sys.version_info[0] == 3 and sys.version_info[1] == 5:
+               copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
+            else:
+               raise Exception('Pre-built vw/python library for Windows is not supported')
         else:
             env = environ
             env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)

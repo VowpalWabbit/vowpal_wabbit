@@ -92,12 +92,44 @@ namespace cs_unittest
             public ActionFeatures[] Actions { get; set; }
         }
 
+        private static string GetConfiguration(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+            if (!string.IsNullOrEmpty(value))
+                return value.Trim();
+
+            var path = Directory.GetCurrentDirectory();
+            do
+            {
+                var filename = Path.Combine(path, "vw_azure.config");
+                if (File.Exists(filename))
+                {
+                    var q = from line in File.ReadAllLines(filename)
+                            let m = Regex.Match(line, @"^(\S+)\s*=(.*)$")
+                            where m.Success
+                            where m.Groups[1].Value == name
+                            select m.Groups[2].Value;
+
+                    value = q.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(value))
+                        return value.Trim();
+                }
+
+                var di = Directory.GetParent(path);
+                if (di == null)
+                    Assert.Fail($"Configuration variable '{name}' not found. Search for environment variable or vw_azure.config");
+
+                path = di.FullName;
+            }
+            while (true);
+        }
+
         [TestMethod]
         public async Task TestAzureTrainer()
         {
-            // TODO: move to config object, find from env or get from config file... 
-            var storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=vwunit2storage;AccountKey=NLCjXurkixobS/vmnqk5e9D3y6GyJQmeWS2ZgYTQgTFCMH8m66Ii21tgTv9YbiKRRfMzxqOWKI332qs20ycXaw==";
-            var inputEventHubConnectionString = "Endpoint=sb://vwunit2sb.servicebus.windows.net/;SharedAccessKeyName=Manage;SharedAccessKey=1bH0yXVwsXMtRduwX7GWmDjUPOrW+wOi5bfLpzhIFSw=;EntityPath=vwunit2input";
+            var storageConnectionString = GetConfiguration("storageConnectionString");
+            var inputEventHubConnectionString = GetConfiguration("inputEventHubConnectionString");
+            var evalEventHubConnectionString = GetConfiguration("evalEventHubConnectionString");
 
             var trainArguments = "--cb_explore_adf --epsilon 0.2 -q ab";
 
@@ -117,7 +149,7 @@ namespace cs_unittest
                 {
                     CheckpointPolicy = new CountingCheckpointPolicy(data.Count),
                     JoinedEventHubConnectionString = inputEventHubConnectionString,
-                    EvalEventHubConnectionString = "Endpoint=sb://vwunit2sb.servicebus.windows.net/;SharedAccessKeyName=Manage;SharedAccessKey=uGUK/DX35pRy77gGCT8RLiRKJUYoIII/VjIt2d1ukyI=;EntityPath=vwunit2eval",
+                    EvalEventHubConnectionString = evalEventHubConnectionString,
                     StorageConnectionString = storageConnectionString,
                     Metadata = new OnlineTrainerSettings
                     {
