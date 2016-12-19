@@ -620,7 +620,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
   .def("get_id", &get_model_id, "return the model id")
-  .def("get_arguments", &get_arguments, "return the model id")
+  .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
