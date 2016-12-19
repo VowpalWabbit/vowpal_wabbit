@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "clr_io.h"
 #include "lda_core.h"
 #include "parse_example.h"
+#include "parse_example_json.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -301,13 +302,11 @@ namespace VW
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
-
-			  VW::read_line_json(
-				  *m_vw, 
-				  examples,
-				  reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()),
-				  get_example_from_pool,
-				  &state);
+			  
+			  if (m_vw->audit)
+				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+			  else
+				VW::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
 
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);

@@ -43,34 +43,6 @@ int read_features_string(vw* all, v_array<example*>& examples)
 
   return (int)num_chars_initial;
 }
-
-int read_features_json(vw* all, v_array<example*>& examples)
-{ char* line;
-  size_t num_chars;
-  size_t num_chars_initial = read_features(all, line, num_chars);
-  if (num_chars_initial < 1)
-    return (int)num_chars_initial;
-
-  line[num_chars] = '\0';
-  VW::read_line_json(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
-
-  // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
-  // since the communication between the parsing thread the main learner expects examples to be requested in order (as they're layed out in memory)
-  // there is no way to determine upfront if a shared example exists
-  // thus even if there are no features for the shared example, still an empty example is returned.
-
-  if (examples.size() > 1) 
-  { // insert new line example at the end
-	example& ae = VW::get_unused_example(all);
-    char empty = '\0';
-    substring example = { &empty, &empty };
-    substring_to_example(all, &ae, example);
-    
-	examples.push_back(&ae);
-  }
-
-  return 1;
-}
  
 template<bool audit>
 class TC_parser

@@ -50,6 +50,7 @@ namespace po = boost::program_options;
 #include "vw.h"
 #include "interactions.h"
 #include "vw_exception.h"
+#include "parse_example_json.h"
 
 using namespace std;
 
@@ -571,8 +572,18 @@ child:
       }
 
       if (all.vm.count("json"))
-      { all.p->reader = read_features_json;
-        all.p->jsonp = new json_parser;
+      { 
+		  // TODO: change to class with virtual method
+		  if (all.audit)
+		  {
+			  all.p->reader = &read_features_json<true>;
+			  all.p->jsonp = new json_parser<true>;
+		  }
+		  else
+		  {
+			  all.p->reader = &read_features_json<false>;
+			  all.p->jsonp = new json_parser<false>;
+		  }
       }
       else
 	all.p->reader = read_features_string;
