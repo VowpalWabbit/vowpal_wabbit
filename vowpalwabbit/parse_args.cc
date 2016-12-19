@@ -1141,7 +1141,7 @@ vw& parse_args(int argc, char *argv[])
     time(&all.init_time);
 
     new_options(all, "VW options")
-    ("random_seed", po::value<uint64_t>(&(all.random_seed))->default_value(2147483647), "seed random number generator")
+    ("random_seed", po::value<uint64_t>(&(all.random_seed)), "seed random number generator")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
     add_options(all);
 
