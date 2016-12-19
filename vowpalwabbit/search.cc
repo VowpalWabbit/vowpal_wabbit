@@ -277,10 +277,10 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? frand48() : frand48_noadvance()) >= priv.beta;
+    pid = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state)) >= priv.beta;
   else
   { // SPEEDUP this up in the case that beta is small!
-    float r = (advance_prng ? frand48() : frand48_noadvance());
+    float r = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state));
     pid = 0;
 
     if (r > priv.beta)
@@ -557,8 +557,7 @@ void reset_search_structure(search_private& priv)
   priv.ptag_to_action.erase();
 
   if (! priv.cb_learner)   // was: if rollout_all_actions
-  { uint32_t seed = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
-    msrand48(seed);
+  { priv.all->random_state = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
   }
 }
 
@@ -582,7 +581,7 @@ template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str
 template<class T> void cerr_print_array(string str, v_array<T>& A) { std::cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) std::cerr << " " << A[i]; std::cerr << " ]" << endl; }
 
 
-size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
+size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
 template<class T> bool array_contains(T target, const T*A, size_t n)
 { if (A == nullptr) return false;
   for (size_t i=0; i<n; i++)
@@ -859,7 +858,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         if (allowed_actions_cost[k] <= min_cost)
         { cdbg << ", hit @ " << k;
           count++;
-          if ((count == 1) || (frand48() < 1./(float)count))
+          if ((count == 1) || (merand48(priv.all->random_state) < 1./(float)count))
           { a = (allowed_actions == nullptr) ? (uint32_t)(k+1) : allowed_actions[k];
             cdbg << "***";
           }
@@ -869,12 +868,12 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   }
 
   if (a == (action)-1)
-  { if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) && (frand48() < priv.perturb_oracle))
+  { if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) && (merand48(priv.all->random_state) < priv.perturb_oracle))
       oracle_actions_cnt = 0;
-    a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
-        (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-        priv.is_ldf ? (action)random(ec_cnt) :
-        (action)(1 + random(priv.A));
+    a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(priv.all->random_state, oracle_actions_cnt )] :
+        (allowed_actions_cnt > 0) ? allowed_actions[random(priv.all->random_state, allowed_actions_cnt)] :
+        priv.is_ldf ? (action)random(priv.all->random_state, ec_cnt) :
+        (action)(1 + random(priv.all->random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << a << endl;
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
@@ -1532,7 +1531,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   // if there's active learning, we need to
   if (priv.subsample_timesteps <= -1)
   { for (size_t i=0; i<priv.active_uncertainty.size(); i++)
-      if (frand48() > priv.active_uncertainty[i].first)
+      if (merand48(priv.all->random_state) > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
@@ -1550,18 +1549,18 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
   else if (priv.subsample_timesteps < 1)
   { for (size_t t=0; t<priv.T; t++)
-      if (frand48() <= priv.subsample_timesteps)
+      if (merand48(priv.all->random_state) <= priv.subsample_timesteps)
         timesteps.push_back(t);
 
     if (timesteps.size() == 0) // ensure at least one
-      timesteps.push_back((size_t)(frand48() * priv.T));
+      timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
   }
 
   // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR but why? :P
   else
   { while ((timesteps.size() < (size_t)priv.subsample_timesteps) &&
            (timesteps.size() < priv.T))
-    { size_t t = (size_t)(frand48() * (float)priv.T);
+    { size_t t = (size_t)(merand48(priv.all->random_state) * (float)priv.T);
       if (! v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }

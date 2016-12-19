@@ -9,10 +9,10 @@
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++11-long-long"
 #endif
-uint64_t a = 0xeece66d5deece66dULL;
-uint64_t c = 2147483647;
+const uint64_t a = 0xeece66d5deece66dULL;
+const uint64_t c = 2147483647;
 
-int bias = 127 << 23;
+const int bias = 127 << 23;
 
 float merand48(uint64_t& initial) {
   initial = a * initial + c;
@@ -20,15 +20,6 @@ float merand48(uint64_t& initial) {
   return bits_to_float(temp) - 1;
 }
 
-uint64_t v = c;
-
-void msrand48(uint64_t initial) { v = initial; }
-
-float frand48() { return merand48(v); }
-
-float frand48_noadvance()
-{ uint64_t old_v = v;
-  float ret = frand48();
-  v = old_v;
-  return ret;
+float merand48_noadvance(uint64_t v)
+{ return merand48(v);
 }

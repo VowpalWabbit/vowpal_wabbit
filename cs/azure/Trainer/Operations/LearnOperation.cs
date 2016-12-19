@@ -42,8 +42,7 @@ namespace VW.Azure.Trainer
                     this.telemetry.TrackTrace($"Unable to find valid label for event '{example.EventId}'", SeverityLevel.Warning);
 
                 // predict first then learn to avoid information leak
-                var progressivePrediction = example.Example.Predict(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
-                example.Example.Learn(this.vw);
+                var progressivePrediction = example.Example.Learn(VowpalWabbitPredictionType.ActionProbabilities, this.vw);
 
                 //if (this.vwAllReduce != null)
                 //{

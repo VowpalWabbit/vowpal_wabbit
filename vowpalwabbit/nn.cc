@@ -158,7 +158,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
-      { n.hiddenbias.l.simple.label = (float) (frand48 () - 0.5);
+      { n.hiddenbias.l.simple.label = (float) (merand48(n.all->random_state) - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -222,7 +222,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     { float sqrtk = sqrt ((float)n.k);
-      n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float) (merand48(n.all->random_state) - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }

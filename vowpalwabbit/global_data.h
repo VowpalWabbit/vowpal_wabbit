@@ -501,7 +501,8 @@ struct vw
   bool adaptive;//Should I use adaptive individual learning rates?
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
-  size_t random_seed;
+  uint64_t random_seed;
+  uint64_t random_state; // per instance random_state
   bool random_weights;
   bool random_positive_weights; // for initialize_regressor w/ new_mf
   bool add_constant;
@@ -558,7 +559,7 @@ struct vw
   std::map< std::string, size_t> name_index_map;
 
   label_type::label_type_t label_type;
-  
+
   vw();
 };
 

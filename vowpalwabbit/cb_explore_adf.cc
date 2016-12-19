@@ -159,7 +159,8 @@ namespace CB_EXPLORE_ADF{
     bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
     for (uint32_t i = 0; i < data.bag_size; i++) 
       {
-	uint32_t count = BS::weight_gen();
+		// avoid updates to the random num generator
+	uint32_t count = is_learn ? BS::weight_gen(*data.all) : 0;
 	if (is_learn && count > 0 && !test_sequence)
 	  multiline_learn_or_predict<true>(base, examples, data.offset, i);
 	else
