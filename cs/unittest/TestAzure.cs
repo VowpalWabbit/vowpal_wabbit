@@ -125,6 +125,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        // TODO: figure issue in VSO
+        [TestCategory("NotOnBuild")]
         public async Task TestAzureTrainer()
         {
             var storageConnectionString = GetConfiguration("storageConnectionString");
