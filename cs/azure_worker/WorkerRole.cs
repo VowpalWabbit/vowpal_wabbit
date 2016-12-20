@@ -51,9 +51,6 @@ namespace VW.Azure.Worker
 
                 bool result = base.OnStart();
 
-                Debugger.Log(1, "INFO", $"VowpalWabbit.AzureWorker starting");
-
-
                 TelemetryConfiguration.Active.InstrumentationKey = CloudConfigurationManager.GetSetting("APPINSIGHTS_INSTRUMENTATIONKEY");
                 //TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
                 this.telemetry = new TelemetryClient();

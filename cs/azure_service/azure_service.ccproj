@@ -61,21 +61,12 @@
     <Content Include="OnlineTrainerContent\install.cmd">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="OnlineTrainerContent\InstallAgent.bat">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="OnlineTrainerContent\InstallAgent.ps1">
-      <SubType>Content</SubType>
-    </Content>
     <Content Include="OnlineTrainerContent\NDP461-KB3102438-Web.exe">
       <SubType>Content</SubType>
     </Content>
     <Content Include="OnlineTrainerContent\ServerGC.cmd">
       <SubType>Content</SubType>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <PublishProfile Include="Profiles\trainer-mcdel5spqfpsfzclankProduction.azurePubxml" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

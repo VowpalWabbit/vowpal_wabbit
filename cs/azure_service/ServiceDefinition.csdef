@@ -26,14 +26,6 @@
       <LocalStorage name="NETFXInstall" sizeInMB="1024" cleanOnRoleRecycle="false" />
     </LocalResources>
     <Startup>
-      <!--<Task commandLine="InstallAgent.bat" executionContext="elevated" taskType="simple">
-        <Environment>
-          <Variable name="ApplicationInsightsAgent.DownloadLink" value="http://go.microsoft.com/fwlink/?LinkID=522371" />
-          <Variable name="RoleEnvironment.IsEmulated">
-            <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated" />
-          </Variable>
-        </Environment>
-      </Task>-->
       <Task commandLine="install.cmd" executionContext="elevated" taskType="simple">
         <Environment>
           <Variable name="PathToNETFXInstall">
