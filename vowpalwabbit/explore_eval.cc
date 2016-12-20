@@ -194,7 +194,7 @@ namespace EXPLORE_EVAL {
 	if (threshold > 1. + 1e-6)
 	  data.violations++;
 	
-	if (frand48() < threshold)
+	if (merand48(data.all->random_state) < threshold)
 	  {
         example* ec_found = nullptr;
         for (example*& ec : data.ec_seq)

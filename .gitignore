@@ -119,3 +119,5 @@ python/.coverage
 vowpalwabbit/vw.VC.VC.opendb
 vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
+/python/pylibvw.pyd
+/python/pylibvw.cp35-win_amd64.pyd

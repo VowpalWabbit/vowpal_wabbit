@@ -15,6 +15,7 @@ namespace CB_EXPLORE{
 
   struct cb_explore
   {
+	vw* all;
     cb_to_cs cbcs;
     v_array<uint32_t> preds;
     v_array<float> cover_probs;
@@ -96,7 +97,7 @@ namespace CB_EXPLORE{
       probs.push_back({i,0.});
     float prob = 1.f/(float)data.bag_size;
     for(size_t i = 0;i < data.bag_size;i++) {
-      uint32_t count = BS::weight_gen();
+      uint32_t count = BS::weight_gen(*data.all);
       if (is_learn && count > 0)
 	base.learn(ec,i);
       else
@@ -311,6 +312,7 @@ base_learner* cb_explore_setup(vw& all)
 
   po::variables_map& vm = all.vm;
   cb_explore& data = calloc_or_throw<cb_explore>();
+  data.all = &all;
   data.cbcs.num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
   uint32_t num_actions = data.cbcs.num_actions;
 

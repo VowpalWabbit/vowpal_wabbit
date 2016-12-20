@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using VW;
 
-namespace VowpalWabbit.Azure.Trainer.Data
+namespace VW.Azure.Trainer.Data
 {
     internal sealed class PipelineData
     {
