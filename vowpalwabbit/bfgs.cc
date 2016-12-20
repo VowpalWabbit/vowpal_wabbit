@@ -388,25 +388,28 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
   return 0.5*step_size;
 }
 
-
 double add_regularization(vw& all, bfgs& b, float regularization)
 { //compute the derivative difference
   double ret = 0.;
   weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin();
 
+  uint32_t i = 0; 
   if (b.regularizers == nullptr)
-    { for(; w != weights.end(); ++w)
-	{ (&(*w))[W_GT] += regularization*(*w);
-	  ret += 0.5*regularization*(*w)*(*w);
-	}
+  { for(; w != weights.end(); ++w, ++i)
+    { if(all.no_bias == true && i!=(size_t)constant_namespace)
+      { (&(*w))[W_GT] += regularization*(*w);
+        ret += 0.5*regularization*(*w)*(*w);
+      }
     }
+  }
   else
-  { uint32_t i = 0;
-	for (; w != weights.end(); ++i, ++w)
-    { weight delta_weight = *w - b.regularizers[2*i+1];
-      (&(*w))[W_GT] += b.regularizers[2*i]*delta_weight;
-      ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
+  { for (; w != weights.end(); ++i, ++w)
+    { if(all.no_bias == true && i!= (size_t)constant_namespace)
+      { weight delta_weight = *w - b.regularizers[2*i+1];
+        (&(*w))[W_GT] += b.regularizers[2*i]*delta_weight;
+        ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
+      }
     }
   }
 
