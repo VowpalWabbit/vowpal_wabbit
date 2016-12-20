@@ -49,15 +49,14 @@ namespace VW.Azure.Worker
             bool result = base.OnStart();
 
             TelemetryConfiguration.Active.InstrumentationKey = CloudConfigurationManager.GetSetting("APPINSIGHTS_INSTRUMENTATIONKEY");
-
-            // TODO: disable
-            // TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
+            //TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
             this.telemetry = new TelemetryClient();
-
-            this.telemetry.TrackTrace("WorkerRole starting", SeverityLevel.Information);
 
             try
             {
+
+                this.telemetry.TrackTrace("WorkerRole starting", SeverityLevel.Information);
+
                 this.trainProcesserHost = new LearnEventProcessorHost();
                 this.settingsWatcher = new OnlineTrainerSettingsWatcher(this.trainProcesserHost);
 
