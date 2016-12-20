@@ -390,6 +390,24 @@ struct TextState : BaseState<audit>
 };
 
 template<bool audit>
+struct TagState : BaseState<audit>
+{
+	// "_tag":"abc" 
+	TagState() : BaseState<audit>("tag")
+	{ }
+
+	BaseState* String(Context<audit>& ctx, const char* str, SizeType length, bool copy)
+	{
+		// only to be used with copy=false
+		assert(!copy);
+
+		push_many(ctx.ex->tag, str, length);
+
+		return ctx.previous_state;
+	}
+};
+
+template<bool audit>
 struct MultiState : BaseState<audit>
 {
 	MultiState() : BaseState<audit>("Multi")
@@ -634,6 +652,9 @@ public:
 			if (ctx.key_length == 6 && !strcmp(str, "_multi"))
 				return &ctx.multi_state;
 
+			if (ctx.key_length == 4 && !_stricmp(ctx.key, "_tag"))
+				return &ctx.tag_state;
+
 			return Ignore(ctx, length);
 		}
 
@@ -701,6 +722,9 @@ public:
 
 				// apply labelIndex
 				ctx.ex = (*ctx.examples)[label_index];
+
+				// reset for next example
+				ctx.label_index_state.index = -1;
 			}
 
 			// inject label
@@ -759,6 +783,7 @@ struct Context
 	LabelSinglePropertyState<audit> label_single_property_state;
 	LabelIndexState<audit> label_index_state;
 	TextState<audit> text_state;
+	TagState<audit> tag_state;
 	MultiState<audit> multi_state;
 	IgnoreState<audit> ignore_state;
 	ArrayState<audit> array_state;
