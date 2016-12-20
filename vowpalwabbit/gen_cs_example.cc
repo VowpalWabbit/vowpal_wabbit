@@ -50,6 +50,28 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
     }
 }
 
+  //Multiline version
+void gen_cs_example_dm(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+{ 
+  cs_labels.costs.erase();
+  bool shared = CB::ec_is_example_header(*examples[0]);
+  for (uint32_t i = 0; i < examples.size()-1; i++)
+  { CB::label ld = examples[i]->l.cb;
+
+    COST_SENSITIVE::wclass wc = {0.,i,0.,0.};
+    if (shared && i > 0)
+      wc.class_index = (uint32_t)i-1;
+    if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
+      wc.x = ld.costs[0].cost;
+    cs_labels.costs.push_back(wc);
+  }
+
+  if (shared)//take care of shared examples
+    { cs_labels.costs[0].class_index = 0;
+      cs_labels.costs[0].x = -FLT_MAX;
+    }
+}
+
 //Multiline version
 void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
 { 

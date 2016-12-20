@@ -567,7 +567,6 @@ struct vw
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
-void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);

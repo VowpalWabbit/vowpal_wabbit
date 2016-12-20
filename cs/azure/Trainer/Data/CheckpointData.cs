@@ -6,6 +6,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+
 namespace VowpalWabbit.Azure.Trainer.Data
 {
     internal sealed class CheckpointData
@@ -21,5 +23,7 @@ namespace VowpalWabbit.Azure.Trainer.Data
         internal string State { get; set; }
 
         internal string Timestamp { get; set; }
+
+        internal DateTime StartDateTime { get; set; }
     }
 }
