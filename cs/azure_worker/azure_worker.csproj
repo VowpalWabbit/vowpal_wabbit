@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VowpalWabbit.AzureWorker</RootNamespace>
-    <AssemblyName>VW.AzureWorker</AssemblyName>
+    <AssemblyName>VowpalWabbit.AzureWorker</AssemblyName>
     <RoleType>Worker</RoleType>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
