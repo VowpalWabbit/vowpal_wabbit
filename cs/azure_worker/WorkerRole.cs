@@ -51,6 +51,9 @@ namespace VW.Azure.Worker
 
                 bool result = base.OnStart();
 
+                Debugger.Log(1, "INFO", $"VowpalWabbit.AzureWorker starting");
+
+
                 TelemetryConfiguration.Active.InstrumentationKey = CloudConfigurationManager.GetSetting("APPINSIGHTS_INSTRUMENTATIONKEY");
                 //TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
                 this.telemetry = new TelemetryClient();
@@ -74,7 +77,7 @@ namespace VW.Azure.Worker
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"VowpalWabbit.AzureWorker failed to start: {e.Message} {e.StackTrace}");
+                Debugger.Log(1, "ERROR", $"VowpalWabbit.AzureWorker failed to start: {e.Message} {e.StackTrace}");
                 throw;
             }
         }
