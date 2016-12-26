@@ -180,7 +180,9 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
   if (f == nullptr)
   {
     if (!dat.ns_pre.empty())
+    { 
         dat.ns_pre.pop_back();
+    }
 
     return;
   }
@@ -619,7 +621,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 
 		for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
 		{
-		  weight* v = &weights[it->second];
+		  weight* v = &weights.strided_index(it->second);
 			if (*v != 0.)
 			{
 				msg << it->first;
@@ -651,7 +653,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 		{
 		  if (i >= length)
 		    THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-		  weight* v = &weights[i];
+		  weight* v = &weights.strided_index(i);
 		  brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
 		}
 	    } while (brw >0);
@@ -659,7 +661,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v - weights.begin();
+		i = v.index();
 		stringstream msg;
 		msg << i;
 		
@@ -709,7 +711,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		{
 		  if (i >= length)
 		      THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-		  weight* v = &weights[i];
+		  weight* v = &weights.strided_index(i);
 		  if (g == NULL || (!g->adaptive && !g->normalized))
 		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
 		  else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
@@ -722,7 +724,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v - weights.begin();
+		i = v.index();
 		msg << i;
 		if (all.num_bits < 31)
 		  {
@@ -872,11 +874,14 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
   if (all.adaptive && all.initial_t > 0){
 	  initialt init(all.initial_t);
-	  all.weights.set_struct = &init;
-	  if (all.sparse)
+	  if (all.sparse){
+		  all.sparse_weights.set_struct = &init;
 		  all.sparse_weights.set_default<set_initial_gd>();
-	  else
-		  all.weights.set_default<set_initial_gd>(); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+	  }  
+	  else{
+		  all.weights.set_struct = &init;
+		  all.weights.set_default<set_initial_gd>();
+	  }  //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
         //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
         //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
         //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...

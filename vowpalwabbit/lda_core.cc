@@ -624,7 +624,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, T& weights, example 
     doc_length = 0;
     for (features& fs : *ec)
       { for (features::iterator& f : fs)
-	  {  float* u_for_w = &(weights[f.index() & weights.mask()]) + l.topics + 1;
+	  {  float* u_for_w = &(weights[f.index()]) + l.topics + 1;
             float c_w = find_cw(l, u_for_w, v);
             xc_w = c_w * f.value();
             score += -f.value() * log(c_w);
@@ -890,7 +890,7 @@ void learn_batch(lda &l, T& weights)
 			  float *v_s = &(l.v[s->document * l.all->lda]);
 			  float* u_for_w = &(weights[s->f.weight_index]) + l.all->lda + 1;
 			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
-			  word_weights = &(weights[s->f.weight_index & weights.mask()]);
+			  word_weights = &(weights[s->f.weight_index]);
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
 			  {   
 				  float new_value = *u_for_w * v_s[k] * c_w;
@@ -996,7 +996,7 @@ void get_top_weights(vw* all, int top_words_count, int topic, std::vector<featur
 	typename T::iterator iter = weights.begin();
 
 	for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
-	  top_features.push({(&(*iter))[topic], i});
+	  top_features.push({(&(*iter))[topic], iter.index()});
 
 	for (uint64_t i = top_words_count; i < length; i++, ++iter)
 	  {
@@ -1040,13 +1040,13 @@ void compute_coherence_metrics(lda &l, T& weights)
 		std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
 		typename T::iterator iter = weights.begin();
 		for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
-			top_features.push(feature((&(*iter))[topic], i));
+			top_features.push(feature((&(*iter))[topic], iter.index()));
 		
 		for (typename T::iterator v = weights.begin(); v!= weights.end(); ++v)
 		  if ((&(*v))[topic] > top_features.top().x)
 		    {
 		      top_features.pop();
-		      top_features.push(feature((&(*v))[topic], v-weights.begin()));
+		      top_features.push(feature((&(*v))[topic], v.index()));
 		    }
 
 		// extract idx and sort descending

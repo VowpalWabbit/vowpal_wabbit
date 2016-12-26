@@ -826,12 +826,11 @@ namespace VW
 
 	  // over weights
 	  weight_parameters& weights = m_vw->weights;
-	  weight_parameters::iterator iter = weights.begin();
-	  for (uint64_t i = 0; i < length; i++, ++iter)
+	  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
 	  {   // over topics
 		  weight_parameters::iterator::w_iter v = iter.begin();
 		  for (uint64_t k = 0; k < K; k++, ++v)
-		    allocation[(int)k][(int)i] = *v + lda_rho;
+		    allocation[(int)k][(int)iter.index()] = *v + lda_rho;
 	  }
 
 	  return allocation;
