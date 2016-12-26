@@ -37,8 +37,8 @@ search_generate: search_generate.cc ../vowpalwabbit/libvw.a
 recommend: recommend.cc ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
-gd_mf_weights: gd_mf_weights.cc ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
-	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+gd_mf_weights: gd_mf_weights.cc ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a 
+	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS) -I ../rapidjson/include
 
 clean:
 	rm -f *.o ezexample_predict ezexample_train library_example test_search recommend ezexample_predict_threaded
