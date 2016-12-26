@@ -180,9 +180,7 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
   if (f == nullptr)
   {
     if (!dat.ns_pre.empty())
-    { 
         dat.ns_pre.pop_back();
-    }
 
     return;
   }

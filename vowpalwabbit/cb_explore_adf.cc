@@ -136,7 +136,6 @@ namespace CB_EXPLORE_ADF{
 
     v_array<action_score>& preds = examples[0]->pred.a_s;
     uint32_t num_actions = (uint32_t)preds.size();
-
     float prob = data.epsilon/(float)num_actions;
     for (size_t i = 0; i < num_actions; i++)
       preds[i].score = prob;
@@ -454,7 +453,10 @@ namespace CB_EXPLORE_ADF{
     if ((CB_ALGS::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
     {
       data.ec_seq.push_back(&ec);
-      do_actual_learning<is_learn>(data, base);
+      if (data.ec_seq.size() == 1)
+	cout << "Something is wrong---an example with no choice.  Do you have all 0 features? Or multiple empty lines?" << endl;
+      else
+	do_actual_learning<is_learn>(data, base);
       // using flag to clear, because ec_seq is used in finish_example
       data.need_to_clear = true;
     }
