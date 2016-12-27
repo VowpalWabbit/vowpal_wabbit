@@ -104,15 +104,28 @@ class TestVW:
         intercept = model.get_intercept()
         assert isinstance(intercept, float)
 
-    def test_oaa(self):
+    def test_oaa_probs(self):
         X = ['1 | feature1:2.5',
              '2 | feature1:0.11 feature2:-0.0741',
              '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
              '1 | feature2:-0.028 feature1:4.43',
              '2 | feature5:1.532 feature6:-3.2']
-        model = VW(convert_to_vw=False, oaa=3)
+        model = VW(convert_to_vw=False, oaa=3, loss_function='logistic', probabilities=True)
         model.fit(X)
-        assert np.allclose(model.predict(X), [ 1.,  2.,  3.,  1.,  2.])
+        prediction = model.predict(X)
+        assert prediction.shape == [5, 3]
+        assert prediction[0, 0] > 0.1
+
+    def test_oaa_probs(self):
+        X = ['1 | feature1:2.5',
+             '2 | feature1:0.11 feature2:-0.0741',
+             '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
+             '1 | feature2:-0.028 feature1:4.43',
+             '2 | feature5:1.532 feature6:-3.2']
+        model = VW(convert_to_vw=False, oaa=3, loss_function='logistic')
+        model.fit(X)
+        prediction = model.predict(X)
+        assert np.allclose(prediction, [1., 2., 3., 1., 2.])
 
     def test_lrq(self):
         X = ['1 |user A |movie 1',
