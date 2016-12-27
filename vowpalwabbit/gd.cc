@@ -386,7 +386,7 @@ struct power_data
   float neg_norm_power;
 };
 
-template<bool sqrt_rate, size_t adaptive, size_t normalized>
+  template<bool sqrt_rate, size_t adaptive, size_t normalized>
 inline float compute_rate_decay(power_data& s, float& fw)
 { weight* w = &fw;
   float rate_decay = 1.f;
