@@ -161,7 +161,7 @@ public:
                      affix_v.push_back('=');
                      push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
                      affix_v.push_back('\0');
-                     fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix",affix_v.begin())));
+                     affix_fs.space_names.push_back(audit_strings_ptr(new audit_strings("affix",affix_v.begin())));
                    }
                  affix >>= 4;
               }
