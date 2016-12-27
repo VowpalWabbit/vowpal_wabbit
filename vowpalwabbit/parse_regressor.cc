@@ -26,11 +26,11 @@ using namespace std;
 #include "vw_versions.h"
 
 
-struct initial_t
+struct initial_weight
 {private:
 	weight _initial;
 public:
-	initial_t(weight initial) : _initial(initial){}
+	initial_weight(weight initial) : _initial(initial){}
 	void operator()(weight_parameters::iterator& iter, uint64_t /*index*/)
 	{
 		*iter = _initial;
@@ -57,8 +57,8 @@ void initialize_regressor(vw& all)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
   {
-	  initial_t init(all.initial_t);
-	  all.weights.set_default<initial_t>(init);
+	  initial_weight init(all.initial_weight);
+	  all.weights.set_default<initial_weight>(init);
   }
   else if (all.random_positive_weights)
 	  all.weights.set_default<random_positive>();
