@@ -70,7 +70,7 @@ struct OjaNewton {
 
 	    const double PI2 = 2.f * 3.1415927f;
 		for (uint32_t i = 0; i < length; i++){
-			weight w = weights.strided_index(i);
+			weight& w = weights.strided_index(i);
 			for (int j = 1; j <= m; j++) {
 				float r1 = frand48();
 				float r2 = frand48();
@@ -277,7 +277,7 @@ struct OjaNewton {
 
         uint32_t length = 1 << all->num_bits;
 		for (uint32_t i = 0; i < length; i++) {
-			weight w = weights.strided_index(i);
+			weight& w = weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
 				w += (&w)[j] * b[j] * D[j];
 		}
@@ -289,7 +289,7 @@ struct OjaNewton {
 	    //double norm = 0;
         for (uint32_t i = 0; i < length; ++i) {
             memset(tmp, 0, sizeof(float) * (m+1));
-			weight w = weights.strided_index(i);
+			weight& w = weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
 			{ for (int h = 1; h <= m; ++h)
 			    tmp[j] += A[j][h] * D[h] * (&w)[h];
