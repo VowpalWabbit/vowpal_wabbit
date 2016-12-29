@@ -143,7 +143,7 @@ void output_example(vw& all, bs& d, example& ec)
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   { d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
-	for (double v : *d.pred_vec)
+    for (double v : *d.pred_vec)
     { if(v > d.ub)
         d.ub = (float)v;
       if(v < d.lb)

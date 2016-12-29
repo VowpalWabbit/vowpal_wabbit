@@ -48,6 +48,8 @@ if CLANG_LIBCXX
 AM_CXXFLAGS += -stdlib=libc++
 endif
 
+AM_CXXFLAGS += -I ../rapidjson/include
+
 AM_CXXFLAGS += $(CXXOPTIMIZE)
 
 vw_SOURCES = main.cc

@@ -77,12 +77,12 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   { uint64_t second_best = 0;
     float    second_best_cost = FLT_MAX;
     for (size_t i=0; i<ec.passthrough->size() - pt_start; i++)
-      { float  val = ec.passthrough->values[pt_start + i];
-        if ((val > ec.partial_prediction) && (val < second_best_cost))
-          { second_best_cost = val;
-            second_best = ec.passthrough->indicies[pt_start + i];
-          }
+    { float  val = ec.passthrough->values[pt_start + i];
+      if ((val > ec.partial_prediction) && (val < second_best_cost))
+      { second_best_cost = val;
+        second_best = ec.passthrough->indicies[pt_start + i];
       }
+    }
     if (second_best_cost < FLT_MAX)
     { float margin = second_best_cost - ec.partial_prediction;
       add_passthrough_feature(ec, constant*2, margin);
@@ -234,8 +234,7 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
 }
 
 bool check_ldf_sequence(ldf& data, size_t start_K)
-{ 
-  bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+{ bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   { example *ec = data.ec_seq[k];
     // Each sub-example must have just one cost
@@ -346,7 +345,7 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
     base.learn(*ec);
-     ec->ft_offset = old_offset;
+    ec->ft_offset = old_offset;
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
@@ -362,16 +361,15 @@ void do_actual_learning(ldf& data, base_learner& base)
   /////////////////////// handle label definitions
 
   if (ec_seq_is_label_definition(data.ec_seq))
-  {
-    for (size_t i=0; i<data.ec_seq.size(); i++)
-      { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
+  { for (size_t i=0; i<data.ec_seq.size(); i++)
+    { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
 
-        v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
-        for (size_t j=0; j<costs.size(); j++)
-          { size_t lab = (size_t)costs[j].x;
-            LabelDict::set_label_features(data.label_features, lab, new_fs);
-          }
+      v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
+      for (size_t j=0; j<costs.size(); j++)
+      { size_t lab = (size_t)costs[j].x;
+        LabelDict::set_label_features(data.label_features, lab, new_fs);
       }
+    }
     return;
   }
 
@@ -418,16 +416,16 @@ void do_actual_learning(ldf& data, base_learner& base)
 
   /////////////////////// learn
   if (is_learn && !isTest)
-    {if (data.is_wap) do_actual_learning_wap(data, base, start_K);
-      else             do_actual_learning_oaa(data, base, start_K);
-    }
+  { if (data.is_wap) do_actual_learning_wap(data, base, start_K);
+    else             do_actual_learning_oaa(data, base, start_K);
+  }
 
   if(data.rank)
   { data.stored_preds[0].erase();
     if (start_K > 0)
     { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
     }
-	for (size_t k=start_K; k<K; k++)
+    for (size_t k=start_K; k<K; k++)
     { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
       data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
@@ -435,11 +433,11 @@ void do_actual_learning(ldf& data, base_learner& base)
   else
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
-	{ if (k == predicted_K)
+    { if (k == predicted_K)
         data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
-	}
+    }
   }
   /////////////////////// remove header
   if (start_K > 0)
@@ -455,13 +453,13 @@ void do_actual_learning(ldf& data, base_learner& base)
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
       float prob = 1.f / (1.f + exp(data.ec_seq[k]->partial_prediction));
-	  data.ec_seq[k]->pred.prob = prob;
+      data.ec_seq[k]->pred.prob = prob;
       sum_prob += prob;
     }
     // make sure that the probabilities sum up (exactly) to one
     for (size_t k=start_K; k<K; k++)
-	{ data.ec_seq[k]->pred.prob /= sum_prob;
-	}
+    { data.ec_seq[k]->pred.prob /= sum_prob;
+    }
   }
 }
 
@@ -721,22 +719,22 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
 
 base_learner* csldf_setup(vw& all)
 { if (missing_option<string, true>(all, "csoaa_ldf", "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-		&& missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
-		return nullptr;
-	new_options(all, "LDF Options")
-		("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-		("csoaa_rank", "Return actions sorted by score order")
-		("probabilities", "predict probabilites of all classes");
-	add_options(all);
+      && missing_option<string, true>(all, "wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."))
+    return nullptr;
+  new_options(all, "LDF Options")
+  ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
+  ("csoaa_rank", "Return actions sorted by score order")
+  ("probabilities", "predict probabilites of all classes");
+  add_options(all);
 
-	po::variables_map& vm = all.vm;
-	ldf& ld = calloc_or_throw<ldf>();
+  po::variables_map& vm = all.vm;
+  ldf& ld = calloc_or_throw<ldf>();
 
-	ld.all = &all;
-	ld.need_to_clear = true;
-	ld.first_pass = true;
+  ld.all = &all;
+  ld.need_to_clear = true;
+  ld.first_pass = true;
 
-	string ldf_arg;
+  string ldf_arg;
 
   if( vm.count("csoaa_ldf") )
   { ldf_arg = vm["csoaa_ldf"].as<string>();
@@ -745,20 +743,20 @@ base_learner* csldf_setup(vw& all)
   { ldf_arg = vm["wap_ldf"].as<string>();
     ld.is_wap = true;
   }
-  if ( vm.count("ldf_override") ) 
+  if ( vm.count("ldf_override") )
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
-		*all.file_options << " --csoaa_rank";
-		all.delete_prediction = delete_action_scores;
-	}
+    *all.file_options << " --csoaa_rank";
+    all.delete_prediction = delete_action_scores;
+  }
 
-	all.p->lp = COST_SENSITIVE::cs_label;
-	all.label_type = label_type::cs;
+  all.p->lp = COST_SENSITIVE::cs_label;
+  all.label_type = label_type::cs;
 
-	ld.treat_as_classifier = false;
-	ld.is_singleline = false;
-if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
+  ld.treat_as_classifier = false;
+  ld.is_singleline = false;
+  if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
   { ld.treat_as_classifier = false;
   }
   else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0)
@@ -793,22 +791,22 @@ if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
   { ld.is_probabilities = false;
   }
 
-	all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
+  all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 
-	/*if (all.add_constant) {
-	  all.add_constant = false;
-	  }*/
-	features fs;
-	ld.label_features.init(256, fs, LabelDict::size_t_eq);
-	ld.label_features.get(1, 94717244); // TODO: figure this out
-	prediction_type::prediction_type_t pred_type;
+  /*if (all.add_constant) {
+    all.add_constant = false;
+    }*/
+  features fs;
+  ld.label_features.init(256, fs, LabelDict::size_t_eq);
+  ld.label_features.get(1, 94717244); // TODO: figure this out
+  prediction_type::prediction_type_t pred_type;
 
-	if (ld.rank)
-		pred_type = prediction_type::multiclass;
-	else if (ld.is_probabilities)
-		pred_type = prediction_type::prob;
-	else
-		pred_type = prediction_type::action_scores;
+  if (ld.rank)
+    pred_type = prediction_type::multiclass;
+  else if (ld.is_probabilities)
+    pred_type = prediction_type::prob;
+  else
+    pred_type = prediction_type::action_scores;
 
   ld.read_example_this_loop = 0;
   ld.need_to_clear = false;

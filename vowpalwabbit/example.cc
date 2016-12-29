@@ -7,17 +7,14 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 float collision_cleanup(features& fs)
-{
-  uint64_t last_index = (uint64_t)-1;
+{ uint64_t last_index = (uint64_t)-1;
   float sum_sq = 0.f;
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
-  {
-    if (last_index == f.index())
+  { if (last_index == f.index())
       pos.value() += f.value();
     else
-    {
-      sum_sq += pos.value() * pos.value();
+    { sum_sq += pos.value() * pos.value();
       ++pos;
       pos.value() = f.value();
       pos.index() = f.index();
@@ -35,7 +32,7 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-	void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
+void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
 { if (copy_label)
     copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
   else
@@ -150,11 +147,11 @@ flat_example* flatten_sort_example(vw& all, example *ec)
 void free_flatten_example(flat_example* fec)
 { //note: The label memory should be freed by by freeing the original example.
   if (fec)
-    { fec->fs.delete_v();
-      if (fec->tag_len > 0)
-        free(fec->tag);
-      free(fec);
-    }
+  { fec->fs.delete_v();
+    if (fec->tag_len > 0)
+      free(fec->tag);
+    free(fec);
+  }
 }
 
 namespace VW

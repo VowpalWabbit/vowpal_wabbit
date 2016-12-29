@@ -1,5 +1,5 @@
 // Tencent is pleased to support the open source community by making RapidJSON available.
-// 
+//
 // Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved.
 //
 // Licensed under the MIT License (the "License"); you may not use this file except
@@ -7,9 +7,9 @@
 //
 // http://opensource.org/licenses/MIT
 //
-// Unless required by applicable law or agreed to in writing, software distributed 
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
 #ifndef RAPIDJSON_INTERNAL_META_H_
@@ -32,7 +32,8 @@ RAPIDJSON_DIAG_OFF(6334)
 
 //@cond RAPIDJSON_INTERNAL
 RAPIDJSON_NAMESPACE_BEGIN
-namespace internal {
+namespace internal
+{
 
 // Helper to wrap/convert arbitrary types to void, useful for arbitrary type matching
 template <typename T> struct Void { typedef void Type; };
@@ -40,9 +41,9 @@ template <typename T> struct Void { typedef void Type; };
 ///////////////////////////////////////////////////////////////////////////////
 // BoolType, TrueType, FalseType
 //
-template <bool Cond> struct BoolType {
-    static const bool Value = Cond;
-    typedef BoolType Type;
+template <bool Cond> struct BoolType
+{ static const bool Value = Cond;
+  typedef BoolType Type;
 };
 typedef BoolType<true> TrueType;
 typedef BoolType<false> FalseType;
@@ -87,8 +88,8 @@ template <typename T> struct IsConst<const T> : TrueType {};
 
 template <typename CT, typename T>
 struct IsMoreConst
-    : AndExpr<IsSame<typename RemoveConst<CT>::Type, typename RemoveConst<T>::Type>,
-              BoolType<IsConst<CT>::Value >= IsConst<T>::Value> >::Type {};
+  : AndExpr<IsSame<typename RemoveConst<CT>::Type, typename RemoveConst<T>::Type>,
+    BoolType<IsConst<CT>::Value >= IsConst<T>::Value> >::Type {};
 
 template <typename T> struct IsPointer : FalseType {};
 template <typename T> struct IsPointer<T*> : TrueType {};
@@ -99,31 +100,31 @@ template <typename T> struct IsPointer<T*> : TrueType {};
 #if RAPIDJSON_HAS_CXX11_TYPETRAITS
 
 template <typename B, typename D> struct IsBaseOf
-    : BoolType< ::std::is_base_of<B,D>::value> {};
+  : BoolType< ::std::is_base_of<B,D>::value> {};
 
 #else // simplified version adopted from Boost
 
-template<typename B, typename D> struct IsBaseOfImpl {
-    RAPIDJSON_STATIC_ASSERT(sizeof(B) != 0);
-    RAPIDJSON_STATIC_ASSERT(sizeof(D) != 0);
+template<typename B, typename D> struct IsBaseOfImpl
+{ RAPIDJSON_STATIC_ASSERT(sizeof(B) != 0);
+  RAPIDJSON_STATIC_ASSERT(sizeof(D) != 0);
 
-    typedef char (&Yes)[1];
-    typedef char (&No) [2];
+  typedef char (&Yes)[1];
+  typedef char (&No) [2];
 
-    template <typename T>
-    static Yes Check(const D*, T);
-    static No  Check(const B*, int);
+  template <typename T>
+  static Yes Check(const D*, T);
+  static No  Check(const B*, int);
 
-    struct Host {
-        operator const B*() const;
-        operator const D*();
-    };
+  struct Host
+  { operator const B*() const;
+    operator const D*();
+  };
 
-    enum { Value = (sizeof(Check(Host(), 0)) == sizeof(Yes)) };
+  enum { Value = (sizeof(Check(Host(), 0)) == sizeof(Yes)) };
 };
 
 template <typename B, typename D> struct IsBaseOf
-    : OrExpr<IsSame<B, D>, BoolExpr<IsBaseOfImpl<B, D> > >::Type {};
+  : OrExpr<IsSame<B, D>, BoolExpr<IsBaseOfImpl<B, D> > >::Type {};
 
 #endif // RAPIDJSON_HAS_CXX11_TYPETRAITS
 

@@ -52,44 +52,44 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
         unsigned int lfd_id = lrq.field_id[left];
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
-          { features& fs = ec.feature_space[left];
-            float lfx = fs.values[lfn];
-            uint64_t lindex = fs.indicies[lfn];
-			weight_parameters::iterator iter = w.begin();
-            for (unsigned int n = 1; n <= k; ++n)
-              { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.weights.stride_shift())); // a feature has k weights in each field
-				(&(*iter))[lindex] += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
-                // perturb away from saddle point at (0, 0)
-				if (is_learn && !example_is_test(ec) && (&(*iter))[lindex] == 0)
-				{  (&(*iter))[lindex] = cheesyrand(lwindex) * 0.5f / sqrtk;
-                }
+        { features& fs = ec.feature_space[left];
+          float lfx = fs.values[lfn];
+          uint64_t lindex = fs.indicies[lfn];
+          weight_parameters::iterator iter = w.begin();
+          for (unsigned int n = 1; n <= k; ++n)
+          { uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << all.weights.stride_shift())); // a feature has k weights in each field
+            (&(*iter))[lindex] += ((rfd_id*k + n) & w.mask()); //TODO: get ride of mask()
+            // perturb away from saddle point at (0, 0)
+            if (is_learn && !example_is_test(ec) && (&(*iter))[lindex] == 0)
+            { (&(*iter))[lindex] = cheesyrand(lwindex) * 0.5f / sqrtk;
+            }
 
-                for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
-                  { features& rfs = ec.feature_space[right];
-                    //                    feature* rf = ec.atomics[right].begin + rfn;
-                    // NB: ec.ft_offset added by base learner
-                    float rfx = rfs.values[rfn];
-                    uint64_t rindex = rfs.indicies[rfn];
-                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.weights.stride_shift()));
+            for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
+            { features& rfs = ec.feature_space[right];
+              //                    feature* rf = ec.atomics[right].begin + rfn;
+              // NB: ec.ft_offset added by base learner
+              float rfx = rfs.values[rfn];
+              uint64_t rindex = rfs.indicies[rfn];
+              uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << all.weights.stride_shift()));
 
-					rfs.push_back((&(*iter))[lindex] * lfx * rfx, rwindex);
-                    if (all.audit || all.hash_inv)
-                      { std::stringstream new_feature_buffer;
-                        new_feature_buffer << right << '^'
-                                           << rfs.space_names[rfn].get()->second << '^'
-                                           << n;
+              rfs.push_back((&(*iter))[lindex] * lfx * rfx, rwindex);
+              if (all.audit || all.hash_inv)
+              { std::stringstream new_feature_buffer;
+                new_feature_buffer << right << '^'
+                                   << rfs.space_names[rfn].get()->second << '^'
+                                   << n;
 #ifdef _WIN32
-                        char* new_space = _strdup("lrqfa");
-                        char* new_feature = _strdup(new_feature_buffer.str().c_str());
+                char* new_space = _strdup("lrqfa");
+                char* new_feature = _strdup(new_feature_buffer.str().c_str());
 #else
-                        char* new_space = strdup("lrqfa");
-                        char* new_feature = strdup(new_feature_buffer.str().c_str());
+                char* new_space = strdup("lrqfa");
+                char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                        rfs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
-                      }
-                  }
+                rfs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
               }
+            }
           }
+        }
       }
     }
 
@@ -113,13 +113,12 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
       features& rfs = ec.feature_space[right];
       rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
 
-	  if (all.audit || all.hash_inv)
-	  {
-		for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
+      if (all.audit || all.hash_inv)
+      { for (size_t j = lrq.orig_size[right]; j < rfs.space_names.size(); ++j)
           rfs.space_names[j].~audit_strings_ptr();
 
-          rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
-        }
+        rfs.space_names.end() = rfs.space_names.begin() + lrq.orig_size[right];
+      }
     }
   }
 }

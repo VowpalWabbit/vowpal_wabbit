@@ -106,12 +106,12 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 
 void zero_derivative(vw& all)
 { //set derivative to 0.
-	all.weights.set_zero(W_GT);
+  all.weights.set_zero(W_GT);
 }
 
 void zero_preconditioner(vw& all)
 { //set derivative to 0.
-	all.weights.set_zero(W_COND);
+  all.weights.set_zero(W_COND);
 }
 
 void reset_state(vw& all, bfgs& b, bool zero)
@@ -190,16 +190,15 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
     return ret;
 
   weight_parameters& weights = all.weights;
-  
+
   if (b.regularizers == nullptr)
-	  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-		  ret += regularizer* (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
-	
+    for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+      ret += regularizer* (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+
   else
-  { 
-	weight_parameters::iterator iter = weights.begin();
-	for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
-		ret += b.regularizers[2 * i] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+  { weight_parameters::iterator iter = weights.begin();
+    for (uint32_t i = 0; iter != weights.end(); ++i, ++iter)
+      ret += b.regularizers[2 * i] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 
   }
   return ret;
@@ -210,7 +209,7 @@ float direction_magnitude(vw& all)
   weight_parameters& weights = all.weights;
   double ret = 0.;
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	  ret += (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+    ret += (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 
   return (float)ret;
 }
@@ -226,11 +225,11 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
   for(; w != weights.end(); mem+=b.mem_stride, ++w)
   { if (b.m>0)
       mem[(MEM_XT+origin)%b.mem_stride] = (&(*w))[W_XT];
-      mem[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
-	  g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
-	  g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
-	  (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
-	  ((&(*w))[W_GT]) = 0;
+    mem[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
+    g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
+    g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
+    (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
+    ((&(*w))[W_GT]) = 0;
   }
   lastj = 0;
   if (!all.quiet)
@@ -240,8 +239,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 }
 
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int &origin)
-{
-	weight_parameters& weights = all.weights;
+{ weight_parameters& weights = all.weights;
 
   float* mem0 = mem;
 
@@ -253,26 +251,26 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
     weight_parameters::iterator w = weights.begin();
     for(; w != weights.end(); mem+=b.mem_stride, ++w)
-      { y = (&(*w))[W_GT]-mem[(MEM_GT+origin)%b.mem_stride];
-	g_Hy += ((&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
-	g_Hg += mem[(MEM_GT+origin)%b.mem_stride] * ((&(*w))[W_COND]) * mem[(MEM_GT+origin)%b.mem_stride];
-      }
-    
+    { y = (&(*w))[W_GT]-mem[(MEM_GT+origin)%b.mem_stride];
+      g_Hy += ((&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
+      g_Hg += mem[(MEM_GT+origin)%b.mem_stride] * ((&(*w))[W_COND]) * mem[(MEM_GT+origin)%b.mem_stride];
+    }
+
     float beta = (float) (g_Hy/g_Hg);
-    
+
     if (beta<0.f || nanpattern(beta))
       beta = 0.f;
-    
+
     mem = mem0;
     w = weights.begin();
-    
+
     for (; w != weights.end(); mem += b.mem_stride, ++w)
-      { mem[(MEM_GT+origin)%b.mem_stride] = (&(*w))[W_GT];
-	
-	(&(*w))[W_DIR] *= beta;
-	(&(*w))[W_DIR] -= ((&(*w))[W_COND])*((&(*w))[W_GT]);
-	(&(*w))[W_GT] = 0;
-      }
+    { mem[(MEM_GT+origin)%b.mem_stride] = (&(*w))[W_GT];
+
+      (&(*w))[W_DIR] *= beta;
+      (&(*w))[W_DIR] -= ((&(*w))[W_COND])*((&(*w))[W_GT]);
+      (&(*w))[W_GT] = 0;
+    }
     if (!all.quiet)
       fprintf(stderr, "%f\t", beta);
     return;
@@ -291,10 +289,10 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
   for (; w != weights.end(); mem += b.mem_stride, ++w)
   { mem[(MEM_YT+origin)%b.mem_stride] = (&(*w))[W_GT] - mem[(MEM_GT+origin)%b.mem_stride];
     mem[(MEM_ST + origin) % b.mem_stride] = (&(*w))[W_XT] - mem[(MEM_XT + origin) % b.mem_stride];
-	(&(*w))[W_DIR] = (&(*w))[W_GT];
+    (&(*w))[W_DIR] = (&(*w))[W_GT];
     y_s += mem[(MEM_YT+origin)%b.mem_stride]*mem[(MEM_ST+origin)%b.mem_stride];
     y_Hy += mem[(MEM_YT+origin)%b.mem_stride]*mem[(MEM_YT+origin)%b.mem_stride]* ((&(*w))[W_COND]);
-	s_q += mem[(MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_GT]);
+    s_q += mem[(MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_GT]);
   }
 
   if (y_s <= 0. || y_Hy <= 0.)
@@ -330,8 +328,8 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
   { coef_j = alpha[j] - rho[j] * y_r;
     y_r = 0.;
     mem = mem0;
-	w = weights.begin();
-	for (; w != weights.end(); mem += b.mem_stride, ++w)
+    w = weights.begin();
+    for (; w != weights.end(); mem += b.mem_stride, ++w)
     { (&(*w))[W_DIR] += (float)coef_j*mem[(2*j+MEM_ST+origin)%b.mem_stride];
       y_r += mem[(2*j-2+MEM_YT+origin)%b.mem_stride]*((&(*w))[W_DIR]);
     }
@@ -363,8 +361,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 }
 
 double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1)
-{
-	weight_parameters& weights = all.weights;
+{ weight_parameters& weights = all.weights;
 
   double g0_d = 0.;
   double g1_d = 0.;
@@ -401,7 +398,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
     }
   }
   else
-  { uint32_t i = 0; 
+  { uint32_t i = 0;
     for (; w != weights.end(); ++i, ++w)
     { weight delta_weight = *w - b.regularizers[2*i+1];
       (&(*w))[W_GT] += b.regularizers[2*i]*delta_weight;
@@ -428,40 +425,39 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 }
 
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
-{
-	weight_parameters& weights = all.weights;
+{ weight_parameters& weights = all.weights;
   float max_hessian = 0.f;
   weight_parameters::iterator w = weights.begin();
   uint32_t i = 0;
   if (b.regularizers == nullptr)
     for(; w != weights.end(); ++w)
-	{ (&(*w))[W_COND] += regularization;
+    { (&(*w))[W_COND] += regularization;
       if ((&(*w))[W_COND] > max_hessian)
-		  max_hessian = (&(*w))[W_COND];
-	  if ((&(*w))[W_COND] > 0)
-		  (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
+        max_hessian = (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0)
+        (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
     }
   else
-	for (; w != weights.end(); ++w, ++i)
-	{  (&(*w))[W_COND] += b.regularizers[2 * i];
-		if ((&(*w))[W_COND] > max_hessian)
-			max_hessian = (&(*w))[W_COND];
-		if ((&(*w))[W_COND] > 0)
-			(&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
+    for (; w != weights.end(); ++w, ++i)
+    { (&(*w))[W_COND] += b.regularizers[2 * i];
+      if ((&(*w))[W_COND] > max_hessian)
+        max_hessian = (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0)
+        (&(*w))[W_COND] = 1.f / (&(*w))[W_COND];
     }
 
   float max_precond = (max_hessian==0.f) ? 0.f : max_precond_ratio / max_hessian;
-  
+
   w = weights.begin();
   for (; w != weights.end(); ++w)
   { if (infpattern(*w) || *w >max_precond)
-		(&(*w))[W_COND] = max_precond;
+      (&(*w))[W_COND] = max_precond;
   }
 }
 
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 { uint32_t length = 1 << all.num_bits;
-weight_parameters& weights = all.weights;
+  weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin();
   uint32_t i = 0;
   if (b.regularizers == nullptr)
@@ -470,16 +466,16 @@ weight_parameters& weights = all.weights;
     if (b.regularizers == nullptr)
       THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
-	for (; w != weights.end(); ++w, ++i)
+    for (; w != weights.end(); ++w, ++i)
     { b.regularizers[2*i] = regularization;
-	  if ((&(*w))[W_COND] > 0.f)
-		  b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
+      if ((&(*w))[W_COND] > 0.f)
+        b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
     }
   }
   else
-	for (; w != weights.end(); ++w, ++i)
-	{if ((&(*w))[W_COND] > 0.f)
-		b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
+    for (; w != weights.end(); ++w, ++i)
+    { if ((&(*w))[W_COND] > 0.f)
+        b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
     }
 
   w = weights.begin();
@@ -494,15 +490,14 @@ void regularizer_to_weight(vw& all, bfgs& b)
   uint32_t i = 0;
   if (b.regularizers != nullptr)
   { for(; w != weights.end(); ++i, ++w)
-      { (&(*w))[W_COND] = b.regularizers[2*i];
+    { (&(*w))[W_COND] = b.regularizers[2*i];
       *w = b.regularizers[2*i+1];
     }
   }
 }
 
 void zero_state(vw& all)
-{
-  all.weights.set_zero(W_GT);
+{ all.weights.set_zero(W_GT);
   all.weights.set_zero(W_DIR);
   all.weights.set_zero(W_COND);
 }
@@ -513,7 +508,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   weight_parameters::iterator w = weights.begin();
 
   for(; w != weights.end(); mem+=b.mem_stride, ++w)
-	  ret += mem[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
+    ret += mem[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
   return ret;
 }
 
@@ -527,22 +522,22 @@ void update_weight(vw& all, float step_size)
 int process_pass(vw& all, bfgs& b)
 { int status = LEARN_OK;
 
-    finalize_preconditioner(all, b, all.l2_lambda);
+  finalize_preconditioner(all, b, all.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
-    if (b.first_pass) 
-    { if(all.all_reduce != nullptr)
-      { accumulate(all, all.weights, W_COND); //Accumulate preconditioner
-        float temp = (float)b.importance_weight_sum;
-        b.importance_weight_sum = accumulate_scalar(all, temp);
-      }
-      //finalize_preconditioner(all, b, all.l2_lambda);
-      if(all.all_reduce != nullptr) 
-      {	float temp = (float)b.loss_sum;
-	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
-	accumulate(all, all.weights, 1); //Accumulate gradients from all nodes
-      }
+  if (b.first_pass)
+  { if(all.all_reduce != nullptr)
+    { accumulate(all, all.weights, W_COND); //Accumulate preconditioner
+      float temp = (float)b.importance_weight_sum;
+      b.importance_weight_sum = accumulate_scalar(all, temp);
+    }
+    //finalize_preconditioner(all, b, all.l2_lambda);
+    if(all.all_reduce != nullptr)
+    { float temp = (float)b.loss_sum;
+      b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
+      accumulate(all, all.weights, 1); //Accumulate gradients from all nodes
+    }
     if (all.l2_lambda > 0.)
       b.loss_sum += add_regularization(all, b, all.l2_lambda);
     if (!all.quiet)
@@ -819,8 +814,7 @@ void finish(bfgs& b)
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
-{
-  int c = 0;
+{ int c = 0;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -859,7 +853,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
       i++;
   }
   while ((!read && i < length) || (read && brw >0));
-  
+
   if (read)
     regularizer_to_weight(all, b);
 }
@@ -908,10 +902,10 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.files.size() > 0)
-    { stringstream msg;
-      msg << ":"<< reg_vector <<"\n";
-      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
-                                "", read, msg, text);
+  { stringstream msg;
+    msg << ":"<< reg_vector <<"\n";
+    bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+                              "", read, msg, text);
 
     if (reg_vector)
       save_load_regularizer(*all, b, model_file, read, text);

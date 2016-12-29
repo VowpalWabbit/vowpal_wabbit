@@ -54,9 +54,9 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 }
 
 float sensitivity(ftrl& b, base_learner& base, example& ec)
-{ 	uncertainty uncetain(b);
-	GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
-	return uncetain.score;
+{ uncertainty uncetain(b);
+  GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
+  return uncetain.score;
 }
 template<bool audit>
 void predict(ftrl& b, base_learner&, example& ec)
@@ -80,13 +80,13 @@ void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step
     for (size_t c=0; c<count; c++)
       pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
   if (audit)
-    { for (size_t c=0; c<count; c++)
-	{ ec.pred.scalar = pred[c].scalar;
-	  GD::print_audit_features(all, ec);
-	  ec.ft_offset += (uint64_t)step;
-	}
-      ec.ft_offset -= (uint64_t)(step*count);
+  { for (size_t c=0; c<count; c++)
+    { ec.pred.scalar = pred[c].scalar;
+      GD::print_audit_features(all, ec);
+      ec.ft_offset += (uint64_t)step;
     }
+    ec.ft_offset -= (uint64_t)(step*count);
+  }
 }
 
 void inner_update_proximal(update_data& d, float x, float& wref)
@@ -104,8 +104,7 @@ void inner_update_proximal(update_data& d, float x, float& wref)
   if (fabs_zt <= d.l1_lambda)
     w[W_XT] = 0.;
   else
-  {
-	float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
+  { float step = 1/(d.l2_lambda + (d.ftrl_beta + sqrt_wW_G2)/d.ftrl_alpha);
     w[W_XT] = step * flag * (d.l1_lambda - fabs_zt);
   }
 }
@@ -208,9 +207,9 @@ void end_pass(ftrl& g)
 
 base_learner* ftrl_setup(vw& all)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
-      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning")){
-    return nullptr;
-	}
+      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
+  { return nullptr;
+  }
 
   new_options(all, "FTRL options")
   ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")

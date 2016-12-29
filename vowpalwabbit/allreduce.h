@@ -178,7 +178,7 @@ private:
   void all_reduce_init();
 
   template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos)
-    { size_t my_bufsize = (std::min)(ar_buf_size, (std::min)(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
+  { size_t my_bufsize = (std::min)(ar_buf_size, (std::min)(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
 
     if (my_bufsize > 0)
     { //going to pass up this chunk of data to the parent

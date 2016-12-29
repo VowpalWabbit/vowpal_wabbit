@@ -49,14 +49,14 @@ void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
 struct StopWatchData;
 
-class StopWatch {
-	StopWatchData* data;
+class StopWatch
+{ StopWatchData* data;
 
 public:
-	StopWatch();
-	~StopWatch();
+  StopWatch();
+  ~StopWatch();
 
-	double MilliSeconds() const;
+  double MilliSeconds() const;
 };
 
 // Equivalent to System::Diagnostics::Debugger::Launch();

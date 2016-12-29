@@ -23,7 +23,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
                    0);
 }
 
-  void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, vector<example*>& ec)
 { Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
   { action oracle     = ec[i]->l.multi.label;

@@ -14,7 +14,7 @@ void predict_or_learn_with_confidence(confidence& c, base_learner& base, example
   float sensitivity = 0.f;
   if (!is_confidence_after_training)
     sensitivity = base.sensitivity(ec);
-  
+
   if (is_learn)
     base.learn(ec);
   else
@@ -73,23 +73,23 @@ base_learner* confidence_setup(vw& all)
   if(missing_option(all, false, "confidence", "Get confidence for binary predictions")) return nullptr;
 
   if(!all.training)
-    {
-      cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when saving the model and avoid --test_only" << endl;
-      return nullptr;
-    }
-  
+  { cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when saving the model and avoid --test_only" << endl;
+    return nullptr;
+  }
+
   confidence& data = calloc_or_throw<confidence>();
   data.all=&all;
 
   void (*learn_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
   void (*predict_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
 
-  if(vm.count("confidence_after_training")){
-	  learn_with_confidence_ptr = predict_or_learn_with_confidence<true, true>;
-	  predict_with_confidence_ptr = predict_or_learn_with_confidence<false, true>;
-  }else{
-	  learn_with_confidence_ptr = predict_or_learn_with_confidence<true, false>;
-	  predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
+  if(vm.count("confidence_after_training"))
+  { learn_with_confidence_ptr = predict_or_learn_with_confidence<true, true>;
+    predict_with_confidence_ptr = predict_or_learn_with_confidence<false, true>;
+  }
+  else
+  { learn_with_confidence_ptr = predict_or_learn_with_confidence<true, false>;
+    predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
   //Create new learner

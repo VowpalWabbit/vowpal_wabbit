@@ -21,7 +21,7 @@ struct label
 { v_array<cb_class> costs;
 };
 
- bool is_test_label(CB::label& ld);
+bool is_test_label(CB::label& ld);
 
 extern label_parser cb_label;//for learning
 bool example_is_test(example& ec);
