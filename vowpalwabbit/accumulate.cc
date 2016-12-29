@@ -24,12 +24,12 @@ void accumulate(vw& all, weight_parameters& weights, size_t offset)
   float* local_grad = new float[length];
 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	local_grad[iter.index()] = (&(*iter))[offset];
+    local_grad[iter.index() >> weights.stride_shift()] = (&(*iter))[offset];
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
- 
+
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	(&(*iter))[offset] = local_grad[iter.index()];
+    (&(*iter))[offset] = local_grad[iter.index() >> weights.stride_shift()];
 
   delete[] local_grad;
 }
@@ -45,14 +45,13 @@ void accumulate_avg(vw& all, weight_parameters& weights, size_t offset)
   float numnodes = (float)all.all_reduce->total;
   float* local_grad = new float[length];
 
- 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	local_grad[iter.index()] = (&(*iter))[offset];
+    local_grad[iter.index() >> weights.stride_shift()] = (&(*iter))[offset];
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	 (&(*iter))[offset] = local_grad[iter.index()]/numnodes;
+    (&(*iter))[offset] = local_grad[iter.index() >> weights.stride_shift()]/numnodes;
  
   delete[] local_grad;
 }
@@ -80,15 +79,15 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
   float* local_weights = new float[length];
 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-	  local_weights[iter.index()] = (&(*iter))[1];
+    local_weights[iter.index() >> weights.stride_shift()] = (&(*iter))[1];
 
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length); 
 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
   {
-	  uint32_t i = iter.index();
-	if (local_weights[i] > 0)
+    uint64_t i = iter.index() >> weights.stride_shift();
+    if (local_weights[i] > 0)
 	{  float ratio = (&(*iter))[1] / local_weights[i];
 		local_weights[i] = *iter * ratio;
 		*iter *= ratio;

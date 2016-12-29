@@ -1158,9 +1158,16 @@ vw& parse_args(int argc, char *argv[])
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
     ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+    ("sparse_weights", "Use a sparse datastructure for weights")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
     add_options(all);
-
+ 
+    po::variables_map& vm = all.vm;
+    if (vm.count("sparse_weights"))
+      all.sparse = true;
+    else
+      all.sparse = false;
+    
     new_options(all, "Parallelization options")
     ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
     ("threads", "Enable multi-threading")
@@ -1169,7 +1176,6 @@ vw& parse_args(int argc, char *argv[])
     ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
     add_options(all);
 
-    po::variables_map& vm = all.vm;
     if (vm.count("span_server"))
     { all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce = new AllReduceSockets(

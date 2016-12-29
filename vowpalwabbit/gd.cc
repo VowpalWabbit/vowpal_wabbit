@@ -591,11 +591,8 @@ void sync_weights(vw& all, T& weights)
 	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
 		return;
 
-	uint64_t length = (uint64_t)1 << all.num_bits;
-	for (uint64_t i = 0; i < length && all.reg_mode; i++) {
-		weight& w = weights.strided_index(i);
-		w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
-	}
+	for (weight& w : weights)
+	  w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
 
 	all.sd->gravity = 0.;
 	all.sd->contraction = 1.;
@@ -661,7 +658,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v.index();
+		i = v.index() >> weights.stride_shift();
 		stringstream msg;
 		msg << i;
 		
@@ -677,7 +674,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text);
 	      }
 }
-
+  
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
@@ -724,7 +721,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
 	    if (*v != 0.)
 	      {
-		i = v.index();
+		i = v.index() >> weights.stride_shift();
 		msg << i;
 		if (all.num_bits < 31)
 		  {
@@ -850,22 +847,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		save_load_online_state<weight_parameters>(all, model_file, read, text, g, msg, all.weights);
 }
 
-
-
-struct initialt
-{
-	weight _initial;
-	initialt(weight initial) : _initial(initial) {}
-};
-
-void set_initial_gd(weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* set_struct)
-{  (&(*iter))[1] = static_cast<initialt*>(set_struct)->_initial;
-}
-
-void set_initial_gd(sparse_weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* set_struct)
-{
-	(&(*iter))[1] = static_cast<initialt*>(set_struct)->_initial;
-}
+  template<class T> void set_initial_gd(typename T::iterator& iter, float& initial) {(&(*iter))[1] = initial; }
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 { vw& all = *g.all;
@@ -873,21 +855,17 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
   if (all.adaptive && all.initial_t > 0){
-	  initialt init(all.initial_t);
-	  if (all.sparse){
-		  all.sparse_weights.set_struct = &init;
-		  all.sparse_weights.set_default<set_initial_gd>();
-	  }  
-	  else{
-		  all.weights.set_struct = &init;
-		  all.weights.set_default<set_initial_gd>();
-	  }  //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
-        //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
-        //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
-        //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
+	  if (all.sparse)
+	    all.sparse_weights.set_default<float, set_initial_gd<sparse_weight_parameters> >(all.initial_t);
+	  else
+	    all.weights.set_default<float, set_initial_gd<weight_parameters> >(all.initial_t);
+	  //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+	  //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
+	  //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
+	  //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
   }
-    if (g.initial_constant != 0.0)
-      VW::set_weight(all, constant, 0, g.initial_constant);
+  if (g.initial_constant != 0.0)
+    VW::set_weight(all, constant, 0, g.initial_constant);
   }
 
   if (model_file.files.size() > 0)

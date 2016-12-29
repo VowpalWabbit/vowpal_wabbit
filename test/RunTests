@@ -327,6 +327,7 @@ sub next_test() {
         }
     }
 
+#    $cmd = sprintf("%s --sparse_weights", $cmd);
     if (eof(DATA) && !defined $cmd) {
         return (undef, undef, undef, undef);
     }

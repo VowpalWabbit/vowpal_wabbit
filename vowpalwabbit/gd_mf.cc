@@ -223,25 +223,27 @@ void mf_train(gdmf& d, example& ec)
 	else
 		mf_train<weight_parameters>(d, ec, (*d.all).weights);
 }
-void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
-{ 
-	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
-	  *w = (float)(0.1 * merand48(index));
-}
-void set_rand(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t stride, void* /*set_struct*/)
+
+template <class T>
+void set_rand(typename T::iterator& iter, uint32_t& stride)
 {
-	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
-		*w = (float)(0.1 * merand48(index));
+  uint64_t index = iter.index();
+  for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
+    *w = (float)(0.1 * merand48(index));
 }
+
 template<class T>
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
 { vw* all = d.all;
   uint64_t length = (uint64_t)1 << all->num_bits;
   if(read)
-  { initialize_regressor(*all);
-  if (all->random_weights)
-	  w.template set_default<set_rand>();
-  }
+    { initialize_regressor(*all);
+      if (all->random_weights)
+	{
+	  uint32_t stride = w.stride();
+	  w.template set_default<uint32_t, set_rand<T> >(stride);
+	}
+    }
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;

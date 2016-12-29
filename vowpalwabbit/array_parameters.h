@@ -15,7 +15,7 @@ typedef float weight;
 
 class weight_parameters;
 class sparse_weight_parameters;
-typedef std::unordered_map<size_t, weight*> weight_map;
+typedef std::unordered_map<uint64_t, weight*> weight_map;
 
 template <typename T> 
 class weights_iterator_iterator
@@ -71,7 +71,7 @@ public:
 
 	T& operator*() { return *_current; }
 
-	size_t index() { return (_current - _begin)/_stride; }
+	size_t index() { return _current - _begin; }
 	
 	weights_iterator& operator++()
 	{
@@ -100,7 +100,6 @@ private:
 public:
 	typedef weights_iterator<weight> iterator;
 	typedef weights_iterator<const weight> const_iterator;
-	void* set_struct;
 	weight_parameters(size_t length, uint32_t stride_shift=0)
 		: _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 		_weight_mask((length << stride_shift) - 1),	
@@ -136,14 +135,20 @@ public:
 	  _seeded = true;
 	}
 
-	inline weight& strided_index(size_t index){	return _begin[index << _stride_shift];}
+	inline weight& strided_index(size_t index){ return operator[](index << _stride_shift);}
 
-	template<void(*T)(iterator&, uint64_t, uint32_t, void*)>  
-	inline void set_default()
-	{ 
-	iterator iter = begin();
+	template<class R, void(*T)(iterator&, R&)> void set_default(R& info)
+	{
+	  iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += _stride)
-			T(iter, i, _stride, set_struct);
+	    T(iter, info);
+	}
+
+	template<void(*T)(iterator&)> void set_default()
+	{ 
+	  iterator iter = begin();
+	  for (size_t i = 0; iter != end(); ++iter, i += _stride)
+	    T(iter);
 	}
 
 	void set_zero(size_t offset)
@@ -152,21 +157,15 @@ public:
 			(&(*iter))[offset] = 0;
 	}
 	
-	uint64_t mask()
-	{ return _weight_mask;
-	}
+	uint64_t mask()	{ return _weight_mask;	}
 
-	uint64_t seeded()
-	{  return _seeded;
-	}
+	uint64_t seeded() { return _seeded; }
 
-	uint32_t stride_shift()
-	{ return _stride_shift;		
-	}		
+	uint32_t stride() { return _stride; }
 	
-	void stride_shift(uint32_t stride_shift)		
-	{ _stride_shift = stride_shift;		
-	}
+	uint32_t stride_shift() { return _stride_shift; }		
+
+	void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
 	
 	#ifndef _WIN32
 	void share(size_t length)
@@ -193,7 +192,7 @@ template <typename T>
 class sparse_weights_iterator
 {
 private:
-	weight_map::iterator& _iter;
+	weight_map::iterator _iter;
 	uint32_t _stride;
 
 public:
@@ -216,11 +215,9 @@ public:
 		return *this;
 
 	}
-	size_t index() { return _iter->first; }
+	uint64_t index() { return _iter->first; }
 
-	T& operator*() { 
-		return *(_iter->second);
-	} 
+	T& operator*() { return *(_iter->second); } 
 
 	sparse_weights_iterator& operator++()
 	{  
@@ -247,12 +244,13 @@ private:
 	uint32_t _stride;
 	bool _seeded; // whether the instance is sharing model state with others
 	bool _delete;
-
+	void* default_data;
 public:
 	typedef sparse_weights_iterator<weight> iterator;
 	typedef sparse_weights_iterator<const weight> const_iterator;
-	void(*fun)(iterator&, uint64_t, uint32_t, void*);
-	void* set_struct;
+ private:
+	void(*fun)(iterator&, void*);
+ public:
 
 	sparse_weight_parameters(size_t length, uint32_t stride_shift = 0)
 		: _map(),
@@ -283,41 +281,23 @@ public:
 	const_iterator cend() { weight_map::iterator i = _map.begin(); return const_iterator(i, _stride); }
 	
 	inline weight& operator[](size_t i)
-	{   uint64_t index = floor((i & _weight_mask)/ _stride);
+	{   uint64_t index = i & _weight_mask;
 		weight_map::iterator iter = _map.find(index);
-		weight_map::iterator end = _map.end();
-		if (iter == end) 
-		{   _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
+		if (iter == _map.end()) 
+		  { 
+		  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
 			iter = _map.find(index);
 			if (fun != nullptr)
 			  {
 			    iterator i(iter,_stride);
-			    fun(i, index << _stride_shift, _stride, set_struct);
+			    fun(i, default_data);
 			  }
 			iter = _map.find(index);
 		}
-		weight* it = iter->second;
-		size_t offset = (i & _weight_mask) % _stride;
-		return (&(*it))[offset];
-
+		return *(iter->second);
 	}
 
-	weight& strided_index(size_t index)
-	{
-		weight_map::iterator iter = _map.find(index);
-		weight_map::iterator end = _map.end();
-		if (iter == end)
-		{  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
-		   iter = _map.find(index);
-		   if (fun != nullptr)
-		     {
-		       iterator i(iter,_stride);
-		       fun(i, index << _stride_shift, _stride, set_struct);
-		     }
-		}	
-		weight* it = iter->second;
-		return *it;
-	}
+	inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
 	
 	void shallow_copy(const sparse_weight_parameters& input)
 	{
@@ -327,10 +307,17 @@ public:
 		_seeded = true;
 	}
 
-	template<void(*T)(iterator&, uint64_t, uint32_t, void*)> //for random initialization of the entire weight_vector 
-	inline void set_default()
+	template<class R, void(*T)(iterator&, R&)> void set_default(R& info)
 	{
-		fun = T;
+	  R& new_R = calloc_or_throw<R>();
+	  new_R = info;
+	  default_data = &new_R;
+	  fun = (void(*)(iterator&, void*))T;
+	}
+
+	template<void(*T)(iterator&)> void set_default()
+	{
+	  fun = (void(*)(iterator&, void*))T;
 	}
 
 	void set_zero(size_t offset)
@@ -349,6 +336,8 @@ public:
 	{
 		return _seeded;
 	}
+
+	uint32_t stride() { return _stride; }
 
 	uint32_t stride_shift()
 	{

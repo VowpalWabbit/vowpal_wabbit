@@ -666,36 +666,26 @@ struct initial_weights
 	weight _initial_random;
 	bool _random;
 	uint32_t _lda;
-	initial_weights(weight initial, weight initial_random, bool random, uint32_t lda)
-		: _initial(initial), _initial_random(initial_random), _random(random), _lda(lda)
-	{}
+  uint32_t _stride;
+  initial_weights(weight initial, weight initial_random, bool random, uint32_t lda, uint32_t stride)
+    : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride){}
 };
 
-void set_initial_lda(weight_parameters::iterator& iter, uint64_t index, uint32_t /*stride*/, void* set_struct)
+template<class T>
+void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
 {
-	uint32_t lda = static_cast<initial_weights*>(set_struct)->_lda;
-	weight initial_random = static_cast<initial_weights*>(set_struct)->_initial_random;
-	if (static_cast<initial_weights*>(set_struct)->_random)
-	  { for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
+	uint32_t lda = iw._lda;
+	weight initial_random = iw._initial_random;
+	if (iw._random)
+	  {
+	    uint64_t index = iter.index();
+	    for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
 		   *k *= initial_random;
 		}
 	  }
-	(&(*iter))[lda] = static_cast<initial_weights*>(set_struct)->_initial;
+	(&(*iter))[lda] = iw._initial;
 }
-void set_initial_lda(sparse_weight_parameters::iterator& iter, uint64_t index, uint32_t /*stride*/, void* set_struct)
-{
-	uint32_t lda = static_cast<initial_weights*>(set_struct)->_lda;
-	weight initial_random = static_cast<initial_weights*>(set_struct)->_initial_random;
-	if (static_cast<initial_weights*>(set_struct)->_random)
-	{  for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
-		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
-			*k *= initial_random;
-		}
-	}
-		(&(*iter))[lda] = static_cast<initial_weights*>(set_struct)->_initial;
-}
-
 
 template<class T>
 void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
@@ -703,10 +693,8 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   uint64_t length = (uint64_t)1 << all->num_bits;
   if (read)
   { initialize_regressor(*all);
-    initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda);
-	all->weights.set_struct = &init;
-	weights.template set_default<set_initial_lda>();
-
+    initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda, weights.stride());
+    weights.template set_default<initial_weights, set_initial_lda<T> >(init);
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
@@ -805,18 +793,20 @@ void learn_batch(lda &l, T& weights)
   float minuseta = -1;
 
   if (l.total_lambda.size() == 0)
-  { for (size_t k = 0; k < l.all->lda; k++)
-      l.total_lambda.push_back(0.f);
-
-	size_t stride = 1 << weights.stride_shift();
-	typename T::iterator iter = weights.begin();
-	for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
+    { for (size_t k = 0; k < l.all->lda; k++)
+	l.total_lambda.push_back(0.f);
+      
+      if (l.all->sparse)
+	THROW("Initialization does not work for LDA and sparse parameters");
+      size_t stride = 1 << weights.stride_shift();
+      typename T::iterator iter = weights.begin();
+      for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
 	{  weights_iterator_iterator<weight> k_iter = iter.begin();
-	   for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
-			l.total_lambda[k] += *k_iter;
+	  for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
+	    l.total_lambda[k] += *k_iter;
 	}   
-  }
-
+    }
+  
   l.example_t++;
   l.total_new.erase();
   for (size_t k = 0; k < l.all->lda; k++)
@@ -834,8 +824,7 @@ void learn_batch(lda &l, T& weights)
   l.digammas.erase();
   float additional = (float)(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++)
-  { l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
-  }
+    l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
 
   uint64_t last_weight_index = -1;
   for (index_feature *s = &l.sorted_features[0]; s <= &l.sorted_features.back(); s++)

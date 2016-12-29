@@ -148,9 +148,7 @@ float bfgs_predict(vw& all, example& ec)
   return GD::finalize_prediction(all.sd, ec.partial_prediction);
 }
 
-inline void add_grad(float& d, float f, float& fw)
-{ fw += d * f;
-}
+inline void add_grad(float& d, float f, float& fw){ (&fw)[W_GT] += d * f; }
 
 float predict_and_gradient(vw& all, example &ec)
 { float fp = bfgs_predict(all, ec);
@@ -160,32 +158,24 @@ float predict_and_gradient(vw& all, example &ec)
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld.label)*ec.weight;
 
-  ec.ft_offset += W_GT;
   GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
-  ec.ft_offset -= W_GT;
 
   return fp;
 }
 
-inline void add_precond(float& d, float f, float& fw)
-{ fw += d * f * f;
-}
+inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f * f; }
 
 void update_preconditioner(vw& all, example& ec)
 { float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-
-  ec.ft_offset += W_COND;
   GD::foreach_feature<float,add_precond>(all, ec, curvature);
-  ec.ft_offset -= W_COND;
 }
 
+inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
 
 float dot_with_direction(vw& all, example& ec)
-{ ec.ft_offset+= W_DIR;
-  float ret = GD::inline_predict(all, ec);
-  ec.ft_offset-= W_DIR;
-
-  return ret;
+{ float temp = ec.l.simple.initial;
+  GD::foreach_feature<float,add_DIR>(all,ec,temp);
+  return temp;
 }
 
 template<class T>
@@ -199,7 +189,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
 	else
 	{
 		for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-			ret += b.regularizers[2 * iter.index()] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+		  ret += b.regularizers[2 * (iter.index() >> weights.stride_shift())] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
 	}
 	return ret;
 }
@@ -244,7 +234,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 	origin = 0;
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		float* mem1 = mem + (w.index()*b.mem_stride);
+	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		if (b.m>0)
 			mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
 		mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
@@ -258,7 +248,6 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 		fprintf(stderr, "%-10.5f\t%-10.5f\t%-10s\t%-10s\t%-10s\t",
 		g1_g1 / (importance_weight_sum*importance_weight_sum),
 		g1_Hg1 / importance_weight_sum, "", "", "");
-
 }
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
 {  if (all.sparse)
@@ -282,7 +271,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			mem = mem0 + (w.index()*b.mem_stride);
+		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 			y = (&(*w))[W_GT] - mem[(MEM_GT + origin) % b.mem_stride];
 			g_Hy += ((&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
 			g_Hg += mem[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_COND]) * mem[(MEM_GT + origin) % b.mem_stride];
@@ -295,7 +284,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			mem = mem0 + (w.index()*b.mem_stride);
+		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 			mem[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
 
 			(&(*w))[W_DIR] *= beta;
@@ -321,7 +310,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		float* mem1 = mem + (w.index()*b.mem_stride);
+	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		mem1[(MEM_YT + origin) % b.mem_stride] = (&(*w))[W_GT] - mem1[(MEM_GT + origin) % b.mem_stride];
 		mem1[(MEM_ST + origin) % b.mem_stride] = (&(*w))[W_XT] - mem1[(MEM_XT + origin) % b.mem_stride];
 		(&(*w))[W_DIR] = (&(*w))[W_GT];
@@ -342,7 +331,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		s_q = 0.;
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			mem = mem0 + (w.index()*b.mem_stride);
+		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 			(&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
 			s_q += mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
 		}
@@ -353,7 +342,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		mem = mem0 + (w.index()*b.mem_stride);
+	  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		(&(*w))[W_DIR] -= (float)alpha[lastj] * mem[(2 * lastj + MEM_YT + origin) % b.mem_stride];
 		(&(*w))[W_DIR] *= gamma*((&(*w))[W_COND]);
 		y_r += mem[(2 * lastj + MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
@@ -367,7 +356,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		y_r = 0.;
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w) 
 		{
-			mem = mem0 + (w.index()*b.mem_stride);
+		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 			(&(*w))[W_DIR] += (float)coef_j*mem[(2 * j + MEM_ST + origin) % b.mem_stride];
 			y_r += mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
 		}
@@ -377,7 +366,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	coef_j = alpha[0] - rho[0] * y_r;
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		mem = mem0 + (w.index()*b.mem_stride);
+	  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		(&(*w))[W_DIR] = -(&(*w))[W_DIR] - (float)coef_j*mem[(MEM_ST + origin) % b.mem_stride];
 	}
 
@@ -390,7 +379,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		mem = mem0 + (w.index()*b.mem_stride);
+	  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		mem[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
 		mem[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
 		(&(*w))[W_GT] = 0;
@@ -418,7 +407,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 	
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
-		float* mem1 = mem + (w.index()*b.mem_stride);
+	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		g0_d += mem1[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
 		g1_d += (&(*w))[W_GT] * (&(*w))[W_DIR];
 		g1_Hg1 += (&(*w))[W_GT] * (&(*w))[W_GT] * ((&(*w))[W_COND]);
@@ -459,7 +448,7 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
 	{
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			uint32_t i = w.index();
+		  uint64_t i = w.index() >> weights.stride_shift();
 			weight delta_weight = *w - b.regularizers[2 * i + 1];
 			(&(*w))[W_GT] += b.regularizers[2 * i] * delta_weight;
 			ret += 0.5*b.regularizers[2 * i] * delta_weight*delta_weight;
@@ -494,7 +483,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization, T& weights)
 	else
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			(&(*w))[W_COND] += b.regularizers[2 * w.index()];
+		  (&(*w))[W_COND] += b.regularizers[2 * (w.index()>> weights.stride_shift())];
 			if ((&(*w))[W_COND] > max_hessian)
 				max_hessian = (&(*w))[W_COND];
 			if ((&(*w))[W_COND] > 0)
@@ -531,7 +520,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& we
 
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			uint32_t i = w.index();
+		  uint64_t i = w.index() >> weights.stride_shift();
 			b.regularizers[2 * i] = regularization;
 			if ((&(*w))[W_COND] > 0.f)
 				b.regularizers[2 * i] += 1.f / (&(*w))[W_COND];
@@ -541,11 +530,11 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& we
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
 			if ((&(*w))[W_COND] > 0.f)
-				b.regularizers[2 * w.index()] += 1.f / (&(*w))[W_COND];
+			  b.regularizers[2 * (w.index() >> weights.stride_shift())] += 1.f / (&(*w))[W_COND];
 		}
 
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
-		b.regularizers[2 * w.index() + 1] = *w;
+	  b.regularizers[2 * (w.index()>> weights.stride_shift()) + 1] = *w;
 }
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
@@ -562,7 +551,7 @@ void regularizer_to_weight(vw& all, bfgs& b, T& weights)
 	{
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-			uint32_t i = w.index();
+		  uint32_t i = w.index() >> weights.stride_shift();
 			(&(*w))[W_COND] = b.regularizers[2 * i];
 			*w = b.regularizers[2 * i + 1];
 		}
@@ -601,7 +590,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& wei
 	double ret = 0.;
 	for (typename T::iterator w = weights.begin(); w != weights.end();  ++w)
 	{ 
-		float* mem1 = mem + (w.index()*b.mem_stride);
+	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		ret += mem1[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
 	}
 	return ret;
@@ -669,7 +658,7 @@ int process_pass(vw& all, bfgs& b)
       float d_mag = direction_magnitude(all);
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
-      if (!all.quiet)
+       if (!all.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
       b.predictions.erase();
       update_weight(all, b.step_size);
@@ -775,11 +764,12 @@ int process_pass(vw& all, bfgs& b)
   /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
   /********************************************************************/
     else // just finished all second gradients
-    { if(all.all_reduce != nullptr)
+    {    
+ if(all.all_reduce != nullptr)
       { float t = (float)b.curvature;
         b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
       }
-      if (all.l2_lambda > 0.)
+       if (all.l2_lambda > 0.)
         b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda);
       float dd = (float)derivative_in_direction(all, b, b.mem, b.origin);
       if (b.curvature == 0. && dd != 0.)
@@ -801,6 +791,7 @@ int process_pass(vw& all, bfgs& b)
       update_weight(all, b.step_size);
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
+
       if (!all.quiet)
         fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
       b.gradient_pass = true;

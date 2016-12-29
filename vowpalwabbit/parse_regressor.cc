@@ -25,42 +25,21 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
-
-struct initial_t
-{  weight _initial;
-   initial_t(weight initial) : _initial(initial){}
-};
+template <class T> void set_initial(typename T::iterator& iter, float& initial) { *iter = initial; }
 	
-void set_initial(weight_parameters::iterator& iter, uint64_t /*index*/, uint32_t /*stride*/, void* set_struct)
+template <class T> void random_positive(typename T::iterator& iter)
 {
-	*iter = static_cast<initial_t*>(set_struct)->_initial;
+  uint64_t index = iter.index();
+  *iter = (float)(0.1 * merand48(index));
 }
-	
-void set_initial(sparse_weight_parameters::iterator& iter, uint64_t /*index*/, uint32_t /*stride*/, void* set_struct)
+
+template <class T> void random_weights(typename T::iterator& iter)
 {
-	*iter = static_cast<initial_t*>(set_struct)->_initial;
+  uint64_t index = iter.index();
+  *iter = (float)(merand48(index) - 0.5);
 }
 
-
-
-void random_positive(weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
-{*iter = (float)(0.1 * merand48(ind));
-}
-
-void random_positive(sparse_weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
-{  *iter = (float)(0.1 * merand48(ind));
-}
-
-void random_weights(weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
-{  *iter = (float)(merand48(ind) - 0.5);
-}
-
-void random_weights(sparse_weight_parameters::iterator& iter, uint64_t ind, uint32_t /*stride*/, void* /*struct*/)
-{	*iter = (float)(merand48(ind) - 0.5);
-}
-
-template<class T>
-void initialize_regressor(vw& all, T& weights)
+template<class T> void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
   if (weights.not_null())
     return;
@@ -73,15 +52,11 @@ void initialize_regressor(vw& all, T& weights)
   if (weights.mask() == 0)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-  {
-	  initial_t init(all.initial_t);
-	  all.weights.set_struct = &init;
-	  weights.template set_default<set_initial>();
-  }
+    weights.template set_default<float,set_initial<T> >(all.initial_t);
   else if (all.random_positive_weights)
-	  weights.template set_default<random_positive>();
+    weights.template set_default<random_positive<T> >();
   else if (all.random_weights)
-	  weights.template set_default<random_weights>();
+    weights.template set_default<random_weights<T> >();
 }
 
 void initialize_regressor(vw& all)
