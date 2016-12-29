@@ -46,7 +46,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 			if (audit)
 				cout << f.audit().get()->first << '^' << f.audit().get()->second << ':';
 			cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-			cout << ':' << weights[f.index() + offset];
+			cout << ':' << (&weights[f.index()])[offset];
 		}
 	}
 	for (string& i : all.pairs)
@@ -59,13 +59,13 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 					{
 						cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index() + k)&mask)
 							<< "(" << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-						cout << ':' << weights[(f1.index() + offset + k)];
+						cout << ':' << (&weights[f1.index()])[offset + k];
 
 						cout << ':' << f2.audit().get()->first << k << '^' << f2.audit().get()->second << ':' << ((f2.index() + k + d.rank)&mask)
 							<< "(" << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
-						cout << ':' << weights[(f2.index() + offset + k + d.rank)];
+								cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-						cout << ':' << weights[(f1.index() + offset + k)] * weights[(f2.index() + offset + k + d.rank)];
+						cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
 					}
 			}
 		}
@@ -87,6 +87,13 @@ void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 { print_result(d.all->stdout_fileno,ec.pred.scalar,-1,ec.tag);
   mf_print_offset_features(d, ec, offset);
 }
+
+struct pred_offset
+{ float p;
+  uint64_t offset;
+};
+
+void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
 template<class T>
 float mf_predict(gdmf& d, example& ec, T& weights)
@@ -114,7 +121,6 @@ float mf_predict(gdmf& d, example& ec, T& weights)
   d.scalars.push_back(linear_prediction);
 
   prediction += linear_prediction;
-
   // interaction terms
   for (string& i : d.all->pairs)
   { if (ec.feature_space[(int)i[0]].size() > 0 && ec.feature_space[(int)i[1]].size() > 0)
@@ -122,19 +128,19 @@ float mf_predict(gdmf& d, example& ec, T& weights)
       { // x_l * l^k
         // l^k is from index+1 to index+d.rank
         //float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
-        float x_dot_l = 0.;
-        GD::foreach_feature<float, GD::vec_add, T>(weights, ec.feature_space[(int)i[0]], x_dot_l, k);
+        pred_offset x_dot_l = {0.,k};
+        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[(int)i[0]], x_dot_l);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         //float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(), k+d.rank);
-        float x_dot_r = 0.;
-        GD::foreach_feature<float,GD::vec_add, T>(weights, ec.feature_space[(int)i[1]], x_dot_r, k+d.rank);
+        pred_offset x_dot_r = {0.,k+d.rank};
+        GD::foreach_feature<pred_offset,offset_add, T>(weights, ec.feature_space[(int)i[1]], x_dot_r);
 
-        prediction += x_dot_l * x_dot_r;
+        prediction += x_dot_l.p * x_dot_r.p;
 
         // store prediction from interaction terms
-        d.scalars.push_back(x_dot_l);
-        d.scalars.push_back(x_dot_r);
+        d.scalars.push_back(x_dot_l.p);
+        d.scalars.push_back(x_dot_r.p);
       }
     }
   }
@@ -171,7 +177,7 @@ float mf_predict(gdmf& d, example& ec)
 template<class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 { for (size_t i = 0; i < fs.size(); i++)
-    weights[(fs.indicies[i] + offset)] += update * fs.values[i] - regularization * weights[(fs.indicies[i] + offset)];
+    (&weights[fs.indicies[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indicies[i]])[offset];
 }
 
 template<class T>

@@ -316,10 +316,7 @@ void parse_diagnostics(vw& all, int argc)
     // --quiet wins over --progress
   }
   else
-  { if (argc == 1)
-      cerr << "For more information use: vw --help" << endl;
-
-    all.quiet = false;
+  {  all.quiet = false;
 
     if (vm.count("progress"))
     { string progress_str = vm["progress"].as<string>();

@@ -284,8 +284,7 @@ public:
 	{   uint64_t index = i & _weight_mask;
 		weight_map::iterator iter = _map.find(index);
 		if (iter == _map.end()) 
-		  { 
-		  _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
+		  {     _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
 			iter = _map.find(index);
 			if (fun != nullptr)
 			  {

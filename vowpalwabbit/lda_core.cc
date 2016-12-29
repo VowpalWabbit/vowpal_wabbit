@@ -795,15 +795,13 @@ void learn_batch(lda &l, T& weights)
   if (l.total_lambda.size() == 0)
     { for (size_t k = 0; k < l.all->lda; k++)
 	l.total_lambda.push_back(0.f);
-      
-      if (l.all->sparse)
-	THROW("Initialization does not work for LDA and sparse parameters");
+      //This part does not work with sparse parameters
       size_t stride = 1 << weights.stride_shift();
-      typename T::iterator iter = weights.begin();
-      for (size_t i = 0; i <= weights.mask(); i += stride, ++iter) 
-	{  weights_iterator_iterator<weight> k_iter = iter.begin();
-	  for (size_t k = 0; k < l.all->lda; k++, ++k_iter)
-	    l.total_lambda[k] += *k_iter;
+      for (size_t i = 0; i <= weights.mask(); i += stride) 
+	{
+	  weight* w = &(weights[i]);
+	  for (size_t k = 0; k < l.all->lda; k++)
+	    l.total_lambda[k] += w[k];
 	}   
     }
   

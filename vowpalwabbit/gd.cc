@@ -224,7 +224,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 			<< ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
 
 		if (dat.all.adaptive)
-			tempstream << '@' << weights[index + 1];
+		  tempstream << '@' << (&weights[index])[1];
 
 
 		string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
@@ -580,7 +580,6 @@ void learn(gd& g, base_learner& base, example& ec)
   assert(ec.in_use);
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
-
   g.predict(g,base,ec);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
