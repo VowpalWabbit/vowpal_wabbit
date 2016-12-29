@@ -394,22 +394,33 @@ double add_regularization(vw& all, bfgs& b, float regularization)
   weight_parameters& weights = all.weights;
   weight_parameters::iterator w = weights.begin();
 
-  uint32_t i = 0; 
   if (b.regularizers == nullptr)
-  { for(; w != weights.end(); ++w, ++i)
-    { if(all.no_bias == true && i!=(size_t)constant_namespace)
-      { (&(*w))[W_GT] += regularization*(*w);
-        ret += 0.5*regularization*(*w)*(*w);
-      }
+  { for(; w != weights.end(); ++w)
+    { (&(*w))[W_GT] += regularization*(*w);
+      ret += 0.5*regularization*(*w)*(*w);
     }
   }
   else
-  { for (; w != weights.end(); ++i, ++w)
-    { if(all.no_bias == true && i!= (size_t)constant_namespace)
-      { weight delta_weight = *w - b.regularizers[2*i+1];
-        (&(*w))[W_GT] += b.regularizers[2*i]*delta_weight;
-        ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
-      }
+  { uint32_t i = 0; 
+    for (; w != weights.end(); ++i, ++w)
+    { weight delta_weight = *w - b.regularizers[2*i+1];
+      (&(*w))[W_GT] += b.regularizers[2*i]*delta_weight;
+      ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
+    }
+  }
+
+  // if we're not regularizing the intercept term, then subtract it off from the result above
+  if (all.no_bias) {
+    w = weights.begin();
+    size_t i=(size_t)constant_namespace;
+    if (b.regularizers == nullptr) {
+      (&(*(w+i)))[W_GT] -= regularization*(*w);
+      ret -= 0.5*regularization*(*w)*(*w);
+    }
+    else {
+      weight delta_weight = *w - b.regularizers[2*i+1];
+      (&(*(w+i)))[W_GT] -= b.regularizers[2*i]*delta_weight;
+      ret -= 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
     }
   }
 
