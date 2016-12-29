@@ -537,10 +537,9 @@ void parse_feature_tweaks(vw& all)
   //feature manipulation
   string hash_function("strings");
   if(vm.count("hash"))
-    {
-      hash_function = vm["hash"].as<string>();
-      *all.file_options << " --hash " << hash_function;
-    }
+  { hash_function = vm["hash"].as<string>();
+    *all.file_options << " --hash " << hash_function;
+  }
   all.p->hasher = getHasher(hash_function);
 
   if (vm.count("spelling"))
@@ -1263,9 +1262,8 @@ void parse_modules(vw& all, io_buf& model)
 }
 
 void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
-{ 
-  if (!skipModelLoad)
-	load_input_model(all, model);
+{ if (!skipModelLoad)
+    load_input_model(all, model);
 
   parse_source(all);
 
@@ -1346,18 +1344,17 @@ void free_args(int argc, char* argv[])
 }
 
 vw* initialize(string s, io_buf* model, bool skipModelLoad)
-{
-  int argc = 0;
+{ int argc = 0;
   char** argv = get_argv_from_string(s,argc);
   vw* ret = nullptr;
-  
+
   try
   { ret = initialize(argc, argv, model, skipModelLoad); }
   catch(...)
   { free_args(argc, argv);
     throw;
   }
-  
+
   free_args(argc, argv);
   return ret;
 }
@@ -1384,8 +1381,8 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad)
   }
   catch (std::exception& e)
   { std::cerr << "Error: " << e.what() << "\n";
-	finish(all);
-	throw;
+    finish(all);
+    throw;
   }
   catch (...)
   { finish(all);
@@ -1504,7 +1501,7 @@ void finish(vw& all, bool delete_all)
   { all.l->finish();
     free_it(all.l);
   }
-  
+
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.erase();

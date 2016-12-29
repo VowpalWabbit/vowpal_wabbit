@@ -26,7 +26,7 @@ struct search;
 class BaseTask
 {
 public:
- BaseTask(search* _sch, std::vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
+  BaseTask(search* _sch, std::vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
   inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
   inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
   inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
@@ -324,14 +324,14 @@ template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const
     *all.file_options << " --" << opt_name << " " << ret;
   }
   else if (strlen(required_error_string)>0)
-    { std::cerr << required_error_string << std::endl;
+  { std::cerr << required_error_string << std::endl;
     if (! vm.count("help"))
       THROW(required_error_string);
   }
 }
 
 void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
- bool string_equal(std::string a, std::string b);
+bool string_equal(std::string a, std::string b);
 bool float_equal(float a, float b);
 bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);

@@ -5,7 +5,8 @@
 #ifndef _Included_vowpalWabbit_VW
 #define _Included_vowpalWabbit_VW
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /*
  * Class:     vowpalWabbit_VW
@@ -13,7 +14,7 @@ extern "C" {
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_vowpalWabbit_VW_version
-  (JNIEnv *, jclass);
+(JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }

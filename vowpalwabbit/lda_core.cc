@@ -209,23 +209,19 @@ inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 #ifdef WIN32
 
 inline __m128 operator+(const __m128 a, const __m128 b)
-{
-	return _mm_add_ps(a, b);
+{ return _mm_add_ps(a, b);
 }
 
 inline __m128 operator-(const __m128 a, const __m128 b)
-{
-	return _mm_sub_ps(a, b);
+{ return _mm_sub_ps(a, b);
 }
 
 inline __m128 operator*(const __m128 a, const __m128 b)
-{
-	return _mm_mul_ps(a, b);
+{ return _mm_mul_ps(a, b);
 }
 
 inline __m128 operator/(const __m128 a, const __m128 b)
-{
-	return _mm_div_ps(a, b);
+{ return _mm_div_ps(a, b);
 }
 
 #endif
@@ -727,16 +723,15 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 				brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v), "", read, msg, text);
 			}
 	  }
-      if (text)
-        {
-		  if (!read)
-			  msg << "\n";
-          brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
-        }
-	  if (!read)
+		if (text)
+		  {
+		    if (!read)
+		      msg << "\n";
+		    brw += bin_text_read_write_fixed(model_file, nullptr, 0, "", read, msg, text);
+		  }
+		if (!read)
 		  ++i;
-    }
-    while ((!read && i < length) || (read && brw > 0));
+	} while ((!read && i < length) || (read && brw > 0));
   }
 }
 
@@ -750,20 +745,19 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 }
 
 void return_example(vw& all, example& ec)
-{
-  label_data ld = ec.l.simple;
-  
+{ label_data ld = ec.l.simple;
+
   all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
-  
+
   for (int f: all.final_prediction_sink)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
-  
+
   if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
-			 ec.num_features, all.progress_add, all.progress_arg);
+                         ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all,&ec);
 }
 
@@ -776,15 +770,14 @@ void learn_batch(lda &l, T& weights)
     // the for loops down there. Since it seems that there's not much to
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
-      {
-	l.examples[d]->pred.scalars.erase();
-	l.examples[d]->pred.scalars.resize(l.topics);
-	memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-	l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
+    { l.examples[d]->pred.scalars.erase();
+      l.examples[d]->pred.scalars.resize(l.topics);
+      memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
+      l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
-	l.examples[d]->pred.scalars.erase();
-	return_example(*l.all, *l.examples[d]);
-      }
+      l.examples[d]->pred.scalars.erase();
+      return_example(*l.all, *l.examples[d]);
+    }
     l.examples.erase();
     return;
   }
@@ -841,6 +834,7 @@ void learn_batch(lda &l, T& weights)
     { weights_for_w[k] *= decay;
       u_for_w[k] = weights_for_w[k] + l.lda_rho;
     }
+
     l.expdigammify_2(*l.all, u_for_w, l.digammas.begin());
   }
 
@@ -907,8 +901,7 @@ void learn_batch(lda &l)
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
-{ 
-  uint32_t num_ex = (uint32_t)l.examples.size();
+{ uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
   for (features& fs : ec)
@@ -926,26 +919,27 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 {
 	uint32_t stride_shift;
 	uint64_t weight_mask;
-  if (l.all->passes_complete == 0)
-  { // build feature to example map
-	  if (l.all->sparse){
-		  weight_mask = l.all->sparse_weights.mask();
-		  stride_shift = l.all->sparse_weights.stride_shift();
+	if (l.all->passes_complete == 0)
+	  { // build feature to example map
+	    if (l.all->sparse){
+	      weight_mask = l.all->sparse_weights.mask();
+	      stride_shift = l.all->sparse_weights.stride_shift();
+	    }
+	    else{
+	      weight_mask = l.all->weights.mask();
+	      stride_shift = l.all->weights.stride_shift();
+	    }
+	    
+	    for (features& fs : ec)
+	      { for (features::iterator& f : fs)
+		  { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
+		    l.feature_counts[idx] += (uint32_t)f.value();
+		    l.feature_to_example_map[idx].push_back(ec.example_counter);
+		  }
+	      }
 	  }
-	  else{
-		  weight_mask = l.all->weights.mask();
-		  stride_shift = l.all->weights.stride_shift();
-	  }
-    for (features& fs : ec)
-    { for (features::iterator& f : fs)
-      { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-        l.feature_counts[idx] += (uint32_t)f.value();
-        l.feature_to_example_map[idx].push_back(ec.example_counter);
-      }
-    }
-  }
-
-  learn(l, base, ec);
+	
+	learn(l, base, ec);
 }
 
 // placeholder
@@ -953,23 +947,21 @@ void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, 
 void predict_with_metrics(lda &l, LEARNER::base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
-{
-	// feature/word index
-	uint64_t idx;
-	// document count
-	uint32_t count;
+{ // feature/word index
+  uint64_t idx;
+  // document count
+  uint32_t count;
 };
 
 // cooccurence of 2 features/words
 struct feature_pair
-{
-	// feature/word 1
-	uint64_t f1;
-	// feature/word 2
-	uint64_t f2;
+{ // feature/word 1
+  uint64_t f1;
+  // feature/word 2
+  uint64_t f2;
 
-	feature_pair(uint64_t _f1, uint64_t _f2) : f1(_f1), f2(_f2)
-	{}
+  feature_pair(uint64_t _f1, uint64_t _f2) : f1(_f1), f2(_f2)
+  {}
 };
 
 template<class T>
@@ -1153,15 +1145,13 @@ void compute_coherence_metrics(lda &l)
 
 }
 void end_pass(lda &l)
-{ 
-	if (l.examples.size())
-		learn_batch(l);
+{ if (l.examples.size())
+    learn_batch(l);
 
-	if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
-	{
-		compute_coherence_metrics(l);
-		// FASTPASS return;
-	}
+  if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
+  { compute_coherence_metrics(l);
+    // FASTPASS return;
+  }
 }
 
 template<class T>
@@ -1171,9 +1161,9 @@ void end_examples(lda &l, T& weights)
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
-	for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(l.all->lda); ++k)
+    for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(l.all->lda); ++k)
       *k *= decay;
-   }
+  }
 }
 
 void end_examples(lda &l)
@@ -1219,13 +1209,13 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 { if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
   new_options(all, "Lda options")
-    ("lda_alpha", po::value<float>()->default_value(0.1f),"Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
-    ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
-    ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
-    ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx")
-    ("metrics", po::value<bool>()->default_value(false), "Compute metrics");
+  ("lda_alpha", po::value<float>()->default_value(0.1f),"Prior on sparsity of per-document topic weights")
+  ("lda_rho", po::value<float>()->default_value(0.1f), "Prior on sparsity of topic distributions")
+  ("lda_D", po::value<float>()->default_value(10000.), "Number of documents")
+  ("lda_epsilon", po::value<float>()->default_value(0.001f), "Loop convergence threshold")
+  ("minibatch", po::value<size_t>()->default_value(1), "Minibatch size, for LDA")
+  ("math-mode", po::value<lda_math_mode>()->default_value(USE_SIMD), "Math mode: simd, accuracy, fast-approx")
+  ("metrics", po::value<bool>()->default_value(false), "Compute metrics");
   add_options(all);
   po::variables_map &vm = all.vm;
 
@@ -1246,9 +1236,9 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
   ld.example_t = all.initial_t;
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
   ld.compute_coherence_metrics = vm["metrics"].as<bool>();
-  if (ld.compute_coherence_metrics) {
-	  ld.feature_counts.resize((uint32_t)1 << all.num_bits);
-	  ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  if (ld.compute_coherence_metrics)
+  { ld.feature_counts.resize((uint32_t)1 << all.num_bits);
+    ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));

@@ -93,8 +93,7 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
     return idx;
   else
   { while (idx < poly.synth_ec.ft_offset)
-  {
-	  idx += poly.all->length() << poly.all->weights.stride_shift();
+    { idx += poly.all->length() << poly.all->weights.stride_shift();
     }
     return idx - poly.synth_ec.ft_offset;
   }
@@ -303,7 +302,7 @@ void sort_data_update_support(stagewise_poly &poly)
                     * - poly.magic_argument
                     * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
                     */
-                   ;
+		;
       if (weightsal > tolerance)
       { assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
@@ -403,17 +402,16 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 }
 
 void synthetic_decycle(stagewise_poly &poly)
-{
-  features& fs = poly.synth_ec.feature_space[tree_atomics];
+{ features& fs = poly.synth_ec.feature_space[tree_atomics];
   for (size_t i = 0; i < fs.size(); ++i)
-    { assert(cycle_get(poly, fs.indicies[i]));
-      cycle_toggle(poly, fs.indicies[i]);
-    }
+  { assert(cycle_get(poly, fs.indicies[i]));
+    cycle_toggle(poly, fs.indicies[i]);
+  }
 }
 
 void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex)); 
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex));
   uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -447,7 +445,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
     ++poly.depths[poly.cur_depth];
 #endif //DEBUG
 
-    feature temp ={v * poly.synth_rec_f.x, wid_cur};
+    feature temp = {v * poly.synth_rec_f.x, wid_cur};
     poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
@@ -637,10 +635,9 @@ void finish(stagewise_poly &poly)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
-    {
-      stringstream msg;
-      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
-    }
+  { stringstream msg;
+    bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
+  }
   //unfortunately, following can't go here since save_load called before gd::save_load and thus
   //weight vector state uninitialiazed.
   //#ifdef DEBUG

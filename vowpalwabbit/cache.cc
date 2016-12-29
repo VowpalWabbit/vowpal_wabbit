@@ -49,7 +49,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 
   ae->tag.erase();
   push_many(ae->tag, c, tag_size);
- return tag_size+sizeof(tag_size);
+  return tag_size+sizeof(tag_size);
 }
 
 struct one_float { float f; }
@@ -102,23 +102,23 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     uint64_t last = 0;
 
     for (; c!= end;)
-      { feature_index i = 0;
-        c = run_len_decode(c,i);
-        feature_value v = 1.f;
-        if (i & neg_1)
-          v = -1.;
-        else if (i & general)
-          { v = ((one_float *)c)->f;
-            c += sizeof(float);
-          }
-        uint64_t diff = i >> 2;
-        int64_t s_diff = ZigZagDecode(diff);
-        if (s_diff < 0)
-          ae->sorted = false;
-        i = last + s_diff;
-        last = i;
-        ours.push_back(v,i);
+    { feature_index i = 0;
+      c = run_len_decode(c,i);
+      feature_value v = 1.f;
+      if (i & neg_1)
+        v = -1.;
+      else if (i & general)
+      { v = ((one_float *)c)->f;
+        c += sizeof(float);
       }
+      uint64_t diff = i >> 2;
+      int64_t s_diff = ZigZagDecode(diff);
+      if (s_diff < 0)
+        ae->sorted = false;
+      i = last + s_diff;
+      last = i;
+      ours.push_back(v,i);
+    }
     all->p->input->set(c);
   }
 
@@ -154,8 +154,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
   uint64_t last = 0;
   for (features::iterator& f : fs)
-  {
-    feature_index fi = f.index() & mask;
+  { feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);
     uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = fi;
@@ -165,8 +164,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
     else if (f.value() == -1.)
       c = run_len_encode(c, diff | neg_1);
     else
-    {
-      c = run_len_encode(c, diff | general);
+    { c = run_len_encode(c, diff | general);
       memcpy(c, &f.value(), sizeof(feature_value));
       c += sizeof(feature_value);
     }

@@ -1,4 +1,4 @@
- #pragma once
+#pragma once
 
 #include "global_data.h"
 #include "constant.h"
@@ -23,7 +23,7 @@ const uint64_t valid_ns_size = printable_end - printable_start - 1; // -1 to ski
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length
 // err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
- v_array<v_string> expand_interactions(const std::vector<std::string> &vec, const size_t required_length, const std::string &err_msg);
+v_array<v_string> expand_interactions(const std::vector<std::string> &vec, const size_t required_length, const std::string &err_msg);
 
 // remove duplicate interactions and sort namespaces in them (if required)
 void sort_and_filter_duplicate_interactions(v_array<v_string> &vec, bool filter_duplicates, size_t &removed_cnt, size_t &sorted_cnt);
@@ -102,8 +102,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
     }
   }
   else
-  {
-    for (; begin != end; ++begin)
+  { for (; begin != end; ++begin)
       call_T<R, T>(dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
   }
 }
@@ -214,152 +213,190 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
             } // end if (data[thr] size > 0)
           } // end if (data[snd] size > 0)
         } // end if (data[fst] size > 0)
+    }
+    else if (len == 3) // special case for triples
+    { features& first = features_data[ns[0]];
+      if (first.nonempty())
+      { features& second = features_data[ns[1]];
+        if (second.nonempty())
+        { features& third = features_data[ns[2]];
+          if (third.nonempty())
+          { // don't compare 1 and 3 as interaction is sorted
+            const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
+            const bool same_namespace2 = ( !all.permutations && ( ns[1] == ns[2] ) );
 
-      }
-      else   // generic case: quatriples, etc.
+            for(size_t i = 0; i < first.indicies.size(); ++i)
+            { if(audit) audit_func(dat, first.space_names[i].get());
+              const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
+              const float& first_ft_value = first.values[i];
+              size_t j=0;
+              if (same_namespace1) // next index differs for permutations and simple combinations
+                j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i+1;
+
+              for (; j < second.indicies.size(); ++j)
+              { //f3 x k*(f2 x k*f1)
+                if(audit) audit_func(dat, second.space_names[j].get());
+                feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
+                feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
+
+                features::features_value_index_audit_range range = third.values_indices_audit();
+                features::iterator_all begin = range.begin();
+                if (same_namespace2) //next index differs for permutations and simple combinations
+                  begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
+
+                features::iterator_all end = range.end();
+                inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
+              } // end for (snd)
+              if(audit) audit_func(dat, nullptr);
+            } // end for (fst)
+
+          } // end if (data[thr] size > 0)
+        } // end if (data[snd] size > 0)
+      } // end if (data[fst] size > 0)
+
+    }
+    else   // generic case: quatriples, etc.
 
 #endif
-      {
+    {
 
-        bool must_skip_interaction = false;
-        // preparing state data
-        feature_gen_data* fgd = state_data.begin();
-        feature_gen_data* fgd2; // for further use
-        for (namespace_index n : ns)
-	  { features& ft = features_data[(int32_t)n];
-	    const size_t ft_cnt = ft.indicies.size();
+      bool must_skip_interaction = false;
+      // preparing state data
+      feature_gen_data* fgd = state_data.begin();
+      feature_gen_data* fgd2; // for further use
+      for (namespace_index n : ns)
+      { features& ft = features_data[(int32_t)n];
+        const size_t ft_cnt = ft.indicies.size();
 
-	    if (ft_cnt == 0)
-	      { must_skip_interaction = true;
-		break;
-	      }
+        if (ft_cnt == 0)
+        { must_skip_interaction = true;
+          break;
+        }
 
-	    if (fgd == state_data.end())
-	      { state_data.push_back(empty_ns_data);
-		fgd = state_data.end()-1; // reassign as memory could be realloced
-	      }
+        if (fgd == state_data.end())
+        { state_data.push_back(empty_ns_data);
+          fgd = state_data.end()-1; // reassign as memory could be realloced
+        }
 
-	    fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
-	    fgd->ft_arr = &ft;
-	    ++fgd;
-	  }
+        fgd->loop_end = ft_cnt-1; // saving number of features for each namespace
+        fgd->ft_arr = &ft;
+        ++fgd;
+      }
 
-        // if any of interacting namespace has 0 features - whole interaction is skipped
-        if (must_skip_interaction) continue; //no_data_to_interact
+      // if any of interacting namespace has 0 features - whole interaction is skipped
+      if (must_skip_interaction) continue; //no_data_to_interact
 
-        if (!all.permutations) // adjust state_data for simple combinations
-        { // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
-          // (in fact, currently they are sorted even for enabled permutations mode)
-          // let's go throw the list and calculate number of features to skip in namespaces which
-          // repeated more than once to generate only simple combinations of features
+      if (!all.permutations) // adjust state_data for simple combinations
+      { // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
+        // (in fact, currently they are sorted even for enabled permutations mode)
+        // let's go throw the list and calculate number of features to skip in namespaces which
+        // repeated more than once to generate only simple combinations of features
 
-          size_t margin = 0;  // number of features to ignore if namespace has been seen before
+        size_t margin = 0;  // number of features to ignore if namespace has been seen before
 
-          // iterate list backward as margin grows in this order
+        // iterate list backward as margin grows in this order
 
-          for (fgd = state_data.end()-1; fgd > state_data.begin(); --fgd)
-          { fgd2 = fgd-1;
-            fgd->self_interaction = (fgd->ft_arr == fgd2->ft_arr); //state_data.begin().self_interaction is always false
-            if (fgd->self_interaction)
-            { size_t& loop_end = fgd2->loop_end;
+        for (fgd = state_data.end()-1; fgd > state_data.begin(); --fgd)
+        { fgd2 = fgd-1;
+          fgd->self_interaction = (fgd->ft_arr == fgd2->ft_arr); //state_data.begin().self_interaction is always false
+          if (fgd->self_interaction)
+          { size_t& loop_end = fgd2->loop_end;
 
-              if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end-margin]))
-                { ++margin; // otherwise margin can't be increased
-                  if ( (must_skip_interaction = (loop_end < margin)) ) break;
-                }
-
-              if (margin != 0)
-                loop_end -= margin;               // skip some features and increase margin
+            if (!PROCESS_SELF_INTERACTIONS((*fgd2->ft_arr).values[loop_end-margin]))
+            { ++margin; // otherwise margin can't be increased
+              if ( (must_skip_interaction = (loop_end < margin)) ) break;
             }
-            else if (margin != 0) margin = 0;
+
+            if (margin != 0)
+              loop_end -= margin;               // skip some features and increase margin
+          }
+          else if (margin != 0) margin = 0;
+        }
+
+        // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
+        // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
+        // combination of length 4 without repetitions from 3 or less elements.
+        if (must_skip_interaction) continue; // impossible_without_permutations
+      } // end of state_data adjustment
+
+
+      fgd = state_data.begin();  // always equal to first ns
+      fgd2 = state_data.end()-1; // always equal to last ns
+      fgd->loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
+
+      // beware: micro-optimization.
+      /* start & end are always point to features in last namespace of interaction.
+          for 'all.permutations == true' they are constant.*/
+      size_t start_i = 0;
+
+      feature_gen_data* cur_data = fgd;
+      // end of micro-optimization block
+
+      // generic feature generation cycle for interactions of any length
+      bool do_it = true;
+      while (do_it)
+      { if (cur_data < fgd2) // can go further threw the list of namespaces in interaction
+        { feature_gen_data* next_data = cur_data+1;
+          size_t feature = cur_data->loop_idx;
+          features& fs = *(cur_data->ft_arr);
+
+          if (next_data->self_interaction)
+          { // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
+            // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
+            // filtered out in parce_args.cc::maybeFeature().
+
+            next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(fs.values[feature])) ? cur_data->loop_idx : cur_data->loop_idx + 1;
+          }
+          else
+            next_data->loop_idx = 0;
+
+          if(audit) audit_func(dat, fs.space_names[feature].get());
+
+          if (cur_data == fgd) // first namespace
+          { next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];
+            next_data->x = fs.values[feature]; // data->x == 1.
+          }
+          else
+          { // feature2 xor (16777619*feature1)
+            next_data->hash = FNV_prime * (cur_data->hash ^ (uint64_t)fs.indicies[feature]);
+            next_data->x = INTERACTION_VALUE(fs.values[feature], cur_data->x);
           }
 
-          // if impossible_without_permutations == true then we faced with case like interaction 'aaaa'
-          // where namespace 'a' contains less than 4 unique features. It's impossible to make simple
-          // combination of length 4 without repetitions from 3 or less elements.
-          if (must_skip_interaction) continue; // impossible_without_permutations
-        } // end of state_data adjustment
+          ++cur_data;
+        }
+        else
+        { // last namespace - iterate its features and go back
+          if (!all.permutations) // start value is not a constant in this case
+            start_i = fgd2->loop_idx;
 
+          features& fs = *(fgd2->ft_arr);
 
-        fgd = state_data.begin();  // always equal to first ns
-        fgd2 = state_data.end()-1; // always equal to last ns
-        fgd->loop_idx = 0; // loop_idx contains current feature id for curently processed namespace.
+	  feature_value ft_value = fgd2->x;
+	  feature_index halfhash = fgd2->hash;
+	  
+	  features::features_value_index_audit_range range = fs.values_indices_audit();
+	  features::iterator_all begin = range.begin();
+	  begin += start_i;
+	  features::iterator_all end = range.begin();
+	  end += fgd2->loop_end + 1;
+	  inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
+	  
+          // trying to go back increasing loop_idx of each namespace by the way
 
-        // beware: micro-optimization.
-        /* start & end are always point to features in last namespace of interaction.
-            for 'all.permutations == true' they are constant.*/
-        size_t start_i = 0;
+          bool go_further = true;
 
-        feature_gen_data* cur_data = fgd;
-        // end of micro-optimization block
+          do
+          { --cur_data;
+            go_further = (++cur_data->loop_idx > cur_data->loop_end); //increment loop_idx
+            if (audit) audit_func(dat, nullptr);
+          }
+          while (go_further && cur_data != fgd);
 
-        // generic feature generation cycle for interactions of any length
-        bool do_it = true;
-        while (do_it)
-        {
-          if (cur_data < fgd2) // can go further threw the list of namespaces in interaction
-            { feature_gen_data* next_data = cur_data+1;
-              size_t feature = cur_data->loop_idx;
-              features& fs = *(cur_data->ft_arr);
-
-              if (next_data->self_interaction)
-                { // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
-                  // unless feature has value x and x != x*x. E.g. x != 0 and x != 1. Features with x == 0 are already
-                  // filtered out in parce_args.cc::maybeFeature().
-
-                  next_data->loop_idx = (PROCESS_SELF_INTERACTIONS(fs.values[feature])) ? cur_data->loop_idx : cur_data->loop_idx + 1;
-                }
-              else
-                next_data->loop_idx = 0;
-
-              if(audit) audit_func(dat, fs.space_names[feature].get());
-
-              if (cur_data == fgd) // first namespace
-                { next_data->hash = FNV_prime * (uint64_t)fs.indicies[feature];
-                  next_data->x = fs.values[feature]; // data->x == 1.
-                }
-              else
-                { // feature2 xor (16777619*feature1)
-                  next_data->hash = FNV_prime * (cur_data->hash ^ (uint64_t)fs.indicies[feature]);
-                  next_data->x = INTERACTION_VALUE(fs.values[feature], cur_data->x);
-                }
-
-              ++cur_data;
-            }
-          else
-          {
-            // last namespace - iterate its features and go back
-            if (!all.permutations) // start value is not a constant in this case
-              start_i = fgd2->loop_idx;
-
-            features& fs = *(fgd2->ft_arr);
-
-	          feature_value ft_value = fgd2->x;
-            feature_index halfhash = fgd2->hash;
-
-            features::features_value_index_audit_range range = fs.values_indices_audit();
-            features::iterator_all begin = range.begin();
-            begin += start_i;
-            features::iterator_all end = range.begin();
-            end += fgd2->loop_end + 1;
-            inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
-
-            // trying to go back increasing loop_idx of each namespace by the way
-
-            bool go_further = true;
-
-            do
-            { --cur_data;
-              go_further = (++cur_data->loop_idx > cur_data->loop_end); //increment loop_idx
-              if (audit) audit_func(dat, nullptr);
-            }
-            while (go_further && cur_data != fgd);
-
-            do_it = !(cur_data == fgd && go_further);
-            //if do_it==false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
-          } // if last namespace
-        } // while do_it
-      }
+          do_it = !(cur_data == fgd && go_further);
+          //if do_it==false - we've reached 0 namespace but its 'cur_data.loop_idx > cur_data.loop_end' -> exit the while loop
+        } // if last namespace
+      } // while do_it
+    }
   } // foreach interaction in all.interactions
 
   state_data.delete_v();

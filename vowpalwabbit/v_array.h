@@ -74,19 +74,19 @@ public:
 
   void erase()
   { if (++erase_count & erase_point)
-	{ resize(_end-_begin);
-		erase_count = 0;
-	}
+    { resize(_end-_begin);
+      erase_count = 0;
+    }
     for (T*item = _begin; item != _end; ++item)
-		item->~T();
+      item->~T();
     _end = _begin;
   }
   void delete_v()
-  { if (_begin != nullptr) {
-		for (T*item = _begin; item != _end; ++item)
-			item->~T();
-		free(_begin);
-	}
+  { if (_begin != nullptr)
+    { for (T*item = _begin; item != _end; ++item)
+        item->~T();
+      free(_begin);
+    }
     _begin = _end = end_array = nullptr;
   }
   void push_back(const T& new_ele)

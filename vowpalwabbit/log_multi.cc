@@ -307,7 +307,7 @@ void learn(log_multi& b, base_learner& base, example& ec)
     b.nodes[cn].min_count++;
     update_min_count(b, cn);
     ec.pred.multiclass = start_pred;
-	ec.l.multi = mc;
+    ec.l.multi = mc;
   }
 }
 
@@ -360,13 +360,13 @@ void finish(log_multi& b)
 
 void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
-    { stringstream msg;
-      msg << "k = " << b.k;
-      bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
+  { stringstream msg;
+    msg << "k = " << b.k;
+    bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
 
-      msg << "nodes = " << b.nodes.size() << " ";
-      uint32_t temp = (uint32_t)b.nodes.size();
-      bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, msg, text);
+    msg << "nodes = " << b.nodes.size() << " ";
+    uint32_t temp = (uint32_t)b.nodes.size();
+    bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, msg, text);
     if (read)
       for (uint32_t j = 1; j < temp; j++)
         b.nodes.push_back(init_node());
@@ -405,7 +405,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
       bin_text_read_write_fixed(model_file,(char*)&n.internal, sizeof(n.internal), "", read, msg, text);
 
       if (n.internal)
-        { msg << " base_predictor = " << n.base_predictor;
+      { msg << " base_predictor = " << n.base_predictor;
         bin_text_read_write_fixed(model_file,(char*)&n.base_predictor, sizeof(n.base_predictor), "", read, msg, text);
 
         msg << " left = " << n.left;
@@ -424,11 +424,11 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
         bin_text_read_write_fixed(model_file,(char*)&n.n, sizeof(n.n), "", read, msg, text);
       }
       else
-        { msg << " max_count = " << n.max_count;
-          bin_text_read_write_fixed(model_file,(char*)&n.max_count, sizeof(n.max_count), "", read, msg, text);
-          msg << " max_count_label = "<< n.max_count_label <<"\n";
-          bin_text_read_write_fixed(model_file,(char*)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
-        }
+      { msg << " max_count = " << n.max_count;
+        bin_text_read_write_fixed(model_file,(char*)&n.max_count, sizeof(n.max_count), "", read, msg, text);
+        msg << " max_count_label = "<< n.max_count_label <<"\n";
+        bin_text_read_write_fixed(model_file,(char*)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
+      }
 
       for (size_t k = 0; k < n.preds.size(); k++)
       { node_pred& p = n.preds[k];

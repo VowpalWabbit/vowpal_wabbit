@@ -69,10 +69,10 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     }
 
     if(cur_id1 == cur_id2)
-      { f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
-        i1++;
-        i2++;
-      }
+    { f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
+      i1++;
+      i2++;
+    }
     else if (cur_id1 < cur_id2)
       i1++;
     else
@@ -86,13 +86,13 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   features& f2 = ec.feature_space[in.n2];
 
   if (!contains_valid_namespaces(f1, f2, in))
-    { if (is_learn)
-        base.learn(ec);
-      else
-        base.predict(ec);
+  { if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
 
-      return;
-    }
+    return;
+  }
 
   in.num_features = ec.num_features;
   in.total_sum_feat_sq = ec.total_sum_feat_sq;
@@ -143,9 +143,9 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2)
-    { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+  { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
-    }
+  }
 
   interact& data = calloc_or_throw<interact>();
 

@@ -82,7 +82,7 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
     local_weights[iter.index() >> weights.stride_shift()] = (&(*iter))[1];
 
   //First compute weights for averaging
-  all_reduce<float, add_float>(all, local_weights, length); 
+  all_reduce<float, add_float>(all, local_weights, length);
 
   for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
   {

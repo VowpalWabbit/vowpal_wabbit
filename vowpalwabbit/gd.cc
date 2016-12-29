@@ -176,12 +176,9 @@ struct audit_results
 
 
 inline void audit_interaction(audit_results& dat, const audit_strings* f)
-{ 
-  if (f == nullptr)
-  {
-    if (!dat.ns_pre.empty())
-    { 
-        dat.ns_pre.pop_back();
+{ if (f == nullptr)
+  { if (!dat.ns_pre.empty())
+    { dat.ns_pre.pop_back();
     }
 
     return;
@@ -192,19 +189,16 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
     ns_pre += '*';
 
   if (f->first != "" && ((f->first) != " "))
-  {
-    ns_pre.append(f->first);
+  { ns_pre.append(f->first);
     ns_pre += '^';
   }
-  
+
   if (f->second != "")
-  {
-    ns_pre.append(f->second);
+  { ns_pre.append(f->second);
   }
 
   if (!ns_pre.empty())
-  {
-    dat.ns_pre.push_back(ns_pre);
+  { dat.ns_pre.push_back(ns_pre);
   }
 }
 
@@ -287,12 +281,11 @@ void print_features(vw& all, example& ec)
     for (features& fs : ec)
     { if (fs.space_names.size() > 0)
         for (features::iterator_all& f : fs.values_indices_audit())
-	      {
-          audit_interaction(dat, f.audit().get());
-	        audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-	        audit_interaction(dat, NULL);
-	      }
-	    else
+        { audit_interaction(dat, f.audit().get());
+          audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+          audit_interaction(dat, NULL);
+        }
+      else
         for (features::iterator& f : fs)
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
     }
@@ -417,11 +410,11 @@ inline float compute_rate_decay(power_data& s, float& fw)
 { weight* w = &fw;
   float rate_decay = 1.f;
   if(adaptive)
-    { if (sqrt_rate)
-	rate_decay = InvSqrt(w[adaptive]);
-      else
-	rate_decay = powf(w[adaptive],s.minus_power_t);
-    }
+  { if (sqrt_rate)
+      rate_decay = InvSqrt(w[adaptive]);
+    else
+      rate_decay = powf(w[adaptive],s.minus_power_t);
+  }
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
@@ -445,7 +438,7 @@ struct norm_data
 
 const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
-  const float x2_max = FLT_MAX;
+const float x2_max = FLT_MAX;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
@@ -603,7 +596,6 @@ void sync_weights(vw& all)
 	else
 		sync_weights<weight_parameters>(all, all.weights);
 }
-
 
 template<class T>
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)

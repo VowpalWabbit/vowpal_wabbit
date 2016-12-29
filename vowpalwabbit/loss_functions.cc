@@ -296,50 +296,42 @@ public:
   float getLoss(shared_data*, float prediction, float label)
   { if (label < 0.f)
       cout << "You are using label " << label << " but loss function expects label >= 0!" << endl;
-	  float exp_prediction = expf(prediction);
+    float exp_prediction = expf(prediction);
     // deviance is used instead of log-likelihood
-	  return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
+    return 2 * (label * (logf(label + 1e-6f) - prediction) - (label - exp_prediction));
   }
 
   float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
-  {
-	  float exp_prediction = expf(prediction);
+  { float exp_prediction = expf(prediction);
     if (label > 0)
-    {
-      return label * update_scale - log1p(exp_prediction*expm1(label * update_scale * pred_per_update)/label)/pred_per_update;
+    { return label * update_scale - log1p(exp_prediction*expm1(label * update_scale * pred_per_update)/label)/pred_per_update;
     }
     else
-    {
-      return - log1p(exp_prediction * update_scale * pred_per_update)/pred_per_update;
+    { return - log1p(exp_prediction * update_scale * pred_per_update)/pred_per_update;
     }
   }
 
   float getUnsafeUpdate(float prediction, float label,float update_scale)
-  {
-	  float exp_prediction = expf(prediction);
-	  return (label - exp_prediction) * update_scale;
+  { float exp_prediction = expf(prediction);
+    return (label - exp_prediction) * update_scale;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
-  {
-    THROW("Active learning not supported by poisson loss");
+  { THROW("Active learning not supported by poisson loss");
   }
 
   float getSquareGrad(float prediction, float label)
-  { 
- 	  float exp_prediction = expf(prediction);
+  { float exp_prediction = expf(prediction);
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
   float first_derivative(shared_data*, float prediction, float label)
-  {
- 	  float exp_prediction = expf(prediction);
+  { float exp_prediction = expf(prediction);
     return (exp_prediction - label);
   }
 
   float second_derivative(shared_data*, float prediction, float label)
-  { 
- 	  float exp_prediction = expf(prediction);
+  { float exp_prediction = expf(prediction);
     return exp_prediction;
   }
 };
@@ -362,10 +354,8 @@ loss_function* getLossFunction(vw& all, string funcName, float function_paramete
   { return new quantileloss(function_parameter);
   }
   else if(funcName.compare("poisson") == 0)
-  {
-    if (all.set_minmax != noop_mm)
-    {
-      all.sd->min_label = -50;
+  { if (all.set_minmax != noop_mm)
+    { all.sd->min_label = -50;
       all.sd->max_label = 50;
     }
     return new poisson_loss();

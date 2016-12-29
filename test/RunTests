@@ -1545,3 +1545,12 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
     train-sets/ref/cb_adf_dm.stderr
     pred-sets/ref/cb_adf_dm.predict
+
+# Test 149: initial_weight option is used
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --quiet
+    train-sets/ref/empty.stderr
+    train-sets/ref/initial_weight.stdout
+
+#Test 150:  Test --sparse_weights with 148
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
+    train-sets/ref/sparse.stderr

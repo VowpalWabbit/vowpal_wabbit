@@ -210,18 +210,18 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         if(!brw) return 2;
       }
       if(fec->fs.size() > 0)
-        { features& fs = fec->fs;
-          size_t len = fs.size();
-          fs.values = v_init<feature_value>();
-          fs.values.resize(len);
-          brw = bin_read_fixed(model_file, (char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
-          fs.values.end() = fs.values.begin()+len;
+      { features& fs = fec->fs;
+        size_t len = fs.size();
+        fs.values = v_init<feature_value>();
+        fs.values.resize(len);
+        brw = bin_read_fixed(model_file, (char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
+        fs.values.end() = fs.values.begin()+len;
 
-          len = fs.indicies.size();
-          fs.indicies = v_init<feature_index>();
-          fs.indicies.resize(len);
-          brw = bin_read_fixed(model_file, (char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
-          fs.indicies.end() = fs.indicies.begin()+len;
+        len = fs.indicies.size();
+        fs.indicies = v_init<feature_index>();
+        fs.indicies.resize(len);
+        brw = bin_read_fixed(model_file, (char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
+        fs.indicies.end() = fs.indicies.begin()+len;
       }
     }
     else return 1;
@@ -238,9 +238,9 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         }
       }
       if(fec->fs.size() > 0)
-        { brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
-          brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
-        }
+      { brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
+        brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
+      }
     }
     else return 1;
   }
@@ -297,8 +297,7 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 }
 
 float linear_kernel(const flat_example* fec1, const flat_example* fec2)
-{
-  float dotprod = 0;
+{ float dotprod = 0;
 
   features& fs_1 = (features&)fec1->fs;
   features& fs_2 = (features&)fec2->fs;
@@ -307,21 +306,21 @@ float linear_kernel(const flat_example* fec1, const flat_example* fec2)
 
   int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size() ; idx1++)
-    { uint64_t ec1pos = fs_1.indicies[idx1];
-      uint64_t ec2pos = fs_2.indicies[idx2];
-      //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-      if(ec1pos < ec2pos) continue;
+  { uint64_t ec1pos = fs_1.indicies[idx1];
+    uint64_t ec2pos = fs_2.indicies[idx2];
+    //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
+    if(ec1pos < ec2pos) continue;
 
-      while(ec1pos > ec2pos && ++idx2 < fs_2.size())
-        ec2pos = fs_2.indicies[idx2];
+    while(ec1pos > ec2pos && ++idx2 < fs_2.size())
+      ec2pos = fs_2.indicies[idx2];
 
-      if(ec1pos == ec2pos)
-        { //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
-          numint++;
-          dotprod += fs_1.values[idx1] * fs_2.values[idx2];
-          ++idx2;
-        }
+    if(ec1pos == ec2pos)
+    { //cerr<<ec1pos<<" "<<ec2pos<<" "<<idx1<<" "<<idx2<<" "<<f->x<<" "<<ec2f->x<<endl;
+      numint++;
+      dotprod += fs_1.values[idx1] * fs_2.values[idx2];
+      ++idx2;
     }
+  }
   //cerr<<endl;
   //cerr<<"numint = "<<numint<<" dotprod = "<<dotprod<<endl;
   return dotprod;
@@ -376,7 +375,7 @@ void predict(svm_params& params, base_learner &, example& ec)
     float score;
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
-	sec->~svm_example();
+    sec->~svm_example();
     free(sec);
   }
 }
@@ -671,8 +670,8 @@ void train(svm_params& params)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
           int randi = 1;
-	  if (frand48() < 0.5)
-	    randi = 0;
+          if (frand48() < 0.5)
+            randi = 0;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
@@ -686,9 +685,9 @@ void train(svm_params& params)
             }
           }
           else
-	    { size_t rand_pos = (size_t)floorf(frand48() * model->num_support);
-	      update(params, rand_pos);
-	    }
+          { size_t rand_pos = (size_t)floorf(frand48() * model->num_support);
+            update(params, rand_pos);
+          }
         }
         //cerr<<endl;
         // cerr<<params.model->support_vec[0]->example_counter<<endl;
@@ -722,7 +721,7 @@ void learn(svm_params& params, base_learner&, example& ec)
     float score = 0;
     predict(params, &sec, &score, 1);
     ec.pred.scalar = score;
-	ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
+    ec.loss = max(0.f, 1.f - score*ec.l.simple.label);
     params.loss_sum += ec.loss;
     if(params.all->training && ec.example_counter % 100 == 0)
       trim_cache(params);

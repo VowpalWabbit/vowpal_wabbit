@@ -1102,6 +1102,3 @@ base_learner* bfgs_setup(vw& all)
 	else
 		return bfgs_setup<weight_parameters>(all, all.weights);
 }
-
-
-

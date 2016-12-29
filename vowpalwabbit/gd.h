@@ -79,15 +79,16 @@ void foreach_feature(W& /*weights*/, features& fs, R&dat, uint64_t offset = 0, f
 template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
-if (all.sparse){
-	for (features& f : ec)
-		foreach_feature<R, T, sparse_weight_parameters>(all.sparse_weights, f, dat, offset);
-}
-else
-{
-	for (features& f : ec)
-		foreach_feature<R, T, weight_parameters>(all.weights, f, dat, offset);
-}
+  if (all.sparse){
+    for (features& f : ec)
+      foreach_feature<R, T, sparse_weight_parameters>(all.sparse_weights, f, dat, offset);
+  }
+  else
+    {
+      for (features& f : ec)
+	foreach_feature<R, T, weight_parameters>(all.weights, f, dat, offset);
+    }
+
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }
 
@@ -108,8 +109,7 @@ inline float inline_predict(vw& all, example& ec)
 inline float sign(float w) { if (w < 0.) return -1.; else  return 1.; }
 
 inline float trunc_weight(const float w, const float gravity)
-{
-	return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+{ return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
 }
 
 }

@@ -5,15 +5,15 @@ typedef uint64_t feature_index;
 typedef std::pair<std::string, std::string> audit_strings;
 typedef std::shared_ptr<audit_strings> audit_strings_ptr;
 
-struct feature {//sparse feature definition for the library interface
-  float x;
+struct feature  //sparse feature definition for the library interface
+{ float x;
   uint64_t weight_index;
   feature(float _x, uint64_t _index): x(_x), weight_index(_index) {}
   feature() {feature(0.f,0);}
 };
 
-struct feature_slice{ //a helper struct for functions using the set {v,i,space_name}
-  feature_value x;
+struct feature_slice  //a helper struct for functions using the set {v,i,space_name}
+{ feature_value x;
   feature_index weight_index;
   audit_strings space_name;
 };
@@ -130,7 +130,7 @@ public:
   }
 
   features_value_index_iterator& operator=(const features_value_index_iterator& other)
-  {  features_value_iterator::operator=(other);
+  { features_value_iterator::operator=(other);
     _begin_index = other._begin_index;
     return *this;
   }
@@ -204,8 +204,8 @@ public:
 };
 
 /// the core definition of a set of features.
-struct features {
-  v_array<feature_value> values; // Always needed.
+struct features
+{ v_array<feature_value> values; // Always needed.
   v_array<feature_index> indicies; //Optional for sparse data.
   v_array<audit_strings_ptr> space_names; //Optional for audit mode.
 
@@ -216,7 +216,8 @@ struct features {
   typedef features_value_index_audit_iterator iterator_all;
 
   /// defines a "range" usable by C++ 11 for loops
-  class features_value_index_audit_range {
+  class features_value_index_audit_range
+  {
   private:
     features* _outer;
   public:
@@ -253,88 +254,75 @@ struct features {
   iterator end() { return iterator(values.end(), indicies.end()); }
 
   void erase()
-  {
-    sum_feat_sq = 0.f;
+  { sum_feat_sq = 0.f;
     values.erase();
     indicies.erase();
     space_names.erase();
   }
 
   void truncate_to(const features_value_iterator& pos)
-  {
-    ssize_t i = pos._begin - values.begin();
+  { ssize_t i = pos._begin - values.begin();
     values.end() = pos._begin;
     if (indicies.end() != indicies.begin())
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
-    {
-      free_space_names(i);
+    { free_space_names(i);
       space_names.end() = space_names.begin() + i;
     }
   }
 
   void truncate_to(size_t i)
-  {
-    values.end() = values.begin() + i;
+  { values.end() = values.begin() + i;
     if (indicies.end() != indicies.begin())
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
     { free_space_names(i);
-	    space_names.end() = space_names.begin() + i;
+      space_names.end() = space_names.begin() + i;
     }
   }
 
   void delete_v()
-  {
-    values.delete_v();
+  { values.delete_v();
     indicies.delete_v();
     space_names.delete_v();
   }
   void push_back(feature_value v, feature_index i)
-  {
-    values.push_back(v);
+  { values.push_back(v);
     indicies.push_back(i);
     sum_feat_sq += v*v;
   }
 
   bool sort(uint64_t parse_mask)
-  {
-    if (indicies.size() == 0)
+  { if (indicies.size() == 0)
       return false;
 
     if (space_names.size() != 0)
-      {
-	v_array<feature_slice> slice = v_init<feature_slice>();
-	for (size_t i = 0; i < indicies.size(); i++)
-	  {
-	    feature_slice temp = { values[i], indicies[i] & parse_mask, *space_names[i].get()};
-	    slice.push_back(temp);
-	  }
-	qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
-	for (size_t i = 0; i < slice.size(); i++)
-	  {
-	    values[i] = slice[i].x;
-	    indicies[i] = slice[i].weight_index;
-	    *space_names[i].get() = slice[i].space_name;
-	  }
-	slice.delete_v();
+    { v_array<feature_slice> slice = v_init<feature_slice>();
+      for (size_t i = 0; i < indicies.size(); i++)
+      { feature_slice temp = { values[i], indicies[i] & parse_mask, *space_names[i].get()};
+        slice.push_back(temp);
       }
+      qsort(slice.begin(), slice.size(), sizeof(feature_slice), order_features<feature_slice>);
+      for (size_t i = 0; i < slice.size(); i++)
+      { values[i] = slice[i].x;
+        indicies[i] = slice[i].weight_index;
+        *space_names[i].get() = slice[i].space_name;
+      }
+      slice.delete_v();
+    }
     else
-      {
-	v_array<feature> slice = v_init<feature>();
-	for (size_t i = 0; i < indicies.size(); i++)
-	  {
-	    feature temp = { values[i], indicies[i] & parse_mask};
-	    slice.push_back(temp);
-	  }
-	qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
-	for (size_t i = 0; i < slice.size(); i++)
-	  {
-	    values[i] = slice[i].x;
-	    indicies[i] = slice[i].weight_index;
-	  }
-	slice.delete_v();
+    { v_array<feature> slice = v_init<feature>();
+      for (size_t i = 0; i < indicies.size(); i++)
+      { feature temp = { values[i], indicies[i] & parse_mask};
+        slice.push_back(temp);
       }
+      qsort(slice.begin(), slice.size(), sizeof(feature), order_features<feature>);
+      for (size_t i = 0; i < slice.size(); i++)
+      { values[i] = slice[i].x;
+        indicies[i] = slice[i].weight_index;
+      }
+      slice.delete_v();
+    }
     return true;
   }
 

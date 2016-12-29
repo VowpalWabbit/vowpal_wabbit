@@ -125,7 +125,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 			 }
 		     }
             }
-        }
+	}
     }
     
     if (is_learn)
@@ -135,20 +135,20 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 
     // Restore example
     if (iter == 0)
-      { first_prediction = ec.pred.scalar;
-        first_loss = ec.loss;
-        first_uncertainty = ec.confidence;
-      }
+    { first_prediction = ec.pred.scalar;
+      first_loss = ec.loss;
+      first_uncertainty = ec.confidence;
+    }
     else
-      { ec.pred.scalar = first_prediction;
-        ec.loss = first_loss;
-        ec.confidence = first_uncertainty;
-      }
+    { ec.pred.scalar = first_prediction;
+      ec.loss = first_loss;
+      ec.confidence = first_uncertainty;
+    }
 
     for (string const& i : lrq.lrpairs)
-      { unsigned char right = i[(which+1)%2];
-        ec.feature_space[right].truncate_to(lrq.orig_size[right]);
-      }
+    { unsigned char right = i[(which+1)%2];
+      ec.feature_space[right].truncate_to(lrq.orig_size[right]);
+    }
   }
 }
 
@@ -224,7 +224,7 @@ base_learner* lrq_setup(vw& all)
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
-	  predict_or_learn<false>, 1 + maxk);
+                                      predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);
 
