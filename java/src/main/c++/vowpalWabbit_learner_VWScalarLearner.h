@@ -5,7 +5,8 @@
 #ifndef _Included_vowpalWabbit_learner_VWScalarLearner
 #define _Included_vowpalWabbit_learner_VWScalarLearner
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /*
  * Class:     vowpalWabbit_learner_VWScalarLearner
@@ -13,7 +14,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;ZJ)F
  */
 JNIEXPORT jfloat JNICALL Java_vowpalWabbit_learner_VWScalarLearner_predict
-  (JNIEnv *, jobject, jstring, jboolean, jlong);
+(JNIEnv *, jobject, jstring, jboolean, jlong);
 
 /*
  * Class:     vowpalWabbit_learner_VWScalarLearner
@@ -21,7 +22,7 @@ JNIEXPORT jfloat JNICALL Java_vowpalWabbit_learner_VWScalarLearner_predict
  * Signature: ([Ljava/lang/String;ZJ)F
  */
 JNIEXPORT jfloat JNICALL Java_vowpalWabbit_learner_VWScalarLearner_predictMultiline
-  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
 
 #ifdef __cplusplus
 }

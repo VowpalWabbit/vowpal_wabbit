@@ -13,30 +13,27 @@ void dispatch_example(vw& all, example& ec)
 
 namespace prediction_type
 {
-#define CASE(type) case type: return #type; 
+#define CASE(type) case type: return #type;
 
-	const char* to_string(prediction_type_t prediction_type)
-	{
-		switch (prediction_type)
-		{
-			CASE(scalar)
-			CASE(scalars)
-			CASE(action_scores)
-			CASE(action_probs)
-			CASE(multiclass)
-			CASE(multilabels)
-			CASE(prob)
-			CASE(multiclassprobs)
-		default: return "<unsupported>";
-		}
-	}
+const char* to_string(prediction_type_t prediction_type)
+{ switch (prediction_type)
+  {   CASE(scalar)
+      CASE(scalars)
+      CASE(action_scores)
+      CASE(action_probs)
+      CASE(multiclass)
+      CASE(multilabels)
+      CASE(prob)
+      CASE(multiclassprobs)
+    default: return "<unsupported>";
+  }
+}
 }
 
 namespace LEARNER
 {
 void process_example(vw& all, example* ec)
-{
-  if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
+{ if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
     dispatch_example(all, *ec);
   else if (ec->end_pass)
   { all.l->end_pass();
@@ -66,10 +63,10 @@ template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context
   while ( all.early_terminate == false )
     if ((ec = VW::get_example(all.p)) != nullptr)
       f(context, ec);
-    else 
+    else
       break;
   if (all.early_terminate) //drain any extra examples from parser.
-    while ((ec = VW::get_example(all.p)) != nullptr) 
+    while ((ec = VW::get_example(all.p)) != nullptr)
       VW::finish_example(all, ec);
   all.l->end_examples();
 }

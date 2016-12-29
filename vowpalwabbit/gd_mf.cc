@@ -50,8 +50,7 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
     if (ec.feature_space[(unsigned char)i[0]].size() > 0 && ec.feature_space[(unsigned char)i[1]].size() > 0)
     { /* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
       for (size_t k = 1; k <= d.rank; k++)
-      {
-        for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
+      { for (features::iterator_all& f1 : ec.feature_space[(unsigned char)i[0]].values_indices_audit())
           for (features::iterator_all& f2 : ec.feature_space[(unsigned char)i[1]].values_indices_audit())
           { cout << '\t' << f1.audit().get()->first << k << '^' << f1.audit().get()->second << ':' << ((f1.index()+k)&mask)
                  <<"(" << ((f1.index() + offset +k) & mask)  << ")" << ':' << f1.value();
@@ -193,9 +192,8 @@ void mf_train(gdmf& d, example& ec)
 }
 
 void set_rand(weight_parameters::iterator& iter, uint64_t index, uint32_t stride)
-{ 
-	for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
-	  *w = (float)(0.1 * merand48(index));
+{ for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
+    *w = (float)(0.1 * merand48(index));
 }
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
@@ -203,14 +201,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   uint64_t length = (uint64_t)1 << all->num_bits;
   if(read)
   { initialize_regressor(*all);
-  if (all->random_weights)
-	  all->weights.set_default<set_rand>();
+    if (all->random_weights)
+      all->weights.set_default<set_rand>();
   }
 
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
-     size_t brw = 1;
-	 weight_parameters& w = all->weights;
+    size_t brw = 1;
+    weight_parameters& w = all->weights;
     do
     { brw = 0;
       size_t K = d.rank*2+1;
@@ -218,23 +216,22 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
-	  if (brw != 0)
-	  { weight_parameters::iterator iter = w.begin()+ i;
-		for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
-		{  msg << &(*v) << " ";
-		   brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
-				  "", read, msg, text);
-		}
-	  }
-      if (text)
-        {
-          msg << "\n";
-          brw += bin_text_read_write_fixed(model_file, nullptr, 0,
-                                           "", read, msg,text);
+      if (brw != 0)
+      { weight_parameters::iterator iter = w.begin()+ i;
+        for (weights_iterator_iterator<weight> v = iter.begin(); v != iter.end(K); ++v)
+        { msg << &(*v) << " ";
+          brw += bin_text_read_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+                                           "", read, msg, text);
         }
+      }
+      if (text)
+      { msg << "\n";
+        brw += bin_text_read_write_fixed(model_file, nullptr, 0,
+                                         "", read, msg,text);
+      }
 
-	  if (!read)
-	    ++i;
+      if (!read)
+        ++i;
     }
     while ((!read && i < length) || (read && brw >0));
   }

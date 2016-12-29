@@ -16,9 +16,8 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
   features& fs = ec.feature_space[autolink_namespace];
   for (size_t i = 0; i < b.d; i++)
     if (base_pred != 0.)
-      {
-        fs.push_back(base_pred, autoconstant + (i << b.stride_shift));
-        base_pred *= ec.pred.scalar;
+    { fs.push_back(base_pred, autoconstant + (i << b.stride_shift));
+      base_pred *= ec.pred.scalar;
     }
   ec.total_sum_feat_sq += fs.sum_feat_sq;
 

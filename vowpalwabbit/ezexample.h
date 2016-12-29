@@ -146,12 +146,12 @@ public:
     }
     else
     { if (ns_exists[(int)current_ns])
-        { ec->total_sum_feat_sq -= ec->feature_space[(int)current_ns].sum_feat_sq;
-          ec->feature_space[(int)current_ns].erase();
-          ec->num_features -= ec->feature_space[(int)current_ns].size();
+      { ec->total_sum_feat_sq -= ec->feature_space[(int)current_ns].sum_feat_sq;
+        ec->feature_space[(int)current_ns].erase();
+        ec->num_features -= ec->feature_space[(int)current_ns].size();
 
-          ns_exists[(int)current_ns] = false;
-        }
+        ns_exists[(int)current_ns] = false;
+      }
 
       current_seed = past_seeds.back();
       past_seeds.pop_back();
@@ -209,7 +209,7 @@ public:
 
     for (std::vector<std::string>::iterator i = vw_ref->pairs.begin(); i != vw_ref->pairs.end(); i++)
     { quadratic_features_num
-        += ec->feature_space[(int)(*i)[0]].size() * ec->feature_space[(int)(*i)[1]].size();
+      += ec->feature_space[(int)(*i)[0]].size() * ec->feature_space[(int)(*i)[1]].size();
       quadratic_features_sqr
       += ec->feature_space[(int)(*i)[0]].sum_feat_sq * ec->feature_space[(int)(*i)[1]].sum_feat_sq;
     }
