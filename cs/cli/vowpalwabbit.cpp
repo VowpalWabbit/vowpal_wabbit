@@ -727,33 +727,9 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
     for (auto& pair : top_weights)
       clr_weights->Add(gcnew VowpalWabbitFeature(this, pair.x, pair.weight_index));
   }
+  return allocation;
+}
   
-  cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
-  {
-	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
-	  // using jagged array to enable LINQ
-	  auto K = (int)m_vw->lda;
-	  auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
-
-	  // TODO: better way of peaking into lda?
-	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
-	  
-	  std::vector<feature> top_weights;
-	  // over topics
-	  for (int topic = 0; topic < K; topic++)
-	  {
-		  get_top_weights(m_vw, top, topic, top_weights);
-
-		  auto clr_weights = gcnew List<VowpalWabbitFeature^>(top);
-		  allocation[topic] = clr_weights;
-		  for (auto& pair : top_weights)
-			  clr_weights->Add(gcnew VowpalWabbitFeature(this, pair.x, pair.weight_index));
-	  }
-
-	  return allocation;
-  }
-
-
   cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
@@ -778,7 +754,4 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 
 	  return allocation;
   }
-
-  return allocation;
-}
 }
