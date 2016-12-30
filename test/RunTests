@@ -1547,8 +1547,8 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cb_adf_dm.predict
 
 # Test 149: initial_weight option is used
-echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --quiet
-    train-sets/ref/empty.stderr
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 
+    train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
 
 #Test 150:  Test --sparse_weights with 148
