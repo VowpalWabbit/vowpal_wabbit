@@ -242,10 +242,10 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{  if (dat.all.sparse)
-		audit_feature<sparse_weight_parameters>(dat, ft_weight, ft_idx, dat.all.sparse_weights);
+{  if (dat.all.weights.sparse)
+		audit_feature(dat, ft_weight, ft_idx, dat.all.weights.sparse_weights);
 	else
-		audit_feature<weight_parameters>(dat, ft_weight, ft_idx, dat.all.weights);
+		audit_feature(dat, ft_weight, ft_idx, dat.all.weights.dense_weights);
 }
 
 template<class T>
@@ -270,10 +270,10 @@ void print_features(vw& all, example& ec, T& weights)
 void print_features(vw& all, example& ec)
 { if (all.lda > 0)
 	{
-		if (all.sparse)
-			print_features<sparse_weight_parameters>(all, ec, all.sparse_weights);
+		if (all.weights.sparse)
+			print_features(all, ec, all.weights.sparse_weights);
 		else
-			print_features<weight_parameters>(all, ec, all.weights);
+			print_features(all, ec, all.weights.dense_weights);
     }
   else
   { audit_results dat(all,ec.ft_offset);
@@ -369,10 +369,10 @@ inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, ui
 }
 inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 {
-	if (mp.sparse)
-		vec_add_trunc_multipredict<sparse_weight_parameters>(mp, fx, fi, mp.sparse_weights);
+	if (mp.weights.sparse)
+		vec_add_trunc_multipredict(mp, fx, fi, mp.weights.sparse_weights);
 	else
-		vec_add_trunc_multipredict<weight_parameters>(mp, fx, fi, mp.weights);
+		vec_add_trunc_multipredict(mp, fx, fi, mp.weights.dense_weights);
 }
 
 template<bool l1, bool audit>
@@ -380,7 +380,7 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, g.all->sparse, g.all->weights,g.all->sparse_weights, (float)all.sd->gravity };
+  multipredict_info mp = { count, step, pred, g.all->weights, (float)all.sd->gravity };
   if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
   else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
   if (all.sd->contraction != 1.)
@@ -591,10 +591,10 @@ void sync_weights(vw& all, T& weights)
 }
 void sync_weights(vw& all)
 {
-	if (all.sparse)
-		sync_weights<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		sync_weights(all, all.weights.sparse_weights);
 	else
-		sync_weights<weight_parameters>(all, all.weights);
+		sync_weights(all, all.weights.dense_weights);
 }
 
 template<class T>
@@ -669,10 +669,10 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
-	if (all.sparse)
-		save_load_regressor<sparse_weight_parameters>(all, model_file, read, text, all.sparse_weights);
+	if (all.weights.sparse)
+		save_load_regressor(all, model_file, read, text, all.weights.sparse_weights);
 	else
-		save_load_regressor<weight_parameters>(all, model_file, read, text, all.weights);
+		save_load_regressor(all, model_file, read, text, all.weights.dense_weights);
 }
 
 template<class T>
@@ -832,10 +832,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->example_number = 0;
 		all.sd->total_features = 0;
 	}
-	if (all.sparse)
-		save_load_online_state<sparse_weight_parameters>(all, model_file, read, text, g, msg, all.sparse_weights);
+	if (all.weights.sparse)
+		save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
 	else
-		save_load_online_state<weight_parameters>(all, model_file, read, text, g, msg, all.weights);
+		save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
 }
 
   template<class T> void set_initial_gd(typename T::iterator& iter, float& initial) {(&(*iter))[1] = initial; }
@@ -846,10 +846,10 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
   { initialize_regressor(all);
 
   if (all.adaptive && all.initial_t > 0){
-	  if (all.sparse)
-	    all.sparse_weights.set_default<float, set_initial_gd<sparse_weight_parameters> >(all.initial_t);
+	  if (all.weights.sparse)
+	    all.weights.sparse_weights.set_default<float, set_initial_gd<sparse_parameters> >(all.initial_t);
 	  else
-	    all.weights.set_default<float, set_initial_gd<weight_parameters> >(all.initial_t);
+	    all.weights.dense_weights.set_default<float, set_initial_gd<dense_parameters> >(all.initial_t);
 	  //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
 	  //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
 	  //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
@@ -1040,10 +1040,10 @@ base_learner* setup(vw& all, T& weights)
 
 base_learner* setup(vw& all)
 {
-	if (all.sparse)
-		return setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return setup(all, all.weights.sparse_weights);
 	else
-		return setup<weight_parameters>(all, all.weights);
+		return setup(all, all.weights.dense_weights);
 
 }
 }

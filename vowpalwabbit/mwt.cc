@@ -55,11 +55,7 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
     cout << "error " << val << " is not a valid action " << endl;
   
   uint32_t value = (uint32_t) val;
-  uint64_t new_index;
-  if (c.all->sparse)
-    new_index = ((index & c.all->sparse_weights.mask()) >> c.all->sparse_weights.stride_shift());
-  else
-    new_index = ((index & c.all->weights.mask()) >> c.all->weights.stride_shift());
+  uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
 
   if (!c.evals[new_index].seen)
   { c.evals[new_index].seen = true;
@@ -136,10 +132,10 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
   template <bool learn, bool exclude, bool is_learn>
   void predict_or_learn(mwt& c, base_learner& base, example& ec)
   {
-    if (c.all->sparse)
-      predict_or_learn<learn, exclude, is_learn, sparse_weight_parameters>(c, base, ec, c.all->sparse_weights);
+    if (c.all->weights.sparse)
+      predict_or_learn<learn, exclude, is_learn, sparse_parameters>(c, base, ec, c.all->weights.sparse_weights);
     else
-      predict_or_learn<learn, exclude, is_learn, weight_parameters>(c, base, ec, c.all->weights);
+      predict_or_learn<learn, exclude, is_learn, dense_parameters>(c, base, ec, c.all->weights.dense_weights);
   }
   
   void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)

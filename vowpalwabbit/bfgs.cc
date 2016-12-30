@@ -104,21 +104,9 @@ const char* curv_message = "Zero or negative curvature detected.\n"
                            "It is also possible that you have reached numerical accuracy\n"
                            "and further decrease in the objective cannot be reliably detected.\n";
 
-void zero_derivative(vw& all)
-{ //set derivative to 0.
-	if (all.sparse)
-		all.sparse_weights.set_zero(W_GT);
-	else
-		all.weights.set_zero(W_GT);
-}
+void zero_derivative(vw& all) { all.weights.set_zero(W_GT); }
 
-void zero_preconditioner(vw& all)
-{ //set derivative to 0.
-	if (all.sparse)
-		all.sparse_weights.set_zero(W_COND);
-	else
-		all.weights.set_zero(W_COND);
-}
+void zero_preconditioner(vw& all) { all.weights.set_zero(W_COND);}
 
 void reset_state(vw& all, bfgs& b, bool zero)
 { b.lastj = b.origin = 0;
@@ -201,10 +189,10 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
   if (regularizer == 0.)
     return ret;
 
-  if (all.sparse)
-	  return regularizer_direction_magnitude<sparse_weight_parameters>(all, b, regularizer, all.sparse_weights);
+  if (all.weights.sparse)
+	  return regularizer_direction_magnitude(all, b, regularizer, all.weights.sparse_weights);
   else
-	  return regularizer_direction_magnitude<weight_parameters>(all, b, regularizer, all.weights);
+	  return regularizer_direction_magnitude(all, b, regularizer, all.weights.dense_weights);
 }
 
 template<class T>
@@ -219,10 +207,10 @@ float direction_magnitude(vw& all, T& weights)
 
 float direction_magnitude(vw& all)
 { //compute direction magnitude
-	if (all.sparse)
-		return direction_magnitude<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return direction_magnitude(all, all.weights.sparse_weights);
 	else
-		return direction_magnitude<weight_parameters>(all, all.weights);
+		return direction_magnitude(all, all.weights.dense_weights);
 }
 
 template<class T>
@@ -250,10 +238,10 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 		g1_Hg1 / importance_weight_sum, "", "", "");
 }
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
-{  if (all.sparse)
-		bfgs_iter_start<sparse_weight_parameters>(all, b, mem, lastj, importance_weight_sum, origin, all.sparse_weights);
+{  if (all.weights.sparse)
+		bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights);
    else
-		bfgs_iter_start<weight_parameters>(all, b, mem, lastj, importance_weight_sum, origin, all.weights);
+		bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.dense_weights);
 }
 
 template<class T>
@@ -390,10 +378,10 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int &origin)
 {
-	if (all.sparse)
-		bfgs_iter_middle<sparse_weight_parameters>(all, b, mem, rho, alpha, lastj, origin, all.sparse_weights);
+	if (all.weights.sparse)
+		bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.sparse_weights);
 	else
-		bfgs_iter_middle<weight_parameters>(all, b, mem, rho, alpha, lastj, origin, all.weights);
+		bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.dense_weights);
 }
 
 template<class T>
@@ -425,10 +413,10 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 
 double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1)
 {
-	if (all.sparse)
-		return wolfe_eval<sparse_weight_parameters>(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1, all.sparse_weights);
+	if (all.weights.sparse)
+		return wolfe_eval(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1, all.weights.sparse_weights);
 	else
-		return wolfe_eval<weight_parameters>(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1, all.weights);
+		return wolfe_eval(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1, all.weights.dense_weights);
 }
 
 template<class T>
@@ -460,10 +448,10 @@ double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
 
 double add_regularization(vw& all, bfgs& b, float regularization)
 {
-	if (all.sparse)
-		return add_regularization<sparse_weight_parameters>(all, b, regularization, all.sparse_weights);
+	if (all.weights.sparse)
+		return add_regularization(all, b, regularization, all.weights.sparse_weights);
 	else
-		return add_regularization<weight_parameters>(all, b, regularization, all.weights);
+		return add_regularization(all, b, regularization, all.weights.dense_weights);
 }
 
 template <class T>
@@ -500,10 +488,10 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization, T& weights)
 }
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 {
-	if (all.sparse)
-		finalize_preconditioner<sparse_weight_parameters>(all, b, regularization, all.sparse_weights);
+	if (all.weights.sparse)
+		finalize_preconditioner(all, b, regularization, all.weights.sparse_weights);
 	else
-		finalize_preconditioner<weight_parameters>(all, b, regularization, all.weights);
+		finalize_preconditioner(all, b, regularization, all.weights.dense_weights);
 }
 
 template<class T>
@@ -538,10 +526,10 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& we
 }
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
-	if (all.sparse)
-		preconditioner_to_regularizer<sparse_weight_parameters>(all, b, regularization, all.sparse_weights);
+	if (all.weights.sparse)
+		preconditioner_to_regularizer(all, b, regularization, all.weights.sparse_weights);
 	else
-		preconditioner_to_regularizer<weight_parameters>(all, b, regularization, all.weights);
+		preconditioner_to_regularizer(all, b, regularization, all.weights.dense_weights);
 }
 
 template<class T>
@@ -560,10 +548,10 @@ void regularizer_to_weight(vw& all, bfgs& b, T& weights)
 
 void regularizer_to_weight(vw& all, bfgs& b)
 {
-	if (all.sparse)
-		regularizer_to_weight<sparse_weight_parameters>(all, b, all.sparse_weights);
+	if (all.weights.sparse)
+		regularizer_to_weight(all, b, all.weights.sparse_weights);
 	else
-		regularizer_to_weight<weight_parameters>(all, b, all.weights);
+		regularizer_to_weight(all, b, all.weights.dense_weights);
 }
 
 template<class T>
@@ -577,10 +565,10 @@ void zero_state(T& weights)
 
 void zero_state(vw& all)
 {
-	if (all.sparse)
-		zero_state<sparse_weight_parameters>(all.sparse_weights);
+	if (all.weights.sparse)
+		zero_state(all.weights.sparse_weights);
 	else
-		zero_state<weight_parameters>(all.weights);
+		zero_state(all.weights.dense_weights);
 
 }
 
@@ -598,10 +586,10 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& wei
 
 double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 {
-	if (all.sparse)
-		return derivative_in_direction<sparse_weight_parameters>(all, b, mem, origin, all.sparse_weights);
+	if (all.weights.sparse)
+		return derivative_in_direction(all, b, mem, origin, all.weights.sparse_weights);
 	else
-		return derivative_in_direction<weight_parameters>(all, b, mem, origin, all.weights);
+		return derivative_in_direction(all, b, mem, origin, all.weights.dense_weights);
 
 }
 
@@ -614,10 +602,10 @@ void update_weight(vw& all, float step_size, T& w)
 
 void update_weight(vw& all, float step_size)
 {
-	if (all.sparse)
-		update_weight<sparse_weight_parameters>(all, step_size, all.sparse_weights);
+	if (all.weights.sparse)
+		update_weight(all, step_size, all.weights.sparse_weights);
 	else
-		update_weight<weight_parameters>(all, step_size, all.weights);
+		update_weight(all, step_size, all.weights.dense_weights);
 }
 
 
@@ -983,11 +971,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.rho = calloc_or_throw<double>(m);
     b.alpha = calloc_or_throw<double>(m);
 
-	uint32_t stride_shift;
-	if (all->sparse)
-		stride_shift = all->sparse_weights.stride_shift();
-	else
-		stride_shift = all->weights.stride_shift();
+    uint32_t stride_shift = all->weights.stride_shift();
 
     if (!all->quiet)
     { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << stride_shift)) >> 20);
@@ -1097,8 +1081,8 @@ base_learner* bfgs_setup(vw& all, T& weights)
 
 base_learner* bfgs_setup(vw& all)
 {
-	if (all.sparse)
-		return bfgs_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return bfgs_setup(all, all.weights.sparse_weights);
 	else
-		return bfgs_setup<weight_parameters>(all, all.weights);
+		return bfgs_setup(all, all.weights.dense_weights);
 }

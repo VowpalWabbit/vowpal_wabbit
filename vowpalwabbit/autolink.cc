@@ -37,10 +37,7 @@ LEARNER::base_learner* autolink_setup(vw& all)
 
   autolink& data = calloc_or_throw<autolink>();
   data.d = (uint32_t)all.vm["autolink"].as<size_t>();
-  if (all.sparse)
-	  data.stride_shift = all.sparse_weights.stride_shift();
-  else
-	   data.stride_shift = all.weights.stride_shift();
+  data.stride_shift = all.weights.stride_shift();
 
   LEARNER::learner<autolink>& ret =
     init_learner(&data, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);

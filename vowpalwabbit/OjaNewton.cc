@@ -101,10 +101,10 @@ struct OjaNewton {
 
 	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
 	{
-		if (all->sparse)
-			initialize_Z<sparse_weight_parameters>(all->sparse_weights);
+		if (all->weights.sparse)
+			initialize_Z(all->weights.sparse_weights);
 		else
-			initialize_Z<weight_parameters>(all->weights);
+			initialize_Z(all->weights.dense_weights);
 	}
     void compute_AZx()
     {
@@ -310,10 +310,10 @@ struct OjaNewton {
 
 	void check()
 	{
-		if (all->sparse)
-			check<sparse_weight_parameters>(all->sparse_weights);
+		if (all->weights.sparse)
+			check(all->weights.sparse_weights);
 		else
-			check<weight_parameters>(all->weights);
+			check(all->weights.dense_weights);
 	}
 };
 
@@ -575,8 +575,8 @@ base_learner* OjaNewton_setup(vw& all, T& weights) {
 }
 base_learner* OjaNewton_setup(vw& all)
 {
-	if (all.sparse)
-		return OjaNewton_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return OjaNewton_setup(all, all.weights.sparse_weights);
 	else
-		return OjaNewton_setup<weight_parameters>(all, all.weights);
+		return OjaNewton_setup(all, all.weights.dense_weights);
 }

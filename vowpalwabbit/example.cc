@@ -99,10 +99,10 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len, T& weights)
 
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
-	if (all.sparse)
-		return get_features(all, ec, feature_map_len, all.sparse_weights);
+	if (all.weights.sparse)
+		return get_features(all, ec, feature_map_len, all.weights.sparse_weights);
 	else
-		return get_features(all, ec, feature_map_len, all.sparse_weights);
+		return get_features(all, ec, feature_map_len, all.weights.dense_weights);
 }
 void return_features(feature* f)
 { free_it (f); }
@@ -147,10 +147,10 @@ flat_example* flatten_example(vw& all, example *ec, T& weights)
 }
 flat_example* flatten_example(vw& all, example *ec)
 {
-	if (all.sparse)
-		return flatten_example<sparse_weight_parameters>(all, ec, all.sparse_weights);
+	if (all.weights.sparse)
+		return flatten_example(all, ec, all.weights.sparse_weights);
 	else
-		return flatten_example<weight_parameters>(all, ec, all.weights);
+		return flatten_example(all, ec, all.weights.dense_weights);
 
 }
 flat_example* flatten_sort_example(vw& all, example *ec)

@@ -1160,9 +1160,9 @@ vw& parse_args(int argc, char *argv[])
  
     po::variables_map& vm = all.vm;
     if (vm.count("sparse_weights"))
-      all.sparse = true;
+      all.weights.sparse = true;
     else
-      all.sparse = false;
+      all.weights.sparse = false;
     
     new_options(all, "Parallelization options")
     ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
@@ -1274,10 +1274,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  if (all.sparse)
-	all.wpp = (1 << i) >> all.sparse_weights.stride_shift();
-  else
-	  all.wpp = (1 << i) >> all.weights.stride_shift();
+  all.wpp = (1 << i) >> all.weights.stride_shift();
 
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
@@ -1408,10 +1405,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
 
 
   vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
-  if (new_model->sparse)
-	new_model->sparse_weights.~sparse_weight_parameters();
-  else
-	new_model->weights.~weight_parameters();
+  new_model->weights.~parameters();
 
   free_it(new_model->sd);
 
@@ -1507,11 +1501,7 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  bool seeded;
-  if (all.sparse)
-	  seeded = all.sparse_weights.seeded();
-  else
-	  seeded = all.weights.seeded();
+  bool seeded = all.weights.seeded();
   if (!seeded)
   { delete(all.sd->ldict);
     free(all.sd);

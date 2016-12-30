@@ -24,7 +24,7 @@ void print_audit_features(vw&, example& ec);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, GD::gd *g = nullptr);
 
-struct multipredict_info { size_t count; size_t step; polyprediction* pred; bool sparse; weight_parameters& weights; sparse_weight_parameters& sparse_weights; /* & for l1: */ float gravity; };
+struct multipredict_info { size_t count; size_t step; polyprediction* pred; parameters& weights; /* & for l1: */ float gravity; };
 
 template<class T>
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
@@ -51,10 +51,10 @@ inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t
 
 inline void vec_add_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
 {
-	if (mp.sparse)
-		vec_add_multipredict<sparse_weight_parameters>(mp, fx, fi, mp.sparse_weights);
+	if (mp.weights.sparse)
+		vec_add_multipredict<sparse_parameters>(mp, fx, fi, mp.weights.sparse_weights);
 	else
-		vec_add_multipredict<weight_parameters>(mp, fx, fi, mp.weights);
+		vec_add_multipredict<dense_parameters>(mp, fx, fi, mp.weights.dense_weights);
 
 }
 
@@ -79,15 +79,12 @@ void foreach_feature(W& /*weights*/, features& fs, R&dat, uint64_t offset = 0, f
 template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
-  if (all.sparse){
+  if (all.weights.sparse)
     for (features& f : ec)
-      foreach_feature<R, T, sparse_weight_parameters>(all.sparse_weights, f, dat, offset);
-  }
+      foreach_feature<R, T, sparse_parameters>(all.weights.sparse_weights, f, dat, offset);
   else
-    {
-      for (features& f : ec)
-	foreach_feature<R, T, weight_parameters>(all.weights, f, dat, offset);
-    }
+    for (features& f : ec)
+      foreach_feature<R, T, dense_parameters>(all.weights.dense_weights, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }

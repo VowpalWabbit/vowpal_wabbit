@@ -675,7 +675,7 @@ void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
 	if (iw._random)
 	  {
 	    uint64_t index = iter.index();
-	    for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(lda); ++k, ++index)
+	    for (weight_iterator_iterator k = iter.begin(); k != iter.end(lda); ++k, ++index)
 		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
 		   *k *= initial_random;
 		}
@@ -737,10 +737,10 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 {
-	if (l.all->sparse)
-		save_load<sparse_weight_parameters>(l, model_file, read, text, l.all->sparse_weights);
+	if (l.all->weights.sparse)
+		save_load(l, model_file, read, text, l.all->weights.sparse_weights);
 	else
-		save_load<weight_parameters>(l, model_file, read, text, l.all->weights);
+		save_load(l, model_file, read, text, l.all->weights.dense_weights);
 
 }
 
@@ -894,10 +894,10 @@ void learn_batch(lda &l, T& weights)
 
 void learn_batch(lda &l)
 {
-	if (l.all->sparse)
-		learn_batch<sparse_weight_parameters>(l, l.all->sparse_weights);
+	if (l.all->weights.sparse)
+		learn_batch(l, l.all->weights.sparse_weights);
 	else
-		learn_batch<weight_parameters>(l, l.all->weights);
+		learn_batch(l, l.all->weights.dense_weights);
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
@@ -917,29 +917,21 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
 
 void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 {
-	uint32_t stride_shift;
-	uint64_t weight_mask;
-	if (l.all->passes_complete == 0)
-	  { // build feature to example map
-	    if (l.all->sparse){
-	      weight_mask = l.all->sparse_weights.mask();
-	      stride_shift = l.all->sparse_weights.stride_shift();
+  if (l.all->passes_complete == 0)
+    { // build feature to example map
+      uint32_t stride_shift=l.all->weights.mask();
+      uint64_t weight_mask=l.all->weights.stride_shift();
+      
+      for (features& fs : ec)
+	{ for (features::iterator& f : fs)
+	    { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
+	      l.feature_counts[idx] += (uint32_t)f.value();
+	      l.feature_to_example_map[idx].push_back(ec.example_counter);
 	    }
-	    else{
-	      weight_mask = l.all->weights.mask();
-	      stride_shift = l.all->weights.stride_shift();
-	    }
-	    
-	    for (features& fs : ec)
-	      { for (features::iterator& f : fs)
-		  { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
-		    l.feature_counts[idx] += (uint32_t)f.value();
-		    l.feature_to_example_map[idx].push_back(ec.example_counter);
-		  }
-	      }
-	  }
-	
-	learn(l, base, ec);
+	}
+    }
+  
+  learn(l, base, ec);
 }
 
 // placeholder
@@ -997,10 +989,10 @@ void get_top_weights(vw* all, int top_words_count, int topic, std::vector<featur
 
 void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output)
 {
-	if (all->sparse)
-		get_top_weights<sparse_weight_parameters>(all, top_words_count, topic, output, all->sparse_weights);
+	if (all->weights.sparse)
+		get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights);
 	else
-		get_top_weights<weight_parameters>(all, top_words_count, topic, output, all->weights);
+		get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
 }
 
 template<class T>
@@ -1138,10 +1130,10 @@ void compute_coherence_metrics(lda &l, T& weights)
 
 void compute_coherence_metrics(lda &l)
 {
-	if (l.all->sparse)
-		compute_coherence_metrics<sparse_weight_parameters>(l, l.all->sparse_weights);
+	if (l.all->weights.sparse)
+		compute_coherence_metrics(l, l.all->weights.sparse_weights);
 	else
-		compute_coherence_metrics<weight_parameters>(l, l.all->weights);
+		compute_coherence_metrics(l, l.all->weights.dense_weights);
 
 }
 void end_pass(lda &l)
@@ -1161,17 +1153,17 @@ void end_examples(lda &l, T& weights)
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
-    for (weights_iterator_iterator<weight> k = iter.begin(); k != iter.end(l.all->lda); ++k)
+    for (weight_iterator_iterator k = iter.begin(); k != iter.end(l.all->lda); ++k)
       *k *= decay;
   }
 }
 
 void end_examples(lda &l)
 {
-	if (l.all->sparse)
-		end_examples<sparse_weight_parameters>(l, l.all->sparse_weights);
+	if (l.all->weights.sparse)
+		end_examples(l, l.all->weights.sparse_weights);
 	else
-		end_examples<weight_parameters>(l, l.all->weights);
+		end_examples(l, l.all->weights.dense_weights);
 }
 
 void finish_example(vw&, lda&, example &) {}
@@ -1278,8 +1270,8 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
 LEARNER::base_learner *lda_setup(vw &all)
 {
-	if (all.sparse)
-		return lda_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return lda_setup(all, all.weights.sparse_weights);
 	else
-		return lda_setup<weight_parameters>(all, all.weights);
+		return lda_setup(all, all.weights.dense_weights);
 }

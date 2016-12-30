@@ -405,10 +405,10 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
 {
-	if (all.sparse)
-		generate_interactions<R, S, T, audit, audit_func, sparse_weight_parameters>(all, ec, dat, all.sparse_weights);
+	if (all.weights.sparse)
+		generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all, ec, dat, all.weights.sparse_weights);
 	else
-		generate_interactions<R, S, T, audit, audit_func, weight_parameters>(all, ec, dat, all.weights);
+		generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all, ec, dat, all.weights.dense_weights);
 }
 
 template <class R>

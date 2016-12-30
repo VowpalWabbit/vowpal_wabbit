@@ -156,10 +156,10 @@ template <bool is_learn>
 void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 {
 	vw& all = *lrq.all;
-	if (all.sparse)
-		predict_or_learn<is_learn, sparse_weight_parameters>(lrq, base, ec, all.sparse_weights);
+	if (all.weights.sparse)
+		predict_or_learn<is_learn, sparse_parameters>(lrq, base, ec, all.weights.sparse_weights);
 	else
-		predict_or_learn<is_learn, weight_parameters>(lrq, base, ec, all.weights);
+		predict_or_learn<is_learn, dense_parameters>(lrq, base, ec, all.weights.dense_weights);
 }
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 

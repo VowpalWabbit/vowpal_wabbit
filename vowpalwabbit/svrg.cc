@@ -172,8 +172,8 @@ base_learner* svrg_setup(vw& all, T& weights)
 }
 base_learner* svrg_setup(vw& all)
 {
-	if (all.sparse)
-		return svrg_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return svrg_setup(all, all.weights.sparse_weights);
 	else
-		return svrg_setup<weight_parameters>(all, all.weights);
+		return svrg_setup(all, all.weights.dense_weights);
 }

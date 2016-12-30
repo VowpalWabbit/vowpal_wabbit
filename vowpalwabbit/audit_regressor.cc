@@ -64,10 +64,10 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const uint64_t ft
 }
 
 inline void audit_regressor_feature(audit_regressor_data& dat, const float /*ft_weight*/, const uint64_t ft_idx)
-{  if (dat.all->sparse)
-		audit_regressor_feature<sparse_weight_parameters>(dat, ft_idx, dat.all->sparse_weights);
+{  if (dat.all->weights.sparse)
+		audit_regressor_feature(dat, ft_idx, dat.all->weights.sparse_weights);
 	else
-		audit_regressor_feature<weight_parameters>(dat, ft_idx, dat.all->weights);
+		audit_regressor_feature(dat, ft_idx, dat.all->weights.dense_weights);
 }
 
 template<class T>
@@ -106,10 +106,10 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::base_learner& base, exam
   
   if (all.lda > 0)
     {
-      if (all.sparse)
-	audit_regressor_lda<sparse_weight_parameters>(rd, base, ec, all.sparse_weights);
+      if (all.weights.sparse)
+	audit_regressor_lda(rd, base, ec, all.weights.sparse_weights);
       else
-	audit_regressor_lda<weight_parameters>(rd, base, ec, all.weights);
+	audit_regressor_lda(rd, base, ec, all.weights.dense_weights);
     }
   else
     {
@@ -190,7 +190,7 @@ void finish(audit_regressor_data& dat)
 template<class T>
 void regressor_values(audit_regressor_data& dat, T& w)
 {  for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-		for (weights_iterator_iterator<weight> it = iter.begin(); it != iter.end(); ++it)
+		for (weight_iterator_iterator it = iter.begin(); it != iter.end(); ++it)
 			if (*it != 0) dat.loaded_regressor_values++;
 }
 
@@ -217,10 +217,10 @@ void init_driver(audit_regressor_data& dat)
   }
 
   // count non-null feature values in regressor
-  if (dat.all->sparse)
-    regressor_values<sparse_weight_parameters>(dat, dat.all->sparse_weights);
+  if (dat.all->weights.sparse)
+    regressor_values(dat, dat.all->weights.sparse_weights);
   else
-    regressor_values<weight_parameters>(dat, dat.all->weights);
+    regressor_values(dat, dat.all->weights.dense_weights);
   
   if (dat.loaded_regressor_values == 0)
     THROW("regressor has no non-zero weights. Nothing to audit.");

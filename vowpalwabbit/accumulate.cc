@@ -19,18 +19,26 @@ using namespace std;
 
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(vw& all, weight_parameters& weights, size_t offset)
-{ uint32_t length = 1 << all.num_bits; //This is size of gradient
+void accumulate(vw& all, parameters& weights, size_t offset)
+{ uint64_t length = 1 << all.num_bits; //This is size of gradient
   float* local_grad = new float[length];
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    local_grad[iter.index() >> weights.stride_shift()] = (&(*iter))[offset];
+  if (weights.sparse)
+    for (uint64_t i = 0; i < length; i++)
+      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
+  else
+    for (uint64_t i = 0; i < length; i++)
+      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];    
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    (&(*iter))[offset] = local_grad[iter.index() >> weights.stride_shift()];
-
+  if (weights.sparse)
+    for (uint64_t i = 0; i < length; i++)
+      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i];
+  else
+    for (uint64_t i = 0; i < length; i++)
+      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i];
+  
   delete[] local_grad;
 }
 
@@ -40,18 +48,26 @@ float accumulate_scalar(vw& all, float local_sum)
   return temp;
 }
 
-void accumulate_avg(vw& all, weight_parameters& weights, size_t offset)
+void accumulate_avg(vw& all, parameters& weights, size_t offset)
 { uint32_t length = 1 << all.num_bits; //This is size of gradient
   float numnodes = (float)all.all_reduce->total;
   float* local_grad = new float[length];
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    local_grad[iter.index() >> weights.stride_shift()] = (&(*iter))[offset];
+  if (weights.sparse)
+    for (uint64_t i = 0; i < length; i++)
+      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
+  else
+    for (uint64_t i = 0; i < length; i++)
+      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];    
   
   all_reduce<float, add_float>(all, local_grad, length); //TODO: modify to not use first()
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    (&(*iter))[offset] = local_grad[iter.index() >> weights.stride_shift()]/numnodes;
+  if (weights.sparse)
+    for (uint64_t i = 0; i < length; i++)
+      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
+  else
+    for (uint64_t i = 0; i < length; i++)
+      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
  
   delete[] local_grad;
 }
@@ -70,7 +86,28 @@ float min_elem(float* arr, int length)
   return min;
 }
 
-void accumulate_weighted_avg(vw& all, weight_parameters& weights)
+template<class T>
+void do_weighting(vw& all, uint64_t length, float* local_weights, T& weights)
+{
+  for (uint64_t i = 0; i < length; i++)
+    {
+      float* weight = &weights[i << weights.stride_shift()];
+      if (local_weights[i] > 0)
+	{ float ratio = weight[1] / local_weights[i];
+	  local_weights[i] = weight[0] * ratio;
+	  weight[0] *= ratio;
+	  weight[1] *= ratio; //A crude max
+	  if (all.normalized_updates)
+	    weight[all.normalized_idx] *= ratio; //A crude max
+	}
+      else
+	{  local_weights[i] = 0;
+	  *weight = 0;
+	}
+    }
+}
+
+void accumulate_weighted_avg(vw& all, parameters& weights)
 { if(!all.adaptive)
   { cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
@@ -78,29 +115,25 @@ void accumulate_weighted_avg(vw& all, weight_parameters& weights)
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
   float* local_weights = new float[length];
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    local_weights[iter.index() >> weights.stride_shift()] = (&(*iter))[1];
+  if (weights.sparse)
+    for (uint64_t i = 0; i < length; i++)
+      local_weights[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[1];
+  else
+    for (uint64_t i = 0; i < length; i++)
+      local_weights[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[1];    
 
   //First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length);
 
-  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-  {
-    uint64_t i = iter.index() >> weights.stride_shift();
-    if (local_weights[i] > 0)
-	{  float ratio = (&(*iter))[1] / local_weights[i];
-		local_weights[i] = *iter * ratio;
-		*iter *= ratio;
-		(&(*iter))[1] *= ratio; //A crude max
-		if (all.normalized_updates)
-			(&(*iter))[all.normalized_idx] *= ratio; //A crude max
-	  }
-	  else
-	  {  local_weights[i] = 0;
-		 *iter = 0;
-	  }
-  }
-  all_reduce<float, add_float>(all, weights.first(), length*weights.stride_shift()); 
+  if (weights.sparse)
+    do_weighting(all, length, local_weights, weights.sparse_weights);
+  else
+    do_weighting(all, length, local_weights, weights.dense_weights);
+    
+  if (weights.sparse)
+    cout << "sparse parameters not supported with parallel computation!" << endl;
+  else
+    all_reduce<float, add_float>(all, weights.dense_weights.first(), length*weights.stride_shift()); 
   delete[] local_weights;
 }
 

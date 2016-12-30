@@ -21,11 +21,7 @@ struct data
 template <bool is_learn>
 void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 {
-  uint64_t mask;
-  if (sm.all->sparse)
-    mask = sm.all->sparse_weights.mask();
-  else
-    mask = sm.all->weights.mask();
+  uint64_t mask = sm.all->weights.mask();
 
   for (example::iterator i = ec.begin(); i!= ec.end(); ++i)
     { namespace_index n = i.index();
@@ -87,11 +83,8 @@ void finish(data& sm)
   
   void save_load(data& sm, io_buf& io, bool read, bool text)
   {
-    uint64_t stride_shift;
-    if (sm.all->sparse)
-      stride_shift = sm.all->sparse_weights.stride_shift();
-    else
-      stride_shift = sm.all->weights.stride_shift();
+    uint64_t stride_shift = sm.all->weights.stride_shift();
+
     if (io.files.size() == 0) 
       return;
     stringstream msg;

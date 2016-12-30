@@ -76,10 +76,10 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 
 void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
-	if ((*d.all).sparse)
-		mf_print_offset_features<sparse_weight_parameters>(d, ec, offset, (*d.all).sparse_weights);
+	if ((*d.all).weights.sparse)
+		mf_print_offset_features(d, ec, offset, (*d.all).weights.sparse_weights);
 	else
-		mf_print_offset_features<weight_parameters>(d, ec, offset, (*d.all).weights);
+		mf_print_offset_features(d, ec, offset, (*d.all).weights.dense_weights);
 
 }
 
@@ -168,10 +168,10 @@ float mf_predict(gdmf& d, example& ec, T& weights)
 float mf_predict(gdmf& d, example& ec)
 {
 	vw& all = *d.all;
-	if (all.sparse)
-		return mf_predict<sparse_weight_parameters>(d, ec, all.sparse_weights);
+	if (all.weights.sparse)
+		return mf_predict(d, ec, all.weights.sparse_weights);
 	else
-		return mf_predict<weight_parameters>(d, ec, all.weights);
+		return mf_predict(d, ec, all.weights.dense_weights);
 }
 
 template<class T>
@@ -224,17 +224,17 @@ void mf_train(gdmf& d, example& ec, T& weights)
 
 void mf_train(gdmf& d, example& ec)
 {
-	if ((*d.all).sparse)
-		mf_train<sparse_weight_parameters>(d, ec, (*d.all).sparse_weights);
+	if ((*d.all).weights.sparse)
+		mf_train(d, ec, (*d.all).weights.sparse_weights);
 	else
-		mf_train<weight_parameters>(d, ec, (*d.all).weights);
+		mf_train(d, ec, (*d.all).weights.dense_weights);
 }
 
 template <class T>
 void set_rand(typename T::iterator& iter, uint32_t& stride)
 {
   uint64_t index = iter.index();
-  for (weights_iterator_iterator<weight> w = iter.begin(); w != iter.end(stride); ++w, ++index)
+  for (weight_iterator_iterator w = iter.begin(); w != iter.end(stride); ++w, ++index)
     *w = (float)(0.1 * merand48(index));
 }
 
@@ -286,10 +286,10 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
-	if ((*d.all).sparse)
-		save_load<sparse_weight_parameters>(d, model_file, read, text, (*d.all).sparse_weights);
+	if ((*d.all).weights.sparse)
+		save_load(d, model_file, read, text, (*d.all).weights.sparse_weights);
 	else
-		save_load<weight_parameters>(d, model_file, read, text, (*d.all).weights);
+		save_load(d, model_file, read, text, (*d.all).weights.dense_weights);
 
 }
 void end_pass(gdmf& d)
@@ -376,8 +376,8 @@ base_learner* gd_mf_setup(vw& all, T& weights)
 
 base_learner* gd_mf_setup(vw& all)
 {
-	if (all.sparse)
-		return gd_mf_setup<sparse_weight_parameters>(all, all.sparse_weights);
+	if (all.weights.sparse)
+		return gd_mf_setup(all, all.weights.sparse_weights);
 	else
-		return gd_mf_setup<weight_parameters>(all, all.weights);
+		return gd_mf_setup(all, all.weights.dense_weights);
 }

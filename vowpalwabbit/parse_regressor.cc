@@ -61,10 +61,10 @@ template<class T> void initialize_regressor(vw& all, T& weights)
 
 void initialize_regressor(vw& all)
 {
-  if (all.sparse)
-    initialize_regressor<sparse_weight_parameters>(all, all.sparse_weights);
+  if (all.weights.sparse)
+    initialize_regressor(all, all.weights.sparse_weights);
   else
-    initialize_regressor<weight_parameters>(all, all.weights);
+    initialize_regressor(all, all.weights.dense_weights);
 }
 
 const size_t default_buf_size = 512;
@@ -511,10 +511,10 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  if (all.sparse)
-		  zero_weights<sparse_weight_parameters>(all.sparse_weights);
+	  if (all.weights.sparse)
+		  zero_weights(all.weights.sparse_weights);
 	  else
-		  zero_weights<weight_parameters>(all.weights);
+		  zero_weights(all.weights.dense_weights);
     }
     else
     { // If no initial regressor, just clear out the options loaded from the header.
