@@ -52,8 +52,7 @@ struct OjaNewton {
     bool normalize;
     bool random_init;
 
-	template<class T>
-	void initialize_Z(T& weights)
+	void initialize_Z(parameters& weights)
 	{ 
 	   uint32_t length = 1 << all->num_bits;
 	   if (normalize) { // initialize normalization part
@@ -99,13 +98,6 @@ struct OjaNewton {
 	    }
     }
 
-	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
-	{
-		if (all->weights.sparse)
-			initialize_Z(all->weights.sparse_weights);
-		else
-			initialize_Z(all->weights.dense_weights);
-	}
     void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
@@ -232,8 +224,7 @@ struct OjaNewton {
         }
     }
 
-	template<class T>
-	void check(T& weights)
+	void check()
     {
     	double max_norm = 0;
         for (int i = 1; i <= m; i++)
@@ -277,7 +268,7 @@ struct OjaNewton {
 
         uint32_t length = 1 << all->num_bits;
 		for (uint32_t i = 0; i < length; i++) {
-			weight& w = weights.strided_index(i);
+			weight& w = all->weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
 				w += (&w)[j] * b[j] * D[j];
 		}
@@ -289,7 +280,7 @@ struct OjaNewton {
 	    //double norm = 0;
         for (uint32_t i = 0; i < length; ++i) {
             memset(tmp, 0, sizeof(float) * (m+1));
-			weight& w = weights.strided_index(i);
+			weight& w = all->weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
 			{ for (int h = 1; h <= m; ++h)
 			    tmp[j] += A[j][h] * D[h] * (&w)[h];
@@ -307,14 +298,6 @@ struct OjaNewton {
             A[i][i] = 1;
         }
     }
-
-	void check()
-	{
-		if (all->weights.sparse)
-			check(all->weights.sparse_weights);
-		else
-			check(all->weights.dense_weights);
-	}
 };
 
 void keep_example(vw& all, OjaNewton& ON, example& ec) {
@@ -462,28 +445,28 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
 
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text) {
-    vw* all = ON.all;
+    vw& all = *ON.all;
     if (read) {
-        initialize_regressor(*all);
-        ON.initialize_Z();
+        initialize_regressor(all);
+        ON.initialize_Z(all.weights);
     }
 
     if (model_file.files.size() > 0) {
-        bool resume = all->save_resume;
+        bool resume = all.save_resume;
 	stringstream msg;
 	msg << ":"<< resume <<"\n";
         bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, msg, text);
 
 
         if (resume)
-            GD::save_load_online_state(*all, model_file, read, text);
+            GD::save_load_online_state(all, model_file, read, text);
         else
-            GD::save_load_regressor(*all, model_file, read, text);
+            GD::save_load_regressor(all, model_file, read, text);
     }
 }
 
-template<class T>
-base_learner* OjaNewton_setup(vw& all, T& weights) {
+base_learner* OjaNewton_setup(vw& all)
+{
     if (missing_option(all, false, "OjaNewton", "Online Newton with Oja's Sketch"))
         return nullptr;
 
@@ -563,20 +546,13 @@ base_learner* OjaNewton_setup(vw& all, T& weights) {
     ON.data.AZx = calloc_or_throw<float>(ON.m+1);
     ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-	weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
+    all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << weights.stride_shift());
+    learner<OjaNewton>& l = init_learner(&ON, learn, all.weights.stride());
 
     l.set_predict(predict);
     l.set_save_load(save_load);
     l.set_finish_example(keep_example);
     l.set_finish(finish);
     return make_base(l);
-}
-base_learner* OjaNewton_setup(vw& all)
-{
-	if (all.weights.sparse)
-		return OjaNewton_setup(all, all.weights.sparse_weights);
-	else
-		return OjaNewton_setup(all, all.weights.dense_weights);
 }

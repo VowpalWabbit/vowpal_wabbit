@@ -1275,7 +1275,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
-
+  
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";

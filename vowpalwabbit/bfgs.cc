@@ -140,12 +140,10 @@ inline void add_grad(float& d, float f, float& fw){ (&fw)[W_GT] += d * f; }
 
 float predict_and_gradient(vw& all, example &ec)
 { float fp = bfgs_predict(all, ec);
-
   label_data& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld.label)*ec.weight;
-
   GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
 
   return fp;
@@ -223,13 +221,13 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
 	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-		if (b.m>0)
-			mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
-		mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
-		g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
-		g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
-		(&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
-		((&(*w))[W_GT]) = 0;
+	  if (b.m>0)
+	    mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
+	  mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
+	  g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
+	  g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
+	  (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
+	  ((&(*w))[W_GT]) = 0;
 	}
 	lastj = 0;
 	if (!all.quiet)
@@ -237,6 +235,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 		g1_g1 / (importance_weight_sum*importance_weight_sum),
 		g1_Hg1 / importance_weight_sum, "", "", "");
 }
+
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
 {  if (all.weights.sparse)
 		bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights);
@@ -554,22 +553,11 @@ void regularizer_to_weight(vw& all, bfgs& b)
 		regularizer_to_weight(all, b, all.weights.dense_weights);
 }
 
-template<class T>
-void zero_state(T& weights)
-{
-	weights.set_zero(W_GT);
-	weights.set_zero(W_DIR);
-	weights.set_zero(W_COND);
-}
-
-
 void zero_state(vw& all)
 {
-	if (all.weights.sparse)
-		zero_state(all.weights.sparse_weights);
-	else
-		zero_state(all.weights.dense_weights);
-
+  all.weights.set_zero(W_GT);
+  all.weights.set_zero(W_DIR);
+  all.weights.set_zero(W_COND);
 }
 
 template<class T>
@@ -1014,8 +1002,7 @@ void init_driver(bfgs& b)
 { b.backstep_on = true;
 }
 
-template<class T>
-base_learner* bfgs_setup(vw& all, T& weights)
+base_learner* bfgs_setup(vw& all)
 { if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
       missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
     return nullptr;
@@ -1067,9 +1054,9 @@ base_learner* bfgs_setup(vw& all, T& weights)
   }
 
   all.bfgs = true;
-  weights.stride_shift(2);
+  all.weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(&b, learn, 1 << weights.stride_shift());
+  learner<bfgs>& l = init_learner(&b, learn, all.weights.stride());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
@@ -1077,12 +1064,4 @@ base_learner* bfgs_setup(vw& all, T& weights)
   l.set_finish(finish);
 
   return make_base(l);
-}
-
-base_learner* bfgs_setup(vw& all)
-{
-	if (all.weights.sparse)
-		return bfgs_setup(all, all.weights.sparse_weights);
-	else
-		return bfgs_setup(all, all.weights.dense_weights);
 }

@@ -476,12 +476,6 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
   }
 }
 
-template<class T>
-void zero_weights(T& weights)
-{
-	weights.set_zero(0);
-}
-
 void parse_mask_regressor_args(vw& all)
 { po::variables_map& vm = all.vm;
   if (vm.count("feature_mask"))
@@ -511,10 +505,7 @@ void parse_mask_regressor_args(vw& all)
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
-	  if (all.weights.sparse)
-		  zero_weights(all.weights.sparse_weights);
-	  else
-		  zero_weights(all.weights.dense_weights);
+      all.weights.set_zero(0);
     }
     else
     { // If no initial regressor, just clear out the options loaded from the header.

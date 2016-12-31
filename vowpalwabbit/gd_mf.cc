@@ -32,10 +32,10 @@ struct gdmf
   uint64_t early_stop_thres;
 };
 
-template<class T>
-void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
+void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
 {
 	vw& all = *d.all;
+	parameters& weights = all.weights;
 	uint64_t mask = weights.mask();
 	for (features& fs : ec)
 	{
@@ -74,15 +74,6 @@ void mf_print_offset_features(gdmf& d, example& ec, size_t offset, T& weights)
 	cout << endl;
 }
 
-void mf_print_offset_features(gdmf& d, example& ec, size_t offset)
-{
-	if ((*d.all).weights.sparse)
-		mf_print_offset_features(d, ec, offset, (*d.all).weights.sparse_weights);
-	else
-		mf_print_offset_features(d, ec, offset, (*d.all).weights.dense_weights);
-
-}
-
 void mf_print_audit_features(gdmf& d, example& ec, size_t offset)
 { print_result(d.all->stdout_fileno,ec.pred.scalar,-1,ec.tag);
   mf_print_offset_features(d, ec, offset);
@@ -95,8 +86,7 @@ struct pred_offset
 
 void offset_add(pred_offset& res, const float fx, float& fw) { res.p += (&fw)[res.offset] * fx; }
 
-template<class T>
-float mf_predict(gdmf& d, example& ec, T& weights)
+template<class T> float mf_predict(gdmf& d, example& ec, T& weights)
 { vw& all = *d.all;
   label_data& ld = ec.l.simple;
   float prediction = ld.initial;
@@ -224,10 +214,10 @@ void mf_train(gdmf& d, example& ec, T& weights)
 
 void mf_train(gdmf& d, example& ec)
 {
-	if ((*d.all).weights.sparse)
-		mf_train(d, ec, (*d.all).weights.sparse_weights);
+	if (d.all->weights.sparse)
+		mf_train(d, ec, d.all->weights.sparse_weights);
 	else
-		mf_train(d, ec, (*d.all).weights.dense_weights);
+		mf_train(d, ec, d.all->weights.dense_weights);
 }
 
 template <class T>
@@ -238,16 +228,18 @@ void set_rand(typename T::iterator& iter, uint32_t& stride)
     *w = (float)(0.1 * merand48(index));
 }
 
-template<class T>
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
-{ vw* all = d.all;
-  uint64_t length = (uint64_t)1 << all->num_bits;
+void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+{ vw& all = *d.all;
+  uint64_t length = (uint64_t)1 << all.num_bits;
   if(read)
-    { initialize_regressor(*all);
-      if (all->random_weights)
+    { initialize_regressor(all);
+      if (all.random_weights)
 	{
-	  uint32_t stride = w.stride();
-	  w.template set_default<uint32_t, set_rand<T> >(stride);
+	  uint32_t stride = all.weights.stride();
+	  if (all.weights.sparse)
+	    all.weights.sparse_weights.template set_default<uint32_t, set_rand<sparse_parameters> >(stride);
+	  else
+	    all.weights.dense_weights.template set_default<uint32_t, set_rand<dense_parameters> >(stride);
 	}
     }
 
@@ -262,14 +254,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
       brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
                                        "", read, msg, text);
 	  if (brw != 0)
-	  { weight* w_i= &(w.strided_index(i));
-		for (uint64_t k = 0; k < K; k++)
+	    { weight* w_i= &(all.weights.strided_index(i));
+	      for (uint64_t k = 0; k < K; k++)
 		{  weight* v = w_i + k;
-		   msg << v << " ";
-		   brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v),
-				  "", read, msg, text);
+		  msg << v << " ";
+		  brw += bin_text_read_write_fixed(model_file, (char *)v, sizeof(*v),
+						   "", read, msg, text);
 		}
-	  }
+	    }
       if (text)
         {
           msg << "\n";
@@ -284,14 +276,6 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text, T& w)
   }
 }
 
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
-{
-	if ((*d.all).weights.sparse)
-		save_load(d, model_file, read, text, (*d.all).weights.sparse_weights);
-	else
-		save_load(d, model_file, read, text, (*d.all).weights.dense_weights);
-
-}
 void end_pass(gdmf& d)
 { vw* all = d.all;
 
@@ -323,8 +307,7 @@ void learn(gdmf& d, base_learner&, example& ec)
 
 void finish(gdmf& d) { d.scalars.delete_v();}
 
-template <class T>
-base_learner* gd_mf_setup(vw& all, T& weights)
+base_learner* gd_mf_setup(vw& all)
 { if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
     return nullptr;
 
@@ -345,7 +328,7 @@ base_learner* gd_mf_setup(vw& all, T& weights)
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  weights.stride_shift((size_t) temp);
+  all.weights.stride_shift((size_t) temp);
   all.random_weights = true;
 
   if(!all.holdout_set_off)
@@ -365,19 +348,11 @@ base_learner* gd_mf_setup(vw& all, T& weights)
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, 1 << weights.stride_shift());
+  learner<gdmf>& l = init_learner(&data, learn, 1 << all.weights.stride_shift());
   l.set_predict(predict);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);
 
   return make_base(l);
-}
-
-base_learner* gd_mf_setup(vw& all)
-{
-	if (all.weights.sparse)
-		return gd_mf_setup(all, all.weights.sparse_weights);
-	else
-		return gd_mf_setup(all, all.weights.dense_weights);
 }

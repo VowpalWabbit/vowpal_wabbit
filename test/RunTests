@@ -1554,3 +1554,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 #Test 150:  Test --sparse_weights with 148
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
     train-sets/ref/sparse.stderr
+
+# Test 151: lrqfa 
+{VW} --lrqfa aa3 -d train-sets/0080.dat
+    train-sets/ref/0151.stderr

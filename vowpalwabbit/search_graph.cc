@@ -83,8 +83,6 @@ struct task_data
   vector<size_t>   pred;  // predictions
   example*cur_node;       // pointer to the current node for add_edge_features_fn
   float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
-  dense_parameters* dense_weights;
-  sparse_parameters* sparse_weights;
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
@@ -180,10 +178,6 @@ void setup(Search::search& sch, vector<example*>& ec)
 	D.wpp = sch.get_vw_pointer_unsafe().wpp;
 	D.mask = sch.get_vw_pointer_unsafe().weights.mask();
 	D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
-	if (sch.get_vw_pointer_unsafe().weights.sparse)
-	  D.sparse_weights = &sch.get_vw_pointer_unsafe().weights.sparse_weights;
-	else
-	  D.dense_weights = &sch.get_vw_pointer_unsafe().weights.dense_weights;
   D.N = 0;
   D.E = 0;
   for (size_t i=0; i<ec.size(); i++)

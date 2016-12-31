@@ -202,79 +202,67 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
   }
 }
 
-template<class T>
-inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx, T& weights)
-{
-	uint64_t index = ft_idx & weights.mask();
-	size_t stride_shift = weights.stride_shift();
-
-	string ns_pre;
-	for (string& s : dat.ns_pre) ns_pre += s;
-
-	if (dat.all.audit)
-	{
-		ostringstream tempstream;
-		tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
-			<< ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
-
-		if (dat.all.adaptive)
-		  tempstream << '@' << (&weights[index])[1];
-
-
-		string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
-		dat.results.push_back(sv);
-	}
-
-	if (dat.all.current_pass == 0 && dat.all.hash_inv)
-	{ //for invert_hash
-
-		if (dat.offset != 0)
-		{ // otherwise --oaa output no features for class > 0.
-			ostringstream tempstream;
-			tempstream << '[' << (dat.offset >> stride_shift) << ']';
-			ns_pre += tempstream.str();
-		}
-
-		if (!dat.all.name_index_map.count(ns_pre))
-			dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
-	}
-
-}
-
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{  if (dat.all.weights.sparse)
-		audit_feature(dat, ft_weight, ft_idx, dat.all.weights.sparse_weights);
-	else
-		audit_feature(dat, ft_weight, ft_idx, dat.all.weights.dense_weights);
+{
+  parameters& weights = dat.all.weights;
+  uint64_t index = ft_idx & weights.mask();
+  size_t stride_shift = weights.stride_shift();
+  
+  string ns_pre;
+  for (string& s : dat.ns_pre) ns_pre += s;
+  
+  if (dat.all.audit)
+    {
+      ostringstream tempstream;
+      tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
+		 << ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
+      
+      if (dat.all.adaptive)
+	tempstream << '@' << (&weights[index])[1];
+      
+      
+      string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
+      dat.results.push_back(sv);
+    }
+  
+  if (dat.all.current_pass == 0 && dat.all.hash_inv)
+    { //for invert_hash
+      
+      if (dat.offset != 0)
+	{ // otherwise --oaa output no features for class > 0.
+	  ostringstream tempstream;
+	  tempstream << '[' << (dat.offset >> stride_shift) << ']';
+	  ns_pre += tempstream.str();
+	}
+      
+      if (!dat.all.name_index_map.count(ns_pre))
+	dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+    }
 }
 
-template<class T>
-void print_features(vw& all, example& ec, T& weights)
+void print_lda_features(vw& all, example& ec)
 {
-	size_t count = 0;
-	for (features& fs : ec)
-		count += fs.size();
-	for (features& fs : ec)
+  parameters& weights = all.weights;
+  uint32_t stride_shift = weights.stride_shift();
+  size_t count = 0;
+  for (features& fs : ec)
+    count += fs.size();
+  for (features& fs : ec)
+    {
+      for (features::iterator_all& f : fs.values_indices_audit())
 	{
-		for (features::iterator_all& f : fs.values_indices_audit())
-		{
-			cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> weights.stride_shift()) & all.parse_mask) << ':' << f.value();
-			for (size_t k = 0; k < all.lda; k++)
-				cout << ':' << weights[(f.index() + k)];
-		}
+	  cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+	  for (size_t k = 0; k < all.lda; k++)
+	    cout << ':' << (&weights[f.index()])[k];
 	}
-	cout << " total of " << count << " features." << endl;
+    }
+  cout << " total of " << count << " features." << endl;
 }
 
 
 void print_features(vw& all, example& ec)
 { if (all.lda > 0)
-	{
-		if (all.weights.sparse)
-			print_features(all, ec, all.weights.sparse_weights);
-		else
-			print_features(all, ec, all.weights.dense_weights);
-    }
+    print_lda_features(all,ec);
   else
   { audit_results dat(all,ec.ft_offset);
 
@@ -358,21 +346,11 @@ void predict(gd& g, base_learner&, example& ec)
     print_audit_features(all, ec);
 }
 
-template<class T>
-inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi, T& w)
+  template <class T> inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
 	size_t index = fi;
 	for (size_t c = 0; c<mp.count; c++, index += mp.step)
-	{
-		mp.pred[c].scalar += fx * trunc_weight(w[index], mp.gravity); //TODO: figure out how to use weight_parameters::iterator (not change_begin)
-	}
-}
-inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{
-	if (mp.weights.sparse)
-		vec_add_trunc_multipredict(mp, fx, fi, mp.weights.sparse_weights);
-	else
-		vec_add_trunc_multipredict(mp, fx, fi, mp.weights.dense_weights);
+		mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity); 
 }
 
 template<bool l1, bool audit>
@@ -380,9 +358,20 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, g.all->weights, (float)all.sd->gravity };
-  if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
-  else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
+  if (g.all->weights.sparse)
+    {
+      multipredict_info<sparse_parameters> mp =
+	{ count, step, pred, g.all->weights.sparse_weights, (float)all.sd->gravity };
+      if (l1) foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
+      else    foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict      >(all, ec, mp);
+    }
+  else
+    {
+      multipredict_info<dense_parameters> mp =
+	{ count, step, pred, g.all->weights.dense_weights, (float)all.sd->gravity };
+      if (l1) foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
+      else    foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict      >(all, ec, mp);
+    }
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
@@ -577,24 +566,20 @@ void learn(gd& g, base_learner& base, example& ec)
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
 }
 
-template<class T>
-void sync_weights(vw& all, T& weights)
+void sync_weights(vw& all)
 {//todo, fix length dependence
 	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
 		return;
 
-	for (weight& w : weights)
-	  w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
-
+	if (all.weights.sparse)
+	  for (weight& w : all.weights.sparse_weights)
+	    w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	else
+	  for (weight& w : all.weights.dense_weights)
+	    w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	  
 	all.sd->gravity = 0.;
 	all.sd->contraction = 1.;
-}
-void sync_weights(vw& all)
-{
-	if (all.weights.sparse)
-		sync_weights(all, all.weights.sparse_weights);
-	else
-		sync_weights(all, all.weights.dense_weights);
 }
 
 template<class T>
@@ -934,8 +919,7 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-template<class T>
-base_learner* setup(vw& all, T& weights)
+base_learner* setup(vw& all)
 { new_options(all, "Gradient Descent options")
   ("sgd", "use regular stochastic gradient descent update.")
   ("adaptive", "use adaptive, individual learning rates.")
@@ -1026,9 +1010,9 @@ base_learner* setup(vw& all, T& weights)
   else
     stride = set_learn<false>(all, feature_mask_off, g);
   
-  weights.stride_shift((uint32_t)ceil_log_2(stride-1));
+  all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << weights.stride_shift()));
+  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));
   ret.set_predict(g.predict);
   ret.set_sensitivity(g.sensitivity);
   ret.set_multipredict(g.multipredict);
@@ -1038,12 +1022,4 @@ base_learner* setup(vw& all, T& weights)
   return make_base(ret);
 }
 
-base_learner* setup(vw& all)
-{
-	if (all.weights.sparse)
-		return setup(all, all.weights.sparse_weights);
-	else
-		return setup(all, all.weights.dense_weights);
-
-}
 }

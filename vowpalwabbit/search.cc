@@ -479,11 +479,11 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
   fs.erase();
 }
 
-template<class T>
-void add_neighbor_features(search_private& priv, T& weights)
+void add_neighbor_features(search_private& priv)
 { 
   if (priv.neighbor_features.size() == 0) return;
 
+  uint32_t stride_shift = priv.all->weights.stride_shift();
   for (size_t n=0; n<priv.ec_seq.size(); n++)    // iterate over every example in the sequence
   { example& me = *priv.ec_seq[n];
     for (size_t n_id=0; n_id < priv.neighbor_features.size(); n_id++)
@@ -503,12 +503,12 @@ void add_neighbor_features(search_private& priv, T& weights)
 
       //cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
-		  add_new_feature(priv, 1., 925871901 << weights.stride_shift());
+		  add_new_feature(priv, 1., 925871901 << stride_shift);
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
-		  add_new_feature(priv, 1., 3824917 << weights.stride_shift());
+		  add_new_feature(priv, 1., 3824917 << stride_shift);
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
-        GD::foreach_feature<search_private,add_new_feature, T>(weights, other.feature_space[ns], priv, me.ft_offset);
+        GD::foreach_feature<search_private,add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
@@ -524,14 +524,6 @@ void add_neighbor_features(search_private& priv, T& weights)
   }
 }
 
-void add_neighbor_features(search_private& priv)
-{
-	vw& all = *priv.all;
-	if (all.weights.sparse)
-		add_neighbor_features(priv, all.weights.sparse_weights);
-	else
-		add_neighbor_features(priv, all.weights.dense_weights);
-}
 void del_neighbor_features(search_private& priv)
 { if (priv.neighbor_features.size() == 0) return;
   for (size_t n=0; n<priv.ec_seq.size(); n++)

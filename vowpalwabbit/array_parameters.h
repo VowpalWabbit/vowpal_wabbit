@@ -93,7 +93,6 @@ private:
 	weight* _begin;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
-	uint32_t _stride;
 	bool _seeded; // whether the instance is sharing model state with others
 
  public:
@@ -103,12 +102,11 @@ private:
    : _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
 	  _weight_mask((length << stride_shift) - 1),	
 	  _stride_shift(stride_shift),
-	  _stride(1 << stride_shift),
 	  _seeded(false)
 	    { }
 	
  dense_parameters()
-	 : _begin(nullptr), _weight_mask(0), _stride_shift(0),_stride(1), _seeded(false)
+	 : _begin(nullptr), _weight_mask(0), _stride_shift(0),_seeded(false)
 	  {}
 	
 	bool not_null() { return (_weight_mask > 0 && _begin != nullptr);}
@@ -119,12 +117,12 @@ private:
 	weight* first() { return _begin; } //TODO: Temporary fix for allreduce.
 	
 	//iterator with stride 
-	iterator begin() { return iterator(_begin, _begin, _stride); }
-	iterator end() { return iterator(_begin + _weight_mask + 1, _begin, _stride); }
+	iterator begin() { return iterator(_begin, _begin, stride()); }
+	iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
 	//const iterator
-	const_iterator cbegin() { return const_iterator(_begin, _begin,  _stride); }
-	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, _stride); }
+	const_iterator cbegin() { return const_iterator(_begin, _begin, stride()); }
+	const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 	void shallow_copy(const dense_parameters& input)
@@ -139,14 +137,14 @@ private:
 	template<class R, void(*T)(iterator&, R&)> void set_default(R& info)
 	{
 	  iterator iter = begin();
-	  for (size_t i = 0; iter != end(); ++iter, i += _stride)
+	  for (size_t i = 0; iter != end(); ++iter, i += stride())
 	    T(iter, info);
 	}
 
 	template<void(*T)(iterator&)> void set_default()
 	{ 
 	  iterator iter = begin();
-	  for (size_t i = 0; iter != end(); ++iter, i += _stride)
+	  for (size_t i = 0; iter != end(); ++iter, i += stride())
 	    T(iter);
 	}
 
@@ -160,7 +158,7 @@ private:
 
 	uint64_t seeded() { return _seeded; }
 
-	uint32_t stride() { return _stride; }
+	uint32_t stride() { return 1 << _stride_shift; }
 	
 	uint32_t stride_shift() { return _stride_shift; }		
 
@@ -240,7 +238,6 @@ private:
 	weight_map _map;
 	uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
 	uint32_t _stride_shift;
-	uint32_t _stride;
 	bool _seeded; // whether the instance is sharing model state with others
 	bool _delete;
 	void* default_data;
@@ -255,13 +252,12 @@ public:
 		: _map(),
 		_weight_mask((length << stride_shift) - 1),
 		_stride_shift(stride_shift),
-		_stride(1 << _stride_shift),
 		_seeded(false), _delete(false),
 		fun(nullptr)
 	{}
 
 	sparse_parameters()
-		: _map(), _weight_mask(0), _stride_shift(0), _stride(1), _seeded(false), _delete(false), fun(nullptr)
+		: _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), fun(nullptr)
 	{}
 
 	bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
@@ -272,22 +268,22 @@ public:
 	weight* first() { throw 1; } //TODO: Throw better exceptions. Allreduce currently not supported in sparse.
 
 	//iterator with stride 
-	iterator begin() { weight_map::iterator i = _map.begin(); return iterator(i, _stride); }
-	iterator end() { weight_map::iterator i = _map.end(); return iterator(i, _stride); }
+	iterator begin() { weight_map::iterator i = _map.begin(); return iterator(i, stride()); }
+	iterator end() { weight_map::iterator i = _map.end(); return iterator(i, stride()); }
 
 	//const iterator
-	const_iterator cbegin() { weight_map::iterator i = _map.begin(); return const_iterator(i,  _stride); }
-	const_iterator cend() { weight_map::iterator i = _map.begin(); return const_iterator(i, _stride); }
+	const_iterator cbegin() { weight_map::iterator i = _map.begin(); return const_iterator(i,  stride()); }
+	const_iterator cend() { weight_map::iterator i = _map.begin(); return const_iterator(i, stride()); }
 	
 	inline weight& operator[](size_t i)
 	{   uint64_t index = i & _weight_mask;
 		weight_map::iterator iter = _map.find(index);
 		if (iter == _map.end()) 
-		  {     _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(_stride)));
+		  {     _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
 			iter = _map.find(index);
 			if (fun != nullptr)
 			  {
-			    iterator i(iter,_stride);
+			    iterator i(iter,stride());
 			    fun(i, default_data);
 			  }
 			iter = _map.find(index);
@@ -325,7 +321,7 @@ public:
 
 	uint64_t seeded() { return _seeded; }
 
-	uint32_t stride() { return _stride; }
+	uint32_t stride() { return 1 << _stride_shift; }
 
 	uint32_t stride_shift()	{ return _stride_shift; }
 
@@ -400,7 +396,7 @@ class parameters {
       dense_weights.shallow_copy(input.dense_weights);
   }
 
-  void set_zero(size_t offset)
+  inline void set_zero(size_t offset)
   {
     if (sparse)
       sparse_weights.set_zero(offset);
@@ -408,11 +404,34 @@ class parameters {
       dense_weights.set_zero(offset);
   }
 
-  void share(size_t length)
+  inline void share(size_t length)
   {
     if (sparse)
       sparse_weights.share(length);
     else
       dense_weights.share(length);
+  }
+
+  inline void stride_shift(uint32_t stride_shift)
+  { if (sparse)
+      sparse_weights.stride_shift(stride_shift);
+    else
+      dense_weights.stride_shift(stride_shift);
+  }
+
+  inline weight& strided_index(size_t index)
+  {
+    if (sparse)
+      return sparse_weights.strided_index(index);
+    else
+      return dense_weights.strided_index(index);
+  }
+
+  inline bool not_null()
+  {
+    if (sparse)
+      return sparse_weights.not_null();
+    else
+      return dense_weights.not_null();
   }
 };

@@ -65,8 +65,8 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
   c.evals[new_index].action = value;
 }
 
-  template <bool learn, bool exclude, bool is_learn, class T>
-  void predict_or_learn(mwt& c, base_learner& base, example& ec, T& weights)
+  template <bool learn, bool exclude, bool is_learn>
+  void predict_or_learn(mwt& c, base_learner& base, example& ec)
   {
     c.observation = get_observed_cost(ec.l.cb);
 
@@ -76,7 +76,7 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
 	//For each nonzero feature in observed namespaces, check it's value.
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
-	    GD::foreach_feature<mwt, value_policy>(weights, ec.feature_space[ns], c);
+	    GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
 	for (uint64_t policy : c.policies)
 	  {
 	    c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action);
@@ -86,6 +86,8 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
     if (exclude || learn)
       {
 	c.indices.erase();
+	uint32_t stride_shift = c.all->weights.stride_shift();
+	uint64_t weight_mask = c.all->weights.mask();
 	for (unsigned char ns : ec.indices)
 	  if (c.namespaces[ns])
 	    {
@@ -93,9 +95,8 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
 	      if (learn)
 		{
 		  c.feature_space[ns].erase();
-		  uint32_t stride_shift = weights.stride_shift();
 		  for ( features::iterator& f : ec.feature_space[ns])
-		    { uint64_t new_index=((f.index()& weights.mask()) >> stride_shift)*c.num_classes +(uint64_t)f.value();
+		    { uint64_t new_index=((f.index()& weight_mask) >> stride_shift)*c.num_classes +(uint64_t)f.value();
 		      c.feature_space[ns].push_back(1, new_index << stride_shift);
 		    }
 		}
@@ -129,15 +130,6 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
     ec.pred.scalars = preds;
   }
 
-  template <bool learn, bool exclude, bool is_learn>
-  void predict_or_learn(mwt& c, base_learner& base, example& ec)
-  {
-    if (c.all->weights.sparse)
-      predict_or_learn<learn, exclude, is_learn, sparse_parameters>(c, base, ec, c.all->weights.sparse_weights);
-    else
-      predict_or_learn<learn, exclude, is_learn, dense_parameters>(c, base, ec, c.all->weights.dense_weights);
-  }
-  
   void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
   { if (f >= 0)
       { std::stringstream ss;

@@ -37,10 +37,7 @@ LEARNER::base_learner* print_setup(vw& all)
   print& p = calloc_or_throw<print>();
   p.all = &all;
 
-  if (all.weights.sparse)
-	  all.weights.sparse_weights.stride_shift(0);
-  else
-	  all.weights.dense_weights.stride_shift(0);
+  all.weights.stride_shift(0);
 
   LEARNER::learner<print>& ret = init_learner(&p, learn, 1);
   return make_base(ret);

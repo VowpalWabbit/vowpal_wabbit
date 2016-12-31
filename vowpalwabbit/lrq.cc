@@ -50,8 +50,8 @@ reset_seed (LRQstate& lrq)
     lrq.seed = lrq.initial_seed;
 }
 
-template <bool is_learn, class T>
-void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
+template <bool is_learn>
+void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 { vw& all = *lrq.all;
 
   // Remember original features
@@ -71,6 +71,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
   bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
   float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
+  uint32_t stride_shift = lrq.all->weights.stride_shift();
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -87,10 +88,10 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-		  for (unsigned int n = 1; n <= k; ++n)
+	  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-		     {  uint64_t lwindex = (uint64_t)(lindex + (n << w.stride_shift()));
-		       weight* lw = &w[lwindex];
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << stride_shift));
+		       weight* lw = &lrq.all->weights[lwindex];
 		       
 		       // perturb away from saddle point at (0, 0)
 		       if (is_learn && ! example_is_test (ec) && *lw == 0)
@@ -103,7 +104,7 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
 			 { // NB: ec.ft_offset added by base learner
 			   float rfx = right_fs.values[rfn];
 			   uint64_t rindex = right_fs.indicies[rfn];
-			   uint64_t rwindex = (uint64_t)(rindex + (n << w.stride_shift()));
+			   uint64_t rwindex = (uint64_t)(rindex + (n << stride_shift));
 			   
 			   right_fs.push_back(scale **lw * lfx * rfx, rwindex);
 			   
@@ -152,15 +153,6 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec, T& w)
   }
 }
 
-template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
-{
-	vw& all = *lrq.all;
-	if (all.weights.sparse)
-		predict_or_learn<is_learn, sparse_parameters>(lrq, base, ec, all.weights.sparse_weights);
-	else
-		predict_or_learn<is_learn, dense_parameters>(lrq, base, ec, all.weights.dense_weights);
-}
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner* lrq_setup(vw& all)

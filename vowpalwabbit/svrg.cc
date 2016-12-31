@@ -147,8 +147,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
 using namespace SVRG;
 
-template<class T>
-base_learner* svrg_setup(vw& all, T& weights)
+base_learner* svrg_setup(vw& all)
 { if (missing_option(all, false, "svrg", "Streaming Stochastic Variance Reduced Gradient"))
   { return NULL;
   }
@@ -163,17 +162,10 @@ base_learner* svrg_setup(vw& all, T& weights)
   s.stable_grad_count = 0;
 
   // Request more parameter storage (4 floats per feature)
-  weights.stride_shift(2);
-  learner<svrg>& l = init_learner(&s, learn, 1 << weights.stride_shift());
+  all.weights.stride_shift(2);
+  learner<svrg>& l = init_learner(&s, learn, 1 << all.weights.stride_shift());
 
   l.set_predict(predict);
   l.set_save_load(save_load);
   return make_base(l);
-}
-base_learner* svrg_setup(vw& all)
-{
-	if (all.weights.sparse)
-		return svrg_setup(all, all.weights.sparse_weights);
-	else
-		return svrg_setup(all, all.weights.dense_weights);
 }

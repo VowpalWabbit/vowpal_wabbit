@@ -592,9 +592,10 @@ v_array<float> old_gamma = v_init<float>();
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-template<class T>
-float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, T& weights, example *ec, float)
-{ new_gamma.erase();
+float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
+{
+  parameters& weights = l.all->weights;
+  new_gamma.erase();
   old_gamma.erase();
 
   for (size_t i = 0; i < l.topics; i++)
@@ -683,14 +684,16 @@ void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
 	(&(*iter))[lda] = iw._initial;
 }
 
-template<class T>
-void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
-{ vw *all = l.all;
-  uint64_t length = (uint64_t)1 << all->num_bits;
+void save_load(lda &l, io_buf &model_file, bool read, bool text)
+{ vw& all = *(l.all);
+  uint64_t length = (uint64_t)1 << all.num_bits;
   if (read)
-  { initialize_regressor(*all);
-    initial_weights init(all->initial_t, (float)(l.lda_D / all->lda / all->length() * 200), all->random_weights, all->lda, weights.stride());
-    weights.template set_default<initial_weights, set_initial_lda<T> >(init);
+  { initialize_regressor(all);
+    initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda, all.weights.stride());
+    if (all.weights.sparse)
+      all.weights.sparse_weights.template set_default<initial_weights, set_initial_lda<sparse_parameters> >(init);
+    else
+      all.weights.dense_weights.template set_default<initial_weights, set_initial_lda<dense_parameters> >(init);
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
@@ -700,11 +703,11 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 	do
 	{
 		brw = 0;
-		size_t K = all->lda;
+		size_t K = all.lda;
 		if (!read && text)
 			msg << i << " ";
 
-		if (!read || l.all->model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
+		if (!read || all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
 			brw += bin_text_read_write_fixed(model_file, (char *)&i, sizeof(i), "", read, msg, text);
 		else
 		{
@@ -715,7 +718,7 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
 		}
 
 		if (brw != 0){
-			weight* w = &(weights.strided_index(i));
+			weight* w = &(all.weights.strided_index(i));
 			for (uint64_t k = 0; k < K; k++)
 			{  weight* v = w + k;
 				if (!read && text)
@@ -735,15 +738,6 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text, T& weights)
   }
 }
 
-void save_load(lda &l, io_buf &model_file, bool read, bool text)
-{
-	if (l.all->weights.sparse)
-		save_load(l, model_file, read, text, l.all->weights.sparse_weights);
-	else
-		save_load(l, model_file, read, text, l.all->weights.dense_weights);
-
-}
-
 void return_example(vw& all, example& ec)
 { label_data ld = ec.l.simple;
 
@@ -761,9 +755,10 @@ void return_example(vw& all, example& ec)
   VW::finish_example(all,&ec);
 }
 
-template<class T>
-void learn_batch(lda &l, T& weights)
-{ if (l.sorted_features.empty()) // FAST-PASS for real "true"
+void learn_batch(lda &l)
+{
+  parameters& weights = l.all->weights;
+  if (l.sorted_features.empty()) // FAST-PASS for real "true"
   { // This can happen when the socket connection is dropped by the client.
     // If l.sorted_features is empty, then l.sorted_features[0] does not
     // exist, so we should not try to take its address in the beginning of
@@ -789,7 +784,7 @@ void learn_batch(lda &l, T& weights)
     { for (size_t k = 0; k < l.all->lda; k++)
 	l.total_lambda.push_back(0.f);
       //This part does not work with sparse parameters
-      size_t stride = 1 << weights.stride_shift();
+      size_t stride = weights.stride();
       for (size_t i = 0; i <= weights.mask(); i += stride) 
 	{
 	  weight* w = &(weights[i]);
@@ -839,7 +834,7 @@ void learn_batch(lda &l, T& weights)
   }
 
   for (size_t d = 0; d < batch_size; d++)
-  { float score = lda_loop<T>(l, l.Elogtheta, &(l.v[d * l.all->lda]), weights, l.examples[d], l.all->power_t);
+  { float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->power_t);
     if (l.all->audit)
       GD::print_audit_features(*l.all, *l.examples[d]);
     // If the doc is empty, give it loss of 0.
@@ -890,14 +885,6 @@ void learn_batch(lda &l, T& weights)
 
   l.examples.erase();
   l.doc_lengths.erase();
-}
-
-void learn_batch(lda &l)
-{
-	if (l.all->weights.sparse)
-		learn_batch(l, l.all->weights.sparse_weights);
-	else
-		learn_batch(l, l.all->weights.dense_weights);
 }
 
 void learn(lda &l, LEARNER::base_learner &, example &ec)
@@ -1196,8 +1183,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-template<class T>
-LEARNER::base_learner *lda_setup(vw &all, T& weights)
+LEARNER::base_learner *lda_setup(vw &all)
 { if (missing_option<uint32_t, true>(all, "lda", "Run lda with <int> topics"))
     return nullptr;
   new_options(all, "Lda options")
@@ -1235,7 +1221,7 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
   
-  weights.stride_shift((size_t)temp);
+  all.weights.stride_shift((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
 
@@ -1256,7 +1242,7 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
 
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
@@ -1266,12 +1252,4 @@ LEARNER::base_learner *lda_setup(vw &all, T& weights)
   l.set_finish(finish);
 
   return make_base(l);
-}
-
-LEARNER::base_learner *lda_setup(vw &all)
-{
-	if (all.weights.sparse)
-		return lda_setup(all, all.weights.sparse_weights);
-	else
-		return lda_setup(all, all.weights.dense_weights);
 }
