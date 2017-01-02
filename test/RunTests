@@ -157,26 +157,6 @@ sub which_vw() {
     usage("can't find a 'vw' executable to test on");
 }
 
-sub which_lda() {
-    if (@ARGV == 2) {
-        my $exe = $ARGV[1];
-        if (-f $exe && -x $exe) {
-            printf STDERR "Testing lda: %s\n", $exe;
-            return $exe;
-        } else {
-            usage("$0: argument $exe: not an executable file");
-        }
-    } elsif (@ARGV == 0 || @ARGV == 1) {
-        foreach my $dir (@PathAdd, split(':', $ENV{PATH})) {
-            my $exe = "$dir/vw";
-            if (-x $exe) {
-                printf STDERR "Testing lda: %s\n", $exe;
-                return $exe;
-            }
-        }
-    }
-    usage("can't find a 'lda' executable to test on");
-}
 
 sub init() {
     $0 =~ s{.*/}{};
