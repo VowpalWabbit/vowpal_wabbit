@@ -15,7 +15,7 @@ use File::Basename;
 
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
-            $opt_v $opt_V);
+            $opt_v $opt_V $opt_O);
 
 my $Epsilon = 1e-4;
 
@@ -89,6 +89,7 @@ sub usage(@) {
         -V      apply valgrind to vw commands
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
+        -O<O>   Add <O> option(s) to all vw commands
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -160,8 +161,13 @@ sub which_vw() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:Vt:') || usage();
+    getopts('wcdDefyE:ov:Vt:O:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
+    if (defined $opt_O) {
+        $opt_O = " $opt_O";
+    } else {
+        $opt_O = '';
+    }
 
     my $hostname = `hostname`; chomp($hostname);
     printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
@@ -313,7 +319,7 @@ sub next_test() {
 
     if ($cmd =~ /{VW}/) {
          $cmd = trim_spaces($cmd);
-         $cmd =~ s/{VW}/$VW/g;
+         $cmd =~ s/{VW}/$VW$opt_O/g;
     }
 
     unless (defined $cmd) {
