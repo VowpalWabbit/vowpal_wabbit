@@ -137,7 +137,7 @@ sub valgrind_errfile($) {
 # which vw executable to test against
 #
 sub which_vw() {
-    if (@ARGV == 1 || @ARGV == 2) {
+    if (@ARGV > 0) {
         my $exe = $ARGV[0];
         if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
