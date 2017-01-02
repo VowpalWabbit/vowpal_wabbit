@@ -116,7 +116,13 @@ public:
   /// <summary>
   /// Return full topic allocation [topic, feature].
   /// </summary>
+  template<class T> cli::array<cli::array<float>^>^ GetTopicAlloc(T weights);
+
+  /// <summary>
+  /// Return full topic allocation [topic, feature].
+  /// </summary>
   cli::array<cli::array<float>^>^ GetTopicAllocation();
+
 
   /// <summary>
   /// Return the <paramref name="top"/> topic weights.

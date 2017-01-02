@@ -729,8 +729,9 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   }
   return allocation;
 }
-  
-  cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+ 
+  template<class T>
+  cli::array<cli::array<float>^>^ VW::VowpalWabbit::GetTopicAlloc(T weights)
   {
 	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
 
@@ -744,14 +745,20 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
 	  // over weights
-	  weight_parameters& weights = m_vw->weights;
-	  for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	  for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
 	  {   // over topics
-		  weight_parameters::iterator::w_iter v = iter.begin();
+		  weight_iterator_iterator v = iter.begin();
 		  for (uint64_t k = 0; k < K; k++, ++v)
-		    allocation[(int)k][(int)iter.index()] = *v + lda_rho;
+			  allocation[(int)k][(int)iter.index()] = *v + lda_rho;
 	  }
-
 	  return allocation;
+  }
+
+  cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+  {
+	  if (m_vw->weights.sparse)
+		  return GetTopicAlloc(m_vw->weights.sparse_weights);
+	  else
+		  return GetTopicAlloc(m_vw->weights.dense_weights);
   }
 }
