@@ -166,9 +166,9 @@ void sanity_check_state(stagewise_poly &poly)
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
 	if (poly.all->weights.sparse)
-		assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->sparse_weights[wid]) > 0) );
+		assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.sparse_weights[wid]) > 0) );
 	else
-		assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0));
+		assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.dense_weights[wid]) > 0));
     //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
