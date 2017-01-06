@@ -165,7 +165,7 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-	if (poly.all->sparse)
+	if (poly.all->weights.sparse)
 		assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->sparse_weights[wid]) > 0) );
 	else
 		assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0));
