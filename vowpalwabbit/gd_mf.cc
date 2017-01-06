@@ -237,9 +237,9 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 	{
 	  uint32_t stride = all.weights.stride();
 	  if (all.weights.sparse)
-	    all.weights.sparse_weights.template set_default<uint32_t, set_rand<sparse_parameters> >(stride);
+	    all.weights.sparse_weights.set_default<uint32_t, set_rand<sparse_parameters> >(stride);
 	  else
-	    all.weights.dense_weights.template set_default<uint32_t, set_rand<dense_parameters> >(stride);
+	    all.weights.dense_weights.set_default<uint32_t, set_rand<dense_parameters> >(stride);
 	}
     }
 
