@@ -403,7 +403,7 @@ class parameters {
     else
       dense_weights.set_zero(offset);
   }
-
+#ifndef _WIN32
   inline void share(size_t length)
   {
     if (sparse)
@@ -411,6 +411,7 @@ class parameters {
     else
       dense_weights.share(length);
   }
+  #endif
 
   inline void stride_shift(uint32_t stride_shift)
   { if (sparse)
