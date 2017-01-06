@@ -691,9 +691,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   { initialize_regressor(all);
     initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda, all.weights.stride());
     if (all.weights.sparse)
-      all.weights.sparse_weights.template set_default<initial_weights, set_initial_lda<sparse_parameters> >(init);
+      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda<sparse_parameters> >(init);
     else
-      all.weights.dense_weights.template set_default<initial_weights, set_initial_lda<dense_parameters> >(init);
+      all.weights.dense_weights.set_default<initial_weights, set_initial_lda<dense_parameters> >(init);
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
