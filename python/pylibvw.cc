@@ -43,8 +43,18 @@ vw_ptr my_initialize(string args)
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
+void my_run_parser(vw_ptr all)
+{   VW::start_parser(*all);
+    LEARNER::generic_driver(*all);
+    VW::end_parser(*all);
+}
+
 void my_finish(vw_ptr all)
 { VW::finish(*all, false);  // don't delete all because python will do that for us!
+}
+
+void my_save(vw_ptr all, string name)
+{ VW::save_predictor(*all, name);
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -637,7 +647,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
+  .def("run_parser", &my_run_parser, "parse external data file")
   .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
+  .def("save", &my_save, "save model to filename")
   .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
   .def("learn_string", &my_learn_string, "given an example specified as a string (as in a VW data file), learn on that example")
   .def("predict", &my_predict, "given a pyvw example, predict on that example")
