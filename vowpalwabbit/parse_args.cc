@@ -632,12 +632,11 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("cubic"))
   { vector<string> vec_arg = vm["cubic"].as< vector<string> >();
     if (!all.quiet)
-    { cerr << "creating cubic features for triples: ";
-      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      { *all.file_options << " --cubic " << *i;
-        *i = spoof_hex_encoded_namespaces(*i);
-        if (!all.quiet) cerr << *i << " ";
-      }
+      cerr << "creating cubic features for triples: ";
+    for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+    { *all.file_options << " --cubic " << *i;
+      *i = spoof_hex_encoded_namespaces(*i);
+      if (!all.quiet) cerr << *i << " ";
     }
 
     v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(vec_arg, 3, "error, cubic features must involve three sets.");
@@ -650,12 +649,11 @@ void parse_feature_tweaks(vw& all)
   if (vm.count("interactions"))
   { vector<string> vec_arg = vm["interactions"].as< vector<string> >();
     if (!all.quiet)
-    { cerr << "creating features for following interactions: ";
-      for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
-      { *all.file_options << " --interactions " << *i;
-        *i = spoof_hex_encoded_namespaces(*i);
-        if (!all.quiet) cerr << *i << " ";
-      }
+      cerr << "creating features for following interactions: ";
+    for (vector<string>::iterator i = vec_arg.begin(); i != vec_arg.end(); ++i)
+    { *all.file_options << " --interactions " << *i;
+      *i = spoof_hex_encoded_namespaces(*i);
+      if (!all.quiet) cerr << *i << " ";
     }
 
     v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(vec_arg, 0, "");
