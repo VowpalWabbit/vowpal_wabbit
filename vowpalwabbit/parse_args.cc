@@ -1501,7 +1501,11 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  bool seeded = (bool)all.weights.seeded();
+  bool seeded;
+  if (all.weights.seeded() > 0)
+	  seeded = true;
+  else
+	  seeded = false;
   if (!seeded)
   { delete(all.sd->ldict);
     free(all.sd);
