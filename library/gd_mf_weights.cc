@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
   // global model params
   unsigned char left_ns = model->pairs[0][0];
   unsigned char right_ns = model->pairs[0][1];
-  weight_parameters& weights = model->weights;
+  dense_parameters& weights = model->weights.dense_weights;
 
   // const char *filename = argv[0];
   FILE* file = fopen(infile.c_str(), "r");

@@ -53,9 +53,9 @@ CB::cb_class* get_observed_cost(CB::label& ld)
 void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a single feature.
 { if (val < 0 || floor(val) != val)
     cout << "error " << val << " is not a valid action " << endl;
-
+  
   uint32_t value = (uint32_t) val;
-  uint64_t new_index = ((index & c.all->weights.mask()) >> c.all->weights.stride_shift());
+  uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
 
   if (!c.evals[new_index].seen)
   { c.evals[new_index].seen = true;
@@ -65,79 +65,87 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
   c.evals[new_index].action = value;
 }
 
-template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, base_learner& base, example& ec)
-{ c.observation = get_observed_cost(ec.l.cb);
+  template <bool learn, bool exclude, bool is_learn>
+  void predict_or_learn(mwt& c, base_learner& base, example& ec)
+  {
+    c.observation = get_observed_cost(ec.l.cb);
 
-  if (c.observation != nullptr)
-  { c.total++;
-    //For each nonzero feature in observed namespaces, check it's value.
-    for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns])
-        GD::foreach_feature<mwt, value_policy>(c.all->weights, ec.feature_space[ns], c);
-    for (uint64_t policy : c.policies)
-    { c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action);
-      c.evals[policy].action = 0;
-    }
+    if (c.observation != nullptr)
+      {
+	c.total++;
+	//For each nonzero feature in observed namespaces, check it's value.
+	for (unsigned char ns : ec.indices)
+	  if (c.namespaces[ns])
+	    GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c);
+	for (uint64_t policy : c.policies)
+	  {
+	    c.evals[policy].cost += get_unbiased_cost(c.observation, c.evals[policy].action);
+	    c.evals[policy].action = 0;
+	  }
+      }
+    if (exclude || learn)
+      {
+	c.indices.erase();
+	uint32_t stride_shift = c.all->weights.stride_shift();
+	uint64_t weight_mask = c.all->weights.mask();
+	for (unsigned char ns : ec.indices)
+	  if (c.namespaces[ns])
+	    {
+	      c.indices.push_back(ns);
+	      if (learn)
+		{
+		  c.feature_space[ns].erase();
+		  for ( features::iterator& f : ec.feature_space[ns])
+		    { uint64_t new_index=((f.index()& weight_mask) >> stride_shift)*c.num_classes +(uint64_t)f.value();
+		      c.feature_space[ns].push_back(1, new_index << stride_shift);
+		    }
+		}
+	      std::swap(c.feature_space[ns], ec.feature_space[ns]);
+	    }
+      }
+
+    //modify the predictions to use a vector with a score for each evaluated feature.
+    v_array<float> preds = ec.pred.scalars;
+    
+    if (learn)
+      { if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
+      }
+    
+    if (exclude || learn)
+      while (c.indices.size() > 0)
+	{ unsigned char ns = c.indices.pop();
+	  swap(c.feature_space[ns], ec.feature_space[ns]);
+	}
+    
+    //modify the predictions to use a vector with a score for each evaluated feature.
+    preds.erase();
+    if (learn)
+      preds.push_back((float)ec.pred.multiclass);
+    for(uint64_t index : c.policies)
+      preds.push_back((float)c.evals[index].cost / (float)c.total);
+    
+    ec.pred.scalars = preds;
   }
-  if (exclude || learn)
-  { c.indices.erase();
-    for (unsigned char ns : ec.indices)
-      if (c.namespaces[ns])
-      { c.indices.push_back(ns);
-        if (learn)
-        { c.feature_space[ns].erase();
-          uint32_t stride_shift = c.all->weights.stride_shift();
-          for ( features::iterator& f : ec.feature_space[ns])
-          { uint64_t new_index=((f.index()& c.all->weights.mask()) >> stride_shift)*c.num_classes +(uint64_t)f.value();
-            c.feature_space[ns].push_back(1, new_index << stride_shift);
-          }
-        }
-        std::swap(c.feature_space[ns], ec.feature_space[ns]);
+
+  void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
+  { if (f >= 0)
+      { std::stringstream ss;
+	
+	for (size_t i = 0; i < scalars.size(); i++)
+	  { if (i > 0)
+	      ss << ' ';
+	    ss << scalars[i];
+	  }
+	ss << '\n';
+	ssize_t len = ss.str().size();
+	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
+	if (t != len)
+	  cerr << "write error: " << strerror(errno) << endl;
       }
   }
-
-  v_array<float> preds = ec.pred.scalars;
-
-  if (learn)
-  { if (is_learn)
-      base.learn(ec);
-    else
-      base.predict(ec);
-  }
-
-  if (exclude || learn)
-    while (c.indices.size() > 0)
-    { unsigned char ns = c.indices.pop();
-      swap(c.feature_space[ns], ec.feature_space[ns]);
-    }
-
-  //modify the predictions to use a vector with a score for each evaluated feature.
-  preds.erase();
-  if (learn)
-    preds.push_back((float)ec.pred.multiclass);
-  for(uint64_t index : c.policies)
-    preds.push_back((float)c.evals[index].cost / (float)c.total);
-
-  ec.pred.scalars = preds;
-}
-
-void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag)
-{ if (f >= 0)
-  { std::stringstream ss;
-
-    for (size_t i = 0; i < scalars.size(); i++)
-    { if (i > 0)
-        ss << ' ';
-      ss << scalars[i];
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
-  }
-}
 
 void finish_example(vw& all, mwt& c, example& ec)
 { float loss = 0.;

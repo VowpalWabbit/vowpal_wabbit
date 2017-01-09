@@ -101,7 +101,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
       { ec.pred.scalars[i] =  1.f / (1.f + exp(- o.pred[i].scalar));
         sum_prob += ec.pred.scalars[i];
       }
-      float inv_sum_prob = 1. / sum_prob;
+      float inv_sum_prob = 1.f / sum_prob;
       for(uint32_t i =0; i< o.k; i++)
         ec.pred.scalars[i] *= inv_sum_prob;
     }

@@ -106,9 +106,7 @@ public:
     return *this;
   }
 
-  inline feature_index& index()
-  { return *_begin_index;
-  }
+  inline feature_index& index() { return *_begin_index; }
 
   template<typename T>
   features_value_index_iterator& operator+=(T index)

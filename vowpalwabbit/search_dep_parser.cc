@@ -230,7 +230,8 @@ void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
   task_data *data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();
-  uint64_t multiplier = all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = all.wpp << all.weights.stride_shift(); 
+
   v_array<uint32_t> &stack = data->stack, &tags = data->tags, *children = data->children, &temp=data->temp;
   example **ec_buf = data->ec_buf;
   example &ex = *(data->ex);
