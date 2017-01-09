@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
@@ -465,6 +466,7 @@ struct vw
 
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
+  bool no_bias;    //no bias in regularization
   float power_t;//the power on learning rate decay.
   int reg_mode;
 

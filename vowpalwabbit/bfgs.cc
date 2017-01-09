@@ -418,31 +418,41 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 		return wolfe_eval(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1, all.weights.dense_weights);
 }
 
-template<class T>
-double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
-{//compute the derivative difference
-	double ret = 0.;
+template <class T> double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
+{ //compute the derivative difference
+  double ret = 0.;
+  
+  if (b.regularizers == nullptr)
+    for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
+      {
+	(&(*w))[W_GT] += regularization*(*w);
+	ret += 0.5*regularization*(*w)*(*w);
+      }
+  else
+    for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
+      {
+	uint64_t i = w.index() >> weights.stride_shift();
+	weight delta_weight = *w - b.regularizers[2 * i + 1];
+	(&(*w))[W_GT] += b.regularizers[2 * i] * delta_weight;
+	ret += 0.5*b.regularizers[2 * i] * delta_weight*delta_weight;
+      }
 
-	if (b.regularizers == nullptr)
-	{
-		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
-		{
-			(&(*w))[W_GT] += regularization*(*w);
-			ret += 0.5*regularization*(*w)*(*w);
-		}
-	}
-	else
-	{
-		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
-		{
-		  uint64_t i = w.index() >> weights.stride_shift();
-			weight delta_weight = *w - b.regularizers[2 * i + 1];
-			(&(*w))[W_GT] += b.regularizers[2 * i] * delta_weight;
-			ret += 0.5*b.regularizers[2 * i] * delta_weight*delta_weight;
-		}
-	}
-
-	return ret;
+  // if we're not regularizing the intercept term, then subtract it off from the result above
+  if (all.no_bias)
+    {
+      if (b.regularizers == nullptr) {
+	(&weights[constant])[W_GT] -= regularization * weights[constant];
+	ret -= 0.5*regularization*(weights[constant])*(weights[constant]);
+      }
+      else {
+	uint64_t i = constant >> weights.stride_shift();
+	weight delta_weight = weights[constant] - b.regularizers[2*i+1];
+	(&weights[constant])[W_GT] -= b.regularizers[2*i]*delta_weight;
+	ret -= 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
+      }
+    }
+  
+  return ret;
 }
 
 double add_regularization(vw& all, bfgs& b, float regularization)
