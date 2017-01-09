@@ -1,3 +1,5 @@
+import os
+
 from vowpalwabbit.pyvw import vw
 
 
@@ -111,3 +113,28 @@ def test_multilabel_prediction_type():
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model
+
+
+def test_regressor_args():
+    # load and parse external data file
+    data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
+    model = vw(oaa=3, data=data_file, passes=30, c=True, k=True)
+    assert model.predict('| feature1:2.5') == 1
+
+    # update model in memory
+    for _ in range(10):
+        model.learn('3 | feature1:2.5')
+    assert model.predict('| feature1:2.5') == 3
+
+    # save model
+    model.save('tmp.model')
+    del model
+
+    # load initial regressor and confirm updated prediction
+    new_model = vw(i='tmp.model', quiet=True)
+    assert new_model.predict('| feature1:2.5') == 3
+    del new_model
+
+    # clean up
+    os.remove('{}.cache'.format(data_file))
+    os.remove('tmp.model')
