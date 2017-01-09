@@ -16,11 +16,9 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
-using VowpalWabbit.Azure.Trainer.Data;
-using VW;
-using VW.Labels;
+using VW.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure.Trainer.Operations
+namespace VW.Azure.Trainer.Operations
 {
     internal sealed class EvalData
     {
@@ -108,7 +106,6 @@ namespace VowpalWabbit.Azure.Trainer.Operations
                 this.telemetry.TrackTrace($"Received invalid data: trainerResult.Probabilities is null");
                 yield break;
             }
-
 
             var pi_a_x = trainerResult.ProgressiveProbabilities[trainerResult.Label.Action - 1];
             var p_a_x = trainerResult.Label.Probability * (1 - trainerResult.ProbabilityOfDrop);

@@ -8,11 +8,11 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using VowpalWabbit.Azure.Trainer.Data;
-using VowpalWabbit.Azure.Trainer.Operations;
+using VW.Azure.Trainer.Data;
+using VW.Azure.Trainer.Operations;
 using VW.Serializer;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     public sealed class LearnEventProcessorHost : IDisposable
     {
@@ -48,16 +48,26 @@ namespace VowpalWabbit.Azure.Trainer
             return this.eventHubStartDateTimeUtc;
         }
 
+        /// <summary>
+        /// Starts the trainer with given parameters.
+        /// </summary>
         public async Task StartAsync(OnlineTrainerSettingsInternal settings)
         {
             await this.SafeExecute(async () => await this.StartInternalAsync(settings));
         }
 
+        /// <summary>
+        /// Stops the trainer.
+        /// </summary>
+        /// <returns></returns>
         public async Task StopAsync()
         {
             await this.SafeExecute(this.StopInternalAsync);
         }
 
+        /// <summary>
+        /// Restarts the trainer.
+        /// </summary>
         public async Task Restart(OnlineTrainerSettingsInternal settings)
         {
             await this.SafeExecute(async () => await this.RestartInternalAsync(settings));
@@ -87,6 +97,7 @@ namespace VowpalWabbit.Azure.Trainer
             {
                 foreach (var innerEx in ex.Flatten().InnerExceptions)
                     this.telemetry.TrackException(innerEx);
+                throw ex;
             }
             catch (Exception ex)
             {
@@ -147,9 +158,6 @@ namespace VowpalWabbit.Azure.Trainer
 
             await this.StopInternalAsync();
 
-            // make sure we ignore previous events
-            this.eventHubStartDateTimeUtc = DateTime.UtcNow;
-
             await this.StartInternalAsync(settings);
         }
 
@@ -176,6 +184,9 @@ namespace VowpalWabbit.Azure.Trainer
 
             this.eventProcessorHost = new EventProcessorHost(settings.Metadata.ApplicationID, joinedEventhubName,
                 EventHubConsumerGroup.DefaultGroupName, serviceBusConnectionStringBuilder.ToString(), settings.StorageConnectionString);
+
+            // used by this.InitialOffsetProvider if no checkpointed state is found
+            this.eventHubStartDateTimeUtc = settings.EventHubStartDateTimeUtc;
 
             await this.eventProcessorHost.RegisterEventProcessorFactoryAsync(
                 this.trainProcessorFactory,
@@ -204,8 +215,11 @@ namespace VowpalWabbit.Azure.Trainer
                 // make sure this is thread safe w.r.t reset/start/stop/...
                 try
                 {
-                    this.trainer.UpdatePerformanceCounters();
-                    this.trainProcessorFactory.UpdatePerformanceCounters();
+                    if (this.trainer != null && this.trainProcessorFactory != null)
+                    {
+                        this.trainer.UpdatePerformanceCounters();
+                        this.trainProcessorFactory.UpdatePerformanceCounters();
+                    }
                 }
                 catch (Exception ex)
                 {

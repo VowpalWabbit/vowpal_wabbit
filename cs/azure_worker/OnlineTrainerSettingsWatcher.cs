@@ -21,10 +21,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer;
-using VowpalWabbit.Azure.Trainer.Checkpoint;
+using VW.Azure.Trainer;
+using VW.Azure.Trainer.Checkpoint;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     internal sealed class OnlineTrainerSettingsWatcher : IDisposable
     {
@@ -57,7 +57,9 @@ namespace VowpalWabbit.Azure.Worker
                 JoinedEventHubConnectionString = CloudConfigurationManager.GetSetting("JoinedEventHubConnectionString"),
                 EvalEventHubConnectionString = CloudConfigurationManager.GetSetting("EvalEventHubConnectionString"),
                 Metadata = this.metaData,
-                CheckpointPolicy = ParseCheckpointPolicy()
+                CheckpointPolicy = ParseCheckpointPolicy(),
+                // make sure we ignore previous events
+                EventHubStartDateTimeUtc = DateTime.UtcNow 
             };
 
             bool enableExampleTracing;

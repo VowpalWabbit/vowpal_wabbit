@@ -1,4 +1,12 @@
-﻿using Microsoft.ApplicationInsights.Extensibility;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="PerformanceCounters.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector;
 using System;
 using System.Linq;
@@ -8,7 +16,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Text;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     /// <summary>
     /// Performance counters reporting various metrics.

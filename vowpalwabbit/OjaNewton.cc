@@ -52,53 +52,55 @@ struct OjaNewton {
     bool normalize;
     bool random_init;
 
-	void initialize_Z(parameters& weights)
-	{ 
-	   uint32_t length = 1 << all->num_bits;
-	   if (normalize) { // initialize normalization part
-		   for (uint32_t i = 0; i < length; i++)
-			   (&(weights.strided_index(i)))[NORM2] = 0.1f;
-	    }
-        if(!random_init) {
-            // simple initialization
-			for (int i = 1; i <= m; i++)
-				(&(weights.strided_index(i)))[i] = 1.f;
-        }
-	    else {
-            // more complicated initialization: orthgonal basis of a random matrix
-
-	    const double PI2 = 2.f * 3.1415927f;
-		for (uint32_t i = 0; i < length; i++){
-			weight& w = weights.strided_index(i);
-			for (int j = 1; j <= m; j++) {
-				float r1 = frand48();
-				float r2 = frand48();
-				(&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
-			}
-
-		}
-		
-            // Gram-Schmidt
-          for (int j = 1; j <= m; j++) {
-             for (int k = 1; k <= j - 1; k++) {
-	            double tmp = 0;
-				
-				for (uint32_t i = 0; i < length; i++)
-					tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
-				for (uint32_t i = 0; i < length; i++)
-					(&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
-			 }
-	        double norm = 0;
-			for (uint32_t i = 0; i < length; i++)
-				norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
-			norm = sqrt(norm);
-			for (uint32_t i = 0; i < length; i++)
-				(&(weights.strided_index(i)))[j] /= (float)norm;
-	       }
-	    }
+  void initialize_Z(parameters& weights)
+  { 
+    uint32_t length = 1 << all->num_bits;
+    if (normalize) { // initialize normalization part
+      for (uint32_t i = 0; i < length; i++)
+	(&(weights.strided_index(i)))[NORM2] = 0.1f;
     }
+    if(!random_init) {
+      // simple initialization
+      for (int i = 1; i <= m; i++)
+	(&(weights.strided_index(i)))[i] = 1.f;
+    }
+    else {
+      // more complicated initialization: orthgonal basis of a random matrix
+      
+      const double PI2 = 2.f * 3.1415927f;
 
-    void compute_AZx()
+      for (uint32_t i = 0; i < length; i++)
+	{
+	  weight& w = weights.strided_index(i);
+	  for (int j = 1; j <= m; j++)
+	    {
+	      float r1 = merand48(all->random_state);
+	      float r2 = merand48(all->random_state);
+	      (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+	    }
+	}
+    }
+    
+    // Gram-Schmidt
+    for (int j = 1; j <= m; j++) {
+      for (int k = 1; k <= j - 1; k++) {
+	double tmp = 0;
+	
+	for (uint32_t i = 0; i < length; i++)
+	  tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
+	for (uint32_t i = 0; i < length; i++)
+	  (&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
+      }
+      double norm = 0;
+      for (uint32_t i = 0; i < length; i++)
+	norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
+      norm = sqrt(norm);
+      for (uint32_t i = 0; i < length; i++)
+	(&(weights.strided_index(i)))[j] /= (float)norm;
+    }
+  }
+  
+  void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
             data.AZx[i] = 0;

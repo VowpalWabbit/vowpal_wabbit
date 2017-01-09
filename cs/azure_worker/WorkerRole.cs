@@ -1,3 +1,11 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="WorkerRole.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -8,16 +16,15 @@ using Microsoft.Practices.Unity;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Owin;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Web.Http;
 using System.Web.Http.Cors;
-using System.Web.Http.ExceptionHandling;
 using Unity.WebApi;
-using VowpalWabbit.Azure.Trainer;
+using VW.Azure.Trainer;
 
-namespace VowpalWabbit.Azure.Worker
+namespace VW.Azure.Worker
 {
     public class WorkerRole : RoleEntryPoint
     {
@@ -34,36 +41,42 @@ namespace VowpalWabbit.Azure.Worker
 
         public override bool OnStart()
         {
-            // Set the maximum number of concurrent connections
-            ServicePointManager.DefaultConnectionLimit = 128;
-
-            // For information on handling configuration changes
-            // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
-
-            bool result = base.OnStart();
-
-            TelemetryConfiguration.Active.InstrumentationKey = CloudConfigurationManager.GetSetting("APPINSIGHTS_INSTRUMENTATIONKEY");
-
-            // TODO: disable
-            // TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
-            this.telemetry = new TelemetryClient();
-
-            this.telemetry.TrackTrace("WorkerRole starting", SeverityLevel.Information);
-
             try
             {
-                this.trainProcesserHost = new LearnEventProcessorHost();
-                this.settingsWatcher = new OnlineTrainerSettingsWatcher(this.trainProcesserHost);
+                // Set the maximum number of concurrent connections
+                ServicePointManager.DefaultConnectionLimit = 128;
 
-                this.StartRESTAdminEndpoint();
+                // For information on handling configuration changes
+                // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
+
+                bool result = base.OnStart();
+
+                TelemetryConfiguration.Active.InstrumentationKey = CloudConfigurationManager.GetSetting("APPINSIGHTS_INSTRUMENTATIONKEY");
+                //TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
+                this.telemetry = new TelemetryClient();
+
+                try
+                {
+
+                    this.telemetry.TrackTrace("WorkerRole starting", SeverityLevel.Information);
+
+                    this.trainProcesserHost = new LearnEventProcessorHost();
+                    this.settingsWatcher = new OnlineTrainerSettingsWatcher(this.trainProcesserHost);
+
+                    this.StartRESTAdminEndpoint();
+                }
+                catch (Exception e)
+                {
+                    this.telemetry.TrackException(e);
+                    // still start to give AppInsights a chance to log
+                }
+                return result;
             }
             catch (Exception e)
             {
-                this.telemetry.TrackException(e);
-                // still start to give AppInsights a chance to log
+                Debugger.Log(1, "ERROR", $"VowpalWabbit.AzureWorker failed to start: {e.Message} {e.StackTrace}");
+                throw;
             }
-
-            return result;
         }
 
         public override void Run()

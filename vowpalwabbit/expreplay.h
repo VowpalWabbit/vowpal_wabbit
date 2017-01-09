@@ -24,12 +24,12 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
   if (!is_learn || lp.get_weight(&ec.l) == 0.) return;
 
   for (size_t replay=1; replay<er.replay_count; replay++)
-  { size_t n = (size_t)(frand48() * (float)er.N);
+  { size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
 
-  size_t n = (size_t)(frand48() * (float)er.N);
+  size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
   if (er.filled[n])
     base.learn(er.buf[n]);
 

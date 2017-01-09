@@ -124,7 +124,7 @@ namespace VW
         /// <param name="example">The example to learn.</param>
         /// <param name="label">The label for this <paramref name="example"/>.</param>
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
-        public void Learn(TExample example, ILabel label, int? index = null)
+        public void Learn(TExample example, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(label != null);

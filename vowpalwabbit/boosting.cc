@@ -178,7 +178,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   if (is_learn) o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = frand48();
+  float stopping_point = merand48(o.all->random_state);
 
   for (int i = 0; i < o.N; i++)
   {

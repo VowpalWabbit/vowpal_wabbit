@@ -623,7 +623,7 @@ void train(svm_params& params)
 
       for(size_t i = 0; i < params.pool_pos; i++)
       { float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
-        if(frand48() < queryp)
+        if(merand48(params.all->random_state) < queryp)
         { svm_example* fec = params.pool[i];
           fec->ex.l.simple.weight *= 1/queryp;
           train_pool[i] = 1;
@@ -670,8 +670,8 @@ void train(svm_params& params)
         { if(model->num_support == 0) break;
           //cerr<<"reprocess: ";
           int randi = 1;
-          if (frand48() < 0.5)
-            randi = 0;
+	  if (merand48(params.all->random_state) < 0.5)
+	    randi = 0;
           if(randi)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
@@ -685,9 +685,9 @@ void train(svm_params& params)
             }
           }
           else
-          { size_t rand_pos = (size_t)floorf(frand48() * model->num_support);
-            update(params, rand_pos);
-          }
+	    { size_t rand_pos = (size_t)floorf(merand48(params.all->random_state) * model->num_support);
+	      update(params, rand_pos);
+	    }
         }
         //cerr<<endl;
         // cerr<<params.model->support_vec[0]->example_counter<<endl;

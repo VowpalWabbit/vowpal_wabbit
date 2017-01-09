@@ -13,11 +13,11 @@
     </ConfigurationSettings>
     <!-- required for perf counters -->
     <Runtime executionContext="elevated">
-      <Environment>
+      <!--<Environment>
         <Variable name="COR_ENABLE_PROFILING" value="1" />
         <Variable name="COR_PROFILER" value="{324F817A-7420-4E6D-B3C1-143FBED6D855}" />
         <Variable name="MicrosoftInstrumentationEngine_Host" value="{CA487940-57D2-10BF-11B2-A3AD5A13CBC0}" />
-      </Environment>
+      </Environment>-->
     </Runtime>
     <Endpoints>
       <InputEndpoint name="OnlineTrainer" protocol="http" port="80" />
@@ -26,14 +26,6 @@
       <LocalStorage name="NETFXInstall" sizeInMB="1024" cleanOnRoleRecycle="false" />
     </LocalResources>
     <Startup>
-      <Task commandLine="InstallAgent.bat" executionContext="elevated" taskType="simple">
-        <Environment>
-          <Variable name="ApplicationInsightsAgent.DownloadLink" value="http://go.microsoft.com/fwlink/?LinkID=522371" />
-          <Variable name="RoleEnvironment.IsEmulated">
-            <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated" />
-          </Variable>
-        </Environment>
-      </Task>
       <Task commandLine="install.cmd" executionContext="elevated" taskType="simple">
         <Environment>
           <Variable name="PathToNETFXInstall">
