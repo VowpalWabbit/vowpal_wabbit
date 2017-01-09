@@ -544,8 +544,8 @@ struct vw
 
   std::string final_regressor_name;
 
-  weight_parameters weights;
-
+  parameters weights;
+  
   size_t max_examples; // for TLC
 
   bool hash_inv;

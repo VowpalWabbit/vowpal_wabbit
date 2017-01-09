@@ -727,33 +727,38 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
     for (auto& pair : top_weights)
       clr_weights->Add(gcnew VowpalWabbitFeature(this, pair.x, pair.weight_index));
   }
-
   return allocation;
 }
+ 
+  template<class T>
+  cli::array<cli::array<float>^>^ VW::VowpalWabbit::GetTopicAlloc(T weights)
+  {
+	  uint64_t length = (uint64_t)1 << m_vw->num_bits;
 
+	  // using jagged array to enable LINQ
+	  auto K = (int)m_vw->lda;
+	  auto allocation = gcnew cli::array<cli::array<float>^>(K);
+	  for (int k = 0; k < K; k++)
+		  allocation[k] = gcnew cli::array<float>((int)length);
 
-cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
-{ uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	  // TODO: better way of peaking into lda?
+	  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
-  // using jagged array to enable LINQ
-  auto K = (int)m_vw->lda;
-  auto allocation = gcnew cli::array<cli::array<float>^>(K);
-  for (int k = 0; k < K; k++)
-    allocation[k] = gcnew cli::array<float>((int)length);
-
-  // TODO: better way of peaking into lda?
-  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
-
-  // over weights
-  weight_parameters& weights = m_vw->weights;
-  weight_parameters::iterator iter = weights.begin();
-  for (uint64_t i = 0; i < length; i++, ++iter)
-  { // over topics
-    weight_parameters::iterator::w_iter v = iter.begin();
-    for (uint64_t k = 0; k < K; k++, ++v)
-      allocation[(int)k][(int)i] = *v + lda_rho;
+	  // over weights
+	  for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+	  {   // over topics
+		  weight_iterator_iterator v = iter.begin();
+		  for (uint64_t k = 0; k < K; k++, ++v)
+			  allocation[(int)k][(int)iter.index()] = *v + lda_rho;
+	  }
+	  return allocation;
   }
 
-  return allocation;
-}
+  cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+  {
+	  if (m_vw->weights.sparse)
+		  return GetTopicAlloc(m_vw->weights.sparse_weights);
+	  else
+		  return GetTopicAlloc(m_vw->weights.dense_weights);
+  }
 }

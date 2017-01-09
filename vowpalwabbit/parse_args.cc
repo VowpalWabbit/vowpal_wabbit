@@ -316,10 +316,7 @@ void parse_diagnostics(vw& all, int argc)
     // --quiet wins over --progress
   }
   else
-  { if (argc == 1)
-      cerr << "For more information use: vw --help" << endl;
-
-    all.quiet = false;
+  {  all.quiet = false;
 
     if (vm.count("progress"))
     { string progress_str = vm["progress"].as<string>();
@@ -1155,9 +1152,16 @@ vw& parse_args(int argc, char *argv[])
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
     ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+    ("sparse_weights", "Use a sparse datastructure for weights")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
     add_options(all);
-
+ 
+    po::variables_map& vm = all.vm;
+    if (vm.count("sparse_weights"))
+      all.weights.sparse = true;
+    else
+      all.weights.sparse = false;
+    
     new_options(all, "Parallelization options")
     ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
     ("threads", "Enable multi-threading")
@@ -1166,7 +1170,6 @@ vw& parse_args(int argc, char *argv[])
     ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job");
     add_options(all);
 
-    po::variables_map& vm = all.vm;
     if (vm.count("span_server"))
     { all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce = new AllReduceSockets(
@@ -1270,7 +1273,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
-
+  
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";
@@ -1398,9 +1401,10 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
     init_args << model_args[i] << " ";
   }
 
-  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
 
-  new_model->weights.~weight_parameters();
+  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
+  new_model->weights.~parameters();
+
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
@@ -1495,7 +1499,8 @@ void finish(vw& all, bool delete_all)
   all.p->parse_name.erase();
   all.p->parse_name.delete_v();
   free(all.p);
-  if (!all.weights.seeded())
+  bool seeded = all.weights.seeded();
+  if (!seeded)
   { delete(all.sd->ldict);
     free(all.sd);
   }

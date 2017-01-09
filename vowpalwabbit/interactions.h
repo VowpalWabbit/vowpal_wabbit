@@ -53,14 +53,16 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
 // 3 template functions to pass T() proper argument (feature idx in regressor, or its coefficient)
 
-template <class R, void (*T)(R&, const float, float&)>
-inline void call_T(R& dat, weight_parameters& weights, const float ft_value, const uint64_t ft_idx)
-{ T(dat, ft_value, weights[ft_idx]);
+template <class R, void (*T)(R&, const float, float&), class W>
+inline void call_T(R& dat, W& weights, const float ft_value, const uint64_t ft_idx)
+{
+  T(dat, ft_value, weights[ft_idx]);
 }
 
-template <class R, void (*T)(R&, float, uint64_t)>
-inline void call_T(R& dat, weight_parameters& /*weights*/, const float ft_value, const uint64_t ft_idx)
-{ T(dat, ft_value, ft_idx);
+template <class R, void (*T)(R&, float, uint64_t), class W>
+inline void call_T(R& dat, W& /*weights*/, const float ft_value, const uint64_t ft_idx)
+{
+    T(dat, ft_value, ft_idx);
 }
 
 // state data used in non-recursive feature generation algorithm
@@ -87,11 +89,14 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1*value
 
 // #define GEN_INTER_LOOP
 
-template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)>
-inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, weight_parameters& weights, feature_value ft_value, feature_index halfhash)
-{ if (audit)
-  { for (; begin != end; ++begin)
-    { audit_func(dat, begin.audit().get());
+template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W>
+inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterator_all& end, const uint64_t offset, W& weights, feature_value ft_value, feature_index halfhash)
+{
+  if (audit)
+  {
+    for (; begin != end; ++begin)
+    {
+      audit_func(dat, begin.audit().get());
       call_T<R, T>(dat, weights,  INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
@@ -106,16 +111,15 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
-
-template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
-{ features* features_data = ec.feature_space;
+ template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W> // nullptr func can't be used as template param in old compilers
+ inline void generate_interactions(vw& all, example& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+ {
+   features* features_data = ec.feature_space;
 
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
-  weight_parameters& weights = all.weights;
-
+ 
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
 
@@ -138,29 +142,77 @@ inline void generate_interactions(vw& all, example& ec, R& dat) // default value
     const size_t len = ns.size();
 
     if (len == 2) //special case of pairs
-    { features& first = features_data[ns[0]];
-      if (first.nonempty())
-      { features& second = features_data[ns[1]];
-        if (second.nonempty())
-        { const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
+      {
+        features& first = features_data[ns[0]];
+        if (first.nonempty())
+          {
+            features& second = features_data[ns[1]];
+            if (second.nonempty())
+              {
+                const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
 
-          for(size_t i = 0; i < first.indicies.size(); ++i)
-          { feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
-            if (audit) audit_func(dat, first.space_names[i].get());
-            // next index differs for permutations and simple combinations
-            feature_value ft_value = first.values[i];
-            features::features_value_index_audit_range range = second.values_indices_audit();
-            features::iterator_all begin = range.begin();
-            if (same_namespace)
-              begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
+                for(size_t i = 0; i < first.indicies.size(); ++i)
+                  { feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
+                    if (audit) audit_func(dat, first.space_names[i].get());
+                    // next index differs for permutations and simple combinations
+                    feature_value ft_value = first.values[i];
+                    features::features_value_index_audit_range range = second.values_indices_audit();
+                    features::iterator_all begin = range.begin();
+                    if (same_namespace)
+                      begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? i : i + 1;
 
-            features::iterator_all end = range.end();
-            inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
+                    features::iterator_all end = range.end();
+                    inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
 
-            if (audit) audit_func(dat, nullptr);
-          } // end for(fst)
-        } // end if (data[snd] size > 0)
-      } // end if (data[fst] size > 0)
+	            if (audit) audit_func(dat, nullptr);
+                  } // end for(fst)
+              } // end if (data[snd] size > 0)
+          } // end if (data[fst] size > 0)
+      }
+    else
+      if (len == 3) // special case for triples
+        { features& first = features_data[ns[0]];
+	  if (first.nonempty())
+        {
+          features& second = features_data[ns[1]];
+          if (second.nonempty())
+          {
+            features& third = features_data[ns[2]];
+            if (third.nonempty())
+            {
+              // don't compare 1 and 3 as interaction is sorted
+              const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
+              const bool same_namespace2 = ( !all.permutations && ( ns[1] == ns[2] ) );
+
+              for(size_t i = 0; i < first.indicies.size(); ++i)
+              {
+                if(audit) audit_func(dat, first.space_names[i].get());
+                const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
+                const float& first_ft_value = first.values[i];
+                size_t j=0;
+                if (same_namespace1) // next index differs for permutations and simple combinations
+                  j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i+1;
+
+                for (; j < second.indicies.size(); ++j)
+                { //f3 x k*(f2 x k*f1)
+                  if(audit) audit_func(dat, second.space_names[j].get());
+                  feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
+                  feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
+
+                  features::features_value_index_audit_range range = third.values_indices_audit();
+                  features::iterator_all begin = range.begin();
+                  if (same_namespace2) //next index differs for permutations and simple combinations
+                    begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
+
+                  features::iterator_all end = range.end();
+                  inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
+                } // end for (snd)
+                if(audit) audit_func(dat, nullptr);
+              } // end for (fst)
+
+            } // end if (data[thr] size > 0)
+          } // end if (data[snd] size > 0)
+        } // end if (data[fst] size > 0)
     }
     else if (len == 3) // special case for triples
     { features& first = features_data[ns[0]];
@@ -319,16 +371,16 @@ inline void generate_interactions(vw& all, example& ec, R& dat) // default value
 
           features& fs = *(fgd2->ft_arr);
 
-          feature_value ft_value = fgd2->x;
-          feature_index halfhash = fgd2->hash;
-
-          features::features_value_index_audit_range range = fs.values_indices_audit();
-          features::iterator_all begin = range.begin();
-          begin += start_i;
-          features::iterator_all end = range.begin();
-          end += fgd2->loop_end + 1;
-          inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
-
+	  feature_value ft_value = fgd2->x;
+	  feature_index halfhash = fgd2->hash;
+	  
+	  features::features_value_index_audit_range range = fs.values_indices_audit();
+	  features::iterator_all begin = range.begin();
+	  begin += start_i;
+	  features::iterator_all end = range.begin();
+	  end += fgd2->loop_end + 1;
+	  inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
+	  
           // trying to go back increasing loop_idx of each namespace by the way
 
           bool go_further = true;
@@ -348,6 +400,15 @@ inline void generate_interactions(vw& all, example& ec, R& dat) // default value
   } // foreach interaction in all.interactions
 
   state_data.delete_v();
+}
+
+template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
+inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
+{
+	if (all.weights.sparse)
+		generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all, ec, dat, all.weights.sparse_weights);
+	else
+		generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all, ec, dat, all.weights.dense_weights);
 }
 
 template <class R>
