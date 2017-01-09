@@ -1,10 +1,11 @@
+import os
+
 from collections import namedtuple
 import numpy as np
 import pytest
 
 from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
-from sklearn.exceptions import NotFittedError
 from scipy.sparse import csr_matrix
 
 
@@ -68,7 +69,7 @@ class TestVW:
 
     def test_predict_not_fit(self, data):
         model = VW(loss_function='logistic')
-        with pytest.raises(NotFittedError):
+        with pytest.raises(ValueError):
             model.predict(data.x[0])
 
     def test_predict(self, data):
@@ -139,6 +140,21 @@ class TestVW:
         model.fit(X)
         prediction = model.predict([' |user C |movie 1'])
         assert np.allclose(prediction, [3.], atol=1)
+
+    def test_bfgs(self):
+        data_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', 'train.dat')
+        model = VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True, data=data_file, cache=True, quiet=False)
+        X = ['1 | feature1:2.5',
+             '2 | feature1:0.11 feature2:-0.0741',
+             '3 | feature3:2.33 feature4:0.8 feature5:-3.1',
+             '1 | feature2:-0.028 feature1:4.43',
+             '2 | feature5:1.532 feature6:-3.2']
+        actual = model.predict(X)
+        assert np.allclose(actual, [1.,  2.,  3.,  1.,  2.])
+
+    def test_bfgs_no_data(self):
+        with pytest.raises(RuntimeError):
+            VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True)
 
 
 class TestVWClassifier:
