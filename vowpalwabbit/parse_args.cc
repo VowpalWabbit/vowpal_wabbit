@@ -859,6 +859,7 @@ void parse_example_tweaks(vw& all)
   ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
   ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
   ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda")
+  ("no_bias_regularization", po::value<bool>(&(all.no_bias)),"no bias in regularization")
   ("named_labels", po::value<string>(&named_labels), "use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"");
   add_options(all);
 
