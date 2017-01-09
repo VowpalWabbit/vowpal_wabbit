@@ -45,7 +45,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	      uint64_t key = second_index + ec.ft_offset;
 	      if (sm.marginals.find(key) == sm.marginals.end())//need to initialize things.
 		sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
-	      f.push_back((sm.marginals[key].first / sm.marginals[key].second), first_index);
+	      f.push_back((float)(sm.marginals[key].first / sm.marginals[key].second), first_index);
 	      if (!sm.temp[n].space_names.empty())
 		f.space_names.push_back(sm.temp[n].space_names[2*(f.size()-1)]);
 	    }

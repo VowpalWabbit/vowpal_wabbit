@@ -906,8 +906,8 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
     { // build feature to example map
-      uint32_t stride_shift=l.all->weights.mask();
-      uint64_t weight_mask=l.all->weights.stride_shift();
+	  uint64_t stride_shift = l.all->weights.stride_shift();
+	  uint64_t weight_mask = l.all->weights.mask();
       
       for (features& fs : ec)
 	{ for (features::iterator& f : fs)

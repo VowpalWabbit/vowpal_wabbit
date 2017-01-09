@@ -538,7 +538,7 @@ void regularizer_to_weight(vw& all, bfgs& b, T& weights)
 	{
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
-		  uint32_t i = w.index() >> weights.stride_shift();
+		  uint64_t i = w.index() >> weights.stride_shift();
 			(&(*w))[W_COND] = b.regularizers[2 * i];
 			*w = b.regularizers[2 * i + 1];
 		}
