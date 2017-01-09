@@ -6,21 +6,22 @@ namespace LabelDict
 {
 size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
 
-void del_example_namespace(example& ec, char ns, features& fs)
-{ // print_update is called after this del_example_namespace,
-  // so we need to keep the ec.num_features correct,
-  // so shared features are included in the reported number of "current features"
-  //ec.num_features -= numf;
-  features& del_target = ec.feature_space[(size_t)ns];
-  assert(del_target.size() >= fs.size());
-  assert(ec.indices.size() > 0);
-  if (ec.indices.last() == ns && ec.feature_space[(size_t)ns].size() == fs.size())
-    ec.indices.pop();
-  ec.total_sum_feat_sq -= fs.sum_feat_sq;
-  //ec.num_features -= fs.size();
-  del_target.truncate_to(del_target.size() - fs.size());
-  del_target.sum_feat_sq -= fs.sum_feat_sq;
-}
+  void del_example_namespace(example& ec, char ns, features& fs)
+  {
+    // print_update is called after this del_example_namespace,
+    // so we need to keep the ec.num_features correct,
+    // so shared features are included in the reported number of "current features"
+    //ec.num_features -= numf;
+    features& del_target = ec.feature_space[(size_t)ns];
+    assert(del_target.size() >= fs.size());
+    assert(ec.indices.size() > 0);
+    if (ec.indices.last() == ns && ec.feature_space[(size_t)ns].size() == fs.size())
+      ec.indices.pop();
+    ec.total_sum_feat_sq -= fs.sum_feat_sq;
+    ec.num_features -= fs.size();
+    del_target.truncate_to(del_target.size() - fs.size());
+    del_target.sum_feat_sq -= fs.sum_feat_sq;
+  }
 
 void add_example_namespace(example& ec, char ns, features& fs)
 { bool has_ns = false;

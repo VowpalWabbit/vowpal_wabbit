@@ -155,47 +155,49 @@ void do_actual_learning(explore_eval& data, base_learner& base)
     label_example->l.cb = data.empty_label;
   }
   multiline_learn_or_predict<false>(base, data.ec_seq, data.offset);
-
+  
   if (label_example != nullptr)	//restore label
     label_example->l.cb = data.action_label;
-
+  
   data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
   if (label_example != nullptr && is_learn)
-  { ACTION_SCORE::action_scores& a_s = data.ec_seq[0]->pred.a_s;
-
-    float action_probability = 0;
-    for (size_t i =0 ; i < a_s.size(); i++)
-      if (data.known_cost.action == a_s[i].action)
-        action_probability = a_s[i].score;
-
-    float threshold = action_probability / data.known_cost.probability;
-
-    if (!data.fixed_multiplier)
-      data.multiplier = min(data.multiplier, 1/threshold);
-
-    threshold *= data.multiplier;
-
-    if (threshold > 1. + 1e-6)
-      data.violations++;
-
-    if (frand48() < threshold)
-    { example* ec_found = nullptr;
-      for (example*& ec : data.ec_seq)
-      { if (ec->l.cb.costs.size() == 1 &&
-            ec->l.cb.costs[0].cost != FLT_MAX &&
-            ec->l.cb.costs[0].probability > 0)
-        { ec_found = ec;
-        }
-      }
-      ec_found->l.cb.costs[0].probability = action_probability;
-
-      multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
-      ec_found->l.cb.costs[0].probability = data.known_cost.probability;
-      data.update_count++;
+    {
+      ACTION_SCORE::action_scores& a_s = data.ec_seq[0]->pred.a_s;
+      
+      float action_probability = 0;
+      for (size_t i =0 ; i < a_s.size(); i++)
+	if (data.known_cost.action == a_s[i].action)
+	  action_probability = a_s[i].score;
+      
+      float threshold = action_probability / data.known_cost.probability;
+      
+      if (!data.fixed_multiplier)
+	data.multiplier = min(data.multiplier, 1/threshold);
+      
+      threshold *= data.multiplier;
+      
+      if (threshold > 1. + 1e-6)
+	data.violations++;
+      
+      if (merand48(data.all->random_state) < threshold)
+	{
+	  example* ec_found = nullptr;
+	  for (example*& ec : data.ec_seq)
+	    {
+	      if (ec->l.cb.costs.size() == 1 &&
+		  ec->l.cb.costs[0].cost != FLT_MAX &&
+		  ec->l.cb.costs[0].probability > 0)
+		ec_found = ec;
+	    }
+	  ec_found->l.cb.costs[0].probability = action_probability;
+	  
+	  multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
+	  ec_found->l.cb.costs[0].probability = data.known_cost.probability;
+	  data.update_count++;
+	}
     }
-  }
 }
-
+  
 template <bool is_learn>
 void predict_or_learn(explore_eval& data, base_learner& base, example &ec)
 { vw* all = data.all;

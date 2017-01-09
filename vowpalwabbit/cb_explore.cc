@@ -13,25 +13,27 @@ using namespace CB_ALGS;
 
 namespace CB_EXPLORE
 {
-
-struct cb_explore
-{ cb_to_cs cbcs;
-  v_array<uint32_t> preds;
-  v_array<float> cover_probs;
-
-  CB::label cb_label;
-  COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label second_cs_label;
-
-  base_learner* cs;
-
-  size_t tau;
-  float epsilon;
-  size_t bag_size;
-  size_t cover_size;
-
-  size_t counter;
-
+  
+  struct cb_explore
+  {
+    vw* all;
+    cb_to_cs cbcs;
+    v_array<uint32_t> preds;
+    v_array<float> cover_probs;
+    
+    CB::label cb_label;
+    COST_SENSITIVE::label cs_label;
+    COST_SENSITIVE::label second_cs_label;
+    
+    base_learner* cs;
+    
+    size_t tau;
+    float epsilon;
+    size_t bag_size;
+    size_t cover_size;
+    
+    size_t counter;
+    
 };
 
 
@@ -86,15 +88,14 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 { //Randomize over predictions from a base set of predictors
-
   v_array<action_score> probs = ec.pred.a_s;
   probs.erase();
-
-  for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
+  
+  for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
     probs.push_back({i,0.});
   float prob = 1.f/(float)data.bag_size;
-  for(size_t i = 0; i < data.bag_size; i++)
-  { uint32_t count = BS::weight_gen();
+  for(size_t i = 0;i < data.bag_size;i++) {
+    uint32_t count = BS::weight_gen(*data.all);
     if (is_learn && count > 0)
       base.learn(ec,i);
     else
@@ -103,9 +104,9 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
     probs[chosen].score += prob;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++)
-        base.learn(ec,i);
+	base.learn(ec,i);
   }
-
+  
   ec.pred.a_s = probs;
 }
 
@@ -305,6 +306,7 @@ base_learner* cb_explore_setup(vw& all)
 
   po::variables_map& vm = all.vm;
   cb_explore& data = calloc_or_throw<cb_explore>();
+  data.all = &all;
   data.cbcs.num_actions = (uint32_t)vm["cb_explore"].as<size_t>();
   uint32_t num_actions = data.cbcs.num_actions;
 

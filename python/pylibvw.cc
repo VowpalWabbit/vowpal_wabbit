@@ -63,6 +63,20 @@ search_ptr get_search_ptr(vw_ptr all)
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
 
+const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
+
+string get_arguments(vw_ptr all)
+{
+	string args;
+	for (auto& s : all->args)
+	{
+		args.append(s);
+		args.append(" ");
+	}
+
+	return args;
+}
+
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
 { Search::predictor* P = new Search::predictor(*sch, my_tag);
   return boost::shared_ptr<Search::predictor>(P);
@@ -672,6 +686,8 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
+  .def("get_id", &get_model_id, "return the model id")
+  .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")

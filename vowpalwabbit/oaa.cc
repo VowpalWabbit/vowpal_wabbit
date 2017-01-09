@@ -217,7 +217,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
     { data.subsample_order = calloc_or_throw<uint32_t>(data.k);
       for (size_t i=0; i<data.k; i++) data.subsample_order[i] = (uint32_t) i;
       for (size_t i=0; i<data.k; i++)
-      { size_t j = (size_t)(frand48() * (float)(data.k-i)) + i;
+      { size_t j = (size_t)(merand48(all.random_state) * (float)(data.k-i)) + i;
         uint32_t tmp = data.subsample_order[i];
         data.subsample_order[i] = data.subsample_order[j];
         data.subsample_order[j] = tmp;

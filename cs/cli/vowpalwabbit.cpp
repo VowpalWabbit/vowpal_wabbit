@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "clr_io.h"
 #include "lda_core.h"
 #include "parse_example.h"
+#include "parse_example_json.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -244,57 +245,59 @@ example& get_example_from_pool(void* v)
   return *ex->m_example;
 }
 
-List<VowpalWabbitExample^>^ VowpalWabbit::ParseJson(String^ line)
-{
+  List<VowpalWabbitExample^>^ VowpalWabbit::ParseJson(String^ line)
+  {
 #if _DEBUG
-  if (line == nullptr)
-    throw gcnew ArgumentNullException("line");
+	  if (line == nullptr)
+		  throw gcnew ArgumentNullException("line");
 #endif
-  auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
-  auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+	  auto bytes = System::Text::Encoding::UTF8->GetBytes(line);
+	  auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
-  try
-  { ParseJsonState^ state = gcnew ParseJsonState();
-    state->vw = this;
-    state->examples = gcnew List<VowpalWabbitExample^>();
+	  try
+	  {
+		  ParseJsonState^ state = gcnew ParseJsonState();
+		  state->vw = this;
+		  state->examples = gcnew List<VowpalWabbitExample^>();
 
-    try
-    { auto ex = GetOrCreateNativeExample();
-      state->examples->Add(ex);
+		  try
+		  {
+			  auto ex = GetOrCreateNativeExample();
+			  state->examples->Add(ex);
 
-      v_array<example*> examples = v_init<example*>();
-      example* native_example = ex->m_example;
-      examples.push_back(native_example);
+			  v_array<example*> examples = v_init<example*>();
+			  example* native_example = ex->m_example;
+			  examples.push_back(native_example);
 
-      interior_ptr<ParseJsonState^> state_ptr = &state;
+			  interior_ptr<ParseJsonState^> state_ptr = &state;
+			  
+			  if (m_vw->audit)
+				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
+			  else
+				VW::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
 
-      VW::read_line_json(
-        *m_vw,
-        examples,
-        reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()),
-        get_example_from_pool,
-        &state);
+			  // finalize example
+			  VW::setup_examples(*m_vw, examples);
 
-      // finalize example
-      VW::setup_examples(*m_vw, examples);
+			  // remember the input string for debugging purposes
+			  ex->VowpalWabbitString = line;
 
-      // remember the input string for debugging purposes
-      ex->VowpalWabbitString = line;
-
-      return state->examples;
-    }
-    catch (...)
-    { // cleanup
-      for each (auto ex in state->examples)
-        delete ex;
-      throw;
-    }
+			  return state->examples;
+		  }
+		  catch (...)
+		  {
+			  // cleanup
+			  for each (auto ex in state->examples)
+				  delete ex;
+			  throw;
+		  }
+	  }
+	  CATCHRETHROW
+		  finally
+	  {
+		  valueHandle.Free();
+	  }
   }
-  CATCHRETHROW
-  finally
-  { valueHandle.Free();
-  }
-}
 
 VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
 {

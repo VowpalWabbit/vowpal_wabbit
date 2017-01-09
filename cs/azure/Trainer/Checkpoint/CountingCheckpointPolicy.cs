@@ -6,7 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace VowpalWabbit.Azure.Trainer.Checkpoint
+namespace VW.Azure.Trainer.Checkpoint
 {
     public class CountingCheckpointPolicy : ICheckpointPolicy
     {

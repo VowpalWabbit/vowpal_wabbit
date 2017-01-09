@@ -9,7 +9,11 @@ clone_folder: C:\vowpal_wabbit
 build_script:
 - cd c:\vowpal_wabbit
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure_worker\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\unittest\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages python\windows27\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages python\windows35\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages vowpalwabbit\packages.config
 - '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal /p:Configuration=Release;Platform=x64'
 test_script:

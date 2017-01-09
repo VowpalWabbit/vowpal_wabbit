@@ -14,9 +14,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
-using VowpalWabbit.Azure.Trainer.Data;
+using VW.Azure.Trainer.Data;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner
     {
@@ -33,19 +33,20 @@ namespace VowpalWabbit.Azure.Trainer
 
             var data = new CheckpointData
             {
-                TrackbackList = string.Join("\n", this.trackbackList),
                 Timestamp = DateTime.UtcNow.ToString("yyyyMMdd/HHmmss", CultureInfo.InvariantCulture),
                 UpdateClientModel = updateClientModel,
                 StartDateTime = this.startDateTime
             };
 
+            var modelId = Guid.NewGuid().ToString();
+
             // store the model name
             this.state.ModelName = $"{data.Timestamp}/model";
             data.State = JsonConvert.SerializeObject(this.State);
+            data.TrackbackList = $"modelid: {modelId}\n" + string.Join("\n", this.trackbackList);
 
             this.trackbackList.Clear();
 
-            var modelId = Guid.NewGuid().ToString();
             using (var memStream = new MemoryStream())
             {
                 this.vw.ID = modelId;
