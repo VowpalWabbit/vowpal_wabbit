@@ -54,19 +54,17 @@ void end_examples(explore_eval& data)
     data.ec_seq.erase();
 }
 
-
 void finish(explore_eval& data)
 { data.ec_seq.delete_v();
   if (!data.all->quiet)
-  { cout << "update count = " << data.update_count << endl;
-    if (data.violations > 0)
-      cout << "violation count = " << data.violations << endl;
-    if (!data.fixed_multiplier)
-      cout << "final multiplier = " << data.multiplier << endl;
-  }
+    { cerr << "update count = " << data.update_count << endl;
+      if (data.violations > 0)
+	cerr << "violation count = " << data.violations << endl;
+      if (!data.fixed_multiplier)
+	cerr << "final multiplier = " << data.multiplier << endl;
+    }
 }
-
-
+  
 //Semantics: Currently we compute the IPS loss no matter what flags
 //are specified. We print the first action and probability, based on
 //ordering by scores in the final output.
@@ -81,9 +79,8 @@ void output_example(vw& all, explore_eval& c, example& ec, v_array<example*>* ec
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-    { num_features += (*ec_seq)[i]->num_features;
-    }
-
+      num_features += (*ec_seq)[i]->num_features;
+  
   all.sd->total_features += num_features;
 
   bool is_test = false;
@@ -146,8 +143,7 @@ void finish_multiline_example(vw& all, explore_eval& data, example& ec)
   }
 }
 
-template <bool is_learn>
-void do_actual_learning(explore_eval& data, base_learner& base)
+template <bool is_learn> void do_actual_learning(explore_eval& data, base_learner& base)
 { example* label_example=CB_EXPLORE_ADF::test_adf_sequence(data.ec_seq);
 
   if (label_example != nullptr)//extract label
@@ -170,11 +166,11 @@ void do_actual_learning(explore_eval& data, base_learner& base)
 	  action_probability = a_s[i].score;
       
       float threshold = action_probability / data.known_cost.probability;
-      
+
       if (!data.fixed_multiplier)
 	data.multiplier = min(data.multiplier, 1/threshold);
-      
-      threshold *= data.multiplier;
+      else
+	threshold *= data.multiplier;
       
       if (threshold > 1. + 1e-6)
 	data.violations++;
@@ -188,10 +184,19 @@ void do_actual_learning(explore_eval& data, base_learner& base)
 		  ec->l.cb.costs[0].cost != FLT_MAX &&
 		  ec->l.cb.costs[0].probability > 0)
 		ec_found = ec;
+	      if (threshold > 1)
+		ec->weight *= threshold;
 	    }
 	  ec_found->l.cb.costs[0].probability = action_probability;
 	  
 	  multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
+
+	  if (threshold > 1)
+	    {
+	      float inv_threshold = 1.f / threshold;
+	      for (example*& ec : data.ec_seq)
+		ec->weight *= inv_threshold;
+	    }	    
 	  ec_found->l.cb.costs[0].probability = data.known_cost.probability;
 	  data.update_count++;
 	}
@@ -229,26 +234,26 @@ base_learner* explore_eval_setup(vw& all)
   if (missing_option(all, true, "explore_eval", "Evaluate explore_eval adf policies"))
     return nullptr;
   new_options(all, "Explore evaluation options")
-  ("multiplier", po::value<float>(), "rejection sampling multiplier < 1");
+  ("multiplier", po::value<float>(), "the multiplier needed to make all rejection sample probabilities <= 1");
   add_options(all);
-
+  
 
   explore_eval& data = calloc_or_throw<explore_eval>();
 
   data.all = &all;
 
   if (all.vm.count("multiplier") > 0)
-  { data.multiplier = all.vm["multiplier"].as<float>();
-    data.fixed_multiplier = true;
-  }
+    { data.multiplier = all.vm["multiplier"].as<float>();
+      data.fixed_multiplier = true;
+    }
   else
     data.multiplier = 1;
-
+  
   if (count(all.args.begin(), all.args.end(), "--cb_explore_adf") == 0)
     all.args.push_back("--cb_explore_adf");
-
+  
   all.delete_prediction = nullptr;
-
+  
   base_learner* base = setup_base(all);
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;

@@ -26,15 +26,13 @@ template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction)
 { if (is_learn)
-  { ec.l.simple.label = cost;
-    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
-    //ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
-    //ec.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
-    base.learn(ec, i-1);
-  }
+    { ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+      ec.l.simple.label = cost;
+      base.learn(ec, i-1);
+    }
   else
     base.predict(ec, i-1);
-
+  
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
   { score = ec.partial_prediction;
