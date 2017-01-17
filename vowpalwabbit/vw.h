@@ -26,13 +26,13 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-  vw* initialize(std::string s, io_buf* model=nullptr, bool skipModelLoad=false);
+vw* initialize(std::string s, io_buf* model=nullptr, bool skipModelLoad=false);
 vw* initialize(int argc, char* argv[], io_buf* model=nullptr, bool skipModelLoad = false);
- vw* seed_vw_model(vw* vw_model, std::string extra_args);
+vw* seed_vw_model(vw* vw_model, std::string extra_args);
 
- void cmd_string_replace_value( std::stringstream*& ss, std::string flag_to_replace, std::string new_value );
+void cmd_string_replace_value( std::stringstream*& ss, std::string flag_to_replace, std::string new_value );
 
- char** get_argv_from_string(std::string s, int& argc);
+char** get_argv_from_string(std::string s, int& argc);
 const char* are_features_compatible(vw& vw1, vw& vw2);
 
 /*
@@ -61,7 +61,7 @@ example* read_example(vw& all, std::string example_line);
 //The more complex way to create an example.
 
 //after you create and fill feature_spaces, get an example with everything filled in.
- example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
+example* import_example(vw& all, std::string label, primitive_feature_space* features, size_t len);
 
 // callers must free memory using release_example
 // this interface must be used with care as finish_example is a no-op for these examples.
@@ -105,32 +105,32 @@ void clear_example_data(example&);  // don't clear the label
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
 void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 
- void save_predictor(vw& all, std::string reg_name);
+void save_predictor(vw& all, std::string reg_name);
 void save_predictor(vw& all, io_buf& buf);
 
 // inlines
 
 //First create the hash of a namespace.
- inline uint32_t hash_space(vw& all, std::string s)
+inline uint32_t hash_space(vw& all, std::string s)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)all.p->hasher(ss,hash_base);
 }
- inline uint32_t hash_space_static(std::string s, std::string hash)
+inline uint32_t hash_space_static(std::string s, std::string hash)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)getHasher(hash)(ss, hash_base);
 }
 //Then use it as the seed for hashing features.
- inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
+inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
 }
- inline uint32_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
+inline uint32_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
@@ -146,20 +146,14 @@ inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-{
-	return all.weights[(index << all.weights.stride_shift()) + offset];
-}
+{ return (&all.weights[index << all.weights.stride_shift()])[offset]; }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-{
-	all.weights[(index << all.weights.stride_shift()) + offset] = value;
-}
+{ (&all.weights[index << all.weights.stride_shift()])[offset] = value; }
 
 inline uint32_t num_weights(vw& all)
 { return (uint32_t)all.length();}
 
 inline uint32_t get_stride(vw& all)
-{
-	return (uint32_t)(1 << all.weights.stride_shift());
-}
+{ return all.weights.stride(); }
 }

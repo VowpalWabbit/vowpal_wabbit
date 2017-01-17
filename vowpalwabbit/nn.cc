@@ -76,15 +76,15 @@ void finish_setup (nn& n, vw& all)
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)
-    { fs.push_back(1., nn_index);
-      nn_index += (uint64_t)n.increment;
-    }
+  { fs.push_back(1., nn_index);
+    nn_index += (uint64_t)n.increment;
+  }
   n.output_layer.num_features += n.k;
 
   if (! n.inpass)
-    { fs.push_back(1.,nn_index);
-      ++n.output_layer.num_features;
-    }
+  { fs.push_back(1.,nn_index);
+    ++n.output_layer.num_features;
+  }
 
   n.output_layer.in_use = true;
 
@@ -158,7 +158,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
-      { n.hiddenbias.l.simple.label = (float) (frand48 () - 0.5);
+      { n.hiddenbias.l.simple.label = (float) (merand48(n.all->random_state) - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -222,7 +222,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     { float sqrtk = sqrt ((float)n.k);
-      n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float) (merand48(n.all->random_state) - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -301,7 +301,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
           ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
-		  if (ec.l.simple.label != hidden_units[i].scalar)
+          if (ec.l.simple.label != hidden_units[i].scalar)
             base.update(ec, i);
         }
       }

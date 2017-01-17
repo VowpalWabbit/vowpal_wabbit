@@ -95,7 +95,7 @@ struct action_repr
   features *repr;
   action_repr(action _a, features* _repr) : a(_a)
   { if(_repr!=nullptr)
-    { repr = new features(); 
+    { repr = new features();
       repr->deep_copy_from(*_repr);
     }
     else
@@ -277,10 +277,10 @@ int random_policy(search_private& priv, bool allow_current, bool allow_optimal, 
   else if (num_valid_policies == 1)
     pid = 0;
   else if (num_valid_policies == 2)
-    pid = (advance_prng ? frand48() : frand48_noadvance()) >= priv.beta;
+    pid = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state)) >= priv.beta;
   else
   { // SPEEDUP this up in the case that beta is small!
-    float r = (advance_prng ? frand48() : frand48_noadvance());
+    float r = (advance_prng ? merand48(priv.all->random_state) : merand48_noadvance(priv.all->random_state));
     pid = 0;
 
     if (r > priv.beta)
@@ -437,9 +437,9 @@ void print_update(search_private& priv)
           priv.beta);
 
   if (PRINT_CLOCK_TIME)
-    { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-      cerr <<" "<< num_sec << "sec";
-    }
+  { size_t num_sec = (size_t)(((float)(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
+    cerr <<" "<< num_sec << "sec";
+  }
 
   if (use_heldout_loss)
     fprintf(stderr, " h");
@@ -450,15 +450,16 @@ void print_update(search_private& priv)
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
-{ uint64_t mask = priv.all->weights.mask();
-size_t ss = priv.all->weights.stride_shift();
+{
+  uint64_t mask = priv.all->weights.mask();
+  size_t ss = priv.all->weights.stride_shift();
+
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
   features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss) );
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
-  {
-    stringstream temp;
+  { stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
     fs.space_names.push_back(audit_strings_ptr(new audit_strings(*priv.dat_new_feature_feature_space, temp.str())));
   }
@@ -467,9 +468,9 @@ size_t ss = priv.all->weights.stride_shift();
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 { if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   { if (ec.indices.size() == 0)
-      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
+    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     else
-      { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
+    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
   ec.indices.decr();
@@ -479,9 +480,10 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 }
 
 void add_neighbor_features(search_private& priv)
-{ vw& all = *priv.all;
+{ 
   if (priv.neighbor_features.size() == 0) return;
 
+  uint32_t stride_shift = priv.all->weights.stride_shift();
   for (size_t n=0; n<priv.ec_seq.size(); n++)    // iterate over every example in the sequence
   { example& me = *priv.ec_seq[n];
     for (size_t n_id=0; n_id < priv.neighbor_features.size(); n_id++)
@@ -501,22 +503,22 @@ void add_neighbor_features(search_private& priv)
 
       //cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
-		  add_new_feature(priv, 1., 925871901 << priv.all->weights.stride_shift());
+		  add_new_feature(priv, 1., 925871901 << stride_shift);
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
-		  add_new_feature(priv, 1., 3824917 << priv.all->weights.stride_shift());
+		  add_new_feature(priv, 1., 3824917 << stride_shift);
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
-        GD::foreach_feature<search_private,add_new_feature>(all.weights, other.feature_space[ns], priv, me.ft_offset);
+        GD::foreach_feature<search_private,add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
     features& fs = me.feature_space[neighbor_namespace];
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
-      { me.indices.push_back(neighbor_namespace);
-        me.total_sum_feat_sq += fs.sum_feat_sq;
-        me.num_features += sz;
-      }
+    { me.indices.push_back(neighbor_namespace);
+      me.total_sum_feat_sq += fs.sum_feat_sq;
+      me.num_features += sz;
+    }
     else
       fs.erase();
   }
@@ -557,8 +559,7 @@ void reset_search_structure(search_private& priv)
   priv.ptag_to_action.erase();
 
   if (! priv.cb_learner)   // was: if rollout_all_actions
-  { uint32_t seed = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
-    msrand48(seed);
+  { priv.all->random_state = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
   }
 }
 
@@ -582,7 +583,7 @@ template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str
 template<class T> void cerr_print_array(string str, v_array<T>& A) { std::cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) std::cerr << " " << A[i]; std::cerr << " ]" << endl; }
 
 
-size_t random(size_t max) { return (size_t)(frand48() * (float)max); }
+size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
 template<class T> bool array_contains(T target, const T*A, size_t n)
 { if (A == nullptr) return false;
   for (size_t i=0; i<n; i++)
@@ -629,8 +630,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       // add the single bias feature
       if (n < priv.acset.max_bias_ngram_length)
-        add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
-
+	add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
         GD::foreach_feature<search_private,uint64_t,add_new_feature>(*priv.all, ec, priv);
@@ -651,12 +651,12 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
             priv.dat_new_feature_audit_ss.clear();
             priv.dat_new_feature_audit_ss << "passthrough_repr_" << i << '_' << k;
           }
-          
+
           priv.dat_new_feature_ec  = &ec;
           priv.dat_new_feature_idx = fid;
           priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
-		  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+	  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;
@@ -664,10 +664,10 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
   features& con_fs = ec.feature_space[conditioning_namespace];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
-    { ec.indices.push_back(conditioning_namespace);
-      ec.total_sum_feat_sq += con_fs.sum_feat_sq;
-      ec.num_features += con_fs.size();
-    }
+  { ec.indices.push_back(conditioning_namespace);
+    ec.total_sum_feat_sq += con_fs.sum_feat_sq;
+    ec.num_features += con_fs.size();
+  }
   else
     con_fs.erase();
 }
@@ -859,7 +859,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
         if (allowed_actions_cost[k] <= min_cost)
         { cdbg << ", hit @ " << k;
           count++;
-          if ((count == 1) || (frand48() < 1./(float)count))
+          if ((count == 1) || (merand48(priv.all->random_state) < 1./(float)count))
           { a = (allowed_actions == nullptr) ? (uint32_t)(k+1) : allowed_actions[k];
             cdbg << "***";
           }
@@ -869,12 +869,12 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   }
 
   if (a == (action)-1)
-  { if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) && (frand48() < priv.perturb_oracle))
+  { if ((priv.perturb_oracle > 0.) && (priv.state == INIT_TRAIN) && (merand48(priv.all->random_state) < priv.perturb_oracle))
       oracle_actions_cnt = 0;
-    a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
-        (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-        priv.is_ldf ? (action)random(ec_cnt) :
-        (action)(1 + random(priv.A));
+    a = ( oracle_actions_cnt > 0) ?  oracle_actions[random(priv.all->random_state, oracle_actions_cnt )] :
+        (allowed_actions_cnt > 0) ? allowed_actions[random(priv.all->random_state, allowed_actions_cnt)] :
+        priv.is_ldf ? (action)random(priv.all->random_state, ec_cnt) :
+        (action)(1 + random(priv.all->random_state, priv.A));
   }
   cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ], ret=" << a << endl;
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
@@ -938,8 +938,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
         this_cache->push_back( action_cache(min_cost, cl, cl==act, cost) );
     }
     if (this_cache)
-    {
-      assert( priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1 );
+    { assert( priv.memo_foreach_action.size() == priv.meta_t + priv.t - 1 );
       priv.memo_foreach_action.push_back(this_cache);
       cdbg << "memo_foreach_action[" << priv.meta_t + priv.t -1 << "] = " << this_cache << endl;
     }
@@ -1005,11 +1004,11 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     ecs[a].ft_offset = priv.offset;
     priv.base_learner->predict(ecs[a], policy);
     ecs[a].ft_offset = old_offset;
-    
+
     priv.empty_example->in_use = true;
     priv.empty_example->ft_offset = priv.offset;
     priv.base_learner->predict(*priv.empty_example);
-    
+
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
 
     if (override_action != (action)-1)
@@ -1190,10 +1189,10 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         lab.costs[0].x = losses.cs.costs[a-start_K].x;
         //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
         ec.in_use = true;
-	uint64_t old_offset = ec.ft_offset;
-	ec.ft_offset = priv.offset;
+        uint64_t old_offset = ec.ft_offset;
+        ec.ft_offset = priv.offset;
         priv.base_learner->learn(ec, learner);
-	ec.ft_offset = old_offset;
+        ec.ft_offset = old_offset;
 
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
@@ -1439,7 +1438,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
             ecs[0].passthrough = &priv.last_action_repr;
           }
           a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, learner, a_cost, need_fea ? a : (action)-1)
-                : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, allowed_actions_cost, a_cost, need_fea ? a : (action)-1);
+              : single_prediction_notLDF(priv, *ecs, learner, allowed_actions, allowed_actions_cnt, allowed_actions_cost, a_cost, need_fea ? a : (action)-1);
 
           cdbg << "passthrough = ["; for (size_t kk=0; kk<priv.last_action_repr.size(); kk++) cdbg << ' ' << priv.last_action_repr.indicies[kk] << ':' << priv.last_action_repr.values[kk]; cdbg << " ]" << endl;
 
@@ -1532,7 +1531,7 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   // if there's active learning, we need to
   if (priv.subsample_timesteps <= -1)
   { for (size_t i=0; i<priv.active_uncertainty.size(); i++)
-      if (frand48() > priv.active_uncertainty[i].first)
+      if (merand48(priv.all->random_state) > priv.active_uncertainty[i].first)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
@@ -1550,18 +1549,18 @@ void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
   // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
   else if (priv.subsample_timesteps < 1)
   { for (size_t t=0; t<priv.T; t++)
-      if (frand48() <= priv.subsample_timesteps)
+      if (merand48(priv.all->random_state) <= priv.subsample_timesteps)
         timesteps.push_back(t);
 
     if (timesteps.size() == 0) // ensure at least one
-      timesteps.push_back((size_t)(frand48() * priv.T));
+      timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
   }
 
   // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR but why? :P
   else
   { while ((timesteps.size() < (size_t)priv.subsample_timesteps) &&
            (timesteps.size() < priv.T))
-    { size_t t = (size_t)(frand48() * (float)priv.T);
+    { size_t t = (size_t)(merand48(priv.all->random_state) * (float)priv.T);
       if (! v_array_contains(timesteps, t))
         timesteps.push_back(t);
     }
@@ -2404,7 +2403,8 @@ action search::predict(example& ec, ptag mytag, const action* oracle_actions, si
     if (priv->acset.use_passthrough_repr)
     { assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr ==  nullptr));
       push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
-    } else
+    }
+    else
       push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
     cdbg << "push_at " << mytag << endl;
   }
@@ -2481,7 +2481,7 @@ void search::get_test_action_sequence(vector<action>& V)
 void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
 void search::add_program_options(po::variables_map& /*vw*/, po::options_description& opts) { add_options( *this->priv->all, opts ); }
 
-uint64_t search::get_mask() { return this->priv->all->weights.mask();}
+uint64_t search::get_mask() { return this->priv->all->weights.mask(); }
 size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
 uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 

@@ -1,0 +1,27 @@
+predictions = cbe_adf_cover_dr256.predict
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/cb_test256.json
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+1.933333 1.933333            1            1.0    known        0:0.966667...        9
+0.966667 0.000000            2            2.0    known        1:0.975...        6
+0.491667 0.016667            4            4.0    known        1:0.975...        6
+0.254167 0.016667            8            8.0    known        1:0.975...        6
+0.135417 0.016667           16           16.0    known        1:0.975...        6
+0.076042 0.016667           32           32.0    known        1:0.975...        6
+0.046354 0.016667           64           64.0    known        1:0.975...        6
+0.031510 0.016667          128          128.0    known        1:0.975...        6
+0.024089 0.016667          256          256.0    known        1:0.975...        6
+
+finished run
+number of examples per pass = 260
+passes used = 1
+weighted example sum = 260.000000
+weighted label sum = 0.000000
+average loss = 0.023974
+total feature number = 1950

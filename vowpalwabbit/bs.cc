@@ -143,7 +143,7 @@ void output_example(vw& all, bs& d, example& ec)
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   { d.lb = FLT_MAX;
     d.ub = -FLT_MAX;
-	for (double v : *d.pred_vec)
+    for (double v : *d.pred_vec)
     { if(v > d.ub)
         d.ub = (float)v;
       if(v < d.lb)
@@ -168,7 +168,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
   d.pred_vec->clear();
 
   for (size_t i = 1; i <= d.B; i++)
-  { ec.weight = weight_temp * (float) BS::weight_gen();
+  { ec.weight = weight_temp * (float) BS::weight_gen(all);
 
     if (is_learn)
       base.learn(ec, i-1);

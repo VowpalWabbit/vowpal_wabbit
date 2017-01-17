@@ -89,45 +89,54 @@ label_parser mc_label = {default_label, parse_label,
                          sizeof(label_t)
                         };
 
-void print_update(vw& all, example &ec)
+void print_label_pred(vw& all, example& ec, uint32_t prediction)
+{ substring ss_label = all.sd->ldict->get(ec.l.multi.label);
+  substring ss_pred  = all.sd->ldict->get(prediction);
+  all.sd->print_update(all.holdout_set_off, all.current_pass,
+                       !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
+                       !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
+                       ec.num_features, all.progress_add, all.progress_arg);
+}
+
+void print_probability(vw& all, example& ec, uint32_t prediction)
+{ char temp_str[10];
+  sprintf_s(temp_str, 10, "%d(%2.0f%%)", prediction, 100 * ec.pred.scalars[prediction - 1]);
+
+  char label_str[512];
+  sprintf_s(label_str, 512, "%u", ec.l.multi.label);
+
+  all.sd->print_update(all.holdout_set_off, all.current_pass, label_str, temp_str,
+                       ec.num_features, all.progress_add, all.progress_arg);
+}
+
+void print_score(vw& all, example& ec, uint32_t prediction)
+{ char temp_str[10];
+  sprintf_s(temp_str, 10, "%d", prediction);
+
+  char label_str[512];
+  sprintf_s(label_str, 512, "%u", ec.l.multi.label);
+
+  all.sd->print_update(all.holdout_set_off, all.current_pass, label_str, temp_str,
+                       ec.num_features, all.progress_add, all.progress_arg);
+}
+
+void direct_print_update(vw& all, example& ec, uint32_t prediction)
+{ all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction,
+                       ec.num_features, all.progress_add, all.progress_arg);
+}
+
+template<void (*T)(vw&, example&, uint32_t)>
+void print_update(vw& all, example &ec, uint32_t prediction)
 { if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { if (! all.sd->ldict)
-      all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.multi.label, ec.pred.multiclass,
-                           ec.num_features, all.progress_add, all.progress_arg);
+      T(all, ec, prediction);
     else
-    { substring ss_label = all.sd->ldict->get(ec.l.multi.label);
-      substring ss_pred  = all.sd->ldict->get(ec.pred.multiclass);
-      all.sd->print_update(all.holdout_set_off, all.current_pass,
-                           !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
-                           !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
-                           ec.num_features, all.progress_add, all.progress_arg);
-    }
+      print_label_pred(all, ec, ec.pred.multiclass);
   }
 }
 
-void print_update_with_probability(vw& all, example &ec, uint32_t prediction)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  { if (!all.sd->ldict)
-    { char temp_str[10];
-      sprintf_s(temp_str, 10, "%d(%2.0f%%)", prediction, 100 * ec.pred.scalars[prediction - 1]);
-
-      char label_str[512];
-      sprintf_s(label_str, 512, "%u", ec.l.multi.label);
-
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_str, temp_str,
-                           ec.num_features, all.progress_add, all.progress_arg);
-    }
-    else
-    { substring ss_label = all.sd->ldict->get(ec.l.multi.label);
-      substring ss_pred  = all.sd->ldict->get(prediction);
-      all.sd->print_update(all.holdout_set_off, all.current_pass,
-                           !ss_label.begin ? "unknown" : string(ss_label.begin, ss_label.end - ss_label.begin),
-                           !ss_pred.begin  ? "unknown" : string(ss_pred.begin, ss_pred.end - ss_pred.begin),
-                           ec.num_features, all.progress_add, all.progress_arg);
-    }
-  }
-}
-
+void print_update_with_probability(vw& all, example& ec, uint32_t pred) {print_update<print_probability>(all, ec, pred);}
+void print_update_with_score(vw& all, example& ec, uint32_t pred) {print_update<print_score>(all, ec, pred);}
 
 void finish_example(vw& all, example& ec)
 { float loss = 0;
@@ -144,7 +153,7 @@ void finish_example(vw& all, example& ec)
       all.print_text(sink, string(ss_pred.begin, ss_pred.end - ss_pred.begin), ec.tag);
     }
 
-  MULTICLASS::print_update(all, ec);
+  MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
   VW::finish_example(all, &ec);
 }
 }

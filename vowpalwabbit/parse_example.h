@@ -11,9 +11,8 @@ license as described in the file LICENSE.
 
 //example processing
 typedef enum
-{
-	StringFeatures,
-	JsonFeatures
+{ StringFeatures,
+  JsonFeatures
 } FeatureInputType;
 
 void substring_to_example(vw* all, example* ae, substring example);
@@ -22,9 +21,7 @@ namespace VW
 {
 example& get_unused_example(vw* all);
 void read_line(vw& all, example* ex, char* line);//read example from the line.
-
-void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context);
 }
 
 int read_features_string(vw* all, v_array<example*>& examples);
-int read_features_json(vw* all, v_array<example*>& examples);
+size_t read_features(vw* all, char*& line, size_t& num_chars);

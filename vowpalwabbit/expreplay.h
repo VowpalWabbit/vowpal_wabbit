@@ -24,12 +24,12 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
   if (!is_learn || lp.get_weight(&ec.l) == 0.) return;
 
   for (size_t replay=1; replay<er.replay_count; replay++)
-  { size_t n = (size_t)(frand48() * (float)er.N);
+  { size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
     if (er.filled[n])
       base.learn(er.buf[n]);
   }
 
-  size_t n = (size_t)(frand48() * (float)er.N);
+  size_t n = (size_t)(merand48(er.all->random_state) * (float)er.N);
   if (er.filled[n])
     base.learn(er.buf[n]);
 
@@ -68,7 +68,7 @@ void finish(expreplay& er)
 
 template<char er_level, label_parser& lp>
 LEARNER::base_learner* expreplay_setup(vw& all)
-  { std::string replay_string = "replay_"; replay_string += er_level;
+{ std::string replay_string = "replay_"; replay_string += er_level;
   if (missing_option<size_t, true>(all, replay_string.c_str(), "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
     return nullptr;
 

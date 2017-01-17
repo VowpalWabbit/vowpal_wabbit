@@ -15,7 +15,7 @@ use File::Basename;
 
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
-            $opt_v $opt_V);
+            $opt_v $opt_V $opt_O);
 
 my $Epsilon = 1e-4;
 
@@ -89,6 +89,7 @@ sub usage(@) {
         -V      apply valgrind to vw commands
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
+        -O<O>   Add <O> option(s) to all vw commands
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -137,7 +138,7 @@ sub valgrind_errfile($) {
 # which vw executable to test against
 #
 sub which_vw() {
-    if (@ARGV == 1 || @ARGV == 2) {
+    if (@ARGV > 0) {
         my $exe = $ARGV[0];
         if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
@@ -157,31 +158,16 @@ sub which_vw() {
     usage("can't find a 'vw' executable to test on");
 }
 
-sub which_lda() {
-    if (@ARGV == 2) {
-        my $exe = $ARGV[1];
-        if (-f $exe && -x $exe) {
-            printf STDERR "Testing lda: %s\n", $exe;
-            return $exe;
-        } else {
-            usage("$0: argument $exe: not an executable file");
-        }
-    } elsif (@ARGV == 0 || @ARGV == 1) {
-        foreach my $dir (@PathAdd, split(':', $ENV{PATH})) {
-            my $exe = "$dir/vw";
-            if (-x $exe) {
-                printf STDERR "Testing lda: %s\n", $exe;
-                return $exe;
-            }
-        }
-    }
-    usage("can't find a 'lda' executable to test on");
-}
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:Vt:') || usage();
+    getopts('wcdDefyE:ov:Vt:O:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
+    if (defined $opt_O) {
+        $opt_O = " $opt_O";
+    } else {
+        $opt_O = '';
+    }
 
     my $hostname = `hostname`; chomp($hostname);
     printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
@@ -333,7 +319,7 @@ sub next_test() {
 
     if ($cmd =~ /{VW}/) {
          $cmd = trim_spaces($cmd);
-         $cmd =~ s/{VW}/$VW/g;
+         $cmd =~ s/{VW}/$VW$opt_O/g;
     }
 
     unless (defined $cmd) {
@@ -928,7 +914,7 @@ __DATA__
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
-{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict
+{VW} -d train-sets/3parity -t -i models/0021.model -p 0022.predict
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
 
@@ -1503,7 +1489,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cbe_adf_cover_dr.predict
 
 # Test 140: marginal features
-{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --holdout_off -c -k --passes 100 -f marginal_model
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 -f marginal_model
     train-sets/ref/marginal.stderr
 
 # Test 141: marginal features test
@@ -1526,9 +1512,35 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/cbe_adf_cover_dr.json.stderr
     pred-sets/ref/cbe_adf_cover_dr.predict
 
-
 # Test 145: mix labeled and unlabeled examples with --bootstrap bug:
 # https://github.com/JohnLangford/vowpal_wabbit/issues/1111
 {VW} --bootstrap 2 -d train-sets/labeled-unlabeled-mix.dat
     train-sets/ref/labeled-unlabeled-mix.stderr
 
+# Test 146: cb_explore_adf with cover exploration + double robust (using more than 256 examples)
+{VW} --cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test256.json --json --noconstant -p cbe_adf_cover_dr256.predict
+    train-sets/ref/cbe_adf_cover_dr256.json.stderr
+    pred-sets/ref/cbe_adf_cover_dr256.predict
+
+# Test 147: --scores --oaa
+{VW} -d train-sets/probabilities.dat --scores --oaa=4 -p oaa_scores.predict
+   train-sets/ref/oaa_scores.stderr
+   pred-sets/ref/oaa_scores.predict
+
+#Test 148:  check cb_adf with direct method option
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
+    train-sets/ref/cb_adf_dm.stderr
+    pred-sets/ref/cb_adf_dm.predict
+
+# Test 149: initial_weight option is used
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 
+    train-sets/ref/initial_weight.stderr
+    train-sets/ref/initial_weight.stdout
+
+#Test 150:  Test --sparse_weights with 148
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
+    train-sets/ref/sparse.stderr
+
+# Test 151: lrqfa 
+{VW} --lrqfa aa3 -d train-sets/0080.dat
+    train-sets/ref/0151.stderr

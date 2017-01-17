@@ -5,7 +5,8 @@
 #ifndef _Included_vowpalWabbit_learner_VWActionProbsLearner
 #define _Included_vowpalWabbit_learner_VWActionProbsLearner
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /*
  * Class:     vowpalWabbit_learner_VWActionProbsLearner
@@ -13,7 +14,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;ZJ)LvowpalWabbit/responses/ActionProbs;
  */
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionProbsLearner_predict
-  (JNIEnv *, jobject, jstring, jboolean, jlong);
+(JNIEnv *, jobject, jstring, jboolean, jlong);
 
 /*
  * Class:     vowpalWabbit_learner_VWActionProbsLearner
@@ -21,7 +22,7 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionProbsLearner_predict
  * Signature: ([Ljava/lang/String;ZJ)LvowpalWabbit/responses/ActionProbs;
  */
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionProbsLearner_predictMultiline
-  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
 
 #ifdef __cplusplus
 }

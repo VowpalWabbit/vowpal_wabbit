@@ -6,9 +6,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-using VowpalWabbit.Azure.Trainer.Checkpoint;
+using System;
+using VW.Azure.Trainer.Checkpoint;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     public class OnlineTrainerSettingsInternal
     {
@@ -33,6 +34,12 @@ namespace VowpalWabbit.Azure.Trainer
         public ICheckpointPolicy CheckpointPolicy { get; set; }
 
         public bool EnableExampleTracing { get; set; }
+
+        /// <summary>
+        /// Null will let the trainer read events earliest available timestamps in event hub input;
+        /// Any other valid DateTime will let the trainer read events from that point in time.
+        /// </summary>
+        public DateTime? EventHubStartDateTimeUtc { get; set; }
 
         internal bool ForceFreshStart { get; set; }
     }

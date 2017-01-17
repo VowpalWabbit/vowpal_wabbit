@@ -12,7 +12,7 @@ using System.Linq;
 using VW;
 using VW.Labels;
 
-namespace VowpalWabbit.Azure.Trainer.Data
+namespace VW.Azure.Trainer.Data
 {
     internal sealed class TrainerResult
     {

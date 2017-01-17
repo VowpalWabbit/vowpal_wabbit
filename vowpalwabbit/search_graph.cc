@@ -83,7 +83,6 @@ struct task_data
   vector<size_t>   pred;  // predictions
   example*cur_node;       // pointer to the current node for add_edge_features_fn
   float* neighbor_predictions;  // prediction on this neighbor for add_edge_features_fn
-  weight_parameters* weights;
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
@@ -173,14 +172,12 @@ void run_bfs(task_data &D, vector<example*>& ec)
 }
 
 void setup(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
-
-  D.mask = sch.get_vw_pointer_unsafe().weights.mask();
-  D.wpp  = sch.get_vw_pointer_unsafe().wpp;
-  D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
-  D.multiplier = D.wpp << D.ss;
-  D.weights = &sch.get_vw_pointer_unsafe().weights;
-
+{
+	task_data& D = *sch.get_task_data<task_data>();
+	D.multiplier = D.wpp << D.ss;
+	D.wpp = sch.get_vw_pointer_unsafe().wpp;
+	D.mask = sch.get_vw_pointer_unsafe().weights.mask();
+	D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
   D.N = 0;
   D.E = 0;
   for (size_t i=0; i<ec.size(); i++)
@@ -233,9 +230,9 @@ void add_edge_features_group_fn(task_data&D, float fv, uint64_t fx)
 { example*node = D.cur_node;
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   for (size_t k=0; k<D.numN; k++)
-    { if (D.neighbor_predictions[k] == 0.) continue;
-      node->feature_space[neighbor_namespace].push_back(fv * D.neighbor_predictions[k], (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
-    }
+  { if (D.neighbor_predictions[k] == 0.) continue;
+    node->feature_space[neighbor_namespace].push_back(fv * D.neighbor_predictions[k], (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
+  }
 }
 
 void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props" Condition="Exists('..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props')" />
+  <Import Project="..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props" Condition="Exists('..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -98,6 +98,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
+  <Import Project="..\version.props" />
   <Import Project="$(WixTargetsPath)" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -105,7 +106,12 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\WiX.3.10.2\build\wix.props'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props'))" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <CreateProperty Condition="$(VowpalWabbitAssemblyVersion) != ''" Value="VowpalWabbitAssemblyVersion=$(VowpalWabbitAssemblyVersion);$(DefineConstants)">
+      <Output TaskParameter="Value" PropertyName="DefineConstants" />
+    </CreateProperty>
   </Target>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using VW;
 using VW.Serializer;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner : IDisposable
     {
@@ -31,6 +31,7 @@ namespace VowpalWabbit.Azure.Trainer
 
         private readonly Action<VowpalWabbitJsonSerializer> delayedExampleCallback;
 
+        private DateTime startDateTime;
 
         private readonly PerformanceCounters perfCounters;
 

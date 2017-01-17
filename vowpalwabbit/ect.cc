@@ -345,7 +345,7 @@ base_learner* ect_setup(vw& all)
   l.set_finish(finish);
 
   if (all.vm["link"].as<string>().compare("logistic") == 0)
-      class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
+    class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
   return make_base(l);
 }

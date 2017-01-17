@@ -37,6 +37,9 @@ class VW(BaseEstimator):
     params = dict()
 
     def __init__(self,
+                 rank=None,
+                 lrq=None,
+                 lrqdropout=None,
                  probabilities=None,
                  random_seed=None,
                  ring_size=None,
@@ -62,6 +65,12 @@ class VW(BaseEstimator):
                  progress=None,
                  P=None,
                  quiet=None,
+                 data=None,
+                 d=None,
+                 cache=None,
+                 c=None,
+                 k=None,
+                 passes=None,
                  no_stdin=None,
                  hash=None,
                  ignore=None,
@@ -100,7 +109,6 @@ class VW(BaseEstimator):
                  f=None,
                  readable_model=None,
                  invert_hash=None,
-                 passes=None,
                  save_resume=None,
                  output_feature_regularizer_binary=None,
                  output_feature_regularizer_text=None,
@@ -140,6 +148,13 @@ class VW(BaseEstimator):
         audit,a (bool): print weights of features
         progress,P (str): Progress update frequency. int: additive, float: multiplicative
         quiet (bool): Don't output disgnostics and progress updates
+
+        Input options
+        data,d (str): path to data file for fitting external to sklearn
+        cache,c (bool): use a cache. default is <data>.cache
+        cache_file (str): path to cache file to use
+        k (bool): auto delete cache file
+        passes (int): Number of training passes
 
         Feature options
         hash (str): how to hash the features. Available options: strings, all
@@ -186,7 +201,6 @@ class VW(BaseEstimator):
         final_regressor,f (str): Final regressor
         readable_model (str): Output human-readable final regressor with numeric features
         invert_hash (str): Output human-readable final regressor with feature names.  Computationally expensive.
-        passes (int): Number of training passes
         save_resume (bool): save extra state so learning can be resumed later with new data
         output_feature_regularizer_binary (str): Per feature regularization output file
         output_feature_regularizer_text (str): Per feature regularization output file, in text
@@ -207,14 +221,10 @@ class VW(BaseEstimator):
         """
 
         # clear estimator attributes
-        if hasattr(self, 'fit_'):
-            del self.fit_
-        if hasattr(self, 'passes_'):
-            del self.passes_
-        if hasattr(self, 'convert_to_vw_'):
-            del self.convert_to_vw_
-        if hasattr(self, 'vw_'):
-            del self.vw_
+        for attr in ['fit_', 'passes_', 'convert_to_vw_', 'vw_']:
+            if hasattr(self, attr):
+                delattr(self, attr)
+        del attr
 
         # reset params and quiet models by default
         self.params = {'quiet':  True}
@@ -225,8 +235,17 @@ class VW(BaseEstimator):
             if k != 'self' and k != '__class__' and v is not None:
                 self.params[k] = v
 
-        # store passes separately to be used in fit
-        self.passes_ = self.params.pop('passes', 1)
+        ext_file_args = ['data', 'd']
+        if any(x in self.params for x in ext_file_args):
+            # fitting will be handled by vw directly
+            self.fit_ = True
+            self.passes_ = 1
+        else:
+            # store passes separately to be used in fit
+            self.passes_ = self.params.pop('passes', 1)
+            if self.params.get('bfgs'):
+                raise RuntimeError('An external data file must be used to fit models using the bfgs option')
+
         # pull out convert_to_vw from params
         self.convert_to_vw_ = self.params.pop('convert_to_vw', True)
 
@@ -313,7 +332,7 @@ class VW(BaseEstimator):
 
         Returns
         -------
-        y : array-like, shape (n_samples,)
+        y : array-like, shape (n_samples, 1 or n_classes)
             Output vector relative to X.
         """
 
@@ -328,12 +347,15 @@ class VW(BaseEstimator):
             X = tovw(X)
 
         model = self.get_vw()
-        label_type = model.get_label_type()
 
-        y = np.empty([num_samples])
-        # add test examples to model
+        shape = [num_samples]
+        if 'oaa' in self.params and 'probabilities' in self.params:
+            shape.append(self.params['oaa'])
+        y = np.empty(shape)
+
+        # predict examples
         for idx, x in enumerate(X):
-            y[idx] = model.predict(ec=x, labelType=label_type)
+            y[idx] = model.predict(ec=x)
 
         return y
 
@@ -345,7 +367,7 @@ class VW(BaseEstimator):
         return self.__str__()
 
     def __del__(self):
-        if self.vw_ is not None:
+        if hasattr(self, 'vw_') and self.vw_ is not None:
             self.vw_.__del__()
 
     def get_params(self, deep=True):

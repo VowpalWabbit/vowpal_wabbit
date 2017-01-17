@@ -53,8 +53,8 @@ I use c:\src\vw as my %ROOT% directory;
 (5) Restore nugets
 
 
-    (a) In a  command shell to %ROOT%\vowpalwabbit : "cd c:\src\vw\vowpalwabbit" 
-    (b) run ".nuget\NuGet.exe restore vw.sln"
+    (a) In a  command shell to %ROOT%\vowpalwabbit\vowpalwabbit : "cd c:\src\vw\vowpalwabbit\vowpalwabbit" 
+    (b) run ".nuget\nuget restore vw.sln"
 	This will restore the ANTLR nuget which is needed before Visual Studio loads the solution.	
 
 **************************************************************************************************************

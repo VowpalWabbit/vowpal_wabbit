@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using VW;
 using VW.Serializer;
 
-namespace VowpalWabbit.Azure.Trainer
+namespace VW.Azure.Trainer
 {
     internal partial class Learner
     {
@@ -75,9 +75,12 @@ namespace VowpalWabbit.Azure.Trainer
             // start from scratch
             this.state = state;
 
+            // save extra state so learning can be resumed later with new data
+            var baseArguments = "--save_resume";
+
             var settings = model == null ?
-                new VowpalWabbitSettings(this.settings.Metadata.TrainArguments) :
-                new VowpalWabbitSettings(string.Empty) { ModelStream = new MemoryStream(model) };
+                new VowpalWabbitSettings(baseArguments + " " + this.settings.Metadata.TrainArguments) :
+                new VowpalWabbitSettings(baseArguments) { ModelStream = new MemoryStream(model) };
 
             this.InitializeVowpalWabbit(settings);
         }
@@ -181,6 +184,7 @@ namespace VowpalWabbit.Azure.Trainer
 
             try
             {
+                this.startDateTime = DateTime.UtcNow;
                 this.vw = new VW.VowpalWabbit(vwSettings);
                 var cmdLine = vw.Arguments.CommandLine;
 

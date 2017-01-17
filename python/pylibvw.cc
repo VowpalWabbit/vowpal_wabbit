@@ -26,6 +26,15 @@ const size_t lCOST_SENSITIVE = 3;
 const size_t lCONTEXTUAL_BANDIT = 4;
 const size_t lMAX = 5;
 
+const size_t pSCALAR = 0;
+const size_t pSCALARS = 1;
+const size_t pACTION_SCORES = 2;
+const size_t pACTION_PROBS = 3;
+const size_t pMULTICLASS = 4;
+const size_t pMULTILABELS = 5;
+const size_t pPROB = 6;
+const size_t pMULTICLASSPROBS = 7;
+
 
 void dont_delete_me(void*arg) { }
 
@@ -34,8 +43,18 @@ vw_ptr my_initialize(string args)
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
+void my_run_parser(vw_ptr all)
+{   VW::start_parser(*all);
+    LEARNER::generic_driver(*all);
+    VW::end_parser(*all);
+}
+
 void my_finish(vw_ptr all)
 { VW::finish(*all, false);  // don't delete all because python will do that for us!
+}
+
+void my_save(vw_ptr all, string name)
+{ VW::save_predictor(*all, name);
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -43,6 +62,20 @@ search_ptr get_search_ptr(vw_ptr all)
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
+
+const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
+
+string get_arguments(vw_ptr all)
+{
+	string args;
+	for (auto& s : all->args)
+	{
+		args.append(s);
+		args.append(" ");
+	}
+
+	return args;
+}
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
 { Search::predictor* P = new Search::predictor(*sch, my_tag);
@@ -64,14 +97,32 @@ size_t my_get_label_type(vw*all)
 { label_parser* lp = &all->p->lp;
   if (lp->parse_label == simple_label.parse_label)
   { return lBINARY;
-  } else if (lp->parse_label == MULTICLASS::mc_label.parse_label) {
-    return lMULTICLASS;
-  } else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label) {
-    return lCOST_SENSITIVE;
-  } else if (lp->parse_label == CB::cb_label.parse_label) {
-    return lCONTEXTUAL_BANDIT;
-  } else {
-    cerr << "unsupported label parser used" << endl; throw exception();
+  }
+  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
+  { return lMULTICLASS;
+  }
+  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
+  { return lCOST_SENSITIVE;
+  }
+  else if (lp->parse_label == CB::cb_label.parse_label)
+  { return lCONTEXTUAL_BANDIT;
+  }
+  else
+  { cerr << "unsupported label parser used" << endl; throw exception();
+  }
+}
+
+size_t my_get_prediction_type(vw_ptr all)
+{ switch (all->l->pred_type)
+  { case prediction_type::scalar:          return pSCALAR;
+    case prediction_type::scalars:         return pSCALARS;
+    case prediction_type::action_scores:   return pACTION_SCORES;
+    case prediction_type::action_probs:    return pACTION_PROBS;
+    case prediction_type::multiclass:      return pMULTICLASS;
+    case prediction_type::multilabels:     return pMULTILABELS;
+    case prediction_type::prob:            return pPROB;
+    case prediction_type::multiclassprobs: return pMULTICLASSPROBS;
+    default: cerr << "unsupported prediction type used" << endl; throw exception();
   }
 }
 
@@ -82,7 +133,6 @@ void my_delete_example(void*voidec)
   VW::dealloc_example(lp ? lp->delete_label : NULL, *ec);
   free(ec);
 }
-
 
 example* my_empty_example0(vw_ptr vw, size_t labelType)
 { label_parser* lp = get_label_parser(&*vw, labelType);
@@ -217,9 +267,9 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
         else { cerr << "warning: malformed feature in list" << endl; continue; }
       }
       if (got)
-	{ ec->feature_space[ns].push_back(f.x, f.weight_index);
+      { ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-	sum_sq += f.x*f.x;
+        sum_sq += f.x*f.x;
       }
     }
   }
@@ -238,13 +288,11 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 }
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
-{
-  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
+{ const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
   const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
   unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
   for (size_t u=0; u<ulCount; ++u)
-  {
-    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
+  { py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
     py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
 
     char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
@@ -311,7 +359,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   }
 
   if (all.add_constant)
-    { ae->feature_space[constant_namespace].erase();
+  { ae->feature_space[constant_namespace].erase();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i=0; i<N; i++)
@@ -349,10 +397,41 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->l.simple.weight; }
 float ex_get_simplelabel_initial(example_ptr ec) { return ec->l.simple.initial; }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
+float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
 uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
+
+py::list ex_get_scalars(example_ptr ec)
+{ py::list values;
+  v_array<float> scalars = ec->pred.scalars;
+
+  for (float s : scalars)
+  { values.append(s);
+  }
+  return values;
+}
+
+py::list ex_get_action_scores(example_ptr ec)
+{ py::list values;
+  v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
+
+  for (ACTION_SCORE::action_score s : scores)
+  { values.append(s.score);
+  }
+  return values;
+}
+
+py::list ex_get_multilabel_predictions(example_ptr ec)
+{ py::list values;
+  MULTILABEL::labels labels = ec->pred.multilabels;
+
+  for (uint32_t l : labels.label_v)
+  { values.append(l);
+  }
+  return values;
+}
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ec->l.cs.costs.size(); }
@@ -582,7 +661,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
+  .def("run_parser", &my_run_parser, "parse external data file")
   .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
+  .def("save", &my_save, "save model to filename")
   .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
   .def("learn_string", &my_learn_string, "given an example specified as a string (as in a VW data file), learn on that example")
   .def("predict", &my_predict, "given a pyvw example, predict on that example")
@@ -599,18 +680,29 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_stride", &VW::get_stride, "return the internal stride")
 
   .def("get_label_type", &my_get_label_type, "return parse label type")
-
+  .def("get_prediction_type", &my_get_prediction_type, "return prediction type")
   .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
   .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
   .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
   .def("audit_example", &my_audit_example, "print example audit information")
+  .def("get_id", &get_model_id, "return the model id")
+  .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
   .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
   .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
+
+  .def_readonly("pSCALAR", pSCALAR, "Scalar prediction type")
+  .def_readonly("pSCALARS", pSCALARS, "Multiple scalar-valued prediction type")
+  .def_readonly("pACTION_SCORES", pACTION_SCORES, "Multiple action scores prediction type")
+  .def_readonly("pACTION_PROBS", pACTION_PROBS, "Multiple action probabilities prediction type")
+  .def_readonly("pMULTICLASS", pMULTICLASS, "Multiclass prediction type")
+  .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
+  .def_readonly("pPROB", pPROB, "Probability prediction type")
+  .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
   ;
 
   // define the example class
@@ -655,6 +747,10 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_multiclass_label", &ex_get_multiclass_label, "Assuming a multiclass label type, get the true label")
   .def("get_multiclass_weight", &ex_get_multiclass_weight, "Assuming a multiclass label type, get the importance weight")
   .def("get_multiclass_prediction", &ex_get_multiclass_prediction, "Assuming a multiclass label type, get the prediction")
+  .def("get_prob", &ex_get_prob, "Get probability from example prediction")
+  .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
+  .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
+  .def("get_multilabel_predictions", &ex_get_multilabel_predictions, "Get multilabel predictions from example prediction")
   .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction, "Assuming a cost_sensitive label type, get the prediction")
   .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs, "Assuming a cost_sensitive label type, get the total number of label/cost pairs")
   .def("get_costsensitive_cost", &ex_get_costsensitive_cost, "Assuming a cost_sensitive label type, get the cost for a given pair (i=0.. get_costsensitive_num_costs)")
