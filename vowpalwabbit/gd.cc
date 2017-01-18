@@ -860,7 +860,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
                               msg, text);
     if (resume)
     { if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+        all.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
       // save_load_online_state(g, model_file, read, text);
       save_load_online_state(all, model_file, read, text, &g);
     }
@@ -992,7 +992,7 @@ base_learner* setup(vw& all)
   }
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
+    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
          << " adjust --decay_learning_rate larger to avoid this." << endl;
 
 

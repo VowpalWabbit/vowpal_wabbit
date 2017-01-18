@@ -141,7 +141,6 @@ public:
   /// </returns>
   String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 
-
   /// <summary>
   /// Persist model to file specified by -i.
   /// </summary>

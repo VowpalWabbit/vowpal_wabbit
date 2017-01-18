@@ -187,9 +187,9 @@ base_learner* lrq_setup(vw& all)
     *all.file_options << " --lrq " << i;
 
   if (! all.quiet)
-  { cerr << "creating low rank quadratic features for pairs: ";
+  { all.trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq.dropout)
-      cerr << "(using dropout) ";
+      all.trace_message << "(using dropout) ";
   }
 
   for (string const& i : lrq.lrpairs)
@@ -199,7 +199,7 @@ base_learner* lrq_setup(vw& all)
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
       }
 
-      cerr << i << " ";
+      all.trace_message << i << " ";
     }
     // TODO: colon-syntax
 
@@ -212,7 +212,7 @@ base_learner* lrq_setup(vw& all)
   }
 
   if(!all.quiet)
-    cerr<<endl;
+    all.trace_message<<endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,

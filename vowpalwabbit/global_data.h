@@ -404,6 +404,27 @@ namespace label_type
 };
 }
 
+typedef void(*trace_message_t)(const std::string&);
+
+// invoke trace_listener when << endl is encountered.
+class vw_ostream : public std::ostream
+{
+	class vw_streambuf : public std::stringbuf
+	{
+		vw_ostream& parent;
+	public:
+		vw_streambuf(vw_ostream& str);
+
+		virtual int sync();
+	};
+	vw_streambuf buf;
+
+public:
+	vw_ostream();
+
+	trace_message_t trace_listener;
+};
+
 struct vw
 { shared_data* sd;
 
@@ -562,7 +583,10 @@ struct vw
 
   label_type::label_type_t label_type;
 
+  vw_ostream trace_message;
+
   vw();
+  vw(const vw &) = delete;
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);

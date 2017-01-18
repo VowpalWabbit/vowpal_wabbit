@@ -213,6 +213,31 @@ bool missing_option(vw& all, bool keep, const char* name, const char* descriptio
   return false;
 }
 
+void trace_listener_cerr(const std::string& message)
+{
+	cerr << message;
+	cerr.flush();
+}
+
+vw_ostream::vw_streambuf::vw_streambuf(vw_ostream& str) : parent(str)
+{}
+
+int vw_ostream::vw_streambuf::sync()
+{
+	int ret = std::stringbuf::sync();
+	if (ret)
+		return ret;
+		
+	parent.trace_listener(str());
+	str("");
+	return 0; // success
+}
+
+vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this)
+{
+	trace_listener = trace_listener_cerr;
+}
+
 vw::vw()
 { sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;   // next update progress dump

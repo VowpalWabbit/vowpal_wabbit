@@ -841,12 +841,12 @@ void end_pass(bfgs& b)
 
       //reaching the max number of passes regardless of convergence
       if(b.final_pass == b.current_pass)
-      { cerr<<"Maximum number of passes reached. ";
+      { b.all->trace_message<<"Maximum number of passes reached. ";
         if(!b.output_regularizer)
-          cerr<<"If you want to optimize further, increase the number of passes\n";
+          b.all->trace_message<<"If you want to optimize further, increase the number of passes\n";
         if(b.output_regularizer)
-        { cerr<<"\nRegular model file has been created. ";
-          cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+        { b.all->trace_message<<"\nRegular model file has been created. ";
+		  b.all->trace_message<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }
@@ -865,7 +865,7 @@ void end_pass(bfgs& b)
           finalize_regressor(*all, all->final_regressor_name);
         if(b.early_stop_thres == b.no_win_counter)
         { set_done(*all);
-          cerr<<"Early termination reached w.r.t. holdout set error";
+          b.all->trace_message<<"Early termination reached w.r.t. holdout set error";
         }
       } if (b.final_pass == b.current_pass)
       { finalize_regressor(*all, all->final_regressor_name);
@@ -1049,13 +1049,13 @@ base_learner* bfgs_setup(vw& all)
 
   if (!all.quiet)
   { if (b.m>0)
-      cerr << "enabling BFGS based optimization ";
+	  b.all->trace_message << "enabling BFGS based optimization ";
     else
-      cerr << "enabling conjugate gradient optimization via BFGS ";
+      b.all->trace_message << "enabling conjugate gradient optimization via BFGS ";
     if (all.hessian_on)
-      cerr << "with curvature calculation" << endl;
+      b.all->trace_message << "with curvature calculation" << endl;
     else
-      cerr << "**without** curvature calculation" << endl;
+      b.all->trace_message << "**without** curvature calculation" << endl;
   }
 
   if (all.numpasses < 2 && all.training)

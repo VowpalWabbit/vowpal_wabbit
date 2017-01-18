@@ -21,7 +21,8 @@ ref class VowpalWabbitModel;
 ref class VowpalWabbitSettings;
 
 public enum class VowpalWabbitExampleDistribution
-{ /// <summary>
+{ 
+  /// <summary>
   /// Statistically safer option.
   /// </summary>
   UniformRandom = 0,
