@@ -1444,6 +1444,7 @@ void sync_stats(vw& all)
 void finish(vw& all, bool delete_all)
 { if (!all.quiet && !all.vm.count("audit_regressor"))
   { all.trace_message.precision(6);
+	all.trace_message << std::fixed;
     all.trace_message << endl << "finished run";
     if(all.current_pass == 0)
       all.trace_message << endl << "number of examples = " << all.sd->example_number;
