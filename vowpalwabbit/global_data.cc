@@ -213,7 +213,7 @@ bool missing_option(vw& all, bool keep, const char* name, const char* descriptio
   return false;
 }
 
-void trace_listener_cerr(const std::string& message)
+void trace_listener_cerr(void*, const std::string& message)
 {
 	cerr << message;
 	cerr.flush();
@@ -228,14 +228,18 @@ int vw_ostream::vw_streambuf::sync()
 	if (ret)
 		return ret;
 		
-	parent.trace_listener(str());
+	parent.trace_listener(parent.trace_context, str());
 	str("");
 	return 0; // success
 }
 
-vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this)
+vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr)
 {
 	trace_listener = trace_listener_cerr;
+}
+
+vw::vw(const vw &)
+{ THROW("Copy constructor not supported");
 }
 
 vw::vw()

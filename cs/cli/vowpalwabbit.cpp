@@ -163,7 +163,6 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
   { throw gcnew ArgumentNullException("ex");
   }
 #endif
-  ResetTraceMessage();
 
   try
   { m_vw->learn(ex->m_example);
@@ -183,7 +182,6 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
   if (nullptr == predictionFactory)
     throw gcnew ArgumentNullException("predictionFactory");
 #endif
-  ResetTraceMessage();
 
   try
   { m_vw->learn(ex->m_example);
@@ -204,7 +202,6 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
   if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 #endif
-  ResetTraceMessage();
 
   try
   { m_vw->l->predict(*ex->m_example);
@@ -221,7 +218,6 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
   if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 #endif
-  ResetTraceMessage();
 
   try
   { m_vw->l->predict(*ex->m_example);
@@ -344,7 +340,6 @@ void VowpalWabbit::Learn(String^ line)
   if (String::IsNullOrEmpty(line))
     throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
 #endif
-  ResetTraceMessage();
 
   VowpalWabbitExample^ example = nullptr;
 
@@ -363,7 +358,6 @@ void VowpalWabbit::Predict(String^ line)
   if (String::IsNullOrEmpty(line))
     throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Predict(IEnumerable<string>) overload.");
 #endif
-  ResetTraceMessage();
 
   VowpalWabbitExample^ example = nullptr;
 
@@ -382,7 +376,6 @@ generic<typename TPrediction> TPrediction VowpalWabbit::Learn(String^ line, IVow
   if (String::IsNullOrEmpty(line))
     throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
 #endif
-  ResetTraceMessage();
 
   VowpalWabbitExample^ example = nullptr;
 
@@ -401,7 +394,6 @@ generic<typename T> T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictio
   if (String::IsNullOrEmpty(line))
     throw gcnew ArgumentException("lines must not be empty. For multi-line examples use Learn(IEnumerable<string>) overload.");
 #endif
-  ResetTraceMessage();
 
   VowpalWabbitExample^ example = nullptr;
 
@@ -420,7 +412,6 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
   if (lines == nullptr)
     throw gcnew ArgumentNullException("lines");
 #endif
-  ResetTraceMessage();
 
   auto examples = gcnew List<VowpalWabbitExample^>;
 
@@ -450,7 +441,6 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
   if (lines == nullptr)
     throw gcnew ArgumentNullException("lines");
 #endif
-  ResetTraceMessage();
 
   auto examples = gcnew List<VowpalWabbitExample^>;
 
@@ -480,7 +470,6 @@ generic<typename T> T VowpalWabbit::Learn(IEnumerable<String^>^ lines, IVowpalWa
   if (lines == nullptr)
     throw gcnew ArgumentNullException("lines");
 #endif
-  ResetTraceMessage();
 
   auto examples = gcnew List<VowpalWabbitExample^>;
 
@@ -512,7 +501,6 @@ generic<typename T> T VowpalWabbit::Predict(IEnumerable<String^>^ lines, IVowpal
   if (lines == nullptr)
     throw gcnew ArgumentNullException("lines");
 #endif
-  ResetTraceMessage();
 
   auto examples = gcnew List<VowpalWabbitExample^>;
 
@@ -778,23 +766,5 @@ cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 	else
 		return FillTopicAllocation(m_vw->weights.dense_weights);
   }
-
-void VowpalWabbit::ResetTraceMessage()
-{
-	if (m_vw->trace_message.tellp() > 0)
-	{
-		m_vw->trace_message.str("");
-		m_vw->trace_message.clear();
-	}
-}
-
-String^ VowpalWabbit::TraceMessage::get()
-{
-	if ((int)m_vw->trace_message.tellp() == 0)
-		return nullptr;
-
-	return  gcnew String(m_vw->trace_message.str().c_str());
-}
-
 }
 

@@ -139,6 +139,14 @@ public:
 
   property bool Verbose;
 
+  /// <summary>
+  /// Action invoked for each trace message.
+  /// </summary>
+  /// <Remarks>
+  /// The trace listener obeys the Verbose property, which defaults to false.
+  /// </Remarks>
+  property Action<String^>^ TraceListener;
+
   virtual Object^ Clone()
   { return MemberwiseClone();
   }

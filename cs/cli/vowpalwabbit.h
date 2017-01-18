@@ -40,11 +40,6 @@ private:
   template<typename T>
   cli::array<cli::array<float>^>^ FillTopicAllocation(T& weights);
 
-  /// <summary>
-  /// Reset the trace message state.
-  /// </summary>
-  void ResetTraceMessage();
-
 public:
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbit"/> instance.
@@ -244,12 +239,5 @@ public:
   /// </summary>
   /// <param name="example">The example to be returned.</param>
   virtual void ReturnExampleToPool(VowpalWabbitExample^ example) sealed;
-
-  /// <summary>
-  /// Get the last trace message.
-  /// </summary>
-  property String^ TraceMessage
-  { String^ get();
-  }
 };
 }

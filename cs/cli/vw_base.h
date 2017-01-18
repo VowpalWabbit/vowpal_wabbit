@@ -35,6 +35,11 @@ private:
   initonly VowpalWabbitSettings^ m_settings;
 
   /// <summary>
+  /// Handle to trace listener delegate, required to keep safe from garbage collection.
+  /// </summary>
+  GCHandle m_traceListener;
+
+  /// <summary>
   /// An optional shared model.
   /// </summary>
   VowpalWabbitModel^ m_model;

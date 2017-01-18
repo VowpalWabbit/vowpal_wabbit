@@ -1126,8 +1126,13 @@ void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, cons
   }
 }
 
-vw& parse_args(int argc, char *argv[])
+vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* trace_context)
 { vw& all = *(new vw());
+
+  if (trace_listener)
+  { all.trace_message.trace_listener = trace_listener;
+    all.trace_message.trace_context = trace_context;
+  }
 
   try
   { all.vw_is_main = false;
@@ -1341,13 +1346,13 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(string s, io_buf* model, bool skipModelLoad)
+vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 { int argc = 0;
   char** argv = get_argv_from_string(s,argc);
   vw* ret = nullptr;
 
   try
-  { ret = initialize(argc, argv, model, skipModelLoad); }
+  { ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context); }
   catch(...)
   { free_args(argc, argv);
     throw;
@@ -1357,8 +1362,8 @@ vw* initialize(string s, io_buf* model, bool skipModelLoad)
   return ret;
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad)
-{ vw& all = parse_args(argc, argv);
+vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{ vw& all = parse_args(argc, argv, trace_listener, trace_context);
 
   try
   { // if user doesn't pass in a model, read from arguments
@@ -1390,7 +1395,7 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad)
 
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
-vw* seed_vw_model(vw* vw_model, const string extra_args)
+vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_listener, void* trace_context)
 { vector<string> model_args = vw_model->args;
   model_args.push_back(extra_args);
 
@@ -1405,7 +1410,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args)
   }
 
 
-  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */);
+  vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
   // TODO: this introduces a leak, but at least we don't crash
   // new_model->weights.~parameters();
 

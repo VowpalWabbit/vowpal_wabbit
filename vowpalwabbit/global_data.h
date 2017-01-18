@@ -404,7 +404,7 @@ namespace label_type
 };
 }
 
-typedef void(*trace_message_t)(const std::string&);
+typedef void(*trace_message_t)(void *context, const std::string&);
 
 // invoke trace_listener when << endl is encountered.
 class vw_ostream : public std::ostream
@@ -422,6 +422,7 @@ class vw_ostream : public std::ostream
 public:
 	vw_ostream();
 
+	void* trace_context;
 	trace_message_t trace_listener;
 };
 
@@ -586,7 +587,9 @@ struct vw
   vw_ostream trace_message;
 
   vw();
-  vw(const vw &) = delete;
+
+  // ostream doesn't have copy constructor and the python library used some boost code which code potentially invoke this
+  vw(const vw &);
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);
