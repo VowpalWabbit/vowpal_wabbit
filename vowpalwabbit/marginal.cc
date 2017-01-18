@@ -1,27 +1,56 @@
 #include<unordered_map>
 #include "reductions.h"
+#include "correctedMath.h"
 
 using namespace std;
 
 namespace MARGINAL
 {
 
-typedef pair<double,double> marginal;
+  struct expert 
+  {  float regret;
+    float abs_regret;
+    float weight;
+  };
+  
+  typedef pair<double, double> marginal;
+  typedef pair<expert, expert> expert_pair;
 
 struct data
 { float initial_numerator;
   float initial_denominator;
   float decay;
+  bool compete;
   bool id_features[256];
   features temp[256];//temporary storage when reducing.
   unordered_map<uint64_t, marginal > marginals;
+  unordered_map<uint64_t, expert_pair> expert_state;
   vw* all;
 };
+
+float trunc_scaled_exp(float R, float C) {
+  float Rpos = R > 0 ? R : 0.;
+  //cout<<"R = "<<R<<" C= "<<C<<" "<<Rpos*Rpos/(3*C)<<endl;
+  if(Rpos == 0) return 1;
+  return correctedExp(Rpos*Rpos / (3*C));
+}
+
+float get_adanormalhedge_weights(float R, float C) {
+  if(R == 0 || C == 0) return 1.;
+  float phi1 = trunc_scaled_exp(R+1., C+1.);
+  float phi2 = trunc_scaled_exp(R-1., C+1.);
+  return (phi1 - phi2)*0.5;
+}
 
 template <bool is_learn>
 void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 {
   uint64_t mask = sm.all->weights.mask();
+  float average_pred = 0.;
+  float net_feature_weight = 0.;
+  float label = ec.l.simple.label;
+  float net_weight = 0.;
+  float alg_loss = 0.;
 
   for (example::iterator i = ec.begin(); i!= ec.end(); ++i)
     { namespace_index n = i.index();
@@ -43,19 +72,59 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 		  continue;
 		}
 	      uint64_t key = second_index + ec.ft_offset;
-	      if (sm.marginals.find(key) == sm.marginals.end())//need to initialize things.
+	      if (sm.marginals.find(key) == sm.marginals.end()) {//need to initialize things.
 		sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
-	      f.push_back((float)(sm.marginals[key].first / sm.marginals[key].second), first_index);
+		if(sm.compete) {
+		  expert e;
+		  e.regret = 0;
+		  e.abs_regret = 0;
+		  e.weight = 1.;
+		  sm.expert_state.insert(make_pair(key, make_pair(e,e)));
+		}
+	      }
+	      
+	      float marginal_pred = (float)(sm.marginals[key].first / sm.marginals[key].second);
+
+	      f.push_back(marginal_pred, first_index);	      
 	      if (!sm.temp[n].space_names.empty())
 		f.space_names.push_back(sm.temp[n].space_names[2*(f.size()-1)]);
+
+	      if(sm.compete) { // compute the prediction from the marginals using the weights
+		float weight = sm.expert_state[key].first.weight;
+		average_pred += weight*marginal_pred;
+		net_weight += weight;
+		net_feature_weight += sm.expert_state[key].second.weight;
+		alg_loss += weight*(marginal_pred - label)*(marginal_pred - label);
+		//cout<<weight<<":"<<marginal_pred<<" "<<sm.expert_state[key].second.weight<<" ";
+	      }
 	    }
 	}
     }
+  //cout<<endl;
 
   if (is_learn)
     base.learn(ec);
   else
     base.predict(ec);
+  
+  float feature_pred = ec.pred.scalar;
+
+  if(sm.compete) { //add in the feature-based expert and normalize,
+		   //assign to example
+    if(net_weight + net_feature_weight > 0.) 
+      average_pred += net_feature_weight * feature_pred;      
+    else {
+      net_feature_weight = 1.;
+      average_pred = feature_pred;
+    }
+    average_pred /= (net_weight + net_feature_weight);
+    ec.pred.scalar = average_pred;
+    //cout<<"Average pred = "<<average_pred<<" Feature pred =  "<<feature_pred<<" label= "<<label<<endl;
+    alg_loss += net_feature_weight*(feature_pred - label)*(feature_pred - label);
+    alg_loss /= (net_weight + net_feature_weight);
+    //alg_loss = (average_pred - label)*(average_pred - label);
+  }
+  
 
   for (example::iterator i = ec.begin(); i!= ec.end(); ++i)
   { namespace_index n = i.index();
@@ -67,8 +136,22 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
           uint64_t second_index = j.index() & mask;
           uint64_t key = second_index + ec.ft_offset;
           marginal& m = sm.marginals[key];
+
+	  if(sm.compete) { //now update weights, before updating marginals
+	    expert_pair& e = sm.expert_state[key];
+	    float regret1 = alg_loss - (m.first/m.second - label)*(m.first/m.second - label);
+	    float regret2 = alg_loss - (feature_pred - label)*(feature_pred - label);
+	    
+	    e.first.regret += regret1;
+	    e.first.abs_regret += fabs(regret1);
+	    e.first.weight = get_adanormalhedge_weights(e.first.regret, e.first.abs_regret);
+	    e.second.regret += regret2;
+	    e.second.abs_regret += fabs(regret2);
+	    e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);	    	    
+	  }
+
           m.first = m.first * (1. - sm.decay) + ec.l.simple.label * ec.weight;
-          m.second = m.second * (1. - sm.decay) + ec.weight;
+          m.second = m.second * (1. - sm.decay) + ec.weight;	  
         }
       std::swap(sm.temp[n],*i);
     }
@@ -77,6 +160,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 
 void finish(data& sm)
 { sm.marginals.~unordered_map();
+  sm.expert_state.~unordered_map();
   for (size_t i =0; i < 256; i++)
     sm.temp[i].delete_v();
 }
@@ -120,6 +204,56 @@ void finish(data& sm)
 	else
 	  ++iter;
       }
+
+    if (!read)
+      { total_size = (uint64_t)sm.expert_state.size();
+	msg << "expert_state size = " << total_size << "\n";
+      }
+    bin_text_read_write_fixed_validated(io, (char*)&total_size, sizeof(total_size), "", read, msg, text);
+
+    auto exp_iter = sm.expert_state.begin();
+    for (size_t i = 0; i < total_size; ++i)
+      { uint64_t index;
+	if (!read)
+	  { index = exp_iter->first >> stride_shift;
+	    msg << index << ":";
+	  }
+	bin_text_read_write_fixed(io, (char*)&index, sizeof(index), "", read, msg, text);
+	float r1, c1, w1, r2, c2, w2;
+	if (!read)
+	  { r1 = exp_iter->second.first.regret;
+	    c1 = exp_iter->second.first.abs_regret;
+	    w1 = exp_iter->second.first.weight;
+	    r2 = exp_iter->second.second.regret;
+	    c2 = exp_iter->second.second.abs_regret;
+	    w2 = exp_iter->second.second.weight;
+	    msg<< r1 << ":";
+	  }
+	bin_text_read_write_fixed(io, (char*)&r1, sizeof(r1), "", read, msg, text);
+	if(!read)
+	  msg<< c1 << ":";
+	bin_text_read_write_fixed(io, (char*)&c1, sizeof(c1), "", read, msg, text);
+	if(!read)
+	  msg<< w1 << ":";
+	bin_text_read_write_fixed(io, (char*)&w1, sizeof(w1), "", read, msg, text);
+	if(!read)
+	  msg<< r2 << ":";
+	bin_text_read_write_fixed(io, (char*)&r2, sizeof(r2), "", read, msg, text);
+	if(!read)
+	  msg<< c2 << ":";
+	bin_text_read_write_fixed(io, (char*)&c2, sizeof(c2), "", read, msg, text);
+	if(!read)
+	  msg<< w2 << ":";
+	bin_text_read_write_fixed(io, (char*)&w2, sizeof(w2), "", read, msg, text);
+
+	if (read) {
+	  expert e1 = {r1, c1, w1};
+	  expert e2 = {r2, c2, w2};
+	  sm.expert_state.insert(make_pair(index << stride_shift,make_pair(e1, e2)));
+	}
+	else
+	  ++exp_iter;
+      }
   }
 }
 
@@ -129,15 +263,19 @@ LEARNER::base_learner* marginal_setup(vw& all)
 { if (missing_option<string, true>(all, "marginal", "substitute marginal label estimates for ids"))
     return nullptr;
   new_options(all)
-  ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
-  ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
-  ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)");
+    ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
+    ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
+    ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)")
+    ("compete", "enable competition with marginal features");
   add_options(all);
-
+  
   data& d = calloc_or_throw<data>();
   d.initial_numerator = all.vm["initial_numerator"].as<float>();
   d.initial_denominator = all.vm["initial_denominator"].as<float>();
   d.decay = all.vm["decay"].as<float>();
+  d.compete = false;
+  if(all.vm.count("compete"))
+    d.compete = true;
   d.all = &all;
   string s = (string)all.vm["marginal"].as<string>();
 
@@ -145,6 +283,8 @@ LEARNER::base_learner* marginal_setup(vw& all)
     if (s.find((char)u) != string::npos)
       d.id_features[u] = true;
   new(&d.marginals)unordered_map<uint64_t,marginal>();
+  if(d.compete)
+    new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<data>& ret =
     init_learner(&d, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
