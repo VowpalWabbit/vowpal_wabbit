@@ -288,7 +288,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
 
 void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
 { if(text)
-  { params.all->trace_message<<"Not supporting readable model for kernel svm currently\n";
+  { params.all->trace_message<<"Not supporting readable model for kernel svm currently"<<endl;
     return;
   }
 
@@ -676,7 +676,7 @@ void train(svm_params& params)
           { size_t max_pos = suboptimality(model, subopt);
             if(subopt[max_pos] > 0)
             { if(!overshoot && max_pos == (size_t)model_pos && max_pos > 0 && j == 0)
-                params.all->trace_message<<"Shouldn't reprocess right after process!!!\n";
+                params.all->trace_message<<"Shouldn't reprocess right after process!!!"<<endl;
               //params.all->trace_message<<max_pos<<" "<<subopt[max_pos]<<endl;
               // params.all->trace_message<<params.model->support_vec[0]->example_counter<<endl;
               if(max_pos*model->num_support <= params.maxcache)
@@ -760,10 +760,10 @@ void finish(svm_params& params)
   params.all->trace_message<<"Total loss = "<<params.loss_sum<<endl;
 
   free_svm_model(params.model);
-  params.all->trace_message<<"Done freeing model\n";
+  params.all->trace_message<<"Done freeing model"<<endl;
   if(params.kernel_params) free(params.kernel_params);
-  params.all->trace_message<<"Done freeing kernel params\n";
-  params.all->trace_message<<"Done with finish \n";
+  params.all->trace_message<<"Done freeing kernel params"<<endl;
+  params.all->trace_message<<"Done with finish "<<endl;
 }
 
 LEARNER::base_learner* kernel_svm_setup(vw &all)
