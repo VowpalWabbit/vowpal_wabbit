@@ -30,16 +30,21 @@ struct data
 
 float trunc_scaled_exp(float R, float C) {
   float Rpos = R > 0 ? R : 0.;
-  //cout<<"R = "<<R<<" C= "<<C<<" "<<Rpos*Rpos/(3*C)<<endl;
-  if(Rpos == 0) return 1;
-  return correctedExp(Rpos*Rpos / (3*C));
+  //leaving some commented code in case we want to switch back to
+  //discrete derivative instead of the continuous one
+  //if(Rpos == 0) return 1;
+  //return correctedExp(Rpos*Rpos / (3*C));
+  if(Rpos == 0.) return 0;
+  return Rpos*correctedExp(Rpos*Rpos / (3*C));
 }
 
 float get_adanormalhedge_weights(float R, float C) {
-  if(R == 0 || C == 0) return 1.;
-  float phi1 = trunc_scaled_exp(R+1., C+1.);
-  float phi2 = trunc_scaled_exp(R-1., C+1.);
-  return (phi1 - phi2)*0.5;
+  //if(R == 0 || C == 0) return 1.;
+  //float phi1 = trunc_scaled_exp(R+1., C+1.);
+  //float phi2 = trunc_scaled_exp(R-1., C+1.);
+  //return (phi1 - phi2)*0.5;
+  if(C == 0.) return 0;
+  return 2*trunc_scaled_exp(R, C)/(3*C);
 }
 
 template <bool is_learn>
@@ -94,13 +99,12 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 		average_pred += weight*marginal_pred;
 		net_weight += weight;
 		net_feature_weight += sm.expert_state[key].second.weight;
-		alg_loss += weight*(marginal_pred - label)*(marginal_pred - label);
-		//cout<<weight<<":"<<marginal_pred<<" "<<sm.expert_state[key].second.weight<<" ";
+		if(is_learn)
+		  alg_loss += weight*(marginal_pred - label)*(marginal_pred - label);
 	      }
 	    }
 	}
     }
-  //cout<<endl;
 
   if (is_learn)
     base.learn(ec);
@@ -111,6 +115,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 
   if(sm.compete) { //add in the feature-based expert and normalize,
 		   //assign to example
+    //net_feature_weight = 0.; useful in case we want to try pure marginals
     if(net_weight + net_feature_weight > 0.) 
       average_pred += net_feature_weight * feature_pred;      
     else {
@@ -119,10 +124,13 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
     }
     average_pred /= (net_weight + net_feature_weight);
     ec.pred.scalar = average_pred;
-    //cout<<"Average pred = "<<average_pred<<" Feature pred =  "<<feature_pred<<" label= "<<label<<endl;
-    alg_loss += net_feature_weight*(feature_pred - label)*(feature_pred - label);
-    alg_loss /= (net_weight + net_feature_weight);
-    //alg_loss = (average_pred - label)*(average_pred - label);
+    ec.partial_prediction = average_pred;
+    if(is_learn) {
+      alg_loss += net_feature_weight*(feature_pred - label)*(feature_pred - label);
+      alg_loss /= (net_weight + net_feature_weight);
+      //alg_loss = (average_pred - label)*(average_pred - label);
+      ////the other plausible definition for alg_loss
+    }    
   }
   
 
@@ -142,11 +150,11 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	    float regret1 = alg_loss - (m.first/m.second - label)*(m.first/m.second - label);
 	    float regret2 = alg_loss - (feature_pred - label)*(feature_pred - label);
 	    
-	    e.first.regret += regret1;
-	    e.first.abs_regret += fabs(regret1);
+	    e.first.regret += regret1*ec.weight;
+	    e.first.abs_regret += regret1*regret1*ec.weight;//fabs(regret1);
 	    e.first.weight = get_adanormalhedge_weights(e.first.regret, e.first.abs_regret);
-	    e.second.regret += regret2;
-	    e.second.abs_regret += fabs(regret2);
+	    e.second.regret += regret2*ec.weight;
+	    e.second.abs_regret += regret2*regret2*ec.weight;//fabs(regret2);
 	    e.second.weight = get_adanormalhedge_weights(e.second.regret, e.second.abs_regret);	    	    
 	  }
 
