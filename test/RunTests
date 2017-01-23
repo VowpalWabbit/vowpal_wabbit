@@ -1292,7 +1292,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
         train-sets/ref/0097.stderr
 
 # Test 98: checking predictions as well
-{VW} -d train-sets/0001.dat -i models/0097.model -p 0098.predict
+{VW} --preserve_performance_counters -d train-sets/0001.dat -i models/0097.model -p 0098.predict
     test-sets/ref/0098.stderr
     pred-sets/ref/0098.predict
 

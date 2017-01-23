@@ -978,6 +978,7 @@ void parse_output_model(vw& all)
   ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
   ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
   ("save_resume", "save extra state so learning can be resumed later with new data")
+  ("preserve_performance_counters", "reset performance counters when warmstarting")
   ("save_per_pass", "Save the model after every pass over data")
   ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
   ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text")
@@ -1007,6 +1008,9 @@ void parse_output_model(vw& all)
   if (vm.count("save_resume"))
     all.save_resume = true;
 
+  if (vm.count("preserve_performance_counters"))
+    all.preserve_performance_counters = true;
+  
   if (vm.count("id") && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
   { all.args.push_back("--id");
     all.args.push_back(vm["id"].as<string>());
