@@ -13,6 +13,7 @@
 #include "cb_algs.h"
 #include "vw_exception.h"
 #include "gen_cs_example.h"
+#include "vw_versions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -344,6 +345,21 @@ void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
     data.ec_seq.push_back(&ec);
   }
 }
+  
+  void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
+  {
+    if (c.all->model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE)
+      return;
+    stringstream msg;
+    msg << "event_sum " << c.gen_cs.event_sum << "\n";
+    bin_text_read_write_fixed(model_file, (char*)&c.gen_cs.event_sum, sizeof(c.gen_cs.event_sum),
+			      "", read, msg, text);
+
+    msg << "action_sum " << c.gen_cs.action_sum << "\n";
+    bin_text_read_write_fixed(model_file, (char*)&c.gen_cs.action_sum, sizeof(c.gen_cs.action_sum),
+			      "", read, msg, text);
+  }
+
 }
 using namespace CB_ADF;
 base_learner* cb_adf_setup(vw& all)
@@ -428,5 +444,6 @@ base_learner* cb_adf_setup(vw& all)
 
   l.set_finish(CB_ADF::finish);
   l.set_end_examples(CB_ADF::end_examples);
+  l.set_save_load(CB_ADF::save_load);
   return make_base(l);
 }
