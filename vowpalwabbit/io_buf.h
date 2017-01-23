@@ -241,11 +241,15 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
   return ret;
 }
 
-inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
+inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len, bool ignore_data_and_write_zeros = false)
 { if (len > 0)
   { char* p;
     buf_write (o, p, len);
-    memcpy (p, data, len);
+
+	if (ignore_data_and_write_zeros)
+		memset(p, 0, len);
+	else
+		memcpy (p, data, len);
 
     // compute hash for check-sum
     if (o.verify_hash)
@@ -284,25 +288,27 @@ inline size_t bin_text_read_write(io_buf& io, char* data, size_t len,
 }
 
 inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len,
-                                   std::stringstream& msg, bool text)
+                                   std::stringstream& msg, bool text,
+							       bool ignore_data_and_write_zeros = false)
 { if (text)
   { size_t temp = bin_write_fixed(io, msg.str().c_str(), msg.str().size());
     msg.str("");
     return temp;
   }
   else
-    return bin_write_fixed (io, data, len);
+    return bin_write_fixed (io, data, len, ignore_data_and_write_zeros);
   return 0;
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
 inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len,
                                         const char* read_message, bool read,
-                                        std::stringstream& msg, bool text)
+                                        std::stringstream& msg, bool text, 
+										bool ignore_data_and_write_zeros = false)
 { if (read)
     return bin_read_fixed(io, data, len, read_message);
   else
-    return bin_text_write_fixed(io, data, len, msg, text);
+    return bin_text_write_fixed(io, data, len, msg, text, ignore_data_and_write_zeros);
 }
 
 inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, size_t len,

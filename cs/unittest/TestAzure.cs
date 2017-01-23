@@ -216,8 +216,6 @@ namespace cs_unittest
                         var progressivePrediction = vw.Learn(json, VowpalWabbitPredictionType.ActionProbabilities);
                         // TODO: validate eval output
                     }
-
-                    vw.Native.SaveModel("offline.2.model");
                 }
 
                 Blobs.DownloadFile(onlineModelUri, "online.model");
@@ -232,10 +230,8 @@ namespace cs_unittest
             }
         }
 
-
         [TestMethod]
         [TestCategory("NotOnBuild")]
-        //[Ignore]
         public async Task TestAzureTrainerRestart()
         {
             // generate data
@@ -284,6 +280,10 @@ namespace cs_unittest
                 // download & parse trackback file
                 var trackbacks = trainer.Blobs.DownloadTrackbacksOrderedByTime();
 
+                Assert.AreEqual(100, trackbacks[0].EventIds.Count); // due to checkpoint policy = 100
+                Assert.AreEqual(100, trackbacks[1].EventIds.Count); // due to checkpoint policy = 100
+                Assert.AreEqual(100, trackbacks[2].EventIds.Count); // due to checkpoint policy = 100
+
                 trainer.TrainOffline("produce the 3rd model by training through all events", trackbacks[2].ModelId, dataMap, trackbacks.SelectMany(t => t.EventIds), trainer.Blobs.ModelBlobs[2].Uri);
 
                 trainer.TrainOffline("produce the 3rd model by starting from the 2nd and then continuing", trackbacks[2].ModelId, dataMap, trackbacks[2].EventIds, trainer.Blobs.ModelBlobs[2].Uri, "-i split2.model -l 0.1");
@@ -291,9 +291,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        // TODO: figure issue in VSO
         [TestCategory("NotOnBuild")]
-        //[Ignore]
         public async Task TestAzureTrainer()
         {
             using (var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.2 -q ab"))

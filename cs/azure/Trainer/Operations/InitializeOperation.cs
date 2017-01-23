@@ -76,11 +76,10 @@ namespace VW.Azure.Trainer
             this.state = state;
 
             // save extra state so learning can be resumed later with new data
-            var baseArguments = "--save_resume";
+            var settings = new VowpalWabbitSettings("--save_resume " + this.settings.Metadata.TrainArguments);
 
-            var settings = model == null ?
-                new VowpalWabbitSettings(baseArguments + " " + this.settings.Metadata.TrainArguments) :
-                new VowpalWabbitSettings(baseArguments) { ModelStream = new MemoryStream(model) };
+            if (model != null)
+                settings.ModelStream = new MemoryStream(model);
 
             this.InitializeVowpalWabbit(settings);
         }
@@ -111,67 +110,17 @@ namespace VW.Azure.Trainer
             // load the model
             using (var modelStream = await modelBlob.OpenReadAsync())
             {
-                this.InitializeVowpalWabbit(new VowpalWabbitSettings("--save_resume") { ModelStream = modelStream });
+                // it's up to the external system to make sure the train arguments are compatible with the stored model
+                // if the arguments are changed substantially, one needs to invoke Reset which forces a refresh
+                var args = "--save_resume " + this.settings.Metadata.TrainArguments;
+                this.InitializeVowpalWabbit(new VowpalWabbitSettings(args) { ModelStream = modelStream });
                 this.telemetry.TrackTrace($"Model loaded {this.state.ModelName}", SeverityLevel.Verbose);
-
-                // validate that the loaded VW model has the same settings as requested by C&C
-                var newSettings = new VowpalWabbitSettings(this.settings.Metadata.TrainArguments);
-                using (var newVW = new VW.VowpalWabbit(newSettings))
-                {
-                    newVW.ID = this.vw.ID;
-
-                    // save the VW instance to a model and load again to get fully expanded parameters.
-                    string newVWarguments;
-                    using (var tempModel = new MemoryStream())
-                    {
-                        newVW.SaveModel(tempModel);
-                        tempModel.Position = 0;
-
-                        using (var tempVW = new VW.VowpalWabbit(new VowpalWabbitSettings { ModelStream = tempModel }))
-                        {
-                            newVWarguments = CleanVowpalWabbitArguments(tempVW.Arguments.CommandLine);
-                        }
-                    }
-
-                    var oldVWarguments = CleanVowpalWabbitArguments(this.vw.Arguments.CommandLine);
-
-                    // this is the expanded command line
-                    if (newVWarguments != oldVWarguments)
-                    {
-                        this.telemetry.TrackTrace("New VowpalWabbit settings found. Discarding existing model",
-                            SeverityLevel.Information,
-                            new Dictionary<string, string>
-                            {
-                            { "TrainArguments", newVW.Arguments.CommandLine },
-                            { "NewExpandedArguments", newVWarguments },
-                            { "OldExpandedArgumentsCleaned", oldVWarguments },
-                            { "OldExpandedArguments", this.vw.Arguments.CommandLine },
-                            });
-
-                        // discard old, use fresh
-                        this.vw.Dispose();
-                        this.vw = null;
-
-                        this.InitializeVowpalWabbit(newSettings);
-                    }
-                }
             }
 
             // store the initial model
             this.settings.InitialVowpalWabbitModel = this.state.ModelName;
 
             return true;
-        }
-
-        // --max_prediction 111.670006 
-        private static readonly Regex RegexMaxPrediction = new Regex("--max_prediction\\s+\\S+(\\s?|$)", RegexOptions.Compiled);
-
-        private static string CleanVowpalWabbitArguments(string args)
-        {
-            return RegexMaxPrediction
-                .Replace(args, " ")
-                .Replace("--save_resume", "")
-                .Trim();
         }
         
         private void InitializeVowpalWabbit(VowpalWabbitSettings vwSettings)

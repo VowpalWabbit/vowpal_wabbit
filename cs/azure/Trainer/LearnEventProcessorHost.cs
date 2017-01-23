@@ -197,14 +197,18 @@ namespace VW.Azure.Trainer
                 TimeSpan.FromMilliseconds(500),
                 this.UpdatePerformanceCounters);
 
+            var vwArgs = this.trainer.VowpalWabbit.Arguments;
+
             this.telemetry.TrackTrace(
                 "OnlineTrainer started",
                 SeverityLevel.Information,
                 new Dictionary<string, string>
                 {
-                { "CheckpointPolicy", settings.CheckpointPolicy.ToString() },
-                { "VowpalWabbit", settings.Metadata.TrainArguments },
-                { "ExampleTracing", settings.EnableExampleTracing.ToString() }
+                    { "CheckpointPolicy", settings.CheckpointPolicy.ToString() },
+                    { "VowpalWabbit", settings.Metadata.TrainArguments },
+                    { "ExampleTracing", settings.EnableExampleTracing.ToString() },
+                    { "LearningRate", vwArgs.LearningRate.ToString() },
+                    { "PowerT", vwArgs.PowerT.ToString() }
                 });
         }
 

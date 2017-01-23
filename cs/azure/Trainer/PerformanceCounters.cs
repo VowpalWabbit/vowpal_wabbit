@@ -129,12 +129,20 @@ namespace VW.Azure.Trainer
             }
         }
 
+        /// <summary>
+        /// List of all online trainer performance counters.
+        /// </summary>
         public PerformanceCounter[] All { get; private set; }
 
+        /// <summary>
+        /// Number of active Azure EventHub event processors.
+        /// </summary>
         [PerformanceCounterType(PerformanceCounterType.NumberOfItems32)]
         public PerformanceCounter EventHub_Processors { get; private set; }
 
-
+        /// <summary>
+        /// Number of cached features.
+        /// </summary>
         [PerformanceCounterType(PerformanceCounterType.NumberOfItems32)]
         public PerformanceCounter Features_Cached { get; private set; }
 
