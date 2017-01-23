@@ -247,6 +247,7 @@ vw::vw()
   daemon = false;
   num_children = 10;
   save_resume = false;
+  preserve_performance_parameters = false;
 
   random_positive_weights = false;
 
