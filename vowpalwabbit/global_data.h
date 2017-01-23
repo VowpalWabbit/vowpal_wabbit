@@ -442,7 +442,7 @@ struct vw
   bool hessian_on;
 
   bool save_resume;
-  bool preserve_performance_parameters;
+  bool preserve_performance_counters;
   std::string id;
 
   version_struct model_file_ver;

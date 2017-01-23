@@ -806,7 +806,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 			"", read, msg, text);
 	}
 
-	if (!all.training || !all.preserve_performance_parameters) // reset various things so that we report test set performance properly
+	if (!all.training || !all.preserve_performance_counters) // reset various things so that we report test set performance properly
 	{
 		all.sd->sum_loss = 0;
 		all.sd->sum_loss_since_last_dump = 0;
