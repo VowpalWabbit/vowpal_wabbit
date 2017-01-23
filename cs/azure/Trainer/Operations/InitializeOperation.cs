@@ -111,7 +111,7 @@ namespace VW.Azure.Trainer
             // load the model
             using (var modelStream = await modelBlob.OpenReadAsync())
             {
-                this.InitializeVowpalWabbit(new VowpalWabbitSettings { ModelStream = modelStream });
+                this.InitializeVowpalWabbit(new VowpalWabbitSettings("--save_resume") { ModelStream = modelStream });
                 this.telemetry.TrackTrace($"Model loaded {this.state.ModelName}", SeverityLevel.Verbose);
 
                 // validate that the loaded VW model has the same settings as requested by C&C
@@ -168,7 +168,10 @@ namespace VW.Azure.Trainer
 
         private static string CleanVowpalWabbitArguments(string args)
         {
-            return RegexMaxPrediction.Replace(args, " ");
+            return RegexMaxPrediction
+                .Replace(args, " ")
+                .Replace("--save_resume", "")
+                .Trim();
         }
         
         private void InitializeVowpalWabbit(VowpalWabbitSettings vwSettings)

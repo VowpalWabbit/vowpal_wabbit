@@ -31,6 +31,8 @@ private:
   String^ m_commandLine;
 
   int m_numberOfActions;
+  float m_learning_rate;
+  float m_power_t;
 
 internal:
   VowpalWabbitArguments(vw* vw) :
@@ -55,6 +57,9 @@ internal:
 
     if (vw->vm.count("cb"))
       m_numberOfActions = (int)vw->vm["cb"].as<size_t>();
+
+	m_learning_rate = vw->eta;
+	m_power_t = vw->power_t;
   }
 
 public:
@@ -113,6 +118,22 @@ public:
   { int get()
     { return m_numberOfActions;
     }
+  }
+
+  property float LearningRate
+  {
+	  float get()
+	  {
+		  return m_learning_rate;
+	  }
+  }
+
+  property float PowerT
+  {
+	  float get()
+	  {
+		  return m_power_t;
+	  }
   }
 };
 }
