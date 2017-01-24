@@ -406,6 +406,8 @@ namespace label_type
 
 typedef void(*trace_message_t)(void *context, const std::string&);
 
+// TODO: change to virtual class
+
 // invoke trace_listener when << endl is encountered.
 class vw_ostream : public std::ostream
 {

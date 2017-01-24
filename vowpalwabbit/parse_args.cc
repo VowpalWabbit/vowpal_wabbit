@@ -1413,11 +1413,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_l
     init_args << model_args[i] << " ";
   }
 
-
   vw* new_model = VW::initialize(init_args.str().c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
-  // TODO: this introduces a leak, but at least we don't crash
-  // new_model->weights.~parameters();
-
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance

@@ -126,7 +126,10 @@ private:
 
 	inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
 	void shallow_copy(const dense_parameters& input)
-	{ _begin = input._begin;
+	{ 
+	  if (!_seeded)
+		  free(_begin);
+	  _begin = input._begin;
 	  _weight_mask = input._weight_mask;
 	  _stride_shift = input._stride_shift;
 	  _seeded = true;
@@ -295,6 +298,12 @@ public:
 	
 	void shallow_copy(const sparse_parameters& input)
 	{
+		// TODO: this is level-1 copy (weight* are stilled shared)
+		if (!_seeded)
+		{
+			for (auto& pair : _map)
+				free(pair.second);
+		}
 		_map = input._map;
 		_weight_mask = input._weight_mask;
 		_stride_shift = input._stride_shift;
@@ -336,6 +345,8 @@ public:
 	~sparse_parameters()
 	{if (!_delete && !_seeded)  // don't free weight vector if it is shared with another instance
 		{
+		for (auto& pair : _map)
+			free(pair.second);
 		 _map.clear();
 		 _delete = true;
 		}

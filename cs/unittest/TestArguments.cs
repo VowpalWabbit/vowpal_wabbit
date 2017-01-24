@@ -87,10 +87,22 @@ namespace cs_unittest
         [TestMethod]
         public void TestArgumentDeDup()
         {
-            using (var vw = new VowpalWabbit("-l 0.3 -l 0.1 --learning_rate 0.2 -f model1 --save_resume -q ab")) 
+            using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.3 -f model1 --save_resume -q ab")) 
             {
                 Assert.AreEqual(0.3f, vw.Native.Arguments.LearningRate);
             }
+
+            try
+            {
+                using (var vw = new VowpalWabbit("-l 0.3 -l 0.3 --learning_rate 0.1 -f model1 --save_resume -q ab"))
+                {
+                    Assert.AreEqual(0.3f, vw.Native.Arguments.LearningRate);
+                }
+
+                Assert.Fail("Disagreering arguments not detected");
+            }
+            catch (VowpalWabbitException)
+            { }
 
             using (var vw = new VowpalWabbit("-i model1 --save_resume"))
             {
@@ -101,6 +113,13 @@ namespace cs_unittest
             {
                 Assert.AreEqual(0.4f, vw.Native.Arguments.LearningRate);
             }
+
+            // make sure different representations of arguments are matched
+            using (var vw = new VowpalWabbit("--cb_explore_adf --epsilon 0.1 -f model2"))
+            { }
+
+            using (var vw = new VowpalWabbit("--cb_explore_adf --epsilon 0.1000 -i model2"))
+            { }
         }
     }
 }

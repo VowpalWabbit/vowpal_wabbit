@@ -13,8 +13,14 @@ using System.Linq;
 
 namespace VW.Azure.Trainer
 {
+    /// <summary>
+    /// Online trainer state structure used to serialize state to state.json.
+    /// </summary>
     public class OnlineTrainerState
     {
+        /// <summary>
+        /// Initializes a new <see cref="OnlineTrainerState"/> instance.
+        /// </summary>
         public OnlineTrainerState()
         {
             this.Partitions = new Dictionary<string, string>();

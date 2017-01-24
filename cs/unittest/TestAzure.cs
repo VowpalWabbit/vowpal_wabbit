@@ -230,63 +230,74 @@ namespace cs_unittest
             }
         }
 
+        private async Task<OnlineTrainerWrapper> RunTrainer(string args, IEnumerable<Context> data, Dictionary<string, Context> dataMap, int expectedNumStates, bool cleanBlobs)
+        {
+            var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.1 -q ab -l 0.1");
+
+            if (cleanBlobs)
+                trainer.Blobs.Cleanup().Wait();
+
+            // start listening for event hub
+            await trainer.StartAsync(new CountingCheckpointPolicy(100));
+
+            // send data to event hub
+            trainer.SendData(data);
+
+            await trainer.PollTrainerCheckpoint(blobs => 
+                blobs.ModelBlobs.Count == expectedNumStates && 
+                blobs.ModelTrackbackBlobs.Count == expectedNumStates &&
+                blobs.StateJsonBlobs.Count == expectedNumStates);
+
+            // download & parse trackback file
+            trainer.Blobs.DownloadTrackbacksOrderedByTime();
+
+            foreach (var trackback in trainer.Blobs.Trackbacks)
+                // due to checkpoint policy = 100
+                Assert.AreEqual(100, trackback.EventIds.Count, $"{trackback.Blob.Uri} does not contain the expected 100 events. Actual: {trackback.EventIds.Count}");
+
+            return trainer;
+        }
+
         [TestMethod]
         [TestCategory("NotOnBuild")]
         public async Task TestAzureTrainerRestart()
         {
             // generate data
-            var data = GenerateData(400).ToList();
+            var data = GenerateData(600).ToList();
             var dataMap = data.ToDictionary(d => d.EventId, d => d);
 
-            using (var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.1 -q ab -l 0.1"))
+            var args = "--cb_explore_adf --epsilon 0.1 -q ab -l 0.1";
+
+            using (var trainer = await RunTrainer(args, data.Take(220), dataMap, expectedNumStates: 2, cleanBlobs: true))
             {
-                trainer.Blobs.Cleanup().Wait();
-
-                // start listening for event hub
-                await trainer.StartAsync(new CountingCheckpointPolicy(100));
-
-                // send data to event hub
-                trainer.SendData(data.Take(220));
-                
-                await trainer.PollTrainerCheckpoint(blobs => blobs.ModelBlobs.Count == 2 && blobs.ModelTrackbackBlobs.Count == 2 && blobs.StateJsonBlobs.Count == 2);
-
-                // download & parse trackback file
-                var trackbacks = trainer.Blobs.DownloadTrackbacksOrderedByTime();
-
-                Assert.AreEqual(100, trackbacks[0].EventIds.Count); // due to checkpoint policy = 100
-                Assert.AreEqual(100, trackbacks[1].EventIds.Count); // due to checkpoint policy = 100
-
-                trainer.TrainOffline("produce the 1st model", trackbacks[0].ModelId, dataMap, trackbacks[0].EventIds, trainer.Blobs.ModelBlobs[0].Uri);
+                trainer.TrainOffline("produce the 1st model", trainer.Blobs.Trackbacks[0].ModelId, dataMap, trainer.Blobs.Trackbacks[0].EventIds, trainer.Blobs.ModelBlobs[0].Uri);
                 // keep model for subsequent training
                 File.Copy("offline.model", "split1.model", overwrite: true);
 
-                trainer.TrainOffline("produce the 2nd model by training through all events", trackbacks[1].ModelId, dataMap, trackbacks.SelectMany(t => t.EventIds), trainer.Blobs.ModelBlobs[1].Uri);
+                trainer.TrainOffline("produce the 2nd model by training through all events", trainer.Blobs.Trackbacks[1].ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), trainer.Blobs.ModelBlobs[1].Uri);
                 File.Copy("offline.model", "split2.model", overwrite: true);
 
-                trainer.TrainOffline("produce the 2nd model by starting from the 1st and then continuing", trackbacks[1].ModelId, dataMap, trackbacks[1].EventIds, trainer.Blobs.ModelBlobs[1].Uri, "-i split1.model -l 0.1");
+                trainer.TrainOffline("produce the 2nd model by starting from the 1st and then continuing", trainer.Blobs.Trackbacks[1].ModelId, dataMap, trainer.Blobs.Trackbacks[1].EventIds, trainer.Blobs.ModelBlobs[1].Uri, "-i split1.model -l 0.1");
             }
 
-            // restart trainer and resume from split2.model
-            using (var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.1 -q ab -l 0.1"))
+            // restart trainer and resume from split2.model, covering "fresh -> load" transition
+            using (var trainer = await RunTrainer(args, data.Skip(220).Take(120), dataMap, expectedNumStates: 3, cleanBlobs: false))
             {
-                // start listening for event hub
-                await trainer.StartAsync(new CountingCheckpointPolicy(100));
+                var lastTrackback = trainer.Blobs.Trackbacks.Last();
+                var lastBlob = trainer.Blobs.ModelBlobs.Last();
+                trainer.TrainOffline("produce the 3rd model by training through all events", lastTrackback.ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), lastBlob.Uri);
+                trainer.TrainOffline("produce the 3rd model by starting from the 2nd and then continuing", lastTrackback.ModelId, dataMap, lastTrackback.EventIds, lastBlob.Uri, "-i split2.model -l 0.1");
 
-                // send data to event hub
-                trainer.SendData(data.Skip(220).Take(120));
+                File.Copy("offline.model", "split3.model", overwrite: true);
+            }
 
-                await trainer.PollTrainerCheckpoint(blobs => blobs.ModelBlobs.Count == 3 && blobs.ModelTrackbackBlobs.Count == 3 && blobs.StateJsonBlobs.Count == 3);
-
-                // download & parse trackback file
-                var trackbacks = trainer.Blobs.DownloadTrackbacksOrderedByTime();
-
-                Assert.AreEqual(100, trackbacks[0].EventIds.Count); // due to checkpoint policy = 100
-                Assert.AreEqual(100, trackbacks[1].EventIds.Count); // due to checkpoint policy = 100
-                Assert.AreEqual(100, trackbacks[2].EventIds.Count); // due to checkpoint policy = 100
-
-                trainer.TrainOffline("produce the 3rd model by training through all events", trackbacks[2].ModelId, dataMap, trackbacks.SelectMany(t => t.EventIds), trainer.Blobs.ModelBlobs[2].Uri);
-
-                trainer.TrainOffline("produce the 3rd model by starting from the 2nd and then continuing", trackbacks[2].ModelId, dataMap, trackbacks[2].EventIds, trainer.Blobs.ModelBlobs[2].Uri, "-i split2.model -l 0.1");
+            // restart ones more to cover "load -> save"
+            using (var trainer = await RunTrainer(args, data.Skip(340).Take(120), dataMap, expectedNumStates: 4, cleanBlobs: false))
+            {
+                var lastTrackback = trainer.Blobs.Trackbacks.Last();
+                var lastBlob = trainer.Blobs.ModelBlobs.Last();
+                trainer.TrainOffline("produce the 4th model by training through all events", lastTrackback.ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), lastBlob.Uri);
+                trainer.TrainOffline("produce the 4th model by starting from the 3rd and then continuing", lastTrackback.ModelId, dataMap, lastTrackback.EventIds, lastBlob.Uri, "-i split3.model -l 0.1");
             }
         }
 
@@ -312,10 +323,10 @@ namespace cs_unittest
                 await trainer.PollTrainerCheckpoint(blobs => blobs.ModelBlobs.Count > 0 && blobs.ModelTrackbackBlobs.Count > 0 && blobs.StateJsonBlobs.Count > 0 );
 
                 // download & parse trackback file
-                var trackbacks = trainer.Blobs.DownloadTrackbacksOrderedByTime();
-                Assert.AreEqual(1, trackbacks.Count);
+                trainer.Blobs.DownloadTrackbacksOrderedByTime();
+                Assert.AreEqual(1, trainer.Blobs.Trackbacks.Count);
 
-                var trackback = trackbacks[0];
+                var trackback = trainer.Blobs.Trackbacks[0];
                 Assert.AreEqual(data.Count, trackback.EventIds.Count);
                 Assert.AreEqual(1, trainer.Blobs.ModelBlobs.Count);
 
@@ -427,6 +438,7 @@ namespace cs_unittest
             internal List<IListBlobItem> ModelBlobs;
             internal List<IListBlobItem> ModelTrackbackBlobs;
             internal List<IListBlobItem> StateJsonBlobs;
+            internal List<Trackback> Trackbacks;
 
             internal OnlineTrainerBlobs(string storageConnectionString)
             {
@@ -494,9 +506,9 @@ namespace cs_unittest
                 Assert.Fail("Trainer didn't produce checkpoints");
             }
 
-            internal List<Trackback> DownloadTrackbacksOrderedByTime()
+            internal void DownloadTrackbacksOrderedByTime()
             {
-                return this.ModelTrackbackBlobs.Select(b =>
+                this.Trackbacks = this.ModelTrackbackBlobs.Select(b =>
                 {
                     var trackbackStr = this.DownloadNonEmptyBlob(b);
 

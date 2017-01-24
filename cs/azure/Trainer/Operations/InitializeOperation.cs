@@ -108,13 +108,22 @@ namespace VW.Azure.Trainer
             }
 
             // load the model
-            using (var modelStream = await modelBlob.OpenReadAsync())
+            var args = "--save_resume " + this.settings.Metadata.TrainArguments;
+            try
             {
-                // it's up to the external system to make sure the train arguments are compatible with the stored model
-                // if the arguments are changed substantially, one needs to invoke Reset which forces a refresh
-                var args = "--save_resume " + this.settings.Metadata.TrainArguments;
-                this.InitializeVowpalWabbit(new VowpalWabbitSettings(args) { ModelStream = modelStream });
-                this.telemetry.TrackTrace($"Model loaded {this.state.ModelName}", SeverityLevel.Verbose);
+                using (var modelStream = await modelBlob.OpenReadAsync())
+                {
+                    // it's up to the external system to make sure the train arguments are compatible with the stored model
+                    // if the arguments are changed substantially, one needs to invoke Reset which forces a refresh
+                    this.InitializeVowpalWabbit(new VowpalWabbitSettings(args) { ModelStream = modelStream });
+                    this.telemetry.TrackTrace($"Model loaded {this.state.ModelName}", SeverityLevel.Verbose);
+                }
+            }
+            catch (VowpalWabbitArgumentDisagreementException ex)
+            {
+                // found conflicting arguments. Start fresh model
+                this.InitializeVowpalWabbit(new VowpalWabbitSettings(args));
+                this.telemetry.TrackTrace($"Arguments found in model {this.state.ModelName} disagree with newly supplied arguments: {args}. Discarding model and starting fresh: {ex.Message}", SeverityLevel.Verbose);
             }
 
             // store the initial model

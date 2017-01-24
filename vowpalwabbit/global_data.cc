@@ -256,15 +256,73 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 
 				previous_option_needs_argument = false;
 			}
-			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
+			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>& e)
 			{
 				auto ignored = *arg;
 
 				args.pop_back();
 				if (previous_option_needs_argument)
 				{
-					ignored = args.back() + " " + ignored;
+					auto option = args.back();
+					auto duplicate_value = ignored;
+					ignored =  option + " " + ignored;
 					args.pop_back();
+
+					// check if at least the values are the same
+
+					// reparse arguments so far
+					new_vm.clear();
+					po::parsed_options parsed_full = po::command_line_parser(args).
+						style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+						options(opts).allow_unregistered().run();
+					po::store(parsed_full, new_vm);
+
+					// parse just the duplicate option
+					vector<string> sub_args;
+					sub_args.push_back(option);
+					sub_args.push_back(duplicate_value);
+
+					po::variables_map sub_vm;
+					po::parsed_options parsed_dup = po::command_line_parser(sub_args).
+						style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+						options(opts).allow_unregistered().run();
+					po::store(parsed_dup, sub_vm);
+
+					// we need to compare the parsed actions to overcome different representation of the same value
+					// e.g. --epsilon 0.1 vs --epsilon 0.10000
+					auto duplicate_option = sub_vm.begin();
+					auto first_option_occurrence = new_vm.find(duplicate_option->first);
+
+					if (first_option_occurrence == new_vm.end() || duplicate_option == sub_vm.end())
+						THROW("unable to find duplicate option");
+
+					bool found_disagreement = false;
+					if (duplicate_option->second.value().type() == typeid(string))
+						found_disagreement = duplicate_option->second.as<string>() != first_option_occurrence->second.as<string>();
+					else if (duplicate_option->second.value().type() == typeid(float))
+						found_disagreement = duplicate_option->second.as<float>() != first_option_occurrence->second.as<float>();
+					else if (duplicate_option->second.value().type() == typeid(double))
+						found_disagreement = duplicate_option->second.as<double>() != first_option_occurrence->second.as<double>();
+					else if (duplicate_option->second.value().type() == typeid(int))
+						found_disagreement = duplicate_option->second.as<int>() != first_option_occurrence->second.as<int>();
+					else
+						THROW("Unsupported type for option '" << duplicate_option->first << "'");
+
+					if (found_disagreement)
+					{
+						// get the original string value
+						auto duplicate_option = parsed_dup.options.begin();
+						auto first_option_occurrence = std::find_if(parsed_full.options.begin(), parsed_full.options.end(),
+							[&duplicate_option](po::option& o) { return duplicate_option->string_key == o.string_key; });
+
+						if (first_option_occurrence == parsed_full.options.end() || duplicate_option == parsed_dup.options.end())
+							THROW("unable to find duplicate option");
+
+						auto duplicate_option_value = *duplicate_option->value.begin();
+						auto first_option_occurrence_value = *first_option_occurrence->value.begin();
+
+						THROW_EX(VW::vw_argument_disagreement_exception, "Disagreeing option values for '" << option << "': '" << first_option_occurrence_value << "' vs '" << duplicate_option_value << "'");
+					}
 				}
 
 				all.trace_message << "ignoring duplicate option: '" << ignored << "'" << endl;
