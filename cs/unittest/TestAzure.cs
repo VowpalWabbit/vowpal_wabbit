@@ -263,6 +263,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("NotOnVSO")]
         public async Task TestAzureTrainerRestart()
         {
             // generate data
@@ -305,6 +306,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("NotOnVSO")]
         public async Task TestAzureTrainer()
         {
             using (var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.2 -q ab"))
