@@ -746,15 +746,15 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
 	msg << "sum_loss " << all.sd->sum_loss << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters );
+		"", read, msg, text);
 
 	msg << "sum_loss_since_last_dump " << all.sd->sum_loss_since_last_dump << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	msg << "dump_interval " << all.sd->dump_interval << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	msg << "min_label " << all.sd->min_label << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
@@ -766,23 +766,23 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
 	msg << "weighted_examples " << all.sd->weighted_examples << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	msg << "weighted_labels " << all.sd->weighted_labels << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels),
-		"", read, msg, text), /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters;
+		"", read, msg, text);
 
 	msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	msg << "example_number " << all.sd->example_number << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	msg << "total_features " << all.sd->total_features << "\n";
 	bin_text_read_write_fixed(model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features),
-		"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters);
+		"", read, msg, text);
 
 	if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
 	{ // restore some data to allow --save_resume work more accurate
@@ -798,7 +798,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		// fix "loss since last" for first printed out example details
 		msg << "sd::oec.weighted_examples " << all.sd->old_weighted_examples << "\n";
 		bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
-			"", read, msg, text, /* ignore_data_and_write_zeros: */ !all.preserve_performance_counters); // TODO: fair to do?
+			"", read, msg, text); 
 
 		// fix "number of examples per pass"
 		msg << "current_pass " << all.current_pass << "\n";
@@ -814,6 +814,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->weighted_examples = 0.;
 		all.sd->weighted_labels = 0.;
 		all.sd->weighted_unlabeled_examples = 0.;
+		all.sd->old_weighted_examples = 0.;
 		all.sd->example_number = 0;
 		all.sd->total_features = 0;
 	}

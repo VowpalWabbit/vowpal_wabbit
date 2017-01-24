@@ -76,7 +76,7 @@ namespace VW.Azure.Trainer
             this.state = state;
 
             // save extra state so learning can be resumed later with new data
-            var settings = new VowpalWabbitSettings("--save_resume " + this.settings.Metadata.TrainArguments);
+            var settings = new VowpalWabbitSettings("--save_resume --preserve_performance_counters " + this.settings.Metadata.TrainArguments);
 
             if (model != null)
                 settings.ModelStream = new MemoryStream(model);
@@ -108,7 +108,7 @@ namespace VW.Azure.Trainer
             }
 
             // load the model
-            var args = "--save_resume " + this.settings.Metadata.TrainArguments;
+            var args = "--save_resume --preserve_performance_counters " + this.settings.Metadata.TrainArguments;
             try
             {
                 using (var modelStream = await modelBlob.OpenReadAsync())

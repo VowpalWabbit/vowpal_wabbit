@@ -206,7 +206,7 @@ namespace cs_unittest
                     trainArguments = this.trainArguments;
 
                 // train model offline using trackback
-                var settings = new VowpalWabbitSettings(trainArguments + $" --id {modelId} --save_resume --readable_model offline.model.txt -f offline.model");
+                var settings = new VowpalWabbitSettings(trainArguments + $" --id {modelId} --save_resume --preserve_performance_counters -f offline.model");
                 using (var vw = new VowpalWabbitJson(settings))
                 {
                     foreach (var id in eventOrder)
@@ -218,15 +218,19 @@ namespace cs_unittest
                     }
                 }
 
+                using (var vw = new VowpalWabbit("-i offline.model --save_resume --readable_model offline.model.txt -f offline.reset_perf_counters.model"))
+                { }
+
                 Blobs.DownloadFile(onlineModelUri, "online.model");
+                using (var vw = new VowpalWabbit("-i online.model --save_resume --readable_model online.model.txt -f online.reset_perf_counters.model"))
+                { }
 
-                using (var vw = new VowpalWabbit("-i online.model --save_resume --readable_model online.model.txt"))
 
-                    // validate that the model is the same
-                    CollectionAssert.AreEqual(
-                        File.ReadAllBytes("offline.model"),
-                        File.ReadAllBytes("online.model"),
-                        $"{message}. Offline and online model differs. Compare online.model.txt with offline.model.txt to compare");
+                // validate that the model is the same
+                CollectionAssert.AreEqual(
+                    File.ReadAllBytes("offline.reset_perf_counters.model"),
+                    File.ReadAllBytes("online.reset_perf_counters.model"),
+                    $"{message}. Offline and online model differs. Compare online.model.txt with offline.model.txt to compare");
             }
         }
 
