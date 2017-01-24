@@ -23,16 +23,28 @@ namespace VW.Azure.Trainer
     /// </summary>
     public sealed class PerformanceCounters : IDisposable
     {
+        /// <summary>
+        /// Performance counter attribute to autmatically allow counter creation.
+        /// </summary>
         public class PerformanceCounterTypeAttribute : Attribute
         {
+            /// <summary>
+            /// Initializes a new <see cref="PerformanceCounterTypeAttribute"/> instance.
+            /// </summary>
             public PerformanceCounterTypeAttribute(PerformanceCounterType type, string name = null)
             {
                 this.Type = type;
                 this.Name = name;
             }
 
+            /// <summary>
+            /// The performance counter type.
+            /// </summary>
             public PerformanceCounterType Type { get; private set; }
 
+            /// <summary>
+            /// The desired name for the performance counter.
+            /// </summary>
             public string Name { get; private set; }
         }
 
@@ -67,6 +79,9 @@ namespace VW.Azure.Trainer
             }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="PerformanceCounters"/> instance.
+        /// </summary>
         public PerformanceCounters(string instance)
         {
             try
@@ -111,6 +126,9 @@ namespace VW.Azure.Trainer
             }
         }
 
+        /// <summary>
+        /// Disposes performance counter native resources.
+        /// </summary>
         public void Dispose()
         {
             var props = typeof(PerformanceCounters)

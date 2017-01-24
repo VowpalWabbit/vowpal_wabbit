@@ -244,7 +244,7 @@ public:
 		}
 		else if (found)
 		{
-			count_label(ctx.ex->l.simple.label);
+			count_label(ctx.all->sd, ctx.ex->l.simple.label);
 
 			found = false;
 		}

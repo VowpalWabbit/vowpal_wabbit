@@ -230,8 +230,7 @@ public:
     if (m_initial.HasValue)
       ld->initial = m_initial.Value;
 
-    // not sure if I should complain... external...
-    count_label(ld->label);
+    count_label(vw->sd, ld->label);
   }
 
   virtual String^ ToString() override

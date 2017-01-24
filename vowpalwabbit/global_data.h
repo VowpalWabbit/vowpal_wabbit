@@ -232,6 +232,10 @@ struct shared_data
   bool report_multiclass_log_loss;
   double multiclass_log_loss;
   double holdout_multiclass_log_loss;
+  
+  bool  is_more_than_two_labels_observed;
+  float first_observed_label;
+  float second_observed_label;
 
   // Column width, precision constants:
   static const int col_avg_loss = 8;

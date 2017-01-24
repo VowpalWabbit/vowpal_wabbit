@@ -22,11 +22,12 @@ namespace cs_unittest
                 Verbose = true
             }))
             {
-                vw.Learn("1 |a x:2"); 
-                vw.Learn("2 |a x:3"); 
+                vw.Learn("1 |a x:2");
+                vw.Learn("2 |a x:3");
             }
 
-            Assert.AreEqual(16, messages.Count);
+            var trace = string.Join("\n", messages);
+            Assert.AreEqual(16, messages.Count, $"Expected 16 lines. Found {messages.Count}. '{trace}'");
             Assert.AreEqual("total feature number = 4", messages[15]);
         }
     }

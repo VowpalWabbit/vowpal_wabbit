@@ -27,10 +27,19 @@ namespace VW.Azure.Trainer
             this.PartitionsDateTime = new Dictionary<string, DateTime>();
         }
 
+        /// <summary>
+        /// Current EventHub state.
+        /// </summary>
         public Dictionary<string, string> Partitions { get; private set; }
 
+        /// <summary>
+        /// Current EventHub state using data time.
+        /// </summary>
         public Dictionary<string, DateTime> PartitionsDateTime { get; private set; }
 
+        /// <summary>
+        /// Union of <see cref="Partitions"/> and <see cref="PartitionsDateTime"/>. 
+        /// </summary>
         [JsonIgnore]
         public Dictionary<string, string> PartitionsDetailed
         {
@@ -43,6 +52,9 @@ namespace VW.Azure.Trainer
             }
         }
 
+        /// <summary>
+        /// The models name (timestamp + name).
+        /// </summary>
         public string ModelName { get; set; }
     }
 }

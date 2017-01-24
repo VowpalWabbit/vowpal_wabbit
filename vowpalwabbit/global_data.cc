@@ -256,7 +256,7 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 
 				previous_option_needs_argument = false;
 			}
-			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>& e)
+			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
 			{
 				auto ignored = *arg;
 
@@ -531,6 +531,10 @@ vw::vw()
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;   // default is multiplicative progress dumps
   progress_arg = 2.0;     // next update progress dump multiplier
+
+  sd->is_more_than_two_labels_observed = false;
+  sd->first_observed_label = FLT_MAX;
+  sd->second_observed_label = FLT_MAX;
 
   sd->report_multiclass_log_loss = false;
   sd->multiclass_log_loss = 0;
