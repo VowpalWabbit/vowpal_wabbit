@@ -887,6 +887,7 @@ namespace VW
 	template<bool audit>
 	void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
 	{
+		// string line_copy(line);
 		// destructive parsing
 		InsituStringStream ss(line);
 		json_parser<audit>* parser = (json_parser<audit>*)all.p->jsonp;
@@ -902,7 +903,8 @@ namespace VW
 
 		THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code()) << ". "
 			"Handler: " << handler.error().str() <<
-			"State: " << (current_state ? current_state->name : "null"));
+			"State: " << (current_state ? current_state->name : "null")); // <<
+			// "Line: '"<< line_copy << "'");
 	}
 }
 
