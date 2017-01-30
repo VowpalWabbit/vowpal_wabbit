@@ -11,6 +11,7 @@ build_script:
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure_worker\packages.config
+- vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\setup_bundle\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\unittest\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages python\windows27\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages python\windows35\packages.config
