@@ -38,13 +38,13 @@ Deployment Process
 5) Upload package to PyPI
 
     You should have twine installed and configured and your PyPI / test PyPI user should have access to the package
-    <VERSION> corresponds to the new version in the configure.ac file
+    <VERSION> corresponds to the new version in the configure.ac file which should match what step 4) creates in the dist sub-dir
 
     a) Test package
 
     .. code-block:: bash
 
-        $ twine upload -r test dist/*
+        $ twine upload --repository-url https://testpypi.python.org/pypi -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
         $ cd /tmp
         $ virtualenv test_vw_package
         $ source test_vw_package/bin/activate
@@ -57,7 +57,7 @@ Deployment Process
 
     .. code-block:: bash
 
-        $ twine upload dist dist/vowpalwabbit-<VERSION>.tar.gz
+        $ twine upload --repository-url https://pypi.python.org/pypi -u <username> -p <password> dist/vowpalwabbit-<VERSION>.tar.gz
 
 6) Cleanup build and packaging artifacts / directories
 
