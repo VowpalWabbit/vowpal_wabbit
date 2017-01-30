@@ -1,8 +1,10 @@
 ﻿using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +26,14 @@ namespace cs_unittest
 
         public void Process(ITelemetry item)
         {
+            var tt = item as TraceTelemetry;
+            if (tt != null)
+            {
+                Console.WriteLine($"Trace: {tt.Message}");
+                foreach (var prop in tt.Properties)
+                    Console.WriteLine($"\t{prop.Key}: {prop.Value}");
+            }
+
             var et = item as ExceptionTelemetry;
             if (et != null)
             {

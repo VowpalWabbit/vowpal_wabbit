@@ -6,7 +6,8 @@ license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 
-vw& parse_args(int argc, char *argv[]);
+// trace listener + context need to be passed at initialization to capture all messages.
+vw& parse_args(int argc, char *argv[], trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 void parse_modules(vw& all, io_buf& model);
 void parse_sources(vw& all, io_buf& model, bool skipModelLoad = false);
 

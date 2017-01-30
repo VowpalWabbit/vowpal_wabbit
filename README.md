@@ -59,8 +59,11 @@ Note that `./autogen.sh` requires *automake* (see the prerequisites, above.)
 `./autogen.sh`'s command line arguments are passed directly to `configure` as
 if they were `configure` arguments and flags.
 
-Note that `./autogen.sh` will overwrite the supplied `Makefile`, so
-keeping a copy of `Makefile` may be a good idea before running `autogen.sh`.
+Note that `./autogen.sh` will overwrite the supplied `Makefile`, including the `Makefile`s in sub-directories, so
+keeping a copy of the `Makefile`s may be a good idea before running `autogen.sh`. If your original `Makefile`s were overwritten by `autogen.sh` calling `automake`, you may always get the originals back from git using:
+```
+git checkout Makefile */Makefile
+```
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.

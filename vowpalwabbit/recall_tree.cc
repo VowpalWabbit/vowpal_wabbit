@@ -554,7 +554,7 @@ base_learner* recall_tree_setup(vw& all)
   init_tree (tree);
 
   if (! all.quiet)
-    std::cerr << "recall_tree:"
+    all.trace_message << "recall_tree:"
               << " node_only = " << tree.node_only
               << " bern_hyper = " << tree.bern_hyper
               << " max_depth = " << tree.max_depth

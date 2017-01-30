@@ -43,6 +43,7 @@ namespace VW.Azure.Trainer
             // store the model name
             this.state.ModelName = $"{data.Timestamp}/model";
             data.State = JsonConvert.SerializeObject(this.State);
+            data.TrackbackCount = this.trackbackList.Count;
             data.TrackbackList = $"modelid: {modelId}\n" + string.Join("\n", this.trackbackList);
 
             this.trackbackList.Clear();
@@ -91,7 +92,7 @@ namespace VW.Azure.Trainer
                     trackbackBlob.UploadTextAsync(data.TrackbackList),
                     stateBlob.UploadTextAsync(data.State));
 
-                var modelBlob = await ExportModel(container, data.Model, modelName, data.TrackbackList.Length);
+                var modelBlob = await ExportModel(container, data.Model, modelName, data.TrackbackCount);
 
                 // update the fast recovery state file
                 var latestState = container.GetBlockBlobReference(Learner.StateBlobName);

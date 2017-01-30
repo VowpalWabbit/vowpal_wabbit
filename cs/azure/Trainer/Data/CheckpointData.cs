@@ -16,6 +16,8 @@ namespace VW.Azure.Trainer.Data
 
         internal byte[] EvalModel { get; set; }
 
+        internal int TrackbackCount { get; set; }
+
         internal string TrackbackList { get; set; }
 
         internal bool UpdateClientModel { get; set; }

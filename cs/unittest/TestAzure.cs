@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -124,33 +125,43 @@ namespace cs_unittest
             while (true);
         }
 
-        [TestMethod]
-        // TODO: figure issue in VSO
-        [TestCategory("NotOnBuild")]
-        [Ignore]
-        public async Task TestAzureTrainer()
+        private class OnlineTrainerWrapper : IDisposable
         {
-            var storageConnectionString = GetConfiguration("storageConnectionString");
-            var inputEventHubConnectionString = GetConfiguration("inputEventHubConnectionString");
-            var evalEventHubConnectionString = GetConfiguration("evalEventHubConnectionString");
+            internal string trainArguments;
+            internal OnlineTrainerBlobs Blobs;
 
-            var trainArguments = "--cb_explore_adf --epsilon 0.2 -q ab";
+            private string storageConnectionString = GetConfiguration("storageConnectionString");
+            private string inputEventHubConnectionString = GetConfiguration("inputEventHubConnectionString");
+            private string evalEventHubConnectionString = GetConfiguration("evalEventHubConnectionString");
+            private SynchronizedCollection<ExceptionTelemetry> exceptions;
+            private LearnEventProcessorHost trainProcesserHost;
 
-            // register with AppInsights to collect exceptions
-            var exceptions = RegisterAppInsightExceptionHook();
-
-            // cleanup blobs
-            var blobs = new ModelBlobs(storageConnectionString);
-            await blobs.Cleanup();
-
-            var data = GenerateData(100).ToDictionary(d => d.EventId, d => d);
-
-            // start listening for event hub
-            using (var trainProcesserHost = new LearnEventProcessorHost())
+            internal OnlineTrainerWrapper(string trainArguments)
             {
+                this.trainArguments = trainArguments;
+
+                Blobs = new OnlineTrainerBlobs(storageConnectionString);
+
+                // register with AppInsights to collect exceptions
+                // need to set the instrumentation key, otherwise the processor is ignored.
+                TelemetryConfiguration.Active.InstrumentationKey = "00000000-0000-0000-0000-000000000000";
+                exceptions = new SynchronizedCollection<ExceptionTelemetry>();
+                var builder = TelemetryConfiguration.Active.TelemetryProcessorChainBuilder;
+                builder.Use((next) => new TestTelemetryProcessor(next, exceptions));
+                builder.Build();
+            }
+
+            void AssertNoExceptionsThroughAppInsights()
+            {
+                Assert.AreEqual(0, exceptions.Count, string.Join("\n", exceptions.Select(e => e.Exception.Message + " " + e.Message)));
+            }
+
+            internal async Task StartAsync(ICheckpointPolicy checkpointPolicy)
+            {
+                trainProcesserHost = new LearnEventProcessorHost();
                 await trainProcesserHost.StartAsync(new OnlineTrainerSettingsInternal
                 {
-                    CheckpointPolicy = new CountingCheckpointPolicy(data.Count),
+                    CheckpointPolicy = checkpointPolicy,
                     JoinedEventHubConnectionString = inputEventHubConnectionString,
                     EvalEventHubConnectionString = evalEventHubConnectionString,
                     StorageConnectionString = storageConnectionString,
@@ -159,44 +170,171 @@ namespace cs_unittest
                         ApplicationID = "vwunittest",
                         TrainArguments = trainArguments
                     },
-                    EnableExampleTracing = true,
+                    EnableExampleTracing = false,
                     EventHubStartDateTimeUtc = DateTime.UtcNow // ignore any events that arrived before this time
                 });
 
+                AssertNoExceptionsThroughAppInsights();
+            }
+
+            internal async Task PollTrainerCheckpoint(Predicate<OnlineTrainerBlobs> predicate)
+            {
+                // wait for trainer to checkpoint
+                await Blobs.PollTrainerCheckpoint(exceptions, predicate);
+            }
+
+            internal void SendData(IEnumerable<Context> data)
+            {
                 // send events to event hub
                 var eventHubInputClient = EventHubClient.CreateFromConnectionString(inputEventHubConnectionString);
-                data.Values.ForEach(c => eventHubInputClient.Send(new EventData(c.JSONAsBytes) { PartitionKey = c.Index.ToString() }));
+                data.ForEach(c => eventHubInputClient.Send(new EventData(c.JSONAsBytes) { PartitionKey = c.Index.ToString() }));
+            }
 
-                // wait for trainer to checkpoint
-                await blobs.PollTrainerCheckpoint(exceptions);
+            public void Dispose()
+            {
+                if (trainProcesserHost != null)
+                {
+                    trainProcesserHost.Dispose();
+                    trainProcesserHost = null;
+                }
+            }
 
-                // download & parse trackback file
-                var trackback = blobs.DownloadTrackback();
-                Assert.AreEqual(data.Count, trackback.EventIds.Count);
+            internal void TrainOffline(string message, string modelId, Dictionary<string, Context> data, IEnumerable<string> eventOrder, Uri onlineModelUri, string trainArguments = null)
+            {
+                // allow override
+                if (trainArguments == null)
+                    trainArguments = this.trainArguments;
 
                 // train model offline using trackback
-                var settings = new VowpalWabbitSettings(trainArguments + $" --id {trackback.ModelId} --save_resume --readable_model offline.json.model.txt -f offline.json.model");
+                var settings = new VowpalWabbitSettings(trainArguments + $" --id {modelId} --save_resume --preserve_performance_counters -f offline.model");
                 using (var vw = new VowpalWabbitJson(settings))
                 {
-                    foreach (var id in trackback.EventIds)
+                    foreach (var id in eventOrder)
                     {
                         var json = data[id].JSON;
 
                         var progressivePrediction = vw.Learn(json, VowpalWabbitPredictionType.ActionProbabilities);
                         // TODO: validate eval output
                     }
-
-                    vw.Native.SaveModel("offline.json.2.model");
                 }
 
-                // download online model
-                new CloudBlob(blobs.ModelBlob.Uri, blobs.BlobClient.Credentials).DownloadToFile("online.model", FileMode.Create);
+                using (var vw = new VowpalWabbit("-i offline.model --save_resume --readable_model offline.model.txt -f offline.reset_perf_counters.model"))
+                { }
+
+                Blobs.DownloadFile(onlineModelUri, "online.model");
+                using (var vw = new VowpalWabbit("-i online.model --save_resume --readable_model online.model.txt -f online.reset_perf_counters.model"))
+                { }
+
 
                 // validate that the model is the same
                 CollectionAssert.AreEqual(
-                    File.ReadAllBytes("offline.json.model"),
-                    File.ReadAllBytes("online.model"),
-                    "Offline and online model differs. Run to 'vw -i online.model --readable_model online.model.txt' to compare");
+                    File.ReadAllBytes("offline.reset_perf_counters.model"),
+                    File.ReadAllBytes("online.reset_perf_counters.model"),
+                    $"{message}. Offline and online model differs. Compare online.model.txt with offline.model.txt to compare");
+            }
+        }
+
+        private async Task<OnlineTrainerWrapper> RunTrainer(string args, IEnumerable<Context> data, Dictionary<string, Context> dataMap, int expectedNumStates, bool cleanBlobs)
+        {
+            var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.1 -q ab -l 0.1");
+
+            if (cleanBlobs)
+                trainer.Blobs.Cleanup().Wait();
+
+            // start listening for event hub
+            await trainer.StartAsync(new CountingCheckpointPolicy(100));
+
+            // send data to event hub
+            trainer.SendData(data);
+
+            await trainer.PollTrainerCheckpoint(blobs => 
+                blobs.ModelBlobs.Count == expectedNumStates && 
+                blobs.ModelTrackbackBlobs.Count == expectedNumStates &&
+                blobs.StateJsonBlobs.Count == expectedNumStates);
+
+            // download & parse trackback file
+            trainer.Blobs.DownloadTrackbacksOrderedByTime();
+
+            foreach (var trackback in trainer.Blobs.Trackbacks)
+                // due to checkpoint policy = 100
+                Assert.AreEqual(100, trackback.EventIds.Count, $"{trackback.Blob.Uri} does not contain the expected 100 events. Actual: {trackback.EventIds.Count}");
+
+            return trainer;
+        }
+
+        [TestMethod]
+        [TestCategory("NotOnVSO")]
+        public async Task TestAzureTrainerRestart()
+        {
+            // generate data
+            var data = GenerateData(600).ToList();
+            var dataMap = data.ToDictionary(d => d.EventId, d => d);
+
+            var args = "--cb_explore_adf --epsilon 0.1 -q ab -l 0.1";
+
+            using (var trainer = await RunTrainer(args, data.Take(220), dataMap, expectedNumStates: 2, cleanBlobs: true))
+            {
+                trainer.TrainOffline("produce the 1st model", trainer.Blobs.Trackbacks[0].ModelId, dataMap, trainer.Blobs.Trackbacks[0].EventIds, trainer.Blobs.ModelBlobs[0].Uri);
+                // keep model for subsequent training
+                File.Copy("offline.model", "split1.model", overwrite: true);
+
+                trainer.TrainOffline("produce the 2nd model by training through all events", trainer.Blobs.Trackbacks[1].ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), trainer.Blobs.ModelBlobs[1].Uri);
+                File.Copy("offline.model", "split2.model", overwrite: true);
+
+                trainer.TrainOffline("produce the 2nd model by starting from the 1st and then continuing", trainer.Blobs.Trackbacks[1].ModelId, dataMap, trainer.Blobs.Trackbacks[1].EventIds, trainer.Blobs.ModelBlobs[1].Uri, "-i split1.model -l 0.1");
+            }
+
+            // restart trainer and resume from split2.model, covering "fresh -> load" transition
+            using (var trainer = await RunTrainer(args, data.Skip(220).Take(120), dataMap, expectedNumStates: 3, cleanBlobs: false))
+            {
+                var lastTrackback = trainer.Blobs.Trackbacks.Last();
+                var lastBlob = trainer.Blobs.ModelBlobs.Last();
+                trainer.TrainOffline("produce the 3rd model by training through all events", lastTrackback.ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), lastBlob.Uri);
+                trainer.TrainOffline("produce the 3rd model by starting from the 2nd and then continuing", lastTrackback.ModelId, dataMap, lastTrackback.EventIds, lastBlob.Uri, "-i split2.model -l 0.1");
+
+                File.Copy("offline.model", "split3.model", overwrite: true);
+            }
+
+            // restart ones more to cover "load -> save"
+            using (var trainer = await RunTrainer(args, data.Skip(340).Take(120), dataMap, expectedNumStates: 4, cleanBlobs: false))
+            {
+                var lastTrackback = trainer.Blobs.Trackbacks.Last();
+                var lastBlob = trainer.Blobs.ModelBlobs.Last();
+                trainer.TrainOffline("produce the 4th model by training through all events", lastTrackback.ModelId, dataMap, trainer.Blobs.Trackbacks.SelectMany(t => t.EventIds), lastBlob.Uri);
+                trainer.TrainOffline("produce the 4th model by starting from the 3rd and then continuing", lastTrackback.ModelId, dataMap, lastTrackback.EventIds, lastBlob.Uri, "-i split3.model -l 0.1");
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("NotOnVSO")]
+        public async Task TestAzureTrainer()
+        {
+            using (var trainer = new OnlineTrainerWrapper("--cb_explore_adf --epsilon 0.2 -q ab"))
+            {
+                trainer.Blobs.Cleanup().Wait();
+
+                // generate data
+                var data = GenerateData(100).ToList();
+                var dataMap = data.ToDictionary(d => d.EventId, d => d);
+
+                // start listening for event hub
+                await trainer.StartAsync(new CountingCheckpointPolicy(data.Count));
+
+                // send data to event hub
+                trainer.SendData(data);
+
+                // wait for trainer to checkpoint
+                await trainer.PollTrainerCheckpoint(blobs => blobs.ModelBlobs.Count > 0 && blobs.ModelTrackbackBlobs.Count > 0 && blobs.StateJsonBlobs.Count > 0 );
+
+                // download & parse trackback file
+                trainer.Blobs.DownloadTrackbacksOrderedByTime();
+                Assert.AreEqual(1, trainer.Blobs.Trackbacks.Count);
+
+                var trackback = trainer.Blobs.Trackbacks[0];
+                Assert.AreEqual(data.Count, trackback.EventIds.Count);
+                Assert.AreEqual(1, trainer.Blobs.ModelBlobs.Count);
+
+                trainer.TrainOffline("train a model for this set of events", trackback.ModelId, dataMap, trackback.EventIds, trainer.Blobs.ModelBlobs[0].Uri);
             }
         }
 
@@ -251,9 +389,13 @@ namespace cs_unittest
 
         internal class Trackback
         {
+            public IListBlobItem Blob;
+
             public string ModelId;
 
             public List<string> EventIds;
+
+            public DateTime Timestamp;
         }
 
         private static IEnumerable<Context> GenerateData(int n)
@@ -291,33 +433,29 @@ namespace cs_unittest
             }
         }
 
-        private static SynchronizedCollection<ExceptionTelemetry> RegisterAppInsightExceptionHook()
-        {
-            var exceptions = new SynchronizedCollection<ExceptionTelemetry>();
-            var builder = TelemetryConfiguration.Active.TelemetryProcessorChainBuilder;
-            builder.Use((next) => new TestTelemetryProcessor(next, exceptions));
-            builder.Build();
-
-            return exceptions;
-        }
-
-        internal class ModelBlobs
+        internal class OnlineTrainerBlobs
         {
             internal CloudBlobClient BlobClient;
             internal CloudBlobContainer ModelContainer;
             internal CloudBlockBlob CurrentModel;
             internal CloudBlobContainer TrainerContainer;
-            internal IListBlobItem ModelBlob;
-            internal IListBlobItem ModelTrackbackBlob;
-            internal IListBlobItem StateJsonBlob;
+            internal List<IListBlobItem> ModelBlobs;
+            internal List<IListBlobItem> ModelTrackbackBlobs;
+            internal List<IListBlobItem> StateJsonBlobs;
+            internal List<Trackback> Trackbacks;
 
-            internal ModelBlobs(string storageConnectionString)
+            internal OnlineTrainerBlobs(string storageConnectionString)
             {
                 this.BlobClient = CloudStorageAccount.Parse(storageConnectionString).CreateCloudBlobClient();
 
                 this.ModelContainer = this.BlobClient.GetContainerReference("mwt-models");
                 this.CurrentModel = this.ModelContainer.GetBlockBlobReference("current");
                 this.TrainerContainer = this.BlobClient.GetContainerReference("onlinetrainer");
+            }
+
+            internal void DownloadFile(Uri uri, string filename)
+            {
+                new CloudBlob(uri, BlobClient.Credentials).DownloadToFile(filename, FileMode.Create);
             }
 
             internal async Task Cleanup()
@@ -335,9 +473,9 @@ namespace cs_unittest
                 }
             }
 
-            internal async Task PollTrainerCheckpoint(SynchronizedCollection<ExceptionTelemetry> exceptions)
+            internal async Task PollTrainerCheckpoint(SynchronizedCollection<ExceptionTelemetry> exceptions, Predicate<OnlineTrainerBlobs> predicate)
             {
-                // wait for fiels to show up
+                // wait for files to show up
                 for (int i = 0; i < 30; i++)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1));
@@ -359,34 +497,40 @@ namespace cs_unittest
 
                     // onlinetrainer/20161128/002828
                     var blobs = this.TrainerContainer.ListBlobs(useFlatBlobListing: true);
-                    this.ModelBlob = blobs.FirstOrDefault(b => b.Uri.ToString().EndsWith("model"));
-                    this.ModelTrackbackBlob = blobs.FirstOrDefault(b => b.Uri.ToString().EndsWith("model.trackback"));
-                    this.StateJsonBlob = blobs.FirstOrDefault(b => b.Uri.ToString().EndsWith("state.json"));
+                    this.ModelBlobs = blobs.Where(b => b.Uri.ToString().EndsWith("model"))
+                        .OrderBy(uri => DateTime.ParseExact(uri.Parent.Prefix, "yyyyMMdd/HHmmss/", CultureInfo.InvariantCulture))
+                        .ToList();
+                    this.ModelTrackbackBlobs = blobs.Where(b => b.Uri.ToString().EndsWith("model.trackback")).ToList();
+                    this.StateJsonBlobs = blobs.Where(b => !string.IsNullOrEmpty(b.Parent.Prefix) && b.Uri.ToString().EndsWith("state.json")).ToList();
 
-                    if (this.ModelBlob == null || this.ModelTrackbackBlob == null || this.StateJsonBlob == null)
-                        continue;
-
-                    return;
+                    if (predicate(this))
+                        return;
                 }
 
                 Assert.Fail("Trainer didn't produce checkpoints");
             }
 
-            internal Trackback DownloadTrackback()
+            internal void DownloadTrackbacksOrderedByTime()
             {
-                var trackbackStr = this.DownloadNonEmptyBlob(this.ModelTrackbackBlob);
-
-                var trackback = trackbackStr.Split('\n');
-                // modelid: faf5e313-46bb-4852-af05-576c3a1c2c67
-                var m = Regex.Match(trackback[0], "^modelid: (.+)$");
-
-                Assert.IsTrue(m.Success, $"Unable to extract model id from trackback file. Line '{trackback[0]}'");
-
-                return new Trackback
+                this.Trackbacks = this.ModelTrackbackBlobs.Select(b =>
                 {
-                    ModelId = m.Groups[1].Value,
-                    EventIds = trackback.Skip(1).ToList()
-                };
+                    var trackbackStr = this.DownloadNonEmptyBlob(b);
+
+                    var trackback = trackbackStr.Split('\n');
+                    // modelid: faf5e313-46bb-4852-af05-576c3a1c2c67
+                    var m = Regex.Match(trackback[0], "^modelid: (.+)$");
+
+                    Assert.IsTrue(m.Success, $"Unable to extract model id from trackback file. Line '{trackback[0]}'");
+
+                    return new Trackback
+                    {
+                        Blob = b,
+                        Timestamp = DateTime.ParseExact(b.Parent.Prefix, "yyyyMMdd/HHmmss/", CultureInfo.InvariantCulture),
+                        ModelId = m.Groups[1].Value,
+                        EventIds = trackback.Skip(1).ToList()
+                    };
+                })
+                .OrderBy(x => x.Timestamp).ToList();
             }
 
             internal string DownloadNonEmptyBlob(IListBlobItem blob)

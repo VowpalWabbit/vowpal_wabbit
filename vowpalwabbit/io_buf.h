@@ -245,7 +245,8 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
 { if (len > 0)
   { char* p;
     buf_write (o, p, len);
-    memcpy (p, data, len);
+
+	memcpy (p, data, len);
 
     // compute hash for check-sum
     if (o.verify_hash)
