@@ -19,7 +19,8 @@ ref class VowpalWabbitBase;
 /// Owners of example must implement this interface.
 /// </summary>
 public interface class IVowpalWabbitExamplePool : public System::IDisposable
-{ /// <summary>
+{ 
+  /// <summary>
   /// Gets or creates a new native examples.
   /// </summary>
   VowpalWabbitExample^ GetOrCreateNativeExample();

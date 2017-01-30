@@ -14,6 +14,9 @@ using VW.Serializer;
 
 namespace VW.Azure.Trainer
 {
+    /// <summary>
+    /// Azure online trainer.
+    /// </summary>
     public sealed class LearnEventProcessorHost : IDisposable
     {
         private readonly TelemetryClient telemetry;
@@ -26,6 +29,9 @@ namespace VW.Azure.Trainer
         private SafeTimer perfUpdater;
         private DateTime? eventHubStartDateTimeUtc;
 
+        /// <summary>
+        /// Initializes a new <see cref="LearnEventProcessorHost"/> instance.
+        /// </summary>
         public LearnEventProcessorHost()
         {
             this.telemetry = new TelemetryClient();
@@ -34,8 +40,14 @@ namespace VW.Azure.Trainer
             this.eventHubStartDateTimeUtc = null;
         }
 
+        /// <summary>
+        /// Performance countners populated by online trainer.
+        /// </summary>
         public PerformanceCounters PerformanceCounters { get { return this.perfCounters; } }
 
+        /// <summary>
+        /// Timestamp when the trainer was last started.
+        /// </summary>
         public DateTime LastStartDateTimeUtc { get; private set; }
 
         internal object InitialOffsetProvider(string partition)
@@ -73,11 +85,17 @@ namespace VW.Azure.Trainer
             await this.SafeExecute(async () => await this.RestartInternalAsync(settings));
         }
 
+        /// <summary>
+        /// Resets the trainers.
+        /// </summary>
         public async Task ResetModelAsync(OnlineTrainerState state = null, byte[] model = null)
         {
             await this.SafeExecute(async () => await this.ResetInternalAsync(state, model));
         }
 
+        /// <summary>
+        /// Forces model checkpointing.
+        /// </summary>
         public async Task CheckpointAsync()
         {
             await this.SafeExecute(async () => await this.trainProcessorFactory.LearnBlock.SendAsync(new CheckpointTriggerEvent()));
@@ -197,14 +215,18 @@ namespace VW.Azure.Trainer
                 TimeSpan.FromMilliseconds(500),
                 this.UpdatePerformanceCounters);
 
+            var vwArgs = this.trainer.VowpalWabbit.Arguments;
+
             this.telemetry.TrackTrace(
                 "OnlineTrainer started",
                 SeverityLevel.Information,
                 new Dictionary<string, string>
                 {
-                { "CheckpointPolicy", settings.CheckpointPolicy.ToString() },
-                { "VowpalWabbit", settings.Metadata.TrainArguments },
-                { "ExampleTracing", settings.EnableExampleTracing.ToString() }
+                    { "CheckpointPolicy", settings.CheckpointPolicy.ToString() },
+                    { "VowpalWabbit", settings.Metadata.TrainArguments },
+                    { "ExampleTracing", settings.EnableExampleTracing.ToString() },
+                    { "LearningRate", vwArgs.LearningRate.ToString() },
+                    { "PowerT", vwArgs.PowerT.ToString() }
                 });
         }
 
@@ -309,6 +331,9 @@ namespace VW.Azure.Trainer
             }
         }
 
+        /// <summary>
+        /// Dispose the trainer.
+        /// </summary>
         public void Dispose()
         {
             try

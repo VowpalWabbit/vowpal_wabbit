@@ -107,6 +107,24 @@ namespace VW
         }
     };
 
+	/// <summary>
+	/// A managed wrapper for native vowpal wabbit exceptions.
+	/// </summary>
+	/// <remarks>
+	/// As the default managed exception wrapping any native exception doesn't even capture exception::what()
+	/// this wrapper was created.
+	/// </remarks>
+	[Serializable]
+	public ref class VowpalWabbitArgumentDisagreementException : VowpalWabbitException
+	{
+	public:
+		/// <summary>
+		/// Initializes a new instance of <see cref="VowpalWabbitException"/>.
+		/// </summary>
+		/// <param name="ex">The native vowpal wabbit exception</param>
+		VowpalWabbitArgumentDisagreementException(const vw_argument_disagreement_exception& ex);
+	};
+
 #ifdef _DEBUG
     [System::ComponentModel::Browsable(false)]
     [System::ComponentModel::EditorBrowsable(System::ComponentModel::EditorBrowsableState::Never)]

@@ -445,9 +445,9 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
 
 #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
     if (correct_features_cnt != new_features_cnt)
-      cerr << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt << endl;
+      all.trace_message << "Incorrect new features count " << new_features_cnt << " must be " << correct_features_cnt << endl;
     if (fabs(correct_features_value - new_features_value) > 1e-5)
-      cerr << "Incorrect new features value " << new_features_value << " must be " << correct_features_value << endl;
+		all.trace_message << "Incorrect new features value " << new_features_value << " must be " << correct_features_value << endl;
 #endif
 
   }

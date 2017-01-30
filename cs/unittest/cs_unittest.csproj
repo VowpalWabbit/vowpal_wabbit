@@ -172,6 +172,7 @@
     <Compile Include="TestConfidence.cs" />
     <Compile Include="TestMultiClassPredictionFactory.cs" />
     <Compile Include="TestTelemetryProcessor.cs" />
+    <Compile Include="TestTracing.cs" />
     <Compile Include="TestWiki.cs" />
     <Compile Include="TestAllReduce.cs" />
     <Compile Include="TestArguments.cs" />

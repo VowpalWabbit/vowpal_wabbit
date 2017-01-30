@@ -37,6 +37,9 @@ private:
   /// </remarks>
   initonly Func<String^, size_t, size_t>^ m_hasher;
 
+  template<typename T>
+  cli::array<cli::array<float>^>^ FillTopicAllocation(T& weights);
+
 public:
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbit"/> instance.
