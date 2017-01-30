@@ -341,7 +341,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	{
 		coef_j = alpha[j] - rho[j] * y_r;
 		y_r = 0.;
-		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w) 
+		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
 		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
 			(&(*w))[W_DIR] += (float)coef_j*mem[(2 * j + MEM_ST + origin) % b.mem_stride];
@@ -421,7 +421,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 template <class T> double add_regularization(vw& all, bfgs& b, float regularization, T& weights)
 { //compute the derivative difference
   double ret = 0.;
-  
+
   if (b.regularizers == nullptr)
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
       {
@@ -451,7 +451,7 @@ template <class T> double add_regularization(vw& all, bfgs& b, float regularizat
 	ret -= 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
-  
+
   return ret;
 }
 
@@ -575,7 +575,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& wei
 {
 	double ret = 0.;
 	for (typename T::iterator w = weights.begin(); w != weights.end();  ++w)
-	{ 
+	{
 	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
 		ret += mem1[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
 	}
@@ -614,14 +614,14 @@ int process_pass(vw& all, bfgs& b)
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
-    if (b.first_pass) 
+    if (b.first_pass)
     { if(all.all_reduce != nullptr)
       { accumulate(all, all.weights, W_COND); //Accumulate preconditioner
         float temp = (float)b.importance_weight_sum;
         b.importance_weight_sum = accumulate_scalar(all, temp);
       }
       //finalize_preconditioner(all, b, all.l2_lambda);
-      if(all.all_reduce != nullptr) 
+      if(all.all_reduce != nullptr)
       {	float temp = (float)b.loss_sum;
 	b.loss_sum = accumulate_scalar(all, temp);  //Accumulate loss_sums
 	accumulate(all, all.weights, 1); //Accumulate gradients from all nodes
@@ -645,7 +645,7 @@ int process_pass(vw& all, bfgs& b)
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
        if (!all.quiet)
-        fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
+        fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
       b.predictions.erase();
       update_weight(all, b.step_size);
     }
@@ -695,7 +695,7 @@ int process_pass(vw& all, bfgs& b)
         b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
         float ratio = (b.step_size==0.f) ? 0.f : (float)new_step/(float)b.step_size;
         if (!all.quiet)
-          fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\n",
+          fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n",
                   "","",ratio,
                   new_step);
         b.predictions.erase();
@@ -739,7 +739,7 @@ int process_pass(vw& all, bfgs& b)
           ftime(&b.t_end_global);
           b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
           if (!all.quiet)
-            fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
+            fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
           b.predictions.erase();
           update_weight(all, b.step_size);
         }
@@ -750,7 +750,7 @@ int process_pass(vw& all, bfgs& b)
   /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
   /********************************************************************/
     else // just finished all second gradients
-    {    
+    {
  if(all.all_reduce != nullptr)
       { float t = (float)b.curvature;
         b.curvature = accumulate_scalar(all, t);  //Accumulate curvatures
@@ -779,7 +779,7 @@ int process_pass(vw& all, bfgs& b)
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
 
       if (!all.quiet)
-        fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
+        fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
       b.gradient_pass = true;
     }//now start computing derivatives.
   b.current_pass++;
@@ -944,7 +944,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
       i++;
   }
   while ((!read && i < length) || (read && brw >0));
-  
+
   if (read)
     regularizer_to_weight(all, b);
 }
@@ -979,7 +979,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     ftime(&b.t_start_global);
 
     if (!all->quiet)
-    { const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+    { const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-s\n";
       fprintf(stderr, header_fmt,
               "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size");
       cerr.precision(5);
