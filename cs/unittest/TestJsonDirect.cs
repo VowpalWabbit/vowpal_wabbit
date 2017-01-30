@@ -1,6 +1,15 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TestJsonDirectClass.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Linq;
 using VW;
 using VW.Labels;
 using VW.Serializer;
@@ -261,6 +270,28 @@ namespace cs_unittest
                         }
                     }
                 });
+
+                vw.Validate(new[] {
+                    "shared | Bar:5",
+                    " | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e"
+                },
+                    new JsonRawAdfString
+                    {
+                        Bar = 5,
+                        _multi = new[]
+                        {
+                                new JsonRawString
+                                {
+                                    Foo = 1,
+                                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar= 2 } }),
+                                    Values = new []
+                                    {
+                                        JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
+                                        JsonConvert.SerializeObject(new { E = new { e = true } }),
+                                    }.ToList()
+                                }
+                        }
+                    });
             }
         }
     }
@@ -271,6 +302,9 @@ namespace cs_unittest
 
         [JsonConverter(typeof(JsonRawStringConverter))]
         public string Value { get; set; }
+
+        [JsonConverter(typeof(JsonRawStringListConverter))]
+        public List<string> Values { get; set; }
     }
 
     public class JsonRawAdfString
