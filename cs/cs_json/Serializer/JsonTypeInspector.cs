@@ -66,7 +66,10 @@ namespace VW.Serializer
             .ToArray();
 
             DictTypes = numericElementTypes
-                .Select(valueType => dictType.MakeGenericType(typeof(string), valueType))
+                .SelectMany(valueType => new[] {
+                    dictType.MakeGenericType(typeof(string), valueType),
+                    dictType.MakeGenericType(typeof(string), valueType.MakeArrayType()),
+                })
                 .ToArray();
         }
 
@@ -238,7 +241,8 @@ namespace VW.Serializer
                     stringProcessing: name == propertyConfiguration.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
-                    featureGroup: VowpalWabbitConstants.DefaultNamespace);
+                    @namespace: p.PropertyType.IsArray && name.Length > 1 ? name.Substring(1) : null,
+                    featureGroup: p.PropertyType.IsArray && name.Length > 0 ? name[0] : VowpalWabbitConstants.DefaultNamespace);
 
             // find all top-level dictionaries
             var topLevelDictionaries =
