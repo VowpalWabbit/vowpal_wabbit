@@ -27,21 +27,20 @@ void add_example_namespace(example& ec, char ns, features& fs)
 { bool has_ns = false;
   for (size_t i=0; i<ec.indices.size(); i++)
     if (ec.indices[i] == (size_t)ns)
-      { has_ns = true;
-        break;
-      }
+    { has_ns = true;
+      break;
+    }
 
   if (!has_ns)
     ec.indices.push_back((size_t)ns);
 
   bool audit = fs.space_names.size() > 0;
   features& add_fs = ec.feature_space[(size_t)ns];
- for (size_t i = 0; i < fs.size(); ++i)
-    {
-      add_fs.push_back(fs.values[i], fs.indicies[i]);
-      if (audit)
-        add_fs.space_names.push_back(fs.space_names[i]);
-    }
+  for (size_t i = 0; i < fs.size(); ++i)
+  { add_fs.push_back(fs.values[i], fs.indicies[i]);
+    if (audit)
+      add_fs.space_names.push_back(fs.space_names[i]);
+  }
   ec.total_sum_feat_sq += fs.sum_feat_sq;
 
   ec.num_features += fs.size();
@@ -60,9 +59,9 @@ void del_example_namespaces_from_example(example& target, example& source)
   namespace_index* idx = source.indices.end();
   idx--;
   for (; idx>=source.indices.begin(); idx--)
-    { if (*idx == constant_namespace) continue;
-      del_example_namespace(target, (char)*idx, source.feature_space[*idx]);
-    }
+  { if (*idx == constant_namespace) continue;
+    del_example_namespace(target, (char)*idx, source.feature_space[*idx]);
+  }
 }
 
 void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab)

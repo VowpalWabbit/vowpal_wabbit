@@ -164,7 +164,7 @@ public:
     }
     // read more bytes from file up to the remaining allocated space
     ssize_t num_read = read_file(f, space.end(), space.end_array - space.end());
-     if (num_read >= 0)
+    if (num_read >= 0)
     { // if some bytes were actually loaded, update the end of loaded values
       space.end() = space.end() + num_read;
       return num_read;
@@ -245,7 +245,8 @@ inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
 { if (len > 0)
   { char* p;
     buf_write (o, p, len);
-    memcpy (p, data, len);
+
+	memcpy (p, data, len);
 
     // compute hash for check-sum
     if (o.verify_hash)
@@ -306,8 +307,8 @@ inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len,
 }
 
 inline size_t bin_text_read_write_fixed_validated(io_buf& io, char* data, size_t len,
-                                                  const char* read_message, bool read,
-                                                  std::stringstream& msg, bool text)
+    const char* read_message, bool read,
+    std::stringstream& msg, bool text)
 { size_t nbytes = bin_text_read_write_fixed(io, data, len, read_message, read, msg, text);
   if (read && len > 0) // only validate bytes read/write if expected length > 0
   { if (nbytes == 0)

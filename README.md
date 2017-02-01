@@ -136,7 +136,7 @@ brew install vowpal-wabbit
 ```
 [The homebrew formula for VW is located on github](https://github.com/Homebrew/homebrew-core/blob/master/Formula/vowpal-wabbit.rb).
 
-### Manual install ov Vowpal Wabbit
+### Manual install of Vowpal Wabbit
 #### OSX Dependencies (if using Brew):
 ```
 brew install libtool

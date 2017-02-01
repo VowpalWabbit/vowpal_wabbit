@@ -17,18 +17,18 @@ struct interact
   size_t num_features;
 };
 
-bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
 { // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0)
     return false;
 
   if (f_src1.values[0] != 1)
-  { cerr << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+  { all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
-  { cerr << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+  { all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -65,10 +65,10 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     }
 
     if(cur_id1 == cur_id2)
-      { f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
-        i1++;
-        i2++;
-      }
+    { f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
+      i1++;
+      i2++;
+    }
     else if (cur_id1 < cur_id2)
       i1++;
     else
@@ -80,15 +80,15 @@ template <bool is_learn, bool print_all>
 void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
 { features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
+  
+  if (!contains_valid_namespaces(*in.all, f1, f2, in))
+  { if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
 
-  if (!contains_valid_namespaces(f1, f2, in))
-    { if (is_learn)
-        base.learn(ec);
-      else
-        base.predict(ec);
-
-      return;
-    }
+    return;
+  }
 
   in.num_features = ec.num_features;
   in.total_sum_feat_sq = ec.total_sum_feat_sq;
@@ -139,9 +139,9 @@ LEARNER::base_learner* interact_setup(vw& all)
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2)
-    { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+  { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
-    }
+  }
 
   interact& data = calloc_or_throw<interact>();
 

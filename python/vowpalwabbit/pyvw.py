@@ -73,6 +73,12 @@ class vw(pylibvw.vw):
             l = [arg_str] + l
 
         pylibvw.vw.__init__(self, ' '.join(l))
+
+        # check to see if native parser needs to run
+        ext_file_args = ['d', 'data', 'passes']
+        if any(x in kw for x in ext_file_args):
+            pylibvw.vw.run_parser(self)
+
         self.finished = False
 
     def num_weights(self):
@@ -132,6 +138,10 @@ class vw(pylibvw.vw):
             ec.finish()
 
         return prediction
+
+    def save(self, filename):
+        """save model to disk"""
+        pylibvw.vw.save(self, filename)
 
     def finish(self):
         """stop VW by calling finish (and, eg, write weights to disk)"""

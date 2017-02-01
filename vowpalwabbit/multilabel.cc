@@ -161,20 +161,20 @@ void output_example(vw& all, example& ec)
   }
 
   all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-  
+
   for (int sink : all.final_prediction_sink)
     if (sink >= 0)
-      { std::stringstream ss;
-	
-	for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
-	  { if (i > 0)
-	      ss << ',';
-	    ss << ec.pred.multilabels.label_v[i];
-	  }
-	ss << ' ';
-	all.print_text(sink, ss.str(), ec.tag);
+    { std::stringstream ss;
+
+      for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+      { if (i > 0)
+          ss << ',';
+        ss << ec.pred.multilabels.label_v[i];
       }
-  
+      ss << ' ';
+      all.print_text(sink, ss.str(), ec.tag);
+    }
+
   print_update(all, is_test_label(ec.l.multilabels), ec);
 }
 

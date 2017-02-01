@@ -38,7 +38,7 @@ public:
   Trie() : terminus(false), count(0), max_count(0), max_string("") {}
 
   ~Trie()
-{ for (Trie* t : children)
+  { for (Trie* t : children)
       delete t;
   }
 
@@ -150,7 +150,7 @@ public:
     prev_row = tmp;
   }
 
-void append(string s) { for (char c : s) append(c); }
+  void append(string s) { for (char c : s) append(c); }
 
   vector<char>& next()
   { A.clear();
@@ -193,7 +193,7 @@ private:
   string  output_string;
   vector<char> A;
 
-inline size_t min3(size_t a, size_t b, size_t c) { return (a < b) ? (a < c) ? a : c : (b < c) ? b : c; }
+  inline size_t min3(size_t a, size_t b, size_t c) { return (a < b) ? (a < c) ? a : c : (b < c) ? b : c; }
 };
 
 struct input
@@ -213,7 +213,7 @@ float max_cost = 100.;
 
 float get_or_one(vector< pair<char,size_t> >& v, char c)
 { // TODO: could binary search
-for (auto& p : v)
+  for (auto& p : v)
     if (p.first == c)
       return minf(max_cost, (float)p.second);
   return 1.;
@@ -258,13 +258,13 @@ public:
 
       // characters thus far
       ex(vw_namespace('c'));
-for (char c : out) ex("c=" + string(1,c));
+      for (char c : out) ex("c=" + string(1,c));
       ex("c=$");
 
       // words thus far
       ex(vw_namespace('w'));
       tmp = "";
-for (char c : out)
+      for (char c : out)
       { if (c == '^') continue;
         if (c == ' ')
         { ex("w=" + tmp + "$");
@@ -280,7 +280,7 @@ for (char c : out)
         cdict->get_next(nullptr, next);
         ex(vw_namespace('d'));
         char best_char = '~'; float best_count = 0.;
-for (auto xx : next)
+        for (auto xx : next)
         { if (xx.cw > 0.) ex("c=" + string(1,xx.c), xx.cw);
           if (xx.sw > 0.) ex("mc=" + xx.s, xx.sw);
           if (xx.sw > best_count) { best_count = xx.sw; best_char = xx.c; }
@@ -299,7 +299,7 @@ for (auto xx : next)
       */
       ex(vw_namespace('i'));
       tmp = "";
-for (char c : in.in)
+      for (char c : in.in)
       { if (c == ' ')
         { ex("w=" + tmp);
           tmp = "";
@@ -366,16 +366,16 @@ void run_easy()
   for (size_t i=0; i<100; i++)
   { //if (i == 9999) max_cost = 1.;
     if (i % 10 == 0) cerr << '.';
-for (auto x : training_data)
+    for (auto x : training_data)
       task.learn(x, out);
   }
   cerr << endl;
 
-for (auto x : training_data)
+  for (auto x : training_data)
   { task.predict(x, out);
     cerr << "output = " << out << endl;
   }
-for (auto x : test_data)
+  for (auto x : test_data)
   { task.predict(x, out);
     cerr << "output = " << out << endl;
   }

@@ -68,7 +68,7 @@ void finish(expreplay& er)
 
 template<char er_level, label_parser& lp>
 LEARNER::base_learner* expreplay_setup(vw& all)
-  { std::string replay_string = "replay_"; replay_string += er_level;
+{ std::string replay_string = "replay_"; replay_string += er_level;
   if (missing_option<size_t, true>(all, replay_string.c_str(), "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
     return nullptr;
 

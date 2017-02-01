@@ -55,10 +55,9 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
       base.learn(ec);
     }
     else
-      {
-	ec.l.simple.label = FLT_MAX;
-	ec.weight = 0.f;
-      }
+    { ec.l.simple.label = FLT_MAX;
+      ec.weight = 0.f;
+    }
   }
 }
 

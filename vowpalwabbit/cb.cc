@@ -15,14 +15,14 @@ using namespace std;
 
 namespace CB
 {
-  bool is_test_label(CB::label& ld)
-  { if (ld.costs.size() == 0)
-      return true;
-    for (size_t i=0; i<ld.costs.size(); i++)
-      if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
-	return false;
+bool is_test_label(CB::label& ld)
+{ if (ld.costs.size() == 0)
     return true;
-  }
+  for (size_t i=0; i<ld.costs.size(); i++)
+    if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
+      return false;
+  return true;
+}
 
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 { size_t num = *(size_t *)c;

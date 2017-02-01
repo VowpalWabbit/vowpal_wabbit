@@ -16,10 +16,10 @@ using namespace std;
 
 using namespace CB;
 using namespace GEN_CS;
-namespace CB_ALGS {
-struct cb
+namespace CB_ALGS
 {
-  cb_to_cs cbcs;
+struct cb
+{ cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
 };
 
@@ -105,8 +105,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 }
 
 void finish(cb& data)
-{
-  cb_to_cs& c = data.cbcs;
+{ cb_to_cs& c = data.cbcs;
   data.cb_cs_ld.costs.delete_v();
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
 }
@@ -181,11 +180,11 @@ base_learner* cb_algs_setup(vw& all)
   base_learner* base = setup_base(all);
   if (eval)
   { all.p->lp = CB_EVAL::cb_eval;
-	all.label_type = label_type::cb_eval;
+    all.label_type = label_type::cb_eval;
   }
   else
   { all.p->lp = CB::cb_label;
-	all.label_type = label_type::cb;
+    all.label_type = label_type::cb;
   }
 
   learner<cb>* l;

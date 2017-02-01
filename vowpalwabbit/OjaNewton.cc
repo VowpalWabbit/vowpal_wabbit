@@ -52,57 +52,55 @@ struct OjaNewton {
     bool normalize;
     bool random_init;
 
-	void initialize_Z() //TODO: use weight_paramters::set_default for initialization
-	{  weight_parameters& weights = all->weights;
-	   if (normalize) { // initialize normalization part
-		 for (weight_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-		   (&(*iter))[NORM2] = 0.1f;
-	    }
-        if(!random_init) {
-            // simple initialization
-		  weight_parameters::iterator iter = weights.begin() + 1;
-		  for (int i = 1; i <= m; ++i, ++iter)
-		  { weights_iterator_iterator<weight> j = iter.begin() + i;
-			*j = 1.f;
-		  }
-        }
-	    else {
-            // more complicated initialization: orthgonal basis of a random matrix
-
-	    const double PI2 = 2.f * 3.1415927f;
-		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
-		  for (weights_iterator_iterator<weight> j = i.begin() + 1; j != i.end(m + 1); ++j)
-		  {  float r1 = merand48(all->random_state);
-		     float r2 = merand48(all->random_state);
-			 *j = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
-		  }
-
-            // Gram-Schmidt
-          for (int j = 1; j <= m; j++) {
-             for (int k = 1; k <= j - 1; k++) {
-	            double tmp = 0;
-				
-				weight_parameters::iterator w = weights.begin();
-		        for (; w != weights.end(); ++w) 
-					tmp += (&(*w))[j] * (&(*w))[k];
-
-				w = weights.begin();
-				for (; w != weights.end(); ++w)
-					(&(*w))[j] -= (float)tmp * (&(*w))[k];
-	         }
-	        double norm = 0;
-			weight_parameters::iterator w = weights.begin();
-			for (; w != weights.end(); ++w)
-				norm += (&(*w))[j] * (&(*w))[j];
-            norm = sqrt(norm);
-			w = weights.begin();
-			for (; w != weights.end(); ++w)
-				(&(*w))[j] /= (float)norm;
-	       }
-	    }
+  void initialize_Z(parameters& weights)
+  { 
+    uint32_t length = 1 << all->num_bits;
+    if (normalize) { // initialize normalization part
+      for (uint32_t i = 0; i < length; i++)
+	(&(weights.strided_index(i)))[NORM2] = 0.1f;
     }
+    if(!random_init) {
+      // simple initialization
+      for (int i = 1; i <= m; i++)
+	(&(weights.strided_index(i)))[i] = 1.f;
+    }
+    else {
+      // more complicated initialization: orthgonal basis of a random matrix
+      
+      const double PI2 = 2.f * 3.1415927f;
 
-    void compute_AZx()
+      for (uint32_t i = 0; i < length; i++)
+	{
+	  weight& w = weights.strided_index(i);
+	  for (int j = 1; j <= m; j++)
+	    {
+	      float r1 = merand48(all->random_state);
+	      float r2 = merand48(all->random_state);
+	      (&w)[j] = sqrt(-2.f * log(r1)) * (float)cos(PI2 * r2);
+	    }
+	}
+    }
+    
+    // Gram-Schmidt
+    for (int j = 1; j <= m; j++) {
+      for (int k = 1; k <= j - 1; k++) {
+	double tmp = 0;
+	
+	for (uint32_t i = 0; i < length; i++)
+	  tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
+	for (uint32_t i = 0; i < length; i++)
+	  (&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
+      }
+      double norm = 0;
+      for (uint32_t i = 0; i < length; i++)
+	norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
+      norm = sqrt(norm);
+      for (uint32_t i = 0; i < length; i++)
+	(&(weights.strided_index(i)))[j] /= (float)norm;
+    }
+  }
+  
+  void compute_AZx()
     {
         for (int i = 1; i <= m; i++) {
             data.AZx[i] = 0;
@@ -228,7 +226,7 @@ struct OjaNewton {
         }
     }
 
-    void check()
+	void check()
     {
     	double max_norm = 0;
         for (int i = 1; i <= m; i++)
@@ -271,30 +269,27 @@ struct OjaNewton {
 	//second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
         uint32_t length = 1 << all->num_bits;
-        //size_t stride_shift = all->stride_shift;
-        weight_parameters& weights = all->weights;
-		for (weight_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
-		{  weights_iterator_iterator<weight> w_j = i.begin() + 1;
-		   for (int j = 1; j <= m; ++j, ++w_j)
-		     *i += *w_j * b[j] * D[j];
+		for (uint32_t i = 0; i < length; i++) {
+			weight& w = all->weights.strided_index(i);
+			for (int j = 1; j <= m; j++)
+				w += (&w)[j] * b[j] * D[j];
 		}
+
         memset(b, 0, sizeof(double) * (m+1));
 
         //third step: Z <- ADZ, A, D <- Identity
 
 	    //double norm = 0;
-		weight_parameters::iterator iter = weights.begin();
-        for (uint32_t i = 0; i < length; ++i, ++iter) {
+        for (uint32_t i = 0; i < length; ++i) {
             memset(tmp, 0, sizeof(float) * (m+1));
+			weight& w = all->weights.strided_index(i);
 			for (int j = 1; j <= m; j++)
-			{ weights_iterator_iterator<weight> w_k = iter.begin() + 1;
-			  for (int h = 1; h <= m; ++h, ++w_k)
-			    tmp[j] += A[j][h] * D[h] * (*w_k);
+			{ for (int h = 1; h <= m; ++h)
+			    tmp[j] += A[j][h] * D[h] * (&w)[h];
 			}
-			weights_iterator_iterator<weight> w_j = iter.begin() + 1;
-            for (int j = 1; j <= m; ++j, ++w_j) {
+            for (int j = 1; j <= m; ++j) {
 		      //norm = max(norm, fabs(tmp[j]));
-               *w_j = tmp[j];
+				(&w)[j] = tmp[j];
 	        }
         }
         //printf("|Z| = %f\n", norm);
@@ -452,27 +447,28 @@ void learn(OjaNewton& ON, base_learner& base, example& ec) {
 
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text) {
-    vw* all = ON.all;
+    vw& all = *ON.all;
     if (read) {
-        initialize_regressor(*all);
-        ON.initialize_Z();
+        initialize_regressor(all);
+        ON.initialize_Z(all.weights);
     }
 
     if (model_file.files.size() > 0) {
-        bool resume = all->save_resume;
+        bool resume = all.save_resume;
 	stringstream msg;
 	msg << ":"<< resume <<"\n";
         bin_text_read_write_fixed(model_file, (char *)&resume, sizeof (resume), "", read, msg, text);
 
 
         if (resume)
-            GD::save_load_online_state(*all, model_file, read, text);
+            GD::save_load_online_state(all, model_file, read, text);
         else
-            GD::save_load_regressor(*all, model_file, read, text);
+            GD::save_load_regressor(all, model_file, read, text);
     }
 }
 
-base_learner* OjaNewton_setup(vw& all) {
+base_learner* OjaNewton_setup(vw& all)
+{
     if (missing_option(all, false, "OjaNewton", "Online Newton with Oja's Sketch"))
         return nullptr;
 
@@ -552,9 +548,9 @@ base_learner* OjaNewton_setup(vw& all) {
     ON.data.AZx = calloc_or_throw<float>(ON.m+1);
     ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-	all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
+    all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-	learner<OjaNewton>& l = init_learner(&ON, learn, 1 << all.weights.stride_shift());
+    learner<OjaNewton>& l = init_learner(&ON, learn, all.weights.stride());
 
     l.set_predict(predict);
     l.set_save_load(save_load);

@@ -33,6 +33,18 @@ int vw_exception::LineNumber() const
 { return lineNumber;
 }
 
+
+vw_argument_disagreement_exception::vw_argument_disagreement_exception(const char* file, int lineNumber, std::string message)
+	: vw_exception(file, lineNumber, message)
+{ } 
+
+vw_argument_disagreement_exception::vw_argument_disagreement_exception(const vw_argument_disagreement_exception& ex)
+	: vw_exception(ex)
+{ }
+
+vw_argument_disagreement_exception::~vw_argument_disagreement_exception() _NOEXCEPT
+{ }
+
 #ifdef _WIN32
 
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
@@ -50,28 +62,24 @@ void vw_trace(const char* filename, int linenumber, const char* fmt, ...)
 }
 
 struct StopWatchData
-{
-	LARGE_INTEGER frequency_;
-	LARGE_INTEGER startTime_;
+{ LARGE_INTEGER frequency_;
+  LARGE_INTEGER startTime_;
 };
 
 StopWatch::StopWatch() : data(new StopWatchData())
-{
-	if (!::QueryPerformanceFrequency(&data->frequency_)) throw "Error with QueryPerformanceFrequency";
-	::QueryPerformanceCounter(&data->startTime_);
+{ if (!::QueryPerformanceFrequency(&data->frequency_)) throw "Error with QueryPerformanceFrequency";
+  ::QueryPerformanceCounter(&data->startTime_);
 }
 
 StopWatch::~StopWatch()
-{
-	delete data;
+{ delete data;
 }
 
 double StopWatch::MilliSeconds() const
-{
-	LARGE_INTEGER now;
-	::QueryPerformanceCounter(&now);
+{ LARGE_INTEGER now;
+  ::QueryPerformanceCounter(&now);
 
-	return double(now.QuadPart - data->startTime_.QuadPart) / (double(data->frequency_.QuadPart) / 1000);
+  return double(now.QuadPart - data->startTime_.QuadPart) / (double(data->frequency_.QuadPart) / 1000);
 }
 
 bool launchDebugger()

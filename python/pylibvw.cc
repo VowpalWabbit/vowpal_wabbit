@@ -43,8 +43,18 @@ vw_ptr my_initialize(string args)
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
+void my_run_parser(vw_ptr all)
+{   VW::start_parser(*all);
+    LEARNER::generic_driver(*all);
+    VW::end_parser(*all);
+}
+
 void my_finish(vw_ptr all)
 { VW::finish(*all, false);  // don't delete all because python will do that for us!
+}
+
+void my_save(vw_ptr all, string name)
+{ VW::save_predictor(*all, name);
 }
 
 search_ptr get_search_ptr(vw_ptr all)
@@ -85,16 +95,20 @@ label_parser* get_label_parser(vw*all, size_t labelType)
 
 size_t my_get_label_type(vw*all)
 { label_parser* lp = &all->p->lp;
-  if (lp->parse_label == simple_label.parse_label) {
-    return lBINARY;
-  } else if (lp->parse_label == MULTICLASS::mc_label.parse_label) {
-    return lMULTICLASS;
-  } else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label) {
-    return lCOST_SENSITIVE;
-  } else if (lp->parse_label == CB::cb_label.parse_label) {
-    return lCONTEXTUAL_BANDIT;
-  } else {
-    cerr << "unsupported label parser used" << endl; throw exception();
+  if (lp->parse_label == simple_label.parse_label)
+  { return lBINARY;
+  }
+  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
+  { return lMULTICLASS;
+  }
+  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
+  { return lCOST_SENSITIVE;
+  }
+  else if (lp->parse_label == CB::cb_label.parse_label)
+  { return lCONTEXTUAL_BANDIT;
+  }
+  else
+  { cerr << "unsupported label parser used" << endl; throw exception();
   }
 }
 
@@ -253,9 +267,9 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
         else { cerr << "warning: malformed feature in list" << endl; continue; }
       }
       if (got)
-	{ ec->feature_space[ns].push_back(f.x, f.weight_index);
+      { ec->feature_space[ns].push_back(f.x, f.weight_index);
         count++;
-	sum_sq += f.x*f.x;
+        sum_sq += f.x*f.x;
       }
     }
   }
@@ -274,13 +288,11 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 }
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict& dict)
-{
-  const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
+{ const py::object objectKeys = py::object(py::handle<>(PyObject_GetIter(dict.keys().ptr())));
   const py::object objectVals = py::object(py::handle<>(PyObject_GetIter(dict.values().ptr())));
   unsigned long ulCount = boost::python::extract<unsigned long>(dict.attr("__len__")());
   for (size_t u=0; u<ulCount; ++u)
-  {
-    py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
+  { py::object objectKey = py::object(py::handle<>(PyIter_Next(objectKeys.ptr())));
     py::object objectVal = py::object(py::handle<>(PyIter_Next(objectVals.ptr())));
 
     char chCheckKey = objectKey.ptr()->ob_type->tp_name[0];
@@ -347,7 +359,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   }
 
   if (all.add_constant)
-    { ae->feature_space[constant_namespace].erase();
+  { ae->feature_space[constant_namespace].erase();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i=0; i<N; i++)
@@ -391,32 +403,32 @@ uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-py::list ex_get_scalars(example_ptr ec) {
-  py::list values;
+py::list ex_get_scalars(example_ptr ec)
+{ py::list values;
   v_array<float> scalars = ec->pred.scalars;
 
-  for (float s : scalars) {
-    values.append(s);
+  for (float s : scalars)
+  { values.append(s);
   }
   return values;
 }
 
-py::list ex_get_action_scores(example_ptr ec) {
-  py::list values;
+py::list ex_get_action_scores(example_ptr ec)
+{ py::list values;
   v_array<ACTION_SCORE::action_score> scores = ec->pred.a_s;
 
-  for (ACTION_SCORE::action_score s : scores) {
-    values.append(s.score);
+  for (ACTION_SCORE::action_score s : scores)
+  { values.append(s.score);
   }
   return values;
 }
 
-py::list ex_get_multilabel_predictions(example_ptr ec) {
-  py::list values;
+py::list ex_get_multilabel_predictions(example_ptr ec)
+{ py::list values;
   MULTILABEL::labels labels = ec->pred.multilabels;
 
-  for (uint32_t l : labels.label_v) {
-    values.append(l);
+  for (uint32_t l : labels.label_v)
+  { values.append(l);
   }
   return values;
 }
@@ -590,19 +602,19 @@ int32_t po_get_int(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   try { return (*d->var_map)[arg].as<int>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<size_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<size_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<uint32_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<uint32_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<uint64_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<uint64_t>(); }
   catch (...) {}
   try { return (*d->var_map)[arg].as<uint16_t>(); }
   catch (...) {}
   try { return (*d->var_map)[arg].as<int32_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<int64_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<int64_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<int16_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<int16_t>(); }
   catch (...) {}
   // we know this'll fail but do it anyway to get the exception
   return (*d->var_map)[arg].as<int>();
@@ -649,7 +661,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<vw, vw_ptr>("vw", "the basic VW object that holds with weight vector, parser, etc.", py::no_init)
   .def("__init__", py::make_constructor(my_initialize))
   //      .def("__del__", &my_finish, "deconstruct the VW object by calling finish")
+  .def("run_parser", &my_run_parser, "parse external data file")
   .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
+  .def("save", &my_save, "save model to filename")
   .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
   .def("learn_string", &my_learn_string, "given an example specified as a string (as in a VW data file), learn on that example")
   .def("predict", &my_predict, "given a pyvw example, predict on that example")

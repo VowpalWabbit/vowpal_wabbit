@@ -16,151 +16,152 @@ using namespace System::Collections::Generic;
 
 namespace VW
 {
-    ref class VowpalWabbitPrediction;
-    ref class VowpalWabbitModel;
+ref class VowpalWabbitPrediction;
+ref class VowpalWabbitModel;
 
-    /// <summary>
-    /// A base wrapper around vowpal wabbit machine learning instance.
-    /// </summary>
-    /// <remarks>
-    /// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
-    /// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
-    /// </remarks> 
-    public ref class VowpalWabbitBase abstract
-    {
-    private:
-        /// <summary>
-        /// The settings used for this instance.
-        /// </summary>
-        initonly VowpalWabbitSettings^ m_settings;
+/// <summary>
+/// A base wrapper around vowpal wabbit machine learning instance.
+/// </summary>
+/// <remarks>
+/// Since the model class must delay diposal of <see cref="m_vw"/> until all referencing
+/// VowpalWabbit instances are disposed, the base class does not dispose <see cref="m_vw"/>.
+/// </remarks>
+public ref class VowpalWabbitBase abstract
+{
+private:
+  /// <summary>
+  /// The settings used for this instance.
+  /// </summary>
+  initonly VowpalWabbitSettings^ m_settings;
 
-        /// <summary>
-        /// An optional shared model.
-        /// </summary>
-        VowpalWabbitModel^ m_model;
+  /// <summary>
+  /// Handle to trace listener delegate, required to keep safe from garbage collection.
+  /// </summary>
+  GCHandle m_traceListener;
 
-        /// <summary>
-        /// Extracted command line arguments.
-        /// </summary>
-        VowpalWabbitArguments^ m_arguments;
+  /// <summary>
+  /// An optional shared model.
+  /// </summary>
+  VowpalWabbitModel^ m_model;
 
-        /// <summary>
-        /// Reference count to native data structure.
-        /// </summary>
-        System::Int32 m_instanceCount;
+  /// <summary>
+  /// Extracted command line arguments.
+  /// </summary>
+  VowpalWabbitArguments^ m_arguments;
 
-    internal:
-        /// <summary>
-        /// The native vowpal wabbit data structure.
-        /// </summary>
-        vw* m_vw;
+  /// <summary>
+  /// Reference count to native data structure.
+  /// </summary>
+  System::Int32 m_instanceCount;
 
-        /// <summary>
-        /// Thread-safe increment of reference count.
-        /// </summary>
-        void IncrementReference();
+internal:
+  /// <summary>
+  /// The native vowpal wabbit data structure.
+  /// </summary>
+  vw* m_vw;
 
-        /// <summary>
-        /// Thread-safe decrement of reference count.
-        /// </summary>
-        void DecrementReference();
+  /// <summary>
+  /// Thread-safe increment of reference count.
+  /// </summary>
+  void IncrementReference();
 
-    protected:
-        /// <summary>
-        /// True if all nativedata structures are disposed.
-        /// </summary>
-        bool m_isDisposed;
+  /// <summary>
+  /// Thread-safe decrement of reference count.
+  /// </summary>
+  void DecrementReference();
 
-        /// <summary>
-        /// Example pool. Kept in base to simplify deallocation.
-        /// </summary>
-        IBag<VowpalWabbitExample^>^ m_examples;
+protected:
+  /// <summary>
+  /// True if all nativedata structures are disposed.
+  /// </summary>
+  bool m_isDisposed;
 
-        /// <summary>
-        /// Initializes a new <see cref="VowpalWabbitBase"/> instance.
-        /// </summary>
-        /// <param name="settings">Command line arguments.</param>
-        VowpalWabbitBase(VowpalWabbitSettings^ settings);
+  /// <summary>
+  /// Example pool. Kept in base to simplify deallocation.
+  /// </summary>
+  IBag<VowpalWabbitExample^>^ m_examples;
 
-        /// <summary>
-        /// Cleanup.
-        /// </summary>
-        !VowpalWabbitBase();
+  /// <summary>
+  /// Initializes a new <see cref="VowpalWabbitBase"/> instance.
+  /// </summary>
+  /// <param name="settings">Command line arguments.</param>
+  VowpalWabbitBase(VowpalWabbitSettings^ settings);
 
-        /// <summary>
-        /// Internal dipose using reference counting to delay disposal of shared native data structures.
-        /// </summary>
-        void InternalDispose();
+  /// <summary>
+  /// Cleanup.
+  /// </summary>
+  !VowpalWabbitBase();
 
-        void DisposeExample(VowpalWabbitExample^ ex);
+  /// <summary>
+  /// Internal dipose using reference counting to delay disposal of shared native data structures.
+  /// </summary>
+  void InternalDispose();
 
-    public:
-        static VowpalWabbitBase();
+  void DisposeExample(VowpalWabbitExample^ ex);
 
-        /// <summary>
-        /// Cleanup.
-        /// </summary>
-        virtual ~VowpalWabbitBase();
+public:
+  static VowpalWabbitBase();
 
-        /// <summary>
-        /// The settings used for this instance.
-        /// </summary>
-        property VowpalWabbitSettings^ Settings
-        {
-            VowpalWabbitSettings^ get();
-        }
+  /// <summary>
+  /// Cleanup.
+  /// </summary>
+  virtual ~VowpalWabbitBase();
 
-        /// <summary>
-        /// Extracted command line arguments.
-        /// </summary>
-        property VowpalWabbitArguments^ Arguments
-        {
-            VowpalWabbitArguments^ get();
-        }
+  /// <summary>
+  /// The settings used for this instance.
+  /// </summary>
+  property VowpalWabbitSettings^ Settings
+  { VowpalWabbitSettings^ get();
+  }
 
-        /// <summary>
-        /// The read/writable model id.
-        /// </summary>
-        property String^ ID
-        {
-            String^ get();
-            void set(String^ id);
-        }
+  /// <summary>
+  /// Extracted command line arguments.
+  /// </summary>
+  property VowpalWabbitArguments^ Arguments
+  { VowpalWabbitArguments^ get();
+  }
 
-        /// <summary>
-        /// Performs the following steps to reset the learning state:
-        ///
-        /// - Save model to in-memory buffer
-        /// - Dispose existing instance
-        /// - Initialize new instance from in-memory buffer
-        /// </summary>
-        void Reload([System::Runtime::InteropServices::Optional] String^ args);
+  /// <summary>
+  /// The read/writable model id.
+  /// </summary>
+  property String^ ID
+  { String^ get();
+    void set(String^ id);
+  }
 
-        /// <summary>
-        /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.
-        /// </summary>
-        /// <returns>
-        /// Null if compatible, otherwise the difference
-        /// </returns>
-        String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
+  /// <summary>
+  /// Performs the following steps to reset the learning state:
+  ///
+  /// - Save model to in-memory buffer
+  /// - Dispose existing instance
+  /// - Initialize new instance from in-memory buffer
+  /// </summary>
+  void Reload([System::Runtime::InteropServices::Optional] String^ args);
 
+  /// <summary>
+  /// Compares features created by current instance are compatible to features created by <paramref name="other"/>.
+  /// </summary>
+  /// <returns>
+  /// Null if compatible, otherwise the difference
+  /// </returns>
+  String^ AreFeaturesCompatible(VowpalWabbitBase^ other);
 
-        /// <summary>
-        /// Persist model to file specified by -i.
-        /// </summary>
-        void SaveModel();
+  /// <summary>
+  /// Persist model to file specified by -i.
+  /// </summary>
+  void SaveModel();
 
-        /// <summary>
-        /// Persist model to <paramref name="filename"/>.
-        /// </summary>
-        /// <param name="filename">The destination filename for the model.</param>
-        void SaveModel(String^ filename);
+  /// <summary>
+  /// Persist model to <paramref name="filename"/>.
+  /// </summary>
+  /// <param name="filename">The destination filename for the model.</param>
+  void SaveModel(String^ filename);
 
-        /// <summary>
-        /// Persist model to <paramref name="stream"/>.
-        /// </summary>
-        /// <param name="stream">The destination stream for the model.</param>
-        /// <remarks>The stream is not closed to support embedded schemes.</remarks>
-        void SaveModel(Stream^ stream);
-    };
+  /// <summary>
+  /// Persist model to <paramref name="stream"/>.
+  /// </summary>
+  /// <param name="stream">The destination stream for the model.</param>
+  /// <remarks>The stream is not closed to support embedded schemes.</remarks>
+  void SaveModel(Stream^ stream);
+};
 }

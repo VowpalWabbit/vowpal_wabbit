@@ -14,9 +14,9 @@ const uint64_t c = 2147483647;
 
 const int bias = 127 << 23;
 
-float merand48(uint64_t& initial) {
-  initial = a * initial + c;
-  int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias; 
+float merand48(uint64_t& initial)
+{ initial = a * initial + c;
+  int32_t temp = ((initial >> 25) & 0x7FFFFF) | bias;
   return bits_to_float(temp) - 1;
 }
 

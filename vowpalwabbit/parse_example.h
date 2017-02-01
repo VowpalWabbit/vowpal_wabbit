@@ -11,9 +11,8 @@ license as described in the file LICENSE.
 
 //example processing
 typedef enum
-{
-	StringFeatures,
-	JsonFeatures
+{ StringFeatures,
+  JsonFeatures
 } FeatureInputType;
 
 void substring_to_example(vw* all, example* ae, substring example);

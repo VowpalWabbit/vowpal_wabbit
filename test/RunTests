@@ -15,7 +15,7 @@ use File::Basename;
 
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y $opt_t
-            $opt_v $opt_V);
+            $opt_v $opt_V $opt_O);
 
 my $Epsilon = 1e-4;
 
@@ -89,6 +89,7 @@ sub usage(@) {
         -V      apply valgrind to vw commands
         -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
                 (will only work where GNU coreutils 'timeout' is present)
+        -O<O>   Add <O> option(s) to all vw commands
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -137,7 +138,7 @@ sub valgrind_errfile($) {
 # which vw executable to test against
 #
 sub which_vw() {
-    if (@ARGV == 1 || @ARGV == 2) {
+    if (@ARGV > 0) {
         my $exe = $ARGV[0];
         if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
@@ -157,31 +158,16 @@ sub which_vw() {
     usage("can't find a 'vw' executable to test on");
 }
 
-sub which_lda() {
-    if (@ARGV == 2) {
-        my $exe = $ARGV[1];
-        if (-f $exe && -x $exe) {
-            printf STDERR "Testing lda: %s\n", $exe;
-            return $exe;
-        } else {
-            usage("$0: argument $exe: not an executable file");
-        }
-    } elsif (@ARGV == 0 || @ARGV == 1) {
-        foreach my $dir (@PathAdd, split(':', $ENV{PATH})) {
-            my $exe = "$dir/vw";
-            if (-x $exe) {
-                printf STDERR "Testing lda: %s\n", $exe;
-                return $exe;
-            }
-        }
-    }
-    usage("can't find a 'lda' executable to test on");
-}
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:Vt:') || usage();
+    getopts('wcdDefyE:ov:Vt:O:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
+    if (defined $opt_O) {
+        $opt_O = " $opt_O";
+    } else {
+        $opt_O = '';
+    }
 
     my $hostname = `hostname`; chomp($hostname);
     printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
@@ -333,7 +319,7 @@ sub next_test() {
 
     if ($cmd =~ /{VW}/) {
          $cmd = trim_spaces($cmd);
-         $cmd =~ s/{VW}/$VW/g;
+         $cmd =~ s/{VW}/$VW$opt_O/g;
     }
 
     unless (defined $cmd) {
@@ -1306,7 +1292,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
         train-sets/ref/0097.stderr
 
 # Test 98: checking predictions as well
-{VW} -d train-sets/0001.dat -i models/0097.model -p 0098.predict
+{VW} --preserve_performance_counters -d train-sets/0001.dat -i models/0097.model -p 0098.predict
     test-sets/ref/0098.stderr
     pred-sets/ref/0098.predict
 
@@ -1547,6 +1533,14 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cb_adf_dm.predict
 
 # Test 149: initial_weight option is used
-echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 --quiet
-    train-sets/ref/empty.stderr
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 
+    train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
+
+#Test 150:  Test --sparse_weights with 148
+{VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
+    train-sets/ref/sparse.stderr
+
+# Test 151: lrqfa 
+{VW} --lrqfa aa3 -d train-sets/0080.dat
+    train-sets/ref/0151.stderr

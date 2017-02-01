@@ -66,14 +66,10 @@ struct stagewise_poly
 
 
 inline uint64_t stride_shift(const stagewise_poly &poly, uint64_t idx)
-{
-	return idx << poly.all->weights.stride_shift();
-}
+{ return idx << poly.all->weights.stride_shift();}
 
 inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
-{
-	return idx >> poly.all->weights.stride_shift();
-}
+{ return idx >> poly.all->weights.stride_shift();}
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 { //cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
@@ -87,33 +83,27 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
     return idx;
   else
   { while (idx < poly.synth_ec.ft_offset)
-  {
-	  idx += poly.all->length() << poly.all->weights.stride_shift();
+    { idx += poly.all->length() << poly.all->weights.stride_shift();
     }
     return idx - poly.synth_ec.ft_offset;
   }
 }
 
 inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{ return wid & poly.all->weights.mask();
-}
+{ return wid & poly.all->weights.mask(); }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
-{ return stride_un_shift(poly, wid & poly.all->weights.mask());
-}
+{ return stride_un_shift(poly, wid & poly.all->weights.mask()); }
 
 inline uint64_t constant_feat(const stagewise_poly &poly)
-{ return stride_shift(poly, constant * poly.all->wpp);
-}
+{ return stride_shift(poly, constant * poly.all->wpp); }
 
 inline uint64_t constant_feat_masked(const stagewise_poly &poly)
-{ return wid_mask(poly, constant_feat(poly));
-}
+{ return wid_mask(poly, constant_feat(poly)); }
 
 
 inline size_t depthsbits_sizeof(const stagewise_poly &poly)
-{ return (2 * poly.all->length() * sizeof(uint8_t));
-}
+{ return (2 * poly.all->length() * sizeof(uint8_t)); }
 
 void depthsbits_create(stagewise_poly &poly)
 { poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
@@ -175,7 +165,10 @@ void sanity_check_state(stagewise_poly &poly)
 
     assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-    assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights[wid]) > 0) );
+	if (poly.all->weights.sparse)
+		assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.sparse_weights[wid]) > 0) );
+	else
+		assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.dense_weights[wid]) > 0));
     //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
@@ -272,8 +265,8 @@ void sort_data_update_support(stagewise_poly &poly)
   for (uint64_t i = 0; i != poly.all->length(); ++i)
   { uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
-      { float weightsal = (fabsf(poly.all->weights[wid])
-			   * poly.all->weights[poly.all->normalized_idx + (wid)])
+	{
+		float weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->normalized_idx + (wid)]);
                    /*
                     * here's some depth penalization code.  It was found to not improve
                     * statistical performance, and meanwhile it is verified as giving
@@ -282,7 +275,7 @@ void sort_data_update_support(stagewise_poly &poly)
                     * - poly.magic_argument
                     * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
                     */
-                   ;
+		;
       if (weightsal > tolerance)
       { assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
@@ -382,17 +375,16 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
 }
 
 void synthetic_decycle(stagewise_poly &poly)
-{
-  features& fs = poly.synth_ec.feature_space[tree_atomics];
+{ features& fs = poly.synth_ec.feature_space[tree_atomics];
   for (size_t i = 0; i < fs.size(); ++i)
-    { assert(cycle_get(poly, fs.indicies[i]));
-      cycle_toggle(poly, fs.indicies[i]);
-    }
+  { assert(cycle_get(poly, fs.indicies[i]));
+    cycle_toggle(poly, fs.indicies[i]);
+  }
 }
 
 void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
 { //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
-  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex)); 
+  uint64_t wid_atomic = wid_mask(poly, un_ft_offset(poly, findex));
   uint64_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
   assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -426,7 +418,7 @@ void synthetic_create_rec(stagewise_poly &poly, float v, uint64_t findex)
     ++poly.depths[poly.cur_depth];
 #endif //DEBUG
 
-    feature temp ={v * poly.synth_rec_f.x, wid_cur};
+    feature temp = {v * poly.synth_rec_f.x, wid_cur};
     poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
@@ -616,10 +608,9 @@ void finish(stagewise_poly &poly)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 { if (model_file.files.size() > 0)
-    {
-      stringstream msg;
-      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
-    }
+  { stringstream msg;
+    bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
+  }
   //unfortunately, following can't go here since save_load called before gd::save_load and thus
   //weight vector state uninitialiazed.
   //#ifdef DEBUG

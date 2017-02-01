@@ -25,7 +25,7 @@ vw* setup(int argc, char* argv[])
   all->vw_is_main = true;
 
   if (!all->quiet && !all->bfgs && !all->searchstr && !all->vm.count("audit_regressor"))
-  { std::cerr << std::left
+  { all->trace_message << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "average"
               << " "
               << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -41,7 +41,7 @@ vw* setup(int argc, char* argv[])
               << " "
               << std::setw(shared_data::col_current_features) << "current"
               << std::endl;
-    std::cerr << std::left
+    all->trace_message << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "loss"
               << " "
               << std::setw(shared_data::col_since_last) << std::left << "last"

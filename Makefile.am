@@ -4,6 +4,7 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/comp_io.h \
 	vowpalwabbit/config.h \
 	vowpalwabbit/example.h \
+	vowpalwabbit/action_score.h \
 	vowpalwabbit/feature_group.h \
 	vowpalwabbit/cb_explore.h \
 	vowpalwabbit/crossplat_compat.h \

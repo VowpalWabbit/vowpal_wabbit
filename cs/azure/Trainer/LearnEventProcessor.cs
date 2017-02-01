@@ -39,7 +39,7 @@ namespace VW.Azure.Trainer
                 new Dictionary<string, string>
                 {
                     { "PartitionId", context.Lease.PartitionId },
-                    { "Offset", context.Lease.Offset.ToString() }
+                    { "Offset", context.Lease.Offset }
                 });
 
             this.perfCounters.EventHub_Processors.Increment();

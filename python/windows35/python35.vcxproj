@@ -45,10 +45,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>pyvw35</TargetName>
     <OutDir>$(SolutionDir)..\python\bin\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\py35\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>pyvw35</TargetName>
     <OutDir>$(SolutionDir)..\python\bin\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\py35\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

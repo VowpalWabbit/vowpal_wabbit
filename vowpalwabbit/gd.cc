@@ -176,12 +176,9 @@ struct audit_results
 
 
 inline void audit_interaction(audit_results& dat, const audit_strings* f)
-{ 
-  if (f == nullptr)
-  {
-    if (!dat.ns_pre.empty())
-    { 
-        dat.ns_pre.pop_back();
+{ if (f == nullptr)
+  { if (!dat.ns_pre.empty())
+    { dat.ns_pre.pop_back();
     }
 
     return;
@@ -192,90 +189,91 @@ inline void audit_interaction(audit_results& dat, const audit_strings* f)
     ns_pre += '*';
 
   if (f->first != "" && ((f->first) != " "))
-  {
-    ns_pre.append(f->first);
+  { ns_pre.append(f->first);
     ns_pre += '^';
   }
-  
+
   if (f->second != "")
-  {
-    ns_pre.append(f->second);
+  { ns_pre.append(f->second);
   }
 
   if (!ns_pre.empty())
-  {
-    dat.ns_pre.push_back(ns_pre);
+  { dat.ns_pre.push_back(ns_pre);
   }
 }
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
-{ 
-  weight_parameters& weights = dat.all.weights;
+{
+  parameters& weights = dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
-  size_t stride_shift = dat.all.weights.stride_shift();
-
+  size_t stride_shift = weights.stride_shift();
+  
   string ns_pre;
   for (string& s : dat.ns_pre) ns_pre += s;
-
-  if(dat.all.audit)
-  { ostringstream tempstream;
-    tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
-               << ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
-
-    if(dat.all.adaptive)
-      tempstream << '@' << weights[index+1];
-
-
-    string_value sv = {weights[index]*ft_weight, ns_pre+tempstream.str()};
-    dat.results.push_back(sv);
-  }
-
-  if(dat.all.current_pass == 0 && dat.all.hash_inv)
-  { //for invert_hash
-
-    if (dat.offset != 0)
-    { // otherwise --oaa output no features for class > 0.
+  
+  if (dat.all.audit)
+    {
       ostringstream tempstream;
-      tempstream << '[' << (dat.offset >> stride_shift) << ']';
-      ns_pre += tempstream.str();
+      tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
+		 << ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
+      
+      if (dat.all.adaptive)
+	tempstream << '@' << (&weights[index])[1];
+      
+      
+      string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
+      dat.results.push_back(sv);
     }
-
-    if(!dat.all.name_index_map.count(ns_pre))
-      dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
-  }
-
+  
+  if (dat.all.current_pass == 0 && dat.all.hash_inv)
+    { //for invert_hash
+      
+      if (dat.offset != 0)
+	{ // otherwise --oaa output no features for class > 0.
+	  ostringstream tempstream;
+	  tempstream << '[' << (dat.offset >> stride_shift) << ']';
+	  ns_pre += tempstream.str();
+	}
+      
+      if (!dat.all.name_index_map.count(ns_pre))
+	dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
+    }
 }
 
-void print_features(vw& all, example& ec)
-{ weight_parameters& weights = all.weights;
-
-  if (all.lda > 0)
-  { size_t count = 0;
-    for (features& fs : ec)
-      count += fs.size();
-    for (features& fs : ec)
-    { for (features::iterator_all& f : fs.values_indices_audit())
-      { cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> all.weights.stride_shift()) & all.parse_mask) << ':' << f.value();
-        for (size_t k = 0; k < all.lda; k++)
-          cout << ':' << weights[(f.index()+k)];
-      }
+void print_lda_features(vw& all, example& ec)
+{
+  parameters& weights = all.weights;
+  uint32_t stride_shift = weights.stride_shift();
+  size_t count = 0;
+  for (features& fs : ec)
+    count += fs.size();
+  for (features& fs : ec)
+    {
+      for (features::iterator_all& f : fs.values_indices_audit())
+	{
+	  cout << '\t' << f.audit().get()->first << '^' << f.audit().get()->second << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':' << f.value();
+	  for (size_t k = 0; k < all.lda; k++)
+	    cout << ':' << (&weights[f.index()])[k];
+	}
     }
-    cout << " total of " << count << " features." << endl;
-  }
-  else
-  {
+  cout << " total of " << count << " features." << endl;
+}
 
-    audit_results dat(all,ec.ft_offset);
+
+void print_features(vw& all, example& ec)
+{ if (all.lda > 0)
+    print_lda_features(all,ec);
+  else
+  { audit_results dat(all,ec.ft_offset);
 
     for (features& fs : ec)
     { if (fs.space_names.size() > 0)
         for (features::iterator_all& f : fs.values_indices_audit())
-	      {
-          audit_interaction(dat, f.audit().get());
-	        audit_feature(dat, f.value(), f.index() + ec.ft_offset);
-	        audit_interaction(dat, NULL);
-	      }
-	    else
+        { audit_interaction(dat, f.audit().get());
+          audit_feature(dat, f.value(), f.index() + ec.ft_offset);
+          audit_interaction(dat, NULL);
+        }
+      else
         for (features::iterator& f : fs)
           audit_feature(dat, f.value(), f.index() + ec.ft_offset);
     }
@@ -290,6 +288,7 @@ void print_features(vw& all, example& ec)
     }
   }
 }
+
 
 void print_audit_features(vw& all, example& ec)
 { if(all.audit)
@@ -347,13 +346,11 @@ void predict(gd& g, base_learner&, example& ec)
     print_audit_features(all, ec);
 }
 
-inline void vec_add_trunc_multipredict(multipredict_info& mp, const float fx, uint64_t fi)
-{  weight_parameters w = mp.weights;
-  size_t index = fi;
-  for (size_t c=0; c<mp.count; c++, index += mp.step)
-  { mp.pred[c].scalar += fx * trunc_weight(w[index], mp.gravity); //TODO: figure out how to use weight_parameters::iterator (not change_begin)
-  }
-  
+  template <class T> inline void vec_add_trunc_multipredict(multipredict_info<T>& mp, const float fx, uint64_t fi)
+{
+	size_t index = fi;
+	for (size_t c = 0; c<mp.count; c++, index += mp.step)
+		mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity); 
 }
 
 template<bool l1, bool audit>
@@ -361,9 +358,20 @@ void multipredict(gd& g, base_learner&, example& ec, size_t count, size_t step, 
 { vw& all = *g.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  multipredict_info mp = { count, step, pred, g.all->weights, (float)all.sd->gravity };
-  if (l1) foreach_feature<multipredict_info, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
-  else    foreach_feature<multipredict_info, uint64_t, vec_add_multipredict      >(all, ec, mp);
+  if (g.all->weights.sparse)
+    {
+      multipredict_info<sparse_parameters> mp =
+	{ count, step, pred, g.all->weights.sparse_weights, (float)all.sd->gravity };
+      if (l1) foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
+      else    foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict      >(all, ec, mp);
+    }
+  else
+    {
+      multipredict_info<dense_parameters> mp =
+	{ count, step, pred, g.all->weights.dense_weights, (float)all.sd->gravity };
+      if (l1) foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(all, ec, mp);
+      else    foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict      >(all, ec, mp);
+    }
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
@@ -386,16 +394,16 @@ struct power_data
   float neg_norm_power;
 };
 
-  template<bool sqrt_rate, size_t adaptive, size_t normalized>
+template<bool sqrt_rate, size_t adaptive, size_t normalized>
 inline float compute_rate_decay(power_data& s, float& fw)
 { weight* w = &fw;
   float rate_decay = 1.f;
   if(adaptive)
-    { if (sqrt_rate)
-	rate_decay = InvSqrt(w[adaptive]);
-      else
-	rate_decay = powf(w[adaptive],s.minus_power_t);
-    }
+  { if (sqrt_rate)
+      rate_decay = InvSqrt(w[adaptive]);
+    else
+      rate_decay = powf(w[adaptive],s.minus_power_t);
+  }
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
@@ -419,7 +427,7 @@ struct norm_data
 
 const float x_min = 1.084202e-19f;
 const float x2_min = x_min*x_min;
-  const float x2_max = FLT_MAX;
+const float x2_max = FLT_MAX;
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
@@ -467,7 +475,7 @@ float get_pred_per_update(gd& g, example& ec)
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
-
+ 
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
@@ -559,261 +567,287 @@ void learn(gd& g, base_learner& base, example& ec)
 }
 
 void sync_weights(vw& all)
-{ if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
-    return;
-  weight_parameters& weights = all.weights;
-  weight_parameters::iterator w = weights.begin();
-  for(; w != weights.end() && all.reg_mode; ++w)
-    *w = trunc_weight(*w, (float)all.sd->gravity) * (float)all.sd->contraction;
-  all.sd->gravity = 0.;
-  all.sd->contraction = 1.;
+{//todo, fix length dependence
+	if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
+		return;
+
+	if (all.weights.sparse)
+	  for (weight& w : all.weights.sparse_weights)
+	    w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	else
+	  for (weight& w : all.weights.dense_weights)
+	    w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
+	  
+	all.sd->gravity = 0.;
+	all.sd->contraction = 1.;
 }
+
+template<class T>
+void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& weights)
+{
+	size_t brw = 1;
+
+	if (all.print_invert)   //write readable model with feature names
+	{
+		stringstream msg;
+		typedef std::map< std::string, size_t> str_int_map;
+
+		for (str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
+		{
+		  weight* v = &weights.strided_index(it->second);
+			if (*v != 0.)
+			{
+				msg << it->first;
+				brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
+					msg, true);
+
+				msg << ":" << it->second << ":" << *v << "\n";
+				bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, true);
+			}
+		}
+		return;
+	}
+
+	uint64_t i = 0;
+	uint32_t old_i = 0;
+	uint64_t length = (uint64_t)1 << all.num_bits;
+	if (read)
+	  do
+	    {
+	      brw = 1;
+	      if (all.num_bits < 31)//backwards compatible
+		{
+		  brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
+		  i = old_i;
+		}
+	      else
+		brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+	      if (brw > 0)
+		{
+		  if (i >= length)
+		    THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
+		  weight* v = &weights.strided_index(i);
+		  brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
+		}
+	    } while (brw >0);
+	else // write
+	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+	    if (*v != 0.)
+	      {
+		i = v.index() >> weights.stride_shift();
+		stringstream msg;
+		msg << i;
+		
+		if (all.num_bits < 31)
+		  {
+		    old_i = (uint32_t)i;
+		    brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
+		  }
+		else
+		  brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
+		
+		msg << ":" << *v << "\n";
+		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text);
+	      }
+}
+  
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
-{ uint64_t length = (uint64_t)1 << all.num_bits;
-  weight_parameters& weights = all.weights;
-  uint64_t i = 0;
-  uint32_t old_i = 0;
-  size_t brw = 1;
-  
-  if(all.print_invert)   //write readable model with feature names
-  { 
-	weight_parameters::iterator v = weights.begin();
-	stringstream msg;
-    typedef std::map< std::string, size_t> str_int_map;
-    
-    for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it)
-    { 
-	  v = weights.begin() + it->second; 
-      if(*v != 0.)
-      {
-        msg << it->first;
-        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
-                                   msg, true);
-
-        msg << ":" << it->second << ":" << *v << "\n";
-        bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, true);
-      }
-    }
-    return;
-  }
-  do
-  { brw = 1;
-    weight_parameters::iterator v = weights.begin();
-    if (read)
-      { 
-	if (all.num_bits < 31)//backwards compatible
-	  { brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
-	    i = old_i;
-	  }
+{
+	if (all.weights.sparse)
+		save_load_regressor(all, model_file, read, text, all.weights.sparse_weights);
 	else
-	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
-      if (brw > 0)
-      { if (i >= length)
-        { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-        }
-	    v += i;
-        brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), ""); 
-      }
-    }
-    else// write binary or text
-    {
-
-	  v += i;
-
-      if (*v != 0.)
-        { stringstream msg;
-          msg << i;
-          if (all.num_bits < 31)
-            {
-              old_i = (uint32_t)i;
-              brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
-            }
-          else
-            brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
-
-          msg << ":"<< *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text); 
-        }
-    }
-
-	if (!read)
-		++i;
-  }
-  while ((!read && i < length) || (read && brw >0));
+		save_load_regressor(all, model_file, read, text, all.weights.dense_weights);
 }
 
+template<class T>
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g, stringstream& msg, T& weights)
+{
+	uint64_t length = (uint64_t)1 << all.num_bits;
+
+	uint64_t i = 0;
+	uint32_t old_i = 0;
+	size_t brw = 1;
+
+	if (read)
+	  do
+	    {
+	      brw = 1;
+	      if (all.num_bits < 31)//backwards compatible
+		{
+		  brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
+		  i = old_i;
+		}
+	      else
+		brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+	      if (brw > 0)
+		{
+		  if (i >= length)
+		      THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
+		  weight* v = &weights.strided_index(i);
+		  if (g == NULL || (!g->adaptive && !g->normalized))
+		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
+		  else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
+		  else //adaptive and normalized
+		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
+		}
+	    } while (brw >0);
+	else // write binary or text
+	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
+	    if (*v != 0.)
+	      {
+		i = v.index() >> weights.stride_shift();
+		msg << i;
+		if (all.num_bits < 31)
+		  {
+		    old_i = (uint32_t)i;
+		    brw = bin_text_write_fixed(model_file, (char *)&old_i, sizeof(old_i), msg, text);
+		  }
+		else
+		  brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
+		
+		if (g == nullptr || (!g->adaptive && !g->normalized))
+		  {
+		    msg << ":" << *v << "\n";
+		    brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v),
+						msg, text);
+		  }
+		else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+		  { //either adaptive or normalized
+		    msg << ":" << *v << " " << (&(*v))[1] << "\n";
+		    brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
+						msg, text);
+		  }
+		else
+		  { //adaptive and normalized
+		    msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+		    brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
+						msg, text);
+		  }
+	      }
+}
+	
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 { //vw& all = *g.all;
-  stringstream msg;
+	stringstream msg;
 
-  msg << "initial_t " << all.initial_t << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t),
-                            "", read, msg, text);
+	msg << "initial_t " << all.initial_t << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.initial_t, sizeof(all.initial_t),
+		"", read, msg, text);
 
-  msg << "norm normalizer "<< all.normalized_sum_norm_x << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x),
-                            "", read, msg, text);
+	msg << "norm normalizer " << all.normalized_sum_norm_x << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x),
+		"", read, msg, text);
 
-  msg << "t "<< all.sd->t <<"\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->t, sizeof(all.sd->t),
-                            "", read, msg, text);
+	msg << "t " << all.sd->t << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->t, sizeof(all.sd->t),
+		"", read, msg, text);
 
-  msg << "sum_loss "<< all.sd->sum_loss << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss),
-                            "", read, msg, text);
+	msg << "sum_loss " << all.sd->sum_loss << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss),
+		"", read, msg, text);
 
-  msg << "sum_loss_since_last_dump "<< all.sd->sum_loss_since_last_dump <<"\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump),
-                            "", read, msg, text);
+	msg << "sum_loss_since_last_dump " << all.sd->sum_loss_since_last_dump << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump),
+		"", read, msg, text);
 
-  msg << "dump_interval "<< all.sd->dump_interval << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval),
-                            "", read, msg, text);
+	msg << "dump_interval " << all.sd->dump_interval << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval),
+		"", read, msg, text);
 
-  msg << "min_label " << all.sd->min_label << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
-                            "", read, msg, text);
+	msg << "min_label " << all.sd->min_label << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
+		"", read, msg, text);
 
-  msg << "max_label " << all.sd->max_label << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
-                            "", read, msg, text);
+	msg << "max_label " << all.sd->max_label << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->max_label, sizeof(all.sd->max_label),
+		"", read, msg, text);
 
-  msg << "weighted_examples "<< all.sd->weighted_examples << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples),
-                            "", read, msg, text);
+	msg << "weighted_examples " << all.sd->weighted_examples << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples),
+		"", read, msg, text);
 
-  msg << "weighted_labels "<< all.sd->weighted_labels << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels),
-                            "", read, msg, text);
+	msg << "weighted_labels " << all.sd->weighted_labels << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels),
+		"", read, msg, text);
 
-  msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples),
-                            "", read, msg, text);
+	msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples),
+		"", read, msg, text);
 
-  msg << "example_number " << all.sd->example_number << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number),
-                            "", read, msg, text);
+	msg << "example_number " << all.sd->example_number << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->example_number, sizeof(all.sd->example_number),
+		"", read, msg, text);
 
-  msg << "total_features "<< all.sd->total_features << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features),
-                            "", read, msg, text);
+	msg << "total_features " << all.sd->total_features << "\n";
+	bin_text_read_write_fixed(model_file, (char*)&all.sd->total_features, sizeof(all.sd->total_features),
+		"", read, msg, text);
 
-  if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
-  { // restore some data to allow --save_resume work more accurate
+	if (!read || all.model_file_ver >= VERSION_SAVE_RESUME_FIX)
+	{ // restore some data to allow --save_resume work more accurate
 
-    // fix average loss
-    double total_weight = 0.; //value holder as g* may be null
-    if (!read && g != nullptr) total_weight = g->total_weight;
-    msg << "gd::total_weight " << total_weight << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight),
-                              "", read, msg, text);
-    if (read && g != nullptr) g->total_weight = total_weight;
+		// fix average loss
+		double total_weight = 0.; //value holder as g* may be null
+		if (!read && g != nullptr) total_weight = g->total_weight;
+		msg << "gd::total_weight " << total_weight << "\n";
+		bin_text_read_write_fixed(model_file, (char*)&total_weight, sizeof(total_weight),
+			"", read, msg, text);
+		if (read && g != nullptr) g->total_weight = total_weight;
 
-    // fix "loss since last" for first printed out example details
-    msg << "sd::oec.weighted_examples "<< all.sd->old_weighted_examples << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
-                              "", read, msg, text);
+		// fix "loss since last" for first printed out example details
+		msg << "sd::oec.weighted_examples " << all.sd->old_weighted_examples << "\n";
+		bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
+			"", read, msg, text); 
 
-    // fix "number of examples per pass"
-    msg << "current_pass "<< all.current_pass << "\n";
-    bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass),
-                              "", read, msg, text);
-  }
+		// fix "number of examples per pass"
+		msg << "current_pass " << all.current_pass << "\n";
+		bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass),
+			"", read, msg, text);
+	}
 
-  if (!all.training) // reset various things so that we report test set performance properly
-  { all.sd->sum_loss = 0;
-    all.sd->sum_loss_since_last_dump = 0;
-    all.sd->dump_interval = 1.;
-    all.sd->weighted_examples = 0.;
-    all.sd->weighted_labels = 0.;
-    all.sd->weighted_unlabeled_examples = 0.;
-    all.sd->example_number = 0;
-    all.sd->total_features = 0;
-  }
-
-  uint64_t length = (uint64_t)1 << all.num_bits;
-
-  weight_parameters& weights = all.weights;
-  uint64_t i = 0;
-  size_t brw = 1;
-  do
-  { brw = 1;
-    weight_parameters::iterator v = weights.begin();
-    if (read)
-    { 
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
-      if (brw > 0)
-      { if (i >= length)
-        { THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-        }
-	    v += i;
-        if (g == NULL || (! g->adaptive && ! g->normalized))
-          brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
-        else //adaptive and normalized
-			brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
-        /*        if (!all.training)
-                  v[1] = v[2] = 0.;*/
-      }
-    }
-    else // write binary or text
-    { 
-	  v += i;
-      if (*v != 0.)
-      { 
-        msg << i;
-        brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i),
-                                   msg, text);
-        if (g == nullptr || (! g->adaptive && ! g->normalized))
-          { msg << ":" << *v << "\n";
-		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v),
-                                      msg, text);
-        }
-        else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-        { //either adaptive or normalized
-          msg << ":"<< *v << " "<< (&(*v))[1]<< "\n";
-		  brw += bin_text_write_fixed(model_file, (char *)&(*v), 2 * sizeof(*v),
-                                     msg, text);
-        }
-        else
-          { //adaptive and normalized
-            msg << ":"<< *v << " "<< (&(*v))[1] << " "<< (&(*v))[2]<< "\n";
-			brw += bin_text_write_fixed(model_file, (char *)&(*v), 3 * sizeof(*v),
-                                       msg, text);
-        }
-      }
-    }
-	if (!read)
-	  ++i;
-  }
-  while ((!read && i < length) || (read && brw >0));
+	if (!all.training || !all.preserve_performance_counters) // reset various things so that we report test set performance properly
+	{
+		all.sd->sum_loss = 0;
+		all.sd->sum_loss_since_last_dump = 0;
+		all.sd->dump_interval = 1.;
+		all.sd->weighted_examples = 0.;
+		all.sd->weighted_labels = 0.;
+		all.sd->weighted_unlabeled_examples = 0.;
+		all.sd->old_weighted_examples = 0.;
+		all.sd->example_number = 0;
+		all.sd->total_features = 0;
+	}
+	if (all.weights.sparse)
+		save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
+	else
+		save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
 }
 
-struct initial_t
-{
-private:
-	weight _initial;
-public:
-	initial_t(weight initial) : _initial(initial){}
-	void operator()(weight_parameters::iterator& iter, size_t /*index*/) 
-	{  (&(*iter))[1] = _initial;
-	}
-};
+  template<class T> void set_initial_gd(typename T::iterator& iter, pair<float,float>& initial)
+  {
+    (&(*iter))[0] = initial.first;
+    (&(*iter))[1] = initial.second;
+  }
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 { vw& all = *g.all;
   if(read)
   { initialize_regressor(all);
 
-  if (all.adaptive && all.initial_t > 0){
-	  initial_t init(all.initial_t);
-	  all.weights.set_default<initial_t>(init); //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
-        //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
-        //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
-        //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
-  }
+  if (all.adaptive && all.initial_t > 0)
+    {
+      float init_weight = all.initial_weight;
+      pair<float,float> p = make_pair(init_weight, all.initial_t);
+      if (all.weights.sparse)
+	all.weights.sparse_weights.set_default<pair<float,float>, set_initial_gd<sparse_parameters> >(p);
+      else
+	all.weights.dense_weights.set_default<pair<float,float>, set_initial_gd<dense_parameters> >(p);
+      //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
+      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
+      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
+    }
     if (g.initial_constant != 0.0)
       VW::set_weight(all, constant, 0, g.initial_constant);
   }
@@ -827,7 +861,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
                               msg, text);
     if (resume)
     { if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+        all.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
       // save_load_online_state(g, model_file, read, text);
       save_load_online_state(all, model_file, read, text, &g);
     }
@@ -953,14 +987,13 @@ base_learner* setup(vw& all)
     }
   }
   else
-    {
-      all.adaptive = all.training;
-      all.invariant_updates = all.training;
-      all.normalized_updates = all.training;
-    }
+  {  all.adaptive = all.training;
+	 all.invariant_updates = all.training;
+	 all.normalized_updates = all.training;
+  }
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
+    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
          << " adjust --decay_learning_rate larger to avoid this." << endl;
 
 
@@ -984,7 +1017,7 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
-
+  
   all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));
@@ -996,4 +1029,5 @@ base_learner* setup(vw& all)
   ret.set_end_pass(end_pass);
   return make_base(ret);
 }
+
 }
