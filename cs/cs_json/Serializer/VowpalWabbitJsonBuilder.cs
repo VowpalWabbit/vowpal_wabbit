@@ -165,6 +165,7 @@ namespace VW.Serializer
         /// </summary>
         public void Parse(JsonReader reader, VowpalWabbitMarshalContext context, Namespace ns, List<VowpalWabbitJsonExtension> extensions = null)
         {
+            this.namespaceStrings.Clear();
             this.reader = reader;
             this.extensions = extensions;
 
@@ -345,9 +346,10 @@ namespace VW.Serializer
                     this.foundMulti = true;
 
                 // forward to handler
-                foreach (var extension in this.extensions)
-                    if (extension(this.extensionState, propertyName))
-                        return;
+                if (this.extensions != null)
+                    foreach (var extension in this.extensions)
+                        if (extension(this.extensionState, propertyName))
+                            return;
 
                 // if not handled, skip it
                 reader.Skip();
@@ -563,7 +565,7 @@ namespace VW.Serializer
                     // probably best to ignore?
                     break;
                 case JsonToken.StartArray:
-                    this.WrapInNamespace(path, featureName, lastContext => this.ParseFeatureArray(lastContext.Context, lastContext.Namespace));
+                    this.WrapInNamespace(path, featureName, lastContext => this.ParseFeatureArray(path));
                     break;
                 default:
                     throw new VowpalWabbitJsonException(this.reader, "Unexpected token " + reader.TokenType + " while deserializing primitive feature");
@@ -573,8 +575,11 @@ namespace VW.Serializer
         /// <summary>
         /// Expects: "1,2.2,3]" (excluding the leading [)
         /// </summary>
-        private void ParseFeatureArray(VowpalWabbitMarshalContext context, Namespace ns)
+        private void ParseFeatureArray(List<VowpalWabbitJsonParseContext> path)
         {
+            var context = path.Last().Context;
+            var ns = path.Last().Namespace;
+
             ulong index = 0;
 
             while (reader.Read())
@@ -586,6 +591,9 @@ namespace VW.Serializer
                         break;
                     case JsonToken.Float:
                         MarshalFloatFeature(context, ns, index, (float)(double)reader.Value);
+                        break;
+                    case JsonToken.StartObject:
+                        ParseProperties(path);
                         break;
                     case JsonToken.EndArray:
                         return;

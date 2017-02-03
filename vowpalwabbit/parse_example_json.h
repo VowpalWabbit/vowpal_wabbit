@@ -495,6 +495,14 @@ public:
 		return Float(ctx, (float)f);
 	}
 
+	BaseState<audit>* StartObject(Context<audit>& ctx)
+	{
+		// parse properties
+		ctx.PushNamespace(ctx.CurrentNamespace().name.c_str(), this);
+
+		return &ctx.default_state;
+	}
+
 	BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType elementCount)
 	{
 		return ctx.PopNamespace();

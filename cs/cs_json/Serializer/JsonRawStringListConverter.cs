@@ -41,8 +41,10 @@ namespace VW.Serializer
             var valueStringEnumerable = value as List<string>;
             if (valueStringEnumerable != null)
             {
+                writer.WriteStartArray();
                 foreach (var str in valueStringEnumerable)
                     writer.WriteRawValue(str);
+                writer.WriteEndArray();
                 return;
             }
 

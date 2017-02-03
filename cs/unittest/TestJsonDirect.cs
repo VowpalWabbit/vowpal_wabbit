@@ -274,27 +274,48 @@ namespace cs_unittest
                     }
                 });
 
-                vw.Validate(new[] {
-                    "shared | Bar:5",
-                    " | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e"
-                },
-                    new JsonRawAdfString
-                    {
-                        Bar = 5,
-                        _multi = new[]
-                        {
-                                new JsonRawString
-                                {
-                                    Foo = 1,
-                                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar= 2 } }),
-                                    Values = new []
+                var adf = new JsonRawString
+                {
+                    Foo = 1,
+                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar = 2 } }),
+                    Values = new[]
                                     {
                                         JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
                                         JsonConvert.SerializeObject(new { E = new { e = true } }),
                                     }.ToList()
-                                }
-                        }
-                    });
+                };
+
+                var ctx = new JsonRawAdfString
+                {
+                    Bar = 5,
+                    _multi = new[] { adf }
+                };
+
+                vw.Validate(new[] {
+                    "shared | Bar:5",
+                    " | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e"
+                }, ctx);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonConvertible()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonRawString>(new VowpalWabbitSettings("") { TypeInspector = JsonTypeInspector.Default }))
+            {
+                var adf = new JsonRawString
+                {
+                    Foo = 1,
+                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar = 2 } }),
+                    Values = new[]
+                    {
+                        JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
+                        JsonConvert.SerializeObject(new { E = new { e = true } }),
+                    }.ToList()
+                };
+
+                vw.Validate(" | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e", adf);
             }
         }
 
@@ -312,7 +333,7 @@ namespace cs_unittest
                             { "B", new float[] { 2, 3, 4.1f} }
                         }
                 };
-                
+
                 vw.Validate(" |A :1 :2 :3.1 |B :2 :3 :4.1", ex);
             }
         }
