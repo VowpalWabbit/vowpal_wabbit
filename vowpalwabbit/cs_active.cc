@@ -30,6 +30,8 @@ struct cs_active
 
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
+
+  size_t num_any_queries; //examples where at least one label is queried
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -144,7 +146,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   if(cs_a.all->sd->queries >= cs_a.min_labels*cs_a.num_classes)
   { // save regressor
     stringstream filename;
-    filename << cs_a.all->final_regressor_name << "." << ec.example_t << "." << cs_a.all->sd->queries;	
+    filename << cs_a.all->final_regressor_name << "." << ec.example_t << "." << cs_a.all->sd->queries<< "." <<cs_a.num_any_queries;	
     VW::save_predictor(*(cs_a.all), filename.str());
   
     // Double label query budget	
@@ -208,14 +210,19 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
+    bool any_query = false;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     { bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
+      if(query_label)
+	any_query = true;
       inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, query_label, cl.query_needed);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << cl.class_index << " x=" << cl.x << " prediction=" << prediction << " score=" << score << " pp=" << cl.partial_prediction << " ql=" << query_label << " qn=" << cl.query_needed << " ro=" << cl.is_range_overlapped << " rl=" << cl.is_range_large << " [" << cl.min_pred << ", " << cl.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
     cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
+    if(any_query)
+      cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
     if(is_learn)
@@ -269,6 +276,7 @@ base_learner* cs_active_setup(vw& all)
   data.min_labels = (size_t)-1;
   data.is_baseline = false; 
   data.print_debug_stuff = all.vm.count("csa_debug") > 0;
+  data.num_any_queries = 0;
   
   if(all.vm.count("baseline"))
   { data.is_baseline = true;
