@@ -83,7 +83,7 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree python
+all:	vw library_example java spanning_tree
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
