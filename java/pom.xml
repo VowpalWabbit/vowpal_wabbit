@@ -155,6 +155,8 @@
                 </executions>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <forkMode>once</forkMode>
+                    <argLine>-Djava.library.path=${project.build.directory}</argLine>
                 </configuration>
             </plugin>
             <plugin>
