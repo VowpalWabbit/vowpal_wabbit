@@ -83,7 +83,7 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree
+all:	vw library_example java spanning_tree python
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -117,10 +117,8 @@ library_example_gcov: vw_gcov
 python: vw
 	cd python; $(MAKE) things
 
-ifneq ($(JAVA_HOME),)
 java: vw
 	cd java; $(MAKE) things
-endif
 
 .FORCE:
 
@@ -136,7 +134,7 @@ bigtests:	.FORCE vw
 	(cd big_tests && $(MAKE) $(MAKEFLAGS))
 
 install: $(BINARIES)
-	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install
+	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install; cd ../java; $(MAKE) install;
 
 doc:
 	(cd doc && doxygen Doxyfile)
@@ -146,8 +144,6 @@ clean:
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
-ifneq ($(JAVA_HOME),)
 	cd java    && $(MAKE) clean
-endif
 
 .PHONY: all clean install doc
