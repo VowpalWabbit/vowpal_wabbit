@@ -23,6 +23,7 @@ ifeq ($(UNAME), Darwin)
   INSTALL_PATH = /Library/Java/Extensions
 endif
 
+LOCAL_LIBRARY = target/$(SHARED_LIBRARY)
 jni_SRCS = $(shell find src/main/c++ -name "*.cc")
 jni_OBJS = $(jni_SRCS:.cc=.o)
 
@@ -32,14 +33,14 @@ all:
 test:
 	cd ..; $(MAKE) test
 
-things: pom_version target/$(SHARED_LIBRARY)
+things: pom_version $(LOCAL_LIBRARY)
 
 pom_version: pom.xml
 	ver=$$(grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1) && \
 	newVer=$$(perl -e "@a=split('\.', '$$ver'); \$$a[2]++; print(join('.', @a))") && \
 	perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$newVer-SNAPSHOT/" pom.xml
 
-target/$(SHARED_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+$(LOCAL_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	mkdir -p target;
 	$(CXX) -shared $(FLAGS) -o $@ $^ $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
 
@@ -52,9 +53,9 @@ target/$(SHARED_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/lib
 	-include $(jni_SRCS:.cc=.o)
 
 install: target/$(SHARED_LIBRARY)
-	cp target/$(SHARED_LIBRARY) $(INSTALL_PATH);
+	cp $(LOCAL_LIBRARY) $(INSTALL_PATH);
 
 .PHONY: clean
 clean:
-	rm -f target/$(SHARED_LIBRARY)
+	rm -f $(LOCAL_LIBRARY)
 	rm -f $(jni_SRCS:.cc=.o)
