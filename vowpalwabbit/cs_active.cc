@@ -6,7 +6,8 @@
 #include "vw.h"
 #include "vw_exception.h"
 #include "csoaa.h"
-#define B_SEARCH_MAX_ITER 50
+//#define B_SEARCH_MAX_ITER 50
+#define B_SEARCH_MAX_ITER 20
 
 using namespace LEARNER;
 using namespace std;
@@ -115,7 +116,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
 }
 
 inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
-{ float tol = 1e-20;
+{ float tol = 1e-6;//1e-20;
 
   base.predict(ec, i-1);
   float sens = base.sensitivity(ec, i-1);
@@ -148,7 +149,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     stringstream filename;
     filename << cs_a.all->final_regressor_name << "." << ec.example_t << "." << cs_a.all->sd->queries<< "." <<cs_a.num_any_queries;	
     VW::save_predictor(*(cs_a.all), filename.str());
-  
+    cerr<<endl<<"Number of examples with at least one query = "<<cs_a.num_any_queries;
     // Double label query budget	
     cs_a.min_labels *= 2;
     for (size_t i=0; i<cs_a.all->sd->examples_by_queries.size(); i++)
@@ -210,19 +211,20 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
-    bool any_query = false;
+    //bool any_query = false;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
     { bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
-      if(query_label)
-	any_query = true;
       inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, query_label, cl.query_needed);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << cl.class_index << " x=" << cl.x << " prediction=" << prediction << " score=" << score << " pp=" << cl.partial_prediction << " ql=" << query_label << " qn=" << cl.query_needed << " ro=" << cl.is_range_overlapped << " rl=" << cl.is_range_large << " [" << cl.min_pred << ", " << cl.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
 
-    cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
-    if(any_query)
+    if(cs_a.all->sd->queries - queries > 0)
       cs_a.num_any_queries++;
+
+    cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
+    //if(any_query)
+    //cs_a.num_any_queries++;
 
     ec.partial_prediction = score;
     if(is_learn)

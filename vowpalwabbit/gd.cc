@@ -487,7 +487,7 @@ float get_pred_per_update(gd& g, example& ec)
   }
   //cerr << "g.update_multiplier=" << g.update_multiplier << " nd.pred_per_update=" << nd.pred_per_update << endl;
   if (nanpattern(nd.pred_per_update) || infpattern(nd.pred_per_update))
-    return 1.;
+    return FLT_MAX;//1.;
   return nd.pred_per_update;
 }
 
