@@ -12,6 +12,7 @@ struct data
 { float initial_numerator;
   float initial_denominator;
   float decay;
+  float fixed_weight;
   bool id_features[256];
   features temp[256];//temporary storage when reducing.
   unordered_map<uint64_t, marginal > marginals;
@@ -67,8 +68,9 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
           uint64_t second_index = j.index() & mask;
           uint64_t key = second_index + ec.ft_offset;
           marginal& m = sm.marginals[key];
-          m.first = m.first * (1. - sm.decay) + ec.l.simple.label * ec.weight;
-          m.second = m.second * (1. - sm.decay) + ec.weight;
+		  auto weight = sm.fixed_weight == 0. ? ec.weight : sm.fixed_weight;
+		  m.first = m.first * (1. - sm.decay) + ec.l.simple.label * weight;
+		  m.second = m.second * (1. - sm.decay) + weight;
         }
       std::swap(sm.temp[n],*i);
     }
@@ -128,16 +130,16 @@ using namespace MARGINAL;
 LEARNER::base_learner* marginal_setup(vw& all)
 { if (missing_option<string, true>(all, "marginal", "substitute marginal label estimates for ids"))
     return nullptr;
+	
+  data& d = calloc_or_throw<data>();
+
   new_options(all)
-  ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
-  ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
-  ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)");
+  ("initial_denominator", po::value<float>(&d.initial_denominator)->default_value(1.f), "initial denominator")
+  ("initial_numerator", po::value<float>(&d.initial_numerator)->default_value(0.5f), "initial numerator")
+  ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)")
+  ("fixed_weight", po::value<float>(&d.fixed_weight)->default_value(0.f), "weight used to update. If 0 then the example weight is used.");
   add_options(all);
 
-  data& d = calloc_or_throw<data>();
-  d.initial_numerator = all.vm["initial_numerator"].as<float>();
-  d.initial_denominator = all.vm["initial_denominator"].as<float>();
-  d.decay = all.vm["decay"].as<float>();
   d.all = &all;
   string s = (string)all.vm["marginal"].as<string>();
 
