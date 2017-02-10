@@ -21,7 +21,8 @@ ref class VowpalWabbitModel;
 ref class VowpalWabbitSettings;
 
 public enum class VowpalWabbitExampleDistribution
-{ /// <summary>
+{ 
+  /// <summary>
   /// Statistically safer option.
   /// </summary>
   UniformRandom = 0,
@@ -137,6 +138,14 @@ public:
   property int MaxExamples;
 
   property bool Verbose;
+
+  /// <summary>
+  /// Action invoked for each trace message.
+  /// </summary>
+  /// <Remarks>
+  /// The trace listener obeys the Verbose property, which defaults to false.
+  /// </Remarks>
+  property Action<String^>^ TraceListener;
 
   virtual Object^ Clone()
   { return MemberwiseClone();

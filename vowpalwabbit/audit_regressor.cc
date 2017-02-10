@@ -139,8 +139,8 @@ void end_examples(audit_regressor_data& d)
   d.ns_pre =  NULL;
 }
 
-inline void print_ex(size_t ex_processed, size_t vals_found, size_t progress)
-{ std::cerr << std::left
+inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
+{ all.trace_message << std::left
             << std::setw(shared_data::col_example_counter) << ex_processed
             << " " << std::right
             << std::setw(9) << vals_found
@@ -152,7 +152,7 @@ inline void print_ex(size_t ex_processed, size_t vals_found, size_t progress)
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 { bool printed = false;
   if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
-  { print_ex(ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
+  { print_ex(all, ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
     all.sd->weighted_examples = (double)(ec.example_counter+1); //used in update_dump_interval
     all.sd->update_dump_interval(all.progress_add, all.progress_arg);
     printed = true;
@@ -161,7 +161,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
   if (dd.values_audited == dd.loaded_regressor_values)
   { // all regressor values were audited
     if (!printed)
-      print_ex(ec.example_counter+1, dd.values_audited, 100);
+      print_ex(all, ec.example_counter+1, dd.values_audited, 100);
     set_done(all);
   }
 
@@ -170,7 +170,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 
 void finish(audit_regressor_data& dat)
 { if (dat.values_audited < dat.loaded_regressor_values)
-    cerr << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
+    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
          dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
 }
 
@@ -213,15 +213,15 @@ void init_driver(audit_regressor_data& dat)
     THROW("regressor has no non-zero weights. Nothing to audit.");
 
   if (!dat.all->quiet)
-  { std::cerr << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    std::cerr << std::left
+  { dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    dat.all->trace_message << std::left
               << std::setw(shared_data::col_example_counter) << "example"
               << " "
               << std::setw(shared_data::col_example_weight) << "values"
               << " "
               << std::setw(shared_data::col_current_label) << "total"
               << std::endl;
-    std::cerr << std::left
+    dat.all->trace_message << std::left
               << std::setw(shared_data::col_example_counter) << "counter"
               << " "
               << std::setw(shared_data::col_example_weight) << "audited"

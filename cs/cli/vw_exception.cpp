@@ -20,4 +20,9 @@ String^ VowpalWabbitException::Filename::get()
 Int32 VowpalWabbitException::LineNumber::get()
 { return m_lineNumber;
 }
+
+VowpalWabbitArgumentDisagreementException::VowpalWabbitArgumentDisagreementException(const vw_argument_disagreement_exception& ex)
+	: VowpalWabbitException(ex)
+{
+}
 }

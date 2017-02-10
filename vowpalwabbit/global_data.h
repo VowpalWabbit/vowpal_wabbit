@@ -232,6 +232,10 @@ struct shared_data
   bool report_multiclass_log_loss;
   double multiclass_log_loss;
   double holdout_multiclass_log_loss;
+  
+  bool  is_more_than_two_labels_observed;
+  float first_observed_label;
+  float second_observed_label;
 
   // Column width, precision constants:
   static const int col_avg_loss = 8;
@@ -404,6 +408,30 @@ namespace label_type
 };
 }
 
+typedef void(*trace_message_t)(void *context, const std::string&);
+
+// TODO: change to virtual class
+
+// invoke trace_listener when << endl is encountered.
+class vw_ostream : public std::ostream
+{
+	class vw_streambuf : public std::stringbuf
+	{
+		vw_ostream& parent;
+	public:
+		vw_streambuf(vw_ostream& str);
+
+		virtual int sync();
+	};
+	vw_streambuf buf;
+
+public:
+	vw_ostream();
+
+	void* trace_context;
+	trace_message_t trace_listener;
+};
+
 struct vw
 { shared_data* sd;
 
@@ -442,6 +470,7 @@ struct vw
   bool hessian_on;
 
   bool save_resume;
+  bool preserve_performance_counters;
   std::string id;
 
   version_struct model_file_ver;
@@ -562,7 +591,12 @@ struct vw
 
   label_type::label_type_t label_type;
 
+  vw_ostream trace_message;
+
   vw();
+
+  // ostream doesn't have copy constructor and the python library used some boost code which code potentially invoke this
+  vw(const vw &);
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);

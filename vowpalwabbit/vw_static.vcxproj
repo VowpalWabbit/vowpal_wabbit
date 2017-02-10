@@ -350,6 +350,7 @@
     <ClInclude Include="action_score.h" />
     <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />

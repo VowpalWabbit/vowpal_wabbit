@@ -330,16 +330,16 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), os2, text);
     }
 
-  if (read)
-  { cerr << "Loading alpha: " << endl;
+  if (!o.all->quiet)
+  { if (read)
+      cerr << "Loading alpha: " << endl;
+    else
+      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+    for (int i = 0; i < o.N; i++)
+      cerr << o.alpha[i] << " " << endl;
+  
+    cerr << endl;
   }
-  else
-  { cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
-  }
-  for (int i = 0; i < o.N; i++)
-  { cerr << o.alpha[i] << " " << endl;
-  }
-  cerr << endl;
 }
 
 LEARNER::base_learner* boosting_setup(vw& all)
@@ -362,9 +362,11 @@ LEARNER::base_learner* boosting_setup(vw& all)
 
   boosting& data = calloc_or_throw<boosting>();
   data.N = (uint32_t)all.vm["boosting"].as<size_t>();
-  cerr << "Number of weak learners = " << data.N << endl;
+  if (!all.quiet)
+    cerr << "Number of weak learners = " << data.N << endl;
   data.gamma = all.vm["gamma"].as<float>();
-  cerr << "Gamma = " << data.gamma << endl;
+  if (!all.quiet)
+    cerr << "Gamma = " << data.gamma << endl;
   string* temp = new string;
   *temp = all.vm["alg"].as<string>();
   data.alg = temp;

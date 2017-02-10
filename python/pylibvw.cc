@@ -602,19 +602,19 @@ int32_t po_get_int(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   try { return (*d->var_map)[arg].as<int>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<size_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<size_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<uint32_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<uint32_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<uint64_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<uint64_t>(); }
   catch (...) {}
   try { return (*d->var_map)[arg].as<uint16_t>(); }
   catch (...) {}
   try { return (*d->var_map)[arg].as<int32_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<int64_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<int64_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<int16_t>(); }
+  try { return (int32_t)(*d->var_map)[arg].as<int16_t>(); }
   catch (...) {}
   // we know this'll fail but do it anyway to get the exception
   return (*d->var_map)[arg].as<int>();
