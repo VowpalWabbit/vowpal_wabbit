@@ -126,7 +126,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
     ec.partial_prediction = average_pred;
     if(is_learn) {
       alg_loss += net_feature_weight*all.loss->getLoss(all.sd, feature_pred, label);
-      alg_loss /= (net_weight + net_feature_weight);
+      alg_loss *= inv_weight;
       //alg_loss = (average_pred - label)*(average_pred - label);
       ////the other plausible definition for alg_loss
     }    
