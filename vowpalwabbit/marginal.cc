@@ -50,7 +50,8 @@ float get_adanormalhedge_weights(float R, float C) {
 template <bool is_learn>
 void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 {
-  uint64_t mask = sm.all->weights.mask();
+  vw& all = *sm.all;
+  uint64_t mask = all.weights.mask();
   float average_pred = 0.;
   float net_feature_weight = 0.;
   float label = ec.l.simple.label;
@@ -80,10 +81,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 	      if (sm.marginals.find(key) == sm.marginals.end()) {//need to initialize things.
 		sm.marginals.insert(make_pair(key,make_pair(sm.initial_numerator, sm.initial_denominator)));
 		if(sm.compete) {
-		  expert e;
-		  e.regret = 0;
-		  e.abs_regret = 0;
-		  e.weight = 1.;
+		  expert e = {0,0,1.};
 		  sm.expert_state.insert(make_pair(key, make_pair(e,e)));
 		}
 	      }
@@ -100,7 +98,7 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 		net_weight += weight;
 		net_feature_weight += sm.expert_state[key].second.weight;
 		if(is_learn)
-		  alg_loss += weight*(marginal_pred - label)*(marginal_pred - label);
+		  alg_loss += weight*all.loss->getLoss(all.sd, marginal_pred, label);
 	      }
 	    }
 	}
@@ -122,11 +120,12 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
       net_feature_weight = 1.;
       average_pred = feature_pred;
     }
-    average_pred /= (net_weight + net_feature_weight);
+    float inv_weight = 1.0/(net_weight + net_feature_weight);
+    average_pred *= inv_weight;
     ec.pred.scalar = average_pred;
     ec.partial_prediction = average_pred;
     if(is_learn) {
-      alg_loss += net_feature_weight*(feature_pred - label)*(feature_pred - label);
+      alg_loss += net_feature_weight*all.loss->getLoss(all.sd, feature_pred, label);
       alg_loss /= (net_weight + net_feature_weight);
       //alg_loss = (average_pred - label)*(average_pred - label);
       ////the other plausible definition for alg_loss
@@ -147,8 +146,8 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
 
 	  if(sm.compete) { //now update weights, before updating marginals
 	    expert_pair& e = sm.expert_state[key];
-	    float regret1 = alg_loss - (m.first/m.second - label)*(m.first/m.second - label);
-	    float regret2 = alg_loss - (feature_pred - label)*(feature_pred - label);
+	    float regret1 = alg_loss - all.loss->getLoss(all.sd, m.first/m.second, label);
+	    float regret2 = alg_loss - all.loss->getLoss(all.sd, feature_pred, label);
 	    
 	    e.first.regret += regret1*ec.weight;
 	    e.first.abs_regret += regret1*regret1*ec.weight;//fabs(regret1);
