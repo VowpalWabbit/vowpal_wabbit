@@ -29,6 +29,13 @@ static VowpalWabbitBase::VowpalWabbitBase()
   LoadLibrary(path.c_str());
 }
 
+void trace_listener_cli(void* context, const std::string& message)
+{
+	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
+	auto str = gcnew String(message.c_str());
+	listener(str->TrimEnd());
+}
+
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
   : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
 { if (m_settings->EnableThreadSafeExamplePooling)
@@ -42,11 +49,21 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
       if (settings->Arguments != nullptr)
         string = msclr::interop::marshal_as<std::string>(settings->Arguments);
 
+	  trace_message_t trace_listener = nullptr;
+	  void* trace_context = nullptr;
+
+	  if (settings->TraceListener != nullptr)
+	  {
+		  m_traceListener = GCHandle::Alloc(settings->TraceListener);
+		  trace_context = GCHandle::ToIntPtr(m_traceListener).ToPointer();
+		  trace_listener = trace_listener_cli;
+	  }
+
       if (settings->Model != nullptr)
       { m_model = settings->Model;
         if (!settings->Verbose && !settings->Arguments->Contains("--quiet") && !m_model->Arguments->CommandLine->Contains("--quiet"))
           string.append(" --quiet");
-        m_vw = VW::seed_vw_model(m_model->m_vw, string);
+        m_vw = VW::seed_vw_model(m_model->m_vw, string, trace_listener, trace_context);
         m_model->IncrementReference();
       }
       else
@@ -54,16 +71,17 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         { if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
             string.append(" --quiet");
 
-          m_vw = VW::initialize(string);
+          m_vw = VW::initialize(string, nullptr, false, trace_listener, trace_context);
         }
         else
         { clr_io_buf model(settings->ModelStream);
           if (!settings->Arguments->Contains("--no_stdin"))
             string += " --no_stdin";
-          m_vw = VW::initialize(string, &model);
+          m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
           settings->ModelStream->Close();
         }
       }
+
     }
     catch (...)
     { // memory leak, but better than crashing
@@ -76,6 +94,8 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
 
 VowpalWabbitBase::~VowpalWabbitBase()
 { this->!VowpalWabbitBase();
+  if (m_traceListener.IsAllocated)
+	  m_traceListener.Free();
 }
 
 VowpalWabbitBase::!VowpalWabbitBase()

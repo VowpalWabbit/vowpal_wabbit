@@ -202,6 +202,7 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
   if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 #endif
+
   try
   { m_vw->l->predict(*ex->m_example);
 
@@ -732,8 +733,9 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   }
   return allocation;
 }
-  
-cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+
+template<typename T>
+cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 {
 	uint64_t length = (uint64_t)1 << m_vw->num_bits;
 
@@ -746,27 +748,23 @@ cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 	// TODO: better way of peaking into lda?
 	auto lda_rho = m_vw->vm["lda_rho"].as<float>();
 
+	for (auto iter = weights.begin(); iter != weights.end(); ++iter)
+	{   // over topics
+		auto v = iter.begin();
+		for (uint64_t k = 0; k < K; k++, ++v)
+			allocation[(int)k][(int)iter.index()] = *v + lda_rho;
+	}
+
+	return allocation;
+}
+  
+cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
+{
 	// over weights
 	if (m_vw->weights.sparse)
-	{	
-		sparse_parameters& weights = m_vw->weights.sparse_weights;
-		for (sparse_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-		{   // over topics
-			sparse_parameters::iterator::w_iter v = iter.begin();
-			for (uint64_t k = 0; k < K; k++, ++v)
-				allocation[(int)k][(int)iter.index()] = *v + lda_rho;
-		}
-	}
+		return FillTopicAllocation(m_vw->weights.sparse_weights);
 	else
-	{
-		dense_parameters& weights = m_vw->weights.dense_weights;
-		for (dense_parameters::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-		{   // over topics
-			sparse_parameters::iterator::w_iter v = iter.begin();
-			for (uint64_t k = 0; k < K; k++, ++v)
-				allocation[(int)k][(int)iter.index()] = *v + lda_rho;
-		}
-	}
-	return allocation;
+		return FillTopicAllocation(m_vw->weights.dense_weights);
   }
 }
+

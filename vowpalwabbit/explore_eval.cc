@@ -57,11 +57,11 @@ void end_examples(explore_eval& data)
 void finish(explore_eval& data)
 { data.ec_seq.delete_v();
   if (!data.all->quiet)
-    { cerr << "update count = " << data.update_count << endl;
+    { data.all->trace_message << "update count = " << data.update_count << endl;
       if (data.violations > 0)
-	cerr << "violation count = " << data.violations << endl;
+		  data.all->trace_message << "violation count = " << data.violations << endl;
       if (!data.fixed_multiplier)
-	cerr << "final multiplier = " << data.multiplier << endl;
+		  data.all->trace_message << "final multiplier = " << data.multiplier << endl;
     }
 }
   

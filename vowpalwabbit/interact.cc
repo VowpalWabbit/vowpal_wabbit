@@ -17,18 +17,18 @@ struct interact
   size_t num_features;
 };
 
-bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in)
+bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
 { // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0)
     return false;
 
   if (f_src1.values[0] != 1)
-  { cerr << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+  { all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
-  { cerr << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+  { all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -80,8 +80,8 @@ template <bool is_learn, bool print_all>
 void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
 { features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
-
-  if (!contains_valid_namespaces(f1, f2, in))
+  
+  if (!contains_valid_namespaces(*in.all, f1, f2, in))
   { if (is_learn)
       base.learn(ec);
     else

@@ -897,7 +897,7 @@ __DATA__
     train-sets/ref/zero.stderr
 
 # Test 16: LBFGS early termination
-{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off
+{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off
     train-sets/ref/rcv1_small.stdout
     train-sets/ref/rcv1_small.stderr
 

@@ -244,7 +244,7 @@ bool check_ldf_sequence(ldf& data, size_t start_K)
 
     if (COST_SENSITIVE::example_is_test(*ec) != isTest)
     { isTest = true;
-      cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
+      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
@@ -706,7 +706,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   }
   else if ((example_is_newline(ec) && is_test_ec) || need_to_break)
   { if (need_to_break && data.first_pass)
-      cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
+      data.all->trace_message << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   }
@@ -785,9 +785,9 @@ base_learner* csldf_setup(vw& all)
     all.sd->report_multiclass_log_loss = true;
     *all.file_options << " --probabilities";
     if (!vm.count("loss_function") || vm["loss_function"].as<string>() != "logistic" )
-      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
-      cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
   else
   { ld.is_probabilities = false;

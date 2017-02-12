@@ -25,12 +25,18 @@ namespace VW.Serializer
         private readonly object value;
         private readonly JsonConverter jsonConverter;
 
+        /// <summary>
+        /// Initializes a new <see cref="VowpalWabbitJsonSerializable"/> instance.
+        /// </summary>
         public VowpalWabbitJsonSerializable(object value, JsonConverter jsonConverter)
         {
             this.value = value;
             this.jsonConverter = jsonConverter;
         }
 
+        /// <summary>
+        /// Marshals JSON string into VW example.
+        /// </summary>
         public void Marshal(VowpalWabbitMarshalContext ctx, Namespace ns, Feature feature)
         {
             var jsonSerializer = new JsonSerializer();

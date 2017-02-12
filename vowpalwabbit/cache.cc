@@ -80,7 +80,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
   { size_t temp;
     unsigned char index = 0;
     if((temp = buf_read(*input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-    { cerr << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+    { all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
       return 0;
     }
 
@@ -93,7 +93,7 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     all->p->input->set(c);
     total += storage;
     if (buf_read(*input,c,storage) < storage)
-    { cerr << "truncated example! wanted: " << storage << " bytes" << endl;
+    { all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
       return 0;
     }
 

@@ -225,7 +225,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
       dat.results.push_back(sv);
     }
   
-  if (dat.all.current_pass == 0 && dat.all.hash_inv)
+  if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
     { //for invert_hash
       
       if (dat.offset != 0)
@@ -798,7 +798,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		// fix "loss since last" for first printed out example details
 		msg << "sd::oec.weighted_examples " << all.sd->old_weighted_examples << "\n";
 		bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_examples, sizeof(all.sd->old_weighted_examples),
-			"", read, msg, text);
+			"", read, msg, text); 
 
 		// fix "number of examples per pass"
 		msg << "current_pass " << all.current_pass << "\n";
@@ -814,6 +814,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->weighted_examples = 0.;
 		all.sd->weighted_labels = 0.;
 		all.sd->weighted_unlabeled_examples = 0.;
+		all.sd->old_weighted_examples = 0.;
 		all.sd->example_number = 0;
 		all.sd->total_features = 0;
 	}
@@ -860,7 +861,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
                               msg, text);
     if (resume)
     { if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        cerr << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+        all.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
       // save_load_online_state(g, model_file, read, text);
       save_load_online_state(all, model_file, read, text, &g);
     }
@@ -992,7 +993,7 @@ base_learner* setup(vw& all)
   }
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
+    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
          << " adjust --decay_learning_rate larger to avoid this." << endl;
 
 

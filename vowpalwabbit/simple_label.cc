@@ -9,7 +9,7 @@
 
 using namespace std;
 
-char* bufread_simple_label(shared_data*, label_data* ld, char* c)
+char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 { memcpy(&ld->label, c, sizeof(ld->label));
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
@@ -17,7 +17,7 @@ char* bufread_simple_label(shared_data*, label_data* ld, char* c)
   memcpy(&ld->initial, c, sizeof(ld->initial));
   c += sizeof(ld->initial);
 
-  count_label(ld->label);
+  count_label(sd, ld->label);
   return c;
 }
 
@@ -65,7 +65,7 @@ void delete_simple_label(void*)
 {
 }
 
-void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& words)
+void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
 { label_data* ld = (label_data*)v;
 
   switch(words.size())
@@ -89,7 +89,7 @@ void parse_simple_label(parser*, shared_data*, void* v, v_array<substring>& word
         print_substring(words[i]);
       cout << endl;
   }
-  count_label(ld->label);
+  count_label(sd, ld->label);
 }
 
 label_parser simple_label = {default_simple_label, parse_simple_label,

@@ -541,13 +541,13 @@ base_learner* cb_explore_adf_setup(vw& all)
       data.gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
       if (vm.count("cover"))
-      { cout << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
+      { all.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
         data.gen_cs.cb_type = CB_TYPE_IPS;
       }
       else
         data.gen_cs.cb_type = CB_TYPE_MTR;
     else
-      std::cerr << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+      all.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
   }
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);

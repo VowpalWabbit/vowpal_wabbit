@@ -211,7 +211,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   { data.num_subsample = all.vm["oaa_subsample"].as<size_t>();
     if (data.num_subsample >= data.k)
     { data.num_subsample = 0;
-      cerr << "oaa is turning off subsampling because your parameter >= K" << endl;
+      all.trace_message << "oaa is turning off subsampling because your parameter >= K" << endl;
     }
     else
     { data.subsample_order = calloc_or_throw<uint32_t>(data.k);
@@ -230,7 +230,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
   { all.delete_prediction = delete_scalars;
     if (all.vm.count("probabilities"))
     { if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
-        cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
       // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true, true>,
                                             predict_or_learn<false, false, true, true>, all.p, data.k, prediction_type::scalars);

@@ -105,7 +105,7 @@ class VWBuildExt(_build_ext):
             elif sys.version_info[0] == 3 and sys.version_info[1] == 5:
                copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
             else:
-               raise Exception('Pre-built vw/python library for Windows is not supported')
+               raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:
             env = environ
             env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
