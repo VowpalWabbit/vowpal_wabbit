@@ -103,15 +103,15 @@ namespace VW.Azure.Trainer.Operations
                 return this.OfflineEvaluateInternal(trainerResult)
                     // insert event id & timestamp to enable data correlation
                     .Select(e => {
+                        e.EventId = trainerResult.EventId;
+                        e.Timestamp = trainerResult.Timestamp;
+
                         var ed = new EvalData
                         {
                             PartitionKey = trainerResult.PartitionKey,
                             Data = e,
                             JSON = JsonConvert.SerializeObject(e)
                         };
-
-                        ed.Data.EventId = trainerResult.EventId;
-                        ed.Data.Timestamp = trainerResult.Timestamp;
 
                         return ed;
                     })
