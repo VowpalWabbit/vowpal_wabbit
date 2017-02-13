@@ -144,6 +144,10 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e)
 { return VW::get_feature_number(static_cast<example*>(e));
 }
 
+VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e)
+{ return VW::get_confidence(static_cast<example*>(e));
+}
+
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
 { vw* pointer = static_cast<vw*>(handle);
   return VW::get_features(*pointer, static_cast<example*>(e), *plen);
