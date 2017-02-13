@@ -88,7 +88,9 @@ namespace VW.Azure.Trainer
                     PartitionKey = example.PartitionKey,
                     Latency = latency,
                     ProbabilityOfDrop = example.ProbabilityOfDrop,
-                    ActionsTags = example.ActionsTags
+                    ActionsTags = example.ActionsTags,
+                    EventId = example.EventId,
+                    Timestamp = example.Timestamp
                 };
             }
             catch (Exception ex)
