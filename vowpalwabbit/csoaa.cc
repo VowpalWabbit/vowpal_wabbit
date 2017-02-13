@@ -232,7 +232,11 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
 }
 
 bool check_ldf_sequence(ldf& data, size_t start_K)
-{ bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+{ bool isTest;
+  if (start_K == data.ec_seq.size())
+    isTest = true;
+  else
+    isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   { example *ec = data.ec_seq[k];
     // Each sub-example must have just one cost

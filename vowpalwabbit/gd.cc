@@ -225,7 +225,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
       dat.results.push_back(sv);
     }
   
-  if (dat.all.current_pass == 0 && dat.all.hash_inv)
+  if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
     { //for invert_hash
       
       if (dat.offset != 0)
