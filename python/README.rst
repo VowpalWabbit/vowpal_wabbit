@@ -76,7 +76,7 @@ Or you can use the included scikit-learn interface like this:
     >>>
     >>> # evaluate model
     >>> model.score(X_train, y_train)
-    >>> model.score(X_test, y_test))
+    >>> model.score(X_test, y_test)
 
 Troubleshooting
 ---------------
