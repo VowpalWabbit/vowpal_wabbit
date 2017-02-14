@@ -668,11 +668,13 @@ struct initial_weights
     : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride){}
 };
 
-template<class T>
-void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
+template<class T> class set_initial_lda_wrapper
 {
-	uint32_t lda = iw._lda;
-	weight initial_random = iw._initial_random;
+public:    
+    static void func(typename T::iterator& iter, initial_weights& iw)
+    {
+    	uint32_t lda = iw._lda;
+    	weight initial_random = iw._initial_random;
 	if (iw._random)
 	  {
 	    uint64_t index = iter.index();
@@ -682,7 +684,8 @@ void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
 		}
 	  }
 	(&(*iter))[lda] = iw._initial;
-}
+    }
+};
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw& all = *(l.all);
@@ -691,9 +694,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   { initialize_regressor(all);
     initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda, all.weights.stride());
     if (all.weights.sparse)
-      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda<sparse_parameters> >(init);
+      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters> >(init);
     else
-      all.weights.dense_weights.set_default<initial_weights, set_initial_lda<dense_parameters> >(init);
+      all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters> >(init);
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
