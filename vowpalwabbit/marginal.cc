@@ -175,8 +175,8 @@ LEARNER::base_learner* marginal_setup(vw& all)
   new_options(all)
     ("initial_denominator", po::value<float>(&d.initial_denominator)->default_value(1.f), "initial denominator")
     ("initial_numerator", po::value<float>(&d.initial_numerator)->default_value(0.5f), "initial numerator")
-    ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false), "update marginal values before learning")
-    ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
+    ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false)->implicit_value(true), "update marginal values before learning")
+    ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false)->implicit_value(true), "ignore importance weights when computing marginals")
     ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)");
   add_options(all);
   
