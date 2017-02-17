@@ -78,7 +78,7 @@ struct data
 		if (sm.unweighted_marginals)
 		  {
 		    m.first = m.first * (1. - sm.decay) + ec.l.simple.label;
-		    m.second = m.second * (1. - sm.decay);
+		    m.second = m.second * (1. - sm.decay) + 1;
 		  }
 		else
 		  {
