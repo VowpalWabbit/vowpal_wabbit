@@ -165,7 +165,7 @@ struct search_private
   bool force_oracle;             // insist on using the oracle to make predictions
   float perturb_oracle;          // with this probability, choose a random action instead of oracle action
 
-  size_t num_calls_to_run;
+  size_t num_calls_to_run, num_calls_to_run_previous, save_every_k_runs;
   
   // if we're printing to stderr we need to remember if we've printed the header yet
   // (i.e., we do this if we're driving)
@@ -1868,6 +1868,14 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
     if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
     else                 priv.learn_losses.cs.costs.erase();
   }
+
+  if (priv.active_csoaa && (priv.save_every_k_runs > 1))
+  { size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
+    size_t this_num = priv.num_calls_to_run          / priv.save_every_k_runs;
+    if (this_num > prev_num)
+      save_predictor(all, all.final_regressor_name, this_num);
+    priv.num_calls_to_run_previous = priv.num_calls_to_run;
+  }
 }
 
 
@@ -2271,6 +2279,7 @@ base_learner* setup(vw&all)
   ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
   ("search_linear_ordering",                        "insist on generating examples in linear order (def: hoopla permutation)")
   ("search_active_verify",     po::value<float>(),  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
+      ("search_save_every_k_runs", po::value<size_t>(), "save model every k runs")
   ;
   add_options(all);
   po::variables_map& vm = all.vm;
@@ -2317,6 +2326,8 @@ base_learner* setup(vw&all)
   if (vm.count("search_no_caching"))              priv.no_caching           = true;
   if (vm.count("search_rollout_num_steps"))       priv.rollout_num_steps    = vm["search_rollout_num_steps"].as<size_t>();
 
+  if (vm.count("search_save_every_k_runs"))       priv.save_every_k_runs    = vm["search_save_every_k_runs"].as<size_t>();
+  
   priv.A = vm["search"].as<size_t>();
 
   string neighbor_features_string;
