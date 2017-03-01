@@ -1,8 +1,5 @@
 package vowpalWabbit.learner;
 
-import vowpalWabbit.jni.NativeUtils;
-
-import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -85,14 +82,9 @@ final public class VWLearners {
             STATIC_LOCK.lock();
             try {
                 if (!loadedNativeLibrary) {
-                    NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
+                    System.loadLibrary("vw_jni");
                     loadedNativeLibrary = true;
                 }
-            }
-            catch (IOException e) {
-                // Here I've chosen to rethrow the exception as an unchecked exception because if the native
-                // library cannot be loaded then the exception is not recoverable from.
-                throw new RuntimeException(e);
             }
             finally {
                 STATIC_LOCK.unlock();

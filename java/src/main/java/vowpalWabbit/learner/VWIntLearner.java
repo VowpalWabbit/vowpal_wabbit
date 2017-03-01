@@ -9,7 +9,7 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
     }
 
     /**
-     * <code>learnOrPredict</code> allows the ability to return an unboxed prediction.  This will reduce the overhead
+     * <code>learnOrPredict</code> returns an unboxed prediction. This will reduce the overhead
      * of this function call.
      * @param example an example
      * @param learn whether to call the learn or predict VW functions.
@@ -29,7 +29,7 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
     }
 
     /**
-     * <code>learnOrPredict</code> allows the ability to return an unboxed prediction.  This will reduce the overhead
+     * <code>learnOrPredict</code> returns an unboxed prediction.  This will reduce the overhead
      * of this function call.
      * @param example an example
      * @param learn whether to call the learn or predict VW functions.
