@@ -53,7 +53,7 @@ $(LOCAL_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../
 
 	-include $(jni_SRCS:.cc=.o)
 
-install: target/$(SHARED_LIBRARY)
+install: $(LOCAL_LIBRARY)
 	cp $(LOCAL_LIBRARY) $(INSTALL_PATH);
 
 .PHONY: clean
