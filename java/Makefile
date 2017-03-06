@@ -1,25 +1,26 @@
 VWLIBS := -L../vowpalwabbit -l vw
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 JAVA_INCLUDE = -I $(JAVA_HOME)/include
+LIBRARY_NAME = vw_jni
 
 ifeq ($(UNAME), Linux)
   JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
-  SHARED_LIBRARY = libvw_jni.so
+  SHARED_LIBRARY = lib$(LIBRARY_NAME).so
   INSTALL_PATH = /usr/lib
 endif
 ifeq ($(UNAME), FreeBSD)
   JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
-  SHARED_LIBRARY = libvw_jni.so
+  SHARED_LIBRARY = lib$(LIBRARY_NAME).so
   INSTALL_PATH = /usr/lib
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   JAVA_INCLUDE += -I $(JAVA_HOME)/include/linux
-  SHARED_LIBRARY = libvw_jni.so
+  SHARED_LIBRARY = lib$(LIBRARY_NAME).so
   INSTALL_PATH = /usr/lib
 endif
 ifeq ($(UNAME), Darwin)
   JAVA_INCLUDE += -I $(JAVA_HOME)/include/darwin
-  SHARED_LIBRARY = libvw_jni.dylib
+  SHARED_LIBRARY = lib$(LIBRARY_NAME).dylib
   INSTALL_PATH = /Library/Java/Extensions
 endif
 
