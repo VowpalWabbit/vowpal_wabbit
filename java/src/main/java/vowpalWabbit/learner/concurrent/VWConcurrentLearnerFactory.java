@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import vowpalWabbit.learner.VWLearner;
 import vowpalWabbit.learner.VWLearners;
 import vowpalWabbit.learner.VWMulticlassLearner;
 import vowpalWabbit.learner.VWMultilabelsLearner;
@@ -81,22 +82,24 @@ public class VWConcurrentLearnerFactory {
      * @param command
      * @throws InterruptedException 
      */
-    private static <P> LinkedBlockingQueue<P> createVWPredictorPool(
+    private static <P extends VWLearner> LinkedBlockingQueue<P> createVWPredictorPool(
             final ExecutorService learnerExecutor, final int poolSize,
             final String command) throws InterruptedException {
-        final CompletionService<P> cs = new ExecutorCompletionService<>(
+        final CompletionService<P> cs = new ExecutorCompletionService<P>(
                 learnerExecutor);
 
-        final LinkedBlockingQueue<P> vwPredictorPool = new LinkedBlockingQueue<>(
+        final LinkedBlockingQueue<P> vwPredictorPool = new LinkedBlockingQueue<P>(
                 poolSize);
+        
+        final P seedLearner = VWLearners.create(command);
 
         // we want to do initialization in parallel as depending on the model
         // size, this could take some time.
-        for (int i = 0; i < poolSize; i++) {
+        for (int i = 1; i < poolSize; i++) {
             cs.submit(new Callable<P>() {
                 @Override
                 public P call() throws Exception {
-                    return VWLearners.create(command);
+                    return VWLearners.clone(seedLearner);
                 }
 
             });
@@ -104,7 +107,8 @@ public class VWConcurrentLearnerFactory {
 
         // This loop makes sure we block until learners are initialized in each
         // of the threads.
-        for (int i = 0; i < poolSize; i++) {
+        vwPredictorPool.add(seedLearner);
+        for (int i = 1; i < poolSize; i++) {
             try {
                 vwPredictorPool.add(cs.take().get());
             } catch (ExecutionException e) {

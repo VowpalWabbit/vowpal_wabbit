@@ -18,6 +18,14 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize
 
 /*
  * Class:     vowpalWabbit_learner_VWLearners
+ * Method:    seedVWModel
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_seedVWModel
+(JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     vowpalWabbit_learner_VWLearners
  * Method:    getReturnType
  * Signature: (J)LvowpalWabbit/learner/VWLearners/VWReturnType;
  */

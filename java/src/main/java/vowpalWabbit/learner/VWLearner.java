@@ -10,4 +10,7 @@ public interface VWLearner extends Closeable {
 
     // This tells the implementations that an IOException cannot be thrown.
     @Override void close();
+    
+    // Get the JNI pointer for the learner
+    public long getNativePointer();
 }

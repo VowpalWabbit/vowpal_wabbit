@@ -21,6 +21,11 @@ abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
     VWLearnerBase(final long nativePointer) {
         super(nativePointer);
     }
+    
+    @Override
+    public long getNativePointer() {
+    	return nativePointer;
+    }
 
     @Override
     public final T learn(String example) {

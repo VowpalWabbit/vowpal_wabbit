@@ -69,14 +69,14 @@ public class VWConcurrentMultilabelsPredictorTest {
         final VWConcurrentMultilabelsPredictor predictor = VWConcurrentLearnerFactory.createMultilabelsPredictor("foo", 
                 Executors.newFixedThreadPool(5), 5, "--quiet -t -i " + modelFile);
         
-        String[] test = new String[]{
+        final String[] test = new String[]{
                 "| a b c d",
                 "| b d"
         };
         Multilabels[] expectedTestPreds = new Multilabels[]{new Multilabels(new int[]{}), new Multilabels(new int[]{2})};
         
         ExecutorService executor = Executors.newFixedThreadPool(10);
-        CompletionService<PredictionOutput> completionService = new ExecutorCompletionService<>(
+        CompletionService<PredictionOutput> completionService = new ExecutorCompletionService<PredictionOutput>(
                 executor);
 
         for (int i=0; i<100; ++i) {

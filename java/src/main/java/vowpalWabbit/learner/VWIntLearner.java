@@ -7,6 +7,11 @@ abstract class VWIntLearner extends VWBase implements VWLearner {
     VWIntLearner(final long nativePointer) {
         super(nativePointer);
     }
+    
+    @Override
+    public long getNativePointer() {
+    	return nativePointer;
+    }
 
     /**
      * <code>learnOrPredict</code> returns an unboxed prediction. This will reduce the overhead

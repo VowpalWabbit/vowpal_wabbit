@@ -52,13 +52,13 @@ public class VWConcurrentMulticlassMultilinePredictorTest {
     @Test
     public void testIdxLabelConversion() throws InterruptedException, IOException, ExecutionException {
         String modelFile = trainAndPersistAMulticlassMultilineModel();
-        VWConcurrentMulticlassMultilinePredictor vwmcLeaner = VWConcurrentLearnerFactory.createMulticlassMultilinePredictorBase("foo", 
+        final VWConcurrentMulticlassMultilinePredictor vwmcLeaner = VWConcurrentLearnerFactory.createMulticlassMultilinePredictorBase("foo", 
                 Executors.newFixedThreadPool(5), 5, "--quiet -t -i " + modelFile, false);
         
         final String[] testInputs = new String[]{"  |w i", "  |w j", "  |w k"};
         
         ExecutorService executor = Executors.newFixedThreadPool(10);
-        CompletionService<PredictionOutput> completionService = new ExecutorCompletionService<>(
+        CompletionService<PredictionOutput> completionService = new ExecutorCompletionService<PredictionOutput>(
                 executor);
         
         String[] expectedStrPred = new String[] {"1", "1", "2"};
