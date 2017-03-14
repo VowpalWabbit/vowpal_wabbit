@@ -18,12 +18,6 @@ import vowpalWabbit.learner.VWMultilabelsLearner;
  * in the threadpool is atleast as big as the pool size otherwise you are wasting memory occupied by the
  * extra learner instances.
  * 
- * TODO: Currently if a model occupies X MB, and your learner pool size is 10 then your overall memory 
- * footprint in 10 * x MB since we initialize multiple instances of the same vw model. There is a 
- * seed_vw_model which helps in sharing memory across multiple instances of the same learner. To achieve this,
- * we need to modify the learner initialization code below to create a new instance just once and use seed_vw_model for
- * creating the rest.
- * 
  * @author atulvkamat
  */
 public class VWConcurrentLearnerFactory {
