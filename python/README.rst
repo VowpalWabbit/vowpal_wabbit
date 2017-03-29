@@ -74,6 +74,9 @@ Or you can use the included scikit-learn interface like this:
     >>> model = VWClassifier()
     >>> model.fit(X_train, y_train)
     >>>
+    >>> # predict model
+    >>> y_pred = model.predict(X_test)
+    >>>
     >>> # evaluate model
     >>> model.score(X_train, y_train)
     >>> model.score(X_test, y_test)
