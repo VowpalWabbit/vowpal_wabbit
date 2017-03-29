@@ -220,13 +220,17 @@ void mf_train(gdmf& d, example& ec)
 		mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T>
-void set_rand(typename T::iterator& iter, uint32_t& stride)
+template <class T> class set_rand_wrapper 
 {
-  uint64_t index = iter.index();
-  for (weight_iterator_iterator w = iter.begin(); w != iter.end(stride); ++w, ++index)
-    *w = (float)(0.1 * merand48(index));
-}
+public:
+    
+    static void func(typename T::iterator& iter, uint32_t& stride)
+    {
+      uint64_t index = iter.index();
+      for (weight_iterator_iterator w = iter.begin(); w != iter.end(stride); ++w, ++index)
+        *w = (float)(0.1 * merand48(index));
+    }
+};
 
 void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 { vw& all = *d.all;
@@ -237,9 +241,9 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 	{
 	  uint32_t stride = all.weights.stride();
 	  if (all.weights.sparse)
-	    all.weights.sparse_weights.set_default<uint32_t, set_rand<sparse_parameters> >(stride);
+	    all.weights.sparse_weights.set_default<uint32_t, set_rand_wrapper<sparse_parameters> >(stride);
 	  else
-	    all.weights.dense_weights.set_default<uint32_t, set_rand<dense_parameters> >(stride);
+	    all.weights.dense_weights.set_default<uint32_t, set_rand_wrapper<dense_parameters> >(stride);
 	}
     }
 
