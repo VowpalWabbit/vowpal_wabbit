@@ -447,7 +447,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.num_bits != vw2.num_bits)
     return "num_bits";
 
-  if (vw1.permutations != vw1.permutations)
+  if (vw1.permutations != vw2.permutations)
     return "permutations";
 
   if (vw1.interactions.size() != vw2.interactions.size())
