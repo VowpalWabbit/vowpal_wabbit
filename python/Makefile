@@ -19,8 +19,8 @@ ifeq ($(PYTHON_LIBS),)
 endif
 
 ifeq ($(VIRTUAL_ENV), )
-  PYTHON_INCLUDE = $(shell python$(PTHON_VERSION)-config --includes)
-  PYTHON_LDFLAGS = $(shell python$(PTHON_VERSION)-config --ldflags)
+  PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
+  PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 else
   PYTHON_INCLUDE = $(shell python-config --includes)
   PYTHON_LDFLAGS = $(shell python-config --ldflags)
