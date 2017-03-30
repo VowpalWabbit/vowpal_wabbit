@@ -169,51 +169,6 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
               } // end if (data[snd] size > 0)
           } // end if (data[fst] size > 0)
       }
-    else
-      if (len == 3) // special case for triples
-        { features& first = features_data[ns[0]];
-	  if (first.nonempty())
-        {
-          features& second = features_data[ns[1]];
-          if (second.nonempty())
-          {
-            features& third = features_data[ns[2]];
-            if (third.nonempty())
-            {
-              // don't compare 1 and 3 as interaction is sorted
-              const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
-              const bool same_namespace2 = ( !all.permutations && ( ns[1] == ns[2] ) );
-
-              for(size_t i = 0; i < first.indicies.size(); ++i)
-              {
-                if(audit) audit_func(dat, first.space_names[i].get());
-                const uint64_t halfhash1 = FNV_prime * (uint64_t)first.indicies[i];
-                const float& first_ft_value = first.values[i];
-                size_t j=0;
-                if (same_namespace1) // next index differs for permutations and simple combinations
-                  j = (PROCESS_SELF_INTERACTIONS(first_ft_value)) ? i : i+1;
-
-                for (; j < second.indicies.size(); ++j)
-                { //f3 x k*(f2 x k*f1)
-                  if(audit) audit_func(dat, second.space_names[j].get());
-                  feature_index halfhash = FNV_prime * (halfhash1 ^ (uint64_t)second.indicies[j]);
-                  feature_value ft_value = INTERACTION_VALUE(first_ft_value, second.values[j]);
-
-                  features::features_value_index_audit_range range = third.values_indices_audit();
-                  features::iterator_all begin = range.begin();
-                  if (same_namespace2) //next index differs for permutations and simple combinations
-                    begin += (PROCESS_SELF_INTERACTIONS(ft_value)) ? j : j + 1;
-
-                  features::iterator_all end = range.end();
-                  inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
-                } // end for (snd)
-                if(audit) audit_func(dat, nullptr);
-              } // end for (fst)
-
-            } // end if (data[thr] size > 0)
-          } // end if (data[snd] size > 0)
-        } // end if (data[fst] size > 0)
-    }
     else if (len == 3) // special case for triples
     { features& first = features_data[ns[0]];
       if (first.nonempty())
@@ -246,6 +201,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
                 features::iterator_all end = range.end();
                 inner_kernel<R, S, T, audit, audit_func>(dat, begin, end, offset, weights, ft_value, halfhash);
+                if (audit) audit_func(dat, nullptr);
               } // end for (snd)
               if(audit) audit_func(dat, nullptr);
             } // end for (fst)
