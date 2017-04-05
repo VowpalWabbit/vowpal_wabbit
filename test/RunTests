@@ -1544,3 +1544,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 151: lrqfa 
 {VW} --lrqfa aa3 -d train-sets/0080.dat
     train-sets/ref/0151.stderr
+
+# Test 152: daemon on the foreground test
+./daemon-test.sh --foreground
+    test-sets/ref/vw-daemon.stdout
