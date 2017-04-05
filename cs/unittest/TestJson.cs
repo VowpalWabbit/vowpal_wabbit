@@ -86,8 +86,8 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator())
             {
-                validator.Validate("| :1 :2.3 :4", "{\"a\":[1,2.3,4]}");
-                validator.Validate("|a :1 :2.3 :4", "{\"a\":{\"b\":[1,2.3,4]}}");
+                validator.Validate("|a :1 :2.3 :4", "{\"a\":[1,2.3,4]}");
+                validator.Validate("|b :1 :2.3 :4", "{\"a\":{\"b\":[1,2.3,4]}}");
             }
 
             using (var vw = new VowpalWabbit("--json"))

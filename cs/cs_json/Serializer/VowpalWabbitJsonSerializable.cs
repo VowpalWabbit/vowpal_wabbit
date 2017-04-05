@@ -18,7 +18,7 @@ using VW.Serializer.Intermediate;
 namespace VW.Serializer
 {
     /// <summary>
-    /// Default impl for objects.
+    /// Uses supplied JsonConverter to custom serialize object into JSON and then marshal from there.
     /// </summary>
     public class VowpalWabbitJsonSerializable : IVowpalWabbitSerializable
     {
@@ -39,6 +39,9 @@ namespace VW.Serializer
         /// </summary>
         public void Marshal(VowpalWabbitMarshalContext ctx, Namespace ns, Feature feature)
         {
+            if (this.value == null)
+                return;
+
             var jsonSerializer = new JsonSerializer();
             using (var jsonBuilder = new VowpalWabbitJsonBuilder(ctx.VW, VowpalWabbitDefaultMarshaller.Instance, jsonSerializer))
             {

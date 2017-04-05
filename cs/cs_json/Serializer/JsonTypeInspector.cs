@@ -66,7 +66,10 @@ namespace VW.Serializer
             .ToArray();
 
             DictTypes = numericElementTypes
-                .Select(valueType => dictType.MakeGenericType(typeof(string), valueType))
+                .SelectMany(valueType => new[] {
+                    dictType.MakeGenericType(typeof(string), valueType),
+                    dictType.MakeGenericType(typeof(string), valueType.MakeArrayType()),
+                })
                 .ToArray();
         }
 
@@ -128,11 +131,16 @@ namespace VW.Serializer
                 attr.ConverterParameters == null ?
                 Expression.New(converterCtor) :
                 Expression.New(converterCtor, attr.ConverterParameters.Select(o => Expression.Constant(o)));
-            
+
+            // leverage optimized path
+            var serializableCtor = jsonConverter is IVowpalWabbitJsonConverter ? 
+                typeof(VowpalWabbitJsonOptimizedSerializable).GetConstructor(new[] { typeof(object), typeof(IVowpalWabbitJsonConverter) }) : 
+                typeof(VowpalWabbitJsonSerializable).GetConstructor(new[] { typeof(object), typeof(JsonConverter) });
+
             // CODE new VowpalWabbitJsonConverter(object, new JsonConverter(...))
             return example =>
                 Expression.New(
-                    typeof(VowpalWabbitJsonSerializable).GetConstructor(new[] { typeof(object), typeof(JsonConverter) }),
+                    serializableCtor,
                     Expression.Property(baseExpression(example), featurePropertyInfo),
                     converterExpression);
         }
@@ -160,9 +168,11 @@ namespace VW.Serializer
                     // removing any JsonIgnore properties
                 where !ns.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let nsAttr = (JsonPropertyAttribute)ns.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
+                let nsIsMarkedWithJsonConverter = ns.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 where
                     !IsDictType(ns.PropertyType) &&
                     !IsTypeSupported(ns.PropertyType) &&
+                    !nsIsMarkedWithJsonConverter &&
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && nsAttr != null))
                 let namespaceRawValue = nsAttr != null && nsAttr.PropertyName != null ? nsAttr.PropertyName : ns.Name
@@ -175,14 +185,14 @@ namespace VW.Serializer
                     // removing any JsonIgnore properties
                 where !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()
                 let attr = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
-                where IsTypeSupported(p.PropertyType) &&
+                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
+                where (IsTypeSupported(p.PropertyType) || isMarkedWithJsonConverter) &&
                     // model OptIn/OptOut
                     (exampleMemberSerialization == MemberSerialization.OptOut || (exampleMemberSerialization == MemberSerialization.OptIn && attr != null))
                 let name = attr != null && attr.PropertyName != null ? attr.PropertyName : p.Name
                 let isTextProperty = name == propertyConfiguration.TextProperty
                 // filter all aux properties
                 where isTextProperty || !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
-                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 select new FeatureExpression(
                     featureType: isMarkedWithJsonConverter ? typeof(VowpalWabbitJsonSerializable) : p.PropertyType,
                     name: name,
@@ -214,13 +224,14 @@ namespace VW.Serializer
                    !name.StartsWith(propertyConfiguration.FeatureIgnorePrefix, StringComparison.Ordinal)
                 // filtering labels for now
                 where name != propertyConfiguration.LabelProperty
+                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 where IsTypeSupported(p.PropertyType) ||
                     // _multi can be any list type that JSON.NET supports
                     name == propertyConfiguration.MultiProperty ||
+                    isMarkedWithJsonConverter ||
                     // labels must be ILabel or string
                     // Note: from the JSON side they actually can be anything that serializes to the same properties as ILabel implementors
                     (name == propertyConfiguration.LabelProperty && (typeof(ILabel).IsAssignableFrom(p.PropertyType) || p.PropertyType == typeof(string)))
-                let isMarkedWithJsonConverter = p.GetCustomAttribute(typeof(JsonConverterAttribute), true) is JsonConverterAttribute
                 select new FeatureExpression(
                     featureType: isMarkedWithJsonConverter ? typeof(VowpalWabbitJsonSerializable) : p.PropertyType,
                     name: name,
@@ -230,7 +241,8 @@ namespace VW.Serializer
                     stringProcessing: name == propertyConfiguration.TextProperty ? StringProcessing.Split : StringProcessing.EscapeAndIncludeName,
                     // CODE example != null
                     valueValidExpressionFactories: new List<Func<Expression, Expression>>{ valueExpression => Expression.NotEqual(valueExpression, Expression.Constant(null)) },
-                    featureGroup: VowpalWabbitConstants.DefaultNamespace);
+                    @namespace: p.PropertyType.IsArray && name.Length > 1 ? name.Substring(1) : null,
+                    featureGroup: p.PropertyType.IsArray && name.Length > 0 ? name[0] : VowpalWabbitConstants.DefaultNamespace);
 
             // find all top-level dictionaries
             var topLevelDictionaries =

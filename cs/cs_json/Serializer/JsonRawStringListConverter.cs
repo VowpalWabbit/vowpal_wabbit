@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="JsonRawStringConverter.cs">
+// <copyright file="JsonRawStringListConverter.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
 //   license as described in the file LICENSE.
@@ -15,14 +15,14 @@ namespace VW.Serializer
     /// <summary>
     /// Custom JSON converter returning the underlying raw json (avoiding object allocation).
     /// </summary>
-    public class JsonRawStringConverter : JsonConverter, IVowpalWabbitJsonConverter
+    public class JsonRawStringListConverter : JsonConverter, IVowpalWabbitJsonConverter
     {
         /// <summary>
         /// Supports string only.
         /// </summary>
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(string);
+            return objectType == typeof(List<string>);
         }
 
         /// <summary>
@@ -38,10 +38,13 @@ namespace VW.Serializer
         /// </summary>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var valueString = value as string;
-            if (valueString != null)
+            var valueStringEnumerable = value as List<string>;
+            if (valueStringEnumerable != null)
             {
-                writer.WriteRawValue(valueString);
+                writer.WriteStartArray();
+                foreach (var str in valueStringEnumerable)
+                    writer.WriteRawValue(str);
+                writer.WriteEndArray();
                 return;
             }
 
@@ -53,12 +56,11 @@ namespace VW.Serializer
         /// </summary>
         public IEnumerable<string> JsonFragments(object value)
         {
-            var valueString = value as string;
-            if (valueString != null)
-            {
-                yield return valueString;
-                yield break; 
-            }
+            var valueStringList = value as List<string>;
+            if (valueStringList == null)
+                throw new ArgumentException($"Unsupported type: {value}");
+
+            return valueStringList;
         }
     }
 }

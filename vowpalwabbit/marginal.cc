@@ -168,21 +168,18 @@ using namespace MARGINAL;
 LEARNER::base_learner* marginal_setup(vw& all)
 { if (missing_option<string, true>(all, "marginal", "substitute marginal label estimates for ids"))
     return nullptr;
+	
+  data& d = calloc_or_throw<data>();
+  d.all = &all;
+
   new_options(all)
-    ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
-    ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
-    ("update_before_learn",po::value<bool>()->default_value(false), "update marginal values before learning")
-    ("unweighted_marginals",po::value<bool>()->default_value(false), "ignore importance weights when computing marginals")
-    ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)");
+    ("initial_denominator", po::value<float>(&d.initial_denominator)->default_value(1.f), "initial denominator")
+    ("initial_numerator", po::value<float>(&d.initial_numerator)->default_value(0.5f), "initial numerator")
+    ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false), "update marginal values before learning")
+    ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
+    ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)");
   add_options(all);
   
-  data& d = calloc_or_throw<data>();
-  d.initial_numerator = all.vm["initial_numerator"].as<float>();
-  d.initial_denominator = all.vm["initial_denominator"].as<float>();
-  d.decay = all.vm["decay"].as<float>();
-  d.update_before_learn = all.vm["update_before_learn"].as<bool>();
-  d.unweighted_marginals = all.vm["unweighted_marginals"].as<bool>();
-  d.all = &all;
   string s = (string)all.vm["marginal"].as<string>();
 
   for (size_t u = 0; u < 256; u++)

@@ -80,8 +80,8 @@ struct BaseState
 
 	virtual BaseState<audit>* Null(Context<audit>& ctx)
 	{
-		ctx.error << "Unexpected token: null";
-		return nullptr;
+		// ignore Null by default and stay in the current state
+		return ctx.previous_state == nullptr ? this : ctx.previous_state;
 	}
 
 	virtual BaseState<audit>* Bool(Context<audit>& ctx, bool b)
@@ -452,13 +452,11 @@ struct MultiState : BaseState<audit>
 // "...":[Numbers only]
 template<bool audit>
 class ArrayState : public BaseState<audit>
-
 {
 	feature_index array_hash;
-	BaseState<audit>* return_state;
 
 public:
-	ArrayState() : BaseState<audit>("Array"), return_state(nullptr)
+	ArrayState() : BaseState<audit>("Array")
 	{ }
 
 	BaseState<audit>* StartArray(Context<audit>& ctx)
@@ -469,9 +467,10 @@ public:
 			return nullptr;
 		}
 
-		array_hash = ctx.CurrentNamespace().namespace_hash;
-		return_state = ctx.previous_state;
+		ctx.PushNamespace(ctx.key, ctx.previous_state);
 
+		array_hash = ctx.CurrentNamespace().namespace_hash;
+		
 		return this;
 	}
 
@@ -496,9 +495,17 @@ public:
 		return Float(ctx, (float)f);
 	}
 
+	BaseState<audit>* StartObject(Context<audit>& ctx)
+	{
+		// parse properties
+		ctx.PushNamespace(ctx.CurrentNamespace().name.c_str(), this);
+
+		return &ctx.default_state;
+	}
+
 	BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType elementCount)
 	{
-		return return_state;
+		return ctx.PopNamespace();
 	}
 };
 
@@ -594,21 +601,6 @@ private:
 		return &ctx.ignore_state;
 	}
 
-	void InsertNamespace(Context<audit>& ctx)
-	{
-		auto& ns = ctx.CurrentNamespace();
-		if (ns.feature_count > 0)
-		{
-			auto feature_group = ns.feature_group;
-			// avoid duplicate insertion
-			for (unsigned char ns : ctx.ex->indices)
-				if (ns == feature_group)
-					return;
-
-			ctx.ex->indices.push_back(feature_group);
-		}
-	}
-
 public:
 	DefaultState() : BaseState<audit>("Default")
 	{ }
@@ -697,8 +689,7 @@ public:
 
 	BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
 	{
-		InsertNamespace(ctx);
-		BaseState<audit>* return_state = ctx.namespace_path.pop().return_state;
+		BaseState<audit>* return_state = ctx.PopNamespace();
 
 		if (ctx.namespace_path.empty())
 		{
@@ -816,6 +807,24 @@ struct Context
 		namespace_path.push_back(n);
 	}
 
+	BaseState<audit>* PopNamespace()
+	{
+		auto& ns = CurrentNamespace();
+		if (ns.feature_count > 0)
+		{
+			auto feature_group = ns.feature_group;
+			// avoid duplicate insertion
+			for (unsigned char ns : ex->indices)
+				if (ns == feature_group)
+					goto done;
+
+			ex->indices.push_back(feature_group);
+		}
+
+		done:
+		return namespace_path.pop().return_state;
+	}
+
 	Namespace<audit>& CurrentNamespace()
 	{
 		return *(namespace_path._end - 1);
@@ -863,6 +872,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 	bool EndObject(SizeType count) { return ctx.TransitionState(ctx.current_state->EndObject(ctx, count)); }
 	bool StartArray() { return ctx.TransitionState(ctx.current_state->StartArray(ctx)); }
 	bool EndArray(SizeType count) { return ctx.TransitionState(ctx.current_state->EndArray(ctx, count)); }
+	bool Null() { return ctx.TransitionState(ctx.current_state->Null(ctx)); }
 
 	bool VWReaderHandlerNull() { return true; }
 	bool VWReaderHandlerDefault() { return false; }

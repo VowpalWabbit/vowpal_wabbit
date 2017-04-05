@@ -29,6 +29,7 @@ namespace cs_unittest
     {
         private VowpalWabbit<TExample> vw;
         private VowpalWabbit<TExample> vwNative;
+        private VowpalWabbit vwJson;
         private VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializer;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
@@ -55,6 +56,10 @@ namespace cs_unittest
             stringSettings.EnableStringExampleGeneration = true;
 
             this.vw = new VowpalWabbit<TExample>(stringSettings);
+
+            var jsonSettings = (VowpalWabbitSettings)settings.Clone();
+            jsonSettings.Arguments += " --json";
+            this.vwJson = new VowpalWabbit(jsonSettings);
 
             this.compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
             if (this.compiler != null)
@@ -128,7 +133,27 @@ namespace cs_unittest
                                 var ex = ((VowpalWabbitSingleLineExampleCollection)jsonExample).Example;
 
                                 diff = strExample.Diff(this.vw.Native, ex, comparator);
-                                Assert.IsNull(diff, diff + "\njson: '" + jsonStr + "'");
+                                Assert.IsNull(diff, $"{diff}\n json: '{jsonStr}'");
+                            }
+                        }
+
+                        List<VowpalWabbitExample> exampleList = null;
+
+                        try
+                        {
+                            exampleList = this.vwJson.ParseJson(jsonStr);
+
+                            Assert.AreEqual(1, exampleList.Count);
+
+                            diff = strExample.Diff(this.vw.Native, exampleList[0], comparator);
+                            Assert.IsNull(diff, $"{diff}\n json: '{jsonStr}'");
+                        }
+                        finally
+                        {
+                            if (exampleList != null)
+                            {
+                                foreach (var ex in exampleList)
+                                    ex.Dispose();
                             }
                         }
                     }
@@ -187,6 +212,12 @@ namespace cs_unittest
                 {
                     this.vwNative.Dispose();
                     this.vwNative = null;
+                }
+
+                if (this.vwJson != null)
+                {
+                    this.vwJson.Dispose();
+                    this.vwJson = null;
                 }
 
                 if (this.factorySerializer != null)
