@@ -67,7 +67,7 @@ DaemonPat=`echo $DaemonCmd | sed 's/^[^ ]*vw /.*vw /'`
 
 stop_daemon() {
     # Make sure we are not running. May ignore 'error' that we're not
-    $PKILL -15 -f "$DaemonPat" 2>&1 | grep -q 'no process found'
+    $PKILL -9 -f "$DaemonPat" 2>&1 | grep -q 'no process found'
 
     # relinquish CPU by forcing some context switches to be safe
     # (let existing vw daemon procs die)
