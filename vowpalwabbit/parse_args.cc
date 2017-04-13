@@ -366,6 +366,7 @@ void parse_source(vw& all)
 { new_options(all, "Input options")
   ("data,d", po::value< string >(), "Example Set")
   ("daemon", "persistent daemon mode on port 26542")
+  ("foreground", "in persistent daemon mode, do not run in the background")
   ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
   ("num_children", po::value<size_t>(&(all.num_children)), "number of children for persistent daemon mode")
   ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
@@ -447,7 +448,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.num_bits != vw2.num_bits)
     return "num_bits";
 
-  if (vw1.permutations != vw1.permutations)
+  if (vw1.permutations != vw2.permutations)
     return "permutations";
 
   if (vw1.interactions.size() != vw2.interactions.size())

@@ -232,7 +232,11 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
 }
 
 bool check_ldf_sequence(ldf& data, size_t start_K)
-{ bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+{ bool isTest;
+  if (start_K == data.ec_seq.size())
+    isTest = true;
+  else
+    isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   { example *ec = data.ec_seq[k];
     // Each sub-example must have just one cost
@@ -431,8 +435,8 @@ void do_actual_learning(ldf& data, base_learner& base)
   else
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
-    { if (k == predicted_K)
-        data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
+      { if (k == predicted_K) 
+	  data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
     }

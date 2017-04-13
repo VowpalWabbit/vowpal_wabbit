@@ -74,9 +74,12 @@ Or you can use the included scikit-learn interface like this:
     >>> model = VWClassifier()
     >>> model.fit(X_train, y_train)
     >>>
+    >>> # predict model
+    >>> y_pred = model.predict(X_test)
+    >>>
     >>> # evaluate model
     >>> model.score(X_train, y_train)
-    >>> model.score(X_test, y_test))
+    >>> model.score(X_test, y_test)
 
 Troubleshooting
 ---------------
@@ -98,7 +101,7 @@ For Mac OSX
     $ brew install boost
     $ brew install boost-python
     # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
-    $ brew install boost --with-python3
+    $ brew install boost-python --with-python3
 
 Also, having Anaconda in your path can cause segmentation faults when importing the pyvw module. Providing Conda support
 is an open issue and efforts are welcome, but in the meantime it is suggested to remove any conda bin directory from your path

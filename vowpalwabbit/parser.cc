@@ -434,9 +434,12 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       port_file.close();
     }
 
-    // background process
-    if (!all.active && daemon(1,1))
-      THROWERRNO("daemon");
+    // background process (if foreground is not set)
+    if (!all.vm.count("foreground"))
+    {
+      if (!all.active && daemon(1,1))
+        THROWERRNO("daemon");
+    }
 
     // write pid file
     if (all.vm.count("pid_file"))
