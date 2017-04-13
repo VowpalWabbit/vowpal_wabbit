@@ -5,9 +5,10 @@
 # Requires R to generate the charts
 #
 use Getopt::Std;
+use Scalar::Util qw(looks_like_number);
 use vars qw ($opt_d $opt_x $opt_y $opt_t
              $opt_w $opt_h $opt_a $opt_q $opt_p $opt_Q
-             $opt_o $opt_v $opt_l
+             $opt_o $opt_v $opt_l $opt_s
 );
 
 my $TmpImgFile = '/tmp/vw-convergence.png';
@@ -15,6 +16,7 @@ my $TmpRFile = '/tmp/vw-convergence.R';
 my $LossStr;
 my $DisplayProg = 'display';
 my ($DefaultWidth, $DefaultHeight) = (800, 600);
+my $DefaultPointSize = 1.2;
 
 sub find_image_viewer() {
     # If your favorite OS image viewer isn't here, please add it
@@ -64,8 +66,9 @@ sub usage(@) {
         -x<XL>  Use <XL> as X-axis label in chart
         -y<YL>  Use <YL> as Y-axis label in chart
         -t<T>   Use <T> as title of chart
-        -w<W>   set image width in pixels (default $DefaultWidth)
-        -h<W>   set image height in pixels (default $DefaultHeight)
+        -w<W>   set image width in pixels to <W> (default $DefaultWidth)
+        -h<H>   set image height in pixels to <H> (default $DefaultHeight)
+        -s<S>   set point size to <S> (default $DefaultPointSize)
 
         -o <image_file> is optional, if not given, will create a temp-file:
             $TmpImgFile
@@ -184,6 +187,7 @@ sub do_plot($;$) {
 
     my $R_input = "$set_r_device_line;\n";
     my $lineno = 0;
+    my $cex = $opt_s;
     my @pchs = ();
     $R_input .= "colors = colors()[c(26, 554, 257, 115, 644, 132, 92)]\n";
     $R_input .= "col.list = vector()\n";
@@ -194,12 +198,12 @@ sub do_plot($;$) {
         $R_input .=
             ($lineno == 0) ?
                 "par(mar=c(5,6,3.5,1))\n" .
-                "plot(loss, pch=20, t='o', col=color, lwd=2, cex=1.3,\n" .
+                "plot(loss, pch=20, t='o', col=color, lwd=2, cex=$cex,\n" .
                 "\tlab=c(20,20,7), xlab='$opt_x', ylab='$opt_y\n', las=1,\n" .
                 "\tylim=c(0, $Ymax), cex.lab=1.5, font.lab=4,\n" .
                 "\tpanel.first=grid(col='gray63'));\n"
             :
-                "lines(loss, pch=20, t='o', col=color, lwd=2, cex=1.3);\n";
+                "lines(loss, pch=20, t='o', col=color, lwd=2, cex=$cex);\n";
 
         $R_input .= "col.list[1+$lineno] = color\n";
         push(@namelist, sprintf("%.4f", $lossref->[-1]));
@@ -232,7 +236,7 @@ sub do_plot($;$) {
 
 sub get_args() {
     $0 =~ s{.*/}{};
-    getopts('dx:y:t:w:h:laqQpo:vi:') || usage();
+    getopts('dx:y:t:w:h:s:laqQpo:vi:') || usage();
 
     $opt_l = 0 unless ((defined $opt_l) && $opt_l > 0);
     $LossStr = ($opt_Q || $opt_p || $opt_q) ? '%loss' : 'loss';
@@ -243,6 +247,12 @@ sub get_args() {
     $opt_t = "online training $opt_y convergence" unless (defined $opt_t);
     $opt_w = $DefaultWidth unless (defined $opt_w);
     $opt_h = $DefaultHeight unless (defined $opt_h);
+    $opt_s = $DefaultPointSize unless (
+            (defined $opt_s) and
+            looks_like_number($opt_s) and
+            ($opt_s > 0)
+    );
+
     $opt_o = $TmpImgFile
         unless (defined $opt_o);
 
