@@ -63,6 +63,23 @@ abstract class VWBase implements Closeable {
         return isOpen;
     }
 
+    /**
+     * Save the model in the VW instance.
+     */
+    public void saveModel(String filename) {
+        lock.lock();
+        try {
+            if (isOpen()) {
+                VWLearners.saveModel(nativePointer, filename);
+            } else {
+                throw new IllegalStateException("Already closed.");
+            }
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
