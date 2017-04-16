@@ -1035,3 +1035,7 @@ base_learner* setup(vw& all)
 }
 
 }
+
+
+/* SVRGD */
+
