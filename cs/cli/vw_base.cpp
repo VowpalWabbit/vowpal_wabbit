@@ -78,7 +78,7 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
           if (!settings->Arguments->Contains("--no_stdin"))
             string += " --no_stdin";
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
-          settings->ModelStream->Dispose();
+          delete settings->ModelStream;
 		  settings->ModelStream = nullptr;
         }
       }
