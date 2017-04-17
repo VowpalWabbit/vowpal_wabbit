@@ -28,6 +28,7 @@ struct cs_active
 
   bool print_debug_stuff;
   bool is_baseline;  
+  bool use_domination;
 
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
@@ -213,7 +214,8 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     size_t queries = cs_a.all->sd->queries;
     //bool any_query = false;
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
+      { bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && cl.is_range_large) || (query && cl.is_range_overlapped && cl.is_range_large));
+      //bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
       inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, query_label, cl.query_needed);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << cl.class_index << " x=" << cl.x << " prediction=" << prediction << " score=" << score << " pp=" << cl.partial_prediction << " ql=" << query_label << " qn=" << cl.query_needed << " ro=" << cl.is_range_overlapped << " rl=" << cl.is_range_large << " [" << cl.min_pred << ", " << cl.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
@@ -255,6 +257,7 @@ base_learner* cs_active_setup(vw& all)
   new_options(all, "cost-sensitive active Learning options")
   ("simulation", "cost-sensitive active learning simulation mode")
   ("baseline", "cost-sensitive active learning baseline")
+  ("domination", "cost-sensitive active learning use domination. Default 1")
   ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 0.1.")
   ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
   ("max_labels", po::value<float>(), "maximum number of label queries.")
@@ -277,13 +280,18 @@ base_learner* cs_active_setup(vw& all)
   data.max_labels = (size_t)-1;
   data.min_labels = (size_t)-1;
   data.is_baseline = false; 
+  data.use_domination = true;
   data.print_debug_stuff = all.vm.count("csa_debug") > 0;
   data.num_any_queries = 0;
   
   if(all.vm.count("baseline"))
   { data.is_baseline = true;
   }
-  
+
+  if(all.vm.count("domination") && !all.vm["domination"].as<int>())
+  { data.use_domination = false;
+  }
+
   if(all.vm.count("mellowness"))
   { data.c0 = all.vm["mellowness"].as<float>();
   }
