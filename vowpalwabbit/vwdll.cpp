@@ -144,6 +144,10 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e)
 { return VW::get_feature_number(static_cast<example*>(e));
 }
 
+VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e)
+{ return VW::get_confidence(static_cast<example*>(e));
+}
+
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
 { vw* pointer = static_cast<vw*>(handle);
   return VW::get_features(*pointer, static_cast<example*>(e), *plen);
@@ -274,4 +278,64 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
 
   return VW::save_predictor(*pointer, name);
 }
+
+
+class memory_io_buf : public io_buf
+{
+public:
+    memory_io_buf() : readOffset(0) {
+        files.push_back(-1); // this is a hack because buf will do nothing if files is empty
+    }
+
+    virtual ssize_t write_file(int file, const void* buf, size_t nbytes) {
+        auto byteBuf = reinterpret_cast<const char*>(buf);
+        data.insert(data.end(), &byteBuf[0], &byteBuf[nbytes]);
+        return nbytes;
+    }
+
+    virtual ssize_t read_file(int f, void* buf, size_t nbytes) {
+        nbytes = min(nbytes, data.size()-readOffset);
+        copy(data.data()+readOffset, data.data()+readOffset+nbytes, reinterpret_cast<char *>(buf));
+        readOffset += nbytes;
+        return nbytes;
+    }
+
+    char* GetDataPointer() {
+        return data.data();
+    }
+
+    size_t GetDataSize() const {
+        return data.size();
+    }
+
+private:
+    vector<char> data;
+    size_t readOffset;
+};
+
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize)
+{
+    unique_ptr<memory_io_buf> buf(new memory_io_buf);
+    buf->write_file(-1, modelData, modelDataSize);
+
+    vw* all = VW::initialize(string(pstrArgs), buf.get());
+    return static_cast<VW_HANDLE>(all);
 }
+
+VW_DLL_MEMBER void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize) {
+    vw* pointer = static_cast<vw*>(handle);
+
+    memory_io_buf* buf = new(memory_io_buf);
+    VW::save_predictor(*pointer, *buf);
+
+    *outputBufferHandle = buf;
+    *outputSize = buf->GetDataSize();
+    *outputData = buf->GetDataPointer();
+}
+
+VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
+    delete static_cast<memory_io_buf*>(bufferHandle);
+}
+
+}
+
