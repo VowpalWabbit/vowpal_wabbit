@@ -24,7 +24,7 @@ struct data
   bool unweighted_marginals;
   bool id_features[256];
   features temp[256];//temporary storage when reducing.
-  unordered_map<uint64_t, marginal> marginals;
+  unordered_map<uint64_t, marginal > marginals;
 
   //bookkeeping variables for experts
   bool compete;
