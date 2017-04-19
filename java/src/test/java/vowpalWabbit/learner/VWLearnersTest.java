@@ -70,10 +70,10 @@ public class VWLearnersTest extends VWTestHelper {
     @Test
     public void testSaveModel() {
         VWLearner vw = VWLearners.create("--quiet");
-        String filename = "/tmp/saved_test_model";
-        vw.saveModel(filename);
+        File file = new File("/tmp/saved_test_model");
+        vw.saveModel(file);
         vw.close();
-        assert(new File(filename).exists());
+        assert(file.exists());
     }
 
     @Test

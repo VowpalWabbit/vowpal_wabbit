@@ -1,6 +1,7 @@
 package vowpalWabbit.learner;
 
 import java.io.Closeable;
+import java.io.File;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -66,11 +67,11 @@ abstract class VWBase implements Closeable {
     /**
      * Save the model in the VW instance.
      */
-    public void saveModel(String filename) {
+    public void saveModel(File filename) {
         lock.lock();
         try {
             if (isOpen()) {
-                VWLearners.saveModel(nativePointer, filename);
+                VWLearners.saveModel(nativePointer, filename.getPath());
             } else {
                 throw new IllegalStateException("Already closed.");
             }
