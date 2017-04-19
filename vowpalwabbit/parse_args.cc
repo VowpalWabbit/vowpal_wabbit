@@ -30,6 +30,7 @@ license as described in the file LICENSE.
 #include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
+#include "fair.h"
 #include "cb_algs.h"
 #include "cb_adf.h"
 #include "cb_explore.h"
@@ -1091,6 +1092,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(multilabel_oaa_setup);
 
   all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(fair_setup);
   all.reduction_stack.push_back(interact_setup);
   all.reduction_stack.push_back(csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
