@@ -554,7 +554,6 @@
     <Import Project="packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" />
     <Import Project="packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" />
     <Import Project="packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" />
-    <Import Project="packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets" Condition="Exists('$(SolutionDir)\packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -564,7 +563,7 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\boost.vc140.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost.vc140.1.63.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets'))" />
@@ -601,6 +600,5 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
-    <Error Condition="!Exists('$(SolutionDir)\packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets'))" />
   </Target>
 </Project>
