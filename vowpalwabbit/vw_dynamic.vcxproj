@@ -284,7 +284,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
