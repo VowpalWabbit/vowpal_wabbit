@@ -34,11 +34,11 @@ namespace VW.Azure.Trainer.Operations
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("cost")]
-        public float Cost { get; set; }
+        [JsonProperty("weightedcost")]
+        public float WeightedCost { get; set; }
 
-        [JsonProperty("prob")]
-        public float Probability { get; set; }
+        [JsonProperty("importanceweight")]
+        public float ImportanceWeight { get; set; }
 
         [JsonProperty("timestamp")]
         public DateTime Timestamp { get; set; }
@@ -155,24 +155,24 @@ namespace VW.Azure.Trainer.Operations
                 Name = "Latest Policy",
                 // calcuate expectation under current randomized policy (using current exploration strategy)
                 // VW action is 0-based, label Action is 1 based
-                Cost = (trainerResult.Label.Cost * pi_a_x) / p_a_x,
-                Probability = pi_a_x / p_a_x
+                WeightedCost = (trainerResult.Label.Cost * pi_a_x) / p_a_x,
+                ImportanceWeight = pi_a_x / p_a_x
             };
 
             // the one currently running
             yield return new EvalEventData
             {
                 Name = "Deployed Policy",
-                Cost = trainerResult.Label.Cost,
-                Probability = 1 // for deployed policy just use the observed cost
+                WeightedCost = trainerResult.Label.Cost,
+                ImportanceWeight = 1 // for deployed policy just use the observed cost
             };
 
             // Default = choosing the action that's supplied by caller
             yield return new EvalEventData
             {
                 Name = "Default Policy",
-                Cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)1, trainerResult.Label.Cost, trainerResult.Label.Probability),
-                Probability = trainerResult.Label.Action == 1 ? 1 / (trainerResult.ObservedProbabilities[0] * (1 - trainerResult.ProbabilityOfDrop)) : 0
+                WeightedCost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)1, trainerResult.Label.Cost, trainerResult.Label.Probability),
+                ImportanceWeight = trainerResult.Label.Action == 1 ? 1 / (trainerResult.ObservedProbabilities[0] * (1 - trainerResult.ProbabilityOfDrop)) : 0
             };
 
             // per action tag policies
@@ -186,8 +186,8 @@ namespace VW.Azure.Trainer.Operations
                 yield return new EvalEventData
                 {
                     Name = name,
-                    Cost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
-                    Probability = trainerResult.Label.Action == action ? 1 / (trainerResult.ObservedProbabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
+                    WeightedCost = VowpalWabbitContextualBanditUtil.GetUnbiasedCost(trainerResult.Label.Action, (uint)action, trainerResult.Label.Cost, trainerResult.Label.Probability),
+                    ImportanceWeight = trainerResult.Label.Action == action ? 1 / (trainerResult.ObservedProbabilities[action - 1] * (1 - trainerResult.ProbabilityOfDrop)) : 0
                 };
             }
         }

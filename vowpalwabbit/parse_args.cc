@@ -70,6 +70,7 @@ license as described in the file LICENSE.
 #include "audit_regressor.h"
 #include "marginal.h"
 #include "explore_eval.h"
+// #include "cntk.h"
 
 using namespace std;
 //
@@ -88,9 +89,9 @@ unsigned long long hash_file_contents(io_buf *io, int f)
 { unsigned long long v = 5289374183516789128;
   unsigned char buf[1024];
   while (true)
-  { size_t n = io->read_file(f, buf, 1024);
-    if (n == 0) break;
-    for (size_t i=0; i<n; i++)
+  { ssize_t n = io->read_file(f, buf, 1024);
+    if (n <= 0) break;
+    for (ssize_t i=0; i<n; i++)
     { v *= 341789041;
       v += buf[i];
     }
@@ -180,7 +181,7 @@ void parse_dictionary_argument(vw&all, string str)
 
   size_t def = (size_t)' ';
 
-  size_t size = 2048, pos, nread;
+  ssize_t size = 2048, pos, nread;
   char rc;
   char*buffer = calloc_or_throw<char>(size);
   do
@@ -366,6 +367,7 @@ void parse_source(vw& all)
 { new_options(all, "Input options")
   ("data,d", po::value< string >(), "Example Set")
   ("daemon", "persistent daemon mode on port 26542")
+  ("foreground", "in persistent daemon mode, do not run in the background")
   ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
   ("num_children", po::value<size_t>(&(all.num_children)), "number of children for persistent daemon mode")
   ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
@@ -447,7 +449,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.num_bits != vw2.num_bits)
     return "num_bits";
 
-  if (vw1.permutations != vw1.permutations)
+  if (vw1.permutations != vw2.permutations)
     return "permutations";
 
   if (vw1.interactions.size() != vw2.interactions.size())
@@ -1062,6 +1064,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(lda_setup);
   all.reduction_stack.push_back(bfgs_setup);
   all.reduction_stack.push_back(OjaNewton_setup);
+  // all.reduction_stack.push_back(VW_CNTK::setup);
 
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);

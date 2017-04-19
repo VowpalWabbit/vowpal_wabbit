@@ -139,6 +139,11 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
 	      ss << ' ';
 	    ss << scalars[i];
 	  }
+	for (size_t i = 0; i < tag.size(); i++)
+	  { if (i == 0)
+	      ss << ' ';
+	    ss << tag[i];
+	  }
 	ss << '\n';
 	ssize_t len = ss.str().size();
 	ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);

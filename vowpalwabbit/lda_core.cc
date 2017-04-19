@@ -668,11 +668,13 @@ struct initial_weights
     : _initial(initial), _initial_random(initial_random), _random(random), _lda(lda), _stride(stride){}
 };
 
-template<class T>
-void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
+template<class T> class set_initial_lda_wrapper
 {
-	uint32_t lda = iw._lda;
-	weight initial_random = iw._initial_random;
+public:    
+    static void func(typename T::iterator& iter, initial_weights& iw)
+    {
+    	uint32_t lda = iw._lda;
+    	weight initial_random = iw._initial_random;
 	if (iw._random)
 	  {
 	    uint64_t index = iter.index();
@@ -682,7 +684,8 @@ void set_initial_lda(typename T::iterator& iter, initial_weights& iw)
 		}
 	  }
 	(&(*iter))[lda] = iw._initial;
-}
+    }
+};
 
 void save_load(lda &l, io_buf &model_file, bool read, bool text)
 { vw& all = *(l.all);
@@ -691,9 +694,9 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
   { initialize_regressor(all);
     initial_weights init(all.initial_t, (float)(l.lda_D / all.lda / all.length() * 200), all.random_weights, all.lda, all.weights.stride());
     if (all.weights.sparse)
-      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda<sparse_parameters> >(init);
+      all.weights.sparse_weights.set_default<initial_weights, set_initial_lda_wrapper<sparse_parameters> >(init);
     else
-      all.weights.dense_weights.set_default<initial_weights, set_initial_lda<dense_parameters> >(init);
+      all.weights.dense_weights.set_default<initial_weights, set_initial_lda_wrapper<dense_parameters> >(init);
   }
   if (model_file.files.size() > 0)
   { uint64_t i = 0;
@@ -1215,8 +1218,8 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
   ld.compute_coherence_metrics = vm["metrics"].as<bool>();
   if (ld.compute_coherence_metrics)
-  { ld.feature_counts.resize((uint32_t)1 << all.num_bits);
-    ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  { ld.feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld.feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
@@ -1242,7 +1245,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, UINT64_ONE << all.weights.stride_shift(), prediction_type::scalars);
 
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);

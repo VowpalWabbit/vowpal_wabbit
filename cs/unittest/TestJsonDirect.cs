@@ -255,6 +255,7 @@ namespace cs_unittest
                     "shared | Bar:5",
                     " | Foo:1 |Value test:1.2",
                     " | Foo:2 |Value test:2.3",
+                    " | Foo:3 |Value titleabc\"def",
                 },
                 new JsonRawAdfString
                 {
@@ -270,7 +271,12 @@ namespace cs_unittest
                         {
                             Foo = 2,
                             Value = JsonConvert.SerializeObject(new { test = 2.3 })
-                        }
+                        },
+                        new JsonRawString
+                        {
+                            Foo = 3,
+                            Value = JsonConvert.SerializeObject(new { title = "abc\"def", _ignoreMe = 1 })
+                        },
                     }
                 });
 
@@ -312,10 +318,11 @@ namespace cs_unittest
                     {
                         JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
                         JsonConvert.SerializeObject(new { E = new { e = true } }),
+                        JsonConvert.SerializeObject(new { F = new { title = "abc\"def" } }),
                     }.ToList()
                 };
 
-                vw.Validate(" | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e", adf);
+                vw.Validate(" | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e |F titleabc\"def", adf);
             }
         }
 

@@ -25,13 +25,30 @@
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
 
+#if _MSC_VER == 1900
+// VS 2015 Bug: https://social.msdn.microsoft.com/Forums/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error?forum=vcgeneral
+std::string utf16_to_utf8(std::u16string utf16_string)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
+	auto p = reinterpret_cast<const int16_t *>(utf16_string.data());
+	return convert.to_bytes(p, p + utf16_string.size());
+}
+
+#else
+
+std::string utf16_to_utf8(std::u16string utf16_string)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+	return convert.to_bytes(utf16_string);
+}
+#endif
+
 extern "C"
 { using namespace std;
+
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(pstrArgs));
-  return VW_InitializeA(sa.c_str());
+{ return VW_InitializeA(utf16_to_utf8(pstrArgs).c_str());
 }
 #endif
 
@@ -77,9 +94,7 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE* feat
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(line));
-  return VW_ReadExampleA(handle, sa.c_str());
+{ return VW_ReadExampleA(handle, utf16_to_utf8(line).c_str());
 }
 #endif
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExampleA(VW_HANDLE handle, const char * line)
@@ -144,6 +159,10 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e)
 { return VW::get_feature_number(static_cast<example*>(e));
 }
 
+VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e)
+{ return VW::get_confidence(static_cast<example*>(e));
+}
+
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
 { vw* pointer = static_cast<vw*>(handle);
   return VW::get_features(*pointer, static_cast<example*>(e), *plen);
@@ -158,17 +177,11 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  return VW_HashSpaceA(handle,sa.c_str());
+{ return VW_HashSpaceA(handle, utf16_to_utf8(s).c_str());
 }
 
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStatic(const char16_t * s, const char16_t * h)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  std::string ha(convert.to_bytes(h));
-
-  return VW_HashSpaceStaticA(sa.c_str(), ha.c_str());
+{ return VW_HashSpaceStaticA(utf16_to_utf8(s).c_str(), utf16_to_utf8(h).c_str());
 }
 #endif
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s)
@@ -185,16 +198,11 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char * s, const c
 
 #ifdef USE_CODECVT
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  return VW_HashFeatureA(handle,sa.c_str(),u);
+{ return VW_HashFeatureA(handle, utf16_to_utf8(s).c_str(),u);
 }
 
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, unsigned long u, const char16_t * h, unsigned int num_bits)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  std::string ha(convert.to_bytes(h));
-  return VW_HashFeatureStaticA(sa.c_str(), u, ha.c_str(), num_bits);
+{ return VW_HashFeatureStaticA(utf16_to_utf8(s).c_str(), u, utf16_to_utf8(h).c_str(), num_bits);
 }
 #endif
 
@@ -274,4 +282,64 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle)
 
   return VW::save_predictor(*pointer, name);
 }
+
+
+class memory_io_buf : public io_buf
+{
+public:
+    memory_io_buf() : readOffset(0) {
+        files.push_back(-1); // this is a hack because buf will do nothing if files is empty
+    }
+
+    virtual ssize_t write_file(int file, const void* buf, size_t nbytes) {
+        auto byteBuf = reinterpret_cast<const char*>(buf);
+        data.insert(data.end(), &byteBuf[0], &byteBuf[nbytes]);
+        return nbytes;
+    }
+
+    virtual ssize_t read_file(int f, void* buf, size_t nbytes) {
+        nbytes = min(nbytes, data.size()-readOffset);
+        copy(data.data()+readOffset, data.data()+readOffset+nbytes, reinterpret_cast<char *>(buf));
+        readOffset += nbytes;
+        return nbytes;
+    }
+
+    char* GetDataPointer() {
+        return data.data();
+    }
+
+    size_t GetDataSize() const {
+        return data.size();
+    }
+
+private:
+    vector<char> data;
+    size_t readOffset;
+};
+
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize)
+{
+    unique_ptr<memory_io_buf> buf(new memory_io_buf);
+    buf->write_file(-1, modelData, modelDataSize);
+
+    vw* all = VW::initialize(string(pstrArgs), buf.get());
+    return static_cast<VW_HANDLE>(all);
 }
+
+VW_DLL_MEMBER void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* outputBufferHandle, char** outputData, size_t* outputSize) {
+    vw* pointer = static_cast<vw*>(handle);
+
+    memory_io_buf* buf = new(memory_io_buf);
+    VW::save_predictor(*pointer, *buf);
+
+    *outputBufferHandle = buf;
+    *outputSize = buf->GetDataSize();
+    *outputData = buf->GetDataPointer();
+}
+
+VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
+    delete static_cast<memory_io_buf*>(bufferHandle);
+}
+
+}
+

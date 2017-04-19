@@ -22,13 +22,6 @@ using namespace System::Text;
 
 namespace VW
 {
-static VowpalWabbitBase::VowpalWabbitBase()
-{ // make sure zlib.dll is loaded before anybody changes the current directory and we can't load anymore...
-  auto str = System::IO::Path::Combine(System::IO::Path::GetDirectoryName(VowpalWabbitBase::typeid->Assembly->Location), "zlib.dll");
-  wstring path = msclr::interop::marshal_as<std::wstring>(str);
-  LoadLibrary(path.c_str());
-}
-
 void trace_listener_cli(void* context, const std::string& message)
 {
 	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
@@ -78,7 +71,8 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
           if (!settings->Arguments->Contains("--no_stdin"))
             string += " --no_stdin";
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
-          settings->ModelStream->Close();
+          delete settings->ModelStream;
+		  settings->ModelStream = nullptr;
         }
       }
 
