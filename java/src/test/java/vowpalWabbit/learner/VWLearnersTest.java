@@ -2,6 +2,8 @@ package vowpalWabbit.learner;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 
 import java.io.BufferedWriter;
@@ -67,10 +69,13 @@ public class VWLearnersTest extends VWTestHelper {
         vw.close();
     }
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
-    public void testSaveModel() {
+    public void testSaveModel() throws IOException {
         VWLearner vw = VWLearners.create("--quiet");
-        File file = new File("/tmp/saved_test_model");
+        File file = temporaryFolder.newFile("saved_test_model");
         vw.saveModel(file);
         vw.close();
         assert(file.exists());
