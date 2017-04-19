@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include <vector>
 #include <stdio.h>
+#include <memory>
 
 #include <iostream>
 #include <boost/iostreams/filtering_streambuf.hpp>
