@@ -31,9 +31,9 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(JNIEnv *en
   {
     const char* utf_string = env->GetStringUTFChars(filename, NULL);
     std::string filenameCpp(utf_string);
-    VW::save_predictor(*(vw*)vwPtr, filenameCpp);
     env->ReleaseStringUTFChars(filename, utf_string);
     env->DeleteLocalRef(filename);
+    VW::save_predictor(*(vw*)vwPtr, filenameCpp);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);
