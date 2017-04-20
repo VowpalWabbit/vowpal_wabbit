@@ -18,6 +18,7 @@ using VW.Serializer.Intermediate;
 
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Linq" #>
+<#@ output extension=".cs" #>
 
 namespace VW.Serializer
 {
