@@ -452,7 +452,7 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
-  size_t current_pass;
+  uint64_t current_pass;
 
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
