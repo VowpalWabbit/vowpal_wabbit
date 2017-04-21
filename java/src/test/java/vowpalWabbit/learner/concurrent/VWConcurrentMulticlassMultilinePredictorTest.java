@@ -1,7 +1,6 @@
 package vowpalWabbit.learner.concurrent;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -80,13 +79,12 @@ public class VWConcurrentMulticlassMultilinePredictorTest {
         for (int i = 0; i < 100; i++) {
             Future<PredictionOutput> output = completionService
                     .poll(2000, TimeUnit.MILLISECONDS);
-            Assert.assertArrayEquals(expectedStrPred, output.get().prediction.get());
+            Assert.assertArrayEquals(expectedStrPred, output.get().prediction);
         }
     }
     
-    
-    private class PredictionOutput {
-        Optional<String[]> prediction;
+    public static class PredictionOutput {
+        String[] prediction;
         String[] input;
     }
 }

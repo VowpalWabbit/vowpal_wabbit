@@ -1,6 +1,5 @@
 package vowpalWabbit.learner;
 
-import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -39,12 +38,12 @@ final public class VWLearners {
      */
     public static <T extends VWLearner> T create(final String command) {
         long nativePointer = initializeVWJni(command);
-        Optional<T> learner = getLearner(nativePointer);
-        if(!learner.isPresent()) {
+        T learner = getLearner(nativePointer);
+        if(learner == null) {
             throw new IllegalArgumentException("Unknown VW return type using command: " + command);
         }
         
-        return learner.get();
+        return learner;
     }
     
     /**
@@ -56,31 +55,31 @@ final public class VWLearners {
      */
     public static <T extends VWLearner> T clone(final T seedLearner) {
         long nativePointer = seedVWModel(seedLearner.getNativePointer());
-        Optional<T> learner = getLearner(nativePointer);
-        if(!learner.isPresent()) {
+        T learner = getLearner(nativePointer);
+        if(learner == null) {
             throw new IllegalArgumentException("Unknown VW return type.");
         }
         
-        return learner.get();
+        return learner;
     }
     
     @SuppressWarnings("unchecked")
-    private static <T extends VWLearner> Optional<T> getLearner(long nativePointer) {
+    private static <T extends VWLearner> T getLearner(long nativePointer) {
         VWReturnType returnType = getReturnType(nativePointer);
 
         switch (returnType) {
-            case ActionProbs: return Optional.of((T)new VWActionProbsLearner(nativePointer));
-            case ActionScores: return Optional.of((T)new VWActionScoresLearner(nativePointer));
-            case Multiclass: return Optional.of((T)new VWMulticlassLearner(nativePointer));
-            case Multilabels: return Optional.of((T)new VWMultilabelsLearner(nativePointer));
-            case Prob: return Optional.of((T)new VWProbLearner(nativePointer));
-            case Scalar: return Optional.of((T)new VWScalarLearner(nativePointer));
-            case Scalars: return Optional.of((T)new VWScalarsLearner(nativePointer));
+            case ActionProbs: return (T)new VWActionProbsLearner(nativePointer);
+            case ActionScores: return (T)new VWActionScoresLearner(nativePointer);
+            case Multiclass: return (T)new VWMulticlassLearner(nativePointer);
+            case Multilabels: return (T)new VWMultilabelsLearner(nativePointer);
+            case Prob: return (T)new VWProbLearner(nativePointer);
+            case Scalar: return (T)new VWScalarLearner(nativePointer);
+            case Scalars: return (T)new VWScalarsLearner(nativePointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.
                 closeInstance(nativePointer);
-                return Optional.empty();
+                return null;
         }
     }
 

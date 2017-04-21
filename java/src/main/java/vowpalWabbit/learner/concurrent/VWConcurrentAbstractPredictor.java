@@ -1,6 +1,5 @@
 package vowpalWabbit.learner.concurrent;
 
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -72,7 +71,7 @@ public abstract class VWConcurrentAbstractPredictor<P, O, E> {
      *             - expecting owner of the thread to deal with this interrupt
      *             exception.
      */
-    public Optional<O> predict(final E example, final long timeoutInMillis)
+    public O predict(final E example, final long timeoutInMillis)
             throws InterruptedException {
         Future<O> future = null;
         try {
@@ -88,8 +87,7 @@ public abstract class VWConcurrentAbstractPredictor<P, O, E> {
                 }
             });
 
-            Optional<O> result = Optional
-                    .of(future.get(timeoutInMillis, TimeUnit.MILLISECONDS));
+            O result = future.get(timeoutInMillis, TimeUnit.MILLISECONDS);
 
             return result;
         } catch (ExecutionException e) {
@@ -99,7 +97,7 @@ public abstract class VWConcurrentAbstractPredictor<P, O, E> {
                     e.getCause());
         } catch (TimeoutException e) {
             future.cancel(true/* interrupt */);
-            return Optional.empty();
+            return null;
         }
     }
 }

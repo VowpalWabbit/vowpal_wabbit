@@ -2,7 +2,6 @@ package vowpalWabbit.learner.concurrent;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -97,13 +96,13 @@ public class VWConcurrentMultilabelsPredictorTest {
             Future<PredictionOutput> output = completionService
                     .poll(2000, TimeUnit.MILLISECONDS);
             PredictionOutput prediction = output.get(); 
-            Assert.assertEquals(expectedTestPreds[prediction.inputIndex], prediction.prediction.get());
+            Assert.assertEquals(expectedTestPreds[prediction.inputIndex], prediction.prediction);
         }
         
     }
     
-    private class PredictionOutput {
-        Optional<Multilabels> prediction;
+    public static class PredictionOutput {
+        Multilabels prediction;
         int inputIndex;
         String input;
     }
