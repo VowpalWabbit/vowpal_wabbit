@@ -434,9 +434,12 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       port_file.close();
     }
 
-    // background process
-    if (!all.active && daemon(1,1))
-      THROWERRNO("daemon");
+    // background process (if foreground is not set)
+    if (!all.vm.count("foreground"))
+    {
+      if (!all.active && daemon(1,1))
+        THROWERRNO("daemon");
+    }
 
     // write pid file
     if (all.vm.count("pid_file"))
@@ -1012,6 +1015,10 @@ const char* get_tag(example* ec)
 
 size_t get_feature_number(example* ec)
 { return ec->num_features;
+}
+
+float get_confidence(example* ec)
+{ return ec->confidence;
 }
 }
 
