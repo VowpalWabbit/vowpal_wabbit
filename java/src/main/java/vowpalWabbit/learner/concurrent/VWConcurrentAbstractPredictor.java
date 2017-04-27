@@ -9,9 +9,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Abstracts out timeout logic associated with predict api.
+ * Abstracts out synchronized and asynchronized prediction method for the concurrent predict API.
  * 
  * @author atulvkamat
+ * @author zhilians
  *
  * @param <P>
  *            is the predictor. Eg: VWMultilabelsLearner.
@@ -65,39 +66,49 @@ public abstract class VWConcurrentAbstractPredictor<P, O, E> {
      * 
      * @param example
      * @param timeoutInMillis
-     * @return Optional prediction with the result being empty if not returned
-     *         within the timeout window.
+     * @return prediction result or null if timed out
      * @throws InterruptedException
-     *             - expecting owner of the thread to deal with this interrupt
+     *             expecting owner of the thread to deal with this interrupt
      *             exception.
      */
-    public O predict(final E example, final long timeoutInMillis)
-            throws InterruptedException {
+    public O predict(final E example, final long timeoutInMillis) throws InterruptedException {
         Future<O> future = null;
         try {
-            future = getLearnerExecutor().submit(new Callable<O>() {
-                @Override
-                public O call() throws Exception {
-                    P predictor = borrowPredictorFromPool();
-                    try {
-                        return predict(predictor, example);
-                    } finally {
-                        returnPredictorToPool(predictor);
-                    }
-                }
-            });
-
+            future = predict(example);
             O result = future.get(timeoutInMillis, TimeUnit.MILLISECONDS);
-
             return result;
         } catch (ExecutionException e) {
-            throw new RuntimeException(
-                    String.format("Exception while predicting for example: %s",
-                            example),
+            throw new RuntimeException(String.format("Exception while predicting for example: %s", example),
                     e.getCause());
         } catch (TimeoutException e) {
             future.cancel(true/* interrupt */);
             return null;
         }
+    }
+
+    /**
+     * Makes prediction against the example by queuing the prediction request
+     * 
+     * A Future will be returned so that further action can be taken asynchronously
+     * 
+     * @param example
+     * @return A {@link Future} of the prediction output
+     * 
+     */
+    public Future<O> predict(final E example) {
+        Future<O> future = getLearnerExecutor().submit(new Callable<O>() {
+
+            @Override
+            public O call() throws Exception {
+                P predictor = borrowPredictorFromPool();
+                try {
+                    return predict(predictor, example);
+                } finally {
+                    returnPredictorToPool(predictor);
+                }
+            }
+        });
+
+        return future;
     }
 }
