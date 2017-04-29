@@ -5,7 +5,7 @@
 #ifndef _Included_vowpalWabbit_learner_VWMulticlassLearner
 #define _Included_vowpalWabbit_learner_VWMulticlassLearner
 #ifdef __cplusplus
-extern "C"
+extern "C" 
 {
 #endif
 /*
@@ -14,7 +14,7 @@ extern "C"
  * Signature: (Ljava/lang/String;ZJ)I
  */
 JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predict
-(JNIEnv *, jobject, jstring, jboolean, jlong);
+  (JNIEnv *, jobject, jstring, jboolean, jlong);
 
 /*
  * Class:     vowpalWabbit_learner_VWMulticlassLearner
@@ -22,7 +22,23 @@ JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predict
  * Signature: ([Ljava/lang/String;ZJ)I
  */
 JNIEXPORT jint JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictMultiline
-(JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+
+/*
+ * Class:     vowpalWabbit_learner_VWMulticlassLearner
+ * Method:    predictForAllLines
+ * Signature: ([Ljava/lang/String;ZJ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictForAllLines
+  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
+
+/*
+ * Class:     vowpalWabbit_learner_VWMulticlassLearner
+ * Method:    predictNamedLabelsForAllLines
+ * Signature: ([Ljava/lang/String;ZJ)[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL Java_vowpalWabbit_learner_VWMulticlassLearner_predictNamedLabelsForAllLines
+  (JNIEnv *, jobject, jobjectArray, jboolean, jlong);
 
 #ifdef __cplusplus
 }
