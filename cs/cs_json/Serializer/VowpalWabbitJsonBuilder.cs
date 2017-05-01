@@ -173,6 +173,10 @@ namespace VW.Serializer
             if (reader.TokenType == JsonToken.None && !reader.Read())
                 return;
 
+            // don't barf on null values.
+            if (reader.TokenType == JsonToken.Null)
+                return;
+
             if (reader.TokenType != JsonToken.StartObject)
                 throw new VowpalWabbitJsonException(this.reader,
                     string.Format("Expected start object. Found '{0}' and value '{1}'",
