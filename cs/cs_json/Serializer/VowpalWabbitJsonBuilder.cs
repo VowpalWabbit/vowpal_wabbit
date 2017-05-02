@@ -179,8 +179,7 @@ namespace VW.Serializer
 
             if (reader.TokenType != JsonToken.StartObject)
                 throw new VowpalWabbitJsonException(this.reader,
-                    string.Format("Expected start object. Found '{0}' and value '{1}'",
-                    reader.TokenType, reader.Value));
+                    $"Expected start object. Found '{reader.TokenType}' and value '{reader.Value}' for namespace {ns.Name}");
 
             // re-direct default namespace to the one passed
             var saveDefaultNamespaceContext = this.DefaultNamespaceContext;

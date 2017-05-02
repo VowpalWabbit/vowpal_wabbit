@@ -1,4 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VowpalWabbitJsonOptimizedSerializable.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Newtonsoft.Json;
+using System;
 using System.IO;
 using VW.Serializer.Intermediate;
 
@@ -29,20 +38,27 @@ namespace VW.Serializer
             if (this.value == null)
                 return;
 
-            var jsonSerializer = new JsonSerializer();
-            using (var jsonBuilder = new VowpalWabbitJsonBuilder(ctx.VW, VowpalWabbitDefaultMarshaller.Instance, jsonSerializer))
+            try
             {
-                // marshal from JSON to VW
-                foreach (var json in jsonConverter.JsonFragments(this.value))
+                var jsonSerializer = new JsonSerializer();
+                using (var jsonBuilder = new VowpalWabbitJsonBuilder(ctx.VW, VowpalWabbitDefaultMarshaller.Instance, jsonSerializer))
                 {
-                    if (json == null)
-                        continue;
-
-                    using (var reader = new JsonTextReader(new StringReader(json)))
+                    // marshal from JSON to VW
+                    foreach (var json in jsonConverter.JsonFragments(this.value))
                     {
-                        jsonBuilder.Parse(reader, ctx, new Namespace(ctx.VW, feature.Name));
+                        if (json == null)
+                            continue;
+
+                        using (var reader = new JsonTextReader(new StringReader(json)))
+                        {
+                            jsonBuilder.Parse(reader, ctx, new Namespace(ctx.VW, feature.Name));
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                throw new VowpalWabbitSerializationException("Optimized marshalling failed", e, ns, feature);
             }
         }
     }
