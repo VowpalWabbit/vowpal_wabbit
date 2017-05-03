@@ -17,6 +17,18 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv *
   return vwPtr;
 }
 
+JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_seedVWModel(JNIEnv *env, jclass obj, jlong vwPtr)
+{ jlong cloneVwPtr = 0;
+  try
+  { vw* vwInstance = VW::seed_vw_model((vw*)vwPtr, "");
+    cloneVwPtr = (jlong)vwInstance;
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+  return cloneVwPtr;
+}
+
 JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv *env, jclass obj, jlong vwPtr)
 { try
   { VW::finish(*((vw*)vwPtr));
