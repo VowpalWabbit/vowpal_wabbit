@@ -81,16 +81,25 @@ LEARNER::base_learner* fair_setup(vw& all)
     ("lambda", po::value<float>()->default_value(0.f), "lagrangian parameter")
     ("space", po::value<char>(), "protected attribute space");
 
+  add_options(all);
+
   fair& data = calloc_or_throw<fair>();
-  
+
   data.k = (uint32_t)all.vm["fair"].as<uint32_t>();
   if (all.vm.count("space"))
     data.fair_space = (char)all.vm["space"].as<char>();
   if (all.vm.count("lambda"))
     data.lambda = (float)all.vm["lambda"].as<float>();
 
+  if (count(all.args.begin(), all.args.end(),"--csoaa") == 0)
+  { all.args.push_back("--csoaa");
+    stringstream ss;
+    ss << data.k;
+    all.args.push_back(ss.str());
+  }
+
   LEARNER::learner<fair>& ret =
-    init_learner(&data, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+    init_multiclass_learner(&data, setup_base(all), predict_or_learn<true>, predict_or_learn<false>,all.p,1,prediction_type::multiclass);
 
   return make_base(ret);
 }
