@@ -1016,6 +1016,10 @@ const char* get_tag(example* ec)
 size_t get_feature_number(example* ec)
 { return ec->num_features;
 }
+
+float get_confidence(example* ec)
+{ return ec->confidence;
+}
 }
 
 void initialize_examples(vw& all)

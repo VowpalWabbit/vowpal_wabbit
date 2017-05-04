@@ -57,6 +57,7 @@ typedef void * VW_EXAMPLE;
 typedef void * VW_LABEL;
 typedef void * VW_FEATURE_SPACE;
 typedef void * VW_FEATURE;
+typedef void * VW_IOBUF;
 
 const VW_HANDLE INVALID_VW_HANDLE = VW_TYPE_SAFE_NULL;
 const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
@@ -65,6 +66,7 @@ const VW_HANDLE INVALID_VW_EXAMPLE = VW_TYPE_SAFE_NULL;
 VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs);
 #endif
 VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs);
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize);
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle);
 VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish(VW_HANDLE handle);
@@ -93,6 +95,7 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_GetTopicPrediction(VW_EXAMPLE e, size_t i
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e);
 VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e);
+VW_DLL_MEMBER float VW_CALLING_CONV VW_GetConfidence(VW_EXAMPLE e);
 VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen);
 VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f);
 #ifdef USE_CODECVT
@@ -120,6 +123,8 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle);
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_SaveModel(VW_HANDLE handle);
+VW_DLL_MEMBER void VW_CALLING_CONV VW_CopyModelData(VW_HANDLE handle, VW_IOBUF* bufferHandle, char** outputData, size_t* outputSize);
+VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle);
 
 #ifdef __cplusplus
 }
