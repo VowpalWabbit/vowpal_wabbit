@@ -1527,7 +1527,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    train-sets/ref/oaa_scores.stderr
    pred-sets/ref/oaa_scores.predict
 
-#Test 148:  check cb_adf with direct method option
+# Test 148:  check cb_adf with direct method option
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
     train-sets/ref/cb_adf_dm.stderr
     pred-sets/ref/cb_adf_dm.predict
@@ -1537,7 +1537,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
 
-#Test 150:  Test --sparse_weights with 148
+# Test 150:  Test --sparse_weights with 148
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
     train-sets/ref/sparse.stderr
 
@@ -1553,7 +1553,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete
     train-sets/ref/marginal_compete.stderr
 
-# Test 154: --cubic regression verification
+# Test 154: ignore linear
+{VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx
+    train-sets/ref/ignore_linear.stderr
+
+# Test 155: --cubic regression verification
 ./cubic-test.sh ${VW}
 
 
