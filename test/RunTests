@@ -1552,3 +1552,8 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 153: marginal features
 {VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete
     train-sets/ref/marginal_compete.stderr
+
+# Test 154: --cubic regression verification
+./cubic-test.sh ${VW}
+
+
