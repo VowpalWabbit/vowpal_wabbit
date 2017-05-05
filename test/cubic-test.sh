@@ -37,6 +37,14 @@ verify_cubic_ABC() {
             warn "$vw: single feature '$f1' missing in $ih"
     done
 
+    # Verify no quadratic features existence
+    grep -q "^[ABC]\^[1-9].[ABC][1-9]:" "$ih" >/dev/null
+    case $? in
+        (0) warn "$vw: quadratic feature '$f1' APPEARING in $ih"
+            ;;
+        (1) : cool ;;
+    esac
+
     # Verify cubic features existence
     f1='A^1'
     for f2 in 'B^2' 'B^3'; do
