@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -437,6 +438,56 @@ namespace cs_unittest
 
                         return true;
                     });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestPartialJson()
+        {
+            using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
+            {
+                Arguments = "--cb_adf",
+                PropertyConfiguration = new PropertyConfiguration
+                {
+                    MultiProperty = "adf",
+                    TextProperty = "someText",
+                    FeatureIgnorePrefix = "xxx"
+                }
+            }))
+            {
+                var json = "{\"eventId\":123,\"c\":{\"Age\":25,\"adf\":[{\"someText\":\"w1 w2\", \"a\":{\"x\":1}, \"xxxxIgnoreMe\":2}, {\"someText\":\"w2 w3\"}], \"_labelIndex\":1, \"_label_Cost\":-1, \"_label_Probability\":0.3},\"post\":456}";
+                using (var textReader = new JsonTextReader(new StringReader(json)))
+                {
+                    textReader.Read();
+                    Assert.AreEqual(JsonToken.StartObject, textReader.TokenType);
+
+                    textReader.Read();
+                    Assert.AreEqual(JsonToken.PropertyName, textReader.TokenType);
+                    Assert.AreEqual("eventId", textReader.Value);
+                    textReader.Read();
+                    Assert.AreEqual(JsonToken.Integer, textReader.TokenType);
+                    Assert.AreEqual((Int64)123, textReader.Value);
+
+                    textReader.Read();
+                    Assert.AreEqual(JsonToken.PropertyName, textReader.TokenType);
+                    Assert.AreEqual("c", textReader.Value);
+                    textReader.Read();
+
+                    validator.Validate(new[] {
+                         "shared | Age:25",
+                         " | w1 w2 |a x:1",
+                         "0:-1:.3 | w2 w3"
+                        },
+                        textReader,
+                        VowpalWabbitLabelComparator.ContextualBandit);
+
+                    textReader.Read();
+                    Assert.AreEqual(JsonToken.PropertyName, textReader.TokenType);
+                    Assert.AreEqual("post", textReader.Value);
+                    textReader.Read();
+                    Assert.AreEqual((Int64)456, textReader.Value);
+                }
             }
         }
 
