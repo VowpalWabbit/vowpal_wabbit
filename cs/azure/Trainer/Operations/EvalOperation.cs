@@ -29,20 +29,38 @@ namespace VW.Azure.Trainer.Operations
         internal string PartitionKey { get; set; }
     }
 
+    /// <summary>
+    /// Evaluation Event Data
+    /// </summary>
     public sealed class EvalEventData
     {
+        /// <summary>
+        /// Policy name
+        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Weighted cost
+        /// </summary>
         [JsonProperty("weightedcost")]
         public float WeightedCost { get; set; }
 
+        /// <summary>
+        /// Importance weight
+        /// </summary>
         [JsonProperty("importanceweight")]
         public float ImportanceWeight { get; set; }
 
+        /// <summary>
+        /// Timestamp
+        /// </summary>
         [JsonProperty("timestamp")]
         public DateTime Timestamp { get; set; }
 
+        /// <summary>
+        /// Event Id
+        /// </summary>
         [JsonProperty("eventid")]
         public string EventId { get; set; }
     }
