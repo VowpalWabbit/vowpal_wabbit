@@ -600,6 +600,9 @@ namespace VW.Serializer
                         break;
                     case JsonToken.EndArray:
                         return;
+                    case JsonToken.Null:
+                        // just ignore nulls
+                        break;
                     default:
                         throw new VowpalWabbitJsonException(this.reader, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
                 }
