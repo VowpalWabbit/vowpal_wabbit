@@ -59,8 +59,8 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
     public void csoaa() throws IOException {
         // Note that the expected values in this test were obtained by running
         // vw from the command line as follows
-        // echo -e "1 | a\n2 | a b\n3 | a c\n2 | a b\n3 | b c\n1 | a c\n2 | d" | ../vowpalwabbit/vw --multilabel_oaa 4 -f multilabel.model -p multilabel.train.out
-        // echo -e "| a b c d\n| b d" | ../vowpalwabbit/vw -t -i multilabel.model -p multilabel.test.out
+        // echo -e "1:1.0 | a \n2:1.0 | b\n3:1.0 | c\n1:2.0 2:1.0 | a b\n2:1.0 3:3.0 | b c\n1:3.0 3:1.0 | a c\n2:3.0 | d" | vw --csoaa 3 -f multilabel.model -p multilabel.train.out
+        // echo -e "1:1.0 | a \n2:1.0 | b\n3:1.0 | c\n1:2.0 2:1.0 | a b\n2:1.0 3:3.0 | b c\n1:3.0 3:1.0 | a c\n2:3.0 | d" | vw -t -i multilabel.model -p multilabel.test.out
         String[] train = new String[]{
                 "1:1.0 a1_expect_1| a",
                 "2:1.0 b1_expect_2| b",
@@ -168,4 +168,46 @@ public class VWMulticlassLearnerTest extends VWTestHelper {
          String[] testPreds = vw.predictMultipleNamedLabels(testInput);
          assertArrayEquals(expectedTestPreds, testPreds);
     }
+
+    @Test
+    public void csoaaRawPredictions() throws IOException {
+        // Note that the expected values in this test were obtained by running
+        // vw from the command line as follows
+        // echo -e "1:1.0 | a \n2:1.0 | b\n3:1.0 | c\n1:2.0 2:1.0 | a b\n2:1.0 3:3.0 | b c\n1:3.0 3:1.0 | a c\n2:3.0 | d" | vw --csoaa 3 -f multilabel.model -p multilabel.train.out
+        // echo -e "1:1.0 | a \n2:1.0 | b\n3:1.0 | c\n1:2.0 2:1.0 | a b\n2:1.0 3:3.0 | b c\n1:3.0 3:1.0 | a c\n2:3.0 | d" | vw -t -i multilabel.model -r multilabel.test.raw.out
+        String[] train = new String[]{
+                "1:1.0 a1_expect_1| a",
+                "2:1.0 b1_expect_2| b",
+                "3:1.0 c1_expect_3| c",
+                "1:2.0 2:1.0 ab1_expect_2| a b",
+                "2:1.0 3:3.0 bc1_expect_2| b c",
+                "1:3.0 3:1.0 ac1_expect_3| a c",
+                "2:3.0 d1_expect_2| d"
+        };
+        String model = temporaryFolder.newFile().getAbsolutePath();
+        VWMulticlassLearner vw = VWLearners.create("--quiet --csoaa 3 -f " + model);
+        for (String aTrain : train) {
+            vw.learn(aTrain);
+        }
+        vw.close();
+
+        float[][] expectedRawPreds = new float[][]{
+                new float[]{1.3138912f},
+                new float[]{1.0170227f},
+                new float[]{0.9935568f},
+                new float[]{1.5651858f, 1.2024833f},
+                new float[]{1.1805034f, 1.2557286f},
+                new float[]{1.5714452f, 1f},
+                new float[]{0.9127718f},
+        };
+        vw = VWLearners.create("--quiet -t -i " + model);
+        float[][] testPreds = new float[expectedRawPreds.length][];
+        for (int i = 0; i < train.length; ++i) {
+            testPreds[i] = vw.rawPredict(train[i]);
+        }
+
+        assertArrayEquals(expectedRawPreds, testPreds);
+        vw.close();
+    }
 }
+
