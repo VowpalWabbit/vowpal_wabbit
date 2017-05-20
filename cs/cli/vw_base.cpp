@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -32,9 +32,9 @@ void trace_listener_cli(void* context, const std::string& message)
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
   : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
 { if (m_settings->EnableThreadSafeExamplePooling)
-    m_examples = Bag::CreateLockFree<VowpalWabbitExample^>();
+    m_examples = Bag::CreateLockFree<VowpalWabbitExample^>(m_settings->MaxExamples);
   else
-    m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
+	m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
 
   try
   { try
