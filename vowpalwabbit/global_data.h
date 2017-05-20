@@ -509,6 +509,8 @@ struct vw
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
+  bool ignore_some_linear;
+  bool ignore_linear[256];//a set of namespaces to ignore for linear
 
   bool redefine_some;          // --redefine param was used
   unsigned char redefine[256]; // keeps new chars for amespaces

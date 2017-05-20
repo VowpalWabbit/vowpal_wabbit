@@ -60,7 +60,7 @@ Or you can use the included scikit-learn interface like this:
 
     >>> import numpy as np
     >>> from sklearn import datasets
-    >>> from sklearn.cross_validation import train_test_split
+    >>> from sklearn.model_selection import train_test_split
     >>> from vowpalwabbit.sklearn_vw import VWClassifier
     >>>
     >>> # generate some data
