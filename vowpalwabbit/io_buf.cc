@@ -100,7 +100,7 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
 
 bool io_buf::is_socket(int f)
 { // this appears to work in practice, but could probably be done in a cleaner fashion
-  const int _nhandle = 32;
+  const int _nhandle = _getmaxstdio()/2;
   return f >= _nhandle;
 }
 
