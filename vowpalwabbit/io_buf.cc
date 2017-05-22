@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "io_buf.h"
+#include <stdio.h>
 #ifdef WIN32
 #include <winsock2.h>
 #endif
