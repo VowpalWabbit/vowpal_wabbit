@@ -16,11 +16,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import vowpalWabbit.VWTestHelper;
 import vowpalWabbit.learner.VWLearners;
 import vowpalWabbit.learner.VWMultilabelsLearner;
 import vowpalWabbit.responses.Multilabels;
 
-public class VWConcurrentMultilabelsPredictorTest {
+public class VWConcurrentMultilabelsPredictorTest extends VWTestHelper {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
