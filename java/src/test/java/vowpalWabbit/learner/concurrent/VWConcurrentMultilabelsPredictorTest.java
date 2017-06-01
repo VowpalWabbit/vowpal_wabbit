@@ -21,7 +21,7 @@ import vowpalWabbit.learner.VWLearners;
 import vowpalWabbit.learner.VWMultilabelsLearner;
 import vowpalWabbit.responses.Multilabels;
 
-public class VWConcurrentMultilabelsPredictorTest extends VWTestHelper {
+public class VWConcurrentMultilabelsPredictorTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();

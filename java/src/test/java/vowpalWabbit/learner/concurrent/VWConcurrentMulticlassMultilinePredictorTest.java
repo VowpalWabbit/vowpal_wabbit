@@ -20,7 +20,7 @@ import vowpalWabbit.learner.VWLearners;
 import vowpalWabbit.learner.VWMulticlassLearner;
 
 
-public class VWConcurrentMulticlassMultilinePredictorTest extends VWTestHelper {
+public class VWConcurrentMulticlassMultilinePredictorTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
