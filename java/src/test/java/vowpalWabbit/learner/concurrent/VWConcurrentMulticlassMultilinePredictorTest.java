@@ -15,11 +15,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import vowpalWabbit.VWTestHelper;
 import vowpalWabbit.learner.VWLearners;
 import vowpalWabbit.learner.VWMulticlassLearner;
 
 
-public class VWConcurrentMulticlassMultilinePredictorTest {
+public class VWConcurrentMulticlassMultilinePredictorTest extends VWTestHelper {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
