@@ -366,6 +366,7 @@ void parse_source(vw& all)
 { new_options(all, "Input options")
   ("data,d", po::value< string >(), "Example Set")
   ("daemon", "persistent daemon mode on port 26542")
+  ("foreground", "in persistent daemon mode, do not run in the background")
   ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
   ("num_children", po::value<size_t>(&(all.num_children)), "number of children for persistent daemon mode")
   ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
@@ -447,7 +448,7 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.num_bits != vw2.num_bits)
     return "num_bits";
 
-  if (vw1.permutations != vw1.permutations)
+  if (vw1.permutations != vw2.permutations)
     return "permutations";
 
   if (vw1.interactions.size() != vw2.interactions.size())
@@ -458,6 +459,12 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
 
   if (vw1.ignore_some && !equal(vw1.ignore, vw1.ignore + (sizeof(vw1.ignore) / sizeof(bool)), vw2.ignore))
     return "ignore";
+
+  if (vw1.ignore_some_linear != vw2.ignore_some_linear)
+    return "ignore_some_linear";
+
+  if (vw1.ignore_some_linear && !equal(vw1.ignore_linear, vw1.ignore_linear + (sizeof(vw1.ignore_linear) / sizeof(bool)), vw2.ignore_linear))
+    return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
     return "redefine_some";
@@ -513,6 +520,7 @@ void parse_feature_tweaks(vw& all)
 { new_options(all, "Feature options")
   ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
   ("ignore", po::value< vector<string> >(), "ignore namespaces beginning with character <arg>")
+  ("ignore_linear", po::value< vector<string> >(), "ignore namespaces beginning with character <arg> for linear terms only")
   ("keep", po::value< vector<string> >(), "keep namespaces beginning with character <arg>")
   ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
   ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
@@ -698,8 +706,12 @@ void parse_feature_tweaks(vw& all)
 
 
   for (size_t i = 0; i < 256; i++)
-    all.ignore[i] = false;
+    {
+      all.ignore[i] = false;
+      all.ignore_linear[i] = false;
+    }
   all.ignore_some = false;
+  all.ignore_some_linear = false;
 
   if (vm.count("ignore"))
   { all.ignore_some = true;
@@ -715,6 +727,28 @@ void parse_feature_tweaks(vw& all)
 
     if (!all.quiet)
     { all.trace_message << "ignoring namespaces beginning with: ";
+      for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
+        for (string::const_iterator j = i->begin(); j != i->end(); j++)
+          all.trace_message << *j << " ";
+
+      all.trace_message << endl;
+    }
+  }
+
+  if (vm.count("ignore_linear"))
+  { all.ignore_some_linear = true;
+
+    vector<string> ignore = vm["ignore_linear"].as< vector<string> >();
+    for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
+    { *i = spoof_hex_encoded_namespaces(*i);
+      *all.file_options << " --ignore_linear " << *i;
+      for (string::const_iterator j = i->begin(); j != i->end(); j++)
+        all.ignore_linear[(size_t)(unsigned char)*j] = true;
+
+    }
+
+    if (!all.quiet)
+    { all.trace_message << "ignoring linear terms for namespaces beginning with: ";
       for (vector<string>::iterator i = ignore.begin(); i != ignore.end(); i++)
         for (string::const_iterator j = i->begin(); j != i->end(); j++)
           all.trace_message << *j << " ";

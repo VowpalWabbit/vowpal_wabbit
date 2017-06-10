@@ -28,6 +28,17 @@ cb_class* get_observed_cost(CB::label& ld)
   return nullptr;
 }
 
+  float safe_probability(float prob)
+  {
+    if (prob <= 0.)
+      {
+	std::cout << "Probability " << prob << " is not possible, replacing with 1e-3.  Fix your dataset. " << std::endl;
+	return 1e-3;
+      }
+    else
+      return prob;
+  }
+  
 //Multiline version
 void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
 { cs_labels.costs.erase();
@@ -39,7 +50,7 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
     if (shared && i > 0)
       wc.class_index = (uint32_t)i-1;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-      wc.x = ld.costs[0].cost / ld.costs[0].probability;
+      wc.x = ld.costs[0].cost / safe_probability(ld.costs[0].probability);
     cs_labels.costs.push_back(wc);
   }
 
@@ -97,7 +108,8 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
     for (uint32_t i = 1; i <= c.num_actions; i++)
     { COST_SENSITIVE::wclass wc = {0.,i,0.,0.};
       if (c.known_cost != nullptr && i == c.known_cost->action)
-      { wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise
+      {
+	wc.x = c.known_cost->cost / safe_probability(c.known_cost->probability); //use importance weighted cost for observed action, 0 otherwise
         //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         //update the loss of this regressor
         c.nb_ex_regressors++;
@@ -114,7 +126,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
     for (auto& cl : ld.costs)
     { COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
       if (c.known_cost != nullptr && cl.action == c.known_cost->action)
-      { wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise
+	{ wc.x = c.known_cost->cost / safe_probability(c.known_cost->probability); //use importance weighted cost for observed action, 0 otherwise
 
         //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
         //update the loss of this regressor

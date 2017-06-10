@@ -10,7 +10,6 @@ all:
 test:
 	cd ..; $(MAKE) test
 
-
 things:	config.h $(BINARIES)
 
 %.1:	%

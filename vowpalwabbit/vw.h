@@ -87,6 +87,7 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
+float get_confidence(example* ec);
 feature* get_features(vw& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 

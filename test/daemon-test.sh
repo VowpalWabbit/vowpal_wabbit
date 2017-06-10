@@ -13,6 +13,20 @@ PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
 PORT=54248
 
+while [ $# -gt 0 ]
+do
+    case "$1" in
+        --foreground)
+            Foreground="$1"
+            ;;
+        *)
+            echo "$NAME: unknown argument $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
 # -- make sure we can find vw first
 if [ -x "$VW" ]; then
     : cool found vw at: $VW
@@ -46,7 +60,7 @@ fi
 
 
 # A command (+pattern) that is unlikely to match anything but our own test
-DaemonCmd="$VW -t -i $MODEL --daemon --num_children 1 --quiet --port $PORT"
+DaemonCmd="$VW -t -i $MODEL --daemon $Foreground --num_children 1 --quiet --port $PORT"
 # libtool may wrap vw with '.libs/lt-vw' so we need to be flexible
 # on the exact process pattern we try to kill.
 DaemonPat=`echo $DaemonCmd | sed 's/^[^ ]*vw /.*vw /'`
@@ -57,14 +71,24 @@ stop_daemon() {
 
     # relinquish CPU by forcing some context switches to be safe
     # (let existing vw daemon procs die)
-    wait
+    if echo "$DaemonPat" | grep -q -v "\-\-foreground"; then
+        wait
+    else
+        sleep 0
+    fi
 }
 
 start_daemon() {
     # echo starting daemon
     $DaemonCmd </dev/null >/dev/null &
+    PID=$!
     # give it time to be ready
-    wait; wait; wait
+    if echo "$DaemonCmd" | grep -q -v "\-\-foreground"; then
+        wait; wait; wait
+    else
+        sleep 0; sleep 0; sleep 0
+    fi
+    echo "$PID"
 }
 
 cleanup() {
@@ -90,7 +114,29 @@ EOF
 # Train
 $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
-start_daemon
+DaemonPid=`start_daemon`
+
+# Test --foreground argument
+PidsAreEqual=false
+for ProcessPid in $(pgrep -f "$DaemonPat" 2>&1)
+do
+    if [ $DaemonPid -eq $ProcessPid ]; then
+        PidsAreEqual=true
+    fi
+done
+if [ $Foreground ]; then
+    if ! $PidsAreEqual ; then
+        echo "$NAME FAILED: --foreground, but vw has run in the background"
+        stop_daemon
+        exit 1
+    fi
+else
+    if $PidsAreEqual ; then
+        echo "$NAME FAILED: vw has not run in the background"
+        stop_daemon
+        exit 1
+    fi
+fi
 
 # Test on train-set
 # OpenBSD netcat quits immediately after stdin EOF

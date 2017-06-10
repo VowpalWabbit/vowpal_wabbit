@@ -824,11 +824,15 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
 }
 
-  template<class T> void set_initial_gd(typename T::iterator& iter, pair<float,float>& initial)
+  template<class T> class set_initial_gd_wrapper 
   {
-    (&(*iter))[0] = initial.first;
-    (&(*iter))[1] = initial.second;
-  }
+      public: 
+          static void func(typename T::iterator& iter, pair<float,float>& initial)
+              {
+                (&(*iter))[0] = initial.first;
+                (&(*iter))[1] = initial.second;
+              }
+  };
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 { vw& all = *g.all;
@@ -840,9 +844,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       float init_weight = all.initial_weight;
       pair<float,float> p = make_pair(init_weight, all.initial_t);
       if (all.weights.sparse)
-	all.weights.sparse_weights.set_default<pair<float,float>, set_initial_gd<sparse_parameters> >(p);
+	all.weights.sparse_weights.set_default<pair<float,float>, set_initial_gd_wrapper<sparse_parameters> >(p);
       else
-	all.weights.dense_weights.set_default<pair<float,float>, set_initial_gd<dense_parameters> >(p);
+	all.weights.dense_weights.set_default<pair<float,float>, set_initial_gd_wrapper<dense_parameters> >(p);
       //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
       //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be
       //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients

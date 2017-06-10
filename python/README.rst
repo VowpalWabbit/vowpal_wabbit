@@ -60,7 +60,7 @@ Or you can use the included scikit-learn interface like this:
 
     >>> import numpy as np
     >>> from sklearn import datasets
-    >>> from sklearn.cross_validation import train_test_split
+    >>> from sklearn.model_selection import train_test_split
     >>> from vowpalwabbit.sklearn_vw import VWClassifier
     >>>
     >>> # generate some data
@@ -74,9 +74,12 @@ Or you can use the included scikit-learn interface like this:
     >>> model = VWClassifier()
     >>> model.fit(X_train, y_train)
     >>>
+    >>> # predict model
+    >>> y_pred = model.predict(X_test)
+    >>>
     >>> # evaluate model
     >>> model.score(X_train, y_train)
-    >>> model.score(X_test, y_test))
+    >>> model.score(X_test, y_test)
 
 Troubleshooting
 ---------------

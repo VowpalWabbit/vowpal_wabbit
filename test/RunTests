@@ -1544,3 +1544,15 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 151: lrqfa 
 {VW} --lrqfa aa3 -d train-sets/0080.dat
     train-sets/ref/0151.stderr
+
+# Test 152: daemon on the foreground test
+./daemon-test.sh --foreground
+    test-sets/ref/vw-daemon.stdout
+
+# Test 153: marginal features
+{VW} --marginal f  -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100  --compete
+    train-sets/ref/marginal_compete.stderr
+
+# Test 154: ignore linear
+{VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx
+    train-sets/ref/ignore_linear.stderr

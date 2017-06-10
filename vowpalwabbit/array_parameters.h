@@ -137,18 +137,18 @@ private:
 
 	inline weight& strided_index(size_t index){ return operator[](index << _stride_shift);}
 
-	template<class R, void(*T)(iterator&, R&)> void set_default(R& info)
+	template<class R, class T> void set_default(R& info)
 	{
 	  iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride())
-	    T(iter, info);
+	    T::func(iter, info);
 	}
 
-	template<void(*T)(iterator&)> void set_default()
+	template<class T> void set_default()
 	{ 
 	  iterator iter = begin();
 	  for (size_t i = 0; iter != end(); ++iter, i += stride())
-	    T(iter);
+	    T::func(iter);
 	}
 
 	void set_zero(size_t offset)
@@ -310,15 +310,15 @@ public:
 		_seeded = true;
 	}
 
-	template<class R, void(*T)(iterator&, R&)> void set_default(R& info)
+	template<class R, class T> void set_default(R& info)
 	{
 	  R& new_R = calloc_or_throw<R>();
 	  new_R = info;
 	  default_data = &new_R;
-	  fun = (void(*)(iterator&, void*))T;
+	  fun = (void(*)(iterator&, void*))T::func;
 	}
 
-	template<void(*T)(iterator&)> void set_default() { fun = (void(*)(iterator&, void*))T; }
+	template<class T> void set_default() { fun = (void(*)(iterator&, void*))T::func; }
 
 	void set_zero(size_t offset)
 	{

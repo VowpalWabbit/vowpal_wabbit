@@ -25,19 +25,31 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
-template <class T> void set_initial(typename T::iterator& iter, float& initial) { *iter = initial; }
+template <class T> class set_initial_wrapper 
+{
+public:
+    static void func(typename T::iterator& iter, float& initial) { *iter = initial; }    
+};
 	
-template <class T> void random_positive(typename T::iterator& iter)
+template <class T> class random_positive_wrapper 
 {
-  uint64_t index = iter.index();
-  *iter = (float)(0.1 * merand48(index));
-}
+public:
+   static void func(typename T::iterator& iter)
+    {
+      uint64_t index = iter.index();
+      *iter = (float)(0.1 * merand48(index));
+    }
+};
 
-template <class T> void random_weights(typename T::iterator& iter)
+template <class T> class random_weights_wrapper
 {
-  uint64_t index = iter.index();
-  *iter = (float)(merand48(index) - 0.5);
-}
+public:    
+    static void func(typename T::iterator& iter)
+    {
+      uint64_t index = iter.index();
+      *iter = (float)(merand48(index) - 0.5);
+    }
+};
 
 template<class T> void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
@@ -52,11 +64,11 @@ template<class T> void initialize_regressor(vw& all, T& weights)
   if (weights.mask() == 0)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
   else if (all.initial_weight != 0.)
-    weights.template set_default<float,set_initial<T> >(all.initial_weight);
+    weights.template set_default<float,set_initial_wrapper<T> >(all.initial_weight);
   else if (all.random_positive_weights)
-    weights.template set_default<random_positive<T> >();
+    weights.template set_default<random_positive_wrapper<T> >();
   else if (all.random_weights)
-    weights.template set_default<random_weights<T> >();
+    weights.template set_default<random_weights_wrapper<T> >();
 }
 
 void initialize_regressor(vw& all)
