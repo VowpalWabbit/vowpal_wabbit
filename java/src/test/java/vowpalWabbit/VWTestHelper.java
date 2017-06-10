@@ -30,7 +30,7 @@ public class VWTestHelper {
     public static void loadLibrary() throws IOException {
         if (!loaded.getAndSet(true)) {
             try {
-                System.loadLibrary("vwjni");
+                System.loadLibrary("vw_jni");
             }
             catch (UnsatisfiedLinkError ignored) {
                 // Do nothing as this means that the library should be loaded as part of the jar
