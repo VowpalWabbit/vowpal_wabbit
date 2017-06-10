@@ -348,8 +348,7 @@ LEARNER::base_learner* marginal_setup(vw& all)
     if (s.find((char)u) != string::npos)
       d.id_features[u] = true;
   new(&d.marginals)unordered_map<uint64_t,marginal>();
-  if(d.compete)
-    new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
+  new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<data>& ret =
     init_learner(&d, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);

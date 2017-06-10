@@ -247,11 +247,14 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
   uint32_t num_actions = (uint32_t)preds.size();
   float norm = 0.;
   float max_score = preds[0].score;
+  for (size_t i = 1; i < num_actions; i++)
+    if (max_score < preds[i].score)
+      max_score = preds[i].score;
 
   for (size_t i = 0; i < num_actions; i++)
   { float prob = exp(data.lambda*(preds[i].score - max_score));
     preds[i].score = prob;
-    norm += prob;
+     norm += prob;
   }
   for (size_t i = 0; i < num_actions; i++)
     preds[i].score /= norm;
