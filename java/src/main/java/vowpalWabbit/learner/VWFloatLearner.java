@@ -7,11 +7,6 @@ abstract class VWFloatLearner extends VWBase implements VWLearner {
     VWFloatLearner(final long nativePointer) {
         super(nativePointer);
     }
-    
-    @Override
-    public long getNativePointer() {
-    	return nativePointer;
-    }
 
     /**
      * <code>learnOrPredict</code> allows the ability to return an unboxed prediction.  This will reduce the overhead
