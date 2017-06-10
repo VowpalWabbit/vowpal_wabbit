@@ -1,5 +1,8 @@
 package vowpalWabbit.learner;
 
+import vowpalWabbit.jni.NativeUtils;
+
+import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,35 +39,9 @@ final public class VWLearners {
      * @param <T> The type of learner expected.  Note that this type implicitly specifies the output type of the learner.
      * @return A VW Learner
      */
+    @SuppressWarnings("unchecked")
     public static <T extends VWLearner> T create(final String command) {
         long nativePointer = initializeVWJni(command);
-        T learner = getLearner(nativePointer);
-        if(learner == null) {
-            throw new IllegalArgumentException("Unknown VW return type using command: " + command);
-        }
-        
-        return learner;
-    }
-    
-    /**
-     * This method internally uses seed_vw_model C++ method which reuses the shared variables from the
-     * seed model. And hence the memory footprint doesn't grow linearly as it would if one creates
-     * multiple instances using the create method.
-     * @param seedLearner
-     * @return A VW Learner
-     */
-    public static <T extends VWLearner> T clone(final T seedLearner) {
-        long nativePointer = seedVWModel(seedLearner.getNativePointer());
-        T learner = getLearner(nativePointer);
-        if(learner == null) {
-            throw new IllegalArgumentException("Unknown VW return type.");
-        }
-        
-        return learner;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private static <T extends VWLearner> T getLearner(long nativePointer) {
         VWReturnType returnType = getReturnType(nativePointer);
 
         switch (returnType) {
@@ -79,7 +56,7 @@ final public class VWLearners {
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.
                 closeInstance(nativePointer);
-                return null;
+                throw new IllegalArgumentException("Unknown VW return type using command: " + command);
         }
     }
 
@@ -101,16 +78,21 @@ final public class VWLearners {
         }
         return nativePointer;
     }
-    
+
     private static void loadNativeLibrary() {
         // By making use of a static lock here we make sure this code is only executed once globally.
         if (!loadedNativeLibrary) {
             STATIC_LOCK.lock();
             try {
                 if (!loadedNativeLibrary) {
-                    System.loadLibrary("vw_jni");
+                    NativeUtils.loadOSDependentLibrary("/vw_jni", ".lib");
                     loadedNativeLibrary = true;
                 }
+            }
+            catch (IOException e) {
+                // Here I've chosen to rethrow the exception as an unchecked exception because if the native
+                // library cannot be loaded then the exception is not recoverable from.
+                throw new RuntimeException(e);
             }
             finally {
                 STATIC_LOCK.unlock();
@@ -118,7 +100,6 @@ final public class VWLearners {
         }
     }
     private static native long initialize(String command);
-    private static native long seedVWModel(long nativePointer);
     private static native VWReturnType getReturnType(long nativePointer);
 
     // Closing needs to be done here when initialization fails and by VWBase
