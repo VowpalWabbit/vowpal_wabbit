@@ -82,11 +82,31 @@ template <class R, class S, void (*T)(R&, float, S)>
 inline void foreach_feature(vw& all, example& ec, R& dat)
 { uint64_t offset = ec.ft_offset;
   if (all.weights.sparse)
-    for (features& f : ec)
-      foreach_feature<R, T, sparse_parameters>(all.weights.sparse_weights, f, dat, offset);
+    if (all.ignore_some_linear)
+      for (example::iterator i = ec.begin (); i != ec.end(); ++i)
+        {
+          if (!all.ignore_linear[i.index()])
+            {
+              features& f = *i;
+              foreach_feature<R, T, sparse_parameters>(all.weights.sparse_weights, f, dat, offset);
+            }
+        }
+    else
+      for (features& f : ec)
+        foreach_feature<R, T, sparse_parameters>(all.weights.sparse_weights, f, dat, offset);
   else
-    for (features& f : ec)
-      foreach_feature<R, T, dense_parameters>(all.weights.dense_weights, f, dat, offset);
+    if (all.ignore_some_linear)
+      for (example::iterator i = ec.begin (); i != ec.end(); ++i)
+        {
+          if (!all.ignore_linear[i.index()])
+            {
+              features& f = *i;
+              foreach_feature<R, T, dense_parameters>(all.weights.dense_weights, f, dat, offset);
+            }
+        }
+    else
+      for (features& f : ec)
+        foreach_feature<R, T, dense_parameters>(all.weights.dense_weights, f, dat, offset);
 
   INTERACTIONS::generate_interactions<R,S,T>(all, ec, dat);
 }
