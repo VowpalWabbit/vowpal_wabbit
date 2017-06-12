@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "io_buf.h"
+#include <stdio.h>
 #ifdef WIN32
 #include <winsock2.h>
 #endif
@@ -100,8 +101,13 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
 
 bool io_buf::is_socket(int f)
 { // this appears to work in practice, but could probably be done in a cleaner fashion
-  const int _nhandle = 32;
-  return f >= _nhandle;
+#ifdef _WIN32
+	const int _nhandle = _getmaxstdio()/2;
+	return f >= _nhandle;
+#else
+	const int _nhandle = 32;
+	return f >= _nhandle;
+#endif
 }
 
 ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
