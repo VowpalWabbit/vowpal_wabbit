@@ -1,0 +1,28 @@
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+use IO::File;
+use IO::Select;
+
+my @mappers = map { $_->autoflush (1); $_ } 
+              map { new IO::File $_, "w" or die "$_: $!" } 
+              @ARGV;
+
+my $bufsize = 1;
+my @buf = grep { defined } map { scalar <STDIN> } (1 .. $bufsize);
+my $n = 0;
+
+while (@buf)
+  {
+    my $fh = $mappers[$n % @mappers];
+    my @ready = IO::Select->new ($fh)->can_write (20000);
+    if (@ready)
+      {
+        print $fh @buf;
+        @buf = grep { defined } map { scalar <STDIN> } (1 .. $bufsize);
+      }
+
+    ++$n;
+  }

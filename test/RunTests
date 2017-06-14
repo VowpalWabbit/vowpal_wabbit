@@ -1557,7 +1557,10 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx
     train-sets/ref/ignore_linear.stderr
 
-# Test 155: --cubic regression verification
+# Test 155: checking audit_regressor with --save_resume model
+{VW} -d train-sets/0001.dat -i models/0097.model --save_resume --audit_regressor 0097.audit_regr
+    train-sets/ref/0097.audit_regr.stderr
+    train-sets/ref/0097.audit_regr
+
+# Test 156: --cubic regression verification
 ./cubic-test.sh ${VW}
-
-
