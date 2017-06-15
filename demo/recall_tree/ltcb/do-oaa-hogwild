@@ -1,0 +1,61 @@
+#! /bin/zsh
+
+nukeem() { \
+  trap - INT QUIT TERM
+  pkill -9 -f 'vw.*--port 26542'
+}
+
+if which netcat >/dev/null 2>/dev/null; then
+  netcat=netcat
+elif which nc >/dev/null 2>/dev/null; then
+  netcat=nc
+else
+  echo "Install netcat or nc" >&2
+  exit 1
+fi
+
+data="$1"
+shift
+
+{ vw "$@" --num_children 24 --port 26542 2>&1 | perl -lane 'print $_ unless $F[2] =~ /^\d$/ && $c{$F[2]}++;' } &
+
+trap 'nukeem; exit 1' INT QUIT TERM
+
+while ! $netcat -z localhost 26542
+  do
+    sleep 1
+  done
+
+zcat $data |                                            \
+./map                                                   \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)                \
+  >($netcat localhost 26542 > /dev/null)
+
+pkill -f 'vw.*--port 26542'
+
+while test "x$1" = "x-f" && test ! -s "$2"
+  do
+    sleep 1
+  done
