@@ -1527,7 +1527,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
    train-sets/ref/oaa_scores.stderr
    pred-sets/ref/oaa_scores.predict
 
-#Test 148:  check cb_adf with direct method option
+# Test 148:  check cb_adf with direct method option
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm
     train-sets/ref/cb_adf_dm.stderr
     pred-sets/ref/cb_adf_dm.predict
@@ -1537,7 +1537,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
 
-#Test 150:  Test --sparse_weights with 148
+# Test 150:  Test --sparse_weights with 148
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
     train-sets/ref/sparse.stderr
 
@@ -1556,3 +1556,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 154: ignore linear
 {VW} -k --cache_file ignore_linear.cache --passes 10000 --holdout_off -d train-sets/0154.dat --noconstant --ignore_linear x -q xx
     train-sets/ref/ignore_linear.stderr
+
+# Test 155: checking audit_regressor with --save_resume model
+{VW} -d train-sets/0001.dat -i models/0097.model --save_resume --audit_regressor 0097.audit_regr
+    train-sets/ref/0097.audit_regr.stderr
+    train-sets/ref/0097.audit_regr
+
+# Test 156: --cubic regression verification
+./cubic-test.sh ${VW}
