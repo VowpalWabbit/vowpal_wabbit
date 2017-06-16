@@ -9,7 +9,11 @@
 #endif
 
 # The python version and python boost library are resolved and set using setup.py
-# When running make directly PYTHON_VERSION and PYTHON_LIBS env vars can be set to change these defaults
+
+# When running make directly PYTHON_VERSION and PYTHON_LIBS env vars can be set to change these defaults.
+# For Python 3 one should find the version of libboost-python-dev installed locally as it may not be in
+# sync with the python version. For example, on Ubuntu 14.04 apt-get installs libboost_python-py34.so.*
+# and for that the setting required is PYTHON_LIBS="-l boost_python-py34".
 ifeq ($(PYTHON_VERSION),)
   PYTHON_VERSION = 2.7
 endif
@@ -18,13 +22,8 @@ ifeq ($(PYTHON_LIBS),)
   PYTHON_LIBS = -l boost_python
 endif
 
-ifeq ($(VIRTUAL_ENV), )
-  PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
-  PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
-else
-  PYTHON_INCLUDE = $(shell python-config --includes)
-  PYTHON_LDFLAGS = $(shell python-config --ldflags)
-endif
+PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
+PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
 
 JSON_INCLUDE = -I ../rapidjson/include
 
