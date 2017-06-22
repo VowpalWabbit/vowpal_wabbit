@@ -8,7 +8,8 @@ Github version of hyperparameter optimization for Vowpal Wabbit via hyperopt
 __author__ = 'kurtosis'
 
 from hyperopt import hp, fmin, tpe, rand, Trials, STATUS_OK
-from sklearn.metrics import roc_curve, auc, log_loss, precision_recall_curve
+from sklearn.metrics import roc_curve, auc, log_loss, average_precision_score, hinge_loss, \
+    mean_squared_error
 import numpy as np
 from datetime import datetime as dt
 import subprocess, shlex
@@ -17,7 +18,6 @@ import argparse
 import re
 import logging
 import json
-import matplotlib
 from matplotlib import pyplot as plt
 try:
     import seaborn as sns
@@ -36,7 +36,7 @@ def read_arguments():
     parser.add_argument('--holdout', type=str, required=True, help="holdout set")
     parser.add_argument('--vw_space', type=str, required=True, help="hyperparameter search space (must be 'quoted')")
     parser.add_argument('--outer_loss_function', default='logistic',
-                        choices=['logistic', 'roc-auc'])  # TODO: implement squared, hinge, quantile, PR-auc
+                        choices=['logistic', 'roc-auc', 'pr-auc', 'hinge', 'squared'])  # TODO: implement quantile
     parser.add_argument('--regression', action='store_true', default=False, help="""regression (continuous class labels)
                                                                         or classification (-1 or 1, default value).""")
     parser.add_argument('--plot', action='store_true', default=False, help=("Plot the results in the end. "
@@ -251,9 +251,9 @@ class HyperOptimizer(object):
         yh = open(self.holdout_set, 'r')
         self.y_true_holdout = []
         for line in yh:
-            self.y_true_holdout.append(int(line.strip()[0:2]))
+            self.y_true_holdout.append(float(line.split('|')[0]))
         if not self.is_regression:
-            self.y_true_holdout = [(i + 1.) / 2 for i in self.y_true_holdout]
+            self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
         self.logger.info("holdout length: %d" % len(self.y_true_holdout))
 
     def validation_metric_vw(self):
@@ -266,11 +266,14 @@ class HyperOptimizer(object):
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             loss = log_loss(self.y_true_holdout, y_pred_holdout_proba)
 
-        elif self.outer_loss_function == 'squared':  # TODO: write it
-            pass
+        elif self.outer_loss_function == 'squared':
+            loss = mean_squared_error(self.y_true_holdout, y_pred_holdout)
 
-        elif self.outer_loss_function == 'hinge':  # TODO: write it
-            pass
+        elif self.outer_loss_function == 'hinge':
+            loss = hinge_loss(self.y_true_holdout, y_pred_holdout)
+
+        elif self.outer_loss_function == 'pr-auc':
+            loss = -average_precision_score(self.y_true_holdout, y_pred_holdout)
 
         elif self.outer_loss_function == 'roc-auc':
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]

@@ -177,8 +177,7 @@ void finish(audit_regressor_data& dat)
 template<class T>
 void regressor_values(audit_regressor_data& dat, T& w)
 {  for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-		for (weight_iterator_iterator it = iter.begin(); it != iter.end(); ++it)
-			if (*it != 0) dat.loaded_regressor_values++;
+		if (*iter != 0) dat.loaded_regressor_values++;
 }
 
 void init_driver(audit_regressor_data& dat)
