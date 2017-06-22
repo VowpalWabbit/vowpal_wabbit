@@ -93,7 +93,7 @@ def test_action_scores_prediction_type():
     model.learn('1 | a b c')
     assert model.get_prediction_type() == model.pMULTICLASS
     prediction = model.predict(' | a b c')
-    assert isinstance(prediction, list)
+    assert isinstance(prediction, int)
     del model
 
 
