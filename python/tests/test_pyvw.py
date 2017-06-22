@@ -91,7 +91,7 @@ def test_prob_prediction_type():
 def test_action_scores_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='m', quiet=True)
     model.learn('1 | a b c')
-    assert model.get_prediction_type() == model.pACTION_SCORES
+    assert model.get_prediction_type() == model.pMULTICLASS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
     del model
