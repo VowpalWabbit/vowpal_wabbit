@@ -688,8 +688,7 @@ public:
 
 	BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
 	{
-        if (ctx.namespace_path.empty())
-          return &ctx.decision_service_state;
+
 
 		BaseState<audit>* return_state = ctx.PopNamespace();
 
@@ -718,7 +717,8 @@ public:
 			ctx.label_object_state.EndObject(ctx, memberCount);
 		}
 
-		return return_state;
+		// if we're at the top-level go back to ds_state
+		return ctx.namespace_path.empty() ? &ctx.decision_service_state : return_state;
 	}
 
 	BaseState<audit>* Float(Context<audit>& ctx, float f)
@@ -851,13 +851,7 @@ public:
 
   BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
   {
-    // only to be used with copy=false
-    assert(!copy);
-
-    ctx.key = str;
-    ctx.key_length = length;
-
-    if (ctx.key_length == 1)
+    if (length == 1)
     {
       switch (str[0])
       {
@@ -871,12 +865,12 @@ public:
         return &ctx.default_state;
       }
     }
-    else if (ctx.key_length == 5 && !strcmp(str, "pdrop"))
+    else if (length == 5 && !strcmp(str, "pdrop"))
     {
       ctx.float_state.output_float = &data->probabilityOfDrop;
       return &ctx.float_state;
     }
-    else if(ctx.key_length == 7 && !strcmp(str, "EventId"))
+    else if(length == 7 && !strcmp(str, "EventId"))
     {
       ctx.string_state.output_string = &data->eventId;
       return &ctx.string_state;
@@ -983,7 +977,7 @@ struct Context
 			ex->indices.push_back(feature_group);
 		}
 
-		done:
+	done:
 		return namespace_path.pop().return_state;
 	}
 
