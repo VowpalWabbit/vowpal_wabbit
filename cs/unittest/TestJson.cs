@@ -157,7 +157,7 @@ namespace cs_unittest
         {
             using (var validator = new VowpalWabbitExampleJsonValidator("--cb_adf"))
             {
-                validator.Validate(new[] 
+                validator.Validate(new[]
                     {
                         "shared | foo:2",
                         "1:-2:.3 | foo:1"
@@ -295,15 +295,15 @@ namespace cs_unittest
             }
 
             using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings
+            {
+                Arguments = "--cb_adf",
+                PropertyConfiguration = new PropertyConfiguration
                 {
-                    Arguments = "--cb_adf",
-                    PropertyConfiguration = new PropertyConfiguration
-                    {
-                        MultiProperty = "adf",
-                        TextProperty = "someText",
-                        FeatureIgnorePrefix = "xxx"
-                    }
-                }))
+                    MultiProperty = "adf",
+                    TextProperty = "someText",
+                    FeatureIgnorePrefix = "xxx"
+                }
+            }))
             {
                 validator.Validate(new[] {
                      "shared | Age:25",
@@ -437,6 +437,56 @@ namespace cs_unittest
 
                         return true;
                     });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestDecisionServiceJson()
+        {
+            using (var vw = new VowpalWabbit("--cb_adf"))
+            {
+                var json = @"
+{""EventId"":""abc"",""a"":[1,2,3],""p"":[0.8,0.1,0.1],""Version"":""1"",
+ ""c"":
+ {
+   ""u"":{""loc"":""New York""},
+   ""_multi"":[{""x"":{""cat"":""1""}},{""x"":{""cat"":""2""}}]
+ }
+}    
+";
+                var obj = JsonConvert.DeserializeObject(json);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                VowpalWabbitDecisionServiceInteractionHeader header;
+                List<VowpalWabbitExample> examples = null;
+
+                try
+                {
+                    examples = vw.ParseDecisionServiceJson(bytes, 0, bytes.Length, out header);
+
+                    Assert.AreEqual("abc", header.EventId);
+                    CollectionAssert.AreEqual(new[] { 1, 2, 3 }, header.Actions, "Actions mismatch");
+                    CollectionAssert.AreEqual(new[] { .8f, .1f, .1f }, header.Probabilities, "Probabilities mismatch");
+                    Assert.AreEqual(0, header.ProbabilityOfDrop);
+
+                    using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings("--cb_adf")))
+                    {
+                        var expected = new[] {
+                         "shared |u locNew_York",
+                         " |x cat1",
+                         " |x cat2"
+                        };
+
+                        validator.Validate(expected, examples);
+                    }
+                }
+                finally
+                {
+                    if (examples != null)
+                        foreach (var ex in examples)
+                            if (ex != null)
+                                ex.Dispose();
+                }
             }
         }
 

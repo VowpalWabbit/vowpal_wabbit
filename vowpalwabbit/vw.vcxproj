@@ -284,7 +284,7 @@
     <Import Project="packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets" Condition="Exists('packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" />
     <Import Project="packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets" Condition="Exists('packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" />
     <Import Project="packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets" Condition="Exists('packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" />
-    <Import Project="packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets" Condition="Exists('packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" />
+    <!--<Import Project="packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets" Condition="Exists('packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" />-->
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -330,6 +330,6 @@
     <Error Condition="!Exists('packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets'))" />
     <Error Condition="!Exists('packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
     <Error Condition="!Exists('packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
-    <Error Condition="!Exists('packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets'))" />
+    <!--<Error Condition="!Exists('packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets'))" />-->
   </Target>
 </Project>
