@@ -87,6 +87,7 @@ public:
   /// TODO: this should return VowpalWabbitExampleCollection, but that would require moving VowpalWaabitExampleCollection to C++/CLI
   /// TODO: the header should be passed along with the List of VowpalWabbit examples, but that requires additional care wrt disposing items.
   /// </summary>
+  /// <param name="json">This needs to be null-terminated string.
   /// <returns>
   /// Returns a <see cref="VowpalWabbitExample"/> ready to be used for <see cref="Learn(VowpalWabbitExample^)"/> or <see cref="Predict(VowpalWabbitExample^)"/>.
   /// </returns>

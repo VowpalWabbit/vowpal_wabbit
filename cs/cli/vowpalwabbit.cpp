@@ -274,7 +274,6 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			pin_ptr<unsigned char> data = &json[0];
 			data += offset;
-			data[length] = '\0';
 
 			DecisionServiceInteraction interaction;
 
