@@ -495,6 +495,12 @@ public:
 		return Float(ctx, (float)f);
 	}
 
+	BaseState<audit>* Null(Context<audit>& ctx)
+	{
+		// ignore null values and stay in current state
+		return this;
+	}
+
 	BaseState<audit>* StartObject(Context<audit>& ctx)
 	{
 		// parse properties
@@ -688,8 +694,6 @@ public:
 
 	BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
 	{
-
-
 		BaseState<audit>* return_state = ctx.PopNamespace();
 
 		if (ctx.namespace_path.empty())
@@ -772,6 +776,12 @@ public:
     return this;
   }
 
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  // ignore null values and stay in current state
+	  return this;
+  }
+
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType)
   {
     // TODO: introduce return_state
@@ -795,6 +805,13 @@ public:
     // TODO: introduce return_state
     return &ctx.decision_service_state;
   }
+
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  // ignore null values and stay in current state
+	  // TODO: introduce return_state
+	  return &ctx.decision_service_state;
+  }
 };
 
 template<bool audit>
@@ -812,6 +829,14 @@ public:
 
     // TODO: introduce return_state
     return &ctx.decision_service_state;
+  }
+
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  *output_float = 0.f;
+
+	  // TODO: introduce return_state
+	  return &ctx.decision_service_state;
   }
 };
 
