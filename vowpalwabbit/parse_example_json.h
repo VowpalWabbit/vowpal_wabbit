@@ -849,7 +849,10 @@ struct DecisionServiceInteraction
 
 	std::vector<float> probabilities;
 
-	float probabilityOfDrop = 0.f;
+	float probabilityOfDrop;
+
+	DecisionServiceInteraction() : probabilityOfDrop(0.f)
+	{ }
 };
 
 template<bool audit>
