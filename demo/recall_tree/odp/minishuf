@@ -1,0 +1,22 @@
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+srand 69;
+
+my $bufsize = shift @ARGV or die;
+
+my @buf;
+
+while (defined ($_ = <>))
+  {
+    my $index = int rand $bufsize;
+    print $buf[$index] if defined $buf[$index];
+    $buf[$index] = $_;
+  }
+
+foreach my $index (0 .. $#buf)
+  {
+    print $buf[$index] if defined $buf[$index];
+  }

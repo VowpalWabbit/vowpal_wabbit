@@ -452,7 +452,7 @@ struct vw
 
   void (*set_minmax)(shared_data* sd, float label);
 
-  size_t current_pass;
+  uint64_t current_pass;
 
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -509,6 +509,8 @@ struct vw
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
+  bool ignore_some_linear;
+  bool ignore_linear[256];//a set of namespaces to ignore for linear
 
   bool redefine_some;          // --redefine param was used
   unsigned char redefine[256]; // keeps new chars for amespaces

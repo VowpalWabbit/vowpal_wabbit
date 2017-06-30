@@ -32,7 +32,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
     }
   else
     base.predict(ec, i-1);
-  
+
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
   { score = ec.partial_prediction;
@@ -435,7 +435,7 @@ void do_actual_learning(ldf& data, base_learner& base)
   else
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
-      { if (k == predicted_K) 
+      { if (k == predicted_K)
 	  data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
@@ -804,11 +804,11 @@ base_learner* csldf_setup(vw& all)
   prediction_type::prediction_type_t pred_type;
 
   if (ld.rank)
-    pred_type = prediction_type::multiclass;
+    pred_type = prediction_type::action_scores;
   else if (ld.is_probabilities)
     pred_type = prediction_type::prob;
   else
-    pred_type = prediction_type::action_scores;
+    pred_type = prediction_type::multiclass;
 
   ld.read_example_this_loop = 0;
   ld.need_to_clear = false;

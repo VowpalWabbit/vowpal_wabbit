@@ -157,7 +157,7 @@ struct data
 
 	      if(sm.compete) { //now update weights, before updating marginals
 		expert_pair& e = sm.expert_state[key];
-		float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, (float)(m.first/m.second), label);
+		float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, (float) (m.first/m.second), label);
 		float regret2 = sm.alg_loss - all.loss->getLoss(all.sd, sm.feature_pred, label);
 		
 		e.first.regret += regret1*weight;
@@ -352,8 +352,7 @@ LEARNER::base_learner* marginal_setup(vw& all)
     if (s.find((char)u) != string::npos)
       d.id_features[u] = true;
   new(&d.marginals)unordered_map<uint64_t,marginal>();
-  if(d.compete)
-    new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
+  new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<MARGINAL::data>& ret =
     init_learner(&d, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);

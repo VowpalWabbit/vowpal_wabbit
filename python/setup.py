@@ -26,6 +26,13 @@ def find_boost():
     if system == 'Linux':
         # use version suffix if present
         boost_lib = 'boost_python-py{v[0]}{v[1]}'.format(v=sys.version_info)
+        if sys.version_info.major == 3:
+            if find_library('boost_python-py36'):
+                boost_lib = 'boost_python-py36'
+            elif find_library('boost_python-py35'):
+                boost_lib = 'boost_python-py35'
+            elif find_library('boost_python-py34'):
+                boost_lib = 'boost_python-py34'
         if not find_library(boost_lib):
             boost_lib = "boost_python"
     elif system == 'Darwin':

@@ -27,6 +27,7 @@ license as described in the file LICENSE.
 #include "floatbits.h"
 
 #define VERSION_SAVE_RESUME_FIX "7.10.1"
+#define VERSION_PASS_UINT64 "8.3.3"
 
 using namespace std;
 using namespace LEARNER;
@@ -802,8 +803,17 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 
 		// fix "number of examples per pass"
 		msg << "current_pass " << all.current_pass << "\n";
-		bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass),
-			"", read, msg, text);
+		if (all.model_file_ver >= VERSION_PASS_UINT64)
+		  bin_text_read_write_fixed(model_file, (char*)&all.current_pass, sizeof(all.current_pass),
+					    "", read, msg, text);
+		else//backwards compatiblity.
+		  {
+		    size_t temp_pass = (size_t) all.current_pass;
+		    bin_text_read_write_fixed(model_file, (char*)&temp_pass, sizeof(temp_pass),
+					      "", read, msg, text);
+		    all.current_pass = temp_pass;
+		  }
+		  
 	}
 
 	if (!all.training || !all.preserve_performance_counters) // reset various things so that we report test set performance properly

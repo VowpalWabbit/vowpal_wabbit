@@ -18,6 +18,53 @@ public class VWActionScoresLearnerTest extends VWTestHelper {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
+    public void testCSOAA() throws IOException {
+        String[][] data = new String[][]{
+                new String[]{
+                        "1:1.0 | a_1 b_1 c_1",
+                        "2:0.0 | a_2 b_2 c_2",
+                        "3:2.0 | a_3 b_3 c_3"
+                },
+                new String[]{
+                        "1:1.0 | b_1 c_1 d_1",
+                        "2:0.0 | b_2 c_2 d_2"
+                },
+                new String[]{
+                        "1:1.0 | a_1 b_1 c_1",
+                        "3:2.0 | a_3 b_3 c_3"
+                }
+        };
+
+        VWActionScoresLearner vw = VWLearners.create("--csoaa_ldf mc --quiet --csoaa_rank");
+
+        ActionScores[] pred = new ActionScores[data.length];
+        for (int j=0; j< 100; ++j) {
+            for (int i=0; i<data.length; ++i) {
+                pred[i] = vw.learn(data[i]);
+            }
+        }
+
+        vw.close();
+
+        ActionScores[] expected = new ActionScores[]{
+                actionScores(
+                        actionScore(1, -1.0573887f),
+                        actionScore(0, -0.033036415f),
+                        actionScore(2, 1.0063205f)
+                ),
+                actionScores(
+                        actionScore(1, -1.0342788f),
+                        actionScore(0, 0.9994181f)
+                ),
+                actionScores(
+                        actionScore(0, 0.033397526f),
+                        actionScore(1, 1.0227613f)
+                )
+        };
+        assertArrayEquals(expected, pred);
+    }
+
+    @Test
     public void testCBADF() throws IOException {
         testCBADF(false);
     }
