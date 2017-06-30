@@ -221,11 +221,10 @@ void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
   
 void finish(data& sm)
 { sm.marginals.~unordered_map();
-  if (sm.compete) {
+  if (sm.compete) 
     sm.expert_state.~unordered_map();
-    for (size_t i =0; i < 256; i++)
-      sm.temp[i].delete_v();
-  }
+ for (size_t i =0; i < 256; i++)
+    sm.temp[i].delete_v();
 }
   
   void save_load(data& sm, io_buf& io, bool read, bool text)
