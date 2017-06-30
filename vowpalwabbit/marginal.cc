@@ -40,7 +40,7 @@ struct data
 
   
   float get_adanormalhedge_weights(float R, float C) {
-    float Rpos = R > 0 ? R : 0.;
+    float Rpos = R > 0 ? R : 0.f;
     if(C == 0. || Rpos == 0.) return 0;
     return 2*Rpos*correctedExp(Rpos*Rpos / (3*C))/(3*C);
   }
@@ -124,7 +124,7 @@ struct data
       sm.net_feature_weight = 1.;
       sm.average_pred = sm.feature_pred;
     }
-    float inv_weight = 1.0/(sm.net_weight + sm.net_feature_weight);
+    float inv_weight = 1.0f/(sm.net_weight + sm.net_feature_weight);
     sm.average_pred *= inv_weight;
     ec.pred.scalar = sm.average_pred;
     ec.partial_prediction = sm.average_pred;
@@ -157,7 +157,7 @@ struct data
 
 	      if(sm.compete) { //now update weights, before updating marginals
 		expert_pair& e = sm.expert_state[key];
-		float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, m.first/m.second, label);
+		float regret1 = sm.alg_loss - all.loss->getLoss(all.sd, (float) (m.first/m.second), label);
 		float regret2 = sm.alg_loss - all.loss->getLoss(all.sd, sm.feature_pred, label);
 		
 		e.first.regret += regret1*weight;
