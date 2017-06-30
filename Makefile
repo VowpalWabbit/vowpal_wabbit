@@ -17,7 +17,7 @@ ifeq ($(CXX),)
 endif
 
 UNAME := $(shell uname)
-LIBS = -l boost_program_options -l pthread -l z
+LIBS = -l boost_program_options -l boost_iostreams -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
 BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
 NPROCS := 1
@@ -27,17 +27,17 @@ ifeq ($(UNAME), Linux)
   NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq ($(UNAME), FreeBSD)
-  LIBS = -l boost_program_options -l pthread -l z -l compat
+  LIBS = -l boost_program_options -l boost_iostreams -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
   NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-  LIBS = -l boost_program_options-mt -l pthread -l z
+  LIBS = -l boost_program_options-mt -l boost_iostreams_mt -l pthread -l z
   BOOST_INCLUDE = -I /usr/include
   NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 endif
 ifeq ($(UNAME), Darwin)
-  LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
+  LIBS = -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -l pthread -l z
   # On Macs, the location isn't always clear
   #	brew uses /usr/local
   #	but /opt/local seems to be preferred by some users

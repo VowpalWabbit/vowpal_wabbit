@@ -1,6 +1,7 @@
 #include "comp_io.h"
 #include <boost/iostreams/filter/gzip.hpp>
 #include <fstream>
+#include <memory>
 
 using namespace std;
 using namespace boost::iostreams;
@@ -21,7 +22,7 @@ comp_io_buf::comp_io_input::~comp_io_input()
 		delete input;
 }
 
-comp_io_buf::comp_io_output::comp_io_output(std::ostream* poutput) : out(&buf), output(poutput)
+comp_io_buf::comp_io_output::comp_io_output(std::ostream* poutput) : output(poutput), out(&buf)
 {
 	buf.push(gzip_decompressor());
 	buf.push(*poutput);
@@ -35,9 +36,9 @@ int comp_io_buf::open_file(const char* name, bool stdin_off, int flag)
 	{
 		unique_ptr<comp_io_input> f;
 		if (*name != '\0')
-			f = make_unique<comp_io_input>(new ifstream(name, ios_base::in | ios_base::binary));
+			f = unique_ptr<comp_io_input>(new comp_io_input(new ifstream(name, ios_base::in | ios_base::binary)));
 		else if (!stdin_off)
-			f = make_unique<comp_io_input>(&cin, /* own */ false);
+			f = unique_ptr<comp_io_input>(new comp_io_input(&cin, /* own */ false));
 
 		if (f)
 		{
@@ -79,12 +80,12 @@ void comp_io_buf::reset_file(int f)
 	if (f < gz_input.size())
 	{
 		if (spec.name.length() > 0)
-			gz_input[f] = make_unique<comp_io_input>(new ifstream(spec.name, ios_base::in | ios_base::binary));
+			gz_input[f] = unique_ptr<comp_io_input>(new comp_io_input(new ifstream(spec.name, ios_base::in | ios_base::binary)));
 		else if (!spec.stdin_off)
-			gz_input[f] = make_unique<comp_io_input>(&cin, /* own */ false);
+			gz_input[f] = unique_ptr<comp_io_input>(new comp_io_input(&cin, /* own */ false));
 	}
 	else
-		gz_output[f] = make_unique<comp_io_output>(new ofstream(spec.name, ios_base::out | ios_base::binary));
+		gz_output[f] = unique_ptr<comp_io_output>(new comp_io_output(new ofstream(spec.name, ios_base::out | ios_base::binary)));
 
 	space.end() = space.begin();
 	head = space.begin();
