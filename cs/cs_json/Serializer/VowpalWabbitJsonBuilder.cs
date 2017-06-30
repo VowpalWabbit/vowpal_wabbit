@@ -173,10 +173,13 @@ namespace VW.Serializer
             if (reader.TokenType == JsonToken.None && !reader.Read())
                 return;
 
+            // don't barf on null values.
+            if (reader.TokenType == JsonToken.Null)
+                return;
+
             if (reader.TokenType != JsonToken.StartObject)
                 throw new VowpalWabbitJsonException(this.reader,
-                    string.Format("Expected start object. Found '{0}' and value '{1}'",
-                    reader.TokenType, reader.Value));
+                    $"Expected start object. Found '{reader.TokenType}' and value '{reader.Value}' for namespace {ns.Name}");
 
             // re-direct default namespace to the one passed
             var saveDefaultNamespaceContext = this.DefaultNamespaceContext;
@@ -597,6 +600,9 @@ namespace VW.Serializer
                         break;
                     case JsonToken.EndArray:
                         return;
+                    case JsonToken.Null:
+                        // just ignore nulls
+                        break;
                     default:
                         throw new VowpalWabbitJsonException(this.reader, "Unxpected token " + reader.TokenType + " while deserializing dense feature array");
                 }

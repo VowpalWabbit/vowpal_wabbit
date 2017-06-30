@@ -121,6 +121,28 @@ namespace cs_unittest
             }
         }
 
+        public void Validate(string[] lines, List<VowpalWabbitExample> examples, IVowpalWabbitLabelComparator labelComparator = null)
+        {
+            VowpalWabbitExample[] strExamples = new VowpalWabbitExample[lines.Count()];
+            try
+            {
+                for (int i = 0; i < lines.Length; i++)
+                    strExamples[i] = this.vw.ParseLine(lines[i]);
+
+                for (int i = 0; i < strExamples.Length; i++)
+                {
+                        var diff = strExamples[i].Diff(this.vw, examples[i], labelComparator);
+                        Assert.IsNull(diff, diff + " generated string: '" + strExamples[i].VowpalWabbitString + "'");
+                }
+            }
+            finally
+            {
+                foreach (var ex in strExamples)
+                    if (ex != null)
+                        ex.Dispose();
+            }
+        }
+
         public void Validate(string[] lines, string json, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, int? index = null, VowpalWabbitJsonExtension extension = null, bool enableNativeJsonValidation = true)
         {
             VowpalWabbitExample[] strExamples = new VowpalWabbitExample[lines.Count()];

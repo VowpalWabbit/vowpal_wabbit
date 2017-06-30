@@ -275,14 +275,14 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="RunTests.tt">
+    <None Include="RunTests.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>RunTests.cs</LastGenOutput>
-    </Content>
-    <Content Include="TestMarshalNumeric.tt">
+    </None>
+    <None Include="TestMarshalNumeric.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>TestMarshalNumeric.cs</LastGenOutput>
-    </Content>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
@@ -311,11 +311,10 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.props'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets'))" />
   </Target>
-  <PropertyGroup>
-    <PreBuildEvent>$(ProjectDir)..\transform_all.bat $(ProjectDir)</PreBuildEvent>
-  </PropertyGroup>
   <Import Project="$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.targets" Condition="Exists('$(SolutionDir)\packages\Antlr4.4.5.3\build\Antlr4.targets')" />
+  <Import Project="$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets" Condition="Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" />
   <!-- making sure it's called during AppVeyor build -->
   <!--
   <Target Name="BeforeBuild">

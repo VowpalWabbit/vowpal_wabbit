@@ -154,6 +154,7 @@
     <Compile Include="VowpalWabbitExampleCollection.cs" />
     <Compile Include="VowpalWabbitMultiLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitMultiworldTesting.cs" />
+    <Compile Include="VowpalWabbitSerializationException.cs" />
     <Compile Include="VowpalWabbitSingleLineExampleCollection.cs" />
     <Compile Include="VowpalWabbitSweep.cs" />
     <Compile Include="VowpalWabbitThreadedPrediction.cs" />
@@ -181,10 +182,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="Serializer\VowpalWabbitDefaultMarshallerExt.tt">
+    <None Include="Serializer\VowpalWabbitDefaultMarshallerExt.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>VowpalWabbitDefaultMarshallerExt.cs</LastGenOutput>
-    </Content>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
@@ -194,11 +195,8 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets'))" />
   </Target>
-  <PropertyGroup>
-    <PreBuildEvent>$(ProjectDir)\..\transform_all.bat $(ProjectDir)
-</PreBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   -->
@@ -210,4 +208,5 @@
     <Exec Command="$(SolutionDir)\.nuget\nuget pack $(ProjectDir)\$(ProjectName).nuspec -Version $(VowpalWabbitAssemblyVersion) -Prop &quot;Configuration=Release;Platform=x64&quot; -Prop SolutionDir=$(SolutionDir) -OutputDirectory $(SolutionDir)\$(Platform)\$(Configuration)" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
   <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
+  <Import Project="$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets" Condition="Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" />
 </Project>

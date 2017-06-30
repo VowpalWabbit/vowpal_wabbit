@@ -61,9 +61,9 @@ namespace VW
         /// </summary>
         /// <typeparam name="T">The type of the items.</typeparam>
         /// <returns>A new bag instance.</returns>
-        public static IBag<T> CreateLockFree<T>()
+        public static IBag<T> CreateLockFree<T>(int max = int.MaxValue)
         {
-            return new LockFreeBagImpl<T>();
+            return new LockFreeBagImpl<T>(max);
         }
 
         private abstract class BaseBagImpl<T>
@@ -122,26 +122,43 @@ namespace VW
             }
         }
 
+        /// <summary>
+        /// This is a good read on performance: http://msdn.microsoft.com/en-us/concurrency/ee851578.aspx
+        /// For streaming training we are seeking good performance for a single producer and multiple consumers.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         private sealed class LockFreeBagImpl<T> : IBag<T>
         {
-            private ConcurrentQueue<T> queue;
+            private readonly int max;
+            private readonly ConcurrentQueue<T> queue;
+            private int count;
 
-            internal LockFreeBagImpl()
+            internal LockFreeBagImpl(int max)
             {
                 this.queue = new ConcurrentQueue<T>();
+                this.max = max;
             }
 
             public bool TryAdd(T item)
             {
-                this.queue.Enqueue(item);
-                return true;
+                if (this.count < this.max)
+                {
+                    this.queue.Enqueue(item);
+                    Interlocked.Increment(ref this.count);
+                    return true;
+                }
+
+                return false;
             }
 
             public T Remove()
             {
                 T result;
                 if (this.queue.TryDequeue(out result))
+                {
+                    Interlocked.Decrement(ref this.count);
                     return result;
+                }
 
                 return default(T);
             }
@@ -154,7 +171,7 @@ namespace VW
 
             public int Count
             {
-                get { return this.queue.Count; }
+                get { return this.count; }
             }
         }
     }
