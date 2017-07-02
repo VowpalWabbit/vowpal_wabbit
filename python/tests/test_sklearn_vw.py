@@ -156,6 +156,15 @@ class TestVW:
         with pytest.raises(RuntimeError):
             VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True)
 
+    def test_nn(self):
+        VW(nn=3)
+
+    def test_lda(self):
+        VW(lda=3)
+
+    def test_ksvm(self):
+        VW(ksvm=True)
+
 
 class TestVWClassifier:
 
