@@ -176,8 +176,23 @@ $ make
 $ make test    # (optional)
 ```
 
-## Code Documentation
+#### OSX Python Binding installation with Anaconda
+When using Anaconda as the source for Python the default Boost libraries used in the Makefile need to be adjusted. Below are the steps needed to install the Python bindings for VW. This should work for Python 2 and 3. Adjust the directories to match where anaconda is installed.
 
+```
+# create anaconda environment with boost
+conda create --name vw boost
+source activate vw
+git clone https://github.com/JohnLangford/vowpal_wabbit.git
+cd vowpal_wabbit
+# edit Makefile
+# change BOOST_INCLUDE to use anaconda env dir: /anaconda/envs/vw/include
+# change BOOST_LIBRARY to use anaconda lib dir: /andaconda/envs/vw/lib
+cd python
+python setup.py install
+```
+
+## Code Documentation
 To browse the code more easily, do
 
 `make doc`

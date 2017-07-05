@@ -11,6 +11,7 @@ MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
+NETCAT_STATUS=$NAME.netcat-status
 PORT=54248
 
 while [ $# -gt 0 ]
@@ -71,10 +72,10 @@ stop_daemon() {
 
     # relinquish CPU by forcing some context switches to be safe
     # (let existing vw daemon procs die)
-    if echo "$DaemonPat" | grep -q -v "\-\-foreground"; then
+    if echo "$DaemonPat" | grep -q -v -- --foreground; then
         wait
     else
-        sleep 0
+        sleep 0.1
     fi
 }
 
@@ -83,16 +84,16 @@ start_daemon() {
     $DaemonCmd </dev/null >/dev/null &
     PID=$!
     # give it time to be ready
-    if echo "$DaemonCmd" | grep -q -v "\-\-foreground"; then
+    if echo "$DaemonCmd" | grep -q -v -- --foreground; then
         wait; wait; wait
     else
-        sleep 0; sleep 0; sleep 0
+        sleep 0.1
     fi
     echo "$PID"
 }
 
 cleanup() {
-    /bin/rm -f $MODEL $TRAINSET $PREDREF $PREDOUT
+    /bin/rm -f $MODEL $TRAINSET $PREDREF $PREDOUT $NETCAT_STATUS
     stop_daemon
 }
 
@@ -145,9 +146,18 @@ fi
 #wait
 # However, GNU netcat does not know -q, so let's do a work-around
 touch $PREDOUT
-$NETCAT localhost $PORT < $TRAINSET > $PREDOUT &
+( $NETCAT localhost $PORT < $TRAINSET > $PREDOUT; STATUS=$?; echo $STATUS > $NETCAT_STATUS ) &
 # Wait until we recieve a prediction from the vw daemon then kill netcat
-until [ `wc -l < $PREDOUT` -eq 2 ]; do :; done
+until [ `wc -l < $PREDOUT` -eq 2 ]; do
+    if [ -f $NETCAT_STATUS ]; then
+        STATUS=`cat $NETCAT_STATUS`
+        if [ $STATUS -ne 0 ]; then
+            echo "$NAME: netcat failed with status code $STATUS"
+            stop_daemon
+            exit 1
+        fi
+    fi
+done
 $PKILL -9 $NETCAT
 
 # We should ignore small (< $Epsilon) floating-point differences (fuzzy compare)

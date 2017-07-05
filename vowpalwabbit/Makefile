@@ -29,7 +29,7 @@ allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 	$(CXX) -std=c++0x -I ../rapidjson/include -MM $< > $@
 -include $(vw_DEPS)
 
-%.o:	 %.cc  %.h 
+%.o:	 %.cc  %.h
 	$(CXX) $(FLAGS) -c $< -o $@
 
 %.o:	 %.cc
@@ -48,7 +48,7 @@ active_interactor: active_interactor.cc
 	$(CXX) $(FLAGS) -o $@ $+
 
 install: $(BINARIES)
-	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
+	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install; cd java; $(MAKE) install
 
 clean:
 	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a liballreduce.a
