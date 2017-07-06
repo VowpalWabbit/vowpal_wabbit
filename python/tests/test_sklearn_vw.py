@@ -157,13 +157,12 @@ class TestVW:
             VW(convert_to_vw=False, oaa=3, passes=30, bfgs=True)
 
     def test_nn(self):
-        VW(nn=3)
-
-    def test_lda(self):
-        VW(lda=3)
-
-    def test_ksvm(self):
-        VW(ksvm=True)
+        vw = VW(convert_to_vw=False, nn=3)
+        pos = '1.0 | a b c'
+        neg = '-1.0 | d e f'
+        vw.fit([pos]*10 + [neg]*10)
+        assert vw.predict(['| a b c']) > 0
+        assert vw.predict(['| d e f']) < 0
 
 
 class TestVWClassifier:

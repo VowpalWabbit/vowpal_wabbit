@@ -120,7 +120,7 @@ class VW(BaseEstimator):
                  dropout=None,
                  inpass=None,
                  meanfield=None,
-                 multitaks=None):
+                 multitask=None):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
