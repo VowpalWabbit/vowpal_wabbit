@@ -3,6 +3,10 @@ package vowpalWabbit;
 import vowpalWabbit.learner.VWLearners;
 
 public final class VW {
+    static {
+        System.loadLibrary("vw_jni");
+    }
+
     /**
      * Should not be directly instantiated.
      */

@@ -33,7 +33,7 @@ cb_class* get_observed_cost(CB::label& ld)
     if (prob <= 0.)
       {
 	std::cout << "Probability " << prob << " is not possible, replacing with 1e-3.  Fix your dataset. " << std::endl;
-	return 1e-3;
+	return 1e-3f;
       }
     else
       return prob;
