@@ -239,24 +239,10 @@ git clone https://github.com/JohnLangford/vowpal_wabbit.git
 cd vowpal_wabbit
 git checkout <VERSION_TAG>
 
-CFLAGS='-fPIC' CXXFLAGS='-fPIC' ./autogen.sh
-sudo make install
+sudo make JAVA_HOME='/usr/lib/jvm/java-openjdk/' install
 ```
 
-### Build JNI bindings
-```bash
-sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
-make FLAGS='-fPIC -I../rapidjson/include -std=c++11' JAVA_HOME='/usr/lib/jvm/java-openjdk/' UNAME=`uname` -C java things
-```
-
-### (Optional) additional OS tools
-##### Install `lsb_release`
-The tool is needed for Java JNI runtime to find the correct version of `vw_jni...` binding file in the classpath.
-Install this if you see `NullPointerException` from `vowpalWabbit.jni.NativeUtils.lsbRelease`.
-
-```
-sudo yum install -y redhat-lsb
-```
+This also builds the JNI bindings at `java/target/libvw_jni.so`.
 
 ## Code Documentation
 To browse the code more easily, do

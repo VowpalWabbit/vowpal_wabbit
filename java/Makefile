@@ -41,7 +41,7 @@ pom_version: pom.xml
 	newVer=$$(perl -e "@a=split('\.', '$$ver'); \$$a[2]++; print(join('.', @a))") && \
 	perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$newVer-SNAPSHOT/" pom.xml
 
-$(LOCAL_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/.libs/libvw.a ../vowpalwabbit/.libs/liballreduce.a
+$(LOCAL_LIBRARY): $(jni_OBJS) ../vowpalwabbit/main.o ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
 	mkdir -p target;
 	$(CXX) -shared $(FLAGS) -o $@ $^ $(VWLIBS) $(STDLIBS) $(JAVA_INCLUDE)
 
