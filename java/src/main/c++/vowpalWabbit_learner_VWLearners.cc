@@ -7,13 +7,16 @@
 
 JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv *env, jclass obj, jstring command)
 { jlong vwPtr = 0;
+  const char* utf_string = env->GetStringUTFChars(command, NULL);
   try
-  { vw* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
+  { vw* vwInstance = VW::initialize(utf_string);
     vwPtr = (jlong)vwInstance;
   }
   catch(...)
-  { rethrow_cpp_exception_as_java_exception(env);
+  { env->ReleaseStringUTFChars(command, utf_string);
+    rethrow_cpp_exception_as_java_exception(env);
   }
+  env->ReleaseStringUTFChars(command, utf_string);
   return vwPtr;
 }
 

@@ -192,6 +192,58 @@ cd python
 python setup.py install
 ```
 
+## CentOS 6-specific info
+
+The following steps describe compiling and installation of VW (including the JNI bindings) from scratch and assumes a bare CentOS 6 system.
+
+The compilation requires **libboost v1.59** modules available as shared objects to be present on the target system. If already present on the system the second step can be skipped.
+
+To check if boost is available run the following:
+
+```bash
+ldconfig -p | grep program_options
+```
+
+If installed the output should contain lines like these:
+
+```bash
+libboost_program_options.so.1.59.0 (libc6,x86-64) => /usr/local/lib/libboost_program_options.so.1.59.0
+libboost_program_options.so (libc6,x86-64) => /usr/local/lib/libboost_program_options.so
+```
+
+### Install and enable a c++11 compatible compiler
+```bash
+sudo wget http://people.centos.org/tru/devtools-2/devtools-2.repo -O /etc/yum.repos.d/devtools-2.repo
+sudo yum -y install gcc gcc-c++ devtoolset-2-gcc devtoolset-2-binutils devtoolset-2-gcc-c++ zlib-devel automake libtool
+scl enable devtoolset-2 bash
+```
+
+### Compile and install boost 1.59 as a shared object library
+```bash
+sudo yum install -y python-devel libxml2-devel libxslt-devel bzip2-devel
+wget https://freefr.dl.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.gz
+tar -xzf boost_1_59_0.tar.gz
+cd boost_1_59_0
+./bootstrap.sh
+sudo ./b2 -a -d2 -q -j 2 variant=release cxxflags="-fPIC" cflags="-fPIC" install
+
+sudo bash -c "echo /usr/local/lib > /etc/ld.so.conf.d/boost-x86_64.conf"
+sudo ldconfig
+```
+
+### Compile and install VW
+```bash
+cd ~
+sudo yum install -y git
+git clone https://github.com/JohnLangford/vowpal_wabbit.git
+cd vowpal_wabbit
+git checkout <VERSION_TAG>
+
+sudo make JAVA_HOME='/usr/lib/jvm/java-openjdk/' install
+```
+
+This also builds the JNI bindings at `java/target/libvw_jni.so`.
+
 ## Code Documentation
 To browse the code more easily, do
 

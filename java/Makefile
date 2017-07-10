@@ -58,5 +58,5 @@ install: $(LOCAL_LIBRARY)
 
 .PHONY: clean
 clean:
-	rm -f $(LOCAL_LIBRARY)
+	rm -rf $(LOCAL_LIBRARY)
 	rm -f $(jni_SRCS:.cc=.o)
