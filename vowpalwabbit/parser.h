@@ -55,7 +55,8 @@ struct parser
 
   label_parser lp;  // moved from vw
 
-  void* jsonp;
+  bool audit;
+  void* jsonp;//either a json_parser<true> or a json_parser<false>
 };
 
 parser* new_parser();

@@ -21,7 +21,7 @@ var skipList = new[] { 13, 32, 39, 40, 41, 59, 60, 61, 66, 68, 90,
 	14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
 	71, // --examples to test parser
 	143, 144, 146, // native json parsing
-	149, 152 // bash script
+	149, 152, 156 // bash script
 	};
 
 var outputModels = new Dictionary<string, TestCase>();
