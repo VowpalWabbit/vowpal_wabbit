@@ -24,7 +24,7 @@ comp_io_buf::comp_io_input::~comp_io_input()
 
 comp_io_buf::comp_io_output::comp_io_output(std::ostream* poutput) : output(poutput), out(&buf)
 {
-	buf.push(gzip_decompressor());
+	buf.push(gzip_compressor());
 	buf.push(*poutput);
 }
 
@@ -94,9 +94,12 @@ void comp_io_buf::reset_file(int f)
 ssize_t comp_io_buf::read_file(int f, void* buf, size_t nbytes)
 {
 	auto& in = gz_input[f]->in;
-	if (!in.read((char*)buf, nbytes))
+
+	if (!in.good())
 		return -1;
 
+	in.read((char*)buf, nbytes);
+	
 	return in.gcount();
 }
 
@@ -106,7 +109,8 @@ ssize_t comp_io_buf::write_file(int f, const void* buf, size_t nbytes)
 {
 	auto& out = gz_output[f]->out;
 
-	if (!out.write((const char*)buf, nbytes))
+	out.write((const char*)buf, nbytes);
+	if (out.fail())
 		return -1;
 
 	return nbytes;
