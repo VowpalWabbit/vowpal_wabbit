@@ -115,7 +115,12 @@ class VW(BaseEstimator):
                  oaa=None,
                  ect=None,
                  csoaa=None,
-                 wap=None):
+                 wap=None,
+                 nn=None,
+                 dropout=None,
+                 inpass=None,
+                 meanfield=None,
+                 multitask=None):
         """VW model constructor, exposing all supported parameters to keep sklearn happy
 
         Parameters
@@ -214,6 +219,13 @@ class VW(BaseEstimator):
         Contextual Bandit Optimization
         cb (int): Use contextual bandit learning with specified costs
         cbify (int): Convert multiclass on <k> classes into a contextual bandit problem
+
+        Neural Network options
+        nn (int): Use a sigmoidal feed-forward neural network with N hidden units
+        dropout: Train or test sigmoidal feed-forward network using dropout
+        inpass: Train or test sigmoidal feed-forward network with input pass-through
+        multitask: Share hidden layer across all reduced tasks
+        meanfield: Train or test sigmoidal feed-forward network using mean field
 
         Returns
         -------
