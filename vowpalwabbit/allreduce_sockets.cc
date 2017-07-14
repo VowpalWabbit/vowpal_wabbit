@@ -118,17 +118,17 @@ void AllReduceSockets::all_reduce_init()
 
   socket_t master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
-    cerr << "write unique_id=" << unique_id << " failed!" << endl;
+    cerr << "write unique_id=" << unique_id << " to span server failed" << endl;
   else cerr << "wrote unique_id=" << unique_id << endl;
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
-    cerr << "write total=" << total << " failed!" << endl;
+    cerr << "write total=" << total << " to span server failed" << endl;
   else cerr << "wrote total=" << total << endl;
   if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
-    cerr << "write node=" << node << " failed!" << endl;
+    cerr << "write node=" << node << " to span server failed" << endl;
   else cerr << "wrote node=" << node << endl;
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
-    cerr << "read ok failed!" << endl;
+    cerr << "read ok from span server failed" << endl;
   else cerr << "read ok=" << ok << endl;
   if (!ok)
     THROW("mapper already connected");
@@ -138,7 +138,7 @@ void AllReduceSockets::all_reduce_init()
   uint32_t parent_ip;
 
   if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
-    cerr << "read kid_count failed!" << endl;
+    cerr << "read kid_count from span server failed" << endl;
   else cerr << "read kid_count=" << kid_count << endl;
 
   socket_t sock = -1;
