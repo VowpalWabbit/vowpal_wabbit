@@ -722,7 +722,7 @@ public:
 		}
 
 		// if we're at the top-level go back to ds_state
-		return ctx.namespace_path.empty() ? &ctx.decision_service_state : return_state;
+		return ctx.namespace_path.empty() ? ctx.root_state : return_state;
 	}
 
 	BaseState<audit>* Float(Context<audit>& ctx, float f)
@@ -950,10 +950,12 @@ struct Context
     StringToStringState<audit> string_state;
     FloatToFloatState<audit> float_state;
 
+	BaseState<audit>* root_state;
+
 	Context()
 	{
 		namespace_path = v_init<Namespace<audit>>();
-		current_state = &default_state;
+		current_state = root_state = &default_state;
 	}
 
 	~Context()
@@ -973,7 +975,7 @@ struct Context
     void SetStartStateToDecisionService(DecisionServiceInteraction* data)
     {
 		decision_service_state.data = data;
-		current_state = &decision_service_state;
+		current_state = root_state = &decision_service_state;
     }
 
 	void PushNamespace(const char* ns, BaseState<audit>* return_state)
