@@ -26,6 +26,20 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv
   }
 }
 
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(JNIEnv *env, jclass obj, jlong vwPtr, jstring filename)
+{ try
+  {
+    const char* utf_string = env->GetStringUTFChars(filename, NULL);
+    std::string filenameCpp(utf_string);
+    env->ReleaseStringUTFChars(filename, utf_string);
+    env->DeleteLocalRef(filename);
+    VW::save_predictor(*(vw*)vwPtr, filenameCpp);
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNIEnv *env, jclass obj, jlong vwPtr)
 { jclass clVWReturnType = env->FindClass(RETURN_TYPE);
   jfieldID field;

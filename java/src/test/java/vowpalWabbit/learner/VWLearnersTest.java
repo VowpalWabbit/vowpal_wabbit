@@ -2,9 +2,12 @@ package vowpalWabbit.learner;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -64,6 +67,18 @@ public class VWLearnersTest extends VWTestHelper {
         thrown.expectMessage("Model content is corrupted, weight vector index 1347768914 must be less than total vector length 262144");
         VWScalarsLearner vw = VWLearners.create("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
+    }
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Test
+    public void testSaveModel() throws IOException {
+        VWLearner vw = VWLearners.create("--quiet");
+        File file = temporaryFolder.newFile("saved_test_model");
+        vw.saveModel(file);
+        vw.close();
+        assert(file.exists());
     }
 
     @Test
