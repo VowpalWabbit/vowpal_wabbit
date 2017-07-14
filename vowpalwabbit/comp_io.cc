@@ -1,5 +1,6 @@
 #include "comp_io.h"
-#include <boost/iostreams/filter/gzip.hpp>
+// #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 #include <fstream>
 #include <memory>
 
@@ -9,7 +10,10 @@ using namespace boost::iostreams;
 // comp_io_buf::comp_io_input::comp_io_input(std::istream& input) : in(&buf)
 comp_io_buf::comp_io_input::comp_io_input(std::istream* pinput, bool own) : input(nullptr), in(&buf)
 {
-	buf.push(gzip_decompressor());
+	zlib_params params;
+	params.noheader = true;
+	buf.push(zlib_decompressor(params));
+	// buf.push(gzip_decompressor());
 	buf.push(*pinput);
 
 	if (own)
@@ -24,7 +28,8 @@ comp_io_buf::comp_io_input::~comp_io_input()
 
 comp_io_buf::comp_io_output::comp_io_output(std::ostream* poutput) : output(poutput), out(&buf)
 {
-	buf.push(gzip_compressor());
+	buf.push(zlib_compressor());
+	// buf.push(gzip_compressor());
 	buf.push(*poutput);
 }
 
