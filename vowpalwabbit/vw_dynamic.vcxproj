@@ -283,7 +283,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\cntk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -526,6 +526,7 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
     <Import Project="$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets" Condition="Exists('$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" />
+    <Import Project="$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" />

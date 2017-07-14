@@ -254,11 +254,6 @@
     <ClCompile Include="spanning_tree_main.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\vowpalwabbit\spanning_tree.h" />
     <ClInclude Include="..\vowpalwabbit\vw_exception.h" />
   </ItemGroup>
