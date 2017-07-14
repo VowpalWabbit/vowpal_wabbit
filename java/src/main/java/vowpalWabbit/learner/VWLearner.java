@@ -13,7 +13,4 @@ public interface VWLearner extends Closeable {
     @Override void close();
 
     void saveModel(File filename);
-    
-    // Get the JNI pointer for the learner
-    public long getNativePointer();
 }
