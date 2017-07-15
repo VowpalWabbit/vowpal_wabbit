@@ -163,7 +163,7 @@ base_learner* svrg_setup(vw& all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg>& l = init_learner(&s, learn, 1 << all.weights.stride_shift());
+  learner<svrg>& l = init_learner(&s, learn, UINT64_ONE << all.weights.stride_shift());
 
   l.set_predict(predict);
   l.set_save_load(save_load);

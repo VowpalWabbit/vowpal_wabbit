@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +16,7 @@ namespace cs_unittest
     {
         private VowpalWabbit vw;
 
-        internal VowpalWabbitExampleJsonValidator(string args = null) : this(new VowpalWabbitSettings((args??"") + " --json"))
+        internal VowpalWabbitExampleJsonValidator(string args = null) : this(new VowpalWabbitSettings((args ?? "") + " --json"))
         {
         }
 
@@ -64,6 +66,80 @@ namespace cs_unittest
                         this.Validate(line, jsonNativeExample, labelComparator, label, validateVowpalWabbitString: false);
                     }
                 }
+            }
+        }
+
+
+        public void Validate(string[] lines, JsonReader jsonReader, IVowpalWabbitLabelComparator labelComparator = null, ILabel label = null, int? index = null, VowpalWabbitJsonExtension extension = null)
+        {
+            VowpalWabbitExample[] strExamples = new VowpalWabbitExample[lines.Count()];
+
+            try
+            {
+                for (int i = 0; i < lines.Length; i++)
+                    strExamples[i] = this.vw.ParseLine(lines[i]);
+
+                using (var jsonSerializer = new VowpalWabbitJsonSerializer(this.vw))
+                {
+                    if (extension != null)
+                    {
+                        jsonSerializer.RegisterExtension(extension);
+                        // extension are not supported with native JSON parsing
+                    }
+
+                    using (var jsonExample = (VowpalWabbitMultiLineExampleCollection)jsonSerializer.ParseAndCreate(jsonReader, label, index))
+                    {
+                        var jsonExamples = new List<VowpalWabbitExample>();
+
+                        if (jsonExample.SharedExample != null)
+                            jsonExamples.Add(jsonExample.SharedExample);
+
+                        jsonExamples.AddRange(jsonExample.Examples);
+
+                        Assert.AreEqual(strExamples.Length, jsonExamples.Count);
+
+
+                        for (int i = 0; i < strExamples.Length; i++)
+                        {
+                            using (var strJsonExample = this.vw.ParseLine(jsonExamples[i].VowpalWabbitString))
+                            {
+                                var diff = strExamples[i].Diff(this.vw, jsonExamples[i], labelComparator);
+                                Assert.IsNull(diff, diff + " generated string: '" + jsonExamples[i].VowpalWabbitString + "'");
+
+                                diff = strExamples[i].Diff(this.vw, strJsonExample, labelComparator);
+                                Assert.IsNull(diff, diff);
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var ex in strExamples)
+                    if (ex != null)
+                        ex.Dispose();
+            }
+        }
+
+        public void Validate(string[] lines, List<VowpalWabbitExample> examples, IVowpalWabbitLabelComparator labelComparator = null)
+        {
+            VowpalWabbitExample[] strExamples = new VowpalWabbitExample[lines.Count()];
+            try
+            {
+                for (int i = 0; i < lines.Length; i++)
+                    strExamples[i] = this.vw.ParseLine(lines[i]);
+
+                for (int i = 0; i < strExamples.Length; i++)
+                {
+                        var diff = strExamples[i].Diff(this.vw, examples[i], labelComparator);
+                        Assert.IsNull(diff, diff + " generated string: '" + strExamples[i].VowpalWabbitString + "'");
+                }
+            }
+            finally
+            {
+                foreach (var ex in strExamples)
+                    if (ex != null)
+                        ex.Dispose();
             }
         }
 

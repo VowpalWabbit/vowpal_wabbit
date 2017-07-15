@@ -100,8 +100,6 @@ protected:
   void DisposeExample(VowpalWabbitExample^ ex);
 
 public:
-  static VowpalWabbitBase();
-
   /// <summary>
   /// Cleanup.
   /// </summary>

@@ -62,6 +62,10 @@ namespace VW.Azure.Worker
                 EventHubStartDateTimeUtc = DateTime.UtcNow 
             };
 
+            var joinedEventHubConsumerGroup = CloudConfigurationManager.GetSetting("JoinedEventHubConsumerGroup");
+            if (!string.IsNullOrEmpty(joinedEventHubConsumerGroup))
+                settings.JoinedEventHubConsumerGroup = joinedEventHubConsumerGroup;
+
             bool enableExampleTracing;
             if (bool.TryParse(CloudConfigurationManager.GetSetting("EnableExampleTracing"), out enableExampleTracing))
                 settings.EnableExampleTracing = enableExampleTracing;

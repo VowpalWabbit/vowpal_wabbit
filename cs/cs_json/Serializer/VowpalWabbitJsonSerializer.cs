@@ -212,6 +212,24 @@ namespace VW.Serializer
         }
 
         /// <summary>
+        /// Creates the VW example, be it single or multi-line.
+        /// </summary>
+        /// <param name="label">The label to be applied.</param>
+        /// <param name="index">The index of the example in the multi-line example this label should be applied on.</param>
+        /// <returns></returns>
+        public VowpalWabbitExampleCollection CreateExamples(ILabel label, int index)
+        {
+            if (index >= this.ExampleBuilders.Count)
+                throw new InvalidDataException($"Label index {index} is invalid. Only {this.ExampleBuilders.Count} examples available.");
+
+            VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(
+                this.ExampleBuilders[index].DefaultNamespaceContext,
+                label);
+
+            return this.CreateExamples();
+        }
+
+        /// <summary>
         /// Parses and creates the example.
         /// </summary>
         /// <param name="json">The example to parse.</param>
@@ -300,7 +318,7 @@ namespace VW.Serializer
                     throw new VowpalWabbitJsonException(reader, "Expected start arrray");
 
                 var exampleCount = 0;
-                while(reader.Read() && reader.TokenType != JsonToken.EndArray)
+                while (reader.Read() && reader.TokenType != JsonToken.EndArray)
                 {
                     exampleCount++;
                     reader.Skip();
@@ -417,7 +435,7 @@ namespace VW.Serializer
 
                         sharedExample = this.ExampleBuilder.CreateExample();
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)
-			                examples[i] = this.ExampleBuilders[i].CreateExample();
+                            examples[i] = this.ExampleBuilders[i].CreateExample();
 
                         return new VowpalWabbitMultiLineExampleCollection(this.vwPool.Native, sharedExample, examples);
                     }

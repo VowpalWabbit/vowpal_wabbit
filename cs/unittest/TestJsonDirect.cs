@@ -1,6 +1,15 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TestJsonDirectClass.cs">
+//   Copyright (c) by respective owners including Yahoo!, Microsoft, and
+//   individual contributors. All rights reserved.  Released under a BSD
+//   license as described in the file LICENSE.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Linq;
 using VW;
 using VW.Labels;
 using VW.Serializer;
@@ -32,7 +41,8 @@ namespace cs_unittest
                     Clicks = 5
                 });
 
-                vw.Validate("| Clicks:5 |a Bar:1", new JsonContext() {
+                vw.Validate("| Clicks:5 |a Bar:1", new JsonContext()
+                {
                     Ns1 = new Namespace1
                     {
                         Foo = 1,
@@ -69,7 +79,7 @@ namespace cs_unittest
                 vw.Validate("| Clicked |Ns2 Marker", new JsonContextOptIn()
                 {
                     Clicked = true,
-                    IgnoredNamespace = new Namespace1 {  Foo = 3 },
+                    IgnoredNamespace = new Namespace1 { Foo = 3 },
                     Ns2 = new Namespace2
                     {
                         FeatureA = true
@@ -84,10 +94,12 @@ namespace cs_unittest
         {
             Assert.AreEqual(
                 "{\"_label\":{\"Label\":25.0},\"Clicks\":0,\"MoreClicks\":3}",
-                JsonConvert.SerializeObject(new JsonContext() {
+                JsonConvert.SerializeObject(new JsonContext()
+                {
                     Label = new SimpleLabel { Label = 25 },
                     MoreClicks = 3,
-                    IgnoreMe = "XXX" }));
+                    IgnoreMe = "XXX"
+                }));
         }
 
         [TestMethod]
@@ -96,9 +108,9 @@ namespace cs_unittest
         {
             using (var vw = new VowpalWabbitExampleValidator<JsonContextArray>(new VowpalWabbitSettings { TypeInspector = JsonTypeInspector.Default }))
             {
-                vw.Validate("1:2:.5 | :.1 :.2 :.3", new JsonContextArray()
+                vw.Validate("1:2:.5 |Data :.1 :.2 :.3", new JsonContextArray()
                 {
-                    Label = new ContextualBanditLabel { Action =1 , Cost = 2, Probability = .5f },
+                    Label = new ContextualBanditLabel { Action = 1, Cost = 2, Probability = .5f },
                     Data = new[] { .1f, .2f, .3f }
                 });
             }
@@ -164,8 +176,8 @@ namespace cs_unittest
                 },
                 new JsonShared
                 {
-                   Age = "teen",
-                   Documents = new []
+                    Age = "teen",
+                    Documents = new[]
                    {
                        new JsonADF { Id = 1 },
                        new JsonADF { Id = 2 }
@@ -243,11 +255,12 @@ namespace cs_unittest
                     "shared | Bar:5",
                     " | Foo:1 |Value test:1.2",
                     " | Foo:2 |Value test:2.3",
+                    " | Foo:3 |Value titleabc\"def",
                 },
                 new JsonRawAdfString
                 {
                     Bar = 5,
-                    _multi = new []
+                    _multi = new[]
                     {
                         new JsonRawString
                         {
@@ -258,9 +271,77 @@ namespace cs_unittest
                         {
                             Foo = 2,
                             Value = JsonConvert.SerializeObject(new { test = 2.3 })
-                        }
+                        },
+                        new JsonRawString
+                        {
+                            Foo = 3,
+                            Value = JsonConvert.SerializeObject(new { title = "abc\"def", _ignoreMe = 1 })
+                        },
                     }
                 });
+
+                var adf = new JsonRawString
+                {
+                    Foo = 1,
+                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar = 2 } }),
+                    Values = new[]
+                                    {
+                                        JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
+                                        JsonConvert.SerializeObject(new { E = new { e = true } }),
+                                    }.ToList()
+                };
+
+                var ctx = new JsonRawAdfString
+                {
+                    Bar = 5,
+                    _multi = new[] { adf }
+                };
+
+                vw.Validate(new[] {
+                    "shared | Bar:5",
+                    " | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e"
+                }, ctx);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonConvertible()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonRawString>(new VowpalWabbitSettings("") { TypeInspector = JsonTypeInspector.Default }))
+            {
+                var adf = new JsonRawString
+                {
+                    Foo = 1,
+                    Value = JsonConvert.SerializeObject(new { A = new { test = 1.2 }, B = new { bar = 2 } }),
+                    Values = new[]
+                    {
+                        JsonConvert.SerializeObject(new { D = new { d = 1.2 } }),
+                        JsonConvert.SerializeObject(new { E = new { e = true } }),
+                        JsonConvert.SerializeObject(new { F = new { title = "abc\"def" } }),
+                    }.ToList()
+                };
+
+                vw.Validate(" | Foo:1 |A test:1.2 |B bar:2 |D d:1.2 |E e |F titleabc\"def", adf);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("JSON")]
+        public void TestJsonDictArray()
+        {
+            using (var vw = new VowpalWabbitExampleValidator<JsonDictArray>(new VowpalWabbitSettings(string.Empty) { TypeInspector = JsonTypeInspector.Default }))
+            {
+                var ex = new JsonDictArray
+                {
+                    Features = new Dictionary<string, float[]>
+                        {
+                            { "A", new float[] { 1, 2, 3.1f} },
+                            { "B", new float[] { 2, 3, 4.1f} }
+                        }
+                };
+
+                vw.Validate(" |A :1 :2 :3.1 |B :2 :3 :4.1", ex);
             }
         }
     }
@@ -271,6 +352,9 @@ namespace cs_unittest
 
         [JsonConverter(typeof(JsonRawStringConverter))]
         public string Value { get; set; }
+
+        [JsonConverter(typeof(JsonRawStringListConverter))]
+        public List<string> Values { get; set; }
     }
 
     public class JsonRawAdfString
@@ -394,4 +478,10 @@ namespace cs_unittest
     {
         public int Id { get; set; }
     }
+
+    public class JsonDictArray
+    {
+        public Dictionary<string, float[]> Features { get; set; }
+    }
+
 }

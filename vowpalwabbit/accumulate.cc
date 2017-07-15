@@ -20,7 +20,7 @@ using namespace std;
 void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void accumulate(vw& all, parameters& weights, size_t offset)
-{ uint64_t length = 1 << all.num_bits; //This is size of gradient
+{ uint64_t length = UINT64_ONE << all.num_bits; //This is size of gradient
   float* local_grad = new float[length];
 
   if (weights.sparse)

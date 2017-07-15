@@ -138,7 +138,8 @@ namespace VW.Azure
                                 var data = new PipelineData
                                 {
                                     JSON = line,
-                                    PartitionKey = context.Lease.PartitionId,
+                                    PartitionId = context.Lease.PartitionId,
+                                    PartitionKey = eventData.PartitionKey,
                                     Offset = eventData.Offset
                                 };
 
