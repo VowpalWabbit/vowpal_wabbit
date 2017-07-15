@@ -1217,8 +1217,8 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
   ld.compute_coherence_metrics = vm["metrics"].as<bool>();
   if (ld.compute_coherence_metrics)
-  { ld.feature_counts.resize((uint32_t)1 << all.num_bits);
-    ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  { ld.feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld.feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
@@ -1244,7 +1244,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, UINT64_ONE << all.weights.stride_shift(), prediction_type::scalars);
 
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);

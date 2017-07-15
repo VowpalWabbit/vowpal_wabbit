@@ -325,19 +325,15 @@ namespace VW.Serializer
                 var position = 0;
                 var stringExample = context.StringExample;
                 if (context.StringExample != null)
-                {
                     position = stringExample.Append(ns.NamespaceString).Length;
-                }
 
                 featureVisits();
 
                 if (context.StringExample != null)
                 {
                     if (position == stringExample.Length)
-                    {
                         // no features added, remove namespace
                         stringExample.Length = position - ns.NamespaceString.Length;
-                    }
                 }
 
                 return (int)context.NamespaceBuilder.FeatureCount;

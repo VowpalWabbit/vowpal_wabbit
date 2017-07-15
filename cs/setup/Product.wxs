@@ -24,7 +24,6 @@
           <Component Id="MainExecutable" Guid="BD9D0AE3-A00F-44B6-86AF-6FE5357F16EE">
             <File Id="SetEnvBat" Source="$(var.cs_console.ProjectDir)setenv.bat" KeyPath="yes"/>
             <File Name="vw.exe" Source="$(var.vw.TargetDir)vw.exe"  />
-            <File Source="$(var.vw.TargetDir)zlib.dll" />
           </Component>
 
           <Component Id="ApplicationShortCut" Guid="A41E9747-F8A9-47A0-9E8D-C8D7BAB17077">

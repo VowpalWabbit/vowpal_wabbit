@@ -283,7 +283,7 @@ base_learner* ftrl_setup(vw& all)
       b.early_stop_thres = vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.weights.stride_shift());
+  learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << all.weights.stride_shift());
   if (all.audit || all.hash_inv)
     l.set_predict(predict<true>);
   else

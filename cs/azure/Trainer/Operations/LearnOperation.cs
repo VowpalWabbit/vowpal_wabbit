@@ -75,19 +75,22 @@ namespace VW.Azure.Trainer
                 this.perfCounters.AverageExampleLatencyBase.Increment();
 
                 // update partition state
-                if (example.PartitionKey != null && example.PartitionKey != null)
+                if (example.PartitionId != null && example.PartitionId != null)
                 {
-                    this.state.Partitions[example.PartitionKey] = example.Offset;
+                    this.state.Partitions[example.PartitionId] = example.Offset;
                     // this.state.PartitionsDateTime[eventHubExample.PartitionKey] = eventHubExample.Offset;
                 }
 
                 return new TrainerResult(progressivePrediction, example.Actions, example.Probabilities)
                 {
                     Label = label,
+                    PartitionId = example.PartitionId,
                     PartitionKey = example.PartitionKey,
                     Latency = latency,
                     ProbabilityOfDrop = example.ProbabilityOfDrop,
-                    ActionsTags = example.ActionsTags
+                    ActionsTags = example.ActionsTags,
+                    EventId = example.EventId,
+                    Timestamp = example.Timestamp
                 };
             }
             catch (Exception ex)

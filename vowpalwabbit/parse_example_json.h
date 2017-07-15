@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
@@ -80,8 +80,8 @@ struct BaseState
 
 	virtual BaseState<audit>* Null(Context<audit>& ctx)
 	{
-		ctx.error << "Unexpected token: null";
-		return nullptr;
+		// ignore Null by default and stay in the current state
+		return ctx.previous_state == nullptr ? this : ctx.previous_state;
 	}
 
 	virtual BaseState<audit>* Bool(Context<audit>& ctx, bool b)
@@ -452,13 +452,11 @@ struct MultiState : BaseState<audit>
 // "...":[Numbers only]
 template<bool audit>
 class ArrayState : public BaseState<audit>
-
 {
 	feature_index array_hash;
-	BaseState<audit>* return_state;
 
 public:
-	ArrayState() : BaseState<audit>("Array"), return_state(nullptr)
+	ArrayState() : BaseState<audit>("Array")
 	{ }
 
 	BaseState<audit>* StartArray(Context<audit>& ctx)
@@ -469,9 +467,10 @@ public:
 			return nullptr;
 		}
 
-		array_hash = ctx.CurrentNamespace().namespace_hash;
-		return_state = ctx.previous_state;
+		ctx.PushNamespace(ctx.key, ctx.previous_state);
 
+		array_hash = ctx.CurrentNamespace().namespace_hash;
+		
 		return this;
 	}
 
@@ -496,9 +495,23 @@ public:
 		return Float(ctx, (float)f);
 	}
 
+	BaseState<audit>* Null(Context<audit>& ctx)
+	{
+		// ignore null values and stay in current state
+		return this;
+	}
+
+	BaseState<audit>* StartObject(Context<audit>& ctx)
+	{
+		// parse properties
+		ctx.PushNamespace(ctx.CurrentNamespace().name.c_str(), this);
+
+		return &ctx.default_state;
+	}
+
 	BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType elementCount)
 	{
-		return return_state;
+		return ctx.PopNamespace();
 	}
 };
 
@@ -518,7 +531,10 @@ struct IgnoreState : BaseState<audit>
 template<bool audit>
 class DefaultState : public BaseState<audit>
 {
-private:
+public:
+	DefaultState() : BaseState<audit>("Default")
+	{ }
+
 	BaseState<audit>* Ignore(Context<audit>& ctx, rapidjson::SizeType length)
 	{
 		// fast ignore
@@ -593,25 +609,6 @@ private:
 
 		return &ctx.ignore_state;
 	}
-
-	void InsertNamespace(Context<audit>& ctx)
-	{
-		auto& ns = ctx.CurrentNamespace();
-		if (ns.feature_count > 0)
-		{
-			auto feature_group = ns.feature_group;
-			// avoid duplicate insertion
-			for (unsigned char ns : ctx.ex->indices)
-				if (ns == feature_group)
-					return;
-
-			ctx.ex->indices.push_back(feature_group);
-		}
-	}
-
-public:
-	DefaultState() : BaseState<audit>("Default")
-	{ }
 
 	BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
 	{
@@ -697,8 +694,7 @@ public:
 
 	BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
 	{
-		InsertNamespace(ctx);
-		BaseState<audit>* return_state = ctx.namespace_path.pop().return_state;
+		BaseState<audit>* return_state = ctx.PopNamespace();
 
 		if (ctx.namespace_path.empty())
 		{
@@ -725,7 +721,8 @@ public:
 			ctx.label_object_state.EndObject(ctx, memberCount);
 		}
 
-		return return_state;
+		// if we're at the top-level go back to ds_state
+		return ctx.namespace_path.empty() ? ctx.root_state : return_state;
 	}
 
 	BaseState<audit>* Float(Context<audit>& ctx, float f)
@@ -745,6 +742,171 @@ public:
 	{
 		return ctx.array_state.StartArray(ctx);
 	}
+};
+
+template<bool audit, typename T>
+class ArrayToVectorState : public BaseState<audit>
+{
+public:
+  ArrayToVectorState() : BaseState<audit>("ArrayToVectorState")
+  { }
+
+  std::vector<T>* output_array;
+
+  BaseState<audit>* StartArray(Context<audit>& ctx)
+  {
+    if (ctx.previous_state == this)
+    {
+      ctx.error << "Nested arrays are not supported";
+      return nullptr;
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f)
+  {
+    output_array->push_back((T)f);
+    return this;
+  }
+
+  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  {
+    output_array->push_back((T)f);
+    return this;
+  }
+
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  // ignore null values and stay in current state
+	  return this;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType)
+  {
+    // TODO: introduce return_state
+    return &ctx.decision_service_state;
+  }
+};
+
+template<bool audit>
+class StringToStringState : public BaseState<audit>
+{
+public:
+  StringToStringState() : BaseState<audit>("StringToStringState")
+  { }
+
+  std::string* output_string;
+
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  {
+    output_string->assign(str, str + length);
+
+    // TODO: introduce return_state
+    return &ctx.decision_service_state;
+  }
+
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  // ignore null values and stay in current state
+	  // TODO: introduce return_state
+	  return &ctx.decision_service_state;
+  }
+};
+
+template<bool audit>
+class FloatToFloatState : public BaseState<audit>
+{
+public:
+  FloatToFloatState() : BaseState<audit>("FloatToFloatState")
+  { }
+
+  float* output_float;
+
+  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  {
+    *output_float = f;
+
+    // TODO: introduce return_state
+    return &ctx.decision_service_state;
+  }
+
+  BaseState<audit>* Null(Context<audit>& ctx)
+  {
+	  *output_float = 0.f;
+
+	  // TODO: introduce return_state
+	  return &ctx.decision_service_state;
+  }
+};
+
+// Decision Service JSON header information - required to construct final label
+struct DecisionServiceInteraction
+{
+	std::string eventId;
+
+	std::vector<unsigned> actions;
+
+	std::vector<float> probabilities;
+
+	float probabilityOfDrop;
+
+	DecisionServiceInteraction() : probabilityOfDrop(0.f)
+	{ }
+};
+
+template<bool audit>
+class DecisionServiceState : public BaseState<audit>
+{
+
+public:
+  DecisionServiceState() : BaseState<audit>("DecisionService")
+  { }
+
+  DecisionServiceInteraction* data;
+
+  BaseState<audit>* StartObject(Context<audit>& ctx)
+  {
+	  // TODO: improve validation
+	  return this;
+  }
+
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
+  {
+	  // TODO: improve validation
+	  return this;
+  }
+
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  {
+    if (length == 1)
+    {
+      switch (str[0])
+      {
+      case 'a':
+        ctx.array_uint_state.output_array = &data->actions;
+        return &ctx.array_uint_state;
+      case 'p':
+        ctx.array_float_state.output_array = &data->probabilities;
+        return &ctx.array_float_state;
+      case 'c':
+        return &ctx.default_state;
+      }
+    }
+    else if (length == 5 && !strcmp(str, "pdrop"))
+    {
+      ctx.float_state.output_float = &data->probabilityOfDrop;
+      return &ctx.float_state;
+    }
+    else if(length == 7 && !strcmp(str, "EventId"))
+    {
+      ctx.string_state.output_string = &data->eventId;
+      return &ctx.string_state;
+    }
+
+	// ignore unknown properties
+	return ctx.default_state.Ignore(ctx, length);
+  }
 };
 
 template<bool audit>
@@ -781,10 +943,19 @@ struct Context
 	IgnoreState<audit> ignore_state;
 	ArrayState<audit> array_state;
 
+    // DecisionServiceState
+    DecisionServiceState<audit> decision_service_state;
+    ArrayToVectorState<audit, float> array_float_state;
+    ArrayToVectorState<audit, unsigned> array_uint_state;
+    StringToStringState<audit> string_state;
+    FloatToFloatState<audit> float_state;
+
+	BaseState<audit>* root_state;
+
 	Context()
 	{
 		namespace_path = v_init<Namespace<audit>>();
-		current_state = &default_state;
+		current_state = root_state = &default_state;
 	}
 
 	~Context()
@@ -801,6 +972,12 @@ struct Context
 		label_object_state.init(pall);
 	}
 
+    void SetStartStateToDecisionService(DecisionServiceInteraction* data)
+    {
+		decision_service_state.data = data;
+		current_state = root_state = &decision_service_state;
+    }
+
 	void PushNamespace(const char* ns, BaseState<audit>* return_state)
 	{
 		Namespace<audit> n;
@@ -814,6 +991,24 @@ struct Context
 			n.name = ns;
 
 		namespace_path.push_back(n);
+	}
+
+	BaseState<audit>* PopNamespace()
+	{
+		auto& ns = CurrentNamespace();
+		if (ns.feature_count > 0)
+		{
+			auto feature_group = ns.feature_group;
+			// avoid duplicate insertion
+			for (unsigned char ns : ex->indices)
+				if (ns == feature_group)
+					goto done;
+
+			ex->indices.push_back(feature_group);
+		}
+
+	done:
+		return namespace_path.pop().return_state;
 	}
 
 	Namespace<audit>& CurrentNamespace()
@@ -863,6 +1058,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 	bool EndObject(SizeType count) { return ctx.TransitionState(ctx.current_state->EndObject(ctx, count)); }
 	bool StartArray() { return ctx.TransitionState(ctx.current_state->StartArray(ctx)); }
 	bool EndArray(SizeType count) { return ctx.TransitionState(ctx.current_state->EndArray(ctx, count)); }
+	bool Null() { return ctx.TransitionState(ctx.current_state->Null(ctx)); }
 
 	bool VWReaderHandlerNull() { return true; }
 	bool VWReaderHandlerDefault() { return false; }
@@ -906,6 +1102,27 @@ namespace VW
 			"State: " << (current_state ? current_state->name : "null")); // <<
 			// "Line: '"<< line_copy << "'");
 	}
+
+    template<bool audit>
+    void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    {
+      InsituStringStream ss(line);  
+      json_parser<audit> parser;
+
+      VWReaderHandler<audit>& handler = parser.handler;
+      handler.init(&all, &examples, &ss, example_factory, ex_factory_context);
+      handler.ctx.SetStartStateToDecisionService(data);
+
+      ParseResult result = parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+      if (!result.IsError())
+        return;
+
+      BaseState<audit>* current_state = handler.current_state();
+
+      THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code()) << ". "
+        "Handler: " << handler.error().str() <<
+        "State: " << (current_state ? current_state->name : "null"));
+    }
 }
 
 template<bool audit>

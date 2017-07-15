@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -239,11 +239,10 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 
 		args.clear();
 		bool previous_option_needs_argument = false;
-		auto end = all.args.end();
-		for (auto arg = all.args.begin(); arg != end; ++arg)
+        for (auto&& arg : all.args)
 		{
 			new_vm.clear();
-			args.push_back(*arg);
+			args.push_back(arg);
 			try
 			{
 				po::parsed_options parsed = po::command_line_parser(args).
@@ -258,7 +257,7 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 			}
 			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
 			{
-				auto ignored = *arg;
+				auto ignored = arg;
 
 				args.pop_back();
 				if (previous_option_needs_argument)

@@ -19,7 +19,7 @@ namespace VW.Azure.Trainer
 
         protected override Task ProcessInternal(TrainerResult value)
         {
-            this.telemetry.TrackMetric("End-to-End Latency " + value.PartitionKey, value.Latency.TotalSeconds);
+            this.telemetry.TrackMetric("End-to-End Latency " + value.PartitionId, value.Latency.TotalSeconds);
             return Task.FromResult(true);
         }
     }

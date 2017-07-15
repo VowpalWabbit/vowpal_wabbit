@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -88,6 +88,17 @@ ILabel^ VowpalWabbitExample::Label::get()
   label->ReadFromExample(this->m_example);
 
   return label;
+}
+
+void VowpalWabbitExample::Label::set(ILabel^ label)
+{
+	if (label == nullptr)
+		return;
+
+	label->UpdateExample(m_owner->Native->m_vw, m_example);
+
+	// we need to update the example weight as setup_example() can be called prior to this call.
+	m_example->weight = m_owner->Native->m_vw->p->lp.get_weight(&m_example->l);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)

@@ -70,6 +70,7 @@ license as described in the file LICENSE.
 #include "audit_regressor.h"
 #include "marginal.h"
 #include "explore_eval.h"
+// #include "cntk.h"
 
 using namespace std;
 //
@@ -88,9 +89,9 @@ unsigned long long hash_file_contents(io_buf *io, int f)
 { unsigned long long v = 5289374183516789128;
   unsigned char buf[1024];
   while (true)
-  { size_t n = io->read_file(f, buf, 1024);
-    if (n == 0) break;
-    for (size_t i=0; i<n; i++)
+  { ssize_t n = io->read_file(f, buf, 1024);
+    if (n <= 0) break;
+    for (ssize_t i=0; i<n; i++)
     { v *= 341789041;
       v += buf[i];
     }
@@ -180,7 +181,7 @@ void parse_dictionary_argument(vw&all, string str)
 
   size_t def = (size_t)' ';
 
-  size_t size = 2048, pos, nread;
+  ssize_t size = 2048, pos, nread;
   char rc;
   char*buffer = calloc_or_throw<char>(size);
   do
@@ -1096,6 +1097,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(lda_setup);
   all.reduction_stack.push_back(bfgs_setup);
   all.reduction_stack.push_back(OjaNewton_setup);
+  // all.reduction_stack.push_back(VW_CNTK::setup);
 
   //Score Users
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);

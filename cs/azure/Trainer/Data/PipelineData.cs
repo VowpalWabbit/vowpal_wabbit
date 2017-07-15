@@ -20,6 +20,8 @@ namespace VW.Azure.Trainer.Data
 
         internal string PartitionKey { get; set; }
 
+        internal string PartitionId { get; set; }
+
         internal string EventId { get; set; }
 
         internal DateTime Timestamp { get; set; }

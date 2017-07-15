@@ -17,7 +17,7 @@
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 [assembly: System.CLSCompliant(false)]
 [assembly: System.Runtime.InteropServices.Guid("6a577997-af00-4ca0-8453-fdc8bbdf2a57")]
-[assembly: System.Reflection.AssemblyVersion("8.2.0.17")]
-[assembly: System.Reflection.AssemblyFileVersion("8.2.0.17")]
+[assembly: System.Reflection.AssemblyVersion("8.3.0.9")]
+[assembly: System.Reflection.AssemblyFileVersion("8.3.0.9")]
 
 
