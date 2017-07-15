@@ -325,7 +325,7 @@ bool should_print_update(vw& all, bool hit_new_pass=false)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
-  return (all.sd->weighted_examples >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 
@@ -335,7 +335,7 @@ bool might_print_update(vw& all)
 
   if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
   if (PRINT_UPDATE_EVERY_PASS) return true;  // SPEEDUP: make this better
-  return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
 bool must_run_test(vw&all, vector<example*>ec, bool is_test_ex)
@@ -414,8 +414,8 @@ void print_update(search_private& priv)
     all.sd->holdout_sum_loss_since_last_dump = 0.0;
   }
   else
-  { avg_loss       = safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples);
-    avg_loss_since = safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples));
+  { avg_loss       = safediv((float)all.sd->sum_loss, (float)all.sd->weighted_labeled_examples);
+    avg_loss_since = safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_labeled_examples - all.sd->old_weighted_labeled_examples));
   }
 
   char inst_cntr[9];  number_to_natural((size_t)all.sd->example_number, inst_cntr);
@@ -466,7 +466,9 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 }
 
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
-{ if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
+{
+  cout << "del_top " << endl;
+  if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   { if (ec.indices.size() == 0)
     { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     else
@@ -526,6 +528,7 @@ void add_neighbor_features(search_private& priv)
 
 void del_neighbor_features(search_private& priv)
 { if (priv.neighbor_features.size() == 0) return;
+  cout << "del_neighbor_feat" << endl;
   for (size_t n=0; n<priv.ec_seq.size(); n++)
     del_features_in_top_namespace(priv, *priv.ec_seq[n], neighbor_namespace);
 }
@@ -673,7 +676,8 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 }
 
 void del_example_conditioning(search_private& priv, example& ec)
-{ if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
+{cout << "del_example_cond" << endl;
+  if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
@@ -1652,7 +1656,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
 
     // accumulate loss
     if (! is_test_ex)
-      all.sd->update(priv.ec_seq[0]->test_only, priv.test_loss, 1.f, priv.num_features);
+      all.sd->update(priv.ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features);
 
     // generate output
     for (int sink : all.final_prediction_sink)
@@ -1681,12 +1685,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
   run_task(sch, priv.ec_seq);
 
   if (!ran_test)    // was  && !priv.ec_seq[0]->test_only) { but we know it's not test_only
-  { all.sd->weighted_examples += 1.f;
-    all.sd->total_features += priv.num_features;
-    all.sd->sum_loss += priv.test_loss;
-    all.sd->sum_loss_since_last_dump += priv.test_loss;
-    all.sd->example_number++;
-  }
+    all.sd->update(priv.ec_seq[0]->test_only, true, priv.test_loss, 1.f, priv.num_features);
 
   // if there's nothing to train on, we're done!
   if ((priv.loss_declared_cnt == 0) || (priv.t+priv.meta_t == 0) || (priv.rollout_method == NO_ROLLOUT))  // TODO: make sure NO_ROLLOUT works with beam!

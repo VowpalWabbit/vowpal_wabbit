@@ -347,7 +347,6 @@ base_learner* gd_mf_setup(vw& all)
   //default initial_t to 1 instead of 0
   if(!all.vm.count("initial_t"))
   { all.sd->t = 1.f;
-    all.sd->weighted_unlabeled_examples = 1.f;
     all.initial_t = 1.f;
   }
   all.eta *= powf((float)(all.sd->t), all.power_t);

@@ -53,13 +53,9 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
 void output_example(vw& all, topk& d, example& ec)
 { label_data& ld = ec.l.simple;
 
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
     all.sd->weighted_labels += ld.label * ec.weight;
-  all.sd->weighted_examples += ec.weight;
-  all.sd->sum_loss += ec.loss;
-  all.sd->sum_loss_since_last_dump += ec.loss;
-  all.sd->total_features += ec.num_features;
-  all.sd->example_number++;
 
   if (example_is_newline(ec))
     for (int sink : all.final_prediction_sink)

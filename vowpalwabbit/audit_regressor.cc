@@ -153,7 +153,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 { bool printed = false;
   if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
   { print_ex(all, ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
-    all.sd->weighted_examples = (double)(ec.example_counter+1); //used in update_dump_interval
+    all.sd->weighted_unlabeled_examples = (double)(ec.example_counter+1); //used in update_dump_interval
     all.sd->update_dump_interval(all.progress_add, all.progress_arg);
     printed = true;
   }

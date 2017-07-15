@@ -86,7 +86,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   if(!is_test_label(ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);

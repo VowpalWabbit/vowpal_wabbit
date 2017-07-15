@@ -240,7 +240,7 @@ void finish(cb_explore& data)
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& pred_string)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { stringstream label_string;
     if (is_test)
       label_string << " unknown";
@@ -258,8 +258,8 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
     for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
       loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.a_s[i].score;
-
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  
+  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
   char temp_str[20];
   stringstream ss, sso;

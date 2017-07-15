@@ -136,7 +136,7 @@ void print_result(int f, float res, v_array<char> tag, float lb, float ub)
 void output_example(vw& all, bs& d, example& ec)
 { label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
 

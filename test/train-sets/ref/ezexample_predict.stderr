@@ -15,7 +15,7 @@ num sources = 0
 
 finished run
 number of examples = 0
-weighted example sum = 0
-weighted label sum = 0
-average loss = -nan
+weighted example sum = 0.000000
+weighted label sum = 0.000000
+average loss = n.a.
 total feature number = 0

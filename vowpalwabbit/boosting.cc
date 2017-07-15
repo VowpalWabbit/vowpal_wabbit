@@ -288,7 +288,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
   { cerr << "Loading alpha and v: " << endl;
   }
   else
-  { cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+  { cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_labeled_examples+o.all->sd->weighted_unlabeled_examples << endl;
   }
   for (int i = 0; i < o.N; i++)
   { cerr << o.alpha[i] << " " << o.v[i] << endl;
@@ -334,7 +334,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
   { if (read)
       cerr << "Loading alpha: " << endl;
     else
-      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << endl;
     for (int i = 0; i < o.N; i++)
       cerr << o.alpha[i] << " " << endl;
   
