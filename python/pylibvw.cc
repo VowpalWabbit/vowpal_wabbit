@@ -460,7 +460,7 @@ float    get_loss(example_ptr ec) { return ec->loss; }
 float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
-double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
+double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
 void search_output(search_ptr sch, string s) { sch->output() << s; }
