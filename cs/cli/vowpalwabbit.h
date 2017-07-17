@@ -88,10 +88,11 @@ public:
   /// TODO: the header should be passed along with the List of VowpalWabbit examples, but that requires additional care wrt disposing items.
   /// </summary>
   /// <param name="json">This needs to be null-terminated string.</param>
+  /// <param name="copyJson">If true the json array is copied prior to destructive parsing</param>
   /// <returns>
   /// Returns a <see cref="VowpalWabbitExample"/> ready to be used for <see cref="Learn(VowpalWabbitExample^)"/> or <see cref="Predict(VowpalWabbitExample^)"/>.
   /// </returns>
-  List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<Byte>^ json, int offset, int length, [Out] VowpalWabbitDecisionServiceInteractionHeader^% header);
+  List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<Byte>^ json, int offset, int length, bool copyJson, [Out] VowpalWabbitDecisionServiceInteractionHeader^% header);
 
   /// <summary>
   /// Hashes the given namespace <paramref name="s"/>.
