@@ -1110,7 +1110,7 @@ namespace VW
 		if (copy_line)
 		{
 			line_vec.reserve(length);
-			memcpy_s(&line_vec[0], length, line, length);
+			memcpy(&line_vec[0], line, length);
 			line = &line_vec[0];
 		}
 
