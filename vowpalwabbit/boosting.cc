@@ -347,11 +347,9 @@ LEARNER::base_learner* boosting_setup(vw& all)
                                   "Online boosting with <N> weak learners"))
     return NULL;
   new_options(all, "Boosting Options")
-  ("gamma", po::value<float>()->default_value(0.1f),
-   "weak learner's edge (=0.1), used only by online BBM")
-  ("alg", po::value<string>()->default_value("BBM"),
-   "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");
-
+    ("gamma", po::value<float>()->default_value(0.1f), "weak learner's edge (=0.1), used only by online BBM")
+    ("alg", po::value<string>()->default_value("BBM"), "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");
+  
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)
   // "logistic" implements AdaBoost.OL.W (importance weighted version
@@ -369,6 +367,7 @@ LEARNER::base_learner* boosting_setup(vw& all)
     cerr << "Gamma = " << data.gamma << endl;
   string* temp = new string;
   *temp = all.vm["alg"].as<string>();
+  *(all.file_options) << " --alg " << *temp;
   data.alg = temp;
 
   data.C = std::vector<std::vector<long long> >(data.N,
