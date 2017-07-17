@@ -85,11 +85,11 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->current_pass;
   }
 
-  stats->WeightedExampleSum = m_vw->sd->weighted_examples;
+  stats->WeightedExampleSum = m_vw->sd->weighted_examples();
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
   if (m_vw->holdout_set_off || (m_vw->sd->holdout_best_loss == FLT_MAX))
-  { stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_examples;
+  { stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_examples();
   }
   else
   { stats->AverageLoss = m_vw->sd->holdout_best_loss;
@@ -246,7 +246,7 @@ example& get_example_from_pool(void* v)
   return *ex->m_example;
 }
 
-List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<Byte>^ json, int offset, int length, [Out] VowpalWabbitDecisionServiceInteractionHeader^% header)
+List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<Byte>^ json, int offset, int length, bool copyJson, [Out] VowpalWabbitDecisionServiceInteractionHeader^% header)
 {
 #if _DEBUG
 	if (json == nullptr)
@@ -278,9 +278,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			DecisionServiceInteraction interaction;
 
 			if (m_vw->audit)
-				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), get_example_from_pool, &state, &interaction);
+				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
 			else
-				VW::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), get_example_from_pool, &state, &interaction);
+				VW::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);

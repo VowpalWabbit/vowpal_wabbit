@@ -1104,9 +1104,17 @@ namespace VW
 	}
 
     template<bool audit>
-    void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
     {
-      InsituStringStream ss(line);  
+		std::vector<char> line_vec;
+		if (copy_line)
+		{
+			line_vec.reserve(length);
+			memcpy_s(&line_vec[0], length, line, length);
+			line = &line_vec[0];
+		}
+
+      InsituStringStream ss(line);
       json_parser<audit> parser;
 
       VWReaderHandler<audit>& handler = parser.handler;
