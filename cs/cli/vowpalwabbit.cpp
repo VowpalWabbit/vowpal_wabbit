@@ -89,7 +89,10 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
   if (m_vw->holdout_set_off || (m_vw->sd->holdout_best_loss == FLT_MAX))
-  { stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_examples();
+  { 
+	  stats->AverageLoss =
+		  m_vw->sd->weighted_labeled_examples > 0 ?
+		  m_vw->sd->sum_loss / m_vw->sd->weighted_labeled_examples : System::Double::NaN;
   }
   else
   { stats->AverageLoss = m_vw->sd->holdout_best_loss;

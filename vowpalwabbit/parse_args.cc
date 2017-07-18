@@ -1483,7 +1483,8 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet && !all.vm.count("audit_regressor"))
+{ // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!all.quiet && !all.vm.count("audit_regressor"))
   { all.trace_message.precision(6);
 	all.trace_message << std::fixed;
     all.trace_message << endl << "finished run";
