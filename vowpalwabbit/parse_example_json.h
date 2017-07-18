@@ -890,6 +890,8 @@ public:
         ctx.array_float_state.output_array = &data->probabilities;
         return &ctx.array_float_state;
       case 'c':
+		ctx.key = " ";
+		ctx.key_length = 1;
         return &ctx.default_state;
       }
     }
@@ -903,6 +905,21 @@ public:
       ctx.string_state.output_string = &data->eventId;
       return &ctx.string_state;
     }
+	else if (length > 0 && str[0] == '_')
+	{
+		// match _label*
+		if (length >= 6 && !strncmp(str, "_label", 6))
+		{
+			ctx.key = str;
+			ctx.key_length = length;
+			if (length >= 7 && ctx.key[6] == '_')
+				return &ctx.label_single_property_state;
+			else if (length == 6)
+				return &ctx.label_state;
+			else if (length == 11 && !_stricmp(str, "_labelIndex"))
+				return &ctx.label_index_state;
+		}
+	}
 
 	// ignore unknown properties
 	return ctx.default_state.Ignore(ctx, length);
@@ -1143,7 +1160,13 @@ int read_features_json(vw* all, v_array<example*>& examples)
 		return (int)num_chars_initial;
 
 	line[num_chars] = '\0';
-	VW::template read_line_json<audit>(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+	if (all->p->decision_service_json)
+	{
+		DecisionServiceInteraction interaction;
+		VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+	}
+	else 
+		VW::template read_line_json<audit>(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
 	// note: the json parser does single pass parsing and cannot determine if a shared example is needed.
 	// since the communication between the parsing thread the main learner expects examples to be requested in order (as they're layed out in memory)

@@ -375,6 +375,7 @@ void parse_source(vw& all)
   ("cache,c", "Use a cache.  The default is <data>.cache")
   ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
   ("json", "Enable JSON parsing.")
+  ("dsjson", "Enable Decision Service JSON parsing.")
   ("kill_cache,k", "do not reuse existing cache: create a new one always")
   ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
   ("no_stdin", "do not default to reading from stdin");
