@@ -375,6 +375,7 @@ void parse_source(vw& all)
   ("cache,c", "Use a cache.  The default is <data>.cache")
   ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
   ("json", "Enable JSON parsing.")
+  ("dsjson", "Enable Decision Service JSON parsing.")
   ("kill_cache,k", "do not reuse existing cache: create a new one always")
   ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
   ("no_stdin", "do not default to reading from stdin");
@@ -1483,7 +1484,8 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet && !all.vm.count("audit_regressor"))
+{ // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!all.quiet && !all.vm.count("audit_regressor"))
   { all.trace_message.precision(6);
 	all.trace_message << std::fixed;
     all.trace_message << endl << "finished run";

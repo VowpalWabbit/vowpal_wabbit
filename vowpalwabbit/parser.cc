@@ -580,7 +580,7 @@ child:
         }
       }
 
-      if (all.vm.count("json"))
+      if (all.vm.count("json") || all.vm.count("dsjson"))
       { 
 		  // TODO: change to class with virtual method
 		  if (all.audit)
@@ -595,6 +595,8 @@ child:
 			  all.p->audit = false;
 			  all.p->jsonp = new json_parser<false>;
 		  }
+
+		  all.p->decision_service_json = all.vm.count("dsjson") > 0;
       }
       else
         all.p->reader = read_features_string;
