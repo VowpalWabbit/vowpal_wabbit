@@ -123,7 +123,11 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data*, float) {}
 
 void vw::learn(example* ec)
-{ this->l->learn(*ec);
+{
+	if (ec->test_only || !training)
+		l->predict(*ec);
+	else
+		l->learn(*ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
