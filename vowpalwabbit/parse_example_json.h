@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
@@ -21,7 +21,7 @@ license as described in the file LICENSE.
 
 // portability fun
 #ifndef _WIN32
-#define _stricmp strcasecmp 
+#define _stricmp strcasecmp
 #endif
 
 using namespace std;
@@ -43,7 +43,7 @@ struct Namespace
 	features* ftrs;
 	size_t feature_count;
 	BaseState<audit>* return_state;
-	std::string name;
+	const char* name;
 
 	void AddFeature(feature_value v, feature_index i, const char* feature_name)
 	{
@@ -96,7 +96,7 @@ struct BaseState
 		return nullptr;
 	}
 
-	virtual BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) 
+	virtual BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
 	{
 		ctx.error << "Unexpected token: uint (" << v << ")";
 		return nullptr;
@@ -228,8 +228,8 @@ public:
 	}
 
 	BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
-	{ 
-		return Float(ctx, (float)v); 
+	{
+		return Float(ctx, (float)v);
 	}
 
 	BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType)
@@ -338,7 +338,7 @@ struct LabelState : BaseState<audit>
 	}
 };
 
-// "_text":"a b c" 
+// "_text":"a b c"
 template<bool audit>
 struct TextState : BaseState<audit>
 {
@@ -386,7 +386,7 @@ struct TextState : BaseState<audit>
 template<bool audit>
 struct TagState : BaseState<audit>
 {
-	// "_tag":"abc" 
+	// "_tag":"abc"
 	TagState() : BaseState<audit>("tag")
 	{ }
 
@@ -470,7 +470,7 @@ public:
 		ctx.PushNamespace(ctx.key, ctx.previous_state);
 
 		array_hash = ctx.CurrentNamespace().namespace_hash;
-		
+
 		return this;
 	}
 
@@ -483,7 +483,7 @@ public:
 
 			ctx.CurrentNamespace().AddFeature(f, array_hash, str.str().c_str());
 		}
-		else 
+		else
 			ctx.CurrentNamespace().AddFeature(f, array_hash, nullptr);
 		array_hash++;
 
@@ -504,7 +504,7 @@ public:
 	BaseState<audit>* StartObject(Context<audit>& ctx)
 	{
 		// parse properties
-		ctx.PushNamespace(ctx.CurrentNamespace().name.c_str(), this);
+		ctx.PushNamespace(ctx.namespace_path.size() > 0 ? ctx.CurrentNamespace().name : " ", this);
 
 		return &ctx.default_state;
 	}
@@ -639,7 +639,7 @@ public:
 			if (ctx.key_length == 5 && !strcmp(str, "_text"))
 				return &ctx.text_state;
 
-			// TODO: _multi in _multi... 
+			// TODO: _multi in _multi...
 			if (ctx.key_length == 6 && !strcmp(str, "_multi"))
 				return &ctx.multi_state;
 
@@ -678,14 +678,14 @@ public:
 		return this;
 	}
 
-	BaseState<audit>* Bool(Context<audit>& ctx, bool b) 
+	BaseState<audit>* Bool(Context<audit>& ctx, bool b)
 	{
 		if (b)
 			ctx.CurrentNamespace().AddFeature(ctx.all, ctx.key);
 
 		return this;
 	}
-	
+
 	BaseState<audit>* StartObject(Context<audit>& ctx)
 	{
 		ctx.PushNamespace(ctx.key, this);
@@ -937,7 +937,7 @@ struct Context
 
   BaseState<audit>* current_state;
   BaseState<audit>* previous_state;
-  
+
   // the path of namespaces
   v_array<Namespace<audit>> namespace_path;
 
@@ -1004,8 +1004,7 @@ struct Context
 		n.feature_count = 0;
 		n.return_state = return_state;
 
-		if (audit)
-			n.name = ns;
+		n.name = ns;
 
 		namespace_path.push_back(n);
 	}
@@ -1165,7 +1164,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
 		DecisionServiceInteraction interaction;
 		VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 	}
-	else 
+	else
 		VW::template read_line_json<audit>(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
 
 	// note: the json parser does single pass parsing and cannot determine if a shared example is needed.

@@ -207,7 +207,7 @@
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
       <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
-      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='DebugLeakCheck|x64'">MultiThreadedDebug</RuntimeLibrary>
       <MinimalRebuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</MinimalRebuild>
     </ClCompile>

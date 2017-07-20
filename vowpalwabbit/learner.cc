@@ -4,10 +4,8 @@
 using namespace std;
 
 void dispatch_example(vw& all, example& ec)
-{ if (ec.test_only || !all.training)
-    all.l->predict(ec);
-  else
-    all.l->learn(ec);
+{
+	all.learn(&ec);
   all.l->finish_example(all, ec);
 }
 

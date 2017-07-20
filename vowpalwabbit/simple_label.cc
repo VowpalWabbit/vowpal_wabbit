@@ -11,6 +11,7 @@ using namespace std;
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 { memcpy(&ld->label, c, sizeof(ld->label));
+  //  cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<  endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
