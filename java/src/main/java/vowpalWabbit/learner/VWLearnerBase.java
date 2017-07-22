@@ -17,7 +17,7 @@ package vowpalWabbit.learner;
  *
  * @author deak
  */
-public abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
+abstract class VWLearnerBase<T> extends VWBase implements VWTypedLearner<T> {
     VWLearnerBase(final long nativePointer) {
         super(nativePointer);
     }
