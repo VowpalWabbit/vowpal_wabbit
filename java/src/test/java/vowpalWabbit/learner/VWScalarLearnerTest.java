@@ -58,7 +58,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testLearn() {
+    public void testLearn() throws IOException {
         VWScalarLearner learner = VWLearners.create("--quiet");
         String heightData = "|f height:0.23 weight:0.25 width:0.05";
         float firstPrediction = learner.learn("0.1 " + heightData);
@@ -68,7 +68,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testManySamples() {
+    public void testManySamples() throws IOException {
         File model = new File("basic.model");
         model.deleteOnExit();
         VWScalarLearner m = VWLearners.create("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
@@ -84,7 +84,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void twoModelTest() {
+    public void twoModelTest() throws IOException {
         VWScalarLearner m1 = VWLearners.create("--quiet");
         VWScalarLearner m2 = VWLearners.create("--quiet");
 

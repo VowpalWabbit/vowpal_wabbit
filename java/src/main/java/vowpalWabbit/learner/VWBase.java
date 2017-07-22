@@ -1,7 +1,8 @@
 package vowpalWabbit.learner;
 
-import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  *
  */
-abstract class VWBase implements Closeable {
+abstract class VWBase implements VWLearner {
     private boolean isOpen;
 
     /**
@@ -24,7 +25,7 @@ abstract class VWBase implements Closeable {
      * It was originally hypothesized that {@link java.util.concurrent.locks.ReadWriteLock} would be a better
      * alternative, but at this time this is not possible cause of <a href="https://mail.google.com/mail/u/0/?ui=2&ik=cdb4bef19b&view=lg&msg=14dfe18a4f82a199#14dfe18a4f82a199_5a">this</a>.
      */
-    protected final Lock lock;
+    final Lock lock;
     protected final long nativePointer;
 
     /**
@@ -36,28 +37,29 @@ abstract class VWBase implements Closeable {
      * 3.  Call either {@link System#load(String)} or {@link System#loadLibrary(String)}<br>
      * If a user wishes to use the prepackaged JNI libraries (which is encouraged) then no additional steps need to be taken.
      */
-    protected VWBase(final long nativePointer) {
+    VWBase(final long nativePointer) {
         isOpen = true;
         lock = new ReentrantLock();
         this.nativePointer = nativePointer;
     }
 
     /**
-     * Close the VW instance.  This MUST be called in order to free up the native memory.
+     * Close the VW instance.  close or closeAsync MUST be called in order to free up the native memory.
      * After this is called no future calls to this object are permitted.
      */
     @Override
-    public void close() {
-        lock.lock();
+    final public void close() throws IOException {
         try {
-            if (isOpen) {
-                isOpen = false;
-                VWLearners.closeInstance(nativePointer);
-            }
+            closer().call();
         }
-        finally {
-            lock.unlock();
+        catch (Exception e) {
+            throw new IOException("An exception occurred while attempting to close VW Model with native pointer " +
+                                  nativePointer, e);
         }
+    }
+
+    final public Callable<Void> closer() {
+        return new Closer();
     }
 
     final boolean isOpen() {
@@ -95,5 +97,30 @@ abstract class VWBase implements Closeable {
     @Override
     public int hashCode() {
         return (int) (nativePointer ^ (nativePointer >>> 32));
+    }
+
+    private class Closer implements Callable<Void> {
+
+        /**
+         * Package private for testing.
+         */
+        Closer() {}
+
+        @Override
+        public Void call() throws Exception {
+            lock.lock();
+            try {
+                if (isOpen) {
+                    isOpen = false;
+                    VWLearners.performRemainingPasses(nativePointer);
+                    VWLearners.closeInstance(nativePointer);
+                    return null;
+                }
+                else throw new IOException("VW model with native pointer " + nativePointer + " already closed.");
+            }
+            finally {
+                lock.unlock();
+            }
+        }
     }
 }
