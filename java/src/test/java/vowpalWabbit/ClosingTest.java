@@ -9,6 +9,10 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,13 +40,82 @@ public class ClosingTest  extends VWTestHelper {
         VWScalarLearner vw = model(PASSES);
 
         long t1 = System.currentTimeMillis();
-        Callable<Void> closer = vw.closer();
+        Callable<Boolean> closer = vw.closer();
         long t2 = System.currentTimeMillis();
         closer.call();
         long t3 = System.currentTimeMillis();
 
         assertEquals("Should only take a few milliseconds to get future", 0, t2 - t1, DELTA_TIME_MS);
         assertNotEquals("Should take longer to finish synchronous closing", 0, t3 - t1, DELTA_TIME_MS);
+    }
+
+    @Test
+    public void closeMultipleTimes() throws IOException {
+        try {
+            final VWScalarLearner model = model(1);
+            model.close();
+            model.close();
+        }
+        catch (Exception e) {
+            final PrintWriter str = new PrintWriter(new StringWriter());
+            e.printStackTrace(str);
+            fail("Shouldn't throw exception but threw " + str.toString());
+        }
+    }
+
+    @Test
+    public void closerThenClose() {
+        try {
+            final VWScalarLearner model = model(1);
+            model.closer().call();
+            model.close();
+        }
+        catch (Exception e) {
+            final PrintWriter str = new PrintWriter(new StringWriter());
+            e.printStackTrace(str);
+            fail("Shouldn't throw exception but threw " + str.toString());
+        }
+    }
+
+    @Test
+    public void closeThenCloser() {
+        try {
+            final VWScalarLearner model = model(1);
+            model.close();
+            model.closer().call();
+        }
+        catch (Exception e) {
+            final PrintWriter str = new PrintWriter(new StringWriter());
+            e.printStackTrace(str);
+            fail("Shouldn't throw exception but threw " + str.toString());
+        }
+    }
+
+    @Test
+    public void multipleAsynchronousCloserCallsReturnTrueOnlyOnce() throws Exception {
+        final int numClosers = 10;   // Should be greater than 2 to avoid confusion.
+        final VWScalarLearner model = model(PASSES);
+        ArrayList<ListenableFuture<Boolean>> closeFutures = new ArrayList<ListenableFuture<Boolean>>(numClosers);
+        final ListeningExecutorService exSvc =
+            MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(numClosers));
+
+        for (int i = 0; i < numClosers; ++i) {
+            // Submit a closer for asynchronous execution to the execution service.
+            // Place the future in the list.
+            closeFutures.add(exSvc.submit(model.closer()));
+        }
+
+        // Sequence the List of Futures as a Future of a List, then block until all futures return.
+        final List<Boolean> closeResults  = Futures.allAsList(closeFutures).get();
+
+        // Count the number of times the closers returned true.  This should be exactly once.
+        // This also means by the pigeonhole principle that there are (numClosers - 1) closers
+        // that returned false.
+        int closeAttempts = 0;
+        for (boolean triedToClose: closeResults) {
+            closeAttempts += triedToClose ? 1 : 0;
+        }
+        assertEquals(1, closeAttempts);
     }
 
     @Test
@@ -74,10 +147,10 @@ public class ClosingTest  extends VWTestHelper {
         int i = 0;
 
         // Get the closer
-        final Callable<Void> closer = vw.closer();
+        final Callable<Boolean> closer = vw.closer();
 
         // Submit to an executor service
-        final ListenableFuture<Void> closeInFuture = exSvc.submit(closer);
+        final ListenableFuture<Boolean> closeInFuture = exSvc.submit(closer);
 
         // Delay prior to registering callback.
         if (0 < msBeforeRegisteringCallback)
@@ -120,13 +193,16 @@ public class ClosingTest  extends VWTestHelper {
         return vw;
     }
 
-
-    private static class CalledTester implements FutureCallback<Void> {
+    /**
+     * It's OK to have the domain be the top type since the input value is ignored and
+     * the <em>Futures.addCallback</em> method is contravariant in the callback's domain.
+     */
+    private static class CalledTester implements FutureCallback<Object> {
         private AtomicBoolean called = new AtomicBoolean(false);
         boolean wasCalled() { return called.get(); }
 
         @Override
-        public void onSuccess(@Nullable Void _void) {
+        public void onSuccess(@Nullable Object ignored) {
             called.set(true);
         }
 

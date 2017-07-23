@@ -45,7 +45,9 @@ abstract class VWBase implements VWLearner {
 
     /**
      * Close the VW instance.  close or closeAsync MUST be called in order to free up the native memory.
-     * After this is called no future calls to this object are permitted.
+     * After this is called no future calls to this object are permitted.  Calling any combination of
+     * <code>closer().call()</code> and <code>close()</code> multiple times should have no effect after
+     * the first call is made.  This is consistent with the guarantees in the Closable interface.
      */
     @Override
     final public void close() throws IOException {
@@ -58,7 +60,8 @@ abstract class VWBase implements VWLearner {
         }
     }
 
-    final public Callable<Void> closer() {
+    @Override
+    final public Callable<Boolean> closer() {
         return new Closer();
     }
 
@@ -99,24 +102,33 @@ abstract class VWBase implements VWLearner {
         return (int) (nativePointer ^ (nativePointer >>> 32));
     }
 
-    private class Closer implements Callable<Void> {
+    private class Closer implements Callable<Boolean> {
+        private Closer() {}
 
         /**
-         * Package private for testing.
+         * <p>
+         * Close the underlying VW model.
+         * </p>
+         *
+         * <p>
+         * May throw an unchecked exception if the underlying native code throws an Exception.
+         * </p>
+         * @return <code>true</code> if model was open and an attempt is made to close the model.
+         *         A return value of <code>false</code> indicates an attempt to close the model was
+         *         made previously.  This is consistent with other languages where a <code>true</code>
+         *         return value indicates success.
          */
-        Closer() {}
-
         @Override
-        public Void call() throws Exception {
+        public Boolean call() {
             lock.lock();
             try {
+                final boolean attemptingToClose = isOpen;
                 if (isOpen) {
                     isOpen = false;
                     VWLearners.performRemainingPasses(nativePointer);
                     VWLearners.closeInstance(nativePointer);
-                    return null;
                 }
-                else throw new IOException("VW model with native pointer " + nativePointer + " already closed.");
+                return attemptingToClose;
             }
             finally {
                 lock.unlock();

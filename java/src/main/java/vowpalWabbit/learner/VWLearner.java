@@ -40,11 +40,12 @@ public interface VWLearner extends Closeable {
      * VW model could corrupted and it may not be closable in the future (which could result in a memory leak).
      * </p>
      *
-     * @return a Callable responsible for closing the model.  <em>As the signature indicates, the return value
-     * from the Callable is Void and Void has no possible values since it is uninstantiable.  <b>Therefore,
-     * do not attempt to use it.</b></em>
+     * @return a Callable responsible for closing the model.  The Callable should return <code>true</code> if
+     *         model was open and an attempt is made to close the model.  A return value of <code>false</code>
+     *         indicates an attempt to close the model was made previously.  This is consistent with other
+     *         languages where a <code>true</code> return value indicates success.
      */
-    Callable<Void> closer();
+    Callable<Boolean> closer();
 
     void saveModel(File filename);
 }
