@@ -230,9 +230,14 @@ class vw(pylibvw.vw):
             if True:   # TODO: get rid of this
                 if oracle is None: pass
                 elif isinstance(oracle, list):
-                    if len(oracle) > 0: P.set_oracles(oracle)
-                elif isinstance(oracle, int): P.set_oracle(oracle)
-                else: raise TypeError('expecting oracle to be a list or an integer')
+                    assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                    if len(oracle) > 0:
+                        P.set_oracles(oracle)
+                elif isinstance(oracle, int):
+                    assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                    P.set_oracle(oracle)
+                else:
+                    raise TypeError('expecting oracle to be a list or an integer')
 
                 if condition is not None:
                     if not isinstance(condition, list): condition = [condition]
@@ -247,6 +252,7 @@ class vw(pylibvw.vw):
 
                 if allowed is None: pass
                 elif isinstance(allowed, list):
+                    assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
                     P.set_alloweds(allowed)
                 else: raise TypeError('allowed argument wrong type')
 

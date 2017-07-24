@@ -468,10 +468,11 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 {
   if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
-  { if (ec.indices.size() == 0)
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
-    else
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
+  { return;
+    //if (ec.indices.size() == 0)
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
+    //else
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
   ec.indices.decr();
@@ -2152,14 +2153,14 @@ base_learner* setup(vw&all)
   add_options(all);
   po::variables_map& vm = all.vm;
 
-  bool has_hook_task = false;
-  for (size_t i=0; i<all.args.size()-1; i++)
-    if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
-      has_hook_task = true;
-  if (has_hook_task)
-    for (int i = (int)all.args.size()-2; i >= 0; i--)
-      if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
-        all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
+  // bool has_hook_task = false;
+  // for (size_t i=0; i<all.args.size()-1; i++)
+  //   if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
+  //     has_hook_task = true;
+  // if (has_hook_task)
+  //   for (int i = (int)all.args.size()-2; i >= 0; i--)
+  //     if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
+  //       all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
 
   search& sch = calloc_or_throw<search>();
   sch.priv = &calloc_or_throw<search_private>();
