@@ -170,6 +170,10 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
 
                     <!-- It's important to run tests serially because we are doing timing tests in some of the tests. -->
+                    <!-- TODO: That tests may fail when executed in parallel is likely an indication of a thread-safety issue -->
+                    <!-- TODO: This thread-safety issue could be on the Java or C side.  Merits future investigation. -->
+                    <!-- TODO: To test, uncomment forkMode and comment forkCount and reuseForks. -->
+                    <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
                     <argLine>-Djava.library.path=${project.build.directory}</argLine>
