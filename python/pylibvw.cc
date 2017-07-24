@@ -792,7 +792,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<Search::search, search_ptr>("search")
   .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
-  .def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
+  //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
   .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
   .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
   .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")
