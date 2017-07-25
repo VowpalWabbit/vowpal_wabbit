@@ -2150,8 +2150,6 @@ base_learner* setup(vw&all)
   ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
   ("search_linear_ordering",                        "insist on generating examples in linear order (def: hoopla permutation)")
   ;
-  add_options(all);
-  po::variables_map& vm = all.vm;
 
   bool has_hook_task = false;
   for (size_t i=0; i<all.args.size()-1; i++)
@@ -2161,6 +2159,10 @@ base_learner* setup(vw&all)
     for (int i = (int)all.args.size()-2; i >= 0; i--)
       if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
         all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
+  
+  add_options(all);
+  po::variables_map& vm = all.vm;
+
 
   search& sch = calloc_or_throw<search>();
   sch.priv = &calloc_or_throw<search_private>();
