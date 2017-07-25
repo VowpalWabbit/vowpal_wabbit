@@ -20,7 +20,7 @@ public class VWScalarsLearnerTest extends VWTestHelper {
     private String readableModel;
 
     @Test
-    public void probs() {
+    public void probs() throws IOException {
         String[] data = new String[]{
                 "1 | a",
                 "2 | a b",
@@ -108,7 +108,7 @@ public class VWScalarsLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testLDALearnerPredict() {
+    public void testLDALearnerPredict() throws IOException {
         writeVwModelToDisk();
         VWScalarsLearner v = rehydrateModel();
         float[] vector = v.predict(convertQuery("| wondering we look since"));
@@ -116,7 +116,7 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         assertEquals(3, vector.length);
     }
 
-    private void writeVwModelToDisk() {
+    private void writeVwModelToDisk() throws IOException {
         final VWScalarsLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
                 model, readableModel));
 

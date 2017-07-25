@@ -2163,7 +2163,6 @@ base_learner* setup(vw&all)
   add_options(all);
   po::variables_map& vm = all.vm;
 
-
   search& sch = calloc_or_throw<search>();
   sch.priv = &calloc_or_throw<search_private>();
   search_initialize(&all, sch);
