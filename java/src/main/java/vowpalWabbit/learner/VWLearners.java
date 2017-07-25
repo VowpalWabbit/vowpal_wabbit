@@ -61,5 +61,8 @@ final public class VWLearners {
     // Closing needs to be done here when initialization fails and by VWBase
     static native void closeInstance(long nativePointer);
 
+    // Closing needs to be done here when initialization fails and by VWBase
+    static native void performRemainingPasses(long nativePointer);
+
     static native void saveModel(long nativePointer, String filename);
 }
