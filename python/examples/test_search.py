@@ -64,5 +64,5 @@ for i in range(10):
 
 # now see the predictions on a test sentence
 print('predicting!', file=sys.stderr)
-print(sequenceLabeler.predict( [(0,w) for w in "the sandwich ate a monster".split()] ))
+print(sequenceLabeler.predict( [(1,w) for w in "the sandwich ate a monster".split()] ))
 print('should have printed: [1, 2, 3, 1, 2]')
