@@ -17,7 +17,7 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv *
   return vwPtr;
 }
 
-JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv *env, jclass obj, jlong vwPtr)
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPasses(JNIEnv *env, jclass obj, jlong vwPtr)
 { try
   { vw* vwInstance = (vw*)vwPtr;
     if (vwInstance->numpasses > 1)
@@ -27,6 +27,16 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv
         LEARNER::generic_driver(*vwInstance);
         VW::end_parser(*vwInstance);
       }
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv *env, jclass obj, jlong vwPtr)
+{ try
+  { vw* vwInstance = (vw*)vwPtr;
     VW::finish(*vwInstance);
   }
   catch(...)

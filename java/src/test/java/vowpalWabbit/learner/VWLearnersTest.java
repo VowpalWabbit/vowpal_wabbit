@@ -43,7 +43,7 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testAlreadyClosed() {
+    public void testAlreadyClosed() throws IOException {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
         VWScalarLearner s = VWLearners.create("--quiet");
@@ -52,7 +52,7 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testOldModel() {
+    public void testOldModel() throws IOException {
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
         VWScalarsLearner vw = VWLearners.create("--quiet -i src/test/resources/vw_7.8.model");
@@ -60,7 +60,7 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testBadModel() {
+    public void testBadModel() throws IOException {
         // Right now VW seg faults on a bad model.  Ideally we should throw an exception
         // that the Java layer could do something about
         thrown.expect(Exception.class);
@@ -123,7 +123,7 @@ public class VWLearnersTest extends VWTestHelper {
         predict.close();
     }
 
-    private long streamingLoadTest(int times) {
+    private long streamingLoadTest(int times) throws IOException {
         VWScalarsLearner m1 = VWLearners.create("--quiet");
         long start = System.currentTimeMillis();
         for (int i=0; i<times; ++i) {
