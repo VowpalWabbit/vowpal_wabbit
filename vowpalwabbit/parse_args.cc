@@ -375,6 +375,7 @@ void parse_source(vw& all)
   ("cache,c", "Use a cache.  The default is <data>.cache")
   ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
   ("json", "Enable JSON parsing.")
+  ("dsjson", "Enable Decision Service JSON parsing.")
   ("kill_cache,k", "do not reuse existing cache: create a new one always")
   ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
   ("no_stdin", "do not default to reading from stdin");
@@ -1230,7 +1231,7 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
     all.random_state = all.random_seed;
     parse_diagnostics(all, argc);
 
-    all.sd->weighted_unlabeled_examples = all.sd->t;
+    //    all.sd->weighted_unlabeled_examples = all.sd->t;
     all.initial_t = (float)all.sd->t;
 
     return all;
@@ -1469,8 +1470,8 @@ void sync_stats(vw& all)
 { if (all.all_reduce != nullptr)
   { float loss = (float)all.sd->sum_loss;
     all.sd->sum_loss = (double)accumulate_scalar(all, loss);
-    float weighted_examples = (float)all.sd->weighted_examples;
-    all.sd->weighted_examples = (double)accumulate_scalar(all, weighted_examples);
+    float weighted_labeled_examples = (float)all.sd->weighted_labeled_examples;
+    all.sd->weighted_labeled_examples = (double)accumulate_scalar(all, weighted_labeled_examples);
     float weighted_labels = (float)all.sd->weighted_labels;
     all.sd->weighted_labels = (double)accumulate_scalar(all, weighted_labels);
     float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
@@ -1483,7 +1484,8 @@ void sync_stats(vw& all)
 }
 
 void finish(vw& all, bool delete_all)
-{ if (!all.quiet && !all.vm.count("audit_regressor"))
+{ // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!all.quiet && !all.vm.count("audit_regressor"))
   { all.trace_message.precision(6);
 	all.trace_message << std::fixed;
     all.trace_message << endl << "finished run";
@@ -1493,20 +1495,23 @@ void finish(vw& all, bool delete_all)
     { all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
       all.trace_message << endl << "passes used = " << all.current_pass;
     }
-    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples;
+    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
     all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
     all.trace_message << endl << "average loss = ";
     if(all.holdout_set_off)
-      all.trace_message << all.sd->sum_loss / all.sd->weighted_examples;
+      if (all.sd->weighted_labeled_examples > 0)
+	all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+      else
+	all.trace_message << "n.a.";
     else if  ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
       all.trace_message << "undefined (no holdout)";
     else
       all.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     { if (all.holdout_set_off)
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_examples;
+        all.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_examples << " h";
+        all.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
     float best_constant; float best_constant_loss;

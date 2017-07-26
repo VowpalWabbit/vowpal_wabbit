@@ -293,10 +293,7 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-    { num_features += (*ec_seq)[i]->num_features;
-    }
-
-  all.sd->total_features += num_features;
+      num_features += (*ec_seq)[i]->num_features;
 
   bool is_test = false;
   if (c.gen_cs.known_cost.probability > 0)
@@ -304,11 +301,10 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
     { float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
       loss += l*preds[i].score;
     }
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
   }
   else
     is_test = true;
+  all.sd->update(ec.test_only, c.gen_cs.known_cost.probability > 0, loss, ec.weight, num_features);
 
   for (int sink : all.final_prediction_sink)
     print_action_score(sink, ec.pred.a_s, ec.tag);
@@ -330,9 +326,7 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 
 void output_example_seq(vw& all, cb_explore_adf& data)
 { if (data.ec_seq.size() > 0)
-  { all.sd->weighted_examples += 1;
-    all.sd->example_number++;
-    output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+  { output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
     if (all.raw_prediction > 0)
       all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
   }

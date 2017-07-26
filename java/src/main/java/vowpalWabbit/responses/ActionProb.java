@@ -1,9 +1,11 @@
 package vowpalWabbit.responses;
 
+import java.io.Serializable;
+
 /**
  * Created by jmorra on 8/12/16.
  */
-public class ActionProb {
+public class ActionProb implements Serializable {
 
     private final int action;
     private final float probability;

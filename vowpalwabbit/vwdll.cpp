@@ -1,10 +1,5 @@
 #include <memory>
-
-#ifdef WIN32
-#define USE_CODECVT
 #include <codecvt>
-#endif
-
 #include <locale>
 #include <string>
 
@@ -342,4 +337,3 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
 }
 
 }
-

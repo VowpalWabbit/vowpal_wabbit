@@ -127,7 +127,7 @@ void direct_print_update(vw& all, example& ec, uint32_t prediction)
 
 template<void (*T)(vw&, example&, uint32_t)>
 void print_update(vw& all, example &ec, uint32_t prediction)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { if (! all.sd->ldict)
       T(all, ec, prediction);
     else
@@ -140,10 +140,10 @@ void print_update_with_score(vw& all, example& ec, uint32_t pred) {print_update<
 
 void finish_example(vw& all, example& ec)
 { float loss = 0;
-  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass)
+  if (ec.l.multi.label != (uint32_t)ec.pred.multiclass && ec.l.multi.label != (uint32_t)-1)
     loss = ec.l.multi.weight;
 
-  all.sd->update(ec.test_only, loss, ec.l.multi.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, loss, ec.l.multi.weight, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (! all.sd->ldict)

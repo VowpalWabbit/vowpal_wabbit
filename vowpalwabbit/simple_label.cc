@@ -11,6 +11,7 @@ using namespace std;
 
 char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 { memcpy(&ld->label, c, sizeof(ld->label));
+  //  cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<  endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
@@ -100,7 +101,7 @@ label_parser simple_label = {default_simple_label, parse_simple_label,
                             };
 
 void print_update(vw& all, example& ec)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
                          ec.num_features, all.progress_add, all.progress_arg);
   }
@@ -109,10 +110,9 @@ void print_update(vw& all, example& ec)
 void output_and_account_example(vw& all, example& ec)
 { label_data ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)

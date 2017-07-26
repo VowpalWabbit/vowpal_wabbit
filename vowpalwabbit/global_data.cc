@@ -123,7 +123,11 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data*, float) {}
 
 void vw::learn(example* ec)
-{ this->l->learn(*ec);
+{
+	if (ec->test_only || !training)
+		l->predict(*ec);
+	else
+		l->learn(*ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
@@ -230,7 +234,7 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 			if (do_notify)
 				po::notify(new_vm);
 
-			// re-create args after unique 
+			// re-create args after unique
 			all.args = opts_to_args(parsed.options);
 			return new_vm;
 		}
@@ -332,7 +336,7 @@ po::variables_map add_options_skip_duplicates(vw& all, po::options_description& 
 			}
 			catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::invalid_command_line_syntax>>& e)
 			{
-				// remember that this option needs an argument to be able to remove the option along with the argument 
+				// remember that this option needs an argument to be able to remove the option along with the argument
 				// in the next iteration
 				if (e.kind() == e.missing_parameter)
 					previous_option_needs_argument = true;
@@ -369,7 +373,7 @@ bool no_new_options(vw& all)
 	auto new_vm = add_options_skip_duplicates(all, *all.new_opts, false /* do_notify */);
 
 	all.opts.add(*all.new_opts);
-		
+
 	delete all.new_opts;
 	for (auto& it : new_vm)
 		all.vm.insert(it);
@@ -403,7 +407,7 @@ int vw_ostream::vw_streambuf::sync()
 	int ret = std::stringbuf::sync();
 	if (ret)
 		return ret;
-		
+
 	parent.trace_listener(parent.trace_context, str());
 	str("");
 	return 0; // success
@@ -422,6 +426,8 @@ vw::vw()
 { sd = &calloc_or_throw<shared_data>();
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
+  sd->first_observed_label = FLT_MAX;
+  sd->is_more_than_two_labels_observed = false;
   sd->max_label = 0;
   sd->min_label = 0;
 
@@ -544,4 +550,3 @@ vw::vw()
   sd->multiclass_log_loss = 0;
   sd->holdout_multiclass_log_loss = 0;
 }
-

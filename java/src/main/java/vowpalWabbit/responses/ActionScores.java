@@ -1,11 +1,12 @@
 package vowpalWabbit.responses;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Created by jmorra on 8/12/16.
  */
-public class ActionScores {
+public class ActionScores implements Serializable {
 
     // Although this is modifiable it is not intended to be updated by the user.  This data structure mimics the
     // C data structure.

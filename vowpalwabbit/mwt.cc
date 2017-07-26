@@ -155,10 +155,9 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
 void finish_example(vw& all, mwt& c, example& ec)
 { float loss = 0.;
   if (c.learn)
-  { if (c.observation != nullptr)
+    if (c.observation != nullptr)
       loss = get_unbiased_cost(c.observation, (uint32_t)ec.pred.scalars[0]);
-  }
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, c.observation!=nullptr, loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     print_scalars(sink, ec.pred.scalars, ec.tag);

@@ -18,7 +18,7 @@ trim_trailing_whitespace = true
 [*.{cc,h}]
 indent_style = space
 indent_size = 2
-indent_brace_style = Horstmann
+indent_brace_style = Allman
 
 # Makefiles need tab indentation
 [Makefile]

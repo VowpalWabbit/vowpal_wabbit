@@ -16,8 +16,9 @@ public final class VW {
      * This main method only exists to test the library implementation.  To test it just run
      * java -cp target/vw-jni-*-SNAPSHOT.jar vowpalWabbit.VW
      * @param args No args needed.
+     * @throws Exception possibly during close.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         VWLearners.create("").close();
         VWLearners.create("--quiet").close();
     }

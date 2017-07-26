@@ -187,29 +187,33 @@ void global_print_newline(vw& all)
 
 // how to
 
+  bool update_statistics(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+  {
+    size_t num_features = 0;
+    
+    uint32_t action = ec.pred.a_s[0].action;
+    for (size_t i = 0; i < (*ec_seq).size(); i++)
+      if (!CB::ec_is_example_header(*(*ec_seq)[i]))
+	num_features += (*ec_seq)[i]->num_features;
+    
+    float loss = 0.;
+    
+    bool is_test = false;
+    if (c.gen_cs.known_cost.probability > 0)
+      loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
+    else
+      is_test = true;
+    
+    all.sd->update(ec.test_only, !is_test, loss, ec.weight, num_features);
+    return is_test;
+  }
+  
 void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
 { if (example_is_newline_not_header(ec)) return;
 
-  size_t num_features = 0;
-
-  float loss = 0.;
+  bool is_test = update_statistics(all, c, ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
-  for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-      num_features += (*ec_seq)[i]->num_features;
-
-  all.sd->total_features += num_features;
-
-  bool is_test = false;
-  if (c.gen_cs.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  }
-  else
-    is_test = true;
-
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)action, 0, ec.tag);
 
@@ -228,33 +232,16 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>* ec_seq)
-{ label& ld = head_ec.l.cb;
+void output_rank_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+{ label& ld = ec.l.cb;
   v_array<CB::cb_class> costs = ld.costs;
 
-  if (example_is_newline_not_header(head_ec)) return;
+  if (example_is_newline_not_header(ec)) return;
 
-  size_t num_features = 0;
-  for (size_t i = 0; i < (*ec_seq).size(); i++)
-    if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-      num_features += (*ec_seq)[i]->num_features;
-
-  all.sd->total_features += num_features;
-
-  float loss = 0.;
-  action_scores& preds = head_ec.pred.a_s;
-  bool is_test = false;
-
-  if (c.gen_cs.known_cost.probability > 0)
-  { loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, preds[0].action);
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  }
-  else
-    is_test = true;
+  bool is_test = update_statistics(all, c, ec, ec_seq);
 
   for (int sink : all.final_prediction_sink)
-    print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
+    print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -263,19 +250,15 @@ void output_rank_example(vw& all, cb_adf& c, example& head_ec, v_array<example*>
     { if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
+    all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, head_ec, ec_seq, true);
+  CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
 void output_example_seq(vw& all, cb_adf& data)
 { if (data.ec_seq.size() > 0)
-  { all.sd->weighted_examples += 1;
-    all.sd->example_number++;
-
-    //bool hit_loss = false;
-
+  { 
     if (data.rank_all)
       output_rank_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
     else
