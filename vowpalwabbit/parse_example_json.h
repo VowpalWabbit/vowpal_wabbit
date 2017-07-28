@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
@@ -1125,9 +1125,8 @@ namespace VW
 		std::vector<char> line_vec;
 		if (copy_line)
 		{
-			line_vec.reserve(length);
-			memcpy(&line_vec[0], line, length);
-			line = &line_vec[0];
+            line_vec.insert(line_vec.end(), line, line + length);
+			line = &line_vec.front();
 		}
 
       InsituStringStream ss(line);
