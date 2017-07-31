@@ -15,7 +15,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   if (label1 != label2)
   { 
     label1_cnt = (float) (all.sd->weighted_labels - label2*all.sd->weighted_labeled_examples)/(label1 - label2);
-    label2_cnt = all.sd->weighted_labeled_examples - label1_cnt;
+    label2_cnt = (float)all.sd->weighted_labeled_examples - label1_cnt;
   }
   else
     return false;

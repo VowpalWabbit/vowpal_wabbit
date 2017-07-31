@@ -336,8 +336,7 @@ base_learner* cb_explore_setup(vw& all)
     data.second_cs_label.costs.resize(num_actions);
     data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
     data.epsilon = 0.05f;
-    sprintf(type_string, "%lu", data.cover_size);
-    *all.file_options << " --cover " << type_string;
+    *all.file_options << " --cover " << data.cover_size;
 
     if (vm.count("epsilon"))
       data.epsilon = vm["epsilon"].as<float>();
@@ -351,14 +350,12 @@ base_learner* cb_explore_setup(vw& all)
   }
   else if (vm.count("bag"))
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
-    sprintf(type_string, "%lu", data.bag_size);
-    *all.file_options << " --bag "<<type_string;
+    *all.file_options << " --bag "<< data.bag_size;
     l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
   }
   else if (vm.count("first") )
   { data.tau = (uint32_t)vm["first"].as<size_t>();
-    sprintf(type_string, "%lu", data.tau);
-    *all.file_options << " --first "<<type_string;
+    *all.file_options << " --first "<< data.tau;
     l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
   }
   else
