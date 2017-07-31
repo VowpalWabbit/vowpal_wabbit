@@ -972,8 +972,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     uint32_t stride_shift = all->weights.stride_shift();
 
     if (!all->quiet)
-    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << stride_shift)) >> 20);
-    }
+		cerr << "m = " << m << endl << "nAllocated " << ((long unsigned int)all->length()*(sizeof(float)*(b.mem_stride) + (sizeof(weight) << stride_shift)) >> 20) << "M for weights and mem" << endl;
 
     b.net_time = 0.0;
     ftime(&b.t_start_global);
