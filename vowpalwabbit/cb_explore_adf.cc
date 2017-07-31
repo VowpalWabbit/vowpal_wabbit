@@ -484,8 +484,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
     data.explore_type = COVER;
     problem_multiplier = data.cover_size+1;
-    sprintf(type_string, "%lu", data.cover_size);
-    *all.file_options << " --cover " << type_string;
+    *all.file_options << " --cover " << data.cover_size;
 
     if (!vm.count("epsilon"))
       data.epsilon = 0.05f;
@@ -494,14 +493,12 @@ base_learner* cb_explore_adf_setup(vw& all)
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     data.explore_type = BAG_EXPLORE;
     problem_multiplier = data.bag_size;
-    sprintf(type_string, "%lu", data.bag_size);
-    *all.file_options << " --bag "<<type_string;
+    *all.file_options << " --bag "<< data.bag_size;
   }
   else if (vm.count("first"))
   { data.tau = (uint32_t)vm["first"].as<size_t>();
     data.explore_type = EXPLORE_FIRST;
-    sprintf(type_string, "%lu", data.tau);
-    *all.file_options << " --first "<<type_string;
+    *all.file_options << " --first "<< data.tau;
   }
   else if (vm.count("softmax"))
   { data.lambda = 1.0;

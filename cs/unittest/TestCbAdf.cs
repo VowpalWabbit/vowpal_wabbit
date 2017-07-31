@@ -219,7 +219,7 @@ namespace cs_unittest
                 _labelIndex = 1
             });
 
-            using (var vw = new VowpalWabbitJson("--cb_explore_adf --bag 4 --epsilon 0.0001 --cb_type mtr --marginal K -q UG -b 26 --power_t 0 --l1 1e-9 -l 4e-3"))
+            using (var vw = new VowpalWabbitJson("--cb_explore_adf --bag 4 --epsilon 0.0001 --cb_type mtr --marginal K -q UG -b 24 --power_t 0 --l1 1e-9 -l 4e-3"))
             {
                 for (int i = 0; i < 50; i++)
                 {
@@ -264,7 +264,7 @@ namespace cs_unittest
             }
 
             using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("cbadfexplore.model", FileMode.Open) }))
-            { 
+            {
                 using (var vwPool = new VowpalWabbitJsonThreadedPrediction(vwModel))
                 using (var vw = vwPool.GetOrCreate())
                 {
