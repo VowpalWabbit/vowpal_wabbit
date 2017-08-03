@@ -52,6 +52,11 @@ namespace VW.Serializer
             /// The feature type (e.g. <see cref="PreHashedFeature"/>).
             /// </summary>
             internal Type MetaFeatureType;
+
+            /// <summary>
+            /// True if the method can marshal a full namespace.
+            /// </summary>
+            internal bool IsNamespace;
         }
 
         /// <summary>
@@ -244,7 +249,6 @@ namespace VW.Serializer
             }
         }
 
-
         private MarshalMethod ResolveFeatureMarshalMethod(FeatureExpression feature)
         {
             if (feature.OverrideSerializeMethod != null)
@@ -302,9 +306,18 @@ namespace VW.Serializer
                 featureType = featureType.GetGenericArguments()[0];
             }
 
+            var method = ResolveFeatureMarshalMethod("MarshalNamespace", metaFeatureTypeCandidates, featureType, isNamespace: true);
+            if (method == null)
+                method = ResolveFeatureMarshalMethod(methodName, metaFeatureTypeCandidates, featureType, isNamespace: false);
+
+            return method;
+        }
+
+        private MarshalMethod ResolveFeatureMarshalMethod(string methodName, Type[] metaFeatureTypeCandidates, Type featureType, bool isNamespace)
+        {
             foreach (var metaFeatureType in metaFeatureTypeCandidates)
             {
-                // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
+                // find visitor.<methodname>(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
                 var method = this.marshallerTypes
                     .Select(visitor => ReflectionHelper.FindMethod(
                             visitor,
@@ -316,13 +329,12 @@ namespace VW.Serializer
                     .FirstOrDefault(m => m != null);
 
                 if (method != null)
-                {
                     return new MarshalMethod
                     {
                         Method = method,
-                        MetaFeatureType = metaFeatureType
+                        MetaFeatureType = metaFeatureType,
+                        IsNamespace = isNamespace
                     };
-                }
             }
 
             return null;
@@ -466,9 +478,10 @@ namespace VW.Serializer
 
         private void CreateNamespacesAndFeatures()
         {
-            var featuresByNamespace = this.allFeatures.GroupBy(
-                f => new { f.Source.Namespace, f.Source.FeatureGroup },
-                f => f);
+            var featuresByNamespace = this.allFeatures
+                .GroupBy(
+                    f => new { f.Source.Namespace, f.Source.FeatureGroup },
+                    f => f);
 
             foreach (var ns in featuresByNamespace)
             {
@@ -487,6 +500,8 @@ namespace VW.Serializer
                         Expression.Constant(ns.Key.Namespace, typeof(string)),
                         ns.Key.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
                          Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)ns.Key.FeatureGroup)))));
+
+                var fullNamespaceCalls = new List<Expression>();
 
                 var featureVisits = new List<Expression>(ns.Count());
                 foreach (var feature in ns.OrderBy(f => f.Source.Order))
@@ -508,7 +523,7 @@ namespace VW.Serializer
                     Expression featureVisit;
                     if (feature.Source.IsNullable)
                     {
-                        // if (value != null) featurzier.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
+                        // if (value != null) featurizer.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
                         featureVisit = Expression.IfThen(
                             Expression.NotEqual(valueVariable, Expression.Constant(null)),
                                 Expression.Call(
@@ -521,7 +536,7 @@ namespace VW.Serializer
                     }
                     else
                     {
-                        // featurzier.MarshalXXX(vw, context, ns, feature, value);
+                        // featurizer.MarshalXXX(vw, context, ns, feature, value);
                         featureVisit = Expression.Call(
                             marshaller,
                             feature.MarshalMethod.Method,
@@ -543,13 +558,19 @@ namespace VW.Serializer
                         featureVisit = Expression.IfThen(condition, featureVisit);
                     }
 
-                    featureVisits.Add(featureVisit);
+                    if (feature.MarshalMethod.IsNamespace)
+                        this.perExampleBody.Add(featureVisit);
+                    else
+                        featureVisits.Add(featureVisit);
 	            }
 
-                var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
+                if (featureVisits.Count > 0)
+                {
+                    var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
 
-                // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
-                this.perExampleBody.Add(this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda));
+                    // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
+                    this.perExampleBody.Add(this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda));
+                }
             }
         }
 

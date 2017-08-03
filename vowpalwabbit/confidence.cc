@@ -45,7 +45,7 @@ void confidence_print_result(int f, float res, float confidence, v_array<char> t
 void output_and_account_confidence_example(vw& all, example& ec)
 { label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label!=FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;

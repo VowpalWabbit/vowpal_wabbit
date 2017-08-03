@@ -9,16 +9,13 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VW.Serializer
 {
     /// <summary>
     /// Custom JSON converter returning the underlying raw json (avoiding object allocation).
     /// </summary>
-    public class JsonRawStringConverter : JsonConverter
+    public class JsonRawStringConverter : JsonConverter, IVowpalWabbitJsonConverter
     {
         /// <summary>
         /// Supports string only.
@@ -43,9 +40,25 @@ namespace VW.Serializer
         {
             var valueString = value as string;
             if (valueString != null)
+            {
                 writer.WriteRawValue(valueString);
-            else
-                serializer.Serialize(writer, value);
+                return;
+            }
+
+            serializer.Serialize(writer, value);
+        }
+
+        /// <summary>
+        /// List of independently parseable JSON fragments.
+        /// </summary>
+        public IEnumerable<string> JsonFragments(object value)
+        {
+            var valueString = value as string;
+            if (valueString != null)
+            {
+                yield return valueString;
+                yield break; 
+            }
         }
     }
 }

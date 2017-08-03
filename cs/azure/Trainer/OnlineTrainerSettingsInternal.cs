@@ -6,6 +6,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+using Microsoft.ServiceBus.Messaging;
 using System;
 using VW.Azure.Trainer.Checkpoint;
 
@@ -40,6 +41,11 @@ namespace VW.Azure.Trainer
         /// Input data Azure EventHub connection string.
         /// </summary>
         public string JoinedEventHubConnectionString { get; set; }
+
+        /// <summary>
+        /// Consumer group used for joined events.
+        /// </summary>
+        public string JoinedEventHubConsumerGroup { get; set; } = EventHubConsumerGroup.DefaultGroupName;
 
         /// <summary>
         /// Evaluation output Azure Eventhub connection string.

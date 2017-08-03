@@ -231,7 +231,7 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
   ec.l.cs = ld;
 }
 
-bool check_ldf_sequence(ldf& data, size_t start_K)
+bool test_ldf_sequence(ldf& data, size_t start_K)
 { bool isTest;
   if (start_K == data.ec_seq.size())
     isTest = true;
@@ -384,7 +384,7 @@ void do_actual_learning(ldf& data, base_learner& base)
     for (uint32_t k=1; k<K; k++)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
-  bool isTest = check_ldf_sequence(data, start_K);
+  bool isTest = test_ldf_sequence(data, start_K);
   /////////////////////// do prediction
   uint32_t predicted_K = start_K;
   if(data.rank)
@@ -590,7 +590,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 void output_example_seq(vw& all, ldf& data)
 { size_t K = data.ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(data.ec_seq))
-  { all.sd->weighted_examples += 1;
+  {
+    size_t start_K = 0;
+    if (ec_is_example_header(*(data.ec_seq[0])))
+      start_K = 1;
+    if (test_ldf_sequence(data, start_K))
+      all.sd->weighted_unlabeled_examples += 1;
+    else
+      all.sd->weighted_labeled_examples += 1;
     all.sd->example_number++;
 
     bool hit_loss = false;
@@ -650,7 +657,11 @@ void end_pass(ldf& data)
 
 void finish_singleline_example(vw& all, ldf& data, example& ec)
 { if (! ec_is_label_definition(ec))
-  { all.sd->weighted_examples += 1;
+  {
+    if (COST_SENSITIVE::example_is_test(ec))
+      all.sd->weighted_unlabeled_examples += ec.weight;
+    else
+      all.sd->weighted_labeled_examples += ec.weight;
     all.sd->example_number++;
   }
   bool hit_loss = false;

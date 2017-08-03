@@ -204,9 +204,9 @@ struct shared_data
   uint64_t total_features;
 
   double t;
-  double weighted_examples;
+  double weighted_labeled_examples;
+  double old_weighted_labeled_examples;
   double weighted_unlabeled_examples;
-  double old_weighted_examples;
   double weighted_labels;
   double sum_loss;
   double sum_loss_since_last_dump;
@@ -251,7 +251,10 @@ struct shared_data
   static const int prec_current_predict = 4;
   static const int col_current_features = 8;
 
-  void update(bool test_example, float loss, float weight, size_t num_features)
+  double weighted_examples()
+  {return weighted_labeled_examples + weighted_unlabeled_examples;}
+
+  void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
   { t += weight;
     if(test_example)
     { weighted_holdout_examples += weight;//test weight seen
@@ -262,21 +265,25 @@ struct shared_data
       holdout_sum_loss_since_last_pass += loss;//since last pass
     }
     else
-    { weighted_examples += weight;
-      sum_loss += loss;
-      sum_loss_since_last_dump += loss;
-      total_features += num_features;
-      example_number++;
-    }
+      {
+	if (labeled_example)
+	  weighted_labeled_examples += weight;
+	else
+	  weighted_unlabeled_examples += weight;
+	sum_loss += loss;
+	sum_loss_since_last_dump += loss;
+	total_features += num_features;
+	example_number++;
+      }
   }
 
   inline void update_dump_interval(bool progress_add, float progress_arg)
   { sum_loss_since_last_dump = 0.0;
-    old_weighted_examples = weighted_examples;
+    old_weighted_labeled_examples = weighted_labeled_examples;
     if (progress_add)
-      dump_interval = (float)weighted_examples + progress_arg;
+      dump_interval = (float)weighted_examples() + progress_arg;
     else
-      dump_interval = (float)weighted_examples * progress_arg;
+      dump_interval = (float)weighted_examples() * progress_arg;
   }
 
   void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction,
@@ -357,17 +364,23 @@ struct shared_data
       holding_out = true;
     }
     else
-    { std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed
-                << (sum_loss / weighted_examples)
-                << " "
-                << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed
-                << (sum_loss_since_last_dump / (weighted_examples - old_weighted_examples));
+      {
+	std::cerr << std::setw(col_avg_loss) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
+	if (weighted_labeled_examples > 0.)
+	  std::cerr << (sum_loss / weighted_labeled_examples);
+	else
+	  std::cerr << "n.a.";
+	std::cerr << " "
+		  << std::setw(col_since_last) << std::setprecision(prec_avg_loss) << std::right << std::fixed;
+	if (weighted_labeled_examples == old_weighted_labeled_examples)
+	  std::cerr << "n.a.";
+	else
+	  std::cerr << (sum_loss_since_last_dump / (weighted_labeled_examples - old_weighted_labeled_examples));
     }
-
     std::cerr << " "
               << std::setw(col_example_counter) << std::right << example_number
               << " "
-              << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples
+              << std::setw(col_example_weight) << std::setprecision(prec_example_weight) << std::right << weighted_examples()
               << " "
               << std::setw(col_current_label) << std::right << label
               << " "

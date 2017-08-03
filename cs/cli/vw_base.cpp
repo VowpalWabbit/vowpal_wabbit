@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -22,13 +22,6 @@ using namespace System::Text;
 
 namespace VW
 {
-static VowpalWabbitBase::VowpalWabbitBase()
-{ // make sure zlib.dll is loaded before anybody changes the current directory and we can't load anymore...
-  auto str = System::IO::Path::Combine(System::IO::Path::GetDirectoryName(VowpalWabbitBase::typeid->Assembly->Location), "zlib.dll");
-  wstring path = msclr::interop::marshal_as<std::wstring>(str);
-  LoadLibrary(path.c_str());
-}
-
 void trace_listener_cli(void* context, const std::string& message)
 {
 	auto listener = (Action<String^>^)GCHandle::FromIntPtr(IntPtr(context)).Target;
@@ -39,9 +32,9 @@ void trace_listener_cli(void* context, const std::string& message)
 VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
   : m_examples(nullptr), m_vw(nullptr), m_model(nullptr), m_settings(settings != nullptr ? settings : gcnew VowpalWabbitSettings), m_instanceCount(0)
 { if (m_settings->EnableThreadSafeExamplePooling)
-    m_examples = Bag::CreateLockFree<VowpalWabbitExample^>();
+    m_examples = Bag::CreateLockFree<VowpalWabbitExample^>(m_settings->MaxExamples);
   else
-    m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
+	m_examples = Bag::Create<VowpalWabbitExample^>(m_settings->MaxExamples);
 
   try
   { try
@@ -78,7 +71,8 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
           if (!settings->Arguments->Contains("--no_stdin"))
             string += " --no_stdin";
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
-          settings->ModelStream->Close();
+          delete settings->ModelStream;
+		  settings->ModelStream = nullptr;
         }
       }
 

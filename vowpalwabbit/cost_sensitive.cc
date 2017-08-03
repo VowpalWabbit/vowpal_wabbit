@@ -173,7 +173,7 @@ label_parser cs_label = {default_label, parse_label,
                         };
 
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { size_t num_current_features = ec.num_features;
     // for csoaa_ldf we want features from the whole (multiline example),
     // not only from one line (the first one) represented by ec
@@ -238,9 +238,9 @@ void output_example(vw& all, example& ec)
 
     loss = chosen_loss - min;
   }
-
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
-
+  
+  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  
   for (int sink : all.final_prediction_sink)
     if (! all.sd->ldict)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);

@@ -13,9 +13,9 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   float label2_cnt;
 
   if (label1 != label2)
-  { float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t);
-    label1_cnt = (float) (all.sd->weighted_labels - label2*weighted_labeled_examples)/(label1 - label2);
-    label2_cnt = weighted_labeled_examples - label1_cnt;
+  { 
+    label1_cnt = (float) (all.sd->weighted_labels - label2*all.sd->weighted_labeled_examples)/(label1 - label2);
+    label2_cnt = (float)all.sd->weighted_labeled_examples - label1_cnt;
   }
   else
     return false;
@@ -32,9 +32,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     funcName = "squared";
 
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
-  { best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t); //GENERIC. WAS: (label1*label1_cnt + label2*label2_cnt) / (label1_cnt + label2_cnt);
-
-  }
+    best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_labeled_examples);
   else if (all.sd->is_more_than_two_labels_observed)
   { //loss functions below don't have generic formuas for constant yet.
     return false;

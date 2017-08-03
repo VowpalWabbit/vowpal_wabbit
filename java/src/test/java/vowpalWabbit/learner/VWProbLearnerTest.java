@@ -3,6 +3,8 @@ package vowpalWabbit.learner;
 import org.junit.Test;
 import vowpalWabbit.VWTestHelper;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertArrayEquals;
 
 /**
@@ -11,7 +13,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class VWProbLearnerTest extends VWTestHelper {
 
     @Test
-    public void prob() {
+    public void prob() throws IOException {
         String[][] data = new String[][]{
             new String[]{"1:1.0 | a_1 b_1 c_1", "2:0.0 | a_2 b_2 c_2", "3:2.0 | a_3 b_3 c_3"},
             new String[]{"1:1.0 | b_1 c_1 d_1", "2:0.0 | b_2 c_2 d_2"},

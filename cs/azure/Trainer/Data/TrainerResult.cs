@@ -47,6 +47,8 @@ namespace VW.Azure.Trainer.Data
 
         internal string PartitionKey { get; set; }
 
+        internal string PartitionId { get; set; }
+
         internal int[] ProgressiveRanking { get; private set; }
 
         internal float[] ProgressiveProbabilities { get; private set; }
@@ -58,5 +60,9 @@ namespace VW.Azure.Trainer.Data
         internal float ProbabilityOfDrop { get; set; }
 
         internal Dictionary<int, string> ActionsTags { get; set; }
+
+        internal string EventId { get; set; }
+
+        internal DateTime Timestamp { get; set; }
     }
 }

@@ -111,6 +111,8 @@ class VWBuildExt(_build_ext):
                copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
             elif sys.version_info[0] == 3 and sys.version_info[1] == 5:
                copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
+            elif sys.version_info[0] == 3 and sys.version_info[1] == 6:
+               copy(path.join(here, 'bin', 'pyvw36.dll'), self.get_ext_fullpath(ext.name))
             else:
                raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:

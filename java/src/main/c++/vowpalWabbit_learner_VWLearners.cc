@@ -17,9 +17,41 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv *
   return vwPtr;
 }
 
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPasses(JNIEnv *env, jclass obj, jlong vwPtr)
+{ try
+  { vw* vwInstance = (vw*)vwPtr;
+    if (vwInstance->numpasses > 1)
+      { adjust_used_index(*vwInstance);
+        vwInstance->do_reset_source = true;
+        VW::start_parser(*vwInstance);
+        LEARNER::generic_driver(*vwInstance);
+        VW::end_parser(*vwInstance);
+      }
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+
 JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv *env, jclass obj, jlong vwPtr)
 { try
-  { VW::finish(*((vw*)vwPtr));
+  { vw* vwInstance = (vw*)vwPtr;
+    VW::finish(*vwInstance);
+  }
+  catch(...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(JNIEnv *env, jclass obj, jlong vwPtr, jstring filename)
+{ try
+  {
+    const char* utf_string = env->GetStringUTFChars(filename, NULL);
+    std::string filenameCpp(utf_string);
+    env->ReleaseStringUTFChars(filename, utf_string);
+    env->DeleteLocalRef(filename);
+    VW::save_predictor(*(vw*)vwPtr, filenameCpp);
   }
   catch(...)
   { rethrow_cpp_exception_as_java_exception(env);

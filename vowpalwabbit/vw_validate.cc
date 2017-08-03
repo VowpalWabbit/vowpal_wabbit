@@ -10,8 +10,10 @@ license as described in the file LICENSE.
 namespace VW
 {
 void validate_version(vw& all)
-{ if (all.model_file_ver < LAST_COMPATIBLE_VERSION || all.model_file_ver > PACKAGE_VERSION)
+{ if (all.model_file_ver < LAST_COMPATIBLE_VERSION)
     THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
+  if (all.model_file_ver > PACKAGE_VERSION)
+    std::cerr << "Warning: model fire version is more recent than VW version.  This may not work." << std::endl;
 }
 
 void validate_min_max_label(vw& all)

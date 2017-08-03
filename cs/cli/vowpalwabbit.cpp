@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -85,15 +85,18 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->current_pass;
   }
 
-  stats->WeightedExampleSum = m_vw->sd->weighted_examples;
+  stats->WeightedExampleSum = m_vw->sd->weighted_examples();
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
-  if (m_vw->holdout_set_off || (m_vw->sd->holdout_best_loss == FLT_MAX))
-  { stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_examples;
-  }
+  if (m_vw->holdout_set_off)
+	  if (m_vw->sd->weighted_labeled_examples > 0)
+		  stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_labeled_examples;
+	  else
+		  stats->AverageLoss = System::Double::NaN;
+  else if ((m_vw->sd->holdout_best_loss == FLT_MAX) || (m_vw->sd->holdout_best_loss == FLT_MAX * 0.5))
+	  stats->AverageLoss = System::Double::NaN;
   else
-  { stats->AverageLoss = m_vw->sd->holdout_best_loss;
-  }
+	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
   if (get_best_constant(*m_vw, best_constant, best_constant_loss))
@@ -244,6 +247,71 @@ example& get_example_from_pool(void* v)
   (*state)->examples->Add(ex);
 
   return *ex->m_example;
+}
+
+List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<Byte>^ json, int offset, int length, bool copyJson, [Out] VowpalWabbitDecisionServiceInteractionHeader^% header)
+{
+#if _DEBUG
+	if (json == nullptr)
+		throw gcnew ArgumentNullException("json");
+#endif
+
+	try
+	{
+		header = gcnew VowpalWabbitDecisionServiceInteractionHeader();
+
+		ParseJsonState^ state = gcnew ParseJsonState();
+		state->vw = this;
+		state->examples = gcnew List<VowpalWabbitExample^>();
+
+		try
+		{
+			auto ex = GetOrCreateNativeExample();
+			state->examples->Add(ex);
+
+			v_array<example*> examples = v_init<example*>();
+			example* native_example = ex->m_example;
+			examples.push_back(native_example);
+
+			interior_ptr<ParseJsonState^> state_ptr = &state;
+
+			pin_ptr<unsigned char> data = &json[0];
+			data += offset;
+
+			DecisionServiceInteraction interaction;
+
+			if (m_vw->audit)
+				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+			else
+				VW::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+
+			// finalize example
+			VW::setup_examples(*m_vw, examples);
+
+			header->EventId = gcnew String(interaction.eventId.c_str());
+			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
+			int index = 0;
+			for (auto a : interaction.actions)
+				header->Actions[index++] = (int)a;
+			
+			header->Probabilities = gcnew cli::array<float>((int)interaction.probabilities.size());
+			index = 0;
+			for (auto p : interaction.probabilities)
+				header->Probabilities[index++] = p;
+
+			header->ProbabilityOfDrop = interaction.probabilityOfDrop;
+
+			return state->examples;
+		}
+		catch (...)
+		{
+			// cleanup
+			for each (auto ex in state->examples)
+				delete ex;
+			throw;
+		}
+	}
+	CATCHRETHROW
 }
 
   List<VowpalWabbitExample^>^ VowpalWabbit::ParseJson(String^ line)

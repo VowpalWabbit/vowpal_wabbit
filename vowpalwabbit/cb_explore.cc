@@ -240,7 +240,7 @@ void finish(cb_explore& data)
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& pred_string)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { stringstream label_string;
     if (is_test)
       label_string << " unknown";
@@ -258,8 +258,8 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
     for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
       loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.a_s[i].score;
-
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  
+  all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
   char temp_str[20];
   stringstream ss, sso;
@@ -336,8 +336,7 @@ base_learner* cb_explore_setup(vw& all)
     data.second_cs_label.costs.resize(num_actions);
     data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
     data.epsilon = 0.05f;
-    sprintf(type_string, "%lu", data.cover_size);
-    *all.file_options << " --cover " << type_string;
+    *all.file_options << " --cover " << data.cover_size;
 
     if (vm.count("epsilon"))
       data.epsilon = vm["epsilon"].as<float>();
@@ -351,14 +350,12 @@ base_learner* cb_explore_setup(vw& all)
   }
   else if (vm.count("bag"))
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
-    sprintf(type_string, "%lu", data.bag_size);
-    *all.file_options << " --bag "<<type_string;
+    *all.file_options << " --bag "<< data.bag_size;
     l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
   }
   else if (vm.count("first") )
   { data.tau = (uint32_t)vm["first"].as<size_t>();
-    sprintf(type_string, "%lu", data.tau);
-    *all.file_options << " --first "<<type_string;
+    *all.file_options << " --first "<< data.tau;
     l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
   }
   else

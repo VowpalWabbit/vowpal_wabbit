@@ -201,7 +201,7 @@ namespace VW.Azure.Trainer
             serviceBusConnectionStringBuilder.EntityPath = string.Empty;
 
             this.eventProcessorHost = new EventProcessorHost(settings.Metadata.ApplicationID, joinedEventhubName,
-                EventHubConsumerGroup.DefaultGroupName, serviceBusConnectionStringBuilder.ToString(), settings.StorageConnectionString);
+                settings.JoinedEventHubConsumerGroup, serviceBusConnectionStringBuilder.ToString(), settings.StorageConnectionString);
 
             // used by this.InitialOffsetProvider if no checkpointed state is found
             this.eventHubStartDateTimeUtc = settings.EventHubStartDateTimeUtc;

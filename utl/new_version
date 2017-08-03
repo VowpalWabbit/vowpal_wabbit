@@ -7,8 +7,8 @@
 #sudo apt-get install npm
 #sudo npm install -g eclint
 
-find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | xargs eclint fix
-find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | grep -v vw_clr | xargs astyle -s2 --style=horstmann --lineend=linux --keep-one-line-blocks --keep-one-line-statements
+#find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | xargs eclint fix
+#find -regextype posix-extended -regex '.*\.(cc|h|cpp)' | grep -v vw_clr | xargs astyle -s2 --style=horstmann --lineend=linux --keep-one-line-blocks --keep-one-line-statements
 git commit -a -m "consistent indentation with astyle (before releasing $1)"
 git push
 git branch $1

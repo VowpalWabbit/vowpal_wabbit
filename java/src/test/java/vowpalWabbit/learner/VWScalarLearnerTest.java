@@ -17,8 +17,7 @@ import static org.junit.Assert.assertNotEquals;
 public class VWScalarLearnerTest extends VWTestHelper {
     private VWScalarLearner houseScorer;
 
-    @Before
-    public void setup() throws IOException {
+    private VWScalarLearner initHouse(String vwArgs) throws IOException {
         // Since we want this test to continue to work between VW changes, we can't store the model
         // Instead, we'll make a new model for each test
         String houseModel = temporaryFolder.newFile().getAbsolutePath();
@@ -26,12 +25,17 @@ public class VWScalarLearnerTest extends VWTestHelper {
                 "0 | price:.23 sqft:.25 age:.05 2006",
                 "1 2 'second_house | price:.18 sqft:.15 age:.35 1976",
                 "0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924"};
-        VWScalarLearner learner = VWLearners.create(" --quiet -f " + houseModel);
+        VWScalarLearner learner = VWLearners.create(vwArgs + " -f " + houseModel);
         for (String d : houseData) {
             learner.learn(d);
         }
         learner.close();
-        houseScorer = VWLearners.create("--quiet -t -i " + houseModel);
+        return VWLearners.create("--quiet -t -i " + houseModel);
+    }
+
+    @Before
+    public void setup() throws IOException {
+        houseScorer = initHouse(" --quiet --holdout_off");
     }
 
     @After
@@ -54,7 +58,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testLearn() {
+    public void testLearn() throws IOException {
         VWScalarLearner learner = VWLearners.create("--quiet");
         String heightData = "|f height:0.23 weight:0.25 width:0.05";
         float firstPrediction = learner.learn("0.1 " + heightData);
@@ -64,7 +68,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void testManySamples() {
+    public void testManySamples() throws IOException {
         File model = new File("basic.model");
         model.deleteOnExit();
         VWScalarLearner m = VWLearners.create("--quiet --loss_function logistic --link logistic -f " + model.getAbsolutePath());
@@ -80,7 +84,7 @@ public class VWScalarLearnerTest extends VWTestHelper {
     }
 
     @Test
-    public void twoModelTest() {
+    public void twoModelTest() throws IOException {
         VWScalarLearner m1 = VWLearners.create("--quiet");
         VWScalarLearner m2 = VWLearners.create("--quiet");
 
@@ -89,5 +93,20 @@ public class VWScalarLearnerTest extends VWTestHelper {
         float b = m2.predict("-1 | ");
         m2.close();
         assertEquals(a, b, 0.000001);
+    }
+
+    @Test
+    public void testMultiplePasses() throws IOException {
+        String cache = temporaryFolder.newFile().getAbsolutePath();
+        VWScalarLearner multiPassModel = initHouse(" --quiet --holdout_off --passes 10 -k --cache_file " + cache);
+        try {
+            String ex = "| price:0.23 sqft:0.25 age:0.05 2006";
+            float singlePassExample = houseScorer.predict(ex);
+            float multiPassExample = multiPassModel.predict(ex);
+            assertNotEquals(singlePassExample, multiPassExample, 0.1);
+        }
+        finally {
+            multiPassModel.close();
+        }
     }
 }

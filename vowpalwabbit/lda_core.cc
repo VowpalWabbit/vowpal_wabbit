@@ -744,15 +744,14 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 void return_example(vw& all, example& ec)
 { label_data ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   for (int f: all.final_prediction_sink)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
-  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
                          ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all,&ec);
@@ -1218,8 +1217,8 @@ LEARNER::base_learner *lda_setup(vw &all)
   ld.mmode = vm["math-mode"].as<lda_math_mode>();
   ld.compute_coherence_metrics = vm["metrics"].as<bool>();
   if (ld.compute_coherence_metrics)
-  { ld.feature_counts.resize((uint32_t)1 << all.num_bits);
-    ld.feature_to_example_map.resize((uint32_t)1 << all.num_bits);
+  { ld.feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld.feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
@@ -1245,7 +1244,7 @@ LEARNER::base_learner *lda_setup(vw &all)
 
   ld.decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, 1 << all.weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, UINT64_ONE << all.weights.stride_shift(), prediction_type::scalars);
 
   l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);

@@ -18,6 +18,7 @@ using VW.Serializer.Intermediate;
 
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Linq" #>
+<#@ output extension=".cs" #>
 
 namespace VW.Serializer
 {
@@ -95,9 +96,7 @@ namespace VW.Serializer
                 i++;
             }
             else
-            {
                 context.NamespaceBuilder.PreAllocate(value.Length);
-            }
 
             <# if (t == typeof(float)) { #>
 
@@ -128,9 +127,7 @@ namespace VW.Serializer
             <# } #>
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             string featureString;
             if (feature.Dictify && context.FastDictionary != null)
@@ -166,9 +163,7 @@ namespace VW.Serializer
             featureString = featureBuilder.ToString();
 
             if (feature.Dictify && context.FastDictionary != null)
-            {
                 context.FastDictionary.Add(value, featureString);
-            }
 
             context.AppendStringExample(feature.Dictify, featureString);
         }
@@ -212,9 +207,7 @@ namespace VW.Serializer
             }
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             string featureString;
             if (feature.Dictify && context.FastDictionary != null)
@@ -250,9 +243,7 @@ namespace VW.Serializer
             featureString = featureBuilder.ToString();
 
             if (feature.Dictify && context.FastDictionary != null)
-            {
                 context.FastDictionary.Add(value, featureString);
-            }
 
             context.AppendStringExample(feature.Dictify, featureString);
         }
@@ -278,9 +269,7 @@ namespace VW.Serializer
             Contract.Requires(feature != null);
 
             if (value == null)
-            {
                 return;
-            }
 
             foreach (var kvp in value)
             {
@@ -297,9 +286,7 @@ namespace VW.Serializer
             }
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var kvp in value)
@@ -333,9 +320,7 @@ namespace VW.Serializer
             Contract.Requires(feature != null);
 
             if (value == null)
-            {
                 return;
-            }
 
             foreach (var kvp in value)
             {
@@ -354,9 +339,7 @@ namespace VW.Serializer
             }
 
             if (context.StringExample == null)
-            {
                 return;
-            }
 
             var format = " {0}:" + (context.VW.Settings.EnableStringFloatCompact ? "{1}" : "{1:E20}");
             foreach (var kvp in value)
@@ -368,6 +351,66 @@ namespace VW.Serializer
                     kvp.Key,
                     kvp.Value);
             }
+        }
+
+		/// <summary>
+        /// Transfers feature data to native space.
+        /// </summary>
+        /// <param name="context">The marshalling context.</param>
+        /// <param name="ns">The namespace description.</param>
+        /// <param name="feature">The feature description.</param>
+        /// <param name="value">The feature value.</param>
+        [ContractVerification(false)]
+        public int MarshalNamespace(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary<string, <#=s#>[]> value)
+        {
+            Contract.Requires(context != null);
+            Contract.Requires(ns != null);
+            Contract.Requires(feature != null);
+
+			if (value == null)
+                return 0;
+
+			int featureCount = 0;
+            foreach (var kvp in value)
+			{
+				var perKeyNs = kvp.Key == null ? ns : new Namespace(context.VW, kvp.Key);
+
+				try
+				{
+					// the namespace is only added on dispose, to be able to check if at least a single feature has been added
+					context.NamespaceBuilder = context.ExampleBuilder.AddNamespace(perKeyNs.FeatureGroup);
+
+					var position = 0;
+					var stringExample = context.StringExample;
+					if (context.StringExample != null)
+					{
+						position = stringExample.Append(perKeyNs.NamespaceString).Length;
+					}
+
+					this.MarshalFeature(context, perKeyNs, feature, kvp.Value);
+
+					if (context.StringExample != null)
+					{
+						if (position == stringExample.Length)
+						{
+							// no features added, remove namespace
+							stringExample.Length = position - ns.NamespaceString.Length;
+						}
+					}
+
+					featureCount += (int)context.NamespaceBuilder.FeatureCount;
+				}
+				finally
+				{
+					if (context.NamespaceBuilder != null)
+					{
+						context.NamespaceBuilder.Dispose();
+						context.NamespaceBuilder = null;
+					}
+				}
+            }
+
+			return featureCount;
         }
         <# } #>
     }

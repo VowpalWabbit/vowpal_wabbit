@@ -115,7 +115,7 @@ label_parser multilabel = {default_label, parse_label,
                           };
 
 void print_update(vw& all, bool is_test, example& ec)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { stringstream label_string;
     if (is_test)
       label_string << " unknown";
@@ -160,7 +160,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (sink >= 0)

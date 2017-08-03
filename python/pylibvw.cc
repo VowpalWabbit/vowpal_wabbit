@@ -7,6 +7,9 @@
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/gd.h"
 
+// see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
+#define BOOST_PYTHON_STATIC_LIB
+
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
@@ -205,7 +208,7 @@ string my_get_tag(example_ptr ec)
 }
 
 uint32_t ex_num_namespaces(example_ptr ec)
-{ return ec->indices.size();
+{ return (uint32_t)ec->indices.size();
 }
 
 unsigned char ex_namespace(example_ptr ec, uint32_t ns)
@@ -213,11 +216,11 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns)
 }
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns)
-{ return ec->feature_space[ns].size();
+{ return (uint32_t)ec->feature_space[ns].size();
 }
 
 uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
-{ return ec->feature_space[ns].indicies[i];
+{ return (uint32_t)ec->feature_space[ns].indicies[i];
 }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i)
@@ -240,7 +243,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
   char ns_str[2] = { (char)ns, 0 };
   uint32_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0; float sum_sq = 0.;
-  for (size_t i=0; i<len(a); i++)
+  for (ssize_t i=0; i<len(a); i++)
   { feature f = { 1., 0 };
     py::object ai = a[i];
     py::extract<py::tuple> get_tup(ai);
@@ -363,7 +366,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i=0; i<N; i++)
-    { size_t j = N - 1 - i;
+    { int j = (int)(N - 1 - i);
       if (ae->indices[j] == constant_namespace)
       { if (hit_constant >= 0) { cerr << "error: hit constant namespace twice!" << endl; throw exception(); }
         hit_constant = j;
@@ -434,14 +437,14 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
 }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
-uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return ec->l.cs.costs.size(); }
+uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
 float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
 uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].class_index; }
 float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].partial_prediction; }
 float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
 uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
-uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return ec->l.cb.costs.size(); }
+uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
 float ex_get_cbandits_cost(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].cost; }
 uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].action; }
 float ex_get_cbandits_probability(example_ptr ec, uint32_t i) { return ec->l.cb.costs[i].probability; }
@@ -449,7 +452,7 @@ float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i) { return ec
 
 // example_counter is being overriden by lableType!
 size_t   get_example_counter(example_ptr ec) { return ec->example_counter; }
-uint32_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
+uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
 size_t   get_num_features(example_ptr ec) { return ec->num_features; }
 float    get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 float    get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
@@ -457,7 +460,7 @@ float    get_loss(example_ptr ec) { return ec->loss; }
 float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
-double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
+double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
 bool search_should_output(search_ptr sch) { return sch->output().good(); }
 void search_output(search_ptr sch, string s) { sch->output() << s; }
@@ -514,7 +517,7 @@ void verify_search_set_properly(search_ptr sch)
 uint32_t search_get_num_actions(search_ptr sch)
 { verify_search_set_properly(sch);
   HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return d->num_actions;
+  return (uint32_t)d->num_actions;
 }
 
 void search_run_fn(Search::search&sch)
@@ -637,15 +640,15 @@ void my_set_input(predictor_ptr P, example_ptr ec) { P->set_input(*ec); }
 void my_set_input_at(predictor_ptr P, size_t posn, example_ptr ec) { P->set_input_at(posn, *ec); }
 
 void my_add_oracle(predictor_ptr P, action a) { P->add_oracle(a); }
-void my_add_oracles(predictor_ptr P, py::list& a) { for (size_t i=0; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
+void my_add_oracles(predictor_ptr P, py::list& a) { for (ssize_t i=0; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
 void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
-void my_add_alloweds(predictor_ptr P, py::list& a) { for (size_t i=0; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
+void my_add_alloweds(predictor_ptr P, py::list& a) { for (ssize_t i=0; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
 void my_add_condition(predictor_ptr P, ptag t, char c) { P->add_condition(t, c); }
 void my_add_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->add_condition_range(hi, count, name0); }
 void my_set_oracle(predictor_ptr P, action a) { P->set_oracle(a); }
-void my_set_oracles(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_oracle(py::extract<action>(a[0])); else P->erase_oracles(); for (size_t i=1; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
+void my_set_oracles(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_oracle(py::extract<action>(a[0])); else P->erase_oracles(); for (ssize_t i=1; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
 void my_set_allowed(predictor_ptr P, action a) { P->set_allowed(a); }
-void my_set_alloweds(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_allowed(py::extract<action>(a[0])); else P->erase_alloweds(); for (size_t i=1; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
+void my_set_alloweds(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_allowed(py::extract<action>(a[0])); else P->erase_alloweds(); for (ssize_t i=1; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
 void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c); }
 void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->set_condition_range(hi, count, name0); }
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
@@ -789,7 +792,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<Search::search, search_ptr>("search")
   .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
-  .def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
+  //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
   .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
   .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
   .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")

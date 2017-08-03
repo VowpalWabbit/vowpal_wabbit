@@ -2,9 +2,12 @@ package vowpalWabbit.learner;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import vowpalWabbit.VWTestHelper;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -40,7 +43,7 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testAlreadyClosed() {
+    public void testAlreadyClosed() throws IOException {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already closed.");
         VWScalarLearner s = VWLearners.create("--quiet");
@@ -49,7 +52,7 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testOldModel() {
+    public void testOldModel() throws IOException {
         thrown.expect(Exception.class);
         thrown.expectMessage("bad model format!");
         VWScalarsLearner vw = VWLearners.create("--quiet -i src/test/resources/vw_7.8.model");
@@ -57,13 +60,25 @@ public class VWLearnersTest extends VWTestHelper {
     }
 
     @Test
-    public void testBadModel() {
+    public void testBadModel() throws IOException {
         // Right now VW seg faults on a bad model.  Ideally we should throw an exception
         // that the Java layer could do something about
         thrown.expect(Exception.class);
         thrown.expectMessage("Model content is corrupted, weight vector index 1347768914 must be less than total vector length 262144");
         VWScalarsLearner vw = VWLearners.create("--quiet -i src/test/resources/vw_bad.model");
         vw.close();
+    }
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Test
+    public void testSaveModel() throws IOException {
+        VWLearner vw = VWLearners.create("--quiet");
+        File file = temporaryFolder.newFile("saved_test_model");
+        vw.saveModel(file);
+        vw.close();
+        assert(file.exists());
     }
 
     @Test
@@ -108,7 +123,7 @@ public class VWLearnersTest extends VWTestHelper {
         predict.close();
     }
 
-    private long streamingLoadTest(int times) {
+    private long streamingLoadTest(int times) throws IOException {
         VWScalarsLearner m1 = VWLearners.create("--quiet");
         long start = System.currentTimeMillis();
         for (int i=0; i<times; ++i) {

@@ -293,10 +293,7 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
     if (!CB::ec_is_example_header(*(*ec_seq)[i]))
-    { num_features += (*ec_seq)[i]->num_features;
-    }
-
-  all.sd->total_features += num_features;
+      num_features += (*ec_seq)[i]->num_features;
 
   bool is_test = false;
   if (c.gen_cs.known_cost.probability > 0)
@@ -304,11 +301,10 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
     { float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
       loss += l*preds[i].score;
     }
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
   }
   else
     is_test = true;
+  all.sd->update(ec.test_only, c.gen_cs.known_cost.probability > 0, loss, ec.weight, num_features);
 
   for (int sink : all.final_prediction_sink)
     print_action_score(sink, ec.pred.a_s, ec.tag);
@@ -330,9 +326,7 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 
 void output_example_seq(vw& all, cb_explore_adf& data)
 { if (data.ec_seq.size() > 0)
-  { all.sd->weighted_examples += 1;
-    all.sd->example_number++;
-    output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+  { output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
     if (all.raw_prediction > 0)
       all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
   }
@@ -490,8 +484,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
     data.explore_type = COVER;
     problem_multiplier = data.cover_size+1;
-    sprintf(type_string, "%lu", data.cover_size);
-    *all.file_options << " --cover " << type_string;
+    *all.file_options << " --cover " << data.cover_size;
 
     if (!vm.count("epsilon"))
       data.epsilon = 0.05f;
@@ -500,14 +493,12 @@ base_learner* cb_explore_adf_setup(vw& all)
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     data.explore_type = BAG_EXPLORE;
     problem_multiplier = data.bag_size;
-    sprintf(type_string, "%lu", data.bag_size);
-    *all.file_options << " --bag "<<type_string;
+    *all.file_options << " --bag "<< data.bag_size;
   }
   else if (vm.count("first"))
   { data.tau = (uint32_t)vm["first"].as<size_t>();
     data.explore_type = EXPLORE_FIRST;
-    sprintf(type_string, "%lu", data.tau);
-    *all.file_options << " --first "<<type_string;
+    *all.file_options << " --first "<< data.tau;
   }
   else if (vm.count("softmax"))
   { data.lambda = 1.0;

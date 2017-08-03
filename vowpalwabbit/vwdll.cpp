@@ -1,10 +1,5 @@
 #include <memory>
-
-#ifdef WIN32
-#define USE_CODECVT
 #include <codecvt>
-#endif
-
 #include <locale>
 #include <string>
 
@@ -25,13 +20,30 @@
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
 
+#if _MSC_VER == 1900
+// VS 2015 Bug: https://social.msdn.microsoft.com/Forums/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error?forum=vcgeneral
+std::string utf16_to_utf8(std::u16string utf16_string)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
+	auto p = reinterpret_cast<const int16_t *>(utf16_string.data());
+	return convert.to_bytes(p, p + utf16_string.size());
+}
+
+#else
+
+std::string utf16_to_utf8(std::u16string utf16_string)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+	return convert.to_bytes(utf16_string);
+}
+#endif
+
 extern "C"
 { using namespace std;
+
 #ifdef USE_CODECVT
   VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(pstrArgs));
-  return VW_InitializeA(sa.c_str());
+{ return VW_InitializeA(utf16_to_utf8(pstrArgs).c_str());
 }
 #endif
 
@@ -77,9 +89,7 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE* feat
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(line));
-  return VW_ReadExampleA(handle, sa.c_str());
+{ return VW_ReadExampleA(handle, utf16_to_utf8(line).c_str());
 }
 #endif
 VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExampleA(VW_HANDLE handle, const char * line)
@@ -162,17 +172,11 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  return VW_HashSpaceA(handle,sa.c_str());
+{ return VW_HashSpaceA(handle, utf16_to_utf8(s).c_str());
 }
 
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStatic(const char16_t * s, const char16_t * h)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  std::string ha(convert.to_bytes(h));
-
-  return VW_HashSpaceStaticA(sa.c_str(), ha.c_str());
+{ return VW_HashSpaceStaticA(utf16_to_utf8(s).c_str(), utf16_to_utf8(h).c_str());
 }
 #endif
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s)
@@ -189,16 +193,11 @@ VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceStaticA(const char * s, const c
 
 #ifdef USE_CODECVT
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  return VW_HashFeatureA(handle,sa.c_str(),u);
+{ return VW_HashFeatureA(handle, utf16_to_utf8(s).c_str(),u);
 }
 
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureStatic(const char16_t * s, unsigned long u, const char16_t * h, unsigned int num_bits)
-{ std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  std::string sa(convert.to_bytes(s));
-  std::string ha(convert.to_bytes(h));
-  return VW_HashFeatureStaticA(sa.c_str(), u, ha.c_str(), num_bits);
+{ return VW_HashFeatureStaticA(utf16_to_utf8(s).c_str(), u, utf16_to_utf8(h).c_str(), num_bits);
 }
 #endif
 
@@ -338,4 +337,3 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
 }
 
 }
-

@@ -25,7 +25,7 @@ vw* setup(int argc, char* argv[])
   all->vw_is_main = true;
 
   if (!all->quiet && !all->bfgs && !all->searchstr && !all->vm.count("audit_regressor"))
-  { all->trace_message << std::left
+    { all->trace_message << std::left
               << std::setw(shared_data::col_avg_loss) << std::left << "average"
               << " "
               << std::setw(shared_data::col_since_last) << std::left << "since"
@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
 
     vw& all = *alls[0];
 
-    struct timeb t_start, t_end;
-    ftime(&t_start);
+    //struct timeb t_start, t_end;
+    //ftime(&t_start);
 
     VW::start_parser(all);
     if (alls.size() == 1)
@@ -102,10 +102,10 @@ int main(int argc, char *argv[])
 
     VW::end_parser(all);
 
-    ftime(&t_end);
-    double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm));
-    if(!all.quiet && all.all_reduce != nullptr)
-      cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
+    // ftime(&t_end);
+    // double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm));
+    // if(!all.quiet && all.all_reduce != nullptr)
+      // cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
     for (vw* v : alls)
     { VW::sync_stats(*v);
@@ -127,4 +127,3 @@ int main(int argc, char *argv[])
   // cin.ignore();
   return 0;
 }
-
