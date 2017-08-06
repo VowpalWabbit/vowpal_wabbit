@@ -71,6 +71,7 @@ license as described in the file LICENSE.
 #include "marginal.h"
 #include "explore_eval.h"
 // #include "cntk.h"
+#include "plt.h"
 
 using namespace std;
 //
@@ -1125,6 +1126,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(log_multi_setup);
   all.reduction_stack.push_back(recall_tree_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
+  all.reduction_stack.push_back(plt_setup);
 
   all.reduction_stack.push_back(csoaa_setup);
   all.reduction_stack.push_back(interact_setup);
