@@ -1,3 +1,18 @@
+# PLT in VW
+
+This fork implements Probabilistic Label Tree in Vowpal Wabbit for multilabel classification.
+
+## PLT options
+```
+--plt arg               Use PLT multilabel learning with arg labels
+--kary_tree arg (=2)    Set k-ary tree for PLT. By default tree is binary
+--top_k arg (=1)        Return k top labels
+--threshold arg         Return labels with probabiltiy greather then arg
+
+--sgd                   Recomended to use with --plt
+```
+
+
 ```
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
