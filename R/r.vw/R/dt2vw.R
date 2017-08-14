@@ -24,17 +24,12 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   data = setDT(data)
 
   #change target if its boolean to take values in {-1,1}
-  if (! is.logical(data[[target]])) {
-    if (is.numeric(data[[target]]) && setequal(unique(data[[target]], c(0, 1)))) {
-      data[[target]] <- as.logical(data[[target]])
-    } else {
-      stop("`data[[target]] must be either logical or numeric with values in {0, 1}.")
-    }
+  if(is.logical(data[[target]]) || sum(levels(factor(data[[target]])) == levels(factor(c(0,1)))) == 2)
+  {
+    data[[target]][data[[target]] == TRUE] = 1
+    data[[target]][data[[target]] == FALSE] = -1
   }
-    
-  data[[target]][data[[target]]] = 1
-  data[[target]][! data[[target]]] = -1
-
+  
   #if namespaces = NULL, define a unique namespace
   if(is.null(namespaces))
   {
