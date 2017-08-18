@@ -41,7 +41,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   specChar = '\\(|\\)|\\||\\:'
   specCharSpace = '\\(|\\)|\\||\\:| '
 
-  parsingNames <- function(x) gsub(specCharSpace,'_', x)
+  parsingNames <- function(x) Reduce(c, lapply(x, function(X) gsub(specCharSpace,'_', X)))
 
   #parse categorical variables
   parsingVar <- function(x, keepSpace, hard_parse)
