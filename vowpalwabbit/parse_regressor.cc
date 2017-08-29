@@ -19,8 +19,6 @@ using namespace std;
 #include <algorithm>
 #include <stdarg.h>
 #include <numeric>
-#include <random>
-
 #include "rand48.h"
 #include "global_data.h"
 #include "vw_exception.h"
@@ -52,37 +50,47 @@ public:
       *iter = (float)(merand48(index) - 0.5);
     }
 };
-template <class T> class normal_weights_wrapper
+// box-muller polar implementation
+template <class T> class polar_normal_weights_wrapper
 {
-public:    
+public:
     static void func(typename T::iterator& iter)
     {
-      std::normal_distribution<double> distribution(0,1.0);
       uint64_t index = iter.index();
-      static std::mt19937_64 eng(index);
-      *iter = (float)(distribution(eng));
+        static float x1 = 0.0;
+        static float x2 = 0.0;
+        static float w  = 0.0;
+         do {
+                 x1 = 2.0 * merand48(index) - 1.0;
+                 x2 = 2.0 * merand48(index) - 1.0;
+                 w = x1 * x1 + x2 * x2;
+         } while ( (w >= 1.0) || (w == 0.0) );
+         w = sqrt( (-2.0 * log( w ) ) / w );
+         *iter = x1 * w;
     }
 };
+// re-picking instead of truncating datasets
 template<class T> void truncate(vw& all,T& weights)
 {
   static double sd = calculate_sd(all,weights);
-  static std::normal_distribution<> distr(0,1); // define the range 
-  static int index = 0;
-  for_each(weights.begin(), weights.end(), [](float& v) { static std::mt19937_64 eng(index);if( std::abs(v) > sd*2 ) v= distr(eng) ;index++;});
-}
+  for_each(weights.begin(), weights.end(), [](float& v) { 
+	if( abs(v) > sd*2 ) {
+           v = std::remainder(v,sd);
+        }
+  });
+};
 
 template<class T> double calculate_sd(vw& all,T& weights)
 {
   static int my_size = 0;
   for_each(weights.begin(), weights.end(), [](float v) {my_size += 1;}); 
-  double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+  double sum = accumulate(weights.begin(), weights.end(), 0.0);
   double mean = sum / my_size;
-  std::vector<double> diff(my_size);
-  std::transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
-  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  return std::sqrt(sq_sum / my_size);
-}
-
+  vector<double> diff(my_size);
+  transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
+  double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  return sqrt(sq_sum / my_size);
+};
 template<class T> void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
 
@@ -102,11 +110,20 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     weights.template set_default<random_positive_wrapper<T> >();
   else if (all.random_weights)
     weights.template set_default<random_weights_wrapper<T> >();
-  else if (all.normal_weights)
-    weights.template set_default<normal_weights_wrapper<T> >();
+  else if (all.normal_weights){
+    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    ////////////////////////////////////////////////////////////////////////
+    // NOTE:- uncomment this and forward the output to a text file and plot 
+    //        to see the initial weights 
+    //for_each(weights.begin(), weights.end(), [](float v) { cout << v << endl;}); 
+  }
   else if (all.tnormal_weights){
-    weights.template set_default<normal_weights_wrapper<T> >();
+    weights.template set_default<polar_normal_weights_wrapper<T> >();
     truncate(all,weights);
+    ////////////////////////////////////////////////////////////////////////
+    // NOTE:- uncomment this and forward the output to a text file and plot 
+    //        to see the initial weights 
+    //for_each(weights.begin(), weights.end(), [](float v) { cout << v << endl;}); 
   }
 }
 
