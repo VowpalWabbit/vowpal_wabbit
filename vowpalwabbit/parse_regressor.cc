@@ -69,13 +69,13 @@ public:
          *iter = x1 * w;
     }
 };
-// re-picking instead of truncating datasets
+// re-scaling to re-picking values outside the truncating boundary.
 template<class T> void truncate(vw& all,T& weights)
 {
   static double sd = calculate_sd(all,weights);
   for_each(weights.begin(), weights.end(), [](float& v) { 
 	if( abs(v) > sd*2 ) {
-           v = std::remainder(v,sd);
+           v = std::remainder(v,sd*2);
         }
   });
 };
@@ -112,18 +112,10 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     weights.template set_default<random_weights_wrapper<T> >();
   else if (all.normal_weights){
     weights.template set_default<polar_normal_weights_wrapper<T> >();
-    ////////////////////////////////////////////////////////////////////////
-    // NOTE:- uncomment this and forward the output to a text file and plot 
-    //        to see the initial weights 
-    //for_each(weights.begin(), weights.end(), [](float v) { cout << v << endl;}); 
   }
   else if (all.tnormal_weights){
     weights.template set_default<polar_normal_weights_wrapper<T> >();
     truncate(all,weights);
-    ////////////////////////////////////////////////////////////////////////
-    // NOTE:- uncomment this and forward the output to a text file and plot 
-    //        to see the initial weights 
-    //for_each(weights.begin(), weights.end(), [](float v) { cout << v << endl;}); 
   }
 }
 
