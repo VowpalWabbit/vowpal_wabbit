@@ -70,6 +70,7 @@ public:
     }
 };
 // re-scaling to re-picking values outside the truncating boundary.
+// note:- boundary is twice the standard deviation.
 template<class T> void truncate(vw& all,T& weights)
 {
   static double sd = calculate_sd(all,weights);
