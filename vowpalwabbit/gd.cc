@@ -840,7 +840,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->old_weighted_labeled_examples = 0.;
 		all.sd->example_number = 0;
 		all.sd->total_features = 0;
-		all.current_pass = 1;
+		all.current_pass = 0;
 	}
 	if (all.weights.sparse)
 		save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
