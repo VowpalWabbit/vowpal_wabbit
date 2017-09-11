@@ -28,6 +28,10 @@ abstract class VWBase implements VWLearner {
     final Lock lock;
     protected final long nativePointer;
 
+    // It would appear that performing multiple passes from the JNI layer is not thread safe even across multiple models.
+    // Because of this we need a GLOBAL lock to do mulitiple passes.
+    private final static Lock globalLock = new ReentrantLock();
+
     /**
      * Create a new VW instance that is ready to either create predictions or learn based on examples.
      * This allows the user to instead of using the prepackaged JNI layer to load their own external JNI layer.
@@ -125,7 +129,13 @@ abstract class VWBase implements VWLearner {
                 final boolean attemptingToClose = isOpen;
                 if (isOpen) {
                     isOpen = false;
-                    VWLearners.performRemainingPasses(nativePointer);
+                    VWBase.globalLock.lock();
+                    try {
+                        VWLearners.performRemainingPasses(nativePointer);
+                    }
+                    finally {
+                        globalLock.unlock();
+                    }
                     VWLearners.closeInstance(nativePointer);
                 }
                 return attemptingToClose;

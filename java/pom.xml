@@ -8,9 +8,8 @@
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
-        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper is designed to be self contained.  Because
-        of the use of JNI, a number of platforms are supported in this JAR.  If your platform is not supported please feel free to add it
-        by modifying src/main/bin/build.sh accordingly.
+        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
+        specific library is installed on your java.library.path.
     </description>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
@@ -84,7 +83,7 @@
             <testResource>
                 <directory>${project.build.directory}</directory>
                 <includes>
-                    <include>vw_jni.*lib</include>
+                    <include>*vw_jni*</include>
                 </includes>
             </testResource>
         </testResources>
@@ -98,7 +97,7 @@
                         <fileset>
                             <directory>${project.build.directory}</directory>
                             <excludes>
-                                <exclude>vw_jni.*lib</exclude>
+                                <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>
                         </fileset>
@@ -196,7 +195,7 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>vw_jni.*lib</include>
+                                        <include>*vw_jni*</include>
                                     </includes>
                                 </resource>
                             </resources>

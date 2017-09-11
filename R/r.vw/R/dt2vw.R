@@ -18,36 +18,30 @@
 #'variables like '_', or same variables perceived differently like "_var" and "var"
 #'@import data.table
 #'@export
-dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = F, append = F)
+dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag = NULL, hard_parse = FALSE, append = FALSE)
 {
 
   data = setDT(data)
 
   #change target if its boolean to take values in {-1,1}
-  if(is.logical(data[[target]]) | sum(levels(factor(data[[target]])) == levels(factor(c(0,1)))) == 2)
+  if(is.logical(data[[target]]) || sum(levels(factor(data[[target]])) == levels(factor(c(0,1)))) == 2)
   {
     data[[target]][data[[target]] == TRUE] = 1
     data[[target]][data[[target]] == FALSE] = -1
   }
-
+  
   #if namespaces = NULL, define a unique namespace
   if(is.null(namespaces))
   {
     all_vars = colnames(data)[!colnames(data) %in% c(target, weight, tag)]
-    namespaces <- list(A = list(varName = all_vars, keepSpace=F))
+    namespaces <- list(A = list(varName = all_vars, keepSpace=FALSE))
   }
 
   #parse variable names
   specChar = '\\(|\\)|\\||\\:'
   specCharSpace = '\\(|\\)|\\||\\:| '
 
-  parsingNames <- function(x)
-  {
-    ret = c()
-    for(el in x)
-      ret = append(ret, gsub(specCharSpace,'_', el))
-    ret
-  }
+  parsingNames <- function(x) Reduce(c, lapply(x, function(X) gsub(specCharSpace,'_', X)))
 
   #parse categorical variables
   parsingVar <- function(x, keepSpace, hard_parse)
@@ -89,7 +83,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
 
   for(namespaceName in names(namespaces))
   {
-    Index[[namespaceName]] = sapply(data[,namespaces[[namespaceName]][['varName']],with=F], is.numeric)
+    Index[[namespaceName]] = vapply(data[,namespaces[[namespaceName]][['varName']],with=FALSE], is.numeric, logical(1))
     #Header[[namespaceName]][Index[[namespaceName]]] = namespaces[[namespaceName]][['varName']][Index[[namespaceName]]]
     Header[[namespaceName]] = namespaces[[namespaceName]][['varName']]
 
@@ -105,7 +99,7 @@ dt2vw <- function(data, fileName, namespaces = NULL, target, weight = NULL, tag 
   }
 
   #appending the name of the variable to its value for each categorical variable
-  sapply(Index, FUN = function(x){sapply(names(x), FUN = function(y){if(x[[y]] == F){
+  sapply(Index, FUN = function(x){sapply(names(x), FUN = function(y){if(!x[[y]]){
                                                     set(data, i=NULL, y, paste0(y,"_",data[[y]]))
                                                     }})})
 
