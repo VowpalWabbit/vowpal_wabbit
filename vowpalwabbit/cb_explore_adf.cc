@@ -36,6 +36,7 @@ struct cb_explore_adf
   size_t bag_size;
   size_t cover_size;
   float psi;
+  bool nounif;
   float lambda;
   uint64_t offset;
 
@@ -232,7 +233,7 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
     probs[action].score += additive_probability;
   }
 
-  CB_EXPLORE::safety(data.action_probs, min_prob * num_actions, true);
+  CB_EXPLORE::safety(data.action_probs, min_prob * num_actions, !data.nounif);
 
   qsort((void*) probs.begin(), probs.size(), sizeof(action_score), reverse_order);
   for (size_t i = 0; i < num_actions; i++)
@@ -465,6 +466,7 @@ base_learner* cb_explore_adf_setup(vw& all)
   ("bag", po::value<size_t>(), "bagging-based exploration")
   ("cover",po::value<size_t>() ,"Online cover based exploration")
   ("psi", po::value<float>(), "disagreement parameter for cover")
+  ("nounif", "do not explore uniformly on zero-probability actions in cover")
   ("softmax", "softmax exploration")
   ("lambda", po::value<float>(), "parameter for softmax");
   add_options(all);
@@ -498,6 +500,10 @@ base_learner* cb_explore_adf_setup(vw& all)
 
     sprintf(type_string, "%f", data.psi);
     *all.file_options << " --psi " << type_string;
+    if (vm.count("nounif"))
+    { data.nounif = true;
+      *all.file_options << " --nounif";
+    }
   }
   else if (vm.count("bag"))
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
