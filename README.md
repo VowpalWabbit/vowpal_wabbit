@@ -35,7 +35,7 @@ The very latest version is always available via 'github' by invoking one of the 
 ## For the traditional ssh-based Git interaction:
 $ git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
-## If that hangs (it does on OSX), try the following SSH URL:
+## You can also try the following SSH URL:
 $ git clone git@github.com:JohnLangford/vowpal_wabbit.git
 
 ## For HTTP-based Git interaction
