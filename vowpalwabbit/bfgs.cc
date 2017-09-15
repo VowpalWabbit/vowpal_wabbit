@@ -255,7 +255,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 		double g_Hg = 0.;
 		double y = 0.;
 
-		
+
 		for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 		{
 		  mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
@@ -294,7 +294,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 	double y_s = 0.;
 	double y_Hy = 0.;
 	double s_q = 0.;
-	
+
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
 	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
@@ -391,7 +391,7 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
 	double g1_Hg1 = 0.;
 	double g1_g1 = 0.;
 
-	
+
 	for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
 	{
 	  float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
@@ -507,7 +507,7 @@ template<class T>
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization, T& weights)
 {
 	uint32_t length = 1 << all.num_bits;
-	
+
 	if (b.regularizers == nullptr)
 	{
 		b.regularizers = calloc_or_throw<weight>(2 * length);
@@ -972,8 +972,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     uint32_t stride_shift = all->weights.stride_shift();
 
     if (!all->quiet)
-    { fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << stride_shift)) >> 20);
-    }
+		cerr << "m = " << m << endl << "Allocated " << ((long unsigned int)all->length()*(sizeof(float)*(b.mem_stride) + (sizeof(weight) << stride_shift)) >> 20) << "M for weights and mem" << endl;
 
     b.net_time = 0.0;
     ftime(&b.t_start_global);

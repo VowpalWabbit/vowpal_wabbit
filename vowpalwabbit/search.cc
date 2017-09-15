@@ -467,12 +467,12 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
 
 void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
 {
-  cout << "del_top " << endl;
   if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
-  { if (ec.indices.size() == 0)
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
-    else
-    { THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
+  { return;
+    //if (ec.indices.size() == 0)
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
+    //else
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " << (size_t)ec.indices.last()); }
   }
   features& fs = ec.feature_space[ns];
   ec.indices.decr();
@@ -528,7 +528,6 @@ void add_neighbor_features(search_private& priv)
 
 void del_neighbor_features(search_private& priv)
 { if (priv.neighbor_features.size() == 0) return;
-  cout << "del_neighbor_feat" << endl;
   for (size_t n=0; n<priv.ec_seq.size(); n++)
     del_features_in_top_namespace(priv, *priv.ec_seq[n], neighbor_namespace);
 }
@@ -676,7 +675,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 }
 
 void del_example_conditioning(search_private& priv, example& ec)
-{cout << "del_example_cond" << endl;
+{
   if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
@@ -2151,8 +2150,6 @@ base_learner* setup(vw&all)
   ("search_perturb_oracle",    po::value<float>(),  "perturb the oracle on rollin with this probability (def: 0)")
   ("search_linear_ordering",                        "insist on generating examples in linear order (def: hoopla permutation)")
   ;
-  add_options(all);
-  po::variables_map& vm = all.vm;
 
   bool has_hook_task = false;
   for (size_t i=0; i<all.args.size()-1; i++)
@@ -2162,6 +2159,9 @@ base_learner* setup(vw&all)
     for (int i = (int)all.args.size()-2; i >= 0; i--)
       if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
         all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
+  
+  add_options(all);
+  po::variables_map& vm = all.vm;
 
   search& sch = calloc_or_throw<search>();
   sch.priv = &calloc_or_throw<search_private>();
