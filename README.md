@@ -35,6 +35,9 @@ The very latest version is always available via 'github' by invoking one of the 
 ## For the traditional ssh-based Git interaction:
 $ git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
+## You can also try the following SSH URL:
+$ git clone git@github.com:JohnLangford/vowpal_wabbit.git
+
 ## For HTTP-based Git interaction
 $ git clone https://github.com/JohnLangford/vowpal_wabbit.git
 ```
@@ -134,7 +137,7 @@ make CXX='clang++ -static' clean vw test     # ignore warnings
 OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
 [MacPorts](https://www.macports.org) package managers.
 
-### Complete brew install of 8.0
+### Complete brew install of 8.4
 ```
 brew install vowpal-wabbit
 ```
