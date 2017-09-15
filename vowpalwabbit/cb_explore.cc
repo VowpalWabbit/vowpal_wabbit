@@ -114,6 +114,19 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
 { //input: a probability distribution
   //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
+  if (min_prob > 0.999) // uniform exploration
+  { size_t support_size = distribution.size();
+    if (!zeros)
+    { for (size_t i = 0; i < distribution.size(); ++i)
+        if (distribution[i].score == 0)
+          support_size--;
+    }
+    for (size_t i = 0; i < distribution.size(); ++i)
+      if (zeros || distribution[i].score > 0)
+        distribution[i].score = 1.f / support_size;
+    return;
+  }
+
   min_prob /= distribution.size();
   float touched_mass = 0.;
   float untouched_mass = 0.;
