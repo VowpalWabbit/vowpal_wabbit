@@ -92,7 +92,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -102,5 +102,5 @@
   <Target Name="BeforeBuild">
     <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Vowpal Wabbit Console" AssemblyDescription="Vowpal Wabbit Console" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="false" Guid="c7c26e42-6d03-4fe5-943c-add2440f1e37" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
   </Target>
-  <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
+  <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
 </Project>

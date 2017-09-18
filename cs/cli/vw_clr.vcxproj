@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -332,7 +332,6 @@
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
     <Import Project="$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets" Condition="Exists('$(SolutionDir)\packages\VisualLeakDetector.2.5.0.0\build\native\VisualLeakDetector.targets')" />
     <Import Project="$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
-    <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
     <Import Project="$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets')" />
@@ -372,13 +371,13 @@
     <Import Project="$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" />
+    <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
   </ImportGroup>
   <Import Project="$(ProjectDir)\..\version.props" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets'))" />
@@ -418,6 +417,7 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
   </Target>
   <Target Name="BeforeBuild" BeforeTargets="PrepareForBuild">
     <FileUpdate Files="AssemblyInfo.cpp" Regex="AssemblyVersionAttribute\(&quot;.*&quot;\)" ReplacementText="AssemblyVersionAttribute(&quot;$(VowpalWabbitAssemblyVersion)&quot;)" />
