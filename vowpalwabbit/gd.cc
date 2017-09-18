@@ -108,17 +108,17 @@ inline void update_feature(float& update, float x, float& fw)
 
 //this deals with few nonzero features vs. all nonzero features issues.
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
-  float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
+  float average_update(double total_weight, double normalized_sum_norm_x, float neg_norm_power)
   { if (normalized)
       { if (sqrt_rate)
-          { float avg_norm = total_weight / normalized_sum_norm_x;
+          { float avg_norm = (float)(total_weight / normalized_sum_norm_x);
             if (adaptive)
               return sqrt(avg_norm);
             else
               return avg_norm;
           }
         else
-          return powf( normalized_sum_norm_x / total_weight, neg_norm_power);
+          return powf( (float)(normalized_sum_norm_x / total_weight), neg_norm_power);
       }
     return 1.f;
   }

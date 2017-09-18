@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace cs_unittest
@@ -8,6 +8,7 @@ namespace cs_unittest
     {
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericInt64Overflow()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleInt64>(string.Empty))
@@ -19,6 +20,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericUInt64Overflow()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleUInt64>(string.Empty))
@@ -29,6 +31,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericDoubleOverflow()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleDouble>(string.Empty))
@@ -40,6 +43,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericInt64OverflowArray()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleInt64Array>(string.Empty))
@@ -51,6 +55,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericUInt64OverflowArray()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleUInt64Array>(string.Empty))
@@ -61,6 +66,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNumericDoubleOverflowArray()
         {
             using (var vw = new VowpalWabbitExampleValidator<NumericExampleDoubleArray>(string.Empty))

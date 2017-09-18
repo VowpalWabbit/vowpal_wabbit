@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +14,7 @@ namespace cs_unittest
     {
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLoadModelCorrupt()
         {
             InternalTestModel(@"model-sets/7.10.2_corrupted.model", false);
@@ -21,6 +22,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLoadModel()
         {
             InternalTestModel(@"model-sets/8.0.0_ok.model", true);
@@ -31,6 +33,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLoadModelRandomCorrupt()
         {
             InternalTestModelRandomCorrupt("model-sets/8.0.1.test_named_ok.model");
@@ -40,6 +43,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLoadModelInMemory()
         {
             using (var vw = new VowpalWabbit(@"-i model-sets\8.0.1_rcv1_ok.model"))
@@ -65,6 +69,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestID()
         {
             using (var vw = new VowpalWabbit("--id abc"))
@@ -100,6 +105,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestEmptyID()
         {
             using (var vw = new VowpalWabbit("-l 1"))
@@ -117,6 +123,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Model Loading")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestReload()
         {
             using (var vw = new VowpalWabbit(""))

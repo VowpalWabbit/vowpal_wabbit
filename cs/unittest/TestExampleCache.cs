@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,6 +14,7 @@ namespace cs_unittest
     {
 #if DEBUG
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheForLearning()
         {
             try
@@ -32,6 +33,7 @@ namespace cs_unittest
         }
 #else
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheForLearning()
         {
             try
@@ -50,6 +52,7 @@ namespace cs_unittest
 #endif
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheDisabledForLearning()
         {
             using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = false }))
@@ -60,6 +63,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCache()
         {
             var random = new Random(123);

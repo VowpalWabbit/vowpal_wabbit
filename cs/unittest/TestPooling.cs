@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,6 +15,7 @@ namespace cs_unittest
         [TestMethod]
         [TestCategory("ObjectPool")]
         [ExpectedException(typeof(InvalidOperationException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestEmptyFactory()
         {
             new ObjectPool<Disposable, Disposable>().GetOrCreate();
@@ -23,6 +24,7 @@ namespace cs_unittest
         [TestMethod]
         [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed1()
         {
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
@@ -33,6 +35,7 @@ namespace cs_unittest
         [TestMethod]
         [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed2()
         {
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
@@ -42,6 +45,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDangling()
         {
             var factory = new Disposable();
@@ -60,6 +64,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestFactory()
         {
             var factory1 = new Disposable();
@@ -95,6 +100,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ThreadPoolNull()
         {
             using (var pool = new VowpalWabbitThreadedPrediction())
@@ -115,6 +121,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestConcurrency()
         {
             var factories = new List<Disposable> { new Disposable() };
@@ -176,6 +183,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestSaveLoadSkip()
         {
             using (var vw = new VowpalWabbit<SimpleData>("--binary -f saveload.model"))

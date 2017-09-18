@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,7 @@ namespace cs_unittest
     {
         [TestMethod]
         [TestCategory("Null")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNull1()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -43,6 +44,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Null")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNull2()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -68,6 +70,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Null")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNull3()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ac"))
@@ -106,6 +109,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Null")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNull4()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -142,6 +146,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Null")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestNull5()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
