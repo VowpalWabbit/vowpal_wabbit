@@ -7,7 +7,7 @@ namespace cs_unittest
     public class TestMarshallingOverflow
     {
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericInt64Overflow()
         {
@@ -19,7 +19,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericUInt64Overflow()
         {
@@ -30,7 +30,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericDoubleOverflow()
         {
@@ -42,7 +42,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericInt64OverflowArray()
         {
@@ -54,7 +54,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericUInt64OverflowArray()
         {
@@ -65,7 +65,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestNumericDoubleOverflowArray()
         {

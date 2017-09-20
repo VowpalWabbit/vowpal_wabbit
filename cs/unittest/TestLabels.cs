@@ -15,7 +15,7 @@ namespace cs_unittest
     public class TestLabelsClass
     {
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestLabels()
         {
@@ -37,7 +37,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestLabelsNoAnnotation()
         {
@@ -60,7 +60,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestStringLabels()
         {

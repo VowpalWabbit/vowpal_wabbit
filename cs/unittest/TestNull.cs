@@ -14,8 +14,7 @@ namespace cs_unittest
     public class TestNull
     {
         [TestMethod]
-        [TestCategory("Null")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestNull1()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -43,8 +42,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Null")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestNull2()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -69,8 +67,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Null")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestNull3()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ac"))
@@ -108,8 +105,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Null")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestNull4()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))
@@ -145,8 +141,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Null")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         public void TestNull5()
         {
             using (var vw = new VowpalWabbit<Context, ADF>("--cb_adf --rank_all --interact ab"))

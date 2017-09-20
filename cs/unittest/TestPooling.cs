@@ -13,7 +13,6 @@ namespace cs_unittest
     public class TestPooling
     {
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(InvalidOperationException))]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestEmptyFactory()
@@ -22,7 +21,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed1()
@@ -33,7 +31,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed2()
@@ -44,7 +41,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDangling()
         {
@@ -63,7 +59,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestFactory()
         {
@@ -99,7 +94,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [TestCategory("Vowpal Wabbit")]
         public void ThreadPoolNull()
         {
@@ -120,7 +114,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestConcurrency()
         {
@@ -182,7 +175,6 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [TestCategory("Vowpal Wabbit")]
         public void TestSaveLoadSkip()
         {

@@ -16,8 +16,7 @@ namespace cs_unittest
     {
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleByte>(string.Empty))
@@ -27,8 +26,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericByteArray()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleByteArray>(string.Empty))
@@ -39,8 +37,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericByteArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleByteArrayAnchor>(string.Empty))
@@ -52,8 +49,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSByte>(string.Empty))
@@ -63,8 +59,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSByteArray()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSByteArray>(string.Empty))
@@ -75,8 +70,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSByteArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSByteArrayAnchor>(string.Empty))
@@ -88,8 +82,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt16>(string.Empty))
@@ -99,8 +92,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt16Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt16Array>(string.Empty))
@@ -111,8 +103,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt16ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt16ArrayAnchor>(string.Empty))
@@ -124,8 +115,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt32>(string.Empty))
@@ -135,8 +125,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt32Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt32Array>(string.Empty))
@@ -147,8 +136,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt32ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt32ArrayAnchor>(string.Empty))
@@ -160,8 +148,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt16>(string.Empty))
@@ -171,8 +158,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt16Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt16Array>(string.Empty))
@@ -183,8 +169,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt16ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt16ArrayAnchor>(string.Empty))
@@ -196,8 +181,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt32>(string.Empty))
@@ -207,8 +191,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt32Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt32Array>(string.Empty))
@@ -219,8 +202,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt32ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt32ArrayAnchor>(string.Empty))
@@ -232,8 +214,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSingle()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSingle>(string.Empty))
@@ -243,8 +224,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSingleArray()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSingleArray>(string.Empty))
@@ -255,8 +235,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericSingleArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleSingleArrayAnchor>(string.Empty))
@@ -268,8 +247,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt64>(string.Empty))
@@ -279,8 +257,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt64Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt64Array>(string.Empty))
@@ -291,8 +268,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericInt64ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleInt64ArrayAnchor>(string.Empty))
@@ -304,8 +280,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt64>(string.Empty))
@@ -315,8 +290,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt64Array()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt64Array>(string.Empty))
@@ -327,8 +301,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericUInt64ArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleUInt64ArrayAnchor>(string.Empty))
@@ -340,8 +313,7 @@ namespace cs_unittest
 
 	
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericDouble()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleDouble>(string.Empty))
@@ -351,8 +323,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericDoubleArray()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleDoubleArray>(string.Empty))
@@ -363,8 +334,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestNumericDoubleArrayAnchor()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<NumericExampleDoubleArrayAnchor>(string.Empty))
@@ -376,8 +346,7 @@ namespace cs_unittest
 
 	
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByte>(string.Empty))
@@ -396,8 +365,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteString()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteString>(string.Empty))
@@ -416,8 +384,7 @@ namespace cs_unittest
 		}
 
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteByte>(string.Empty))
@@ -435,8 +402,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteSByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteSByte>(string.Empty))
@@ -454,8 +420,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteInt16>(string.Empty))
@@ -473,8 +438,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteInt32>(string.Empty))
@@ -492,8 +456,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteUInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteUInt16>(string.Empty))
@@ -511,8 +474,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteUInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteUInt32>(string.Empty))
@@ -530,8 +492,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteSingle()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteSingle>(string.Empty))
@@ -549,8 +510,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteInt64>(string.Empty))
@@ -568,8 +528,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteUInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteUInt64>(string.Empty))
@@ -587,8 +546,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryByteDouble()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleByteDouble>(string.Empty))
@@ -607,8 +565,7 @@ namespace cs_unittest
 		}
 	
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByte>(string.Empty))
@@ -627,8 +584,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteString()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteString>(string.Empty))
@@ -647,8 +603,7 @@ namespace cs_unittest
 		}
 
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteByte>(string.Empty))
@@ -666,8 +621,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteSByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteSByte>(string.Empty))
@@ -685,8 +639,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteInt16>(string.Empty))
@@ -704,8 +657,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteInt32>(string.Empty))
@@ -723,8 +675,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteUInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteUInt16>(string.Empty))
@@ -742,8 +693,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteUInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteUInt32>(string.Empty))
@@ -761,8 +711,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteSingle()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteSingle>(string.Empty))
@@ -780,8 +729,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteInt64>(string.Empty))
@@ -799,8 +747,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteUInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteUInt64>(string.Empty))
@@ -818,8 +765,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionarySByteDouble()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleSByteDouble>(string.Empty))
@@ -838,8 +784,7 @@ namespace cs_unittest
 		}
 	
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16>(string.Empty))
@@ -858,8 +803,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16String()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16String>(string.Empty))
@@ -878,8 +822,7 @@ namespace cs_unittest
 		}
 
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Byte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Byte>(string.Empty))
@@ -897,8 +840,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16SByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16SByte>(string.Empty))
@@ -916,8 +858,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Int16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Int16>(string.Empty))
@@ -935,8 +876,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Int32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Int32>(string.Empty))
@@ -954,8 +894,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16UInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16UInt16>(string.Empty))
@@ -973,8 +912,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16UInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16UInt32>(string.Empty))
@@ -992,8 +930,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Single()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Single>(string.Empty))
@@ -1011,8 +948,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Int64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Int64>(string.Empty))
@@ -1030,8 +966,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16UInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16UInt64>(string.Empty))
@@ -1049,8 +984,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt16Double()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt16Double>(string.Empty))
@@ -1069,8 +1003,7 @@ namespace cs_unittest
 		}
 	
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32>(string.Empty))
@@ -1089,8 +1022,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32String()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32String>(string.Empty))
@@ -1109,8 +1041,7 @@ namespace cs_unittest
 		}
 
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Byte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Byte>(string.Empty))
@@ -1128,8 +1059,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32SByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32SByte>(string.Empty))
@@ -1147,8 +1077,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Int16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Int16>(string.Empty))
@@ -1166,8 +1095,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Int32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Int32>(string.Empty))
@@ -1185,8 +1113,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32UInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32UInt16>(string.Empty))
@@ -1204,8 +1131,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32UInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32UInt32>(string.Empty))
@@ -1223,8 +1149,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Single()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Single>(string.Empty))
@@ -1242,8 +1167,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Int64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Int64>(string.Empty))
@@ -1261,8 +1185,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32UInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32UInt64>(string.Empty))
@@ -1280,8 +1203,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryInt32Double()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleInt32Double>(string.Empty))
@@ -1300,8 +1222,7 @@ namespace cs_unittest
 		}
 	
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16>(string.Empty))
@@ -1320,8 +1241,7 @@ namespace cs_unittest
 		}
 
         [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16String()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16String>(string.Empty))
@@ -1340,8 +1260,7 @@ namespace cs_unittest
 		}
 
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Byte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Byte>(string.Empty))
@@ -1359,8 +1278,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16SByte()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16SByte>(string.Empty))
@@ -1378,8 +1296,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Int16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Int16>(string.Empty))
@@ -1397,8 +1314,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Int32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Int32>(string.Empty))
@@ -1416,8 +1332,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16UInt16()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16UInt16>(string.Empty))
@@ -1435,8 +1350,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16UInt32()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16UInt32>(string.Empty))
@@ -1454,8 +1368,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Single()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Single>(string.Empty))
@@ -1473,8 +1386,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Int64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Int64>(string.Empty))
@@ -1492,8 +1404,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16UInt64()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16UInt64>(string.Empty))
@@ -1511,8 +1422,7 @@ namespace cs_unittest
             }
 		}
 	        [TestMethod]
-        [TestCategory("Marshal")]
-        [TestCategory("Vowpal Wabbit")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
 		public void TestDictionaryUInt16Double()
 		{
 		    using(var vw = new VowpalWabbitExampleValidator<DictionaryExampleUInt16Double>(string.Empty))

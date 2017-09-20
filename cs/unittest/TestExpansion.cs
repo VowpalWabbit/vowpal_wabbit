@@ -13,7 +13,7 @@ namespace cs_unittest
     public class TestExpansionClass
     {
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
         [TestCategory("Vowpal Wabbit")]
         public void TestExpansion()
         {
