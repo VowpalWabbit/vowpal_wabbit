@@ -1027,8 +1027,8 @@ struct Context
 		{
 			auto feature_group = ns.feature_group;
 			// avoid duplicate insertion
-			for (unsigned char ns : ex->indices)
-				if (ns == feature_group)
+			for (unsigned char ns_char : ex->indices)
+				if (ns_char == feature_group)
 					goto done;
 
 			ex->indices.push_back(feature_group);
