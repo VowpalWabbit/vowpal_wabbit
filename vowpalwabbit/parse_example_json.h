@@ -969,7 +969,7 @@ struct Context
 
 	BaseState<audit>* root_state;
 
-	Context()
+	Context() : error_ptr(nullptr)
 	{
 		namespace_path = v_init<Namespace<audit>>();
 		current_state = root_state = &default_state;
