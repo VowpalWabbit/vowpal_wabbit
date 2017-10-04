@@ -39,18 +39,13 @@ void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(vo
     dst->l = src->l;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
-{ //std::cerr << "copy_example_data dst = " << dst << std::endl;
+void copy_example_metadata(bool audit, example* dst, example* src)
+{
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
-  copy_array(dst->indices, src->indices);
-  for (namespace_index c : src->indices)
-    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
-  dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
@@ -59,7 +54,6 @@ void copy_example_data(bool audit, example* dst, example* src)
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
-  dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
@@ -67,9 +61,38 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->in_use = src->in_use;
 }
 
+void copy_example_data(bool audit, example* dst, example* src)
+{ //std::cerr << "copy_example_data dst = " << dst << std::endl;
+  copy_example_metadata(audit, dst, src);
+
+  // copy feature data
+  copy_array(dst->indices, src->indices);
+  for (namespace_index c : src->indices)
+    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  //copy_array(dst->atomics[i], src->atomics[i]);
+  dst->num_features = src->num_features;
+  dst->total_sum_feat_sq = src->total_sum_feat_sq;
+}
+
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*))
 { copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
+}
+
+void move_feature_namespace(example* dst, example* src, namespace_index c)
+{ if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
+    return; // index not present in src
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
+    dst->indices.push_back(c);
+
+  auto& fdst = dst->feature_space[c];
+  auto& fsrc = src->feature_space[c];
+
+  src->num_features -= fsrc.size();
+  src->total_sum_feat_sq -= fsrc.sum_feat_sq;
+  std::swap(fdst, fsrc);
+  dst->num_features += fdst.size();
+  dst->total_sum_feat_sq += fdst.sum_feat_sq;
 }
 
 }

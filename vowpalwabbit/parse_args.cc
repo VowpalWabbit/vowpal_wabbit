@@ -70,6 +70,7 @@ license as described in the file LICENSE.
 #include "audit_regressor.h"
 #include "marginal.h"
 #include "explore_eval.h"
+#include "baseline.h"
 // #include "cntk.h"
 
 using namespace std;
@@ -1101,6 +1102,7 @@ void parse_reductions(vw& all)
   // all.reduction_stack.push_back(VW_CNTK::setup);
 
   //Score Users
+  all.reduction_stack.push_back(baseline_setup);
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
   all.reduction_stack.push_back(active_cover_setup);
