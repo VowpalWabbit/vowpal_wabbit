@@ -59,6 +59,12 @@ inline void call_T(R& dat, W& weights, const float ft_value, const uint64_t ft_i
   T(dat, ft_value, weights[ft_idx]);
 }
 
+ template <class R, void (*T)(R&, const float, const float&), class W>
+inline void call_T(R& dat, const W& weights, const float ft_value, const uint64_t ft_idx)
+{
+  T(dat, ft_value, weights[ft_idx]);
+}
+
 template <class R, void (*T)(R&, float, uint64_t), class W>
 inline void call_T(R& dat, W& /*weights*/, const float ft_value, const uint64_t ft_idx)
 {
@@ -119,7 +125,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   // often used values
   const uint64_t offset = ec.ft_offset;
 //    const uint64_t stride_shift = all.stride_shift; // it seems we don't need stride shift in FTRL-like hash
- 
+
   // statedata for generic non-recursive iteration
   v_array<feature_gen_data > state_data = v_init<feature_gen_data >();
 
@@ -329,14 +335,14 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 
 	  feature_value ft_value = fgd2->x;
 	  feature_index halfhash = fgd2->hash;
-	  
+
 	  features::features_value_index_audit_range range = fs.values_indices_audit();
 	  features::iterator_all begin = range.begin();
 	  begin += start_i;
 	  features::iterator_all end = range.begin();
 	  end += fgd2->loop_end + 1;
 	  inner_kernel<R, S, T, audit, audit_func, W>(dat, begin, end, offset, weights, ft_value, halfhash);
-	  
+
           // trying to go back increasing loop_idx of each namespace by the way
 
           bool go_further = true;

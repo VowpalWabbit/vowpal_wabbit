@@ -25,30 +25,22 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
-template <class T> class set_initial_wrapper 
+template <class T> class set_initial_wrapper
 {
 public:
-    static void func(typename T::iterator& iter, float& initial) { *iter = initial; }    
+  static void func(weight& w, float& initial, uint64_t index) { w = initial; }
 };
-	
-template <class T> class random_positive_wrapper 
+
+template <class T> class random_positive_wrapper
 {
 public:
-   static void func(typename T::iterator& iter)
-    {
-      uint64_t index = iter.index();
-      *iter = (float)(0.1 * merand48(index));
-    }
+  static void func(weight& w, uint64_t index) { w = (float)(0.1 * merand48(index)); }
 };
 
 template <class T> class random_weights_wrapper
 {
-public:    
-    static void func(typename T::iterator& iter)
-    {
-      uint64_t index = iter.index();
-      *iter = (float)(merand48(index) - 0.5);
-    }
+public:
+  static void func(weight& w, uint64_t index) { w = (float)(merand48(index) - 0.5); }
 };
 
 template<class T> void initialize_regressor(vw& all, T& weights)
@@ -57,7 +49,10 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     return;
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { new(&weights) T(length, weights.stride_shift()); }
+    {
+      uint32_t ss = weights.stride_shift();
+      weights.~T();//dealloc so that we can realloc, now with a known size
+      new(&weights) T(length, ss); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
