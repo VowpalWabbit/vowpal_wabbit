@@ -437,7 +437,7 @@ inline void expdigammify_2(vw &all, float* gamma, T *norm, const T threshold)
 		 [threshold](float g, float n)
 		 { return fmax(threshold, exponential<T, mtype>(digamma<T, mtype>(g) - n)); });
 }
-template <> 
+template <>
 inline void expdigammify_2<float, USE_SIMD>(vw &all, float* gamma, float *norm, const float threshold)
 {
 #if defined(HAVE_SIMD_MATHMODE)
@@ -670,20 +670,18 @@ struct initial_weights
 
 template<class T> class set_initial_lda_wrapper
 {
-public:    
-    static void func(typename T::iterator& iter, initial_weights& iw)
+public:
+  static void func(weight& w, initial_weights& iw, uint64_t index)
     {
     	uint32_t lda = iw._lda;
     	weight initial_random = iw._initial_random;
-	if (iw._random)
-	  {
-	    uint64_t index = iter.index();
-	    for (weight_iterator_iterator k = iter.begin(); k != iter.end(lda); ++k, ++index)
-		{  *k = (float)(-log(merand48(index) + 1e-6) + 1.0f);
-		   *k *= initial_random;
-		}
-	  }
-	(&(*iter))[lda] = iw._initial;
+      if (iw._random)
+        {
+          weight* pw =&w;
+          for (size_t i =0; i != lda; ++i, ++index)
+            pw[i] = (float)(-log(merand48(index) + 1e-6) + 1.0f)*initial_random;
+        }
+      (&w)[lda]= iw._initial;
     }
 };
 
@@ -787,14 +785,14 @@ void learn_batch(lda &l)
 	l.total_lambda.push_back(0.f);
       //This part does not work with sparse parameters
       size_t stride = weights.stride();
-      for (size_t i = 0; i <= weights.mask(); i += stride) 
+      for (size_t i = 0; i <= weights.mask(); i += stride)
 	{
 	  weight* w = &(weights[i]);
 	  for (size_t k = 0; k < l.all->lda; k++)
 	    l.total_lambda[k] += w[k];
-	}   
+	}
     }
-  
+
   l.example_t++;
   l.total_new.erase();
   for (size_t k = 0; k < l.all->lda; k++)
@@ -870,14 +868,14 @@ void learn_batch(lda &l)
 			  float c_w = eta * find_cw(l, u_for_w, v_s) * s->f.x;
 			  word_weights = &(weights[s->f.weight_index]);
 			  for (size_t k = 0; k < l.all->lda; k++, ++u_for_w, ++word_weights)
-			  {   
+			  {
 				  float new_value = *u_for_w * v_s[k] * c_w;
 				  l.total_new[k] += new_value;
 				  *word_weights += new_value;
 			  }
 		  }
 	  }
-  
+
 	  for (size_t k = 0; k < l.all->lda; k++)
 	  { l.total_lambda[k] *= minuseta;
 		l.total_lambda[k] += l.total_new[k];
@@ -910,7 +908,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
     { // build feature to example map
 	  uint64_t stride_shift = l.all->weights.stride_shift();
 	  uint64_t weight_mask = l.all->weights.mask();
-      
+
       for (features& fs : ec)
 	{ for (features::iterator& f : fs)
 	    { uint64_t idx = (f.index() & weight_mask) >> stride_shift;
@@ -919,7 +917,7 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 	    }
 	}
     }
-  
+
   learn(l, base, ec);
 }
 
@@ -1001,7 +999,7 @@ void compute_coherence_metrics(lda &l, T& weights)
 		typename T::iterator iter = weights.begin();
 		for (uint64_t i = 0; i < min(top_words_count, length); i++, ++iter)
 			top_features.push(feature((&(*iter))[topic], iter.index()));
-		
+
 		for (typename T::iterator v = weights.begin(); v!= weights.end(); ++v)
 		  if ((&(*v))[topic] > top_features.top().x)
 		    {
@@ -1142,8 +1140,9 @@ void end_examples(lda &l, T& weights)
       l.decay_levels.last() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = fmin(1.f, correctedExp(decay_component));
 
-    for (weight_iterator_iterator k = iter.begin(); k != iter.end(l.all->lda); ++k)
-      *k *= decay;
+    weight* wp = &(*iter);
+    for (size_t i = 0 ; i < l.all->lda; ++i)
+      wp[i] *= decay;
   }
 }
 
@@ -1222,7 +1221,7 @@ LEARNER::base_learner *lda_setup(vw &all)
   }
 
   float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
-  
+
   all.weights.stride_shift((size_t)temp);
   all.random_weights = true;
   all.add_constant = false;
