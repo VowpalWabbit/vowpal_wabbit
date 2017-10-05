@@ -286,8 +286,8 @@ public:
 			iter = _map.find(index);
 			if (fun != nullptr)
 			  {
-			    iterator i(iter,stride());
-			    fun(i, default_data);
+			    iterator j(iter,stride());
+			    fun(j, default_data);
 			  }
 			iter = _map.find(index);
 		}

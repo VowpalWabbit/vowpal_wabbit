@@ -488,13 +488,13 @@ float get_pred_per_update(gd& g, example& ec)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
       g.total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g.total_weight, g.all->normalized_sum_norm_x, g.neg_norm_power);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
     else
       {
         double nsnx = g.all->normalized_sum_norm_x + ec.weight * nd.norm_x;
         double tw = g.total_weight + ec.weight;
-        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)tw, (float)nsnx, g.neg_norm_power);
       }
     nd.pred_per_update *= g.update_multiplier;
   }

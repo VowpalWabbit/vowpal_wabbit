@@ -147,10 +147,10 @@ inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-{ return (&all.weights[index << all.weights.stride_shift()])[offset]; }
+{ return (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset]; }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-{ (&all.weights[index << all.weights.stride_shift()])[offset] = value; }
+{ (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset] = value; }
 
 inline uint32_t num_weights(vw& all)
 { return (uint32_t)all.length();}
