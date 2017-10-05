@@ -851,11 +851,11 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   template<class T> class set_initial_gd_wrapper
   {
       public:
-          static void func(typename T::iterator& iter, pair<float,float>& initial)
-              {
-                (&(*iter))[0] = initial.first;
-                (&(*iter))[1] = initial.second;
-              }
+    static void func(weight& w, pair<float,float>& initial, uint64_t index)
+    {
+      w = initial.first;
+      (&w)[1] = initial.second;
+    }
   };
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
