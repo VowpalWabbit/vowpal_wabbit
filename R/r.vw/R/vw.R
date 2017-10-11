@@ -71,7 +71,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
   path_data_args = list(path_vw_data_train, path_vw_data_val)
   for(i in seq_along(data_args))
   {
-    if (inherits(data_args[[i], "data.frame"))
+    if (inherits(data_args[[i]], "data.frame"))
     {
       if(is.null(target))
         stop(paste0(names(data_args)[i],
