@@ -9,7 +9,7 @@ average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0        1        1        2
 0.000000 0.000000            2            2.0        2        2        2
-0.500000 1.000000            4            4.0        4        2        2
+0.500000 1.000000            4            4.0        4        3        2
 0.750000 1.000000            8            8.0        8        6        2
 
 finished run

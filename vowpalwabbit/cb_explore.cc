@@ -31,6 +31,7 @@ namespace CB_EXPLORE
     float epsilon;
     size_t bag_size;
     size_t cover_size;
+    float psi;
     
     size_t counter;
     
@@ -113,6 +114,19 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
 { //input: a probability distribution
   //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
+  if (min_prob > 0.999) // uniform exploration
+  { size_t support_size = distribution.size();
+    if (!zeros)
+    { for (size_t i = 0; i < distribution.size(); ++i)
+        if (distribution[i].score == 0)
+          support_size--;
+    }
+    for (size_t i = 0; i < distribution.size(); ++i)
+      if (zeros || distribution[i].score > 0)
+        distribution[i].score = 1.f / support_size;
+    return;
+  }
+
   min_prob /= distribution.size();
   float touched_mass = 0.;
   float untouched_mass = 0.;
@@ -152,9 +166,8 @@ void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, 
     data.preds.push_back((uint32_t)pred);
   }
   uint32_t num_actions = data.cbcs.num_actions;
-  float epsilon = data.epsilon;
 
-  float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
 
   safety(probs, min_prob*num_actions, false);
 
@@ -175,7 +188,6 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
   for (uint32_t j = 0; j < num_actions; j++)
     data.cs_label.costs.push_back({FLT_MAX,j+1,0.,0.});
 
-  float epsilon = data.epsilon;
   size_t cover_size = data.cover_size;
   size_t counter = data.counter;
   v_array<float>& probabilities = data.cover_probs;
@@ -183,7 +195,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 
   float additive_probability = 1.f / (float)cover_size;
 
-  float min_prob = epsilon * min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
+  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
 
   data.cb_label = ec.l.cb;
 
@@ -210,7 +222,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     for (size_t i = 0; i < cover_size; i++)
     { //Create costs of each action based on online cover
       for (uint32_t j = 0; j < num_actions; j++)
-      { float pseudo_cost = data.cs_label.costs[j].x - epsilon * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
+      { float pseudo_cost = data.cs_label.costs[j].x - data.psi * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
         data.second_cs_label.costs[j].class_index = j+1;
         data.second_cs_label.costs[j].x = pseudo_cost;
         //cout<<pseudo_cost<<" ";
@@ -301,7 +313,8 @@ base_learner* cb_explore_setup(vw& all)
   ("first", po::value<size_t>(), "tau-first exploration")
   ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
   ("bag",po::value<size_t>() ,"bagging-based exploration")
-  ("cover",po::value<size_t>() ,"Online cover based exploration");
+  ("cover",po::value<size_t>() ,"Online cover based exploration")
+  ("psi", po::value<float>(), "disagreement parameter for cover");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -335,17 +348,17 @@ base_learner* cb_explore_setup(vw& all)
     data.cs = all.cost_sensitive;
     data.second_cs_label.costs.resize(num_actions);
     data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
-    data.epsilon = 0.05f;
     *all.file_options << " --cover " << data.cover_size;
 
-    if (vm.count("epsilon"))
-      data.epsilon = vm["epsilon"].as<float>();
+    data.psi = 1.0f;
+    if (vm.count("psi"))
+      data.psi = vm["psi"].as<float>();
     data.cover_probs = v_init<float>();
     data.cover_probs.resize(num_actions);
     data.preds = v_init<uint32_t>();
     data.preds.resize(data.cover_size);
-    sprintf(type_string, "%f", data.epsilon);
-    *all.file_options << " --epsilon " << type_string;
+    sprintf(type_string, "%f", data.psi);
+    *all.file_options << " --psi " << type_string;
     l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1, prediction_type::action_probs);
   }
   else if (vm.count("bag"))
