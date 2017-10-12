@@ -14,6 +14,8 @@ using namespace LEARNER;
 
 struct baseline
 { example* ec;
+  vw* all;
+  bool lr_scaling; // whether to scale baseline learning rate based on max label
 };
 
 template <bool is_learn>
@@ -31,7 +33,15 @@ void predict_or_learn(baseline& data, base_learner& base, example& ec)
     VW::move_feature_namespace(data.ec, &ec, constant_namespace);
 
     // regress baseline on label
-    base.learn(*data.ec);
+    if (data.lr_scaling)
+    { const float multiplier = max(0.0001, max(abs(data.all->sd->min_label), abs(data.all->sd->max_label)));
+      cout << "mult " << multiplier << endl;
+      data.all->eta *= multiplier;
+      base.learn(*data.ec);
+      data.all->eta /= multiplier;
+    }
+    else
+      base.learn(*data.ec);
 
     // regress residual
     ec.l.simple.initial = data.ec->pred.scalar;
@@ -59,6 +69,7 @@ base_learner* baseline_setup(vw& all)
   // initialize baseline example
   data.ec = VW::alloc_examples(simple_label.label_size, 1);
   data.ec->in_use = true;
+  data.all = &all;
 
   base_learner* base = setup_base(all);
   learner<baseline>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>);
