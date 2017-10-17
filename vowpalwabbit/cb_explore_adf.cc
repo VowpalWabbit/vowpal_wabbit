@@ -35,9 +35,13 @@ struct cb_explore_adf
   float epsilon;
   size_t bag_size;
   size_t cover_size;
+  float psi;
+  bool nounif;
   float lambda;
   uint64_t offset;
   bool greedify;
+
+  size_t counter;
 
   bool need_to_clear;
   vw* all;
@@ -199,7 +203,7 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
   uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)data.cover_size;
-  float min_prob = data.epsilon / num_actions;
+  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
   probs.erase();
   for(uint32_t i = 0; i < num_actions; i++)
@@ -217,7 +221,7 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
       if (shared > 0)
         data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
       for (uint32_t j = 0; j < num_actions; j++)
-      { float pseudo_cost = data.cs_labels.costs[j+shared].x - data.epsilon * min_prob / (max(probs[j].score, min_prob) / norm);
+      { float pseudo_cost = data.cs_labels.costs[j+shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
         data.cs_labels_2.costs.push_back({pseudo_cost,j,0.,0.});
       }
       GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2, data.prepped_cs_labels, data.offset, i+1);
@@ -233,11 +237,13 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
     probs[action].score += additive_probability;
   }
 
-  CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
+  CB_EXPLORE::safety(data.action_probs, min_prob * num_actions, !data.nounif);
 
   qsort((void*) probs.begin(), probs.size(), sizeof(action_score), reverse_order);
   for (size_t i = 0; i < num_actions; i++)
     preds[i] = probs[i];
+
+  ++data.counter;
 }
 
 template <bool is_learn>
@@ -463,6 +469,8 @@ base_learner* cb_explore_adf_setup(vw& all)
   ("epsilon", po::value<float>(), "epsilon-greedy exploration")
   ("bag", po::value<size_t>(), "bagging-based exploration")
   ("cover",po::value<size_t>() ,"Online cover based exploration")
+  ("psi", po::value<float>(), "disagreement parameter for cover")
+  ("nounif", "do not explore uniformly on zero-probability actions in cover")
   ("softmax", "softmax exploration")
   ("greedify", "always update first policy once in bagging")
   ("lambda", po::value<float>(), "parameter for softmax");
@@ -491,8 +499,16 @@ base_learner* cb_explore_adf_setup(vw& all)
     problem_multiplier = data.cover_size+1;
     *all.file_options << " --cover " << data.cover_size;
 
-    if (!vm.count("epsilon"))
-      data.epsilon = 0.05f;
+    data.psi = 1.0f;
+    if (vm.count("psi"))
+      data.psi = vm["psi"].as<float>();
+
+    sprintf(type_string, "%f", data.psi);
+    *all.file_options << " --psi " << type_string;
+    if (vm.count("nounif"))
+    { data.nounif = true;
+      *all.file_options << " --nounif";
+    }
   }
   else if (vm.count("bag"))
   { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
