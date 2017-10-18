@@ -551,6 +551,8 @@ struct vw
   uint64_t random_state; // per instance random_state
   bool random_weights;
   bool random_positive_weights; // for initialize_regressor w/ new_mf
+  bool normal_weights;
+  bool tnormal_weights;
   bool add_constant;
   bool nonormalize;
   bool do_reset_source;
