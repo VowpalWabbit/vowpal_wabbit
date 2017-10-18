@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,7 @@ namespace cs_unittest
     public class TestTracing
     {
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestTraceListener()
         {
             var messages = new List<string>();
