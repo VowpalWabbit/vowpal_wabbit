@@ -478,6 +478,8 @@ vw::vw()
   lda = 0;
   random_seed = 0;
   random_weights = false;
+  normal_weights = false;
+  tnormal_weights = false;
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
