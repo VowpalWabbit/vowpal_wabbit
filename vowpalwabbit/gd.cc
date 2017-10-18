@@ -111,14 +111,14 @@ inline void update_feature(float& update, float x, float& fw)
   float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
   { if (normalized)
       { if (sqrt_rate)
-          { float avg_norm = total_weight / normalized_sum_norm_x;
+          { float avg_norm = (float)(total_weight / normalized_sum_norm_x);
             if (adaptive)
               return sqrt(avg_norm);
             else
               return avg_norm;
           }
         else
-          return powf( normalized_sum_norm_x / total_weight, neg_norm_power);
+          return powf( (float)(normalized_sum_norm_x / total_weight), neg_norm_power);
       }
     return 1.f;
   }
@@ -488,13 +488,13 @@ float get_pred_per_update(gd& g, example& ec)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
       g.total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g.total_weight, g.all->normalized_sum_norm_x, g.neg_norm_power);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
     else
       {
         double nsnx = g.all->normalized_sum_norm_x + ec.weight * nd.norm_x;
         double tw = g.total_weight + ec.weight;
-        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)tw, (float)nsnx, g.neg_norm_power);
       }
     nd.pred_per_update *= g.update_multiplier;
   }
