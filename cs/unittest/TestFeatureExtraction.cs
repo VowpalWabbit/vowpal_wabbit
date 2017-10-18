@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +23,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestFeatureExtraction()
         {
             using (var vw = new VowpalWabbit<Features>("--noconstant"))
@@ -62,6 +63,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestJsonFeatureExtraction()
         {
             string json = "{\"ns1\":{\"location\":\"New York\", \"f2\":3.4}}";

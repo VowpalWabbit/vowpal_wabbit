@@ -220,15 +220,15 @@ void mf_train(gdmf& d, example& ec)
 		mf_train(d, ec, d.all->weights.dense_weights);
 }
 
-template <class T> class set_rand_wrapper 
+template <class T> class set_rand_wrapper
 {
 public:
-    
-    static void func(typename T::iterator& iter, uint32_t& stride)
+
+  static void func(weight& w, uint32_t& stride, uint64_t index)
     {
-      uint64_t index = iter.index();
-      for (weight_iterator_iterator w = iter.begin(); w != iter.end(stride); ++w, ++index)
-        *w = (float)(0.1 * merand48(index));
+      weight* pw=&w;
+      for (size_t i =0 ; i != stride; ++i, ++index)
+        pw[i] = (float)(0.1 * merand48(index));
     }
 };
 
