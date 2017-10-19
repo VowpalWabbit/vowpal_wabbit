@@ -18,10 +18,11 @@ struct baseline
 
 template <bool is_learn>
 void predict_or_learn(baseline& data, base_learner& base, example& ec)
-{ if (is_learn)
-  { // do a full prediction, for safety in accurate predictive validation
-    base.predict(ec);
-    const double pred = ec.pred.scalar;
+{ // always do a full prediction, for safety in accurate predictive validation
+  base.predict(ec);
+
+  if (is_learn)
+  { const double pred = ec.pred.scalar; // save 'safe' prediction
 
     // now learn
     // move label & constant features data over to baseline example
@@ -42,8 +43,6 @@ void predict_or_learn(baseline& data, base_learner& base, example& ec)
     // return the safe prediction
     ec.pred.scalar = pred;
   }
-  else
-    base.predict(ec);
 }
 
 void finish(baseline& data)
