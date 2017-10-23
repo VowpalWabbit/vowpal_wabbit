@@ -20,6 +20,7 @@ struct baseline
 { example* ec;
   vw* all;
   bool lr_scaling; // whether to scale baseline learning rate based on max label
+  float lr_multiplier;
   bool global_only; // only use a global constant for the baseline
 };
 
@@ -48,11 +49,13 @@ void predict_or_learn(baseline& data, base_learner& base, example& ec)
 
     // regress baseline on label
     if (data.lr_scaling)
-    { float multiplier = max<float>(0.0001f,
-        max<float>(abs(data.all->sd->min_label), abs(data.all->sd->max_label)));
-      if (multiplier > max_multiplier)
-        multiplier = max_multiplier;
-      cout << data.all->sd->min_label << " " << data.all->sd->max_label << " mult " << multiplier << endl;
+    { float multiplier = data.lr_multiplier;
+      if (multiplier == 0)
+      { multiplier = max<float>(0.0001f,
+            max<float>(abs(data.all->sd->min_label), abs(data.all->sd->max_label)));
+        if (multiplier > max_multiplier)
+          multiplier = max_multiplier;
+      }
       data.all->eta *= multiplier;
       base.learn(*data.ec);
       data.all->eta /= multiplier;
@@ -83,6 +86,7 @@ base_learner* baseline_setup(vw& all)
 { if (missing_option(all, true, "baseline", "Learn an additive baseline (from constant features) and a residual separately in regression."))
     return nullptr;
   new_options(all, "BASELINE options")
+  ("lr_multiplier", po::value<float>(), "learning rate multiplier for baseline model")
   ("global_only", "use separate example with only global constant for baseline predictions");
   add_options(all);
 
@@ -94,10 +98,16 @@ base_learner* baseline_setup(vw& all)
   data.all = &all;
   if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
     data.lr_scaling = true;
+  if (all.vm.count("lr_multiplier"))
+    data.lr_multiplier = all.vm["lr_multiplier"].as<float>();
   data.global_only = all.vm.count("global_only") > 0;
   if (data.global_only)
   { // use a separate global
-    VW::add_constant_feature(all, data.ec);
+    data.ec->indices.push_back(constant_namespace);
+    // shifted index to avoid conflicts
+    data.ec->feature_space[constant_namespace].push_back(1, constant - 17);
+    data.ec->total_sum_feat_sq++;
+    data.ec->num_features++;
   }
 
   base_learner* base = setup_base(all);
