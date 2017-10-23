@@ -13,7 +13,43 @@ using namespace std;
 using namespace LEARNER;
 
 namespace
-{ const float max_multiplier = 1000.f;
+{
+const float max_multiplier = 1000.f;
+const size_t baseline_enabled_idx = 1357; // feature index for enabling baseline
+}
+
+namespace BASELINE
+{
+void set_baseline_enabled(example* ec)
+{ auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
+  { if (f.index() == baseline_enabled_idx)
+    { f.value() = 1;
+      return;
+    }
+  }
+  // if not found, push new feature
+  fs.push_back(1, baseline_enabled_idx);
+}
+
+void reset_baseline_disabled(example* ec)
+{ auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
+  { if (f.index() == baseline_enabled_idx)
+    { f.value() = 0;
+      return;
+    }
+  }
+}
+
+bool baseline_enabled(example* ec)
+{ auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
+  { if (f.index() == baseline_enabled_idx)
+      return f.value() == 1;
+  }
+  return false;
+}
 }
 
 struct baseline
@@ -22,11 +58,21 @@ struct baseline
   bool lr_scaling; // whether to scale baseline learning rate based on max label
   float lr_multiplier;
   bool global_only; // only use a global constant for the baseline
+  bool check_enabled; // only use baseline when the example contains enabled flag
 };
 
 template <bool is_learn>
 void predict_or_learn(baseline& data, base_learner& base, example& ec)
-{ // always do a full prediction, for safety in accurate predictive validation
+{ // no baseline if check_enabled is true and example contains flag
+  if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
+  { if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
+    return;
+  }
+
+  // always do a full prediction, for safety in accurate predictive validation
   if (data.global_only)
   { VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
     base.predict(*data.ec);
@@ -87,7 +133,8 @@ base_learner* baseline_setup(vw& all)
     return nullptr;
   new_options(all, "BASELINE options")
   ("lr_multiplier", po::value<float>(), "learning rate multiplier for baseline model")
-  ("global_only", "use separate example with only global constant for baseline predictions");
+  ("global_only", "use separate example with only global constant for baseline predictions")
+  ("check_enabled", "only use baseline when the example contains enabled flag");
   add_options(all);
 
   baseline& data = calloc_or_throw<baseline>();
@@ -100,6 +147,7 @@ base_learner* baseline_setup(vw& all)
     data.lr_scaling = true;
   if (all.vm.count("lr_multiplier"))
     data.lr_multiplier = all.vm["lr_multiplier"].as<float>();
+  data.check_enabled = all.vm.count("check_enabled") > 0;
   data.global_only = all.vm.count("global_only") > 0;
   if (data.global_only)
   { // use a separate global

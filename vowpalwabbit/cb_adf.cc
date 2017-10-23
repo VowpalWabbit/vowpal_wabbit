@@ -360,6 +360,7 @@ base_learner* cb_adf_setup(vw& all)
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
+  bool check_baseline_enabled = false;
   if (all.vm.count("cb_type"))
   { std::string type_string;
 
@@ -369,6 +370,8 @@ base_learner* cb_adf_setup(vw& all)
     if (type_string.compare("dr") == 0)
     { ld.gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
+      // only use baseline when manually enabled for loss estimation
+      check_baseline_enabled = true;
     }
     else if (type_string.compare("ips") == 0)
     { ld.gen_cs.cb_type = CB_TYPE_IPS;
@@ -413,6 +416,9 @@ base_learner* cb_adf_setup(vw& all)
       all.args.push_back("multiline");
     if (count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
       all.args.push_back("--csoaa_rank");
+  }
+  if (count(all.args.begin(), all.args.end(), "--baseline") && check_baseline_enabled)
+  { all.args.push_back("--check_enabled");
   }
 
   base_learner* base = setup_base(all);
