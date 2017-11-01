@@ -1115,6 +1115,7 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(scorer_setup);
 
   //Reductions
+  all.reduction_stack.push_back(bs_setup);
   all.reduction_stack.push_back(binary_setup);
 
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'m', MULTICLASS::mc_label>);
@@ -1139,7 +1140,6 @@ void parse_reductions(vw& all)
 
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);
-  all.reduction_stack.push_back(bs_setup);
 
   all.reduction_stack.push_back(audit_regressor_setup);
 
