@@ -1,4 +1,4 @@
-﻿<#@ template debug="false" hostspecific="True" language="C#" #>
+<#@ template debug="false" hostspecific="True" language="C#" #>
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
@@ -121,7 +121,7 @@ namespace cs_unittest
 <# if (skipList.Contains(mainTestcase.Id)) { #>
 		[Ignore]
 <# } #>
-		[TestCategory("Command Line")]
+		[TestCategory("Vowpal Wabbit/Command Line")]
         public void CommandLine_Test<#=mainTestcase.Id#>()
         {
 <# foreach (var tc in mainTestcase.InDependencyOrder()) { #>

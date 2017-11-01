@@ -86,55 +86,55 @@ struct BaseState
 
 	virtual BaseState<audit>* Bool(Context<audit>& ctx, bool b)
 	{
-		ctx.error << "Unexpected token: bool (" << (b ? "true" : "false") << ")";
+		ctx.error() << "Unexpected token: bool (" << (b ? "true" : "false") << ")";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* Float(Context<audit>& ctx, float v)
 	{
-		ctx.error << "Unexpected token: float (" << v << ")";
+		ctx.error() << "Unexpected token: float (" << v << ")";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
 	{
-		ctx.error << "Unexpected token: uint (" << v << ")";
+		ctx.error() << "Unexpected token: uint (" << v << ")";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool)
 	{
-		ctx.error << "Unexpected token: string('" << str << "' len: " << len << ")";
+		ctx.error() << "Unexpected token: string('" << str << "' len: " << len << ")";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* StartObject(Context<audit>& ctx)
 	{
-		ctx.error << "Unexpected token: {";
+		ctx.error() << "Unexpected token: {";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool copy)
 	{
-		ctx.error << "Unexpected token: key('" << str << "' len: " << len << ")";
+		ctx.error() << "Unexpected token: key('" << str << "' len: " << len << ")";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType)
 	{
-		ctx.error << "Unexpected token: }";
+		ctx.error() << "Unexpected token: }";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* StartArray(Context<audit>& ctx)
 	{
-		ctx.error << "Unexpected token: [";
+		ctx.error() << "Unexpected token: [";
 		return nullptr;
 	}
 
 	virtual BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType)
 	{
-		ctx.error << "Unexpected token: ]";
+		ctx.error() << "Unexpected token: ]";
 		return nullptr;
 	}
 };
@@ -167,7 +167,7 @@ public:
 		// don't allow { { { } } }
 		if (ctx.previous_state == this)
 		{
-			ctx.error << "invalid label object. nested objected.";
+			ctx.error() << "invalid label object. nested objected.";
 			return nullptr;
 		}
 
@@ -220,7 +220,7 @@ public:
 		}
 		else
 		{
-			ctx.error << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+			ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
 			return nullptr;
 		}
 
@@ -463,7 +463,7 @@ public:
 	{
 		if (ctx.previous_state == this)
 		{
-			ctx.error << "Nested arrays are not supported";
+			ctx.error() << "Nested arrays are not supported";
 			return nullptr;
 		}
 
@@ -543,7 +543,7 @@ public:
 
 		if (*head != ':')
 		{
-			ctx.error << "Expected ':' found '" << *head << "'";
+			ctx.error() << "Expected ':' found '" << *head << "'";
 			return nullptr;
 		}
 		head++;
@@ -631,7 +631,7 @@ public:
 					return &ctx.label_index_state;
 				else
 				{
-					ctx.error << "Unsupported key '" << str << "' len: " << length;
+					ctx.error() << "Unsupported key '" << str << "' len: " << length;
 					return nullptr;
 				}
 			}
@@ -706,7 +706,7 @@ public:
 				label_index++;
 				if (label_index >= (int)ctx.examples->size())
 				{
-					ctx.error << "_label_index out of bounds: " << (label_index - 1) << " examples available: " << ctx.examples->size() - 1;
+					ctx.error() << "_label_index out of bounds: " << (label_index - 1) << " examples available: " << ctx.examples->size() - 1;
 					return nullptr;
 				}
 
@@ -757,7 +757,7 @@ public:
   {
     if (ctx.previous_state == this)
     {
-      ctx.error << "Nested arrays are not supported";
+      ctx.error() << "Nested arrays are not supported";
       return nullptr;
     }
 
@@ -929,7 +929,7 @@ public:
 template<bool audit>
 struct Context
 { vw* all;
-  std::stringstream error;
+  std::stringstream* error_ptr;
 
   // last "<key>": encountered
   const char* key;
@@ -969,7 +969,7 @@ struct Context
 
 	BaseState<audit>* root_state;
 
-	Context()
+	Context() : error_ptr(nullptr)
 	{
 		namespace_path = v_init<Namespace<audit>>();
 		current_state = root_state = &default_state;
@@ -978,6 +978,9 @@ struct Context
 	~Context()
 	{
 		namespace_path.delete_v();
+
+    if (error_ptr)
+      delete error_ptr;
 	}
 
 	void init(vw* pall)
@@ -987,7 +990,15 @@ struct Context
 		key_length = 1;
 		previous_state = nullptr;
 		label_object_state.init(pall);
+    error_ptr = nullptr;
 	}
+
+  std::stringstream& error() {
+    if (!error_ptr)
+      error_ptr = new std::stringstream;
+    
+    return *error_ptr;
+  }
 
     void SetStartStateToDecisionService(DecisionServiceInteraction* data)
     {
@@ -1016,8 +1027,8 @@ struct Context
 		{
 			auto feature_group = ns.feature_group;
 			// avoid duplicate insertion
-			for (unsigned char ns : ex->indices)
-				if (ns == feature_group)
+			for (unsigned char ns_char : ex->indices)
+				if (ns_char == feature_group)
 					goto done;
 
 			ex->indices.push_back(feature_group);
@@ -1082,7 +1093,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 	// alternative to above if we want to re-use the VW float parser...
 	bool RawNumber(const char* str, rapidjson::SizeType length, bool copy) { return false; }
 
-	std::stringstream& error() { return ctx.error; }
+	std::stringstream& error() { return ctx.error(); }
 
 	BaseState<audit>* current_state() { return ctx.current_state; }
 };
@@ -1125,9 +1136,8 @@ namespace VW
 		std::vector<char> line_vec;
 		if (copy_line)
 		{
-			line_vec.reserve(length);
-			memcpy(&line_vec[0], line, length);
-			line = &line_vec[0];
+            line_vec.insert(line_vec.end(), line, line + length);
+			line = &line_vec.front();
 		}
 
       InsituStringStream ss(line);

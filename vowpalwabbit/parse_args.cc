@@ -1201,6 +1201,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_weight", po::value<float>(&(all.initial_weight)), "Set all weights to an initial value of arg.")
     ("random_weights", po::value<bool>(&(all.random_weights)), "make initial weights random")
+    ("normal_weights", po::value<bool>(&(all.normal_weights)), "make initial weights normal")
+    ("truncated_normal_weights", po::value<bool>(&(all.tnormal_weights)), "make initial weights truncated normal")
     ("sparse_weights", "Use a sparse datastructure for weights")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
     add_options(all);

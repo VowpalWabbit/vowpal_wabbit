@@ -107,21 +107,21 @@ inline void update_feature(float& update, float x, float& fw)
 }
 
 //this deals with few nonzero features vs. all nonzero features issues.
-template<bool sqrt_rate, size_t adaptive, size_t normalized>
-float average_update(gd& g)
-{ if (normalized)
-  { if (sqrt_rate)
-    { float avg_norm = (float) g.total_weight / (float) g.all->normalized_sum_norm_x;
-      if (adaptive)
-        return sqrt(avg_norm);
-      else
-        return avg_norm;
-    }
-    else
-      return powf( (float) g.all->normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
+  template<bool sqrt_rate, size_t adaptive, size_t normalized>
+  float average_update(float total_weight, float normalized_sum_norm_x, float neg_norm_power)
+  { if (normalized)
+      { if (sqrt_rate)
+          { float avg_norm = (float)(total_weight / normalized_sum_norm_x);
+            if (adaptive)
+              return sqrt(avg_norm);
+            else
+              return avg_norm;
+          }
+        else
+          return powf( (float)(normalized_sum_norm_x / total_weight), neg_norm_power);
+      }
+    return 1.f;
   }
-  return 1.f;
-}
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void train(gd& g, example& ec, float update)
@@ -208,34 +208,34 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
   parameters& weights = dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = weights.stride_shift();
-  
+
   string ns_pre;
   for (string& s : dat.ns_pre) ns_pre += s;
-  
+
   if (dat.all.audit)
     {
       ostringstream tempstream;
       tempstream << ':' << (index >> stride_shift) << ':' << ft_weight
 		 << ':' << trunc_weight(weights[index], (float)dat.all.sd->gravity) * (float)dat.all.sd->contraction;
-      
+
       if (dat.all.adaptive)
 	tempstream << '@' << (&weights[index])[1];
-      
-      
+
+
       string_value sv = { weights[index] * ft_weight, ns_pre + tempstream.str() };
       dat.results.push_back(sv);
     }
-  
+
   if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
     { //for invert_hash
-      
+
       if (dat.offset != 0)
 	{ // otherwise --oaa output no features for class > 0.
 	  ostringstream tempstream;
 	  tempstream << '[' << (dat.offset >> stride_shift) << ']';
 	  ns_pre += tempstream.str();
 	}
-      
+
       if (!dat.all.name_index_map.count(ns_pre))
 	dat.all.name_index_map.insert(std::map< std::string, size_t>::value_type(ns_pre, index >> stride_shift));
     }
@@ -351,7 +351,7 @@ void predict(gd& g, base_learner&, example& ec)
 {
 	size_t index = fi;
 	for (size_t c = 0; c<mp.count; c++, index += mp.step)
-		mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity); 
+		mp.pred[c].scalar += fx * trunc_weight(mp.weights[index], mp.gravity);
 }
 
 template<bool l1, bool audit>
@@ -424,6 +424,7 @@ struct norm_data
   float pred_per_update;
   float norm_x;
   power_data pd;
+  float extra_state[4];
 };
 
 const float x_min = 1.084202e-19f;
@@ -441,11 +442,18 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
     }
     if (x2 > x2_max)
       THROW("your features have too much magnitude");
-    if(adaptive && !stateless)
+    if (stateless) // we must not modify the parameter state so introduce a shadow version.
+      {
+        nd.extra_state[0]=w[0];
+        nd.extra_state[adaptive]=w[adaptive];
+        nd.extra_state[normalized]=w[normalized];
+        w = nd.extra_state;
+      }
+    if(adaptive)
       w[adaptive] += nd.grad_squared * x2;
     if(normalized)
     { float x_abs = fabsf(x);
-      if( x_abs > w[normalized] && !stateless)  // new scale discovered
+      if( x_abs > w[normalized])  // new scale discovered
       { if( w[normalized] > 0.)  //If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
         { if (sqrt_rate)
           { float rescale = w[normalized]/x_abs;
@@ -460,7 +468,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
       }
       nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
-    w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
+    w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
     nd.pred_per_update += x2 * w[spare];
   }
 }
@@ -476,13 +484,18 @@ float get_pred_per_update(gd& g, example& ec)
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
- 
   if(normalized)
   { if(!stateless)
     { g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
       g.total_weight += ec.weight;
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
-    g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g);
+    else
+      {
+        double nsnx = g.all->normalized_sum_norm_x + ec.weight * nd.norm_x;
+        double tw = g.total_weight + ec.weight;
+        g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)tw, (float)nsnx, g.neg_norm_power);
+      }
     nd.pred_per_update *= g.update_multiplier;
   }
   return nd.pred_per_update;
@@ -578,7 +591,7 @@ void sync_weights(vw& all)
 	else
 	  for (weight& w : all.weights.dense_weights)
 	    w = trunc_weight(w, (float)all.sd->gravity) * (float)all.sd->contraction;
-	  
+
 	all.sd->gravity = 0.;
 	all.sd->contraction = 1.;
 }
@@ -638,7 +651,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 		i = v.index() >> weights.stride_shift();
 		stringstream msg;
 		msg << i;
-		
+
 		if (all.num_bits < 31)
 		  {
 		    old_i = (uint32_t)i;
@@ -646,12 +659,12 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text, T& w
 		  }
 		else
 		  brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
-		
+
 		msg << ":" << *v << "\n";
 		brw += bin_text_write_fixed(model_file, (char *)&(*v), sizeof(*v), msg, text);
 	      }
 }
-  
+
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
@@ -707,7 +720,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		  }
 		else
 		  brw = bin_text_write_fixed(model_file, (char *)&i, sizeof(i), msg, text);
-		
+
 		if (g == nullptr || (!g->adaptive && !g->normalized))
 		  {
 		    msg << ":" << *v << "\n";
@@ -728,7 +741,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		  }
 	      }
 }
-	
+
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, gd* g)
 { //vw& all = *g.all;
 	stringstream msg;
@@ -799,7 +812,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		// fix "loss since last" for first printed out example details
 		msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
 		bin_text_read_write_fixed(model_file, (char*)&all.sd->old_weighted_labeled_examples, sizeof(all.sd->old_weighted_labeled_examples),
-			"", read, msg, text); 
+			"", read, msg, text);
 
 		// fix "number of examples per pass"
 		msg << "current_pass " << all.current_pass << "\n";
@@ -813,7 +826,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 					      "", read, msg, text);
 		    all.current_pass = temp_pass;
 		  }
-		  
+
 	}
 
 	if (read && (!all.training || !all.preserve_performance_counters)) // reset various things so that we report test set performance properly
@@ -827,7 +840,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		all.sd->old_weighted_labeled_examples = 0.;
 		all.sd->example_number = 0;
 		all.sd->total_features = 0;
-		all.current_pass = 1;
+		all.current_pass = 0;
 	}
 	if (all.weights.sparse)
 		save_load_online_state(all, model_file, read, text, g, msg, all.weights.sparse_weights);
@@ -835,14 +848,14 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 		save_load_online_state(all, model_file, read, text, g, msg, all.weights.dense_weights);
 }
 
-  template<class T> class set_initial_gd_wrapper 
+  template<class T> class set_initial_gd_wrapper
   {
-      public: 
-          static void func(typename T::iterator& iter, pair<float,float>& initial)
-              {
-                (&(*iter))[0] = initial.first;
-                (&(*iter))[1] = initial.second;
-              }
+      public:
+    static void func(weight& w, pair<float,float>& initial, uint64_t index)
+    {
+      w = initial.first;
+      (&w)[1] = initial.second;
+    }
   };
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
@@ -1031,7 +1044,7 @@ base_learner* setup(vw& all)
     stride = set_learn<true>(all, feature_mask_off, g);
   else
     stride = set_learn<false>(all, feature_mask_off, g);
-  
+
   all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
   learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));

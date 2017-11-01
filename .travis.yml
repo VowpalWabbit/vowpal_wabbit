@@ -17,7 +17,7 @@ before_install:
 script:
   - make all
   - make python
-  - mvn test -f java/pom.xml
+  - mvn clean test -f java/pom.xml
   - make test
   - make test_gcov --always-make
   - cd python
