@@ -1573,3 +1573,12 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
     train-sets/ref/decisionservice.stderr
 
+# Test 159: test --bootstrap & --binary interaction
+{VW} train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
+    train-sets/ref/bootstrap_and_binary.stderr
+
+# Test 160: test --bootstrap & --oaa interaction
+# (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
+{VW} train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+    train-sets/ref/bootstrap_and_oaa.stderr
+
