@@ -1270,7 +1270,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 94: experience replay version of test 1
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off --replay_b 100
         train-sets/ref/0001-replay.stderr
 
@@ -1503,7 +1503,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 143: Test 1 using JSON
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
