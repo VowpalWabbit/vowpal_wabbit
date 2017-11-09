@@ -1136,8 +1136,8 @@ namespace VW
 		std::vector<char> line_vec;
 		if (copy_line)
 		{
-        line_vec.insert(line_vec.end(), line, line + length);
-			  line = &line_vec.front();
+			line_vec.insert(line_vec.end(), line, line + length);
+			line = &line_vec.front();
 		}
 
       InsituStringStream ss(line);
