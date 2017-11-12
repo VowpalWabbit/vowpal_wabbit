@@ -433,6 +433,7 @@
     <ClInclude Include="v_array.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
+    <ClInclude Include="classweight.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -518,6 +519,7 @@
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
+    <ClCompile Include="classweight.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
