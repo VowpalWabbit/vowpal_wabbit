@@ -8,12 +8,10 @@ using namespace std;
 struct classweights
 {
   std::unordered_map<int, double> weights;
-  vw* all;
 
-  classweights(std::string const& source, vw* all)
+  classweights(std::string const& source)
   {
     load_string(source);
-    this->all = all;
   }
 
   void load_string(std::string const& source)
@@ -52,10 +50,10 @@ struct classweights
 
 };
 
-template <bool is_learn>
+template <bool is_learn, int pred_type>
 static void predict_or_learn(classweights& cweights, LEARNER::base_learner& base, example& ec)
 {
-  switch (cweights.all->l->pred_type) {
+  switch (pred_type) {
     case prediction_type::scalar:
       ec.weight *= cweights.get_class_weight(ec.l.simple.label);
       break;
@@ -86,13 +84,18 @@ LEARNER::base_learner* classweight_setup(vw& all)
 
   if (vm.count("classweight"))
   { *all.file_options << " --classweight " << classweight << ' ';
-    cweights = new classweights(classweight, &all);
+    cweights = new classweights(classweight);
     if (!all.quiet)
       all.trace_message << "parsed " << cweights->size() << " class weights" << endl;
   } else
     return nullptr;
 
-  LEARNER::learner<classweights>& ret =
-    LEARNER::init_learner<classweights>(cweights, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
-  return make_base(ret);
+  LEARNER::base_learner* base = setup_base(all);
+
+  if (base->pred_type == prediction_type::scalar)
+    return make_base(LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true,prediction_type::scalar>, predict_or_learn<false,prediction_type::scalar>));
+  else if (base->pred_type == prediction_type::multiclass)
+    return make_base(LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true,prediction_type::multiclass>, predict_or_learn<false,prediction_type::multiclass>));
+  else
+    THROW("--classweight not implemented for this type of prediction");
 }
