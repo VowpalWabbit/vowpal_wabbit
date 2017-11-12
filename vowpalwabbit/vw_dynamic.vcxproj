@@ -348,6 +348,7 @@
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="baseline.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -440,6 +441,7 @@
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
     <ClCompile Include="allreduce_sockets.cc" />
+    <ClCompile Include="baseline.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
