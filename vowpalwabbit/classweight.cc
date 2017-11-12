@@ -1,6 +1,4 @@
-#include <float.h>
 #include <unordered_map>
-#include <vector>
 #include "reductions.h"
 using namespace std;
 
