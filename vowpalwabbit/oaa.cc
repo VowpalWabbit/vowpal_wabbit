@@ -33,6 +33,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
   float best_partial_prediction = ec.partial_prediction;
 
   ec.l.simple.label = -1.;
+  float weight_temp = ec.weight;
   ec.weight *= ((float)o.k) / (float)o.num_subsample;
   size_t p = o.subsample_id;
   size_t count = 0;
@@ -51,6 +52,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
 
   ec.pred.multiclass = (uint32_t)prediction;
   ec.l.multi = ld;
+  ec.weight = weight_temp;
 }
 
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
@@ -133,7 +135,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   { if (ec.l.multi.label <= o.k) // prevent segmentation fault if labeĺ==(uint32_t)-1
       correct_class_prob = ec.pred.scalars[ec.l.multi.label-1];
     if (correct_class_prob > 0)
-      multiclass_log_loss = -log(correct_class_prob) * ec.l.multi.weight;
+      multiclass_log_loss = -log(correct_class_prob) * ec.weight;
     if (ec.test_only)
       all.sd->holdout_multiclass_log_loss += multiclass_log_loss;
     else
@@ -149,7 +151,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   prediction++; // prediction is 1-based index (not 0-based)
   float zero_one_loss = 0;
   if (ec.l.multi.label != prediction)
-    zero_one_loss = ec.l.multi.weight;
+    zero_one_loss = ec.weight;
 
   // === Print probabilities for all classes
   char temp_str[10];
@@ -169,9 +171,9 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     all.print_text(sink, outputStringStream.str(), ec.tag);
 
   // === Report updates using zero-one loss
-  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.l.multi.weight, ec.num_features);
+  all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
   // Alternatively, we could report multiclass_log_loss.
-  //all.sd->update(ec.test_only, multiclass_log_loss, ec.l.multi.weight, ec.num_features);
+  //all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
   // Even better would be to report both losses, but this would mean to increase
   // the number of columns and this would not fit narrow screens.
   // So let's report (average) multiclass_log_loss only in the final resume.
