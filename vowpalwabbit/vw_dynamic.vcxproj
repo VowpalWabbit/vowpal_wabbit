@@ -348,6 +348,7 @@
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="baseline.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -432,6 +433,7 @@
     <ClInclude Include="v_array.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
+    <ClInclude Include="classweight.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -440,6 +442,7 @@
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
     <ClCompile Include="allreduce_sockets.cc" />
+    <ClCompile Include="baseline.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
@@ -516,6 +519,7 @@
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
+    <ClCompile Include="classweight.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

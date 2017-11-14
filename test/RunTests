@@ -1582,3 +1582,15 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
     train-sets/ref/bootstrap_and_oaa.stderr
 
+# Test 161: --classweight
+{VW} -d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5
+    train-sets/ref/classweight.stderr
+
+# Test 162: --classweight with multiclass
+{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+    train-sets/ref/classweight_multiclass.stderr
+
+# Test 163: --classweight with multiclass
+{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+    train-sets/ref/classweight_recall_tree.stderr
+
