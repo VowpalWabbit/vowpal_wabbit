@@ -46,8 +46,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 
     for (string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
     { for (string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
-      { unsigned char left = which%2 ? *i1 : *i2;
-        unsigned char right = (which+1)%2 ? *i1 : *i2;
+      { unsigned char left = (which%2) ? *i1 : *i2;
+        unsigned char right = ((which+1)%2) ? *i1 : *i2;
         unsigned int lfd_id = lrq.field_id[left];
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
