@@ -483,7 +483,9 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   dump_regressor(all, io_temp, as_text);
 
   remove(reg_name.c_str());
-  rename(start_name.c_str(),reg_name.c_str());
+
+  if(!rename(start_name.c_str(),reg_name.c_str()))
+    THROW("dump_regressor(vw& all, string reg_name, bool as_text): cannot rename: " << start_name << " to " << reg_name);
 }
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
