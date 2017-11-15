@@ -33,6 +33,9 @@
     <ProjectName>vw</ProjectName>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <!-- This is the ruleset file for code analysis, you can change it in VS -->
+    <CodeAnalysisRuleSet>..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -329,4 +332,5 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
     <!--<Error Condition="!Exists('$(SolutionDir)\packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\CNTK.GPU.2.0-beta15\build\native\CNTK.GPU.targets'))" />-->
   </Target>
+  <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
