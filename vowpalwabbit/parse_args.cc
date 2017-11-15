@@ -1572,7 +1572,15 @@ void finish(vw& all, bool delete_all)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
   for (size_t i=0; i<all.loaded_dictionaries.size(); i++)
-  { free(all.loaded_dictionaries[i].name);
+  { // Warning C6001 is triggered by the following:
+    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using 'free(all.loaded_dictionaries[i].name)'
+    // 
+    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the warning goes away.
+    // Disable SDL warning.
+    #pragma warning(disable:6001)
+    free(all.loaded_dictionaries[i].name);
+    #pragma warning(default:6001)
+
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
     delete all.loaded_dictionaries[i].dict;

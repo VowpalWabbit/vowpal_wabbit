@@ -835,10 +835,19 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
+
+  //
+  // Using the following code stops generating C6386 warning.  Disable the compiler warning.
+  // for (int idx = 0; idx < len ; ++idx)
+  // { namespace_index i = ec->indices[idx]; 
+  // 
   for (namespace_index i : ec->indices)
-  { fs_ptr[fs_count].name = i;
+  { 
+    #pragma warning(disable:6386)
+    fs_ptr[fs_count].name = i;
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+    #pragma warning(default:6386)
 
     uint32_t stride_shift = all.weights.stride_shift();
     int f_count = 0;
