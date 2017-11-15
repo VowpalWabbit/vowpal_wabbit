@@ -80,8 +80,9 @@ SpanningTree::SpanningTree() : m_stop(false), port(26543), m_future(nullptr)
 {
 #ifdef _WIN32
   WSAData wsaData;
-  WSAStartup(MAKEWORD(2, 2), &wsaData);
-  int lastError = WSAGetLastError();
+  int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (lastError != 0)
+    THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
   sock = socket(PF_INET, SOCK_STREAM, 0);

@@ -389,8 +389,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
   {
 #ifdef _WIN32
     WSAData wsaData;
-    WSAStartup(MAKEWORD(2,2), &wsaData);
-    int lastError = WSAGetLastError();
+    int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (lastError != 0)
+      THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
     all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
     if (all.p->bound_sock < 0)
