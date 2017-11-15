@@ -1325,7 +1325,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
-  while (params_per_problem > (uint32_t)(1 << i))
+  while (params_per_problem > ((uint64_t)1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
   

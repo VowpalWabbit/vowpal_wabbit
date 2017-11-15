@@ -755,7 +755,7 @@ void setup_example(vw& all, example* ae)
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
-  uint64_t multiplier = all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
   if(multiplier != 1) //make room for per-feature information.
     for (features& fs : *ae)
