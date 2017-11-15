@@ -276,7 +276,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   char temp_str[20];
   stringstream ss, sso;
   float maxprob = 0.;
-  uint32_t maxid;
+  uint32_t maxid = 0;
   //cout<<ec.pred.scalars.size()<<endl;
   for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
   { sprintf(temp_str,"%f ", ec.pred.a_s[i].score);
