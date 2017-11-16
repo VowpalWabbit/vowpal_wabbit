@@ -148,7 +148,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   if(cs_a.all->sd->queries >= cs_a.min_labels*cs_a.num_classes)
   { // save regressor
     stringstream filename;
-    filename << cs_a.all->final_regressor_name << "." << ec.example_t << "." << cs_a.all->sd->queries<< "." <<cs_a.num_any_queries;	
+    filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries<< "." <<cs_a.num_any_queries;	
     VW::save_predictor(*(cs_a.all), filename.str());
     cerr<<endl<<"Number of examples with at least one query = "<<cs_a.num_any_queries;
     // Double label query budget	

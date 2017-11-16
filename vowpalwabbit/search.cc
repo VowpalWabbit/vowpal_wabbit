@@ -1841,7 +1841,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       //                          (priv.learn_allowed_actions.size() > 0) ? priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) : (priv.learn_a_idx),
       //                           priv.learn_loss);
     }
-    if (priv.active_csoaa_verify > 0.) verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], priv.ec_seq[0]->example_t, priv.active_csoaa_verify);
+    if (priv.active_csoaa_verify > 0.) verify_active_csoaa(priv.learn_losses.cs, priv.active_known[priv.learn_t], priv.ec_seq[0]->example_counter, priv.active_csoaa_verify);
 
     if (skipped_all_actions)
     { reset_search_structure(priv);
