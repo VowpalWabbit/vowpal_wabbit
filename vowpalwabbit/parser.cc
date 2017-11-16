@@ -221,7 +221,7 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->close_file();
     remove(all.p->output->finalname.begin());
     if(!rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      THROW("cannot rename: " << all.p->output->currentname.begin() << " to " << all.p->output->finalname.begin());
+      VW_TRACE("WARN: reset_source(vw& all, size_t numbits) cannot rename: %s to %s", all.p->output->currentname, all.p->output->finalname);
 
     while(input->num_files() > 0)
       if (input->compressed())
