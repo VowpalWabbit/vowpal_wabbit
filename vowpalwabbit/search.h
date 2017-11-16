@@ -26,23 +26,23 @@ struct search;
 class BaseTask
 {
 public:
-  BaseTask(search* _sch, vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
+  BaseTask(search* _sch, std::vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
   inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
   inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
   inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
-  inline BaseTask& with_output_string(void (*f)(search&,stringstream&)) { _with_output_string = f; return *this; }
+  inline BaseTask& with_output_string(void (*f)(search&,std::stringstream&)) { _with_output_string = f; return *this; }
   inline BaseTask& final_run() { _final_run = true; return *this; }
 
   void Run();
 
   // data
   search* sch;
-  vector<example*>& ec;
+  std::vector<example*>& ec;
   bool _final_run;
   void (*_foreach_action)(search&,size_t,float,action,bool,float);
   void (*_post_prediction)(search&,size_t,action,float);
   bool (*_maybe_override_prediction)(search&,size_t,action&,float&);
-  void (*_with_output_string)(search&,stringstream&);
+  void (*_with_output_string)(search&,std::stringstream&);
 };
 
 struct search
@@ -166,7 +166,7 @@ struct search
   void set_num_learners(size_t num_learners);
 
   // get the action sequence from the test run (only run if test_only or -t or...)
-  void get_test_action_sequence(vector<action>&);
+  void get_test_action_sequence(std::vector<action>&);
 
   // get feature index mask
   uint64_t get_mask();
@@ -178,7 +178,7 @@ struct search
   std::string pretty_label(action a);
 
   // for meta-tasks:
-  BaseTask base_task(vector<example*>& ec) { return BaseTask(this, ec); }
+  BaseTask base_task(std::vector<example*>& ec) { return BaseTask(this, ec); }
 
   // internal data that you don't get to see!
   search_private* priv;
@@ -242,6 +242,8 @@ public:
   // between calling add/set_oracle and calling predict()
   predictor& erase_oracles();
 
+  predictor& reset();
+
   predictor& add_oracle(action a);
   predictor& add_oracle(action*a, size_t action_count);
   predictor& add_oracle(v_array<action>& a);
@@ -266,13 +268,13 @@ public:
   // set/add allowed but with per-actions costs specified
   predictor& add_allowed(action a, float cost);
   predictor& add_allowed(action*a, float*costs, size_t action_count);
-  predictor& add_allowed(v_array< pair<action,float> >& a);
-  predictor& add_allowed(vector< pair<action,float> >& a);
+  predictor& add_allowed(v_array< std::pair<action,float> >& a);
+  predictor& add_allowed(std::vector< std::pair<action,float> >& a);
 
   predictor& set_allowed(action a, float cost);
   predictor& set_allowed(action*a, float*costs, size_t action_count);
-  predictor& set_allowed(v_array< pair<action,float> >& a);
-  predictor& set_allowed(vector< pair<action,float> >& a);
+  predictor& set_allowed(v_array< std::pair<action,float> >& a);
+  predictor& set_allowed(std::vector< std::pair<action,float> >& a);
 
   // add a tag to condition on with a name, or set the conditioning
   // variables (i.e., erase previous ones)
@@ -322,14 +324,14 @@ template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const
     *all.file_options << " --" << opt_name << " " << ret;
   }
   else if (strlen(required_error_string)>0)
-  { std::cerr << required_error_string << endl;
+  { std::cerr << required_error_string << std::endl;
     if (! vm.count("help"))
       THROW(required_error_string);
   }
 }
 
 void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
-bool string_equal(string a, string b);
+bool string_equal(std::string a, std::string b);
 bool float_equal(float a, float b);
 bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);

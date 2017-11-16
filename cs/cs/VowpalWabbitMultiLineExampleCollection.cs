@@ -10,8 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -20,6 +19,8 @@ namespace VW
     /// </summary>
     public sealed class VowpalWabbitMultiLineExampleCollection : VowpalWabbitExampleCollection
     {
+        private readonly ulong numberOfFeatures;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitMultiLineExampleCollection"/> class.
         /// </summary>
@@ -30,6 +31,13 @@ namespace VW
 
             this.SharedExample = shared;
             this.Examples = examples;
+
+            if (shared != null)
+                numberOfFeatures += shared.NumberOfFeatures;
+
+            foreach (var e in examples)
+                if (e != null)
+                    numberOfFeatures += e.NumberOfFeatures;
         }
 
         /// <summary>
@@ -41,6 +49,14 @@ namespace VW
         /// The multi-line examples
         /// </summary>
         public VowpalWabbitExample[] Examples { get; private set; }
+
+        /// <summary>
+        /// The number of feature this example holds.
+        /// </summary>
+        public override ulong NumberOfFeatures
+        {
+            get { return this.numberOfFeatures; }
+        }
 
         /// <summary>
         /// Calls learn or predict for the set of examples. Does required filtering of potential new line examples.
@@ -99,6 +115,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The VW instance that should be used for learning.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction LearnInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
@@ -119,6 +136,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The native VW instance.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction PredictInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
@@ -145,6 +163,17 @@ namespace VW
         }
 
         /// <summary>
+        /// All labels this example holds.
+        /// </summary>
+        public override IEnumerable<ILabel> Labels
+        {
+            get
+            {
+                return this.Examples.Select(e => e.Label);
+            }
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public override void Dispose()
@@ -166,7 +195,8 @@ namespace VW
                 if (this.Examples != null)
                 {
                     foreach (var ex in this.Examples)
-                        ex.Dispose();
+                        if (ex != null)
+                            ex.Dispose();
 
                     this.Examples = null;
                 }

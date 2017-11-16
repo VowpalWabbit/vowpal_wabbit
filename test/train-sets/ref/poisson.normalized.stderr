@@ -1,0 +1,27 @@
+only testing
+predictions = poisson.normalized.preds
+Num weight bits = 2
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/poisson.dat
+num sources = 1
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+95.590408 95.590408            1            1.0  12.0000   9.2347        3
+82.029816 68.469223            2            2.0  11.0000  15.2623        3
+70.361785 58.693754            4            4.0  13.0000   9.6882        3
+66.002784 61.643783            8            8.0  14.0000  10.2895        3
+73.706988 81.411191           16           16.0   9.0000   5.4146        3
+54.857522 36.008057           32           32.0   6.0000   8.2880        3
+71.853323 88.849125           64           64.0   6.0000   6.4692        3
+
+finished run
+number of examples per pass = 100
+passes used = 1
+weighted example sum = 100.000000
+weighted label sum = 916.000000
+average loss = 74.371941
+best constant = 9.160000
+total feature number = 276

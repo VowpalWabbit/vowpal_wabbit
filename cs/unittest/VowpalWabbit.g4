@@ -2,7 +2,7 @@ grammar VowpalWabbit;
 
 number returns [float value] : NUMBER;
 
-label_simple	: value=number (WS initial=number)? WS;
+label_simple	: value=number (WS weight=number)? WS;
 
 label_cbf		: value=INT ':' weight=NUMBER;
 
@@ -25,7 +25,7 @@ start			: (example NEWLINE)* example (NEWLINE | EOF);
 NUMBER			: INT | FLOAT;
 
 INT	: [+-]? [0-9]+ ([Ee] '-'? [0-9]+)?;
- 
+
 FLOAT 	: [+-]? [0-9]* '.' [0-9]+ ([Ee] '-'? [0-9]+)?;
 
 WS				: [ \t]+;

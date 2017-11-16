@@ -4,13 +4,12 @@
 
     <groupId>com.github.johnlangford</groupId>
     <artifactId>vw-jni</artifactId>
-    <version>8.1.2-SNAPSHOT</version>
+    <version>8.4.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Vowpal Wabbit JNI Layer</name>
     <description>
-        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper is designed to be self contained.  Because
-        of the use of JNI, a number of platforms are supported in this JAR.  If your platform is not supported please feel free to add it
-        by modifying src/main/bin/build.sh accordingly.
+        A wrapper around Vowpal Wabbit that allows use through Java.  This wrapper requires that the vw_jni platform
+        specific library is installed on your java.library.path.
     </description>
     <url>https://github.com/JohnLangford/vowpal_wabbit</url>
 
@@ -55,6 +54,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.6</java.version>
     </properties>
 
     <dependencies>
@@ -64,6 +64,18 @@
             <version>4.11</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,7 +83,7 @@
             <testResource>
                 <directory>${project.build.directory}</directory>
                 <includes>
-                    <include>vw_jni.*lib</include>
+                    <include>*vw_jni*</include>
                 </includes>
             </testResource>
         </testResources>
@@ -85,7 +97,7 @@
                         <fileset>
                             <directory>${project.build.directory}</directory>
                             <excludes>
-                                <exclude>vw_jni.*lib</exclude>
+                                <exclude>*vw_jni*</exclude>
                             </excludes>
                             <followSymlinks>false</followSymlinks>
                         </fileset>
@@ -97,8 +109,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.2</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -155,6 +167,16 @@
                 </executions>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+                    <!-- It's important to run tests serially because we are doing timing tests in some of the tests. -->
+                    <!-- TODO: That tests may fail when executed in parallel is likely an indication of a thread-safety issue -->
+                    <!-- TODO: This thread-safety issue could be on the Java or C side.  Merits future investigation. -->
+                    <!-- TODO: To test, uncomment forkMode and comment forkCount and reuseForks. -->
+                    <!--<forkMode>once</forkMode>-->
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <argLine>-Djava.library.path=${project.build.directory}</argLine>
+
                 </configuration>
             </plugin>
             <plugin>
@@ -173,7 +195,7 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>vw_jni.*lib</include>
+                                        <include>*vw_jni*</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -205,6 +227,19 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -221,20 +256,8 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>2.1.2</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

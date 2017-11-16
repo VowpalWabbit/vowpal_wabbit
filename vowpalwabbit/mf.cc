@@ -61,14 +61,12 @@ void predict(mf& data, base_learner& base, example& ec)
 
   // add interaction terms to prediction
   for (string& i : data.pairs)
-  {
-    int left_ns = (int) i[0];
+  { int left_ns = (int) i[0];
     int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
     { for (size_t k = 1; k <= data.rank; k++)
-      {
-        ec.indices[0] = left_ns;
+      { ec.indices[0] = left_ns;
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
@@ -132,8 +130,7 @@ void learn(mf& data, base_learner& base, example& ec)
       data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
-      {
-        features& fs = ec.feature_space[left_ns];
+      { features& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
         for (size_t i= 0; i < fs.size(); ++i)
           fs.values[i] *= data.sub_predictions[2*k];
@@ -157,8 +154,7 @@ void learn(mf& data, base_learner& base, example& ec)
       data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
-      {
-        features& fs = ec.feature_space[right_ns];
+      { features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
         for (size_t i = 0; i < fs.size(); ++i)
           fs.values[i] *= data.sub_predictions[2*k-1];

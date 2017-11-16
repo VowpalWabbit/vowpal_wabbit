@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7D381808-CC76-4A1A-A8E6-3F71278858BD}</ProjectGuid>
+    <RootNamespace>python</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>python36</ProjectName>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>pyvw36</TargetName>
+    <OutDir>$(SolutionDir)..\python\bin\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\python36\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>pyvw36</TargetName>
+    <OutDir>$(SolutionDir)..\python\bin\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\python36\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);_WIN32</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)packages\python.3.6.0\tools\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies);python36.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);_WIN32</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)packages\python.3.6.0\tools\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;%(AdditionalDependencies);python36.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pylibvw.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\vw_dynamic.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_container-vc140.1.63.0.0\build\native\boost_container-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_container-vc140.1.63.0.0\build\native\boost_container-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_context-vc140.1.63.0.0\build\native\boost_context-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_context-vc140.1.63.0.0\build\native\boost_context-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_coroutine-vc140.1.63.0.0\build\native\boost_coroutine-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_coroutine-vc140.1.63.0.0\build\native\boost_coroutine-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_date_time-vc140.1.63.0.0\build\native\boost_date_time-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_date_time-vc140.1.63.0.0\build\native\boost_date_time-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_exception-vc140.1.63.0.0\build\native\boost_exception-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_exception-vc140.1.63.0.0\build\native\boost_exception-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_fiber-vc140.1.63.0.0\build\native\boost_fiber-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_fiber-vc140.1.63.0.0\build\native\boost_fiber-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_graph-vc140.1.63.0.0\build\native\boost_graph-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_graph-vc140.1.63.0.0\build\native\boost_graph-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_iostreams-vc140.1.63.0.0\build\native\boost_iostreams-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_iostreams-vc140.1.63.0.0\build\native\boost_iostreams-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_locale-vc140.1.63.0.0\build\native\boost_locale-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_locale-vc140.1.63.0.0\build\native\boost_locale-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_log-vc140.1.63.0.0\build\native\boost_log-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_log-vc140.1.63.0.0\build\native\boost_log-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_log_setup-vc140.1.63.0.0\build\native\boost_log_setup-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_log_setup-vc140.1.63.0.0\build\native\boost_log_setup-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_c99-vc140.1.63.0.0\build\native\boost_math_c99-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_c99-vc140.1.63.0.0\build\native\boost_math_c99-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_c99f-vc140.1.63.0.0\build\native\boost_math_c99f-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_c99f-vc140.1.63.0.0\build\native\boost_math_c99f-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_c99l-vc140.1.63.0.0\build\native\boost_math_c99l-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_c99l-vc140.1.63.0.0\build\native\boost_math_c99l-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_tr1-vc140.1.63.0.0\build\native\boost_math_tr1-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_tr1-vc140.1.63.0.0\build\native\boost_math_tr1-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_tr1f-vc140.1.63.0.0\build\native\boost_math_tr1f-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_tr1f-vc140.1.63.0.0\build\native\boost_math_tr1f-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_math_tr1l-vc140.1.63.0.0\build\native\boost_math_tr1l-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_math_tr1l-vc140.1.63.0.0\build\native\boost_math_tr1l-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_prg_exec_monitor-vc140.1.63.0.0\build\native\boost_prg_exec_monitor-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_prg_exec_monitor-vc140.1.63.0.0\build\native\boost_prg_exec_monitor-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_random-vc140.1.63.0.0\build\native\boost_random-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_random-vc140.1.63.0.0\build\native\boost_random-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_regex-vc140.1.63.0.0\build\native\boost_regex-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_regex-vc140.1.63.0.0\build\native\boost_regex-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_serialization-vc140.1.63.0.0\build\native\boost_serialization-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_serialization-vc140.1.63.0.0\build\native\boost_serialization-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_signals-vc140.1.63.0.0\build\native\boost_signals-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_signals-vc140.1.63.0.0\build\native\boost_signals-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_test_exec_monitor-vc140.1.63.0.0\build\native\boost_test_exec_monitor-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_test_exec_monitor-vc140.1.63.0.0\build\native\boost_test_exec_monitor-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_timer-vc140.1.63.0.0\build\native\boost_timer-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_timer-vc140.1.63.0.0\build\native\boost_timer-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_type_erasure-vc140.1.63.0.0\build\native\boost_type_erasure-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_type_erasure-vc140.1.63.0.0\build\native\boost_type_erasure-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_wave-vc140.1.63.0.0\build\native\boost_wave-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_wave-vc140.1.63.0.0\build\native\boost_wave-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_python-vc140.1.63.0.0\build\native\boost_python-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_atomic-vc140.1.63.0.0\build\native\boost_atomic-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_bzip2-vc140.1.63.0.0\build\native\boost_bzip2-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_chrono-vc140.1.63.0.0\build\native\boost_chrono-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_container-vc140.1.63.0.0\build\native\boost_container-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_container-vc140.1.63.0.0\build\native\boost_container-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_context-vc140.1.63.0.0\build\native\boost_context-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_context-vc140.1.63.0.0\build\native\boost_context-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_coroutine-vc140.1.63.0.0\build\native\boost_coroutine-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_coroutine-vc140.1.63.0.0\build\native\boost_coroutine-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_date_time-vc140.1.63.0.0\build\native\boost_date_time-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_date_time-vc140.1.63.0.0\build\native\boost_date_time-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_exception-vc140.1.63.0.0\build\native\boost_exception-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_exception-vc140.1.63.0.0\build\native\boost_exception-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_fiber-vc140.1.63.0.0\build\native\boost_fiber-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_fiber-vc140.1.63.0.0\build\native\boost_fiber-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_filesystem-vc140.1.63.0.0\build\native\boost_filesystem-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_graph-vc140.1.63.0.0\build\native\boost_graph-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_graph-vc140.1.63.0.0\build\native\boost_graph-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_iostreams-vc140.1.63.0.0\build\native\boost_iostreams-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_iostreams-vc140.1.63.0.0\build\native\boost_iostreams-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_locale-vc140.1.63.0.0\build\native\boost_locale-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_locale-vc140.1.63.0.0\build\native\boost_locale-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_log-vc140.1.63.0.0\build\native\boost_log-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_log-vc140.1.63.0.0\build\native\boost_log-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_log_setup-vc140.1.63.0.0\build\native\boost_log_setup-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_log_setup-vc140.1.63.0.0\build\native\boost_log_setup-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_c99-vc140.1.63.0.0\build\native\boost_math_c99-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_c99-vc140.1.63.0.0\build\native\boost_math_c99-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_c99f-vc140.1.63.0.0\build\native\boost_math_c99f-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_c99f-vc140.1.63.0.0\build\native\boost_math_c99f-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_c99l-vc140.1.63.0.0\build\native\boost_math_c99l-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_c99l-vc140.1.63.0.0\build\native\boost_math_c99l-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_tr1-vc140.1.63.0.0\build\native\boost_math_tr1-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_tr1-vc140.1.63.0.0\build\native\boost_math_tr1-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_tr1f-vc140.1.63.0.0\build\native\boost_math_tr1f-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_tr1f-vc140.1.63.0.0\build\native\boost_math_tr1f-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_math_tr1l-vc140.1.63.0.0\build\native\boost_math_tr1l-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_math_tr1l-vc140.1.63.0.0\build\native\boost_math_tr1l-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_prg_exec_monitor-vc140.1.63.0.0\build\native\boost_prg_exec_monitor-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_prg_exec_monitor-vc140.1.63.0.0\build\native\boost_prg_exec_monitor-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_random-vc140.1.63.0.0\build\native\boost_random-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_random-vc140.1.63.0.0\build\native\boost_random-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_regex-vc140.1.63.0.0\build\native\boost_regex-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_regex-vc140.1.63.0.0\build\native\boost_regex-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_serialization-vc140.1.63.0.0\build\native\boost_serialization-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_serialization-vc140.1.63.0.0\build\native\boost_serialization-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_signals-vc140.1.63.0.0\build\native\boost_signals-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_signals-vc140.1.63.0.0\build\native\boost_signals-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_system-vc140.1.63.0.0\build\native\boost_system-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_test_exec_monitor-vc140.1.63.0.0\build\native\boost_test_exec_monitor-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_test_exec_monitor-vc140.1.63.0.0\build\native\boost_test_exec_monitor-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_timer-vc140.1.63.0.0\build\native\boost_timer-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_timer-vc140.1.63.0.0\build\native\boost_timer-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_type_erasure-vc140.1.63.0.0\build\native\boost_type_erasure-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_type_erasure-vc140.1.63.0.0\build\native\boost_type_erasure-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\build\native\boost_unit_test_framework-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_wave-vc140.1.63.0.0\build\native\boost_wave-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_wave-vc140.1.63.0.0\build\native\boost_wave-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
+  </Target>
+</Project>

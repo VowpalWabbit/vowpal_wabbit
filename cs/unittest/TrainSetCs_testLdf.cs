@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 
@@ -20,7 +19,7 @@ namespace cs_unittest
             //| b_1 c_1 d_1
             //0:0.0:0.5 | b_2 c_2 d_2
 
-            //| a_1 b_1 c_1 
+            //| a_1 b_1 c_1
             //| a_3 b_3 c_3
 
             sampleData[0] = new Cs_TestData
@@ -45,8 +44,8 @@ namespace cs_unittest
             {
                 ActionDependentFeatures = new[] {
                         new Cs_TestCs_TestDataADF { Features = new [] { "b_1","c_1","d_1" } },
-                        new Cs_TestCs_TestDataADF 
-                        { 
+                        new Cs_TestCs_TestDataADF
+                        {
                             Features = new [] { "b_2", "c_2", "d_2" },
                             Label = new ContextualBanditLabel
                             {
@@ -69,7 +68,7 @@ namespace cs_unittest
         }
     }
 
-    public class Cs_TestData 
+    public class Cs_TestData
     {
         [Feature]
         public string[] Shared { get; set; }

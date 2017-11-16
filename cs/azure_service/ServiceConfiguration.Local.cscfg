@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="OnlineTraining" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2015-04.2.6">
+  <Role name="OnlineTrainer">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" value="350dbdb0-efc3-4938-80f8-6b6535cdac75" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=storageow5eaadgjqnig;AccountKey=TcVfBxYA4J66fuS2EM7b2J7geBq7t5SwwQcRecnf4HtfzyjG+v5SvWjqTuion7Xam/Ja0Av5Fkngrt/lpGO89A=="/>
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=storageow5eaadgjqnig;AccountKey=TcVfBxYA4J66fuS2EM7b2J7geBq7t5SwwQcRecnf4HtfzyjG+v5SvWjqTuion7Xam/Ja0Av5Fkngrt/lpGO89A=="/>
+      <Setting name="JoinedEventHubConnectionString" value="Endpoint=sb://sb-ow5eaadgjqnig7gjzendcoa2ba.servicebus.windows.net/;SharedAccessKeyName=ListenOnly;SharedAccessKey=ow5uvxcP7T/iQv2nsm2kgzEoH6xYSsiubfFfru+Gbvo=;EntityPath=joined"/>
+      <Setting name="EvalEventHubConnectionString" value="Endpoint=sb://sb-ow5eaadgjqnig7gjzendcoa2ba.servicebus.windows.net/;SharedAccessKeyName=SendOnly;SharedAccessKey=0zr67iHByTbr0YpzlEnS5NFxWn2BEwomeauCvFSJ9Ys=;EntityPath=eval" />
+      <Setting name="AdminToken" value="xpyfgfr6fywbi"/>
+      <Setting name="CheckpointIntervalOrCount" value="00:00:10"/>
+      <Setting name="EnableExampleTracing" value="false"/>
+    </ConfigurationSettings>
+  </Role>
+</ServiceConfiguration>

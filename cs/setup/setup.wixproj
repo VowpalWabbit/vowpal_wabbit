@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\vowpalwabbit\packages\WiX.3.10.1\build\wix.props" Condition="Exists('..\..\vowpalwabbit\packages\WiX.3.10.1\build\wix.props')" />
+  <Import Project="..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props" Condition="Exists('..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -12,7 +12,8 @@
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
-    <NuGetPackageImportStamp>0044cf5d</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>..\..\vowpalwabbit\x64\$(Configuration)\</OutputPath>
@@ -37,28 +38,9 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\vowpalwabbit\vw.vcxproj">
       <Name>vw</Name>
       <Project>{1055a78f-1e3a-4e6c-bbf5-0b63299c4adf}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vowpalwabbit\vw_dynamic.vcxproj">
-      <Name>vw_dynamic</Name>
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vowpalwabbit\vw_static.vcxproj">
-      <Name>vw_static</Name>
-      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -96,7 +78,27 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\cs_json\cs_json.csproj">
+      <Name>cs_json</Name>
+      <Project>{9e27fa94-ab34-4736-8427-fb7a2ba90d52}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\cs_parallel\cs_parallel.csproj">
+      <Name>cs_parallel</Name>
+      <Project>{08636f79-5577-4af2-8eed-ec8a5bc14ac4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="packages.config" />
+  </ItemGroup>
+  <Import Project="..\version.props" />
   <Import Project="$(WixTargetsPath)" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -104,7 +106,12 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\..\vowpalwabbit\packages\WiX.3.10.1\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\WiX.3.10.1\build\wix.props'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\WiX.3.10.3\build\wix.props'))" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <CreateProperty Condition="$(VowpalWabbitAssemblyVersion) != ''" Value="VowpalWabbitAssemblyVersion=$(VowpalWabbitAssemblyVersion);$(DefineConstants)">
+      <Output TaskParameter="Value" PropertyName="DefineConstants" />
+    </CreateProperty>
   </Target>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

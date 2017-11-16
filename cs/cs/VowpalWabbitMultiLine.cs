@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 
@@ -94,7 +93,7 @@ namespace VW
 
             if (serializer == null)
             {
-                serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(vw);
+                serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(new VowpalWabbitSettings { EnableStringExampleGeneration = true }).Create(vw);
             }
             else if (!serializer.EnableStringExampleGeneration)
             {
@@ -103,7 +102,7 @@ namespace VW
 
             if (actionDependentFeatureSerializer == null)
             {
-                actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(new VowpalWabbitSettings(enableStringExampleGeneration: true)).Create(vw);
+                actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(new VowpalWabbitSettings { EnableStringExampleGeneration = true }).Create(vw);
             }
             else if (!actionDependentFeatureSerializer.EnableStringExampleGeneration)
             {
@@ -412,26 +411,47 @@ namespace VW
                 return null;
             }
 
-            var values = firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Multilabel);
-
-            if (values.Length != validActionDependentFeatures.Count)
-            {
-                throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
-            }
-
-            var result = new ActionDependentFeature<TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
-
+            ActionDependentFeature<TActionDependentFeature>[] result;
             int i = 0;
-            foreach (var index in values)
+
+            var values = firstExample.GetPrediction(vw, VowpalWabbitPredictionType.Dynamic);
+            var actionScores = values as ActionScore[];
+            if (actionScores != null)
             {
-                result[i++] = validActionDependentFeatures[index];
+                if (actionScores.Length != validActionDependentFeatures.Count)
+                    throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
+
+                result = new ActionDependentFeature<TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
+
+                foreach (var index in actionScores)
+                {
+                    result[i] = validActionDependentFeatures[(int)index.Action];
+                    result[i].Probability = index.Score;
+                    i++;
+                }
+            }
+            else
+            {
+                var multilabel = values as int[];
+                if (multilabel != null)
+                {
+                    if (multilabel.Length != validActionDependentFeatures.Count)
+                        throw new InvalidOperationException("Number of predictions returned unequal number of examples fed");
+
+                    result = new ActionDependentFeature<TActionDependentFeature>[validActionDependentFeatures.Count + emptyActionDependentFeatures.Count];
+
+                    foreach (var index in multilabel)
+                        result[i++] = validActionDependentFeatures[index];
+
+                    result[0].Probability = 1f;
+                }
+                else
+                    throw new NotSupportedException("Unsupported return type: " + values.GetType());
             }
 
             // append invalid ones at the end
             foreach (var f in emptyActionDependentFeatures)
-            {
                 result[i++] = f;
-            }
 
             return result;
         }

@@ -43,6 +43,13 @@ inline void print_substring(substring s)
 { std::cout.write(s.begin,s.end - s.begin);
 }
 
+// can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
+struct example;
+namespace VW
+{
+typedef example& (*example_factory_t)(void*);
+}
+
 uint64_t hashstring (substring s, uint64_t h);
 
 typedef uint64_t (*hash_func_t)(substring, uint64_t);

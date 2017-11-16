@@ -12,12 +12,14 @@ license as described in the file LICENSE.
 #include "gen_cs_example.h"
 
 using namespace LEARNER;
+using namespace std;
 
 using namespace CB;
-
-struct cb
+using namespace GEN_CS;
+namespace CB_ALGS
 {
-  cb_to_cs cbcs;
+struct cb
+{ cb_to_cs cbcs;
   COST_SENSITIVE::label cb_cs_ld;
 };
 
@@ -84,7 +86,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   if(!is_test_label(ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
@@ -103,8 +105,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 }
 
 void finish(cb& data)
-{
-  cb_to_cs& c = data.cbcs;
+{ cb_to_cs& c = data.cbcs;
   data.cb_cs_ld.costs.delete_v();
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
 }
@@ -118,7 +119,8 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 { output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, &ec);
 }
-
+}
+using namespace CB_ALGS;
 base_learner* cb_algs_setup(vw& all)
 { if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
     return nullptr;
@@ -177,23 +179,24 @@ base_learner* cb_algs_setup(vw& all)
 
   base_learner* base = setup_base(all);
   if (eval)
-    all.p->lp = CB_EVAL::cb_eval;
+  { all.p->lp = CB_EVAL::cb_eval;
+    all.label_type = label_type::cb_eval;
+  }
   else
-    all.p->lp = CB::cb_label;
+  { all.p->lp = CB::cb_label;
+    all.label_type = label_type::cb;
+  }
 
   learner<cb>* l;
   if (eval)
-  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier);
+  { l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   { l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>,
-                      problem_multiplier);
+                      problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  // preserve the increment of the base learner since we are
-  // _adding_ to the number of problems rather than multiplying.
-  l->increment = base->increment;
   c.scorer = all.scorer;
 
   l->set_finish(finish);

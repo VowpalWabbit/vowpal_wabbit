@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 using VW.Serializer.Attributes;
@@ -15,11 +14,12 @@ namespace cs_unittest
     {
 #if DEBUG
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheForLearning()
         {
             try
             {
-                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = true }))
                 {
                     vw.Learn(new CachedData(), new SimpleLabel());
                 }
@@ -33,11 +33,12 @@ namespace cs_unittest
         }
 #else
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheForLearning()
         {
             try
             {
-                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(string.Empty, enableExampleCaching: true)))
+                using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = true }))
                 {
                     vw.Learn(new CachedData(), new SimpleLabel());
                 }
@@ -51,9 +52,10 @@ namespace cs_unittest
 #endif
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCacheDisabledForLearning()
         {
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(enableExampleCaching: false)))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { EnableExampleCaching = false }))
             {
                 vw.Learn(new CachedData(), new SimpleLabel());
 
@@ -61,6 +63,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestExampleCache()
         {
             var random = new Random(123);
@@ -73,10 +76,7 @@ namespace cs_unittest
                     Label = new SimpleLabel { Label = 1 },
                     Feature = random.NextDouble()
                 });
-            }
 
-            for (int i = 0; i < 1000; i++)
-            {
                 var cachedData = new CachedData
                 {
                     Label = new SimpleLabel { Label = 2 },
@@ -87,20 +87,22 @@ namespace cs_unittest
                 examples.Add(cachedData);
             }
 
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings("-k -c --passes 10", enableExampleCaching: false)))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings("-k -c --passes 10") { EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
                 {
-                    vw.Learn(example, example.Label);
+                    var pred = vw.Learn(example, example.Label, VowpalWabbitPredictionType.Scalar);
+                    //Console.WriteLine($"feature {example.Label.Label} <- {example.Feature}");
+                    //Console.WriteLine($"   pred {pred}");
                 }
 
                 vw.Native.RunMultiPass();
                 vw.Native.SaveModel("models/model1");
             }
 
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t", modelStream: File.OpenRead("models/model1"))))
-            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: true, maxExampleCacheSize: 5 )))
-            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings(model: vwModel, enableExampleCaching: false )))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-t") { ModelStream = File.OpenRead("models/model1") }))
+            using (var vwCached = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { Model = vwModel, EnableExampleCaching = true, MaxExampleCacheSize =  5 }))
+            using (var vw = new VowpalWabbit<CachedData>(new VowpalWabbitSettings { Model = vwModel, EnableExampleCaching = false }))
             {
                 foreach (var example in examples)
                 {
@@ -108,6 +110,7 @@ namespace cs_unittest
                     var prediction = vw.Predict(example, VowpalWabbitPredictionType.Scalar);
 
                     Assert.AreEqual(prediction, cachedPrediction);
+                    //Console.WriteLine($"{example.Label.Label} to {prediction} to {cachedPrediction} {example.Feature}");
                     Assert.AreEqual(example.Label.Label, Math.Round(prediction));
                 }
             }

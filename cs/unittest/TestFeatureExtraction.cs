@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +23,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestFeatureExtraction()
         {
             using (var vw = new VowpalWabbit<Features>("--noconstant"))
@@ -38,7 +39,7 @@ namespace cs_unittest
 
                     foreach (var feature in ns)
                     {
-                        Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                        Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                     }
                 }
 
@@ -47,21 +48,22 @@ namespace cs_unittest
                 Assert.AreEqual((byte)' ', namespaces[0].Index);
                 CollectionAssert.AreEqual(
                     new[] {
-                        new VowpalWabbitFeature(3.2f, 610696),
+                        new VowpalWabbitFeature(singleExample.Example, 3.2f, 610696),
                     },
                     namespaces[0].ToArray());
 
                 Assert.AreEqual((byte)'l', namespaces[1].Index);
                 CollectionAssert.AreEqual(
                     new[] {
-                        new VowpalWabbitFeature(1, 414696),
-                        new VowpalWabbitFeature(1, 380324),
+                        new VowpalWabbitFeature(singleExample.Example, 1, 414696),
+                        new VowpalWabbitFeature(singleExample.Example, 1, 380324),
                     },
                     namespaces[1].ToArray());
             }
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestJsonFeatureExtraction()
         {
             string json = "{\"ns1\":{\"location\":\"New York\", \"f2\":3.4}}";
@@ -80,7 +82,7 @@ namespace cs_unittest
 
                         foreach (var feature in ns)
                         {
-                            Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                            Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                         }
                     }
 
@@ -89,8 +91,8 @@ namespace cs_unittest
                     Assert.AreEqual((byte)'n', ns1[0].Index);
                     CollectionAssert.AreEqual(
                             new[] {
-                                new VowpalWabbitFeature(1, 12),
-                                new VowpalWabbitFeature(3.4f, 28)
+                                new VowpalWabbitFeature(singleExample.Example, 1, 12),
+                                new VowpalWabbitFeature(singleExample.Example, 3.4f, 28)
                             },
                             ns1[0].ToArray());
                 }
@@ -108,7 +110,7 @@ namespace cs_unittest
 
                             foreach (var feature in ns)
                             {
-                                Console.WriteLine("{0}:{1}", feature.WeightIndex, feature.X);
+                                Console.WriteLine("{0}:{1}", feature.FeatureIndex, feature.X);
                             }
                         }                        
                     }

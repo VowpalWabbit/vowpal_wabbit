@@ -101,6 +101,7 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
   }
 
   ec.weight = u;
+  ec.partial_prediction = final_prediction;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
@@ -157,6 +158,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
   }
 
   ec.weight = u;
+  ec.partial_prediction = final_prediction;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
@@ -178,7 +180,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   if (is_learn) o.t++;
   float eta = 4.f / (float)sqrtf((float)o.t);
 
-  float stopping_point = frand48();
+  float stopping_point = merand48(o.all->random_state);
 
   for (int i = 0; i < o.N; i++)
   {
@@ -239,6 +241,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example
   }
 
   ec.weight = u;
+  ec.partial_prediction = final_prediction;
   ec.pred.scalar = sign(final_prediction);
 
   if (ld.label == ec.pred.scalar)
@@ -288,7 +291,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
   { cerr << "Loading alpha and v: " << endl;
   }
   else
-  { cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_examples << endl;
+  { cerr << "Saving alpha and v, current weighted_examples = " << o.all->sd->weighted_labeled_examples+o.all->sd->weighted_unlabeled_examples << endl;
   }
   for (int i = 0; i < o.N; i++)
   { cerr << o.alpha[i] << " " << o.v[i] << endl;
@@ -330,16 +333,16 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
       bin_text_write_fixed(model_file, (char *) &(o.alpha[i]),  sizeof(o.alpha[i]), os2, text);
     }
 
-  if (read)
-  { cerr << "Loading alpha: " << endl;
+  if (!o.all->quiet)
+  { if (read)
+      cerr << "Loading alpha: " << endl;
+    else
+      cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples() << endl;
+    for (int i = 0; i < o.N; i++)
+      cerr << o.alpha[i] << " " << endl;
+  
+    cerr << endl;
   }
-  else
-  { cerr << "Saving alpha, current weighted_examples = " << o.all->sd->weighted_examples << endl;
-  }
-  for (int i = 0; i < o.N; i++)
-  { cerr << o.alpha[i] << " " << endl;
-  }
-  cerr << endl;
 }
 
 LEARNER::base_learner* boosting_setup(vw& all)
@@ -347,11 +350,9 @@ LEARNER::base_learner* boosting_setup(vw& all)
                                   "Online boosting with <N> weak learners"))
     return NULL;
   new_options(all, "Boosting Options")
-  ("gamma", po::value<float>()->default_value(0.1f),
-   "weak learner's edge (=0.1), used only by online BBM")
-  ("alg", po::value<string>()->default_value("BBM"),
-   "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");
-
+    ("gamma", po::value<float>()->default_value(0.1f), "weak learner's edge (=0.1), used only by online BBM")
+    ("alg", po::value<string>()->default_value("BBM"), "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)");
+  
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)
   // "logistic" implements AdaBoost.OL.W (importance weighted version
@@ -362,11 +363,14 @@ LEARNER::base_learner* boosting_setup(vw& all)
 
   boosting& data = calloc_or_throw<boosting>();
   data.N = (uint32_t)all.vm["boosting"].as<size_t>();
-  cerr << "Number of weak learners = " << data.N << endl;
+  if (!all.quiet)
+    cerr << "Number of weak learners = " << data.N << endl;
   data.gamma = all.vm["gamma"].as<float>();
-  cerr << "Gamma = " << data.gamma << endl;
+  if (!all.quiet)
+    cerr << "Gamma = " << data.gamma << endl;
   string* temp = new string;
   *temp = all.vm["alg"].as<string>();
+  *(all.file_options) << " --alg " << *temp;
   data.alg = temp;
 
   data.C = std::vector<std::vector<long long> >(data.N,

@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ namespace VW.Serializer
     /// <summary>
     /// Context containing state during example marshalling.
     /// </summary>
+    [DebuggerDisplay("{GetHashCode()}: {ToString()}")]
     public class VowpalWabbitMarshalContext : IDisposable
     {
         /// <summary>
@@ -29,7 +31,7 @@ namespace VW.Serializer
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitMarshalContext"/> class.
         /// </summary>
-        /// <param name="vw">The VW instance the example will be imported to.</param>
+        /// <param name="vwPool">The VW instance the example will be imported to.</param>
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         public VowpalWabbitMarshalContext(IVowpalWabbitExamplePool vwPool, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
@@ -67,6 +69,35 @@ namespace VW.Serializer
         /// See https://github.com/JohnLangford/vowpal_wabbit/wiki/Input-format for reference
         /// </summary>
         public StringBuilder StringExample { get; private set; }
+
+        /// <summary>
+        /// The VW string version of the label.
+        /// </summary>
+        public string StringLabel { get; set; }
+
+        /// <summary>
+        /// Creates the VW string for this example.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            if (this.StringExample == null)
+                return null;
+
+            var sb = new StringBuilder();
+            if (this.StringLabel != null)
+                sb.Append(this.StringLabel);
+
+            if (this.StringExample.Length > 0)
+            {
+                if (sb.Length > 0)
+                    sb.Append(' ');
+
+                sb.Append(this.StringExample);
+            }
+
+            return sb.ToString();
+        }
 
         /// <summary>
         /// Used if dictify is true. Maps from serialized feature to surrogate key.
@@ -114,7 +145,7 @@ namespace VW.Serializer
                 }
                 else
                 {
-                    this.StringExample.AppendFormat(outputString);
+                    this.StringExample.Append(outputString);
                 }
             }
         }

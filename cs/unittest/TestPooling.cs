@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
-using VW.Interfaces;
+using VW.Labels;
+using VW.Serializer.Attributes;
+using System.IO;
 
 namespace cs_unittest
 {
@@ -11,16 +13,16 @@ namespace cs_unittest
     public class TestPooling
     {
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(InvalidOperationException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestEmptyFactory()
         {
             new ObjectPool<Disposable, Disposable>().GetOrCreate();
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed1()
         {
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
@@ -29,8 +31,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
         [ExpectedException(typeof(ObjectDisposedException))]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDisposed2()
         {
             var objectPool = new ObjectPool<Disposable, Disposable>(ObjectFactory.Create(new Disposable(), d => d.Create()));
@@ -39,7 +41,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestDangling()
         {
             var factory = new Disposable();
@@ -57,7 +59,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestFactory()
         {
             var factory1 = new Disposable();
@@ -92,7 +94,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ThreadPoolNull()
         {
             using (var pool = new VowpalWabbitThreadedPrediction())
@@ -112,7 +114,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("ObjectPool")]
+        [TestCategory("Vowpal Wabbit")]
         public void ObjectPoolTestConcurrency()
         {
             var factories = new List<Disposable> { new Disposable() };
@@ -166,6 +168,37 @@ namespace cs_unittest
             }
         }
 
+        public class SimpleData
+        {
+            [Feature]
+            public float Value { get; set; }
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public void TestSaveLoadSkip()
+        {
+            using (var vw = new VowpalWabbit<SimpleData>("--binary -f saveload.model"))
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    vw.Learn(new SimpleData { Value = 1 }, new SimpleLabel { Label = 1 });
+                    vw.Learn(new SimpleData { Value = -1 }, new SimpleLabel { Label = -1 });
+                }
+
+                Assert.AreEqual(1, vw.Predict(new SimpleData { Value = 1 }, VowpalWabbitPredictionType.Scalar));
+                Assert.AreEqual(-1, vw.Predict(new SimpleData { Value = -1 }, VowpalWabbitPredictionType.Scalar));
+            }
+
+            using (var model = new VowpalWabbitModel(new VowpalWabbitSettings { Arguments = "--binary", ModelStream = File.Open("saveload.model", FileMode.Open) }))
+            using (var pool = new VowpalWabbitThreadedPrediction<SimpleData>(new VowpalWabbitSettings { Model = model }))
+            {
+                using (var vw = pool.GetOrCreate())
+                {
+                    Assert.AreEqual(-1, vw.Value.Predict(new SimpleData { Value = -1 }, VowpalWabbitPredictionType.Scalar));
+                }
+            }
+        }
 
         public class Disposable : IDisposable
         {

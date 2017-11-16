@@ -41,11 +41,33 @@ public:
   int LineNumber() const;
 };
 
+class vw_argument_disagreement_exception : public vw_exception
+{
+public:
+	vw_argument_disagreement_exception(const char* file, int lineNumber, std::string message);
+
+	vw_argument_disagreement_exception(const vw_argument_disagreement_exception& ex);
+
+	~vw_argument_disagreement_exception() _NOEXCEPT;
+};
+
 #ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
 // useful when hunting down release mode bugs
 #define VW_TRACE(fmt, ...) VW::vw_trace(__FILE__, __LINE__, fmt, __VA_ARGS__)
+
+struct StopWatchData;
+
+class StopWatch
+{ StopWatchData* data;
+
+public:
+  StopWatch();
+  ~StopWatch();
+
+  double MilliSeconds() const;
+};
 
 // Equivalent to System::Diagnostics::Debugger::Launch();
 bool launchDebugger();
@@ -82,6 +104,13 @@ bool launchDebugger();
     __msg << args; \
     throw VW::vw_exception(__FILE__, __LINE__, __msg.str()); \
   }
+
+#define THROW_EX(ex, args) \
+	{ \
+	std::stringstream __msg; \
+	__msg << args; \
+	throw ex(__FILE__, __LINE__, __msg.str()); \
+	}
 
 }
 

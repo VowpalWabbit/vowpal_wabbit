@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -6,7 +6,6 @@ using System.Linq;
 using cs_unittest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer.Attributes;
 using System.Threading;
@@ -19,7 +18,7 @@ namespace cs_test
     public class Test1and2Class : TestBase
     {
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test1and2()
         {
             var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
@@ -27,8 +26,8 @@ namespace cs_test
             var input = new List<Test1>();
 
             using (var vwStr = new VowpalWabbit(" -k -c test1and2.str --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
-            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off",
-                enableExampleCaching: false)))
+            using (var vw = new VowpalWabbit<Test1>(new VowpalWabbitSettings(" -k -c test1and2 --passes 8 -l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off")
+                { EnableExampleCaching = false }))
             using (var vwValidate = new VowpalWabbitExampleValidator<Test1>("-l 20 --power_t 1 --initial_t 128000  --ngram 3 --skips 1 --invariant --holdout_off"))
             {
                 var lineNr = 0;
@@ -40,10 +39,11 @@ namespace cs_test
 
                         vwValidate.Validate(data.Line, data, data.Label);
 
-                        var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Scalar);
+                        var expected = vwStr.Learn(data.Line, VowpalWabbitPredictionType.Dynamic);
+                        Assert.IsInstanceOfType(expected, typeof(float));
                         var actual = vw.Learn(data, data.Label, VowpalWabbitPredictionType.Scalar);
 
-                        Assert.AreEqual(expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
+                        Assert.AreEqual((float)expected, actual, 1e-6, "Learn output differs on line: " + lineNr);
 
                         lineNr++;
                     }));
@@ -60,15 +60,15 @@ namespace cs_test
 
             Assert.AreEqual(input.Count, references.Length);
 
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-k -t --invariant", modelStream: File.OpenRead("models/0001.model"))))
-            using (var vwInMemoryShared1 = new VowpalWabbit(new VowpalWabbitSettings(model: vwModel)))
-            using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel)))
-            using (var vwInMemory = new VowpalWabbit(new VowpalWabbitSettings("-k -t --invariant", modelStream: File.OpenRead("models/0001.model"))))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead("models/0001.model") }))
+            using (var vwInMemoryShared1 = new VowpalWabbit(new VowpalWabbitSettings { Model = vwModel }))
+            using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(new VowpalWabbitSettings { Model = vwModel }))
+            using (var vwInMemory = new VowpalWabbit(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead("models/0001.model") }))
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
             using (var vwNative = new VowpalWabbit("-k -t -i models/0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
             using (var vwModel2 = new VowpalWabbitModel("-k -t --invariant -i models/0001.model"))
-            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings(model: vwModel2)))
+            using (var vwInMemoryShared3 = new VowpalWabbit<Test1>(new VowpalWabbitSettings { Model = vwModel2 }))
             {
                 for (var i = 0; i < input.Count; i++)
                 {

@@ -232,7 +232,7 @@ public:
 class StringUtils
 {
 public:
-  static inline string to_string(size_t& n)
+  static inline string to_string(size_t n)
   { const int buf_size = 512;
     char buff[buf_size];
     sprintf_s(buff, buf_size, "%llu", (unsigned long long)n);

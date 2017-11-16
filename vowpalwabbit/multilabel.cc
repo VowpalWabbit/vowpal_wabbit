@@ -2,6 +2,8 @@
 #include "gd.h"
 #include "vw.h"
 
+using namespace std;
+
 namespace MULTILABEL
 {
 bool is_test_label(labels& ld)
@@ -113,7 +115,7 @@ label_parser multilabel = {default_label, parse_label,
                           };
 
 void print_update(vw& all, bool is_test, example& ec)
-{ if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { stringstream label_string;
     if (is_test)
       label_string << " unknown";
@@ -125,26 +127,8 @@ void print_update(vw& all, bool is_test, example& ec)
     for(size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
       pred_string << " " << ec.pred.multilabels.label_v[i];
 
-
     all.sd->print_update(all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
                          ec.num_features, all.progress_add, all.progress_arg);
-  }
-}
-
-void print_multilabel(int f, labels& mls, v_array<char>&)
-{ if (f >= 0)
-  { std::stringstream ss;
-
-    for (size_t i = 0; i < mls.label_v.size(); i++)
-    { if (i > 0)
-        ss << ',';
-      ss << mls.label_v[i];
-    }
-    ss << '\n';
-    ssize_t len = ss.str().size();
-    ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
-    if (t != len)
-      cerr << "write error: " << strerror(errno) << endl;
   }
 }
 
@@ -176,10 +160,20 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
-    print_multilabel(sink, ec.pred.multilabels, ec.tag);
+    if (sink >= 0)
+    { std::stringstream ss;
+
+      for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+      { if (i > 0)
+          ss << ',';
+        ss << ec.pred.multilabels.label_v[i];
+      }
+      ss << ' ';
+      all.print_text(sink, ss.str(), ec.tag);
+    }
 
   print_update(all, is_test_label(ec.l.multilabels), ec);
 }

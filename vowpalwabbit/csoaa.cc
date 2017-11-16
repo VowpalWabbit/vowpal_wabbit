@@ -28,12 +28,10 @@ template<bool is_learn>
 inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction)
 { if (is_learn)
-  { ec.l.simple.label = cost;
-    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
-    //ec.l.simple.label = (cost <= 0.) ? -1. : 1.;
-    //ec.weight = (cost == FLT_MAX) ? 0. : (cost <= 0.) ? 1. : cost;
-    base.learn(ec, i-1);
-  }
+    { ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+      ec.l.simple.label = cost;
+      base.learn(ec, i-1);
+    }
   else
     base.predict(ec, i-1);
 
@@ -79,12 +77,12 @@ void predict_or_learn(csoaa& c, base_learner& base, example& ec)
   { uint64_t second_best = 0;
     float    second_best_cost = FLT_MAX;
     for (size_t i=0; i<ec.passthrough->size() - pt_start; i++)
-      { float  val = ec.passthrough->values[pt_start + i];
-        if ((val > ec.partial_prediction) && (val < second_best_cost))
-          { second_best_cost = val;
-            second_best = ec.passthrough->indicies[pt_start + i];
-          }
+    { float  val = ec.passthrough->values[pt_start + i];
+      if ((val > ec.partial_prediction) && (val < second_best_cost))
+      { second_best_cost = val;
+        second_best = ec.passthrough->indicies[pt_start + i];
       }
+    }
     if (second_best_cost < FLT_MAX)
     { float margin = second_best_cost - ec.partial_prediction;
       add_passthrough_feature(ec, constant*2, margin);
@@ -118,20 +116,17 @@ base_learner* csoaa_setup(vw& all)
   c.pred = calloc_or_throw<polyprediction>(c.num_classes);
 
   learner<csoaa>& l = init_learner(&c, setup_base(all), predict_or_learn<true>,
-                                   predict_or_learn<false>, c.num_classes);
+                                   predict_or_learn<false>, c.num_classes, prediction_type::multiclass);
   all.p->lp = cs_label;
+  all.label_type = label_type::cs;
+
   l.set_finish_example(finish_example);
   l.set_finish(finish);
-  base_learner* b = make_base(l);
-  all.cost_sensitive = b;
-  cerr << "initialized csoaa!" << endl;
-  return b;
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 
-struct score
-{ float val;
-  size_t idx;
-};
+using namespace ACTION_SCORE;
 
 // TODO: passthrough for ldf
 struct ldf
@@ -149,28 +144,11 @@ struct ldf
   vw* all;
 
   bool rank;
-  v_array<score> scores;
+  action_scores a_s;
+  uint64_t ft_offset;
 
-  v_array<MULTILABEL::labels> stored_preds;
-  base_learner* base;
+  v_array<action_scores > stored_preds;
 };
-
-int cmp(size_t a, size_t b)
-{ if (a == b) return 0;
-  if (a > b) return 1;
-  return -1;
-}
-
-int score_comp(const void* p1, const void* p2)
-{ score* s1 = (score*)p1;
-  score* s2 = (score*)p2;
-  // Most sorting algos do not guarantee the output order of elements that compare equal.
-  // Tie-breaking on the index ensures that the result is deterministic across platforms.
-  // However, this forces a strict ordering, rather than a weak ordering, which carries a performance cost.
-  if(s2->val == s1->val) return cmp(s1->idx, s2->idx);
-  else if(s2->val >= s1->val) return -1;
-  else return 1;
-}
 
 bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
 { if (ec.indices.size() < 1) return false;
@@ -246,24 +224,30 @@ void make_single_prediction(ldf& data, base_learner& base, example& ec)
   LabelDict::add_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
 
   ec.l.simple = simple_label;
+  uint64_t old_offset = ec.ft_offset;
+  ec.ft_offset = data.ft_offset;
   base.predict(ec); // make a prediction
+  ec.ft_offset = old_offset;
   ld.costs[0].partial_prediction = ec.partial_prediction;
 
   LabelDict::del_example_namespace_from_memory(data.label_features, ec, ld.costs[0].class_index);
   ec.l.cs = ld;
 }
 
-bool check_ldf_sequence(ldf& data, size_t start_K)
-{ bool isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+bool test_ldf_sequence(ldf& data, size_t start_K)
+{ bool isTest;
+  if (start_K == data.ec_seq.size())
+    isTest = true;
+  else
+    isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   { example *ec = data.ec_seq[k];
-
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size()==1);
 
     if (COST_SENSITIVE::example_is_test(*ec) != isTest)
     { isTest = true;
-      cerr << "warning: ldf example has mix of train/test data; assuming test" << endl;
+      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
@@ -278,14 +262,12 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
     all_costs.push_back(&data.ec_seq[k]->l.cs.costs[0]);
   compute_wap_values(all_costs);
 
-  data.csoaa_example_t += 1.;
   for (size_t k1=start_K; k1<K; k1++)
   { example *ec1 = data.ec_seq[k1];
 
     // save original variables
     COST_SENSITIVE::label   save_cs_label = ec1->l.cs;
     label_data& simple_label = ec1->l.simple;
-    float save_example_t1 = ec1->example_t;
 
     v_array<COST_SENSITIVE::wclass> costs1 = save_cs_label.costs;
     if (costs1[0].class_index == (uint32_t)-1) continue;
@@ -305,13 +287,15 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
       LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
-      ec1->example_t = data.csoaa_example_t;
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
+      uint64_t old_offset = ec1->ft_offset;
+      ec1->ft_offset = data.ft_offset;
       base.learn(*ec1);
+      ec1->ft_offset = old_offset;
       unsubtract_example(ec1);
 
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
@@ -320,7 +304,6 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K)
 
     // restore original cost-sensitive label, sum of importance weights
     ec1->l.cs = save_cs_label;
-    ec1->example_t = save_example_t1;
     // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
@@ -336,18 +319,15 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
     if (ec_cost > max_cost) max_cost = ec_cost;
   }
 
-  data.csoaa_example_t += 1.;
   for (size_t k=start_K; k<K; k++)
   { example *ec = data.ec_seq[k];
 
     // save original variables
     label save_cs_label = ec->l.cs;
-    float save_example_t = ec->example_t;
     v_array<COST_SENSITIVE::wclass> costs = save_cs_label.costs;
 
     // build example for the base learner
     label_data simple_label;
-    ec->example_t = data.csoaa_example_t;
 
     simple_label.initial = 0.;
     float old_weight = ec->weight;
@@ -367,71 +347,69 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
     // learn
     LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    uint64_t old_offset = ec->ft_offset;
+    ec->ft_offset = data.ft_offset;
     base.learn(*ec);
+    ec->ft_offset = old_offset;
     LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     ec->weight = old_weight;
 
     // restore original cost-sensitive label, sum of importance weights and partial_prediction
     ec->l.cs = save_cs_label;
-    ec->example_t = save_example_t;
     ec->partial_prediction = costs[0].partial_prediction;
   }
 }
 
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
-{ //cout<< "do_actual_learning size=" << data.ec_seq.size() << endl;
-  if (data.ec_seq.size() <= 0) return;  // nothing to do
-
+{ if (data.ec_seq.size() <= 0) return;  // nothing to do
   /////////////////////// handle label definitions
-  if (ec_seq_is_label_definition(data.ec_seq))
-  {
-    for (size_t i=0; i<data.ec_seq.size(); i++)
-      { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
 
-        v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
-        for (size_t j=0; j<costs.size(); j++)
-          { size_t lab = (size_t)costs[j].x;
-            LabelDict::set_label_features(data.label_features, lab, new_fs);
-          }
+  if (ec_seq_is_label_definition(data.ec_seq))
+  { for (size_t i=0; i<data.ec_seq.size(); i++)
+    { features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
+
+      v_array<COST_SENSITIVE::wclass>& costs = data.ec_seq[i]->l.cs.costs;
+      for (size_t j=0; j<costs.size(); j++)
+      { size_t lab = (size_t)costs[j].x;
+        LabelDict::set_label_features(data.label_features, lab, new_fs);
       }
+    }
     return;
   }
 
   /////////////////////// add headers
-  size_t K = data.ec_seq.size();
-  size_t start_K = 0;
+  uint32_t K = (uint32_t)data.ec_seq.size();
+  uint32_t start_K = 0;
 
   if (ec_is_example_header(*data.ec_seq[0]))
   { start_K = 1;
-    for (size_t k=1; k<K; k++)
+    for (uint32_t k=1; k<K; k++)
       LabelDict::add_example_namespaces_from_example(*data.ec_seq[k], *data.ec_seq[0]);
   }
-  bool isTest = check_ldf_sequence(data, start_K);
-
+  bool isTest = test_ldf_sequence(data, start_K);
   /////////////////////// do prediction
-  size_t predicted_K = start_K;
+  uint32_t predicted_K = start_K;
   if(data.rank)
-  { data.scores.erase();
+  { data.a_s.erase();
     data.stored_preds.erase();
     if (start_K > 0)
-      data.stored_preds.push_back(data.ec_seq[0]->pred.multilabels);
-
-    for (size_t k=start_K; k<K; k++)
-    { data.stored_preds.push_back(data.ec_seq[k]->pred.multilabels);
+      data.stored_preds.push_back(data.ec_seq[0]->pred.a_s);
+    for (uint32_t k=start_K; k<K; k++)
+    { data.stored_preds.push_back(data.ec_seq[k]->pred.a_s);
       example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
-      score s;
-      s.val = ec->partial_prediction;
-      s.idx = k - start_K;
-      data.scores.push_back(s);
+      action_score s;
+      s.score = ec->partial_prediction;
+      s.action = k - start_K;
+      data.a_s.push_back(s);
     }
 
-    qsort((void*) data.scores.begin(), data.scores.size(), sizeof(score), score_comp);
+    qsort((void*) data.a_s.begin(), data.a_s.size(), sizeof(action_score), score_comp);
   }
   else
   { float  min_score = FLT_MAX;
-    for (size_t k=start_K; k<K; k++)
+    for (uint32_t k=start_K; k<K; k++)
     { example *ec = data.ec_seq[k];
       make_single_prediction(data, base, *ec);
       if (ec->partial_prediction < min_score)
@@ -441,31 +419,30 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
   }
 
-
   /////////////////////// learn
   if (is_learn && !isTest)
   { if (data.is_wap) do_actual_learning_wap(data, base, start_K);
     else             do_actual_learning_oaa(data, base, start_K);
   }
 
-
   if(data.rank)
-  { data.stored_preds[0].label_v.erase();
+  { data.stored_preds[0].erase();
     if (start_K > 0)
-    { data.ec_seq[0]->pred.multilabels = data.stored_preds[0];
+    { data.ec_seq[0]->pred.a_s = data.stored_preds[0];
     }
     for (size_t k=start_K; k<K; k++)
-    { data.ec_seq[k]->pred.multilabels = data.stored_preds[k];
-      data.ec_seq[0]->pred.multilabels.label_v.push_back((uint32_t)data.scores[k-start_K].idx);
+    { data.ec_seq[k]->pred.a_s = data.stored_preds[k];
+      data.ec_seq[0]->pred.a_s.push_back(data.a_s[k-start_K]);
     }
   }
   else
   { // Mark the predicted subexample with its class_index, all other with 0
     for (size_t k=start_K; k<K; k++)
-      if (k == predicted_K)
-        data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
+      { if (k == predicted_K)
+	  data.ec_seq[k]->pred.multiclass =  data.ec_seq[k]->l.cs.costs[0].class_index;
       else
         data.ec_seq[k]->pred.multiclass =  0;
+    }
   }
   /////////////////////// remove header
   if (start_K > 0)
@@ -486,7 +463,8 @@ void do_actual_learning(ldf& data, base_learner& base)
     }
     // make sure that the probabilities sum up (exactly) to one
     for (size_t k=start_K; k<K; k++)
-      data.ec_seq[k]->pred.prob /= sum_prob;
+    { data.ec_seq[k]->pred.prob /= sum_prob;
+    }
   }
 }
 
@@ -548,7 +526,6 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
 
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
-    assert(loss >= 0);
   }
 
   for (int sink : all.final_prediction_sink)
@@ -578,14 +555,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   all.sd->total_features += head_ec.num_features;
 
   float loss = 0.;
-  v_array<uint32_t> preds = head_ec.pred.multilabels.label_v;
+  v_array<action_score>& preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::example_is_test(head_ec))
   { size_t idx = 0;
     for (example* ex : *ec_seq)
     { if(ec_is_example_header(*ex)) continue;
       if (hit_loss) break;
-      if (preds[0] == idx)
+      if (preds[0].action == idx)
       { loss = ex->l.cs.costs[0].x;
         hit_loss = true;
       }
@@ -597,7 +574,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   }
 
   for (int sink : all.final_prediction_sink)
-    MULTILABEL::print_multilabel(sink, head_ec.pred.multilabels, head_ec.tag);
+    print_action_score(sink, head_ec.pred.a_s, head_ec.tag);
 
   if (all.raw_prediction > 0)
   { string outputString;
@@ -616,7 +593,14 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
 void output_example_seq(vw& all, ldf& data)
 { size_t K = data.ec_seq.size();
   if ((K > 0) && !ec_seq_is_label_definition(data.ec_seq))
-  { all.sd->weighted_examples += 1;
+  {
+    size_t start_K = 0;
+    if (ec_is_example_header(*(data.ec_seq[0])))
+      start_K = 1;
+    if (test_ldf_sequence(data, start_K))
+      all.sd->weighted_unlabeled_examples += 1;
+    else
+      all.sd->weighted_labeled_examples += 1;
     all.sd->example_number++;
 
     bool hit_loss = false;
@@ -676,7 +660,11 @@ void end_pass(ldf& data)
 
 void finish_singleline_example(vw& all, ldf& data, example& ec)
 { if (! ec_is_label_definition(ec))
-  { all.sd->weighted_examples += 1;
+  {
+    if (COST_SENSITIVE::example_is_test(ec))
+      all.sd->weighted_unlabeled_examples += ec.weight;
+    else
+      all.sd->weighted_labeled_examples += ec.weight;
     all.sd->example_number++;
   }
   bool hit_loss = false;
@@ -705,14 +693,14 @@ void end_examples(ldf& data)
 void finish(ldf& data)
 { data.ec_seq.delete_v();
   LabelDict::free_label_features(data.label_features);
-  data.scores.delete_v();
+  data.a_s.delete_v();
   data.stored_preds.delete_v();
 }
 
 template <bool is_learn>
 void predict_or_learn(ldf& data, base_learner& base, example &ec)
 { vw* all = data.all;
-  data.base = &base;
+  data.ft_offset = ec.ft_offset;
   bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
 
@@ -732,7 +720,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   }
   else if ((example_is_newline(ec) && is_test_ec) || need_to_break)
   { if (need_to_break && data.first_pass)
-      cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
+      data.all->trace_message << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   }
@@ -775,10 +763,12 @@ base_learner* csldf_setup(vw& all)
     ldf_arg = vm["ldf_override"].as<string>();
   if (vm.count("csoaa_rank"))
   { ld.rank = true;
-    all.delete_prediction = MULTILABEL::multilabel.delete_label;
+    *all.file_options << " --csoaa_rank";
+    all.delete_prediction = delete_action_scores;
   }
 
   all.p->lp = COST_SENSITIVE::cs_label;
+  all.label_type = label_type::cs;
 
   ld.treat_as_classifier = false;
   ld.is_singleline = false;
@@ -807,10 +797,11 @@ base_learner* csldf_setup(vw& all)
   if( vm.count("probabilities") )
   { ld.is_probabilities = true;
     all.sd->report_multiclass_log_loss = true;
+    *all.file_options << " --probabilities";
     if (!vm.count("loss_function") || vm["loss_function"].as<string>() != "logistic" )
-      cerr << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
-      cerr << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
   else
   { ld.is_probabilities = false;
@@ -824,10 +815,18 @@ base_learner* csldf_setup(vw& all)
   features fs;
   ld.label_features.init(256, fs, LabelDict::size_t_eq);
   ld.label_features.get(1, 94717244); // TODO: figure this out
+  prediction_type::prediction_type_t pred_type;
+
+  if (ld.rank)
+    pred_type = prediction_type::action_scores;
+  else if (ld.is_probabilities)
+    pred_type = prediction_type::prob;
+  else
+    pred_type = prediction_type::multiclass;
 
   ld.read_example_this_loop = 0;
   ld.need_to_clear = false;
-  learner<ldf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+  learner<ldf>& l = init_learner(&ld, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1, pred_type);
   if (ld.is_singleline)
     l.set_finish_example(finish_singleline_example);
   else
@@ -835,7 +834,8 @@ base_learner* csldf_setup(vw& all)
   l.set_finish(finish);
   l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
-  return make_base(l);
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 
 }

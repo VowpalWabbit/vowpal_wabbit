@@ -59,7 +59,7 @@ namespace VW.Serializer
         /// <param name="dictionary">Dictionary used for dictify operation.</param>
         /// <param name="fastDictionary">Dictionary used for dictify operation.</param>
         /// <returns>The resulting VW string.</returns>
-        public string SerializeToString(TExample example, Interfaces.ILabel label = null, int? index = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
+        public string SerializeToString(TExample example, ILabel label = null, int? index = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
             var sb = new StringBuilder();
 
@@ -80,7 +80,7 @@ namespace VW.Serializer
             return sb.ToString();
         }
 
-        public VowpalWabbitExampleCollection Serialize(TExample example, Interfaces.ILabel label = null, int? index = null)
+        public VowpalWabbitExampleCollection Serialize(TExample example, ILabel label = null, int? index = null)
         {
             VowpalWabbitExample shared = null;
             var adf = new List<VowpalWabbitExample>();

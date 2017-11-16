@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -23,10 +24,10 @@ namespace VW.Reflection
     public static class ReflectionHelper
     {
         /// <summary>
-        ///
+        /// Compiles the supplied <paramref name="sourceExpression"/> to a callable function.
         /// </summary>
-        /// <param name="?"></param>
-        /// <returns></returns>
+        /// <param name="sourceExpression">The source expression to be compiled.</param>
+        /// <returns>A callable function.</returns>
         /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
         public static System.Delegate CompileToFunc<T>(this Expression<T> sourceExpression)
         {
@@ -40,7 +41,18 @@ namespace VW.Reflection
             var returnType = genericArguments.Last();
             var paramTypes = genericArguments.Take(genericArguments.Length - 1);
 
-            var asmName = new AssemblyName("VowpalWabbitSerializer." + typeof(T).Name);
+            // sign serializer so we can get access to internal members.
+            var asmName = new AssemblyName("VowpalWabbitSerializer");
+            StrongNameKeyPair kp;
+            using (var stream = typeof(ReflectionHelper).Assembly.GetManifestResourceStream("VW.vw_key.snk"))
+            using (var memStream = new MemoryStream())
+            {
+                stream.CopyTo(memStream, 1024);
+
+                kp = new StrongNameKeyPair(memStream.ToArray());
+            }
+            asmName.KeyPair = kp;
+
             var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
 
             // Create a dynamic module and type
@@ -69,6 +81,9 @@ namespace VW.Reflection
             //#endif
 
             var dynType = typeBuilder.CreateType();
+
+            // for debugging only
+            // dynAsm.Save(@"my.dll");
 
             return Delegate.CreateDelegate(typeof(T), dynType.GetMethod(methodName));
         }

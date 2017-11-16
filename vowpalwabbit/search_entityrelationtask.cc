@@ -5,6 +5,7 @@
 */
 #include "search_entityrelationtask.h"
 #include "vw.h"
+using namespace std;
 
 #define R_NONE 10 // label for NONE relation
 #define LABEL_SKIP 11 // label for SKIP
@@ -106,9 +107,9 @@ void finish(Search::search& sch)
   delete my_task_data;
 }    // if we had task data, we'd want to free it here
 
-bool check_constraints(int ent1_id, int ent2_id, int rel_id)
-{ int valid_ent1_id [] = {2,3,4,2,2}; // encode the valid entity-relation combinations
-  int valid_ent2_id [] = {4,4,4,3,2};
+bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
+{ size_t valid_ent1_id [] = {2,3,4,2,2}; // encode the valid entity-relation combinations
+  size_t valid_ent2_id [] = {4,4,4,3,2};
   if(rel_id - 5 == 5)
     return true;
   if(valid_ent1_id[rel_id-5] == ent1_id && valid_ent2_id[rel_id-5] == ent2_id)
@@ -150,12 +151,12 @@ size_t predict_entity(Search::search&sch, example* ex, v_array<size_t>& /*predic
   }
   else
   { if(isLdf)
-    { for(size_t a=0; a<4; a++)
+    { for(uint32_t a=0; a<4; a++)
       { VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a+1));
         CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
-        lab.costs[0].class_index = (uint64_t)a;
+        lab.costs[0].class_index = a;
         lab.costs[0].partial_prediction = 0.f;
         lab.costs[0].wap_value = 0.f;
       }
@@ -180,7 +181,7 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
 { char type;
   int id1, id2;
   task_data* my_task_data = sch.get_task_data<task_data>();
-  uint32_t hist[2];
+  size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
   v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
   if(my_task_data->constraints && predictions[id1]!=0 &&predictions[id2]!=0)
@@ -192,7 +193,7 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
     hist[1] = 0;
   }
   for(size_t j=0; j< my_task_data->y_allowed_relation.size(); j++)
-  { if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
+  { if(!my_task_data->constraints || hist[0] == (size_t)0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
       constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
 
   }
@@ -260,19 +261,19 @@ void entity_first_decoding(Search::search& sch, vector<example*> ec, v_array<siz
 
 void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions)
 { // ec.size = #entity + #entity*(#entity-1)/2
-  size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
-  for(size_t t=0; t<ec.size(); t++)
+  uint32_t n_ent = (uint32_t)((sqrt(ec.size()*8+1)-1)/2);
+  for(uint32_t t=0; t<ec.size(); t++)
   { // Do entity recognition first
-    size_t count = 0;
-    for (size_t i=0; i<n_ent; i++)
+    uint32_t count = 0;
+    for (ptag i=0; i<n_ent; i++)
     { if(count ==t)
-      { predictions[i] = predict_entity(sch, ec[i], predictions, (ptag)i);
+      { predictions[i] = predict_entity(sch, ec[i], predictions, i);
         break;
       }
       count++;
-      for(size_t j=0; j<i; j++)
+      for(uint32_t j=0; j<i; j++)
       { if(count ==t)
-        { size_t rel_index = (n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
+        { ptag rel_index = (ptag)(n_ent + (2*n_ent-j-1)*j/2 + i-j-1);
           predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
           break;
         }
@@ -293,8 +294,8 @@ void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<si
   my_task_data->allow_skip = true;
 
   // loop until all the entity and relation types are predicted
-  for(size_t t=0; ; t++)
-  { size_t i = t % ec.size();
+  for(ptag t=0; ; t++)
+  { ptag i = t % (uint32_t)ec.size();
     if(n_predicts == ec.size())
       break;
 

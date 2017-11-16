@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -35,6 +36,10 @@ namespace VW
             this.vw = vw;
         }
 
+        /// <summary>
+        /// Learns this example on the VW instance used for marshalling or the optionally passed on <paramref name="vw"/>.
+        /// </summary>
+        /// <param name="vw">The optional VW instance used for learning. Defaults to the one used for marshalling.</param>
         public void Learn(VowpalWabbit vw = null)
         {
             this.LearnInternal(vw ?? this.vw);
@@ -107,6 +112,16 @@ namespace VW
         /// The optional string version of the example.
         /// </summary>
         public abstract string VowpalWabbitString { get; }
+
+        /// <summary>
+        /// The number of feature this example holds.
+        /// </summary>
+        public abstract ulong NumberOfFeatures { get; }
+
+        /// <summary>
+        /// All labels this example holds.
+        /// </summary>
+        public abstract IEnumerable<ILabel> Labels { get; }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

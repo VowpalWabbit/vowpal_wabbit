@@ -29,8 +29,7 @@ T* calloc_mergable_or_throw(size_t nmemb)
   size_t length = nmemb * sizeof(T);
   void* data;
   if (0 != posix_memalign(&data, sysconf(_SC_PAGE_SIZE), length))
-  {
-    const char* msg = "internal error: memory allocation failed!\n";
+  { const char* msg = "internal error: memory allocation failed!\n";
     fputs(msg, stderr);
     THROW(msg);
   }
@@ -51,8 +50,8 @@ T* calloc_mergable_or_throw(size_t nmemb)
 // you can enable ksmd with sudo "echo 1 > /sys/kernel/mm/ksm/run"
 // mark address space as a candidate for merging
 
-  if (0 != madvise(data, length, MADV_MERGEABLE)) {
-    const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
+  if (0 != madvise(data, length, MADV_MERGEABLE))
+  { const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
     fputs(msg, stderr);
   }
   return (T*)data;

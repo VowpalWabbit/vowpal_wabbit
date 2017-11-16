@@ -9,9 +9,19 @@ using VW.Reflection;
 
 namespace VW.Serializer
 {
-    internal static class VowpalWabbitMultiExampleSerializerCompiler
+    /// <summary>
+    /// Factory class to create <see cref="IVowpalWabbitSerializer{TExample}"/>.
+    /// </summary>
+    public static class VowpalWabbitMultiExampleSerializerCompiler
     {
-        internal static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
+        /// <summary>
+        /// Creates a serializer for <typeparamref name="TExample"/> based on <paramref name="settings"/> and <paramref name="schema"/>,
+        /// </summary>
+        /// <typeparam name="TExample">The example type.</typeparam>
+        /// <param name="settings">Settings for inspection.</param>
+        /// <param name="schema">The schema used for serializer creation.</param>
+        /// <returns>If the schema is valid a compiler is created, otherwise null.</returns>
+        public static IVowpalWabbitSerializerCompiler<TExample> TryCreate<TExample>(VowpalWabbitSettings settings, Schema schema)
         {
             // check for _multi
             var multiFeature = schema.Features.FirstOrDefault(fe => fe.Name == settings.PropertyConfiguration.MultiProperty);
@@ -51,7 +61,7 @@ namespace VW.Serializer
                         !settings.EnableStringExampleGeneration);
 
                 this.adfSerializerComputer = new VowpalWabbitSingleExampleSerializerCompiler<TActionDependentFeature>(
-                    AnnotationJsonInspector.CreateSchema(typeof(TActionDependentFeature), settings.PropertyConfiguration),
+                    settings.TypeInspector.CreateSchema(settings, typeof(TActionDependentFeature)),
                     settings == null ? null : settings.CustomFeaturizer,
                     !settings.EnableStringExampleGeneration);
 

@@ -20,6 +20,7 @@
 #include "network.h"
 #include "reductions.h"
 
+using namespace std;
 struct sender
 { io_buf* buf;
   int sd;

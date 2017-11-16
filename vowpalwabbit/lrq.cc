@@ -6,6 +6,7 @@
 #include "parse_args.h" // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
+using namespace std;
 
 struct LRQstate
 { vw* all; // feature creation, audit, hash_inv
@@ -64,11 +65,13 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
   size_t which = ec.example_counter;
   float first_prediction = 0;
   float first_loss = 0;
+  float first_uncertainty = 0;
   unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
 
   bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
   float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
+  uint32_t stride_shift = lrq.all->weights.stride_shift();
   for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
   { // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
@@ -85,49 +88,47 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
         {
           float lfx = left_fs.values[lfn];
           uint64_t lindex = left_fs.indicies[lfn] + ec.ft_offset;
-
-          for (unsigned int n = 1; n <= k; ++n)
+	  for (unsigned int n = 1; n <= k; ++n)
             { if (! do_dropout || cheesyrbit (lrq.seed))
-                { uint64_t lwindex = (uint64_t)(lindex + (n << all.reg.stride_shift));
-
-                  float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
-
-                  // perturb away from saddle point at (0, 0)
-                  if (is_learn && ! example_is_test (ec) && *lw == 0)
-                    *lw = cheesyrand (lwindex);
-
-                  features& right_fs = ec.feature_space[right];
-                  for (unsigned int rfn = 0;
-                       rfn < lrq.orig_size[right];
-                       ++rfn)
-                    { // NB: ec.ft_offset added by base learner
-                      float rfx = right_fs.values[rfn];
-                      uint64_t rindex = right_fs.indicies[rfn];
-                      uint64_t rwindex = (uint64_t)(rindex + (n << all.reg.stride_shift));
-
-                      right_fs.push_back(scale **lw * lfx * rfx, rwindex);
-
-                      if (all.audit || all.hash_inv)
-                        { std::stringstream new_feature_buffer;
-                          new_feature_buffer << right << '^'
-                                             << right_fs.space_names[rfn].get()->second << '^'
-                                             << n;
-
+		     {  uint64_t lwindex = (uint64_t)(lindex + (n << stride_shift));
+		       weight* lw = &lrq.all->weights[lwindex];
+		       
+		       // perturb away from saddle point at (0, 0)
+		       if (is_learn && ! example_is_test (ec) && *lw == 0)
+			 *lw = cheesyrand (lwindex); //not sure if lw needs a weight mask?
+		       
+		       features& right_fs = ec.feature_space[right];
+		       for (unsigned int rfn = 0;
+			    rfn < lrq.orig_size[right];
+			    ++rfn)
+			 { // NB: ec.ft_offset added by base learner
+			   float rfx = right_fs.values[rfn];
+			   uint64_t rindex = right_fs.indicies[rfn];
+			   uint64_t rwindex = (uint64_t)(rindex + (n << stride_shift));
+			   
+			   right_fs.push_back(scale **lw * lfx * rfx, rwindex);
+			   
+			   if (all.audit || all.hash_inv)
+			     { std::stringstream new_feature_buffer;
+			       new_feature_buffer << right << '^'
+						  << right_fs.space_names[rfn].get()->second << '^'
+						  << n;
+			       
 #ifdef _WIN32
-                          char* new_space = _strdup("lrq");
-                          char* new_feature =	_strdup(new_feature_buffer.str().c_str());
+			       char* new_space = _strdup("lrq");
+			       char* new_feature =	_strdup(new_feature_buffer.str().c_str());
 #else
-                          char* new_space = strdup("lrq");
-                          char* new_feature = strdup(new_feature_buffer.str().c_str());
+			       char* new_space = strdup("lrq");
+			       char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
-                          right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
-                        }
-                    }
-                }
+			       right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space,new_feature)));
+			     }
+			 }
+		     }
             }
-        }
+	}
     }
-
+    
     if (is_learn)
       base.learn(ec);
     else
@@ -135,18 +136,20 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
     // Restore example
     if (iter == 0)
-      { first_prediction = ec.pred.scalar;
-        first_loss = ec.loss;
-      }
+    { first_prediction = ec.pred.scalar;
+      first_loss = ec.loss;
+      first_uncertainty = ec.confidence;
+    }
     else
-      { ec.pred.scalar = first_prediction;
-        ec.loss = first_loss;
-      }
+    { ec.pred.scalar = first_prediction;
+      ec.loss = first_loss;
+      ec.confidence = first_uncertainty;
+    }
 
     for (string const& i : lrq.lrpairs)
-      { unsigned char right = i[(which+1)%2];
-        ec.feature_space[right].truncate_to(lrq.orig_size[right]);
-      }
+    { unsigned char right = i[(which+1)%2];
+      ec.feature_space[right].truncate_to(lrq.orig_size[right]);
+    }
   }
 }
 
@@ -164,7 +167,7 @@ base_learner* lrq_setup(vw& all)
     return nullptr;
 
   LRQstate& lrq = calloc_or_throw<LRQstate>();
-  size_t maxk = 0;
+  uint32_t maxk = 0;
   lrq.all = &all;
 
   vector<string> arg = all.vm["lrq"].as<vector<string> > ();
@@ -184,9 +187,9 @@ base_learner* lrq_setup(vw& all)
     *all.file_options << " --lrq " << i;
 
   if (! all.quiet)
-  { cerr << "creating low rank quadratic features for pairs: ";
+  { all.trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq.dropout)
-      cerr << "(using dropout) ";
+      all.trace_message << "(using dropout) ";
   }
 
   for (string const& i : lrq.lrpairs)
@@ -196,7 +199,7 @@ base_learner* lrq_setup(vw& all)
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
       }
 
-      cerr << i << " ";
+      all.trace_message << i << " ";
     }
     // TODO: colon-syntax
 
@@ -209,7 +212,7 @@ base_learner* lrq_setup(vw& all)
   }
 
   if(!all.quiet)
-    cerr<<endl;
+    all.trace_message<<endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
   learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,

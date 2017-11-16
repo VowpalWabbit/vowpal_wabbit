@@ -7,16 +7,30 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 
 namespace cs_unittest
 {
+    internal static class VowpalWabbitExampleValidator
+    {
+        internal static void Validate(string line, VowpalWabbitExample ex, IVowpalWabbitLabelComparator comparator, string args = null)
+        {
+            using (var vw = new VowpalWabbit(args))
+            using (var strExample = vw.ParseLine(line))
+            {
+                var diff = strExample.Diff(vw, ex, comparator);
+                Assert.IsNull(diff, diff + " generated string: '" + ex.VowpalWabbitString + "'");
+            }
+        }
+    }
+
     internal sealed class VowpalWabbitExampleValidator<TExample> : IDisposable
     {
         private VowpalWabbit<TExample> vw;
         private VowpalWabbit<TExample> vwNative;
+        private VowpalWabbit vwJson;
+        private VowpalWabbitSingleExampleSerializerCompiler<TExample> compiler;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializer;
         private Action<VowpalWabbitMarshalContext, TExample, ILabel> serializerNative;
         private IVowpalWabbitSerializer<TExample> factorySerializer;
@@ -38,19 +52,26 @@ namespace cs_unittest
 
         internal VowpalWabbitExampleValidator(VowpalWabbitSettings settings)
         {
-            this.vw = new VowpalWabbit<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true));
+            var stringSettings = (VowpalWabbitSettings)settings.Clone();
+            stringSettings.EnableStringExampleGeneration = true;
 
-            var compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
-            if (compiler != null)
-                this.serializer = compiler.Func(this.vw.Native);
+            this.vw = new VowpalWabbit<TExample>(stringSettings);
+
+            var jsonSettings = (VowpalWabbitSettings)settings.Clone();
+            jsonSettings.Arguments += " --json";
+            this.vwJson = new VowpalWabbit(jsonSettings);
+
+            this.compiler = this.vw.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
+            if (this.compiler != null)
+                this.serializer = this.compiler.Func(this.vw.Native);
 
             this.vwNative = new VowpalWabbit<TExample>(settings);
 
-            compiler = this.vwNative.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
+            this.compiler = this.vwNative.Serializer as VowpalWabbitSingleExampleSerializerCompiler<TExample>;
             if (compiler != null)
-                this.serializerNative = compiler.Func(this.vwNative.Native);
+                this.serializerNative = this.compiler.Func(this.vwNative.Native);
 
-            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(settings.ShallowCopy(enableStringExampleGeneration: true)).Create(this.vw.Native);
+            this.factorySerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(stringSettings).Create(this.vw.Native);
         }
 
         public void Validate(string line, TExample example, ILabel label = null)
@@ -85,12 +106,12 @@ namespace cs_unittest
                 // (1) natively build example
                 // (2) string serialized & natively parsed string example
                 using (var strExample = this.vw.Native.ParseLine(line))
-                using (var strConvertedExample = this.vw.Native.ParseLine(context.StringExample.ToString()))
+                using (var strConvertedExample = this.vw.Native.ParseLine(context.ToString()))
                 using (var nativeExample = contextNative.ExampleBuilder.CreateExample())
                 using (var nativeExampleWithString = this.factorySerializer.Serialize(example, label))
                 {
                     var diff = strExample.Diff(this.vw.Native, strConvertedExample, comparator);
-                    Assert.IsNull(diff, diff + " generated string: '" + context.StringExample + "'");
+                    Assert.IsNull(diff, diff + " generated string: '" + context.ToString() + "'");
 
                     diff = strExample.Diff(this.vw.Native, nativeExample, comparator);
                     Assert.IsNull(diff, diff);
@@ -101,7 +122,7 @@ namespace cs_unittest
                         Assert.IsFalse(string.IsNullOrEmpty(this.factorySerializer.SerializeToString(example, label)));
                     }
 
-                    if (this.vw.Native.Settings.FeatureDiscovery == VowpalWabbitFeatureDiscovery.Json)
+                    if (this.vw.Native.Settings.TypeInspector == JsonTypeInspector.Default)
                     {
                         var jsonStr = JsonConvert.SerializeObject(example);
 
@@ -112,7 +133,27 @@ namespace cs_unittest
                                 var ex = ((VowpalWabbitSingleLineExampleCollection)jsonExample).Example;
 
                                 diff = strExample.Diff(this.vw.Native, ex, comparator);
-                                Assert.IsNull(diff, diff + "\njson: '" + jsonStr + "'");
+                                Assert.IsNull(diff, $"{diff}\n json: '{jsonStr}'");
+                            }
+                        }
+
+                        List<VowpalWabbitExample> exampleList = null;
+
+                        try
+                        {
+                            exampleList = this.vwJson.ParseJson(jsonStr);
+
+                            Assert.AreEqual(1, exampleList.Count);
+
+                            diff = strExample.Diff(this.vw.Native, exampleList[0], comparator);
+                            Assert.IsNull(diff, $"{diff}\n json: '{jsonStr}'");
+                        }
+                        finally
+                        {
+                            if (exampleList != null)
+                            {
+                                foreach (var ex in exampleList)
+                                    ex.Dispose();
                             }
                         }
                     }
@@ -171,6 +212,12 @@ namespace cs_unittest
                 {
                     this.vwNative.Dispose();
                     this.vwNative = null;
+                }
+
+                if (this.vwJson != null)
+                {
+                    this.vwJson.Dispose();
+                    this.vwJson = null;
                 }
 
                 if (this.factorySerializer != null)

@@ -1,24 +1,21 @@
 #include "best_constant.h"
-
-bool  is_more_than_two_labels_observed = false;
-float first_observed_label = FLT_MAX;
-float second_observed_label = FLT_MAX;
+using namespace std;
 
 bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
-{ if (    first_observed_label == FLT_MAX || // no non-test labels observed or function was never called
+{ if (all.sd->first_observed_label == FLT_MAX || // no non-test labels observed or function was never called
           (all.loss == nullptr) || (all.sd == nullptr)) return false;
 
-  float label1 = first_observed_label; // observed labels might be inside [sd->Min_label, sd->Max_label], so can't use Min/Max
-  float label2 = (second_observed_label == FLT_MAX)?0:second_observed_label; // if only one label observed, second might be 0
+  float label1 = all.sd->first_observed_label; // observed labels might be inside [sd->Min_label, sd->Max_label], so can't use Min/Max
+  float label2 = (all.sd->second_observed_label == FLT_MAX)?0: all.sd->second_observed_label; // if only one label observed, second might be 0
   if (label1 > label2) {float tmp = label1; label1 = label2; label2 = tmp;} // as don't use min/max - make sure label1 < label2
 
   float label1_cnt;
   float label2_cnt;
 
   if (label1 != label2)
-  { float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t);
-    label1_cnt = (float) (all.sd->weighted_labels - label2*weighted_labeled_examples)/(label1 - label2);
-    label2_cnt = weighted_labeled_examples - label1_cnt;
+  { 
+    label1_cnt = (float) (all.sd->weighted_labels - label2*all.sd->weighted_labeled_examples)/(label1 - label2);
+    label2_cnt = (float)all.sd->weighted_labeled_examples - label1_cnt;
   }
   else
     return false;
@@ -35,10 +32,8 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
     funcName = "squared";
 
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
-  { best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_examples - all.sd->weighted_unlabeled_examples + all.initial_t); //GENERIC. WAS: (label1*label1_cnt + label2*label2_cnt) / (label1_cnt + label2_cnt);
-
-  }
-  else if (is_more_than_two_labels_observed)
+    best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_labeled_examples);
+  else if (all.sd->is_more_than_two_labels_observed)
   { //loss functions below don't have generic formuas for constant yet.
     return false;
 
@@ -75,7 +70,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   else
     return false;
 
-  if (!is_more_than_two_labels_observed)
+  if (!all.sd->is_more_than_two_labels_observed)
   { best_constant_loss =  (label1_cnt>0)?all.loss->getLoss(all.sd, best_constant, label1) * label1_cnt:0.0f;
     best_constant_loss += (label2_cnt>0)?all.loss->getLoss(all.sd, best_constant, label2) * label2_cnt:0.0f;
     best_constant_loss /= label1_cnt + label2_cnt;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,7 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using VW.Interfaces;
+using VW.Labels;
 using VW.Reflection;
 using VW.Serializer.Intermediate;
 
@@ -18,11 +19,12 @@ namespace VW.Serializer
     /// </summary>
     /// <typeparam name="TExample">The example user type.</typeparam>
     /// <returns>A serializer for the given user example type.</returns>
-    internal sealed class VowpalWabbitSingleExampleSerializerCompiler<TExample> : IVowpalWabbitSerializerCompiler<TExample>
+    public sealed class VowpalWabbitSingleExampleSerializerCompiler<TExample> : IVowpalWabbitSerializerCompiler<TExample>
     {
                 /// <summary>
         /// Internal structure collecting all itmes required to marshal a single feature.
         /// </summary>
+        [DebuggerDisplay("FeatureExpressionInternal(Source={Source}, MarshalMethod={MarshalMethod})")]
         internal sealed class FeatureExpressionInternal
         {
             /// <summary>
@@ -50,6 +52,11 @@ namespace VW.Serializer
             /// The feature type (e.g. <see cref="PreHashedFeature"/>).
             /// </summary>
             internal Type MetaFeatureType;
+
+            /// <summary>
+            /// True if the method can marshal a full namespace.
+            /// </summary>
+            internal bool IsNamespace;
         }
 
         /// <summary>
@@ -61,7 +68,7 @@ namespace VW.Serializer
 
         /// <summary>
         /// Ordered list of featurizer types. Marshalling methods are resolved in order of this list.
-        /// <see cref="VowpalWabbitDefaultMarshaller"/> is added last as  default.
+        /// <see cref="VowpalWabbitDefaultMarshaller"/> is added last as default.
         /// </summary>
         private readonly List<Type> marshallerTypes;
 
@@ -177,6 +184,11 @@ namespace VW.Serializer
             return this.Create(vw);
         }
 
+        /// <summary>
+        /// Creates a serializer for <typeparamref name="TExample"/> bound to <paramref name="vw"/>.
+        /// </summary>
+        /// <param name="vw">The VW native instance examples will be assocated with.</param>
+        /// <returns>A serializer for <typeparamref name="TExample"/>.</returns>
         public VowpalWabbitSingleExampleSerializer<TExample> Create(VowpalWabbit vw)
         {
             return new VowpalWabbitSingleExampleSerializer<TExample>(this, vw);
@@ -184,7 +196,7 @@ namespace VW.Serializer
 
         private void CreateLabel()
         {
-            // CODE if (labelParameter == null) 
+            // CODE if (labelParameter == null)
             this.perExampleBody.Add(Expression.IfThen(
                 Expression.NotEqual(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
                 this.CreateMarshallerCall("MarshalLabel", this.contextParameter, this.labelParameter)));
@@ -205,9 +217,9 @@ namespace VW.Serializer
                         Expression.AndAlso(
                             Expression.Equal(this.labelParameter, Expression.Constant(null, typeof(ILabel))),
                             condition),
-                        // CODE MarshalLabel(context, example.Label) 
-                        this.CreateMarshallerCall("MarshalLabel", 
-                            this.contextParameter, 
+                        // CODE MarshalLabel(context, example.Label)
+                        this.CreateMarshallerCall("MarshalLabel",
+                            this.contextParameter,
                             label.ValueExpressionFactory(this.exampleParameter))));
             }
         }
@@ -236,7 +248,6 @@ namespace VW.Serializer
                 this.body.Add(Expression.Assign(marshaller, newExpr));
             }
         }
-
 
         private MarshalMethod ResolveFeatureMarshalMethod(FeatureExpression feature)
         {
@@ -295,9 +306,18 @@ namespace VW.Serializer
                 featureType = featureType.GetGenericArguments()[0];
             }
 
+            var method = ResolveFeatureMarshalMethod("MarshalNamespace", metaFeatureTypeCandidates, featureType, isNamespace: true);
+            if (method == null)
+                method = ResolveFeatureMarshalMethod(methodName, metaFeatureTypeCandidates, featureType, isNamespace: false);
+
+            return method;
+        }
+
+        private MarshalMethod ResolveFeatureMarshalMethod(string methodName, Type[] metaFeatureTypeCandidates, Type featureType, bool isNamespace)
+        {
             foreach (var metaFeatureType in metaFeatureTypeCandidates)
             {
-                // find visitor.MarshalFeature(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
+                // find visitor.<methodname>(VowpalWabbitMarshallingContext context, Namespace ns, <PreHashedFeature|Feature> feature, <valueType> value)
                 var method = this.marshallerTypes
                     .Select(visitor => ReflectionHelper.FindMethod(
                             visitor,
@@ -309,16 +329,27 @@ namespace VW.Serializer
                     .FirstOrDefault(m => m != null);
 
                 if (method != null)
-                {
                     return new MarshalMethod
                     {
                         Method = method,
-                        MetaFeatureType = metaFeatureType
+                        MetaFeatureType = metaFeatureType,
+                        IsNamespace = isNamespace
                     };
-                }
             }
 
             return null;
+        }
+
+        private bool ContainsAncestor(FeatureExpressionInternal candidate, List<FeatureExpressionInternal> validFeature)
+        {
+            if (candidate.Source.Parent == null)
+                return false;
+
+            if (validFeature.Any(valid => object.ReferenceEquals(valid.Source, candidate.Source.Parent)))
+                return true;
+
+            var parent = this.allFeatures.First(f => object.ReferenceEquals(f.Source, candidate.Source.Parent));
+            return ContainsAncestor(parent, validFeature);
         }
 
         /// <summary>
@@ -329,6 +360,10 @@ namespace VW.Serializer
             var validFeature = new List<FeatureExpressionInternal>(this.allFeatures.Length);
             foreach (var feature in this.allFeatures)
             {
+                // skip any feature which parent feature is already resolved
+                if (ContainsAncestor(feature, validFeature))
+                    continue;
+
                 feature.MarshalMethod = this.ResolveFeatureMarshalMethod(feature.Source);
 
                 if (feature.MarshalMethod != null)
@@ -443,9 +478,10 @@ namespace VW.Serializer
 
         private void CreateNamespacesAndFeatures()
         {
-            var featuresByNamespace = this.allFeatures.GroupBy(
-                f => new { f.Source.Namespace, f.Source.FeatureGroup },
-                f => f);
+            var featuresByNamespace = this.allFeatures
+                .GroupBy(
+                    f => new { f.Source.Namespace, f.Source.FeatureGroup },
+                    f => f);
 
             foreach (var ns in featuresByNamespace)
             {
@@ -464,6 +500,8 @@ namespace VW.Serializer
                         Expression.Constant(ns.Key.Namespace, typeof(string)),
                         ns.Key.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
                          Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)ns.Key.FeatureGroup)))));
+
+                var fullNamespaceCalls = new List<Expression>();
 
                 var featureVisits = new List<Expression>(ns.Count());
                 foreach (var feature in ns.OrderBy(f => f.Source.Order))
@@ -485,7 +523,7 @@ namespace VW.Serializer
                     Expression featureVisit;
                     if (feature.Source.IsNullable)
                     {
-                        // if (value != null) featurzier.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
+                        // if (value != null) featurizer.MarshalXXX(vw, context, ns, feature, (FeatureType)value);
                         featureVisit = Expression.IfThen(
                             Expression.NotEqual(valueVariable, Expression.Constant(null)),
                                 Expression.Call(
@@ -498,7 +536,7 @@ namespace VW.Serializer
                     }
                     else
                     {
-                        // featurzier.MarshalXXX(vw, context, ns, feature, value);
+                        // featurizer.MarshalXXX(vw, context, ns, feature, value);
                         featureVisit = Expression.Call(
                             marshaller,
                             feature.MarshalMethod.Method,
@@ -520,13 +558,19 @@ namespace VW.Serializer
                         featureVisit = Expression.IfThen(condition, featureVisit);
                     }
 
-                    featureVisits.Add(featureVisit);
+                    if (feature.MarshalMethod.IsNamespace)
+                        this.perExampleBody.Add(featureVisit);
+                    else
+                        featureVisits.Add(featureVisit);
 	            }
 
-                var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
+                if (featureVisits.Count > 0)
+                {
+                    var featureVisitLambda = Expression.Lambda(Expression.Block(featureVisits));
 
-                // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
-                this.perExampleBody.Add(this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda));
+                    // CODE: featurizer.MarshalNamespace(context, namespace, { ... })
+                    this.perExampleBody.Add(this.CreateMarshallerCall("MarshalNamespace", this.contextParameter, namespaceVariable, featureVisitLambda));
+                }
             }
         }
 

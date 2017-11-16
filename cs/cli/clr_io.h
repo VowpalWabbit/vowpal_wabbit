@@ -11,34 +11,37 @@ using namespace System::IO;
 
 namespace VW
 {
-    /// <summary>
-    /// C++ wrapper for managed <see cref="Stream"/>.
-    /// </summary>
-    class clr_io_buf : public io_buf
-    {
-    private:
-        gcroot<Stream^> m_stream;
+/// <summary>
+/// C++ wrapper for managed <see cref="Stream"/>.
+/// </summary>
+class clr_io_buf : public io_buf
+{
+private:
+  gcroot<Stream^> m_stream;
+  gcroot<cli::array<unsigned char>^> m_buffer;
 
-    public:
-        /// <summary>
-        /// Initializes a new <see cref="clr_io_buf"/> instance.
-        /// </summary>
-        clr_io_buf(Stream^ stream);
+  void ensure_buffer_size(size_t nbytes);
 
-        virtual int open_file(const char* name, bool stdin_off, int flag = READ);
+public:
+  /// <summary>
+  /// Initializes a new <see cref="clr_io_buf"/> instance.
+  /// </summary>
+  clr_io_buf(Stream^ stream);
 
-        virtual void reset_file(int f);
+  virtual int open_file(const char* name, bool stdin_off, int flag = READ);
 
-        virtual ssize_t read_file(int f, void* buf, size_t nbytes);
+  virtual void reset_file(int f);
 
-        virtual size_t num_files();
+  virtual ssize_t read_file(int f, void* buf, size_t nbytes);
 
-        virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
+  virtual size_t num_files();
 
-        virtual bool compressed();
+  virtual ssize_t write_file(int file, const void* buf, size_t nbytes);
 
-        virtual void flush();
+  virtual bool compressed();
 
-        virtual bool close_file();
-    };
+  virtual void flush();
+
+  virtual bool close_file();
+};
 }

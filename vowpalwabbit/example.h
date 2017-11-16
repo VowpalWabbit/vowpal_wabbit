@@ -13,7 +13,7 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "constant.h"
 #include "feature_group.h"
-#include "cb_explore.h"
+#include "action_score.h"
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
@@ -25,6 +25,7 @@ const unsigned char affix_namespace     = 132;   // this is \x84
 const unsigned char spelling_namespace  = 133;   // this is \x85
 const unsigned char conditioning_namespace = 134;// this is \x86
 const unsigned char dictionary_namespace  = 135; // this is \x87
+const unsigned char node_id_namespace  = 136; // this is \x88
 
 typedef union
 { label_data simple;
@@ -35,23 +36,25 @@ typedef union
   MULTILABEL::labels multilabels;
 } polylabel;
 
+inline void delete_scalars(void* v)
+{ v_array<float>* preds = (v_array<float>*)v;
+  preds->delete_v();
+}
+
 typedef union
 { float scalar;
-  v_array<float> scalars;
+  v_array<float> scalars;//a sequence of scalar predictions
+  ACTION_SCORE::action_scores a_s;//a sequence of classes with scores.  Also used for probabilities.
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
-  float* probs; // for --probabilities --oaa
   float prob; // for --probabilities --csoaa_ldf=mc
-  cb_explore_pred action_prob; // for --cb_explore
 } polyprediction;
 
 typedef unsigned char namespace_index;
 
 struct example // core example datatype.
-{
-  class iterator
-  {
-    features* _feature_space;
+{ class iterator
+  { features* _feature_space;
     namespace_index* _index;
   public:
     iterator(features* feature_space, namespace_index* index)
@@ -66,6 +69,8 @@ struct example // core example datatype.
     { _index++;
       return *this;
     }
+
+    namespace_index index() { return *_index; }
 
     bool operator==(const iterator& rhs) { return _index == rhs._index; }
     bool operator!=(const iterator& rhs) { return _index != rhs._index; }
@@ -88,9 +93,7 @@ struct example // core example datatype.
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
   float updated_prediction;//estimated post-update prediction.
-  v_array<float> topic_predictions;
   float loss;
-  float example_t;//sum of importance weights so far.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float confidence;
   features* passthrough; // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
@@ -127,6 +130,7 @@ void free_flatten_example(flat_example* fec);
 
 inline int example_is_newline(example& ec)
 { // if only index is constant namespace or no index
+  if (ec.tag.size() > 0) return false;
   return ((ec.indices.size() == 0) ||
           ((ec.indices.size() == 1) &&
            (ec.indices.last() == constant_namespace)));

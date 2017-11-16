@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 
 namespace VW
@@ -23,16 +24,43 @@ namespace VW
         /// </summary>
         private ObjectPool<VowpalWabbitModel, TVowpalWabbit> vwPool;
 
+        private VowpalWabbitSettings settings;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VowpalWabbitThreadedPredictionBase{TVowpalWabbit}"/> class.
         /// </summary>
         /// <param name="model">The initial model to use.</param>
         protected VowpalWabbitThreadedPredictionBase(VowpalWabbitModel model = null)
+             : this(new VowpalWabbitSettings() { Model = model })
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbitThreadedPredictionBase{TVowpalWabbit}"/> class.
+        /// </summary>
+        /// <param name="settings">The initial settings to use.</param>
+        protected VowpalWabbitThreadedPredictionBase(VowpalWabbitSettings settings)
+        {
+            this.settings = settings;
+
             this.vwPool = new ObjectPool<VowpalWabbitModel, TVowpalWabbit>(
                 ObjectFactory.Create(
-                    model,
-                    m => m != null ? this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m))) : default(TVowpalWabbit)));
+                    settings.Model,
+                    m =>
+                    {
+                        if (m == null)
+                            return default(TVowpalWabbit);
+
+                        return CreateVowpalWabbitChild(m);
+                    }));
+        }
+
+        private TVowpalWabbit CreateVowpalWabbitChild(VowpalWabbitModel model)
+        {
+            var newSettings = (VowpalWabbitSettings)this.settings.Clone();
+            newSettings.Model = model;
+            var vw = new VowpalWabbit(newSettings);
+            return this.InternalCreate(vw);
         }
 
         /// <summary>
@@ -50,7 +78,7 @@ namespace VW
         {
             this.vwPool.UpdateFactory(ObjectFactory.Create(
                 model,
-                m => this.InternalCreate(new VowpalWabbit(m.Settings.ShallowCopy(model: m)))));
+                this.CreateVowpalWabbitChild));
         }
 
         /// <summary>

@@ -7,7 +7,7 @@
 #include "vw_exception.h"
 
 using namespace LEARNER;
-
+using namespace std;
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 { float b,sb,rs,sl;
   b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
@@ -26,11 +26,11 @@ float query_decision(active& a, float ec_revert_weight, float k)
   if (k<=1.)
     bias=1.;
   else
-  { weighted_queries = (float)(a.all->initial_t + a.all->sd->weighted_examples - a.all->sd->weighted_unlabeled_examples);
+  { weighted_queries = (float)a.all->sd->weighted_labeled_examples;
     avg_loss = (float)(a.all->sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight/k, a.active_c0);
   }
-  if(frand48() < bias)
+  if(merand48(a.all->random_state) < bias)
     return 1.f / bias;
   else
     return -1.;
@@ -43,7 +43,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
   if (is_learn)
   { vw& all = *a.all;
 
-    float k = ec.example_t - ec.weight;
+    float k = (float)all.sd->t;
     float threshold = 0.f;
     float ec_input_label = ec.l.simple.label;
 
@@ -59,7 +59,9 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
       base.learn(ec);
     }
     else
-      ec.l.simple.label = FLT_MAX;
+    { ec.l.simple.label = FLT_MAX;
+      ec.weight = 0.f;
+    }
   }
 }
 
@@ -100,7 +102,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 void output_and_account_example(vw& all, active& a, example& ec)
 { label_data& ld = ec.l.simple;
 
-  all.sd->update(ec.test_only, ec.loss, ec.weight, ec.num_features);
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;

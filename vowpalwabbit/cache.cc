@@ -6,6 +6,9 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
+#include "vw.h"
+
+using namespace std;
 
 const size_t int_size = 11;
 const size_t char_size = 2;
@@ -46,7 +49,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 
   ae->tag.erase();
   push_many(ae->tag, c, tag_size);
- return tag_size+sizeof(tag_size);
+  return tag_size+sizeof(tag_size);
 }
 
 struct one_float { float f; }
@@ -55,9 +58,8 @@ __attribute__((packed))
 #endif
 ;
 
-int read_cached_features(void* in, example* ec)
-{ vw* all = (vw*)in;
-  example* ae = (example*)ec;
+int read_cached_features(vw* all, v_array<example*>& examples)
+{ example* ae = examples[0];
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
@@ -78,7 +80,7 @@ int read_cached_features(void* in, example* ec)
   { size_t temp;
     unsigned char index = 0;
     if((temp = buf_read(*input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-    { cerr << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+    { all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
       return 0;
     }
 
@@ -91,7 +93,7 @@ int read_cached_features(void* in, example* ec)
     all->p->input->set(c);
     total += storage;
     if (buf_read(*input,c,storage) < storage)
-    { cerr << "truncated example! wanted: " << storage << " bytes" << endl;
+    { all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
       return 0;
     }
 
@@ -100,23 +102,23 @@ int read_cached_features(void* in, example* ec)
     uint64_t last = 0;
 
     for (; c!= end;)
-      { feature_index i = 0;
-        c = run_len_decode(c,i);
-        feature_value v = 1.f;
-        if (i & neg_1)
-          v = -1.;
-        else if (i & general)
-          { v = ((one_float *)c)->f;
-            c += sizeof(float);
-          }
-        uint64_t diff = i >> 2;
-        int64_t s_diff = ZigZagDecode(diff);
-        if (s_diff < 0)
-          ae->sorted = false;
-        i = last + s_diff;
-        last = i;
-        ours.push_back(v,i);
+    { feature_index i = 0;
+      c = run_len_decode(c,i);
+      feature_value v = 1.f;
+      if (i & neg_1)
+        v = -1.;
+      else if (i & general)
+      { v = ((one_float *)c)->f;
+        c += sizeof(float);
       }
+      uint64_t diff = i >> 2;
+      int64_t s_diff = ZigZagDecode(diff);
+      if (s_diff < 0)
+        ae->sorted = false;
+      i = last + s_diff;
+      last = i;
+      ours.push_back(v,i);
+    }
     all->p->input->set(c);
   }
 
@@ -152,8 +154,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
   uint64_t last = 0;
   for (features::iterator& f : fs)
-  {
-    feature_index fi = f.index() & mask;
+  { feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);
     uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = fi;
@@ -163,8 +164,7 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
     else if (f.value() == -1.)
       c = run_len_encode(c, diff | neg_1);
     else
-    {
-      c = run_len_encode(c, diff | general);
+    { c = run_len_encode(c, diff | general);
       memcpy(c, &f.value(), sizeof(feature_value));
       c += sizeof(feature_value);
     }

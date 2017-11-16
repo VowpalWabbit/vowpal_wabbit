@@ -7,12 +7,12 @@ license as described in the file LICENSE.
 
 namespace LEARNER
 { template<class T> struct learner;
-  typedef learner<char> base_learner;
+typedef learner<char> base_learner;
 }
 
 LEARNER::base_learner* cb_explore_setup(vw& all);
 
-struct cb_explore_pred
-{ uint32_t action;
-  float probability;
-};
+namespace CB_EXPLORE
+{
+void safety(v_array<ACTION_SCORE::action_score>& distribution, float min_prob, bool zeros);
+}

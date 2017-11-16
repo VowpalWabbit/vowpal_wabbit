@@ -65,7 +65,7 @@ public:
       }
       else
         _begin = temp;
-      if (old_len < length)
+      if (old_len < length && _begin+old_len != nullptr)
         memset(_begin+old_len, 0, (length-old_len)*sizeof(T));
       _end = _begin+old_len;
       end_array = _begin + length;
@@ -77,11 +77,16 @@ public:
     { resize(_end-_begin);
       erase_count = 0;
     }
+    for (T*item = _begin; item != _end; ++item)
+      item->~T();
     _end = _begin;
   }
   void delete_v()
   { if (_begin != nullptr)
+    { for (T*item = _begin; item != _end; ++item)
+        item->~T();
       free(_begin);
+    }
     _begin = _end = end_array = nullptr;
   }
   void push_back(const T& new_ele)
@@ -166,6 +171,13 @@ inline v_array<T> v_init() { return {nullptr, nullptr, nullptr, 0};}
 template<class T> void copy_array(v_array<T>& dst, const v_array<T>& src)
 { dst.erase();
   push_many(dst, src._begin, src.size());
+}
+
+// use to copy arrays of types with non-trivial copy constructors, such as shared_ptr
+template<class T> void copy_array_no_memcpy(v_array<T>& dst, const v_array<T>& src)
+{ dst.erase();
+  for (T*item = src._begin; item != src._end; ++item)
+    dst.push_back(*item);
 }
 
 template<class T> void copy_array(v_array<T>& dst, const v_array<T>& src, T(*copy_item)(T&))

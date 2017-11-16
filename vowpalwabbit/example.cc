@@ -7,17 +7,14 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 float collision_cleanup(features& fs)
-{
-  uint64_t last_index = (uint64_t)-1;
+{ uint64_t last_index = (uint64_t)-1;
   float sum_sq = 0.f;
   features::iterator pos = fs.begin();
   for (features::iterator& f : fs)
-  {
-    if (last_index == f.index())
+  { if (last_index == f.index())
       pos.value() += f.value();
     else
-    {
-      sum_sq += pos.value() * pos.value();
+    { sum_sq += pos.value() * pos.value();
       ++pos;
       pos.value() = f.value();
       pos.index() = f.index();
@@ -42,20 +39,14 @@ void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(vo
     dst->l = src->l;
 }
 
-void copy_example_data(bool audit, example* dst, example* src)
-{ //std::cerr << "copy_example_data dst = " << dst << std::endl;
+void copy_example_metadata(bool audit, example* dst, example* src)
+{
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
-  copy_array(dst->indices, src->indices);
-  for (namespace_index c : src->indices)
-    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  //copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
-  dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
   if (src->passthrough == nullptr) dst->passthrough = nullptr;
   else
   { dst->passthrough = new features;
@@ -63,8 +54,6 @@ void copy_example_data(bool audit, example* dst, example* src)
   }
   dst->loss = src->loss;
   dst->weight = src->weight;
-  dst->example_t = src->example_t;
-  dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->confidence = src->confidence;
   dst->test_only = src->test_only;
   dst->end_pass = src->end_pass;
@@ -72,9 +61,38 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->in_use = src->in_use;
 }
 
+void copy_example_data(bool audit, example* dst, example* src)
+{ //std::cerr << "copy_example_data dst = " << dst << std::endl;
+  copy_example_metadata(audit, dst, src);
+
+  // copy feature data
+  copy_array(dst->indices, src->indices);
+  for (namespace_index c : src->indices)
+    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  //copy_array(dst->atomics[i], src->atomics[i]);
+  dst->num_features = src->num_features;
+  dst->total_sum_feat_sq = src->total_sum_feat_sq;
+}
+
 void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*))
 { copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
+}
+
+void move_feature_namespace(example* dst, example* src, namespace_index c)
+{ if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
+    return; // index not present in src
+  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
+    dst->indices.push_back(c);
+
+  auto& fdst = dst->feature_space[c];
+  auto& fsrc = src->feature_space[c];
+
+  src->num_features -= fsrc.size();
+  src->total_sum_feat_sq -= fsrc.sum_feat_sq;
+  std::swap(fdst, fsrc);
+  dst->num_features += fdst.size();
+  dst->total_sum_feat_sq += fdst.sum_feat_sq;
 }
 
 }
@@ -92,8 +110,8 @@ namespace VW
 {
 feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 { features_and_source fs;
-  fs.stride_shift = all.reg.stride_shift;
-  fs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
+  fs.stride_shift = all.weights.stride_shift();
+  fs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
   fs.feature_map = v_init<feature>();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
@@ -130,8 +148,11 @@ flat_example* flatten_example(vw& all, example *ec)
   fec.num_features = ec->num_features;
 
   full_features_and_source ffs;
-  ffs.stride_shift = all.reg.stride_shift;
-  ffs.mask = (uint64_t)all.reg.weight_mask >> all.reg.stride_shift;
+  ffs.stride_shift = all.weights.stride_shift();
+  if (all.weights.not_null())  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
+    ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
+  else
+    ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   fec.fs = ffs.fs;
@@ -149,11 +170,11 @@ flat_example* flatten_sort_example(vw& all, example *ec)
 void free_flatten_example(flat_example* fec)
 { //note: The label memory should be freed by by freeing the original example.
   if (fec)
-    { fec->fs.delete_v();
-      if (fec->tag_len > 0)
-        free(fec->tag);
-      free(fec);
-    }
+  { fec->fs.delete_v();
+    if (fec->tag_len > 0)
+      free(fec->tag);
+    free(fec);
+  }
 }
 
 namespace VW
@@ -178,7 +199,6 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
 
   ec.tag.delete_v();
 
-  ec.topic_predictions.delete_v();
   if (ec.passthrough)
   { ec.passthrough->delete_v();
     delete ec.passthrough;

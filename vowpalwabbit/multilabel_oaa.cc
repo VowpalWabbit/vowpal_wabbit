@@ -8,6 +8,8 @@ license as described in the file LICENSE.
 #include "reductions.h"
 #include "vw.h"
 
+using namespace std;
+
 struct multi_oaa
 { size_t k;
 };
@@ -55,9 +57,10 @@ LEARNER::base_learner* multilabel_oaa_setup(vw& all)
   data.k = all.vm["multilabel_oaa"].as<size_t>();
 
   LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true>,
-                                   predict_or_learn<false>, data.k);
+                                   predict_or_learn<false>, data.k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
   all.p->lp = MULTILABEL::multilabel;
+  all.label_type = label_type::multi;
   all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   return make_base(l);

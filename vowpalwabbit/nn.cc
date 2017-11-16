@@ -72,19 +72,25 @@ void finish_setup (nn& n, vw& all)
 
   memset (&n.output_layer, 0, sizeof (n.output_layer));
   n.output_layer.indices.push_back(nn_output_namespace);
-  uint64_t nn_index = nn_constant << all.reg.stride_shift;
+  uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)
-    { fs.push_back(1., nn_index);
-      nn_index += (uint64_t)n.increment;
+  { fs.push_back(1., nn_index);
+    if (all.audit || all.hash_inv) {
+      std::stringstream ss;
+      ss << "OutputLayer" << i;
+      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", ss.str())));
     }
+    nn_index += (uint64_t)n.increment;
+  }
   n.output_layer.num_features += n.k;
 
   if (! n.inpass)
-    { fs.push_back(1.,nn_index);
-      ++n.output_layer.num_features;
-    }
+  { fs.push_back(1.,nn_index);
+    if (all.audit || all.hash_inv) fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
+    ++n.output_layer.num_features;
+  }
 
   n.output_layer.in_use = true;
 
@@ -92,6 +98,7 @@ void finish_setup (nn& n, vw& all)
   memset (&n.hiddenbias, 0, sizeof (n.hiddenbias));
   n.hiddenbias.indices.push_back(constant_namespace);
   n.hiddenbias.feature_space[constant_namespace].push_back(1,(uint64_t)constant);
+  if (all.audit || all.hash_inv) n.hiddenbias.feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
@@ -101,6 +108,7 @@ void finish_setup (nn& n, vw& all)
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0],outfs.indicies[0]);
+  if (all.audit || all.hash_inv) n.outputweight.feature_space[nn_output_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
@@ -120,7 +128,6 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
 { bool shouldOutput = n.all->raw_prediction > 0;
   if (! n.finished_setup)
     finish_setup (n, *(n.all));
-
   shared_data sd;
   memcpy (&sd, n.all->sd, sizeof(shared_data));
   shared_data* save_sd = n.all->sd;
@@ -159,7 +166,7 @@ void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
-      { n.hiddenbias.l.simple.label = (float) (frand48 () - 0.5);
+      { n.hiddenbias.l.simple.label = (float) (merand48(n.all->random_state) - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
@@ -223,7 +230,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     { float sqrtk = sqrt ((float)n.k);
-      n.outputweight.l.simple.label = (float) (frand48 () - 0.5) / sqrtk;
+      n.outputweight.l.simple.label = (float) (merand48(n.all->random_state) - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -238,7 +245,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   { // TODO: this is not correct if there is something in the
     // nn_output_namespace but at least it will not leak memory
     // in that case
-
     ec.indices.push_back (nn_output_namespace);
     features save_nn_output_namespace = ec.feature_space[nn_output_namespace];
     ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
@@ -259,7 +265,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n.output_layer.l = ec.l;
     n.output_layer.weight = ec.weight;
     n.output_layer.partial_prediction = 0;
-    n.output_layer.example_t = ec.example_t;
     if (is_learn)
       base.learn(n.output_layer, n.k);
     else
@@ -388,7 +393,7 @@ base_learner* nn_setup(vw& all)
   nn& n = calloc_or_throw<nn>();
   n.all = &all;
   //first parse for number of hidden units
-  n.k = (uint64_t)vm["nn"].as<size_t>();
+  n.k = (uint32_t)vm["nn"].as<size_t>();
 
   if ( vm.count("dropout") )
   { n.dropout = true;

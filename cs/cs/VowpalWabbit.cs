@@ -9,10 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using VW;
-using VW.Interfaces;
 using VW.Labels;
 using VW.Serializer;
 
@@ -69,22 +65,27 @@ namespace VW
         /// </summary>
         /// <param name="vw">The native instance to wrap.</param>
         /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
-        public VowpalWabbit(VowpalWabbit vw)
+        public VowpalWabbit(VowpalWabbit vw) : this(vw, VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VowpalWabbit{TExample}"/> class.
+        /// </summary>
+        /// <param name="vw">The native instance to wrap.</param>
+        /// <param name="compiledSerializer">The per-compiled serializer.</param>
+        /// <remarks>This instance takes ownership of <paramref name="vw"/> instance and disposes it.</remarks>
+        public VowpalWabbit(VowpalWabbit vw, IVowpalWabbitSerializerCompiler<TExample> compiledSerializer)
         {
             if (vw == null)
-            {
-                throw new ArgumentNullException("vw");
-            }
+                throw new ArgumentNullException(nameof(vw));
+            if (compiledSerializer == null)
+                throw new ArgumentNullException(nameof(compiledSerializer));
             Contract.Ensures(this.serializer != null);
             Contract.EndContractBlock();
 
             this.vw = vw;
-            this.compiledSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings);
-
-            if (this.compiledSerializer == null)
-            {
-                throw new ArgumentException("No features found for " + typeof(TExample));
-            }
+            this.compiledSerializer = compiledSerializer;
 
             this.serializer = this.compiledSerializer.Create(vw);
 
@@ -123,7 +124,7 @@ namespace VW
         /// <param name="example">The example to learn.</param>
         /// <param name="label">The label for this <paramref name="example"/>.</param>
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
-        public void Learn(TExample example, ILabel label, int? index = null)
+        public void Learn(TExample example, ILabel label = null, int? index = null)
         {
             Contract.Requires(example != null);
             Contract.Requires(label != null);
@@ -255,7 +256,7 @@ namespace VW
         }
 
         /// <summary>
-        /// Learn from the given example and return the current prediction for it.
+        /// Predict for the given example and return the current prediction for it.
         /// </summary>
         /// <param name="actionDependentFeatures">The action dependent features.</param>
         /// <param name="index">The index of the example to evaluate within <paramref name="actionDependentFeatures"/>.</param>
@@ -371,7 +372,8 @@ namespace VW
                     "{0} maps to a multiline example. Use VowpalWabbit<{0}> instead.",
                         typeof(TExample)));
 
-            var adfSettings = vw.Settings.ShallowCopy(schema: vw.Settings.ActionDependentSchema);
+            var adfSettings = (VowpalWabbitSettings)vw.Settings.Clone();
+            adfSettings.Schema = vw.Settings.ActionDependentSchema;
             this.actionDependentFeatureSerializer = VowpalWabbitSerializerFactory.CreateSerializer<TActionDependentFeature>(adfSettings).Create(vw) as VowpalWabbitSingleExampleSerializer<TActionDependentFeature>;
             if (this.actionDependentFeatureSerializer == null)
                 throw new ArgumentException(string.Format(

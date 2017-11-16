@@ -1,6 +1,7 @@
 #include <float.h>
 #include "reductions.h"
 
+using namespace std;
 template <bool is_learn>
 void predict_or_learn(char&, LEARNER::base_learner& base, example& ec)
 { if (is_learn)

@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #pragma once
 #include "global_data.h"
 
-void accumulate(vw& all, regressor& reg, size_t o);
+void accumulate(vw& all, parameters& weights, size_t o);
 float accumulate_scalar(vw& all, float local_sum);
-void accumulate_weighted_avg(vw& all, regressor& reg);
-void accumulate_avg(vw& all, regressor& reg, size_t o);
+void accumulate_weighted_avg(vw& all, parameters& weights);
+void accumulate_avg(vw& all, parameters& weights, size_t o);

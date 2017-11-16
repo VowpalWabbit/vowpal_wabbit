@@ -4,12 +4,12 @@ MANPAGES = vw.1
 VWLIBS := -L. -l vw -l allreduce
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
+
 all:
 	cd ..; $(MAKE)
 
 test:
 	cd ..; $(MAKE) test
-
 
 things:	config.h $(BINARIES)
 
@@ -27,8 +27,7 @@ allreduce_SOURCES = $(shell grep liballreduce_la_SOURCES Makefile.am | cut -d '=
 allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 
 %.d:	%.cc config.h
-	$(CXX) -std=c++0x -MM $< > $@
-
+	$(CXX) -std=c++0x -I ../rapidjson/include -MM $< > $@
 -include $(vw_DEPS)
 
 %.o:	 %.cc  %.h
@@ -50,7 +49,7 @@ active_interactor: active_interactor.cc
 	$(CXX) $(FLAGS) -o $@ $+
 
 install: $(BINARIES)
-	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
+	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install; cd java; $(MAKE) install
 
 clean:
 	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a liballreduce.a

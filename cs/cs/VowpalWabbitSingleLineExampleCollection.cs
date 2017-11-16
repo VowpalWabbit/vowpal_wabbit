@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VW.Labels;
 
 namespace VW
 {
@@ -49,6 +50,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The VW native instance.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction LearnInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
@@ -68,6 +70,7 @@ namespace VW
         /// </summary>
         /// <typeparam name="TPrediction">The prediction type.</typeparam>
         /// <param name="predictionFactory">The prediction factory to be used. See <see cref="VowpalWabbitPredictionType"/>.</param>
+        /// <param name="vw">The VW instance that should be used for prediction.</param>
         /// <returns>The prediction for the this example.</returns>
         protected override TPrediction PredictInternal<TPrediction>(IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, VowpalWabbit vw)
         {
@@ -82,6 +85,25 @@ namespace VW
             get
             {
                 return this.Example.VowpalWabbitString;
+            }
+        }
+
+        /// <summary>
+        /// The number of feature this example holds.
+        /// </summary>
+        public override ulong NumberOfFeatures
+        {
+            get { return this.Example.NumberOfFeatures; }
+        }
+
+        /// <summary>
+        /// All labels this example holds.
+        /// </summary>
+        public override IEnumerable<ILabel> Labels
+        {
+            get
+            {
+                yield return this.Example.Label;
             }
         }
 

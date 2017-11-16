@@ -1,0 +1,6 @@
+include README.rst *.txt *.bat
+recursive-include src *
+recursive-include vowpalwabbit *
+recursive-include bin *.dll
+recursive-include windows* packages.config *.vcxproj*
+global-exclude *.o *.exe *.pyc

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="FF4D100F-9833-43CB-B335-E9923812F9B9" Name="setup" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft Research"
+	<Product Id="FF4D100F-9833-43CB-B335-E9923812F9B9" Name="Vowpal Wabbit" Language="1033" Version="$(var.VowpalWabbitAssemblyVersion)" Manufacturer="Microsoft Research"
            UpgradeCode="ddebf366-a8ca-4192-8552-dbf1d3603ae9">
 		<Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" />
 
@@ -24,7 +24,6 @@
           <Component Id="MainExecutable" Guid="BD9D0AE3-A00F-44B6-86AF-6FE5357F16EE">
             <File Id="SetEnvBat" Source="$(var.cs_console.ProjectDir)setenv.bat" KeyPath="yes"/>
             <File Name="vw.exe" Source="$(var.vw.TargetDir)vw.exe"  />
-            <File Source="$(var.vw.TargetDir)zlib.dll" />
           </Component>
 
           <Component Id="ApplicationShortCut" Guid="A41E9747-F8A9-47A0-9E8D-C8D7BAB17077">
@@ -41,8 +40,10 @@
             <File Source="$(var.cs_console.TargetDir)Newtonsoft.Json.dll" />
             <File Source="$(var.cs_console.TargetDir)System.Threading.Tasks.Dataflow.dll" />
             <File Source="$(var.cs_console.TargetDir)VowpalWabbit.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbit.JSON.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbit.Parallel.dll" />
             <File Source="$(var.cs_console.TargetDir)VowpalWabbit.Common.dll" />
-            <File Source="$(var.cs_console.TargetDir)VowpalWabbitCore.dll" />
+            <File Source="$(var.cs_console.TargetDir)VowpalWabbit.Core.dll" />
           </Component>
         </Directory>
 			</Directory>

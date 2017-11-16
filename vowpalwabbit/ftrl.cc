@@ -33,26 +33,69 @@ struct ftrl
   size_t early_stop_thres;
 };
 
+struct uncertainty
+{ float pred;
+  float score;
+  ftrl& b;
+  uncertainty(ftrl& ftrlb) : b(ftrlb)
+  { pred = 0;
+    score = 0;
+  }
+};
+
+inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
+
+inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
+{ float* w = &fw;
+  d.pred += w[W_XT] * fx;
+  float sqrtf_ng2 = sqrtf(w[W_G2]);
+  float uncertain = ( (d.b.data.ftrl_beta+sqrtf_ng2)/d.b.data.ftrl_alpha +d.b.data.l2_lambda);
+  d.score += (1/uncertain)*sign(fx);
+}
+
+float sensitivity(ftrl& b, base_learner& base, example& ec)
+{ uncertainty uncetain(b);
+  GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
+  return uncetain.score;
+}
+template<bool audit>
 void predict(ftrl& b, base_learner&, example& ec)
 { ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+  if (audit)
+    GD::print_audit_features(*(b.all), ec);
 }
 
+template<bool audit>
 void multipredict(ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 { vw& all = *b.all;
   for (size_t c=0; c<count; c++)
     pred[c].scalar = ec.l.simple.initial;
-  GD::multipredict_info mp = { count, step, pred, &all.reg, (float)all.sd->gravity };
-  GD::foreach_feature<GD::multipredict_info, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+  if (b.all->weights.sparse)
+    {
+      GD::multipredict_info<sparse_parameters> mp = { count, step, pred, all.weights.sparse_weights, (float)all.sd->gravity };
+      GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+    }
+  else
+    {
+      GD::multipredict_info<dense_parameters> mp = { count, step, pred, all.weights.dense_weights, (float)all.sd->gravity };
+      GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(all, ec, mp);
+    }
   if (all.sd->contraction != 1.)
     for (size_t c=0; c<count; c++)
       pred[c].scalar *= (float)all.sd->contraction;
   if (finalize_predictions)
     for (size_t c=0; c<count; c++)
       pred[c].scalar = GD::finalize_prediction(all.sd, pred[c].scalar);
+  if (audit)
+  { for (size_t c=0; c<count; c++)
+    { ec.pred.scalar = pred[c].scalar;
+      GD::print_audit_features(all, ec);
+      ec.ft_offset += (uint64_t)step;
+    }
+    ec.ft_offset -= (uint64_t)(step*count);
+  }
 }
-
-inline float sign(float w) { if (w < 0.) return -1.; else  return 1.;}
 
 void inner_update_proximal(update_data& d, float x, float& wref)
 { float* w = &wref;
@@ -118,11 +161,12 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
+template<bool audit>
 void learn_proximal(ftrl& a, base_learner& base, example& ec)
 { assert(ec.in_use);
 
-  // predict
-  predict(a, base, ec);
+  // predict with confidence
+  predict<audit>(a, base, ec);
 
   //update state based on the prediction
   update_after_prediction_proximal(a,ec);
@@ -172,11 +216,13 @@ void end_pass(ftrl& g)
 base_learner* ftrl_setup(vw& all)
 { if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
       missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
-    return nullptr;
+  { return nullptr;
+  }
 
   new_options(all, "FTRL options")
   ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
   ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
+
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -191,7 +237,10 @@ base_learner* ftrl_setup(vw& all)
   string algorithm_name;
   if (vm.count("ftrl"))
   { algorithm_name = "Proximal-FTRL";
-    learn_ptr=learn_proximal;
+    if (all.audit)
+      learn_ptr=learn_proximal<true>;
+    else
+      learn_ptr=learn_proximal<false>;
     if (vm.count("ftrl_alpha"))
       b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
     else
@@ -212,13 +261,14 @@ base_learner* ftrl_setup(vw& all)
       b.ftrl_beta = vm["ftrl_beta"].as<float>();
     else
       b.ftrl_beta = 0.5f;
+
   }
   b.data.ftrl_alpha = b.ftrl_alpha;
   b.data.ftrl_beta = b.ftrl_beta;
   b.data.l1_lambda = b.all->l1_lambda;
   b.data.l2_lambda = b.all->l2_lambda;
 
-  all.reg.stride_shift = 2; // NOTE: for more parameter storage
+  all.weights.stride_shift(2); // NOTE: for more parameter storage
 
   if (!all.quiet)
   { cerr << "Enabling FTRL based optimization" << endl;
@@ -233,9 +283,16 @@ base_learner* ftrl_setup(vw& all)
       b.early_stop_thres = vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, 1 << all.reg.stride_shift);
-  l.set_predict(predict);
-  l.set_multipredict(multipredict);
+  learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << all.weights.stride_shift());
+  if (all.audit || all.hash_inv)
+    l.set_predict(predict<true>);
+  else
+    l.set_predict(predict<false>);
+  l.set_sensitivity(sensitivity);
+  if (all.audit || all.hash_inv)
+    l.set_multipredict(multipredict<true>);
+  else
+    l.set_multipredict(multipredict<false>);
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   return make_base(l);

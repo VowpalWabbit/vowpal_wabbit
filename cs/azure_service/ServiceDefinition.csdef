@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ServiceDefinition name="OnlineTraining" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2015-04.2.6">
+  <WorkerRole name="OnlineTrainer" vmsize="Standard_D3_v2">
+    <ConfigurationSettings>
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
+      <Setting name="StorageConnectionString" />
+      <Setting name="JoinedEventHubConnectionString" />
+      <Setting name="EvalEventHubConnectionString" />
+      <Setting name="AdminToken" />
+      <Setting name="CheckpointIntervalOrCount" />
+      <Setting name="EnableExampleTracing" />
+    </ConfigurationSettings>
+    <!-- required for perf counters -->
+    <Runtime executionContext="elevated">
+      <!--<Environment>
+        <Variable name="COR_ENABLE_PROFILING" value="1" />
+        <Variable name="COR_PROFILER" value="{324F817A-7420-4E6D-B3C1-143FBED6D855}" />
+        <Variable name="MicrosoftInstrumentationEngine_Host" value="{CA487940-57D2-10BF-11B2-A3AD5A13CBC0}" />
+      </Environment>-->
+    </Runtime>
+    <Endpoints>
+      <InputEndpoint name="OnlineTrainer" protocol="http" port="80" />
+    </Endpoints>
+    <LocalResources>
+      <LocalStorage name="NETFXInstall" sizeInMB="1024" cleanOnRoleRecycle="false" />
+    </LocalResources>
+    <Startup>
+      <Task commandLine="install.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="PathToNETFXInstall">
+            <RoleInstanceValue xpath="/RoleEnvironment/CurrentInstance/LocalResources/LocalResource[@name='NETFXInstall']/@path" />
+          </Variable>
+          <Variable name="ComputeEmulatorRunning">
+            <RoleInstanceValue xpath="/RoleEnvironment/Deployment/@emulated" />
+          </Variable>
+        </Environment>
+      </Task>
+      <!-- COMMENT IF RUNNING IN DEBUGGER
+      <Task commandLine="ServerGC.cmd" executionContext="elevated" taskType="simple">
+        <Environment>
+          <Variable name="UseServerGC" value="True" />
+          <Variable name="UseBackgroundGC" value="True" />
+        </Environment>
+      </Task>
+       -->
+    </Startup>
+  </WorkerRole>
+</ServiceDefinition>
