@@ -221,7 +221,7 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->close_file();
     remove(all.p->output->finalname.begin());
     if(!rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
-      cerr << "WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to " << all.p->output->finalname;
+      cerr << "WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to " << all.p->output->finalname << std::endl;
 
     while(input->num_files() > 0)
       if (input->compressed())
