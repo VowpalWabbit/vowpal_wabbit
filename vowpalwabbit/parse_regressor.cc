@@ -125,11 +125,15 @@ void initialize_regressor(vw& all)
 const size_t default_buf_size = 512;
 
 bool resize_buf_if_needed(char *& __dest, size_t& __dest_size, const size_t __n)
-{ if (__dest_size < __n)
-  { if ( (__dest = (char*) realloc(__dest, __n)) == NULL)
-      THROW("Can't realloc enough memory.");
-    __dest_size = __n;
-    return true;
+{ char* new_dest;
+  if (__dest_size < __n)
+  { if ((new_dest = (char*)realloc(__dest, __n)) == NULL) 
+      THROW("Can't realloc enough memory.")
+    else 
+    { __dest = new_dest;
+      __dest_size = __n;
+      return true;
+    }
   }
   return false;
 }

@@ -193,15 +193,18 @@ void parse_dictionary_argument(vw&all, string str)
       if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
       if (pos >= size - 1)
       { size *= 2;
-        buffer = (char*)realloc(buffer, size);
-        if (buffer == nullptr)
-        { free(ec);
+        const auto new_buffer = (char*)(realloc(buffer, size));
+        if (new_buffer == nullptr)
+        { free(buffer);
+          free(ec);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
           delete map;
           io->close_file();
           delete io;
           THROW("error: memory allocation failed in reading dictionary");
         }
+        else
+          buffer = new_buffer;
       }
     }
     while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
