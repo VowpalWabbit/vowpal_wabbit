@@ -172,20 +172,6 @@ label_parser cs_label = {default_label, parse_label,
                          sizeof(label)
                         };
 
-void get_example_print_info(example& ec, uint32_t& best_class, float& best_cost, size_t& num_features) {
-  num_features += ec.num_features;
-  for (COST_SENSITIVE::wclass& wc : ec.l.cs.costs)
-    if ((wc.class_index > 0) && (wc.x < best_cost))
-    { best_cost  = wc.x;
-      best_class = wc.class_index;
-    }
-}
-
-void get_example_seq_print_info(const v_array<example*>& ecs, uint32_t& best_class, float& best_cost, size_t& num_features) {
-  for (example** ec = ecs._begin; ec != ecs._end; ++ec)
-    get_example_print_info(**ec, best_class, best_cost, num_features);
-}
-
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
 { if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   { size_t num_current_features = ec.num_features;
