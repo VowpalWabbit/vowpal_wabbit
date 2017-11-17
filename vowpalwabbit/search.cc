@@ -2127,7 +2127,7 @@ void search_finish(search& sch)
   priv.learn_condition_on.delete_v();
   priv.learn_condition_on_act.delete_v();
 
-  //if (priv.active_csoaa)
+  if (priv.active_csoaa)
     std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
 
   if (priv.task->finish) priv.task->finish(sch);

@@ -30,7 +30,6 @@ bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float 
 
   // Get loss difference
   float middle = 0.f;
-  ec.l.simple.label = -sign(ec.pred.scalar);
   ec.confidence = fabsf(ec.pred.scalar - middle) / base.sensitivity(ec);
 
   float k = (float)all.sd->t;
