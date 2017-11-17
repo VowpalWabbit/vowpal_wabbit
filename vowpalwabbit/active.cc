@@ -48,7 +48,6 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
     float importance = query_decision(a, ec.confidence, k);
-    // ec.l.simple.label = ec_input_label;
 
     if(importance > 0)
     { all.sd->queries += 1;
