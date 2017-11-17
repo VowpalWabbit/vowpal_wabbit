@@ -30,7 +30,7 @@ struct wclass
      if x == -FLT_MAX then this is a 'shared' example
      if x > 0 then this is a label feature vector for (size_t)x
 */
-  
+
 struct label
 { v_array<wclass> costs;
 };
@@ -44,4 +44,3 @@ bool example_is_test(example& ec);
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }
-

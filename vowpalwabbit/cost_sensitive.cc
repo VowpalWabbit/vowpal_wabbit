@@ -180,55 +180,55 @@ void get_example_print_info(example& ec, uint32_t& best_class, float& best_cost,
       best_class = wc.class_index;
     }
 }
-  
+
 void get_example_seq_print_info(const v_array<example*>& ecs, uint32_t& best_class, float& best_cost, size_t& num_features) {
   for (example** ec = ecs._begin; ec != ecs._end; ++ec)
     get_example_print_info(**ec, best_class, best_cost, num_features);
 }
-  
+
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
 { if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-    { size_t num_current_features = ec.num_features;
-      // for csoaa_ldf we want features from the whole (multiline example),
-      // not only from one line (the first one) represented by ec
-      if (ec_seq != nullptr)
-        { num_current_features = 0;
-          // If the first example is "shared", don't include its features.
-          // These should be already included in each example (TODO: including quadratic and cubic).
-          // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-          example** ecc = ec_seq->cbegin();
-          const example& first_ex = **ecc;
+  { size_t num_current_features = ec.num_features;
+    // for csoaa_ldf we want features from the whole (multiline example),
+    // not only from one line (the first one) represented by ec
+    if (ec_seq != nullptr)
+    { num_current_features = 0;
+      // If the first example is "shared", don't include its features.
+      // These should be already included in each example (TODO: including quadratic and cubic).
+      // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
+      example** ecc = ec_seq->cbegin();
+      const example& first_ex = **ecc;
 
-          v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
-          if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
+      v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
+      if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
 
-          for (; ecc!=ec_seq->cend(); ecc++)
-            num_current_features += (*ecc)->num_features;
-        }
-
-      std::string label_buf;
-      if (is_test)
-        label_buf = " unknown";
-      else
-        label_buf = " known";
-
-      if (action_scores || all.sd->ldict)
-        { std::ostringstream pred_buf;
-
-          pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
-          if (all.sd->ldict)
-            { if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
-              else            pred_buf << all.sd->ldict->get(prediction);
-            }
-          else            pred_buf << ec.pred.a_s[0].action;
-          if (action_scores) pred_buf <<".....";
-          all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                               num_current_features, all.progress_add, all.progress_arg);;
-        }
-      else
-        all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction,
-                             num_current_features, all.progress_add, all.progress_arg);
+      for (; ecc!=ec_seq->cend(); ecc++)
+        num_current_features += (*ecc)->num_features;
     }
+
+    std::string label_buf;
+    if (is_test)
+      label_buf = " unknown";
+    else
+      label_buf = " known";
+
+    if (action_scores || all.sd->ldict)
+    { std::ostringstream pred_buf;
+
+      pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
+      if (all.sd->ldict)
+      { if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
+        else            pred_buf << all.sd->ldict->get(prediction);
+      }
+      else            pred_buf << ec.pred.a_s[0].action;
+      if (action_scores) pred_buf <<".....";
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+                           num_current_features, all.progress_add, all.progress_arg);;
+    }
+    else
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction,
+                           num_current_features, all.progress_add, all.progress_arg);
+  }
 }
 
 void output_example(vw& all, example& ec)

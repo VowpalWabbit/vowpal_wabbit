@@ -1542,12 +1542,12 @@ void finish(vw& all, bool delete_all)
        all.trace_message << endl << "average distance to range = " << all.sd->distance_to_range/((float)all.sd->labels_outside_range);
        all.trace_message << endl << "average range = " << all.sd->range/((float)all.sd->labels_outside_range);
     }
-    /* 
+    /*
     for (size_t i=0; i<all.sd->distance_to_range.size(); i++)
     {  all.trace_message << endl << "label " << i << ", average distance to range = " << all.sd->distance_to_range[i]/((float)all.sd->example_number);
     }
     */
-   
+
     all.trace_message << endl;
   }
 

@@ -6,8 +6,6 @@
 using namespace std;
 struct scorer { vw* all; }; // for set_minmax, loss
 
-#define disp(X) #X << '=' << X
-
 template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
 { s.all->set_minmax(s.all->sd, ec.l.simple.label);
@@ -83,7 +81,6 @@ LEARNER::base_learner* scorer_setup(vw& all)
   l->set_multipredict(multipredict_f);
   l->set_update(update);
   all.scorer = make_base(*l);
-  cerr << "scorer data = " << &s << endl;
 
   return all.scorer;
 }

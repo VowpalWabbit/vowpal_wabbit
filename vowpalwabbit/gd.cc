@@ -1,12 +1,12 @@
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
-license as return 10-0described in the file LICENSE.
+license as described in the file LICENSE.
  */
 #include "crossplat_compat.h"
 
 #include <float.h>
-#ifdef _WIN321000
+#ifdef _WIN32
 #include <WinSock2.h>
 #else
 #include <netdb.h>
@@ -405,11 +405,9 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay = powf(w[adaptive],s.minus_power_t);
   }
-  //cerr << "w[adaptive]=" << w[adaptive] << " rate_decay=" << rate_decay;
   if(normalized)
   { if (sqrt_rate)
     { float inv_norm = 1.f / w[normalized];
-      //cerr << " inv_norm=" << inv_norm;
       if (adaptive)
         rate_decay *= inv_norm;
       else
@@ -418,8 +416,6 @@ inline float compute_rate_decay(power_data& s, float& fw)
     else
       rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
   }
-  //rate_decay = std::min(rate_decay, 1e6f);
-  //cerr << " rate_decay=" << rate_decay << endl;
   return rate_decay;
 }
 
@@ -470,7 +466,6 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
         }
         w[normalized] = x_abs;
       }
-      //cerr << "x2=" << x2 << " w[normalized]=" << w[normalized] << endl;
       if (w[normalized] != 0)
         nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
@@ -483,12 +478,12 @@ bool global_print_features = false;
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
-  //label_data& ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
   vw& all = *g.all;
 
-  float grad_squared = ec.weight; 
-  //if (count(all.args.begin(), all.args.end(),"--cs_active") == 0)
-  //   grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+  float grad_squared = ec.weight;
+  if (count(all.args.begin(), all.args.end(),"--cs_active") == 0)
+     grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
 
   if (grad_squared == 0 && !stateless) return 1.;
 
@@ -533,11 +528,8 @@ float get_scale(gd& g, example& ec, float weight)
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(gd& g, base_learner& base, example& ec)
-{ //return 1000.;
-  float scale = get_scale<adaptive>(g, ec, 1.);
-  float sens  = sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
-  //cerr << "scale=" << scale << " sens=" << sens << endl;
-  return scale * sens;
+{ return get_scale<adaptive>(g, ec, 1.)
+         * sensitivity<sqrt_rate, feature_mask_off, adaptive, normalized, spare, true>(g,ec);
 }
 
 template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>

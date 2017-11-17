@@ -659,7 +659,7 @@ void run(Search::search& sch, vector<example*>& ec)
                  .erase_alloweds()
                  .set_condition_range(count-1, sch.get_history_length(), 'p')
                  .set_learner_id(a_id-1)
-                 .predict();                 
+                 .predict();
         }
       }
     }

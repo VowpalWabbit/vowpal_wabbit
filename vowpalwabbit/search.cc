@@ -89,7 +89,6 @@ struct scored_action
   //scored_action() { a = (action)-1; s = 0.; }
 };
 std::ostream& operator << (std::ostream& os, const scored_action& x) { os << x.a << ':' << x.s; return os; }
-  //std::ostream& operator << (std::ostream& os, const COST_SENSITIVE::wclass& wc) { os << wc.class_index << ':' << wc.x; if (wc.query_needed) os << '?'; return os; }
 
 struct action_repr
 { action a;
@@ -171,7 +170,7 @@ struct search_private
   float perturb_oracle;          // with this probability, choose a random action instead of oracle action
 
   size_t num_calls_to_run, num_calls_to_run_previous, save_every_k_runs;
-  
+
   // if we're printing to stderr we need to remember if we've printed the header yet
   // (i.e., we do this if we're driving)
   bool printed_output_header;
@@ -1177,9 +1176,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
   }
   else
   { if (min_loss == FLT_MAX)
-      for (size_t i=0; i<losses.cs.costs.size(); i++)
-        if (losses.cs.costs[i].x < min_loss)
-          min_loss = losses.cs.costs[i].x;
+      for (size_t i=0; i<losses.cs.costs.size(); i++) min_loss = MIN(min_loss, losses.cs.costs[i].x);
     for (size_t i=0; i<losses.cs.costs.size(); i++) losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
   }
   //cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
@@ -1347,12 +1344,10 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
     if (priv.learn_a_idx >= valid_action_cnt)
     { priv.done_with_all_actions = true;
       priv.learn_learner_id = learner_id;
-    }
-    if (priv.force_setup_ec_ref || (priv.learn_ec_ref == nullptr))
-    { // set reference or copy example(s)
+
+      // set reference or copy example(s)
       if (oracle_actions_cnt > 0) priv.learn_oracle_action = oracle_actions[0];
       priv.learn_ec_ref_cnt = ec_cnt;
-      cdbg << "priv.learn_ec_ref_cnt = " << priv.learn_ec_ref_cnt << endl;
       if (priv.examples_dont_change)
         priv.learn_ec_ref = ecs;
       else
@@ -1811,7 +1806,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
     { cdbg << "skipping because it looks like this was overridden by metatask" << endl;
       continue;
     }
-    
+
     priv.learn_ec_ref = nullptr;
     priv.learn_ec_ref_cnt = 0;
 
@@ -1853,7 +1848,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex)
       run_task(sch, priv.ec_seq); // TODO: i guess we can break out of this early
       cdbg << ">>>>>" << endl;
     } else cdbg << "didn't skip all actions" << endl;
-    
+
     // now we can make a training example
     if (priv.learn_allowed_actions.size() > 0)
     { for (size_t i=0; i<priv.learn_allowed_actions.size(); i++)
@@ -2056,7 +2051,7 @@ void search_initialize(vw* all, search& sch)
 
   priv.active_uncertainty = v_init< pair<float,size_t> >();
   priv.active_known = v_init< v_array<CS::wclass> >();
-  
+
   priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
   CS::cs_label.default_label(&priv.empty_example->l.cs);
   priv.empty_example->in_use = true;
@@ -2134,7 +2129,7 @@ void search_finish(search& sch)
 
   //if (priv.active_csoaa)
     std::cerr << "search calls to run = " << priv.num_calls_to_run << endl;
-  
+
   if (priv.task->finish) priv.task->finish(sch);
   if (priv.metatask && priv.metatask->finish) priv.metatask->finish(sch);
 
@@ -2341,7 +2336,7 @@ base_learner* setup(vw&all)
   if (vm.count("search_rollout_num_steps"))       priv.rollout_num_steps    = vm["search_rollout_num_steps"].as<size_t>();
 
   if (vm.count("search_save_every_k_runs"))       priv.save_every_k_runs    = vm["search_save_every_k_runs"].as<size_t>();
-  
+
   priv.A = vm["search"].as<size_t>();
 
   string neighbor_features_string;
@@ -2409,7 +2404,7 @@ base_learner* setup(vw&all)
   ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
 
   priv.num_calls_to_run = 0;
-  
+
   //compute total number of policies we will have at end of training
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;

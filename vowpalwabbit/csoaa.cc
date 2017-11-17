@@ -18,7 +18,6 @@ using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
 namespace CSOAA {
-
 struct csoaa
 { uint32_t num_classes;
   polyprediction* pred;
@@ -109,7 +108,6 @@ void finish(csoaa& c)
 base_learner* csoaa_setup(vw& all)
 { if (missing_option<size_t, true>(all, "csoaa", "One-against-all multiclass with <k> costs"))
     return nullptr;
-  cerr << "initialize csoaa" << endl;
 
   csoaa& c = calloc_or_throw<csoaa>();
   c.num_classes = (uint32_t)all.vm["csoaa"].as<size_t>();
