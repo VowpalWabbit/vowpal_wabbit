@@ -488,8 +488,8 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
   remove(reg_name.c_str());
 
-  if(!rename(start_name.c_str(),reg_name.c_str()))
-    cerr << "WARN: dump_regressor(vw& all, string reg_name, bool as_text): cannot rename: " << start_name << " to " << reg_name << std::endl;
+  if(0 != rename(start_name.c_str(),reg_name.c_str()))
+    THROW("WARN: dump_regressor(vw& all, string reg_name, bool as_text): cannot rename: " << start_name.c_str() << " to " << reg_name.c_str());
 }
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
