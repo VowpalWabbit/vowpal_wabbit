@@ -149,19 +149,21 @@ base_learner* baseline_setup(vw& all)
     data.lr_multiplier = all.vm["lr_multiplier"].as<float>();
   data.check_enabled = all.vm.count("check_enabled") > 0;
   data.global_only = all.vm.count("global_only") > 0;
-  if (data.global_only)
-  { // use a separate global
-    data.ec->indices.push_back(constant_namespace);
-    // shifted index to avoid conflicts
-    data.ec->feature_space[constant_namespace].push_back(1, constant - 17);
-    data.ec->total_sum_feat_sq++;
-    data.ec->num_features++;
-  }
 
   base_learner* base = setup_base(all);
   learner<baseline>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>);
 
   l.set_finish(finish);
+
+  if (data.global_only)
+  { // use a separate example for global constant
+    data.ec->indices.push_back(constant_namespace);
+    // different index from constant to avoid conflicts
+    data.ec->feature_space[constant_namespace].push_back(
+        1, (constant - 17) << all.weights.stride_shift());
+    data.ec->total_sum_feat_sq++;
+    data.ec->num_features++;
+  }
 
   return make_base(l);
 }
