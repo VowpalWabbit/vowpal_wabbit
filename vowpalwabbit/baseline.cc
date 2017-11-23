@@ -58,8 +58,21 @@ struct baseline
   bool lr_scaling; // whether to scale baseline learning rate based on max label
   float lr_multiplier;
   bool global_only; // only use a global constant for the baseline
+  bool global_initialized;
   bool check_enabled; // only use baseline when the example contains enabled flag
 };
+
+void init_global(baseline& data)
+{ if (!data.global_only)
+    return;
+  // use a separate global constant
+  data.ec->indices.push_back(constant_namespace);
+  // different index from constant to avoid conflicts
+  data.ec->feature_space[constant_namespace].push_back(
+      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift());
+  data.ec->total_sum_feat_sq++;
+  data.ec->num_features++;
+}
 
 template <bool is_learn>
 void predict_or_learn(baseline& data, base_learner& base, example& ec)
@@ -74,7 +87,11 @@ void predict_or_learn(baseline& data, base_learner& base, example& ec)
 
   // always do a full prediction, for safety in accurate predictive validation
   if (data.global_only)
-  { VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
+  { if (!data.global_initialized)
+    { init_global(data);
+      data.global_initialized = true;
+    }
+    VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
     base.predict(*data.ec);
     ec.l.simple.initial = data.ec->pred.scalar;
     base.predict(ec);
@@ -148,22 +165,12 @@ base_learner* baseline_setup(vw& all)
   if (all.vm.count("lr_multiplier"))
     data.lr_multiplier = all.vm["lr_multiplier"].as<float>();
   data.check_enabled = all.vm.count("check_enabled") > 0;
-  data.global_only = all.vm.count("global_only") > 0;
+  data.global_only = all.vm.count("global_only") > 0; // initialization done later
 
   base_learner* base = setup_base(all);
   learner<baseline>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>);
 
   l.set_finish(finish);
-
-  if (data.global_only)
-  { // use a separate example for global constant
-    data.ec->indices.push_back(constant_namespace);
-    // different index from constant to avoid conflicts
-    data.ec->feature_space[constant_namespace].push_back(
-        1, (constant - 17) << all.weights.stride_shift());
-    data.ec->total_sum_feat_sq++;
-    data.ec->num_features++;
-  }
 
   return make_base(l);
 }
