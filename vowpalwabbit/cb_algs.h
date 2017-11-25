@@ -4,6 +4,9 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+
+#include "baseline.h"
+
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
 LEARNER::base_learner* cb_algs_setup(vw& all);
 
@@ -14,6 +17,8 @@ LEARNER::base_learner* cb_algs_setup(vw& all);
 
 namespace CB_ALGS
 {
+
+
 template <bool is_learn>
 float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 { CB::label ld = ec.l.cb;
@@ -25,6 +30,8 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   else
     simple_temp.label = FLT_MAX;
 
+  const bool baseline_enabled_old = BASELINE::baseline_enabled(&ec);
+  BASELINE::set_baseline_enabled(&ec);
   ec.l.simple = simple_temp;
   polyprediction p = ec.pred;
   if (is_learn && known_cost != nullptr && index == known_cost->action)
@@ -35,6 +42,9 @@ float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, exa
   }
   else
     scorer->predict(ec, index-1+base);
+
+  if (!baseline_enabled_old)
+    BASELINE::reset_baseline_disabled(&ec);
   float pred = ec.pred.scalar;
   ec.pred = p;
 
