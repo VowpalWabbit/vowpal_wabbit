@@ -1270,7 +1270,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 94: experience replay version of test 1
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off --replay_b 100
         train-sets/ref/0001-replay.stderr
 
@@ -1503,7 +1503,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 143: Test 1 using JSON
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
-    -f models/0001.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
@@ -1573,14 +1573,24 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
     train-sets/ref/decisionservice.stderr
 
-# Test 159: --classweight
+# Test 159: test --bootstrap & --binary interaction
+{VW} train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
+    train-sets/ref/bootstrap_and_binary.stderr
+
+# Test 160: test --bootstrap & --oaa interaction
+# (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
+{VW} train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+    train-sets/ref/bootstrap_and_oaa.stderr
+
+# Test 161: --classweight
 {VW} -d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5
     train-sets/ref/classweight.stderr
 
-# Test 160: --classweight with multiclass
+# Test 162: --classweight with multiclass
 {VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
     train-sets/ref/classweight_multiclass.stderr
 
-# Test 161: --classweight with multiclass
+# Test 163: --classweight with multiclass
 {VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
     train-sets/ref/classweight_recall_tree.stderr
+
