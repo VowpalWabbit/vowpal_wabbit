@@ -1,5 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.props" Condition="Exists('$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -102,10 +103,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GitLink, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\vowpalwabbit\packages\gitlink.2.3.0\lib\net45\GitLink.exe</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
@@ -194,8 +191,10 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.props'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -204,9 +203,9 @@
     <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Vowpal Wabbit" AssemblyDescription="Vowpal Wabbit" AssemblyConfiguration="" AssemblyCompany="Microsoft Corp" AssemblyProduct="Vowpal Wabbit" AssemblyCopyright="Copyright (C) Microsoft Corp 2012-2016, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved" AssemblyTrademark="" ComVisible="false" CLSCompliant="false" Guid="6a577997-af00-4ca0-8453-fdc8bbdf2a57" AssemblyVersion="$(VowpalWabbitAssemblyVersion)" AssemblyFileVersion="$(VowpalWabbitAssemblyVersion)" />
   </Target>
   <Target Name="AfterBuild">
-    <Exec Command="$(SolutionDir)\packages\gitlink.2.3.0\lib\net45\GitLink.exe ..\.. -f $(SolutionDir)\vw.sln -p $(Platform) -c $(Configuration) -d $(SolutionDir)\$(Platform)\$(Configuration) -errorsaswarnings" Condition="'$(BuildNuget)' == 'true'" />
     <Exec Command="$(SolutionDir)\.nuget\nuget pack $(ProjectDir)\$(ProjectName).nuspec -Version $(VowpalWabbitAssemblyVersion) -Prop &quot;Configuration=Release;Platform=x64&quot; -Prop SolutionDir=$(SolutionDir) -OutputDirectory $(SolutionDir)\$(Platform)\$(Configuration)" Condition="'$(BuildNuget)' == 'true'" />
   </Target>
-  <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
   <Import Project="$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets" Condition="Exists('$(SolutionDir)\packages\Clarius.TransformOnBuild.1.1.12\build\Clarius.TransformOnBuild.targets')" />
+  <Import Project="$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.targets" Condition="Exists('$(SolutionDir)\packages\GitLink.3.1.0\build\GitLink.targets')" />
+  <Import Project="$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('$(SolutionDir)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
 </Project>

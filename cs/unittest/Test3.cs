@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TrainSet0002Dat;
@@ -10,7 +10,7 @@ namespace cs_unittest
     public class Test3Class : TestBase
     {
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test3()
         {
             VWTestHelper.Learn<Data, DataListener>(
@@ -20,7 +20,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test4and6()
         {
             VWTestHelper.Learn<Data, DataListener>(
@@ -35,7 +35,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test5()
         {
             VWTestHelper.Learn<Data, DataListener>(
@@ -49,7 +49,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         [Description("using normalized adaptive updates and a low --power_t")]
         public void Test7and8()
         {

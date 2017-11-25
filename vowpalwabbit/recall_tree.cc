@@ -171,7 +171,7 @@ double updated_entropy (recall_tree& b, uint32_t cn, example& ec)
   //            - ((c_0+1)/(n+1)) Log[(c_0+1)/(n+1)]
 
   double c0 = (ls == b.nodes[cn].preds.end ()) ? 0 : ls->label_count;
-  double deltac0 = ec.l.multi.weight;
+  double deltac0 = ec.weight;
   double n = b.nodes[cn].n;
 
   double novernp1 = n / (deltac0 + n);
@@ -193,7 +193,7 @@ void insert_example_at_node (recall_tree& b, uint32_t cn, example& ec)
 
   b.nodes[cn].entropy = updated_entropy (b, cn, ec);
 
-  ls->label_count += ec.l.multi.weight;
+  ls->label_count += ec.weight;
 
   while (ls != b.nodes[cn].preds.begin () &&
          ls[-1].label_count < ls[0].label_count)
@@ -201,7 +201,7 @@ void insert_example_at_node (recall_tree& b, uint32_t cn, example& ec)
     --ls;
   }
 
-  b.nodes[cn].n += ec.l.multi.weight;
+  b.nodes[cn].n += ec.weight;
 
   compute_recall_lbest (b, &b.nodes[cn]);
 }

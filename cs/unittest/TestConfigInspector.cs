@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,6 +16,7 @@ namespace cs_unittest
     public class TestConfigInspector
     {
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestConfigParsing()
         {
             var str = @"
@@ -49,6 +50,7 @@ ns1.ns2.f5
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestConfigADFParsing()
         {
             var schemaShared = ConfigInspector.CreateSchema(typeof(ConfigShared), "f1", msg => Assert.Fail(msg));
