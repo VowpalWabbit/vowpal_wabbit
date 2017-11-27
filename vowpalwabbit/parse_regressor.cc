@@ -24,6 +24,7 @@ using namespace std;
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
+#include <boost/filesystem.hpp>
 
 template <class T> class set_initial_wrapper
 {
@@ -488,8 +489,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
   remove(reg_name.c_str());
 
-  if(0 != rename(start_name.c_str(),reg_name.c_str()))
-    THROW("WARN: dump_regressor(vw& all, string reg_name, bool as_text): cannot rename: " << start_name.c_str() << " to " << reg_name.c_str());
+  boost::filesystem::rename(start_name.c_str(), reg_name.c_str());
 }
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
