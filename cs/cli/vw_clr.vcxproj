@@ -32,6 +32,8 @@
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>vw_clr</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\vowpalwabbit\</SolutionDir>
+    <CodeAnalysisRuleSet>..\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -427,4 +429,5 @@
     <FileUpdate Files="Resource.rc" Regex="FILEVERSION .*" ReplacementText="FILEVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
     <FileUpdate Files="Resource.rc" Regex="PRODUCTVERSION .*" ReplacementText="PRODUCTVERSION $(VowpalWabbitAssemblyVersion.Replace('.',','))" Encoding="UTF-16" />
   </Target>
+  <Import Project="..\..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

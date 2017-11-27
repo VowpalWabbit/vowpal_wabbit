@@ -193,15 +193,18 @@ void parse_dictionary_argument(vw&all, string str)
       if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
       if (pos >= size - 1)
       { size *= 2;
-        buffer = (char*)realloc(buffer, size);
-        if (buffer == nullptr)
-        { free(ec);
+        const auto new_buffer = (char*)(realloc(buffer, size));
+        if (new_buffer == nullptr)
+        { free(buffer);
+          free(ec);
           VW::dealloc_example(all.p->lp.delete_label, *ec);
           delete map;
           io->close_file();
           delete io;
           THROW("error: memory allocation failed in reading dictionary");
         }
+        else
+          buffer = new_buffer;
       }
     }
     while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
@@ -1325,7 +1328,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
-  while (params_per_problem > (uint32_t)(1 << i))
+  while (params_per_problem > ((uint64_t)1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
   
@@ -1572,7 +1575,15 @@ void finish(vw& all, bool delete_all)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
   for (size_t i=0; i<all.loaded_dictionaries.size(); i++)
-  { free(all.loaded_dictionaries[i].name);
+  { // Warning C6001 is triggered by the following:
+    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using 'free(all.loaded_dictionaries[i].name)'
+    // 
+    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the warning goes away.
+    // Disable SDL warning.
+    #pragma warning(disable:6001)
+    free(all.loaded_dictionaries[i].name);
+    #pragma warning(default:6001)
+
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
     delete all.loaded_dictionaries[i].dict;
