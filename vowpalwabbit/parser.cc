@@ -220,7 +220,10 @@ void reset_source(vw& all, size_t numbits)
     all.p->write_cache = false;
     all.p->output->close_file();
     remove(all.p->output->finalname.begin());
-    rename(all.p->output->currentname.begin(), all.p->output->finalname.begin());
+
+    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to " << all.p->output->finalname);
+
     while(input->num_files() > 0)
       if (input->compressed())
         input->close_file();
@@ -389,8 +392,9 @@ void enable_sources(vw& all, bool quiet, size_t passes)
   {
 #ifdef _WIN32
     WSAData wsaData;
-    WSAStartup(MAKEWORD(2,2), &wsaData);
-    int lastError = WSAGetLastError();
+    int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (lastError != 0)
+      THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
     all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
     if (all.p->bound_sock < 0)
@@ -754,7 +758,7 @@ void setup_example(vw& all, example* ae)
   if(all.limit_strings.size() > 0)
     feature_limit(all,ae);
 
-  uint64_t multiplier = all.wpp << all.weights.stride_shift();
+  uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
   if(multiplier != 1) //make room for per-feature information.
     for (features& fs : *ae)
@@ -834,10 +838,19 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
   primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
+
+  //
+  // Using the following code stops generating C6386 warning.  Disable the compiler warning.
+  // for (int idx = 0; idx < len ; ++idx)
+  // { namespace_index i = ec->indices[idx]; 
+  // 
   for (namespace_index i : ec->indices)
-  { fs_ptr[fs_count].name = i;
+  { 
+    #pragma warning(disable:6386)
+    fs_ptr[fs_count].name = i;
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+    #pragma warning(default:6386)
 
     uint32_t stride_shift = all.weights.stride_shift();
     int f_count = 0;

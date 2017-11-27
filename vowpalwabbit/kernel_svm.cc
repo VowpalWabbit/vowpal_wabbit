@@ -742,7 +742,15 @@ void learn(svm_params& params, base_learner&, example& ec)
 void free_svm_model(svm_model* model)
 { for(size_t i = 0; i < model->num_support; i++)
   { model->support_vec[i]->~svm_example();
+  // Warning C6001 is triggered by the following:
+  // example is allocated using (a) '&calloc_or_throw<svm_example>()' and freed using (b) 'free(model->support_vec[i])'
+  // 
+  // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete (model->support_vect[i])', the warning goes away.
+  // Disable SDL warning.
+    #pragma warning(disable:6001)
     free(model->support_vec[i]);
+    #pragma warning(default:6001)
+
     model->support_vec[i] = 0;
   }
 

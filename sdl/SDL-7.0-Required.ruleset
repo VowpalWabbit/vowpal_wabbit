@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="SDL 7.0 Required Native Rules" Description="This ruleset contains all the security checks that are required for SDL 7.0. Some rules are part of the compiler. For other rules, you need to install the native rules for SDL from codebox." ToolsVersion="11.0">
+    <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">
+        <Rule Id="C6029" Action="Error" />
+        <Rule Id="C6053" Action="Error" />
+        <Rule Id="C6059" Action="Error" />
+        <Rule Id="C6067" Action="Error" />
+        <Rule Id="C6200" Action="Error" />
+        <Rule Id="C6201" Action="Error" />
+        <Rule Id="C6214" Action="Error" />
+        <Rule Id="C6215" Action="Error" />
+        <Rule Id="C6216" Action="Error" />
+        <Rule Id="C6230" Action="Error" />
+        <Rule Id="C6248" Action="Error" />
+        <Rule Id="C6260" Action="Error" />
+        <Rule Id="C6276" Action="Error" />
+        <Rule Id="C6277" Action="Error" />
+        <Rule Id="C6279" Action="Error" />
+        <Rule Id="C6293" Action="Error" />
+        <Rule Id="C6305" Action="Error" />
+        <Rule Id="C6306" Action="Error" />
+        <Rule Id="C6317" Action="Error" />
+        <Rule Id="C6324" Action="Error" />
+        <Rule Id="C6334" Action="Error" />
+        <Rule Id="C6383" Action="Error" />
+        <Rule Id="C6504" Action="Error" />
+        <Rule Id="C6505" Action="Error" />
+        <Rule Id="C6506" Action="Error" />
+        <Rule Id="C6509" Action="Error" />
+        <Rule Id="C6510" Action="Error" />
+        <Rule Id="C6515" Action="Error" />
+        <Rule Id="C6518" Action="Error" />
+        <Rule Id="C28208" Action="Error" />
+        <Rule Id="C28218" Action="Error" />
+        <Rule Id="C28220" Action="Error" />
+        <Rule Id="C28222" Action="Error" />
+        <Rule Id="C28230" Action="Error" />
+        <Rule Id="C28241" Action="Error" />
+        <Rule Id="C28243" Action="Error" />
+        <Rule Id="C28285" Action="Error" />
+        <Rule Id="C28290" Action="Error" />
+        <Rule Id="C28309" Action="Error" />
+        <Rule Id="C33001" Action="Error" />
+        <Rule Id="C33005" Action="Error" />
+        <Rule Id="C33010" Action="Error" />
+        <Rule Id="C33020" Action="Error" />
+        <Rule Id="C33087" Action="Error" />
+        <Rule Id="C33089" Action="Error" />
+        <Rule Id="C33091" Action="Error" />
+        <Rule Id="C33092" Action="Error" />
+        <Rule Id="C33093" Action="Error" />
+        <Rule Id="C33095" Action="Error" />
+        <Rule Id="C33096" Action="Error" />
+        <Rule Id="C33097" Action="Error" />
+        <Rule Id="C33098" Action="Error" />
+        <Rule Id="C33099" Action="Error" />
+    </Rules>
+</RuleSet>
