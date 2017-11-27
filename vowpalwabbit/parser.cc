@@ -51,7 +51,6 @@ namespace po = boost::program_options;
 #include "interactions.h"
 #include "vw_exception.h"
 #include "parse_example_json.h"
-#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -222,7 +221,8 @@ void reset_source(vw& all, size_t numbits)
     all.p->output->close_file();
     remove(all.p->output->finalname.begin());
 
-    boost::filesystem::rename(all.p->output->currentname.begin(), all.p->output->finalname.begin());
+    if (0 != rename(all.p->output->currentname.begin(), all.p->output->finalname.begin()))
+      THROW("WARN: reset_source(vw& all, size_t numbits) cannot rename: " << all.p->output->currentname << " to " << all.p->output->finalname);
 
     while(input->num_files() > 0)
       if (input->compressed())
