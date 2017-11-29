@@ -249,6 +249,26 @@ void finish_example(vw& all, cs_active& cs_a, example& ec)
 { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec);
 }
 
+void finish(cs_active& cs_a)
+{
+  vw all = *cs_a.all;
+  if (all.sd->overlapped_and_range_small > 0)
+    all.trace_message << endl << "total overlapped and range small = " << all.sd->overlapped_and_range_small;
+  for (size_t i=0; i<all.sd->examples_by_queries.size(); i++)
+    {  all.trace_message << endl << "examples with " << i << " labels queried = " << all.sd->examples_by_queries[i];
+    }
+  if (all.sd->labels_outside_range > 0)
+    {  all.trace_message << endl << "labels outside of cost range = " << all.sd->labels_outside_range;
+      all.trace_message << endl << "average distance to range = " << all.sd->distance_to_range/((float)all.sd->labels_outside_range);
+      all.trace_message << endl << "average range = " << all.sd->range/((float)all.sd->labels_outside_range);
+    }
+  /*
+    for (size_t i=0; i<all.sd->distance_to_range.size(); i++)
+    {  all.trace_message << endl << "label " << i << ", average distance to range = " << all.sd->distance_to_range[i]/((float)all.sd->example_number);
+    }
+  */
+}
+
 base_learner* cs_active_setup(vw& all)
 { //parse and set arguments
   if(missing_option<size_t, true>(all, "cs_active", "Cost-sensitive active learning with <k> costs"))
@@ -367,6 +387,7 @@ base_learner* cs_active_setup(vw& all)
   */
 
   l.set_finish_example(finish_example);
+  l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
