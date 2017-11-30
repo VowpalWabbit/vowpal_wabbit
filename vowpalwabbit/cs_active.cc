@@ -34,6 +34,11 @@ struct cs_active
   LEARNER::base_learner* l;
 
   size_t num_any_queries; //examples where at least one label is queried
+  size_t overlapped_and_range_small;
+  v_array<size_t> examples_by_queries;
+  size_t labels_outside_range;
+  float distance_to_range;
+  float range;
 };
 
 float binarySearch(float fhat, float delta, float sens, float tol)
@@ -153,13 +158,13 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     cerr<<endl<<"Number of examples with at least one query = "<<cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
-    for (size_t i=0; i<cs_a.all->sd->examples_by_queries.size(); i++)
-    {  cerr << endl << "examples with " << i << " labels queried = " << cs_a.all->sd->examples_by_queries[i];
+    for (size_t i=0; i<cs_a.examples_by_queries.size(); i++)
+    {  cerr << endl << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
     }
 
-    cerr << endl << "labels outside of cost range = " << cs_a.all->sd->labels_outside_range;
-    cerr << endl << "average distance to range = " << cs_a.all->sd->distance_to_range/((float)cs_a.all->sd->labels_outside_range);
-    cerr << endl << "average range = " << cs_a.all->sd->range/((float)cs_a.all->sd->labels_outside_range);
+    cerr << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
+    cerr << endl << "average distance to range = " << cs_a.distance_to_range/((float)cs_a.labels_outside_range);
+    cerr << endl << "average range = " << cs_a.range/((float)cs_a.labels_outside_range);
 
     /*
     for (size_t i=0; i<cs_a.all->sd->distance_to_range.size(); i++)
@@ -200,12 +205,12 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
         //if(cl.is_range_overlapped && is_learn)
         //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ", is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
         //}
-      cs_a.all->sd->overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
+      cs_a.overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
       if(cl.x > cl.max_pred || cl.x < cl.min_pred)
-      {  cs_a.all->sd->labels_outside_range++;
+      {  cs_a.labels_outside_range++;
          //cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-         cs_a.all->sd->distance_to_range += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-         cs_a.all->sd->range += cl.max_pred - cl.min_pred;
+         cs_a.distance_to_range += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
+         cs_a.range += cl.max_pred - cl.min_pred;
       }
 
     }
@@ -224,7 +229,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     if(cs_a.all->sd->queries - queries > 0)
       cs_a.num_any_queries++;
 
-    cs_a.all->sd->examples_by_queries[cs_a.all->sd->queries - queries] += 1;
+    cs_a.examples_by_queries[cs_a.all->sd->queries - queries] += 1;
     //if(any_query)
     //cs_a.num_any_queries++;
 
@@ -283,6 +288,10 @@ base_learner* cs_active_setup(vw& all)
   data.use_domination = true;
   data.print_debug_stuff = all.vm.count("csa_debug") > 0;
   data.num_any_queries = 0;
+  data.overlapped_and_range_small = 0;
+  data.labels_outside_range = 0;
+  data.distance_to_range = 0;
+  data.range = 0.0;
 
   if(all.vm.count("baseline"))
   { data.is_baseline = true;
@@ -362,12 +371,7 @@ base_learner* cs_active_setup(vw& all)
 
   all.p->lp = cs_label; // assigning the label parser
   for (uint32_t i=0; i<data.num_classes+1; i++)
-    all.sd->examples_by_queries.push_back(0);
-
-  /*
-  for (uint32_t i=0; i<data.num_classes; i++)
-    all.sd->distance_to_range.push_back(0.f);
-  */
+    data.examples_by_queries.push_back(0);
 
   l.set_finish_example(finish_example);
   base_learner* b = make_base(l);
