@@ -1531,7 +1531,7 @@ void finish(vw& all, bool delete_all)
 
     all.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries << endl;
+      all.trace_message << endl << "total queries = " << all.sd->queries;
     all.trace_message << endl;
   }
 
