@@ -199,13 +199,6 @@ public:
 
 struct shared_data
 { size_t queries;
-  size_t overlapped_and_range_small;
-  v_array<size_t> examples_by_queries;
-  //v_array<float> distance_to_range;
-  size_t labels_outside_range;
-  float distance_to_range;
-  float range;
-
 
   uint64_t example_number;
   uint64_t total_features;
