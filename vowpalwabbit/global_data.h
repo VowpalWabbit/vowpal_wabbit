@@ -552,6 +552,7 @@ struct vw
   bool training;//Should I train if lable data is available?
   bool active;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool adax;//Adaptive individual learning rates with x^2 instead of g^2x^2
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
   uint64_t random_seed;

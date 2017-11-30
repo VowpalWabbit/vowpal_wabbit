@@ -342,6 +342,9 @@ base_learner* cs_active_setup(vw& all)
     THROW("error: you can't use --cs_active and --csoaa at the same time");
   }
 
+  if (count(all.args.begin(), all.args.end(),"--adax") == 0)
+    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+
   //learner<cs_active>* l;
   //if (all.vm.count("simulation"))
   //  l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
