@@ -56,8 +56,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   ("transition_system", po::value<uint32_t>(&(data->transition_system))->default_value(1), "1: arc-hybrid 2: arc-eager")
   ("one_learner", "Using one learner instead of three learners for labeled parser")
   ("cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
-  ("old_style_labels", "Use old hack of label information")
-    ;
+  ("old_style_labels", "Use old hack of label information");
   add_options(all);
 
   check_option<size_t>(data->root_label, all, vm, "root_label", false, size_equal,
