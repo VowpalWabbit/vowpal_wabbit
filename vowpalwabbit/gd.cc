@@ -466,8 +466,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
         }
         w[normalized] = x_abs;
       }
-      if (w[normalized] != 0)
-        nd.norm_x += x2 / (w[normalized] * w[normalized]);
+      nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
     w[spare] = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, w[0]);
     nd.pred_per_update += x2 * w[spare];
