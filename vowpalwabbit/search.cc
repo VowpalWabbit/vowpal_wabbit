@@ -722,7 +722,7 @@ inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
 { if (isCB) { CB::cb_class cost = { value, index, 0., 0.                  }; ld.cb.costs.push_back(cost); }
-  else      { CS::wclass   cost = { value, index, 0., 0., true }; ld.cs.costs.push_back(cost); }
+  else      { CS::wclass   cost = { value, index, 0., 0. }; ld.cs.costs.push_back(cost); }
 }
 
 polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost)
