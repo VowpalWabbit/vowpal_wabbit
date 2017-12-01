@@ -100,8 +100,9 @@ void AllReduceSockets::all_reduce_init()
 {
 #ifdef _WIN32
   WSAData wsaData;
-  WSAStartup(MAKEWORD(2,2), &wsaData);
-  int lastError = WSAGetLastError();
+  int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if(lastError != 0)
+    THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
 

@@ -233,7 +233,7 @@ private:
 
 
             size_t count = (std::min) (ar_buf_size, n - child_read_pos[i]);
-            int read_size = recv(socks.children[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
+            int read_size = recv(socks.children[i], &child_read_buf[i][child_unprocessed[i]], (int)count, 0);
             if (read_size == -1)
               THROWERRNO("recv from child");
 

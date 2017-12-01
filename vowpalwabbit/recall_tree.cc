@@ -218,11 +218,11 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
   features& fs = ec.feature_space[node_id_namespace];
 
   if (b.node_only)
-  { fs.push_back (1., ((868771 * cn) << ss) & mask);
+  { fs.push_back (1., (((uint64_t)868771 * cn) << ss) & mask);
   }
   else
   { while (cn > 0)
-    { fs.push_back (1., ((868771 * cn) << ss) & mask);
+    { fs.push_back (1., (((uint64_t)868771 * cn) << ss) & mask);
       cn = b.nodes[cn].parent;
     }
   }

@@ -15,6 +15,9 @@
     <RootNamespace>python</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>python27</ProjectName>
+    <!-- This is the ruleset file for code analysis, you can change it in VS -->
+    <CodeAnalysisRuleSet>..\..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -183,4 +186,5 @@
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
   </Target>
+  <Import Project="..\..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
