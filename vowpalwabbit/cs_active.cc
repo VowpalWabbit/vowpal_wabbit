@@ -383,8 +383,8 @@ base_learner* cs_active_setup(vw& all)
 
   learner<cs_active>& l =
       (all.vm.count("simulation") > 0)
-       ? init_learner(&data, setup_base(all), predict_or_learn<true,true> , predict_or_learn<false,true >, data.num_classes)
-       : init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+    ? init_learner(&data, setup_base(all), predict_or_learn<true,true> , predict_or_learn<false,true >, data.num_classes, prediction_type::multilabels)
+    : init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes,prediction_type::multilabels);
 
   all.set_minmax(all.sd,data.cost_max);
   all.set_minmax(all.sd,data.cost_min);
