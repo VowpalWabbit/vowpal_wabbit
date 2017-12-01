@@ -41,9 +41,10 @@ void bs_predict_vote(example& ec, vector<double> &pred_vec)
   // float sum_labels = 0; // uncomment for: "avg on votes" and getLoss()
   bool majority_found = false;
   bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
-  int* pred_vec_int = new int[pred_vec.size()];
+  auto pred_vec_sz = pred_vec.size();
+  int* pred_vec_int = new int[pred_vec_sz];
 
-  for(unsigned int i=0; i<pred_vec.size(); i++)
+  for(unsigned int i=0; i<pred_vec_sz; i++)
   { pred_vec_int[i] = (int)floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
     if(multivote_detected == false)   // distinct(votes)>2 detection bloc

@@ -228,6 +228,12 @@ base_learner* cbify_setup(vw& all)
     ss << num_actions;
     all.args.push_back(ss.str());
   }
+  if (count(all.args.begin(), all.args.end(), "--baseline"))
+  { all.args.push_back("--lr_multiplier");
+    stringstream ss;
+    ss << max<float>(abs(data.loss0), abs(data.loss1)) / (data.loss1 - data.loss0);
+    all.args.push_back(ss.str());
+  }
   base_learner* base = setup_base(all);
 
   all.delete_prediction = nullptr;

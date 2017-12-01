@@ -693,24 +693,28 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
 	    {
 	      brw = 1;
 	      if (all.num_bits < 31)//backwards compatible
-		{
-		  brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
-		  i = old_i;
-		}
+          {
+            brw = bin_read_fixed(model_file, (char*)&old_i, sizeof(old_i), "");
+            i = old_i;
+          }
 	      else
-		brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+          brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
 	      if (brw > 0)
-		{
-		  if (i >= length)
-		      THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
-		  weight* v = &weights.strided_index(i);
-		  if (g == NULL || (!g->adaptive && !g->normalized))
-		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v), "");
-		  else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
-		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 2, "");
-		  else //adaptive and normalized
-		    brw += bin_read_fixed(model_file, (char*)&(*v), sizeof(*v) * 3, "");
-		}
+          {
+            if (i >= length)
+              THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length " << length);
+            weight buff[4] = {0,0,0,0};
+            if (g == NULL || (!g->adaptive && !g->normalized))
+              brw += bin_read_fixed(model_file, (char*)buff, sizeof(buff[0]), "");
+            else if ((g->adaptive && !g->normalized) || (!g->adaptive && g->normalized))
+              brw += bin_read_fixed(model_file, (char*)buff, sizeof(buff[0]) * 2, "");
+            else //adaptive and normalized
+              brw += bin_read_fixed(model_file, (char*)buff, sizeof(buff[0]) * 3, "");
+            uint32_t stride = 1 << weights.stride_shift();
+            weight* v = &weights.strided_index(i);
+            for (size_t i = 0; i < stride; i++)
+              v[i] = buff[i];
+          }
 	    } while (brw >0);
 	else // write binary or text
 	  for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)

@@ -514,9 +514,9 @@ void add_neighbor_features(search_private& priv)
 
       //cerr << "n=" << n << " offset=" << offset << endl;
       if ((offset < 0) && (n < (uint64_t)(-offset))) // add <s> feature
-		  add_new_feature(priv, 1., 925871901 << stride_shift);
+		  add_new_feature(priv, 1., (uint64_t)925871901 << stride_shift);
       else if (n + offset >= priv.ec_seq.size()) // add </s> feature
-		  add_new_feature(priv, 1., 3824917 << stride_shift);
+		  add_new_feature(priv, 1., (uint64_t)3824917 << stride_shift);
       else   // this is actually a neighbor
       { example& other = *priv.ec_seq[n + offset];
         GD::foreach_feature<search_private,add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
@@ -642,7 +642,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
 
       // add the single bias feature
       if (n < priv.acset.max_bias_ngram_length)
-	add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+	add_new_feature(priv, 1., (uint64_t)4398201 << priv.all->weights.stride_shift());
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
         GD::foreach_feature<search_private,uint64_t,add_new_feature>(*priv.all, ec, priv);
@@ -668,7 +668,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
           priv.dat_new_feature_idx = fid;
           priv.dat_new_feature_namespace = conditioning_namespace;
           priv.dat_new_feature_value = fs.values[k];
-	  add_new_feature(priv, 1., 4398201 << priv.all->weights.stride_shift());
+	  add_new_feature(priv, 1., (uint64_t)4398201 << priv.all->weights.stride_shift());
         }
     }
     cdbg << "END adding passthrough features" << endl;

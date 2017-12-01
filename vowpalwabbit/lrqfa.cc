@@ -46,8 +46,8 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 
     for (string::const_iterator i1 = lrq.field_name.begin(); i1 != lrq.field_name.end(); ++i1)
     { for (string::const_iterator i2 = i1 + 1; i2 != lrq.field_name.end(); ++i2)
-      { unsigned char left = which%2 ? *i1 : *i2;
-        unsigned char right = (which+1)%2 ? *i1 : *i2;
+      { unsigned char left = (which%2) ? *i1 : *i2;
+        unsigned char right = ((which+1)%2) ? *i1 : *i2;
         unsigned int lfd_id = lrq.field_id[left];
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
@@ -56,7 +56,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
             uint64_t lindex = fs.indicies[lfn];
             for (unsigned int n = 1; n <= k; ++n)
 	      {
-		uint64_t lwindex = (uint64_t)(lindex + ((rfd_id*k+n) << stride_shift)); // a feature has k weights in each field
+		uint64_t lwindex = (lindex + ((uint64_t)(rfd_id*k+n) << stride_shift)); // a feature has k weights in each field
 		float* lw = &all.weights[lwindex & weight_mask];
                 // perturb away from saddle point at (0, 0)
 		if (is_learn && !example_is_test(ec) && *lw == 0)
@@ -68,7 +68,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
                     // NB: ec.ft_offset added by base learner
                     float rfx = rfs.values[rfn];
                     uint64_t rindex = rfs.indicies[rfn];
-                    uint64_t rwindex = (uint64_t)(rindex + ((lfd_id*k+n) << stride_shift));
+                    uint64_t rwindex = (rindex + ((uint64_t)(lfd_id*k+n) << stride_shift));
 		    
 		    rfs.push_back(*lw * lfx * rfx, rwindex);
                     if (all.audit || all.hash_inv)

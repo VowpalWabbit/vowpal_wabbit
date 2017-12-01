@@ -30,6 +30,9 @@
     <ProjectGuid>{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}</ProjectGuid>
     <RootNamespace>deploy_vw</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\vowpalwabbit\</SolutionDir>
+    <!-- This is the ruleset file for code analysis, you can change it in VS -->
+    <CodeAnalysisRuleSet>..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -290,4 +293,5 @@ xcopy /v /i /r  /y "$(VCInstallDir)redist\$(PlatformShortName)\Microsoft.VC120.O
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
