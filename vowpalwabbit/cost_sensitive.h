@@ -17,7 +17,6 @@ struct wclass
   float partial_prediction;  // a partial prediction: new!
   float wap_value;  // used for wap to store values derived from costs
   bool operator==(wclass j) {return class_index == j.class_index;}
-
 };
 /* if class_index > 0, then this is a "normal" example
    if class_index == 0, then:
