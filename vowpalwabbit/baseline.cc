@@ -100,7 +100,7 @@ void predict_or_learn(baseline& data, base_learner& base, example& ec)
     base.predict(ec);
 
   if (is_learn)
-  { const double pred = ec.pred.scalar; // save 'safe' prediction
+  { const float pred = ec.pred.scalar; // save 'safe' prediction
 
     // now learn
     data.ec->l.simple = ec.l.simple;

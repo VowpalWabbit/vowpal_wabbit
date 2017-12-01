@@ -52,11 +52,11 @@ public:
         static float x2 = 0.0;
         static float temp  = 0.0;
          do {
-                 x1 = 2.0 * merand48(index) - 1.0;
-                 x2 = 2.0 * merand48(index) - 1.0;
+                 x1 = 2.0f * merand48(index) - 1.0f;
+                 x2 = 2.0f * merand48(index) - 1.0f;
                  temp = x1 * x1 + x2 * x2;
          } while ( (temp >= 1.0) || (temp == 0.0) );
-         temp = sqrt( (-2.0 * log( temp ) ) / temp );
+         temp = sqrtf( (-2.0f * logf( temp ) ) / temp );
          w = x1 * temp;
     }
 };
@@ -67,7 +67,7 @@ template<class T> void truncate(vw& all,T& weights)
   static double sd = calculate_sd(all,weights);
   for_each(weights.begin(), weights.end(), [](float& v) {
 	if( abs(v) > sd*2 ) {
-           v = std::remainder(v,sd*2);
+           v = (float)std::remainder(v,sd*2);
         }
   });
 }

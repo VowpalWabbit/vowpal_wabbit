@@ -5,7 +5,7 @@ using namespace std;
 
 struct classweights
 {
-  std::unordered_map<int, double> weights;
+  std::unordered_map<uint32_t, float> weights;
 
   classweights(std::string const& source)
   {
@@ -28,16 +28,16 @@ struct classweights
       }
 
       int klass_int = std::stoi(klass);
-      double weight_double = std::stod(weight);
+      float weight_double = std::stof(weight);
 
       weights[klass_int] = weight_double;
     }
   }
 
-  double get_class_weight(int klass) {
+  float get_class_weight(uint32_t klass) {
     auto got = weights.find(klass);
     if ( got == weights.end() )
-      return 1.0;
+      return 1.0f;
     else
       return got->second;
   }
@@ -53,7 +53,7 @@ static void predict_or_learn(classweights& cweights, LEARNER::base_learner& base
 {
   switch (pred_type) {
     case prediction_type::scalar:
-      ec.weight *= cweights.get_class_weight(ec.l.simple.label);
+      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
       break;
     case prediction_type::multiclass:
       ec.weight *= cweights.get_class_weight(ec.l.multi.label);
