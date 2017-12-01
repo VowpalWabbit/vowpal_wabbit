@@ -238,7 +238,8 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     for (lq_data& lqd : cs_a.query_data)
       { bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) || (query && lqd.is_range_overlapped && lqd.is_range_large));
       inner_loop<is_learn,is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score, lqd.cl.partial_prediction, query_label, lqd.query_needed);
-      lqd.cl.query_needed = lqd.query_needed;
+      if(lqd.query_needed)
+        ec.pred.multilabels.label_v.push_back(lqd.cl.class_index);
       if (cs_a.print_debug_stuff)
         cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " [" << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
