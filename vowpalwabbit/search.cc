@@ -722,7 +722,7 @@ inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 
 inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
 { if (isCB) { CB::cb_class cost = { value, index, 0., 0.                  }; ld.cb.costs.push_back(cost); }
-  else      { CS::wclass   cost = { value, index, 0., 0., 0., 0., false, false, true }; ld.cs.costs.push_back(cost); }
+  else      { CS::wclass   cost = { value, index, 0., 0., true }; ld.cs.costs.push_back(cost); }
 }
 
 polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost)
@@ -987,7 +987,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
                                           cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl; */
       CS::wclass& wc = ec.l.cs.costs[k];
       priv.active_known[cur_t].push_back(wc);
-      cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << " max_pred=" << wc.max_pred << " min_pred=" << wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << " is_range_large=" << wc.is_range_large << endl;
+      // cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << " max_pred=" << wc.max_pred << " min_pred=" << wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << " is_range_large=" << wc.is_range_large << endl;
           //query_needed=" << ec.l.cs.costs[k].query_needed << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" << endl;
     }
   }

@@ -18,12 +18,7 @@ struct wclass
   float wap_value;  // used for wap to store values derived from costs
   bool operator==(wclass j) {return class_index == j.class_index;}
 
-  // The following are used by cost-sensitive active learning
-  float max_pred; // The max cost for this label predicted by the current set of good regressors
-  float min_pred; // The min cost for this label predicted by the current set of good regressors
-  bool is_range_large; // Indicator of whether this label's cost range was large
-  bool is_range_overlapped; // Indicator of whether this label's cost range overlaps with the cost range that has the minimnum max_pred
-  bool query_needed; // Used in reduction mode: tell upper-layer whether a query is needed for this label
+  bool query_needed;
 };
 /* if class_index > 0, then this is a "normal" example
    if class_index == 0, then:

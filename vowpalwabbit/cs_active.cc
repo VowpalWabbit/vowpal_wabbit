@@ -13,6 +13,16 @@ using namespace LEARNER;
 using namespace std;
 using namespace COST_SENSITIVE;
 
+struct lq_data
+{ // The following are used by cost-sensitive active learning
+  float max_pred; // The max cost for this label predicted by the current set of good regressors
+  float min_pred; // The min cost for this label predicted by the current set of good regressors
+  bool is_range_large; // Indicator of whether this label's cost range was large
+  bool is_range_overlapped; // Indicator of whether this label's cost range overlaps with the cost range that has the minimnum max_pred
+  bool query_needed; // Used in reduction mode: tell upper-layer whether a query is needed for this label
+  COST_SENSITIVE::wclass& cl;
+};
+
 struct cs_active
 { // active learning algorithm parameters
   float c0; // mellowness controlling the width of the set of good functions
@@ -32,6 +42,8 @@ struct cs_active
 
   vw* all;//statistics, loss
   LEARNER::base_learner* l;
+
+  v_array<lq_data> query_data;
 
   size_t num_any_queries; //examples where at least one label is queried
   size_t overlapped_and_range_small;
@@ -191,26 +203,31 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   float delta = cs_a.c0*log((float)(cs_a.num_classes*max(t_prev,1.f)))*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
 
   if (ld.costs.size() > 0)
-  { uint32_t n_overlapped = 0;
-    { for (COST_SENSITIVE::wclass& cl : ld.costs)
-      { find_cost_range(cs_a, base, ec, cl.class_index, delta, eta, cl.min_pred, cl.max_pred, cl.is_range_large);
-        min_max_cost = min(min_max_cost, cl.max_pred);
-      }
-    }
-
+  {
+    // Create metadata structure
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { cl.is_range_overlapped = (cl.min_pred <= min_max_cost);
-      n_overlapped += (uint32_t)(cl.is_range_overlapped);
+    { 
+      lq_data f = {0.0, 0.0, 0, 0, 0, cl};
+      cs_a.query_data.push_back(f);
+    }
+    uint32_t n_overlapped = 0;
+    for (lq_data& lqd : cs_a.query_data)
+    { find_cost_range(cs_a, base, ec, lqd.cl.class_index, delta, eta, lqd.min_pred, lqd.max_pred, lqd.is_range_large);
+      min_max_cost = min(min_max_cost, lqd.max_pred);
+    }
+    for (lq_data& lqd : cs_a.query_data)
+    { lqd.is_range_overlapped = (lqd.min_pred <= min_max_cost);
+      n_overlapped += (uint32_t)(lqd.is_range_overlapped);
         //large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
         //if(cl.is_range_overlapped && is_learn)
         //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ", is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
         //}
-      cs_a.overlapped_and_range_small += (size_t)(cl.is_range_overlapped && !cl.is_range_large);
-      if(cl.x > cl.max_pred || cl.x < cl.min_pred)
+      cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
+      if(lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
       {  cs_a.labels_outside_range++;
          //cs_a.all->sd->distance_to_range[cl.class_index-1] += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-         cs_a.distance_to_range += max(cl.x - cl.max_pred, cl.min_pred - cl.x);
-         cs_a.range += cl.max_pred - cl.min_pred;
+         cs_a.distance_to_range += max(lqd.cl.x - lqd.max_pred, lqd.min_pred - lqd.cl.x);
+         cs_a.range += lqd.max_pred - lqd.min_pred;
       }
 
     }
@@ -218,13 +235,16 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
     bool query = (n_overlapped > 1);
     size_t queries = cs_a.all->sd->queries;
     //bool any_query = false;
-    for (COST_SENSITIVE::wclass& cl : ld.costs)
-      { bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && cl.is_range_large) || (query && cl.is_range_overlapped && cl.is_range_large));
-      //bool query_label = (query && (cs_a.is_baseline || (cl.is_range_overlapped && cl.is_range_large)));
-      inner_loop<is_learn,is_simulation>(cs_a, base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, query_label, cl.query_needed);
+    for (lq_data& lqd : cs_a.query_data)
+      { bool query_label = ((query && cs_a.is_baseline) || (!cs_a.use_domination && lqd.is_range_large) || (query && lqd.is_range_overlapped && lqd.is_range_large));
+      inner_loop<is_learn,is_simulation>(cs_a, base, ec, lqd.cl.class_index, lqd.cl.x, prediction, score, lqd.cl.partial_prediction, query_label, lqd.query_needed);
+      lqd.cl.query_needed = lqd.query_needed;
       if (cs_a.print_debug_stuff)
-        cerr << "label=" << cl.class_index << " x=" << cl.x << " prediction=" << prediction << " score=" << score << " pp=" << cl.partial_prediction << " ql=" << query_label << " qn=" << cl.query_needed << " ro=" << cl.is_range_overlapped << " rl=" << cl.is_range_large << " [" << cl.min_pred << ", " << cl.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
+        cerr << "label=" << lqd.cl.class_index << " x=" << lqd.cl.x << " prediction=" << prediction << " score=" << score << " pp=" << lqd.cl.partial_prediction << " ql=" << query_label << " qn=" << lqd.query_needed << " ro=" << lqd.is_range_overlapped << " rl=" << lqd.is_range_large << " [" << lqd.min_pred << ", " << lqd.max_pred << "] vs delta=" << delta << " n_overlapped=" << n_overlapped << " is_baseline=" << cs_a.is_baseline << endl;
     }
+
+    // Need to pop metadata
+    cs_a.query_data.delete_v();
 
     if(cs_a.all->sd->queries - queries > 0)
       cs_a.num_any_queries++;
