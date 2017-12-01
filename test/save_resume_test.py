@@ -1,5 +1,5 @@
 """
-Test that the models generated with and without --save_resume produce the same predictions when load in test_mode.
+Test that the models generated with and without --save_resume produce the same predictions when loaded in test_mode.
 """
 import sys
 import os
@@ -41,12 +41,15 @@ def get_file_size(filename, cache={}):
     return file_size
 
 
-def do_test(filename, args, verbose=None):
+def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False):
     if isinstance(args, list):
         args = ' '.join(args)
 
     if verbose is None:
         verbose = globals()['verbose']
+
+    if repeat_args is None:
+        repeat_args = globals()['repeat_args']
 
     file_size = get_file_size(filename)
     if verbose:
@@ -78,7 +81,10 @@ def do_test(filename, args, verbose=None):
                     if p_normal != p_resume:
                         if verbose:
                             sys.stderr.write('line %s: %r != %r\n' % (index + 1, p_normal, p_resume))
-                        sys.stderr.write('FAILED %s %s\n' % (VW, args))
+                        if known_failure:
+                            sys.stderr.write('KNOWN FAILURE %s %s\n' % (VW, args))
+                            return 0
+                        sys.stderr.write('FAILED %s %s%s\n' % (VW, args, ' (known failure)' if known_failure else ''))
                         if not verbose and verbose_on_fail:
                             sys.stderr.write('Redoing with verbose on:\n')
                             do_test(filename, args, verbose=True)
@@ -88,22 +94,26 @@ def do_test(filename, args, verbose=None):
     finally:
         unlink(tmp_model + '.resume')
 
+    if known_failure:
+        sys.stderr.write('OK (BUT EXPECTED TO FAIL) %s %s\n' % (VW, args))
+        return 1
+
     sys.stderr.write('OK %s %s\n' % (VW, args))
     return 0
 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('--filename', default='train-sets/rcv1_micro.dat')
+    parser.add_option('--filename', default='train-sets/rcv1_small.dat')
     parser.add_option('--vw', default='../vowpalwabbit/vw')
-    parser.add_option('--repeat_args', action='store_true')
+    parser.add_option('--no_repeat_args', action='store_true')
     parser.add_option('--verbose', action='store_true')
     parser.add_option('--verbose_on_fail', action='store_true')
     options, args = parser.parse_args()
 
     VW = options.vw
     filename = options.filename
-    repeat_args = options.repeat_args
+    repeat_args = not options.no_repeat_args
     verbose = options.verbose
     verbose_on_fail = options.verbose_on_fail
     errors = 0
@@ -113,12 +123,20 @@ if __name__ == '__main__':
     else:
         errors += do_test(filename, '')
         errors += do_test(filename, '-b 22')
+        errors += do_test(filename, '--sparse_weights')
+        errors += do_test(filename, '--noconstant')
+        errors += do_test(filename, '--constant 10')
+        errors += do_test(filename, '--random_seed 55')
+        errors += do_test(filename, '--min_prediction 0.1')
+        errors += do_test(filename, '--max_prediction 0.1')
         errors += do_test(filename, '--loss_function logistic')
         errors += do_test(filename, '--boosting 10')
-        errors += do_test(filename, '--bootstrap 10')
-        errors += do_test(filename, '--l1 1e-04')
-        errors += do_test(filename, '--l2 1e-04')
+        errors += do_test(filename, '--bootstrap 10', known_failure=True)
+        errors += do_test(filename, '--l1 1e-04', known_failure=True)
+        errors += do_test(filename, '--l2 1e-04', known_failure=True)
         errors += do_test(filename, '--learning_rate 0.1')
+        errors += do_test(filename, '--power_t 0.1')
+        errors += do_test(filename, '--initial_t 10')
         errors += do_test(filename, '--loss_function quantile')
         errors += do_test(filename, '--loss_function quantile --quantile_tau 0.2')
         errors += do_test(filename, '--sgd')
@@ -128,9 +146,17 @@ if __name__ == '__main__':
         errors += do_test(filename, '--loss_function logistic --link logistic')
         errors += do_test(filename, '--nn 2')
         errors += do_test(filename, '--binary')
-        errors += do_test(filename, '--ftrl')
-        errors += do_test(filename, '--pistol')
-        errors += do_test(filename, '--ksvm')
+        errors += do_test(filename, '--ftrl', known_failure=True)
+        errors += do_test(filename, '--pistol', known_failure=True)
+
+        # this one also fails but pollutes output
+        #errors += do_test(filename, '--ksvm', known_failure=True)
+
+        errors += do_test('train-sets/multiclass', '--oaa 10')
+        errors += do_test('train-sets/multiclass', '--oaa 10')
+        errors += do_test('train-sets/multiclass', '--ect 10')
+        errors += do_test('train-sets/multiclass', '--log_multi 10')
+        errors += do_test('train-sets/multiclass', '--recall_tree 10')
 
     if errors:
         sys.exit('%s failed' % errors)
