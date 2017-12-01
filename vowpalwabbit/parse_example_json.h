@@ -410,19 +410,20 @@ struct MultiState : BaseState<audit>
 	BaseState<audit>* StartArray(Context<audit>& ctx)
 	{
 		// mark shared example
-		// TODO: how to check if we're in CB mode (--cb?)
-		// if (ctx.all->p->lp == CB::cb_label) // not sure how to compare
-		{
-			CB::label* ld = (CB::label*)&ctx.ex->l;
-			CB::cb_class f;
+		if (ctx.all->label_type == label_type::cb)
+      {
+        CB::label* ld = &ctx.ex->l.cb;
+        CB::cb_class f;
 
-			f.partial_prediction = 0.;
-			f.action = (uint32_t)uniform_hash("shared", 6, 0);
-			f.cost = FLT_MAX;
-			f.probability = -1.f;
+        f.partial_prediction = 0.;
+        f.action = (uint32_t)uniform_hash("shared", 6, 0);
+        f.cost = FLT_MAX;
+        f.probability = -1.f;
 
-			ld->costs.push_back(f);
-		}
+        ld->costs.push_back(f);
+      }
+    else
+      THROW("label type is not CB")
 
 		return this;
 	}

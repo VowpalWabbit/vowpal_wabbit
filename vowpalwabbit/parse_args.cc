@@ -1051,7 +1051,7 @@ void parse_output_model(vw& all)
 
   if (vm.count("preserve_performance_counters"))
     all.preserve_performance_counters = true;
-  
+
   if (vm.count("id") && find(all.args.begin(), all.args.end(), "--id") == all.args.end())
   { all.args.push_back("--id");
     all.args.push_back(vm["id"].as<string>());
@@ -1213,13 +1213,13 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
     ("sparse_weights", "Use a sparse datastructure for weights")
     ("input_feature_regularizer", po::value< string >(&(all.per_feature_regularizer_input)), "Per feature regularization input file");
     add_options(all);
- 
+
     po::variables_map& vm = all.vm;
     if (vm.count("sparse_weights"))
       all.weights.sparse = true;
     else
       all.weights.sparse = false;
-    
+
     new_options(all, "Parallelization options")
     ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
     ("threads", "Enable multi-threading")
@@ -1331,7 +1331,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   while (params_per_problem > ((uint64_t)1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
-  
+
   if (all.vm.count("help"))
   { /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << all.opts << "\n";
@@ -1577,12 +1577,12 @@ void finish(vw& all, bool delete_all)
   for (size_t i=0; i<all.loaded_dictionaries.size(); i++)
   { // Warning C6001 is triggered by the following:
     // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using 'free(all.loaded_dictionaries[i].name)'
-    // 
+    //
     // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the warning goes away.
     // Disable SDL warning.
-    #pragma warning(disable:6001)
+    //    #pragma warning(disable:6001)
     free(all.loaded_dictionaries[i].name);
-    #pragma warning(default:6001)
+    //#pragma warning(default:6001)
 
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
