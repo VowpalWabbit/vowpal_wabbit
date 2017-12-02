@@ -1593,3 +1593,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 163: --classweight with multiclass
 {VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
     train-sets/ref/classweight_recall_tree.stderr
+
+# Test 164: cs_active low mellowness
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 0.01 --simulation --adax
+    train-sets/ref/cs_active_0.01.stderr
+
+# Test 165: cs_active high mellowness
+{VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
+    train-sets/ref/cs_active_1.0.stderr

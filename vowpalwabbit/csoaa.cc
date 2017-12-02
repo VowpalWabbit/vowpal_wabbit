@@ -17,6 +17,7 @@ using namespace std;
 using namespace LEARNER;
 using namespace COST_SENSITIVE;
 
+namespace CSOAA {
 struct csoaa
 { uint32_t num_classes;
   polyprediction* pred;
@@ -833,4 +834,6 @@ base_learner* csldf_setup(vw& all)
   l.set_end_pass(end_pass);
   all.cost_sensitive = make_base(l);
   return all.cost_sensitive;
+}
+
 }

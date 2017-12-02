@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -516,7 +516,6 @@ vw::vw()
   adaptive = true;
   normalized_updates = true;
   invariant_updates = true;
-
   normalized_idx = 2;
 
   add_constant = true;
