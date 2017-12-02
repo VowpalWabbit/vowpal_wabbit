@@ -296,7 +296,7 @@ void finalize_source(parser* p)
     {
       if (p->audit)
 	delete (json_parser<true>*)p->jsonp;
-      else 
+      else
 	delete (json_parser<false>*)p->jsonp;
       p->jsonp = nullptr;
     }
@@ -585,7 +585,7 @@ child:
       }
 
       if (all.vm.count("json") || all.vm.count("dsjson"))
-      { 
+      {
 		  // TODO: change to class with virtual method
 		  if (all.audit)
 		  {
@@ -839,18 +839,12 @@ primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 
   int fs_count = 0;
 
-  //
-  // Using the following code stops generating C6386 warning.  Disable the compiler warning.
-  // for (int idx = 0; idx < len ; ++idx)
-  // { namespace_index i = ec->indices[idx]; 
-  // 
-  for (namespace_index i : ec->indices)
-  { 
-    #pragma warning(disable:6386)
+  for (size_t idx=0; idx < len; ++idx)
+  {
+    namespace_index i = ec->indices[idx];
     fs_ptr[fs_count].name = i;
     fs_ptr[fs_count].len = ec->feature_space[i].size();
     fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
-    #pragma warning(default:6386)
 
     uint32_t stride_shift = all.weights.stride_shift();
     int f_count = 0;
@@ -936,7 +930,7 @@ void *main_parse_loop(void *in)
       { reset_source(*all, all->num_bits);
         all->do_reset_source = false;
         all->passes_complete++;
-    
+
         end_pass_example(*all, examples[0]);
         if (all->passes_complete == all->numpasses && example_number == all->pass_length)
         { all->passes_complete = 0;
