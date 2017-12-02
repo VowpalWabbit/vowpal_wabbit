@@ -57,8 +57,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 { float maxw = min(fhat/sens,FLT_MAX);
 
   if(maxw*fhat*fhat <= delta)
-  { return maxw;
-  }
+    return maxw;
 
   float l = 0, u = maxw, w, v;
 
@@ -66,14 +65,11 @@ float binarySearch(float fhat, float delta, float sens, float tol)
   { w = (u+l)/2.f;
     v = w*(fhat*fhat-(fhat-sens*w)*(fhat-sens*w))-delta;
     if(v > 0)
-    { u = w;
-    }
+      u = w;
     else
-    { l = w;
-    }
+      l = w;
     if(fabs(v)<=tol || u-l<=tol)
-    { break;
-    }
+      break;
   }
 
   return l;
@@ -95,8 +91,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
         all.sd->queries += 1;
       }
       else
-      { ec.l.simple.label = FLT_MAX;
-      }
+        ec.l.simple.label = FLT_MAX;
     }
     else
     { // In reduction mode.
@@ -108,22 +103,16 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
           cerr << "warning: cost " << cost << " outside of cost range [" << cs_a.cost_min << ", " << cs_a.cost_max << "]!" << endl;
       }
       else
-      { ec.l.simple.label = FLT_MAX;
-      }
+        ec.l.simple.label = FLT_MAX;
     }
 
     if(ec.l.simple.label != FLT_MAX)
-    {
-      //cerr << "t = " << cs_a.t << ", base.learn(" << i-1 << ", " << ec.l.simple.label << ", " << ec.l.simple.weight  << ")" << endl;
       base.learn(ec, i-1);
-    } //else
-    //cerr << "t = " << cs_a.t << ", no base.learn(" << i-1 << ", " << ec.l.simple.label << ")" << endl;
   }
   else if (!is_simulation)
-  {// Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.
+  // Prediction in reduction mode could be used by upper layer to ask whether this label needs to be queried.
    // So we return that.
     query_needed = query_this_label;
-  }
 
   partial_prediction = ec.partial_prediction;
   if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction))
@@ -188,8 +177,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   }
 
   if(cs_a.all->sd->queries >= cs_a.max_labels*cs_a.num_classes)
-  { return;
-  }
+    return;
 
   uint32_t prediction = 1;
   float score = FLT_MAX;
@@ -206,7 +194,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
   {
     // Create metadata structure
     for (COST_SENSITIVE::wclass& cl : ld.costs)
-    { 
+    {
       lq_data f = {0.0, 0.0, 0, 0, 0, cl};
       cs_a.query_data.push_back(f);
     }
@@ -275,6 +263,11 @@ void finish_example(vw& all, cs_active& cs_a, example& ec)
 { CSOAA::finish_example(all, *(CSOAA::csoaa*)&cs_a, ec);
 }
 
+void finish(cs_active& data)
+{
+  data.examples_by_queries.delete_v();
+}
+
 base_learner* cs_active_setup(vw& all)
 { //parse and set arguments
   if(missing_option<size_t, true>(all, "cs_active", "Cost-sensitive active learning with <k> costs"))
@@ -315,28 +308,22 @@ base_learner* cs_active_setup(vw& all)
   data.range = 0.0;
 
   if(all.vm.count("baseline"))
-  { data.is_baseline = true;
-  }
+    data.is_baseline = true;
 
   if(all.vm.count("domination") && !all.vm["domination"].as<int>())
-  { data.use_domination = false;
-  }
+    data.use_domination = false;
 
   if(all.vm.count("mellowness"))
-  { data.c0 = all.vm["mellowness"].as<float>();
-  }
+    data.c0 = all.vm["mellowness"].as<float>();
 
   if(all.vm.count("range_c"))
-  { data.c1 = all.vm["range_c"].as<float>();
-  }
+    data.c1 = all.vm["range_c"].as<float>();
 
   if(all.vm.count("cost_max"))
-  { data.cost_max = all.vm["cost_max"].as<float>();
-  }
+    data.cost_max = all.vm["cost_max"].as<float>();
 
   if(all.vm.count("cost_min"))
-  { data.cost_min = all.vm["cost_min"].as<float>();
-  }
+    data.cost_min = all.vm["cost_min"].as<float>();
 
   string loss_function = all.vm["loss_function"].as<string>();
   if (loss_function.compare("squared") != 0)
@@ -350,12 +337,10 @@ base_learner* cs_active_setup(vw& all)
   }
 
   if(all.vm.count("max_labels"))
-  { data.max_labels = (size_t)all.vm["max_labels"].as<float>();
-  }
+    data.max_labels = (size_t)all.vm["max_labels"].as<float>();
 
   if(all.vm.count("min_labels"))
-  { data.min_labels = (size_t)all.vm["min_labels"].as<float>();
-  }
+    data.min_labels = (size_t)all.vm["min_labels"].as<float>();
 
   if (count(all.args.begin(), all.args.end(),"--active") != 0)
   { free(&data);
@@ -395,8 +380,8 @@ base_learner* cs_active_setup(vw& all)
     data.examples_by_queries.push_back(0);
 
   l.set_finish_example(finish_example);
+  l.set_finish(finish);
   base_learner* b = make_base(l);
   all.cost_sensitive = b;
   return b;
 }
-
