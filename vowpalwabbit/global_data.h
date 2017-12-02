@@ -232,7 +232,7 @@ struct shared_data
   bool report_multiclass_log_loss;
   double multiclass_log_loss;
   double holdout_multiclass_log_loss;
-  
+
   bool  is_more_than_two_labels_observed;
   float first_observed_label;
   float second_observed_label;
@@ -545,7 +545,6 @@ struct vw
   bool training;//Should I train if lable data is available?
   bool active;
   bool adaptive;//Should I use adaptive individual learning rates?
-  bool adax;//Adaptive individual learning rates with x^2 instead of g^2x^2
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
   uint64_t random_seed;
@@ -595,7 +594,7 @@ struct vw
   std::string final_regressor_name;
 
   parameters weights;
-  
+
   size_t max_examples; // for TLC
 
   bool hash_inv;
