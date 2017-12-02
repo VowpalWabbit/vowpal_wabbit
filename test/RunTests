@@ -1109,7 +1109,7 @@ __DATA__
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
-echo "" | {VW} 
+echo "" | {VW}
     train-sets/ref/empty-set.stderr
 
 # Test 61: daemon test
@@ -1270,7 +1270,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 94: experience replay version of test 1
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat \
-    -f models/0001_94.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off --replay_b 100
         train-sets/ref/0001-replay.stderr
 
@@ -1362,7 +1362,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} --confidence -d ./train-sets/rcv1_micro.dat --initial_t 0.1 -p confidence.preds
     train-sets/ref/confidence.stderr
     pred-sets/ref/confidence.preds
-     
+
 # Test 114: Over size example test
 {VW} -d train-sets/x.txt
     train-sets/ref/oversize.stderr
@@ -1370,7 +1370,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 115: Long Line test
 {VW} -d train-sets/long_line -c -k
     train-sets/ref/long_line.stderr
-    
+
 # Test 116: MWT test
 {VW} -d train-sets/cb_eval --multiworld_test f -p cb_eval.preds
     train-sets/ref/cb_eval.stderr
@@ -1404,7 +1404,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 # Test 122: Predictions with confidences after training
 {VW} --confidence --confidence_after_training --initial_t 0.1 -d ./train-sets/rcv1_small.dat -p confidence_after_training.preds
     train-sets/ref/confidence_after_training.stderr
-    pred-sets/ref/confidence_after_training.preds   
+    pred-sets/ref/confidence_after_training.preds
 
 # Test 123: cb_eval save/load #1
 {VW} -d train-sets/cb_eval1 --multiworld_test f -f mwt.model -p cb_eval1.preds
@@ -1421,7 +1421,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/search_dep_parser_arceager.stderr
 
 # Test 126: recall tree hello world
-{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic 
+{VW} --quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic
 
 # Test 127: recall_tree hello world predict-from-saved-model
 {VW} -t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model
@@ -1471,7 +1471,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 {VW} -d train-sets/cb_adf_crash_2.data -i models/cb_adf_crash.model -t
     train-sets/ref/cb_adf_crash2.stderr
 
-# Test 137: Fix for regression introduced by badeedb.  
+# Test 137: Fix for regression introduced by badeedb.
 # Ensure audit output continues to work correctly in the presence of anon features.
 # Github issue 1038 (https://github.com/JohnLangford/vowpal_wabbit/issues/1038)
 {VW} --audit -d train-sets/audit.dat --noconstant
@@ -1493,7 +1493,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/marginal.stderr
 
 # Test 141: marginal features test
-{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t 
+{VW} -i marginal_model  -d train-sets/marginal_features --noconstant -t
     train-sets/ref/marginal_test.stderr
 
 # Test 142: Evaluate exploration on contextal bandit data
@@ -1503,7 +1503,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
 
 # Test 143: Test 1 using JSON
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.json --json \
-    -f models/0001_143.model -c --passes 8 --invariant \
+    -c --passes 8 --invariant \
     --ngram 3 --skips 1 --holdout_off
         train-sets/ref/0001.json.stderr
 
@@ -1533,7 +1533,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     pred-sets/ref/cb_adf_dm.predict
 
 # Test 149: initial_weight option is used
-echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3 
+echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/initial_weight.stderr
     train-sets/ref/initial_weight.stdout
 
@@ -1541,7 +1541,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} --cb_adf -d train-sets/cb_test.ldf -p cb_adf_dm.predict --cb_type dm --sparse_weights
     train-sets/ref/sparse.stderr
 
-# Test 151: lrqfa 
+# Test 151: lrqfa
 {VW} --lrqfa aa3 -d train-sets/0080.dat
     train-sets/ref/0151.stderr
 
@@ -1573,14 +1573,23 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 --quadratic GT
     train-sets/ref/decisionservice.stderr
 
-# Test 159: --classweight
+# Test 159: test --bootstrap & --binary interaction
+{VW} -d train-sets/rcv1_mini.dat --bootstrap 5 --binary -c -k --passes 2
+    train-sets/ref/bootstrap_and_binary.stderr
+
+# Test 160: test --bootstrap & --oaa interaction
+# (Also adds -q :: and -P1 to get & verify perfect predictions in 2nd pass)
+{VW} -d train-sets/multiclass --bootstrap 4 --oaa 10 -q :: --leave_duplicate_interactions  -c -k --passes 2 --holdout_off -P1
+    train-sets/ref/bootstrap_and_oaa.stderr
+
+# Test 161: --classweight
 {VW} -d train-sets/0001.dat --classweight 1:2,0:3.1,-1:5
     train-sets/ref/classweight.stderr
 
-# Test 160: --classweight with multiclass
+# Test 162: --classweight with multiclass
 {VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
     train-sets/ref/classweight_multiclass.stderr
 
-# Test 161: --classweight with multiclass
+# Test 163: --classweight with multiclass
 {VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
     train-sets/ref/classweight_recall_tree.stderr

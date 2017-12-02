@@ -1,6 +1,5 @@
 Generating 3-grams for all namespaces.
 Generating 1-skips for all namespaces.
-final_regressor = models/0001_143.model
 Num weight bits = 18
 learning rate = 2.56e+06
 initial_t = 128000
