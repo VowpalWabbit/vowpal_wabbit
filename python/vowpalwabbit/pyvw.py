@@ -96,10 +96,12 @@ class vw(pylibvw.vw):
         learned on)."""
         if isinstance(ec, str):
             self.learn_string(ec)
-        else:
+        elif isinstance(ec, example):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+        else:
+            raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
     def predict(self, ec, prediction_type=None):
         """Just make a prediction on this example; ec can either be an example
@@ -113,6 +115,9 @@ class vw(pylibvw.vw):
             ec = self.example(ec)
             ec.setup_done = True
             new_example = True
+
+        if not isinstance(ec, example):
+            raise TypeError('expecting string or example object as ec argument for predict, got %s' % type(ec))
 
         if not getattr(ec, 'setup_done', True):
             ec.setup_example()
