@@ -14,22 +14,27 @@ using namespace std;
 typedef pair<float, v_array<char> > scored_example;
 
 struct compare_scored_examples
-{ bool operator()(scored_example const& a, scored_example const& b) const
+{
+  bool operator()(scored_example const& a, scored_example const& b) const
   { return a.first > b.first; }
 };
 
 struct topk
-{ uint32_t B; //rec number
+{
+  uint32_t B; //rec number
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
 };
 
 void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples > &pr_queue)
-{ if (f >= 0)
-  { char temp[30];
+{
+  if (f >= 0)
+  {
+    char temp[30];
     std::stringstream ss;
     scored_example tmp_example;
     while(!pr_queue.empty())
-    { tmp_example = pr_queue.top();
+    {
+      tmp_example = pr_queue.top();
       pr_queue.pop();
       sprintf(temp, "%f", tmp_example.first);
       ss << temp;
@@ -51,7 +56,8 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
 }
 
 void output_example(vw& all, topk& d, example& ec)
-{ label_data& ld = ec.l.simple;
+{
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
@@ -66,7 +72,8 @@ void output_example(vw& all, topk& d, example& ec)
 
 template <bool is_learn>
 void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
-{ if (example_is_newline(ec)) return;//do not predict newline
+{
+  if (example_is_newline(ec)) return;//do not predict newline
 
   if (is_learn)
     base.learn(ec);
@@ -77,23 +84,27 @@ void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
     d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
 
   else if(d.pr_queue.top().first < ec.pred.scalar)
-  { d.pr_queue.pop();
+  {
+    d.pr_queue.pop();
     d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
   }
 }
 
 void finish_example(vw& all, topk& d, example& ec)
-{ output_example(all, d, ec);
+{
+  output_example(all, d, ec);
   VW::finish_example(all, &ec);
 }
 
 
 void finish(topk& d)
-{ d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
+{
+  d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
 LEARNER::base_learner* topk_setup(vw& all)
-{ if (missing_option<size_t, false>(all, "top", "top k recommendation"))
+{
+  if (missing_option<size_t, false>(all, "top", "top k recommendation"))
     return nullptr;
 
   topk& data = calloc_or_throw<topk>();

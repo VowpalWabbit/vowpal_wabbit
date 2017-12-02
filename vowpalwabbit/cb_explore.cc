@@ -13,34 +13,35 @@ using namespace CB_ALGS;
 
 namespace CB_EXPLORE
 {
-  
-  struct cb_explore
-  {
-    vw* all;
-    cb_to_cs cbcs;
-    v_array<uint32_t> preds;
-    v_array<float> cover_probs;
-    
-    CB::label cb_label;
-    COST_SENSITIVE::label cs_label;
-    COST_SENSITIVE::label second_cs_label;
-    
-    base_learner* cs;
-    
-    size_t tau;
-    float epsilon;
-    size_t bag_size;
-    size_t cover_size;
-    float psi;
-    
-    size_t counter;
-    
+
+struct cb_explore
+{
+  vw* all;
+  cb_to_cs cbcs;
+  v_array<uint32_t> preds;
+  v_array<float> cover_probs;
+
+  CB::label cb_label;
+  COST_SENSITIVE::label cs_label;
+  COST_SENSITIVE::label second_cs_label;
+
+  base_learner* cs;
+
+  size_t tau;
+  float epsilon;
+  size_t bag_size;
+  size_t cover_size;
+  float psi;
+
+  size_t counter;
+
 };
 
 
 template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
-{ //Explore tau times, then act according to optimal.
+{
+  //Explore tau times, then act according to optimal.
   v_array<action_score> probs = ec.pred.a_s;
 
   if (is_learn && ec.l.cb.costs[0].probability < 1)
@@ -50,13 +51,15 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 
   probs.erase();
   if(data.tau > 0)
-  { float prob = 1.f/(float)data.cbcs.num_actions;
+  {
+    float prob = 1.f/(float)data.cbcs.num_actions;
     for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
       probs.push_back({i,prob});
     data.tau--;
   }
   else
-  { uint32_t chosen = ec.pred.multiclass-1;
+  {
+    uint32_t chosen = ec.pred.multiclass-1;
     for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
       probs.push_back({i,0.});
     probs[chosen].score = 1.0;
@@ -67,7 +70,8 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
-{ //Explore uniform random an epsilon fraction of the time.
+{
+  //Explore uniform random an epsilon fraction of the time.
 
   v_array<action_score> probs = ec.pred.a_s;
   probs.erase();
@@ -88,14 +92,16 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
-{ //Randomize over predictions from a base set of predictors
+{
+  //Randomize over predictions from a base set of predictors
   v_array<action_score> probs = ec.pred.a_s;
   probs.erase();
-  
-  for(uint32_t i = 0;i < data.cbcs.num_actions;i++)
+
+  for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
     probs.push_back({i,0.});
   float prob = 1.f/(float)data.bag_size;
-  for(size_t i = 0;i < data.bag_size;i++) {
+  for(size_t i = 0; i < data.bag_size; i++)
+  {
     uint32_t count = BS::weight_gen(*data.all);
     if (is_learn && count > 0)
       base.learn(ec,i);
@@ -105,19 +111,22 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
     probs[chosen].score += prob;
     if (is_learn)
       for (uint32_t j = 1; j < count; j++)
-	base.learn(ec,i);
+        base.learn(ec,i);
   }
-  
+
   ec.pred.a_s = probs;
 }
 
 void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
-{ //input: a probability distribution
+{
+  //input: a probability distribution
   //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
   if (min_prob > 0.999) // uniform exploration
-  { size_t support_size = distribution.size();
+  {
+    size_t support_size = distribution.size();
     if (!zeros)
-    { for (size_t i = 0; i < distribution.size(); ++i)
+    {
+      for (size_t i = 0; i < distribution.size(); ++i)
         if (distribution[i].score == 0)
           support_size--;
     }
@@ -132,14 +141,16 @@ void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
   float untouched_mass = 0.;
   for (uint32_t i = 0; i < distribution.size(); i++)
     if ((distribution[i].score > 0 || (distribution[i].score ==0 && zeros)) && distribution[i].score <= min_prob)
-    { touched_mass += min_prob;
+    {
+      touched_mass += min_prob;
       distribution[i].score = min_prob;
     }
     else
       untouched_mass += distribution[i].score;
 
   if (touched_mass > 0.)
-  { if (touched_mass > 0.999)
+  {
+    if (touched_mass > 0.999)
       THROW("Cannot safety this distribution");
     float ratio = (1.f - touched_mass) / untouched_mass;
     for (uint32_t i = 0; i < distribution.size(); i++)
@@ -149,14 +160,16 @@ void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
 }
 
 void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, v_array<action_score>& probs)
-{ float additive_probability = 1.f / (float)data.cover_size;
+{
+  float additive_probability = 1.f / (float)data.cover_size;
   data.preds.erase();
 
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
     probs.push_back({i,0.});
 
   for (size_t i = 0; i < data.cover_size; i++)
-  { //get predicted cost-sensitive predictions
+  {
+    //get predicted cost-sensitive predictions
     if (i == 0)
       data.cs->predict(ec, i);
     else
@@ -176,7 +189,8 @@ void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, 
 
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
-{ //Randomize over predictions from a base set of predictors
+{
+  //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
 
   uint32_t num_actions = data.cbcs.num_actions;
@@ -203,7 +217,8 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
   get_cover_probabilities(data, base, ec, probs);
 
   if (is_learn)
-  { ec.l.cb = data.cb_label;
+  {
+    ec.l.cb = data.cb_label;
     base.learn(ec);
 
     //Now update oracles
@@ -220,9 +235,11 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     ec.l.cs = data.second_cs_label;
     //2. Update functions
     for (size_t i = 0; i < cover_size; i++)
-    { //Create costs of each action based on online cover
+    {
+      //Create costs of each action based on online cover
       for (uint32_t j = 0; j < num_actions; j++)
-      { float pseudo_cost = data.cs_label.costs[j].x - data.psi * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
+      {
+        float pseudo_cost = data.cs_label.costs[j].x - data.psi * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
         data.second_cs_label.costs[j].class_index = j+1;
         data.second_cs_label.costs[j].x = pseudo_cost;
         //cout<<pseudo_cost<<" ";
@@ -243,7 +260,8 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 }
 
 void finish(cb_explore& data)
-{ data.preds.delete_v();
+{
+  data.preds.delete_v();
   data.cover_probs.delete_v();
   cb_to_cs& c = data.cbcs;
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
@@ -252,8 +270,10 @@ void finish(cb_explore& data)
 }
 
 void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& pred_string)
-{ if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  { stringstream label_string;
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    stringstream label_string;
     if (is_test)
       label_string << " unknown";
     else
@@ -263,14 +283,15 @@ void print_update_cb_explore(vw& all, bool is_test, example& ec, stringstream& p
 }
 
 void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
-{ float loss = 0.;
+{
+  float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
 
   if ((c.known_cost = get_observed_cost(ld)) != nullptr)
     for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
       loss += get_unbiased_cost(c.known_cost, c.pred_scores, i)*ec.pred.a_s[i].score;
-  
+
   all.sd->update(ec.test_only, get_observed_cost(ld) != nullptr, loss, 1.f, ec.num_features);
 
   char temp_str[20];
@@ -279,10 +300,12 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   uint32_t maxid = 0;
   //cout<<ec.pred.scalars.size()<<endl;
   for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-  { sprintf(temp_str,"%f ", ec.pred.a_s[i].score);
+  {
+    sprintf(temp_str,"%f ", ec.pred.a_s[i].score);
     ss << temp_str;
     if(ec.pred.a_s[i].score > maxprob)
-    { maxprob = ec.pred.a_s[i].score;
+    {
+      maxprob = ec.pred.a_s[i].score;
       maxid = i+1;
     }
   }
@@ -298,7 +321,8 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)
-{ output_example(all, c, ec, ec.l.cb);
+{
+  output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, &ec);
 }
 }
@@ -306,7 +330,8 @@ using namespace CB_EXPLORE;
 
 
 base_learner* cb_explore_setup(vw& all)
-{ //parse and set arguments
+{
+  //parse and set arguments
   if (missing_option<size_t, true>(all, "cb_explore", "Online explore-exploit for a <k> action contextual bandit problem"))
     return nullptr;
   new_options(all, "CB_EXPLORE options")
@@ -324,7 +349,8 @@ base_learner* cb_explore_setup(vw& all)
   uint32_t num_actions = data.cbcs.num_actions;
 
   if (count(all.args.begin(), all.args.end(),"--cb") == 0)
-  { all.args.push_back("--cb");
+  {
+    all.args.push_back("--cb");
     stringstream ss;
     ss << vm["cb_explore"].as<size_t>();
     all.args.push_back(ss.str());
@@ -344,7 +370,8 @@ base_learner* cb_explore_setup(vw& all)
 
   learner<cb_explore>* l;
   if (vm.count("cover"))
-  { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
+  {
+    data.cover_size = (uint32_t)vm["cover"].as<size_t>();
     data.cs = all.cost_sensitive;
     data.second_cs_label.costs.resize(num_actions);
     data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
@@ -362,17 +389,20 @@ base_learner* cb_explore_setup(vw& all)
     l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1, prediction_type::action_probs);
   }
   else if (vm.count("bag"))
-  { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
+  {
+    data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     *all.file_options << " --bag "<< data.bag_size;
     l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
   }
   else if (vm.count("first") )
-  { data.tau = (uint32_t)vm["first"].as<size_t>();
+  {
+    data.tau = (uint32_t)vm["first"].as<size_t>();
     *all.file_options << " --first "<< data.tau;
     l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
   }
   else
-  { data.epsilon = 0.05f;
+  {
+    data.epsilon = 0.05f;
     if (vm.count("epsilon"))
       data.epsilon = vm["epsilon"].as<float>();
     sprintf(type_string, "%f", data.epsilon);
