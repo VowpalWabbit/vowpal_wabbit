@@ -2,64 +2,69 @@
 #include "reductions.h"
 using namespace std;
 
-namespace CLASSWEIGHTS{
-  struct classweights
-  {
-    std::unordered_map<uint32_t, float> weights;
+namespace CLASSWEIGHTS
+{
+struct classweights
+{
+  std::unordered_map<uint32_t, float> weights;
 
-    void load_string(std::string const& source)
+  void load_string(std::string const& source)
+  {
+    std::stringstream ss(source);
+    std::string item;
+    while (std::getline(ss, item, ','))
     {
-      std::stringstream ss(source);
-      std::string item;
-      while (std::getline(ss, item, ',')) {
-        std::stringstream inner_ss(item);
-        std::string klass;
-        std::string weight;
-        std::getline(inner_ss, klass, ':');
-        std::getline(inner_ss, weight, ':');
+      std::stringstream inner_ss(item);
+      std::string klass;
+      std::string weight;
+      std::getline(inner_ss, klass, ':');
+      std::getline(inner_ss, weight, ':');
 
-        if (!klass.size() || !weight.size()) {
-          THROW("error: while parsing --classweight " << item);
-        }
-
-        int klass_int = std::stoi(klass);
-        float weight_double = std::stof(weight);
-
-        weights[klass_int] = weight_double;
+      if (!klass.size() || !weight.size())
+      {
+        THROW("error: while parsing --classweight " << item);
       }
-    }
 
-    float get_class_weight(uint32_t klass) {
-      auto got = weights.find(klass);
-      if ( got == weights.end() )
-        return 1.0f;
-      else
-        return got->second;
-    }
-  };
+      int klass_int = std::stoi(klass);
+      float weight_double = std::stof(weight);
 
-  template <bool is_learn, int pred_type>
-  static void predict_or_learn(classweights& cweights, LEARNER::base_learner& base, example& ec)
-  {
-    switch (pred_type) {
-    case prediction_type::scalar:
-      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
-      break;
-    case prediction_type::multiclass:
-      ec.weight *= cweights.get_class_weight(ec.l.multi.label);
-      break;
-    default:
-      // suppress the warning
-      break;
+      weights[klass_int] = weight_double;
     }
-
-    if (is_learn)
-      base.learn(ec);
-    else
-      base.predict(ec);
   }
 
-  void finish(classweights& data){ data.weights.~unordered_map();}
+  float get_class_weight(uint32_t klass)
+  {
+    auto got = weights.find(klass);
+    if ( got == weights.end() )
+      return 1.0f;
+    else
+      return got->second;
+  }
+};
+
+template <bool is_learn, int pred_type>
+static void predict_or_learn(classweights& cweights, LEARNER::base_learner& base, example& ec)
+{
+  switch (pred_type)
+  {
+  case prediction_type::scalar:
+    ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
+    break;
+  case prediction_type::multiclass:
+    ec.weight *= cweights.get_class_weight(ec.l.multi.label);
+    break;
+  default:
+    // suppress the warning
+    break;
+  }
+
+  if (is_learn)
+    base.learn(ec);
+  else
+    base.predict(ec);
+}
+
+void finish(classweights& data) { data.weights.~unordered_map();}
 }
 
 using namespace CLASSWEIGHTS;

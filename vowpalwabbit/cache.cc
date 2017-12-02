@@ -16,7 +16,8 @@ const size_t neg_1 = 1;
 const size_t general = 2;
 
 inline char* run_len_decode(char *p, uint64_t& i)
-{ // read an int 7 bits at a time.
+{
+  // read an int 7 bits at a time.
   size_t count = 0;
   while(*p & 128)
     i = i | ((uint64_t)(*(p++) & 127) << 7*count++);
@@ -25,9 +26,11 @@ inline char* run_len_decode(char *p, uint64_t& i)
 }
 
 inline char* run_len_encode(char *p, uint64_t i)
-{ // store an int 7 bits at a time.
+{
+  // store an int 7 bits at a time.
   while (i >= 128)
-  { *(p++) = (i & 127) | 128;
+  {
+    *(p++) = (i & 127) | 128;
     i = i >> 7;
   }
   *(p++) = (i & 127);
@@ -37,7 +40,8 @@ inline char* run_len_encode(char *p, uint64_t i)
 inline int64_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int64_t>(n & 1); }
 
 size_t read_cached_tag(io_buf& cache, example* ae)
-{ char* c;
+{
+  char* c;
   size_t tag_size;
   if (buf_read(cache, c, sizeof(tag_size)) < sizeof(tag_size))
     return 0;
@@ -59,7 +63,8 @@ __attribute__((packed))
 ;
 
 int read_cached_features(vw* all, v_array<example*>& examples)
-{ example* ae = examples[0];
+{
+  example* ae = examples[0];
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
@@ -77,10 +82,12 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 
   all->p->input->set(c);
   for (; num_indices > 0; num_indices--)
-  { size_t temp;
+  {
+    size_t temp;
     unsigned char index = 0;
     if((temp = buf_read(*input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t))
-    { all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
+    {
+      all->trace_message << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
       return 0;
     }
 
@@ -93,7 +100,8 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     all->p->input->set(c);
     total += storage;
     if (buf_read(*input,c,storage) < storage)
-    { all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
+    {
+      all->trace_message << "truncated example! wanted: " << storage << " bytes" << endl;
       return 0;
     }
 
@@ -102,13 +110,15 @@ int read_cached_features(vw* all, v_array<example*>& examples)
     uint64_t last = 0;
 
     for (; c!= end;)
-    { feature_index i = 0;
+    {
+      feature_index i = 0;
       c = run_len_decode(c,i);
       feature_value v = 1.f;
       if (i & neg_1)
         v = -1.;
       else if (i & general)
-      { v = ((one_float *)c)->f;
+      {
+        v = ((one_float *)c)->f;
         c += sizeof(float);
       }
       uint64_t diff = i >> 2;
@@ -126,12 +136,14 @@ int read_cached_features(vw* all, v_array<example*>& examples)
 }
 
 inline uint64_t ZigZagEncode(int64_t n)
-{ uint64_t ret = (n << 1) ^ (n >> 63);
+{
+  uint64_t ret = (n << 1) ^ (n >> 63);
   return ret;
 }
 
 void output_byte(io_buf& cache, unsigned char s)
-{ char *c;
+{
+  char *c;
 
   buf_write(cache, c, 1);
   *(c++) = s;
@@ -139,7 +151,8 @@ void output_byte(io_buf& cache, unsigned char s)
 }
 
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask)
-{ char* c;
+{
+  char* c;
   size_t storage = fs.size() * int_size;
   for (feature_value f : fs.values)
     if (f != 1. && f != -1.)
@@ -154,7 +167,8 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 
   uint64_t last = 0;
   for (features::iterator& f : fs)
-  { feature_index fi = f.index() & mask;
+  {
+    feature_index fi = f.index() & mask;
     int64_t s_diff = (fi - last);
     uint64_t diff = ZigZagEncode(s_diff) << 2;
     last = fi;
@@ -164,7 +178,8 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
     else if (f.value() == -1.)
       c = run_len_encode(c, diff | neg_1);
     else
-    { c = run_len_encode(c, diff | general);
+    {
+      c = run_len_encode(c, diff | general);
       memcpy(c, &f.value(), sizeof(feature_value));
       c += sizeof(feature_value);
     }
@@ -175,7 +190,8 @@ void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t 
 }
 
 void cache_tag(io_buf& cache, v_array<char> tag)
-{ char *c;
+{
+  char *c;
   buf_write(cache, c, sizeof(size_t)+tag.size());
   *(size_t*)c = tag.size();
   c += sizeof(size_t);
@@ -185,7 +201,8 @@ void cache_tag(io_buf& cache, v_array<char> tag)
 }
 
 void cache_features(io_buf& cache, example* ae, uint64_t mask)
-{ cache_tag(cache,ae->tag);
+{
+  cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
 
   for (namespace_index ns : ae->indices)

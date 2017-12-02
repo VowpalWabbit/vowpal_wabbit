@@ -26,7 +26,8 @@ namespace CB_EXPLORE_ADF
 {
 
 struct cb_explore_adf
-{ v_array<example*> ec_seq;
+{
+  v_array<example*> ec_seq;
   v_array<action_score> action_probs;
 
   size_t explore_type;
@@ -60,14 +61,17 @@ struct cb_explore_adf
 };
 
 template<class T> void swap(T& ele1, T& ele2)
-{ T temp = ele2;
+{
+  T temp = ele2;
   ele2 = ele1;
   ele1 = temp;
 }
 template<bool is_learn>
 void multiline_learn_or_predict(base_learner& base, v_array<example*>& examples, uint64_t offset, uint32_t id = 0)
-{ for (example* ec : examples)
-  { uint64_t old_offset = ec->ft_offset;
+{
+  for (example* ec : examples)
+  {
+    uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = offset;
     if (is_learn)
       base.learn(*ec, id);
@@ -78,16 +82,19 @@ void multiline_learn_or_predict(base_learner& base, v_array<example*>& examples,
 }
 
 example* test_adf_sequence(v_array<example*>& ec_seq)
-{ uint32_t count = 0;
+{
+  uint32_t count = 0;
   example* ret = nullptr;
   for (size_t k = 0; k < ec_seq.size(); k++)
-  { example *ec = ec_seq[k];
+  {
+    example *ec = ec_seq[k];
 
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
-    { ret = ec;
+    {
+      ret = ec;
       count += 1;
     }
 
@@ -103,7 +110,8 @@ example* test_adf_sequence(v_array<example*>& ec_seq)
 
 template <bool is_learn>
 void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
-{ //Explore tau times, then act according to optimal.
+{
+  //Explore tau times, then act according to optimal.
   if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(data.ec_seq) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
@@ -113,38 +121,42 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<ex
   uint32_t num_actions = (uint32_t)preds.size();
 
   if (data.tau)
-  { float prob = 1.f / (float)num_actions;
+  {
+    float prob = 1.f / (float)num_actions;
     for (size_t i = 0; i < num_actions; i++)
       preds[i].score = prob;
     data.tau--;
   }
   else
-  { for (size_t i = 1; i < num_actions; i++)
+  {
+    for (size_t i = 1; i < num_actions; i++)
       preds[i].score = 0.;
     preds[0].score = 1.0;
   }
   CB_EXPLORE::safety(preds, data.epsilon, true);
 }
 
-  template <bool is_learn>
-  void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
-  { //Explore uniform random an epsilon fraction of the time.
-    if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
-      multiline_learn_or_predict<true>(base, examples, data.offset);
-    else
-      multiline_learn_or_predict<false>(base, examples, data.offset);
-    
-    v_array<action_score>& preds = examples[0]->pred.a_s;
-    uint32_t num_actions = (uint32_t)preds.size();
-    float prob = data.epsilon/(float)num_actions;
-    for (size_t i = 0; i < num_actions; i++)
-      preds[i].score = prob;
-    preds[0].score += 1.f - data.epsilon;
-  }
-  
+template <bool is_learn>
+void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
+{
+  //Explore uniform random an epsilon fraction of the time.
+  if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
+    multiline_learn_or_predict<true>(base, examples, data.offset);
+  else
+    multiline_learn_or_predict<false>(base, examples, data.offset);
+
+  v_array<action_score>& preds = examples[0]->pred.a_s;
+  uint32_t num_actions = (uint32_t)preds.size();
+  float prob = data.epsilon/(float)num_actions;
+  for (size_t i = 0; i < num_actions; i++)
+    preds[i].score = prob;
+  preds[0].score += 1.f - data.epsilon;
+}
+
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
-{ //Randomize over predictions from a base set of predictors
+{
+  //Randomize over predictions from a base set of predictors
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)(examples.size() - 1);
   if (CB::ec_is_example_header(*examples[0]))
@@ -161,13 +173,13 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
     data.action_probs.push_back({ i,0. });
   float prob = 1.f / (float)data.bag_size;
   bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
-  for (uint32_t i = 0; i < data.bag_size; i++) 
+  for (uint32_t i = 0; i < data.bag_size; i++)
   {
     // avoid updates to the random num generator
     // for greedify, always update first policy once
     uint32_t count = is_learn
-      ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
-      : 0;
+                     ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
+                     : 0;
     if (is_learn && count > 0 && !test_sequence)
       multiline_learn_or_predict<true>(base, examples, data.offset, i);
     else
@@ -185,17 +197,20 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   for (size_t i = 0; i < num_actions; i++)
     preds[i] = data.action_probs[i];
 }
-  
+
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
-{ //Randomize over predictions from a base set of predictors
+{
+  //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
   if (is_learn)
-  { GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
+  {
+    GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
     multiline_learn_or_predict<true>(base, examples, data.offset);
   }
   else
-  { GEN_CS::gen_cs_example_ips(examples, data.cs_labels);
+  {
+    GEN_CS::gen_cs_example_ips(examples, data.cs_labels);
     multiline_learn_or_predict<false>(base, examples, data.offset);
   }
 
@@ -215,13 +230,16 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
 
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < data.cover_size; i++)
-  { //Create costs of each action based on online cover
+  {
+    //Create costs of each action based on online cover
     if (is_learn)
-    { data.cs_labels_2.costs.erase();
+    {
+      data.cs_labels_2.costs.erase();
       if (shared > 0)
         data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
       for (uint32_t j = 0; j < num_actions; j++)
-      { float pseudo_cost = data.cs_labels.costs[j+shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
+      {
+        float pseudo_cost = data.cs_labels.costs[j+shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
         data.cs_labels_2.costs.push_back({pseudo_cost,j,0.,0.});
       }
       GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2, data.prepped_cs_labels, data.offset, i+1);
@@ -248,7 +266,8 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
 
 template <bool is_learn>
 void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
-{ if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
+{
+  if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
@@ -262,9 +281,10 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
       max_score = preds[i].score;
 
   for (size_t i = 0; i < num_actions; i++)
-  { float prob = exp(data.lambda*(preds[i].score - max_score));
+  {
+    float prob = exp(data.lambda*(preds[i].score - max_score));
     preds[i].score = prob;
-     norm += prob;
+    norm += prob;
   }
   for (size_t i = 0; i < num_actions; i++)
     preds[i].score /= norm;
@@ -272,12 +292,14 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
 }
 
 void end_examples(cb_explore_adf& data)
-{ if (data.need_to_clear)
+{
+  if (data.need_to_clear)
     data.ec_seq.erase();
 }
 
 void finish(cb_explore_adf& data)
-{ data.ec_seq.delete_v();
+{
+  data.ec_seq.delete_v();
   data.action_probs.delete_v();
   data.cs_labels.costs.delete_v();
   data.cs_labels_2.costs.delete_v();
@@ -294,7 +316,8 @@ void finish(cb_explore_adf& data)
 //ordering by scores in the final output.
 
 void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* ec_seq)
-{ if (CB_ALGS::example_is_newline_not_header(ec)) return;
+{
+  if (CB_ALGS::example_is_newline_not_header(ec)) return;
 
   size_t num_features = 0;
 
@@ -307,8 +330,10 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 
   bool is_test = false;
   if (c.gen_cs.known_cost.probability > 0)
-  { for (uint32_t i = 0; i < preds.size(); i++)
-    { float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
+  {
+    for (uint32_t i = 0; i < preds.size(); i++)
+    {
+      float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
       loss += l*preds[i].score;
     }
   }
@@ -320,12 +345,14 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
     print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
-  { string outputString;
+  {
+    string outputString;
     stringstream outputStringStream(outputString);
     v_array<CB::cb_class> costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
-    { if (i > 0) outputStringStream << ' ';
+    {
+      if (i > 0) outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
@@ -335,8 +362,10 @@ void output_example(vw& all, cb_explore_adf& c, example& ec, v_array<example*>* 
 }
 
 void output_example_seq(vw& all, cb_explore_adf& data)
-{ if (data.ec_seq.size() > 0)
-  { output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+{
+  if (data.ec_seq.size() > 0)
+  {
+    output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
     if (all.raw_prediction > 0)
       all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
   }
@@ -344,7 +373,8 @@ void output_example_seq(vw& all, cb_explore_adf& data)
 
 
 void clear_seq_and_finish_examples(vw& all, cb_explore_adf& data)
-{ if (data.ec_seq.size() > 0)
+{
+  if (data.ec_seq.size() > 0)
     for (example* ecc : data.ec_seq)
       if (ecc->in_use)
         VW::finish_example(all, ecc);
@@ -352,9 +382,12 @@ void clear_seq_and_finish_examples(vw& all, cb_explore_adf& data)
 }
 
 void finish_multiline_example(vw& all, cb_explore_adf& data, example& ec)
-{ if (data.need_to_clear)
-  { if (data.ec_seq.size() > 0)
-    { output_example_seq(all, data);
+{
+  if (data.need_to_clear)
+  {
+    if (data.ec_seq.size() > 0)
+    {
+      output_example_seq(all, data);
       CB_ADF::global_print_newline(all);
     }
     clear_seq_and_finish_examples(all, data);
@@ -364,61 +397,67 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, example& ec)
 
 template <bool is_learn>
 void do_actual_learning(cb_explore_adf& data, base_learner& base)
-{ example* label_example=test_adf_sequence(data.ec_seq);
+{
+  example* label_example=test_adf_sequence(data.ec_seq);
   data.gen_cs.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
 
   if (label_example == nullptr || !is_learn)
-  { if (label_example != nullptr)//extract label
-    { data.action_label = label_example->l.cb;
+  {
+    if (label_example != nullptr)//extract label
+    {
+      data.action_label = label_example->l.cb;
       label_example->l.cb = data.empty_label;
     }
     switch (data.explore_type)
-    { case EXPLORE_FIRST:
-        predict_or_learn_first<false>(data, base, data.ec_seq);
-        break;
-      case EPS_GREEDY:
-        predict_or_learn_greedy<false>(data, base, data.ec_seq);
-        break;
-      case SOFTMAX:
-        predict_or_learn_softmax<false>(data, base, data.ec_seq);
-        break;
-      case BAG_EXPLORE:
-        predict_or_learn_bag<false>(data, base, data.ec_seq);
-        break;
-      case COVER:
-        predict_or_learn_cover<false>(data, base, data.ec_seq);
-        break;
-      default:
-        THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+    {
+    case EXPLORE_FIRST:
+      predict_or_learn_first<false>(data, base, data.ec_seq);
+      break;
+    case EPS_GREEDY:
+      predict_or_learn_greedy<false>(data, base, data.ec_seq);
+      break;
+    case SOFTMAX:
+      predict_or_learn_softmax<false>(data, base, data.ec_seq);
+      break;
+    case BAG_EXPLORE:
+      predict_or_learn_bag<false>(data, base, data.ec_seq);
+      break;
+    case COVER:
+      predict_or_learn_cover<false>(data, base, data.ec_seq);
+      break;
+    default:
+      THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
     if (label_example != nullptr)	//restore label
       label_example->l.cb = data.action_label;
   }
   else
-  { /*	v_array<float> temp_probs;
+  {
+    /*	v_array<float> temp_probs;
     temp_probs = v_init<float>();
     do_actual_learning<false>(data,base);
     for (size_t i = 0; i < data.ec_seq[0]->pred.a_s.size(); i++)
     temp_probs.push_back(data.ec_seq[0]->pred.a_s[i].score);*/
 
     switch (data.explore_type)
-    { case EXPLORE_FIRST:
-        predict_or_learn_first<is_learn>(data, base, data.ec_seq);
-        break;
-      case EPS_GREEDY:
-        predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
-        break;
-      case SOFTMAX:
-        predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
-        break;
-      case BAG_EXPLORE:
-        predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
-        break;
-      case COVER:
-        predict_or_learn_cover<is_learn>(data, base, data.ec_seq);
-        break;
-      default:
-        THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+    {
+    case EXPLORE_FIRST:
+      predict_or_learn_first<is_learn>(data, base, data.ec_seq);
+      break;
+    case EPS_GREEDY:
+      predict_or_learn_greedy<is_learn>(data, base, data.ec_seq);
+      break;
+    case SOFTMAX:
+      predict_or_learn_softmax<is_learn>(data, base, data.ec_seq);
+      break;
+    case BAG_EXPLORE:
+      predict_or_learn_bag<is_learn>(data, base, data.ec_seq);
+      break;
+    case COVER:
+      predict_or_learn_cover<is_learn>(data, base, data.ec_seq);
+      break;
+    default:
+      THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
 
     /*	for (size_t i = 0; i < temp_probs.size(); i++)
@@ -430,14 +469,16 @@ void do_actual_learning(cb_explore_adf& data, base_learner& base)
 
 template <bool is_learn>
 void predict_or_learn(cb_explore_adf& data, base_learner& base, example &ec)
-{ vw* all = data.all;
+{
+  vw* all = data.all;
   //data.base = &base;
   data.offset = ec.ft_offset;
   bool is_test_ec = CB::example_is_test(ec);
   bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
   if ((CB_ALGS::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
-  { data.ec_seq.push_back(&ec);
+  {
+    data.ec_seq.push_back(&ec);
     if (data.ec_seq.size() == 1)
       cout << "Something is wrong---an example with no choice.  Do you have all 0 features? Or multiple empty lines?" << endl;
     else
@@ -446,8 +487,10 @@ void predict_or_learn(cb_explore_adf& data, base_learner& base, example &ec)
     data.need_to_clear = true;
   }
   else
-  { if (data.need_to_clear)    // should only happen if we're NOT driving
-    { data.ec_seq.erase();
+  {
+    if (data.need_to_clear)    // should only happen if we're NOT driving
+    {
+      data.ec_seq.erase();
       data.need_to_clear = false;
     }
     data.ec_seq.push_back(&ec);
@@ -461,7 +504,8 @@ using namespace CB_EXPLORE_ADF;
 
 
 base_learner* cb_explore_adf_setup(vw& all)
-{ //parse and set arguments
+{
+  //parse and set arguments
   if (missing_option(all, true, "cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
     return nullptr;
   new_options(all, "CB_EXPLORE_ADF options")
@@ -489,12 +533,14 @@ base_learner* cb_explore_adf_setup(vw& all)
   char type_string[10];
 
   if (vm.count("epsilon"))
-  { data.epsilon = vm["epsilon"].as<float>();
+  {
+    data.epsilon = vm["epsilon"].as<float>();
     sprintf(type_string, "%f", data.epsilon);
     *all.file_options << " --epsilon "<<type_string;
   }
   if (vm.count("cover"))
-  { data.cover_size = (uint32_t)vm["cover"].as<size_t>();
+  {
+    data.cover_size = (uint32_t)vm["cover"].as<size_t>();
     data.explore_type = COVER;
     problem_multiplier = data.cover_size+1;
     *all.file_options << " --cover " << data.cover_size;
@@ -506,12 +552,14 @@ base_learner* cb_explore_adf_setup(vw& all)
     sprintf(type_string, "%f", data.psi);
     *all.file_options << " --psi " << type_string;
     if (vm.count("nounif"))
-    { data.nounif = true;
+    {
+      data.nounif = true;
       *all.file_options << " --nounif";
     }
   }
   else if (vm.count("bag"))
-  { data.bag_size = (uint32_t)vm["bag"].as<size_t>();
+  {
+    data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     data.greedify = vm.count("greedify") > 0;
     data.explore_type = BAG_EXPLORE;
     problem_multiplier = data.bag_size;
@@ -520,12 +568,14 @@ base_learner* cb_explore_adf_setup(vw& all)
       *all.file_options << " --greedify";
   }
   else if (vm.count("first"))
-  { data.tau = (uint32_t)vm["first"].as<size_t>();
+  {
+    data.tau = (uint32_t)vm["first"].as<size_t>();
     data.explore_type = EXPLORE_FIRST;
     *all.file_options << " --first "<< data.tau;
   }
   else if (vm.count("softmax"))
-  { data.lambda = 1.0;
+  {
+    data.lambda = 1.0;
     if (vm.count("lambda"))
       data.lambda = (float)vm["lambda"].as<float>();
     data.explore_type = SOFTMAX;
@@ -535,7 +585,8 @@ base_learner* cb_explore_adf_setup(vw& all)
   else if (vm.count("epsilon"))
     data.explore_type = EPS_GREEDY;
   else //epsilon
-  { data.epsilon = 0.05f;
+  {
+    data.epsilon = 0.05f;
     data.explore_type = EPS_GREEDY;
   }
 
@@ -550,7 +601,8 @@ base_learner* cb_explore_adf_setup(vw& all)
   data.cs_ldf_learner = all.cost_sensitive;
   data.gen_cs.cb_type = CB_TYPE_IPS;
   if (all.vm.count("cb_type"))
-  { std::string type_string;
+  {
+    std::string type_string;
     type_string = all.vm["cb_type"].as<std::string>();
 
     if (type_string.compare("dr") == 0)
@@ -559,7 +611,8 @@ base_learner* cb_explore_adf_setup(vw& all)
       data.gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
       if (vm.count("cover"))
-      { all.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
+      {
+        all.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
         data.gen_cs.cb_type = CB_TYPE_IPS;
       }
       else
