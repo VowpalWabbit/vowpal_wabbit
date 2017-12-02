@@ -52,6 +52,7 @@ struct gd
   void (*multipredict)(gd&, base_learner&, example&, size_t, size_t, polyprediction*, bool);
   bool normalized;
   bool adaptive;
+  bool adax;
 
   vw* all; //parallel, features, parameters
 };
@@ -479,7 +480,11 @@ float get_pred_per_update(gd& g, example& ec)
 { //We must traverse the features in _precisely_ the same order as during training.
   label_data& ld = ec.l.simple;
   vw& all = *g.all;
-  float grad_squared = all.loss->getSquareGrad(ec.pred.scalar, ld.label) * ec.weight;
+
+  float grad_squared = ec.weight;
+  if (!g.adax)
+     grad_squared *= all.loss->getSquareGrad(ec.pred.scalar, ld.label);
+
   if (grad_squared == 0 && !stateless) return 1.;
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
@@ -963,6 +968,7 @@ base_learner* setup(vw& all)
 { new_options(all, "Gradient Descent options")
   ("sgd", "use regular stochastic gradient descent update.")
   ("adaptive", "use adaptive, individual learning rates.")
+  ("adax", "use adaptive learning rates with x^2 instead of g^2x^2")
   ("invariant", "use safe/importance aware updates.")
   ("normalized", "use per feature normalized updates")
   ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
@@ -978,6 +984,7 @@ base_learner* setup(vw& all)
   g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g.neg_power_t = - all.power_t;
   g.adaptive = all.adaptive;
+  g.adax = all.adax;
   g.normalized = all.normalized_updates;
 
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
@@ -1022,6 +1029,14 @@ base_learner* setup(vw& all)
 	 all.invariant_updates = all.training;
 	 all.normalized_updates = all.training;
   }
+
+  if( vm.count("adax"))
+  { all.adax = all.training && vm.count("adax");
+    g.adax = all.adax;
+  }
+
+  if( all.adax && !all.adaptive)
+    THROW("Cannot use adax without adaptive");
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     all.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)

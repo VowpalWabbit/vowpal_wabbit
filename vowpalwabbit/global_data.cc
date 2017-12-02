@@ -516,6 +516,7 @@ vw::vw()
   adaptive = true;
   normalized_updates = true;
   invariant_updates = true;
+  adax = false;
 
   normalized_idx = 2;
 

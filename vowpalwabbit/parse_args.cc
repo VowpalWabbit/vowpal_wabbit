@@ -58,6 +58,7 @@ license as described in the file LICENSE.
 #include "stagewise_poly.h"
 #include "active.h"
 #include "active_cover.h"
+#include "cs_active.h"
 #include "kernel_svm.h"
 #include "parse_example.h"
 #include "best_constant.h"
@@ -1134,9 +1135,10 @@ void parse_reductions(vw& all)
   all.reduction_stack.push_back(classweight_setup);
   all.reduction_stack.push_back(multilabel_oaa_setup);
 
-  all.reduction_stack.push_back(csoaa_setup);
+  all.reduction_stack.push_back(cs_active_setup);
+  all.reduction_stack.push_back(CSOAA::csoaa_setup);
   all.reduction_stack.push_back(interact_setup);
-  all.reduction_stack.push_back(csldf_setup);
+  all.reduction_stack.push_back(CSOAA::csldf_setup);
   all.reduction_stack.push_back(cb_algs_setup);
   all.reduction_stack.push_back(cb_adf_setup);
   all.reduction_stack.push_back(mwt_setup);
@@ -1532,7 +1534,7 @@ void finish(vw& all, bool delete_all)
 
     all.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries << endl;
+      all.trace_message << endl << "total queries = " << all.sd->queries;
     all.trace_message << endl;
   }
 
