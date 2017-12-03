@@ -69,6 +69,7 @@ public:
   uint64_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
+  uint32_t hash_seed;
 
   vector<feature_dict*>* namespace_dictionaries;
 
@@ -298,7 +299,7 @@ public:
           free(base);
         base = base_v_array.begin();
       }
-      channel_hash = p->hasher(name, hash_base);
+      channel_hash = p->hasher(name, this->hash_seed);
       nameSpaceInfoValue();
     }
   }
@@ -338,7 +339,7 @@ public:
         base[0] = ' ';
         base[1] = '\0';
       }
-      channel_hash = 0;
+      channel_hash = this->hash_seed == 0 ? 0 : uniform_hash("", 0, this->hash_seed);
       listFeatures();
     }
     else if(*reading_head != ':')
@@ -386,6 +387,7 @@ public:
       this->spelling_features = all.spelling_features;
       this->namespace_dictionaries = all.namespace_dictionaries;
       this->base = nullptr;
+      this->hash_seed = all.hash_seed;
       listNameSpace();
       if (base != nullptr)
         free(base);
