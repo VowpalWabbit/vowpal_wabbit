@@ -4,8 +4,8 @@ Test that the models generated with and without --save_resume produce the same p
 import sys
 import os
 import optparse
+import random
 from itertools import izip_longest
-import numpy as np
 
 
 def system(cmd, verbose=True):
@@ -41,6 +41,15 @@ def get_file_size(filename, cache={}):
     return file_size
 
 
+def choice_no_replacement(a, size):
+    result = []
+    while a and len(result) < size:
+        x = random.choice(a)
+        a.remove(x)
+        result.append(x)
+    return result
+
+
 def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False):
     if isinstance(args, list):
         args = ' '.join(args)
@@ -54,7 +63,7 @@ def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False)
     file_size = get_file_size(filename)
     if verbose:
         sys.stderr.write('Testing %s %s on %s (%s lines)\n' % (VW, args, filename, file_size))
-    splits = 1 + np.random.choice(file_size - 2, size=min(10, file_size - 2), replace=False)
+    splits = choice_no_replacement(range(1, file_size - 2), size=10)
     splits.sort()
     splits = list(splits)
     if verbose:
