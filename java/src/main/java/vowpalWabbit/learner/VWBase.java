@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 abstract class VWBase implements VWLearner {
-    private boolean isOpen;
+    private volatile boolean isOpen;
 
     /**
      * Load tests have shown that a Lock is faster than synchronized (this).
