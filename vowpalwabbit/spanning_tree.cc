@@ -21,17 +21,20 @@ license as described in the file LICENSE.
 using namespace std;
 
 struct client
-{ uint32_t client_ip;
+{
+  uint32_t client_ip;
   socket_t socket;
 };
 
 struct partial
-{ client* nodes;
+{
+  client* nodes;
   size_t filled;
 };
 
 static int socket_sort(const void* s1, const void* s2)
-{ client* socket1 = (client*)s1;
+{
+  client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
   if (socket1->client_ip != socket2->client_ip)
     return socket1->client_ip - socket2->client_ip;
@@ -43,7 +46,8 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
 {
 
   if (source_count == 1)
-  { kid_count[offset] = 0;
+  {
+    kid_count[offset] = 0;
     return offset;
   }
 
@@ -57,7 +61,8 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
 
   size_t right_count = source_count - left_count - 1;
   if (right_count > 0)
-  { int right_offset = oroot + 1;
+  {
+    int right_offset = oroot + 1;
 
     int right_child = build_tree(parent, kid_count, right_count, right_offset);
     parent[right_child] = oroot;
@@ -70,7 +75,8 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
 }
 
 void fail_send(const socket_t fd, const void* buf, const int count)
-{ if (send(fd, (char*)buf, count, 0) == -1)
+{
+  if (send(fd, (char*)buf, count, 0) == -1)
     THROWERRNO("send: ");
 }
 
@@ -80,8 +86,9 @@ SpanningTree::SpanningTree() : m_stop(false), port(26543), m_future(nullptr)
 {
 #ifdef _WIN32
   WSAData wsaData;
-  WSAStartup(MAKEWORD(2, 2), &wsaData);
-  int lastError = WSAGetLastError();
+  int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (lastError != 0)
+    THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -102,33 +109,40 @@ SpanningTree::SpanningTree() : m_stop(false), port(26543), m_future(nullptr)
 }
 
 SpanningTree::~SpanningTree()
-{ Stop();
+{
+  Stop();
   delete m_future;
 }
 
 void SpanningTree::Start()
-{ // launch async
+{
+  // launch async
   if (m_future == nullptr)
-  { m_future = new future<void>;
+  {
+    m_future = new future<void>;
   }
 
   *m_future = std::async(std::launch::async, &SpanningTree::Run, this);
 }
 
 void SpanningTree::Stop()
-{ CLOSESOCK(sock);
+{
+  CLOSESOCK(sock);
   m_stop = true;
 
   // wait for run to stop
   if (m_future != nullptr)
-  { m_future->get();
+  {
+    m_future->get();
   }
 }
 
 void SpanningTree::Run()
-{ map<size_t, partial> partial_nodesets;
+{
+  map<size_t, partial> partial_nodesets;
   while (!m_stop)
-  { if (listen(sock, 1024) < 0)
+  {
+    if (listen(sock, 1024) < 0)
       THROWERRNO("listen: ");
 
     sockaddr_in client_address;
@@ -159,7 +173,8 @@ void SpanningTree::Run()
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
-    { cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+    {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
            << "): nonce read failed, exiting" << endl;
       exit(1);
     }
@@ -167,7 +182,8 @@ void SpanningTree::Run()
                 << "): nonce=" << nonce << endl;
     size_t total = 0;
     if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
-    { cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+    {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
            << "): total node count read failed, exiting" << endl;
       exit(1);
     }
@@ -175,7 +191,8 @@ void SpanningTree::Run()
                 << "): total=" << total << endl;
     size_t id = 0;
     if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
-    { cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+    {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
            << "): node id read failed, exiting" << endl;
       exit(1);
     }
@@ -184,20 +201,23 @@ void SpanningTree::Run()
 
     int ok = true;
     if (id >= total)
-    { cout << dotted_quad << "(" << hostname << ':' << ntohs(port)
+    {
+      cout << dotted_quad << "(" << hostname << ':' << ntohs(port)
            << "): invalid id=" << id << " >=  " << total << " !" << endl;
       ok = false;
     }
     partial partial_nodeset;
 
     if (partial_nodesets.find(nonce) == partial_nodesets.end())
-    { partial_nodeset.nodes = (client*)calloc(total, sizeof(client));
+    {
+      partial_nodeset.nodes = (client*)calloc(total, sizeof(client));
       for (size_t i = 0; i < total; i++)
         partial_nodeset.nodes[i].client_ip = (uint32_t)-1;
       partial_nodeset.filled = 0;
     }
     else
-    { partial_nodeset = partial_nodesets[nonce];
+    {
+      partial_nodeset = partial_nodesets[nonce];
       partial_nodesets.erase(nonce);
     }
 
@@ -206,15 +226,19 @@ void SpanningTree::Run()
     fail_send(f, &ok, sizeof(ok));
 
     if (ok)
-    { partial_nodeset.nodes[id].client_ip = client_address.sin_addr.s_addr;
+    {
+      partial_nodeset.nodes[id].client_ip = client_address.sin_addr.s_addr;
       partial_nodeset.nodes[id].socket = f;
       partial_nodeset.filled++;
     }
     if (partial_nodeset.filled != total) //Need to wait for more connections
-    { partial_nodesets[nonce] = partial_nodeset;
+    {
+      partial_nodesets[nonce] = partial_nodeset;
       for (size_t i = 0; i < total; i++)
-      { if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
-        { cout << "nonce " << nonce
+      {
+        if (partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
+        {
+          cout << "nonce " << nonce
                << " still waiting for " << (total - partial_nodeset.filled)
                << " nodes out of " << total << " for example node " << i << endl;
           break;
@@ -222,7 +246,8 @@ void SpanningTree::Run()
       }
     }
     else
-    { //Time to make the spanning tree
+    {
+      //Time to make the spanning tree
       qsort(partial_nodeset.nodes, total, sizeof(client), socket_sort);
 
       int* parent = (int*)calloc(total, sizeof(int));
@@ -232,24 +257,29 @@ void SpanningTree::Run()
       parent[root] = -1;
 
       for (size_t i = 0; i < total; i++)
-      { fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
+      {
+        fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
       }
 
       uint16_t* client_ports = (uint16_t*)calloc(total, sizeof(uint16_t));
 
       for (size_t i = 0; i < total; i++)
-      { int done = 0;
+      {
+        int done = 0;
         if (recv(partial_nodeset.nodes[i].socket, (char*)&(client_ports[i]), sizeof(client_ports[i]), 0) < (int) sizeof(client_ports[i]))
           cerr << " Port read failed for node " << i << " read " << done << endl;
       }// all clients have bound to their ports.
 
       for (size_t i = 0; i < total; i++)
-      { if (parent[i] >= 0)
-        { fail_send(partial_nodeset.nodes[i].socket, &partial_nodeset.nodes[parent[i]].client_ip, sizeof(partial_nodeset.nodes[parent[i]].client_ip));
+      {
+        if (parent[i] >= 0)
+        {
+          fail_send(partial_nodeset.nodes[i].socket, &partial_nodeset.nodes[parent[i]].client_ip, sizeof(partial_nodeset.nodes[parent[i]].client_ip));
           fail_send(partial_nodeset.nodes[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
         }
         else
-        { int bogus = -1;
+        {
+          int bogus = -1;
           uint32_t bogus2 = -1;
           fail_send(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
           fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));

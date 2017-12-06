@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,7 +78,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Command line through marshalling")]
+        [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test87()
         {
             using (var vw = new VowpalWabbit<DataString, DataStringADF>("--cb_adf --rank_all"))
@@ -113,6 +113,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestSharedModel()
         {
             string cbadfModelFile = "models/cb_adf.model";
@@ -195,6 +196,7 @@ namespace cs_unittest
         }
 
         [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public void TestCbAdfExplore()
         {
             var json = JsonConvert.SerializeObject(new

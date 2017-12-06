@@ -17,16 +17,19 @@ namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf"
 namespace SequenceTask
 {
 void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& /*vm*/)
-{ sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
+{
+  sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
                    Search::EXAMPLES_DONT_CHANGE     |    // we don't do any internal example munging
                    0);
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ Search::predictor P(sch, (ptag)0);
+{
+  Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
-  { action oracle     = ec[i]->l.multi.label;
+  {
+    action oracle     = ec[i]->l.multi.label;
     size_t prediction = P.set_tag((ptag)i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range((ptag)i, sch.get_history_length(), 'p').predict();
 
     if (sch.output().good())
@@ -65,25 +68,30 @@ enum EncodingType { BIO, BILOU };
 //     m%4=3 -> 1; 2, 6, 10, ...; 3, 7, 11, ...         last-X to { out, unit-Y, begin-Y }    5, 9, 13, 17, ...
 
 inline action bilou_to_bio(action y)
-{ return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
+{
+  return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
 }
 
 void convert_bio_to_bilou(vector<example*> ec)
-{ for (size_t n=0; n<ec.size(); n++)
-  { MULTICLASS::label_t& ylab = ec[n]->l.multi;
+{
+  for (size_t n=0; n<ec.size(); n++)
+  {
+    MULTICLASS::label_t& ylab = ec[n]->l.multi;
     action y = ylab.label;
     action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
     if (y == 1)   // do nothing
     {
     }
     else if (y % 2 == 0)     // this is a begin-X
-    { if (nexty != y + 1) // should be unit
+    {
+      if (nexty != y + 1) // should be unit
         ylab.label = (y/2 - 1) * 4 + 2;  // from 2 to 2, 4 to 6, 6 to 10, etc.
       else // should be begin-X
         ylab.label = (y/2 - 1) * 4 + 3;  // from 2 to 3, 4 to 7, 6 to 11, etc.
     }
     else if (y % 2 == 1)     // this is an in-X
-    { if (nexty != y) // should be last
+    {
+      if (nexty != y) // should be last
         ylab.label = (y-1) * 2 + 1;  // from 3 to 5, 5 to 9, 7 to 13, etc.
       else // should be in-X
         ylab.label = (y-1) * 2;      // from 3 to 4, 5 to 8, 7 to 12, etc.
@@ -93,21 +101,24 @@ void convert_bio_to_bilou(vector<example*> ec)
 }
 
 struct task_data
-{ EncodingType encoding;
+{
+  EncodingType encoding;
   v_array<action> allowed_actions;
   v_array<action> only_two_allowed;  // used for BILOU encoding
   size_t multipass;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
-{ task_data * D = new task_data();
+{
+  task_data * D = new task_data();
   po::options_description sspan_opts("search sequencespan options");
   sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
   sspan_opts.add_options()("search_span_multipass", po::value<size_t>(&(D->multipass))->default_value(1), "do multiple passes");
   sch.add_program_options(vm, sspan_opts);
 
   if (vm.count("search_span_bilou"))
-  { cerr << "switching to BILOU encoding for sequence span labeling" << endl;
+  {
+    cerr << "switching to BILOU encoding for sequence span labeling" << endl;
     D->encoding = BILOU;
     num_actions = num_actions * 2 - 1;
   }
@@ -118,15 +129,18 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
   D->allowed_actions.erase();
 
   if (D->encoding == BIO)
-  { D->allowed_actions.push_back(1);
+  {
+    D->allowed_actions.push_back(1);
     for (action l=2; l<num_actions; l+=2)
       D->allowed_actions.push_back(l);
     D->allowed_actions.push_back(1);  // push back an extra 1 that we can overwrite later if we want
   }
   else if (D->encoding == BILOU)
-  { D->allowed_actions.push_back(1);
+  {
+    D->allowed_actions.push_back(1);
     for (action l=2; l<num_actions; l+=4)
-    { D->allowed_actions.push_back(l);
+    {
+      D->allowed_actions.push_back(l);
       D->allowed_actions.push_back(l+1);
     }
     D->only_two_allowed.push_back(0);
@@ -142,55 +156,66 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
 }
 
 void finish(Search::search& sch)
-{ task_data* D = sch.get_task_data<task_data>();
+{
+  task_data* D = sch.get_task_data<task_data>();
   D->allowed_actions.delete_v();
   D->only_two_allowed.delete_v();
   delete D;
 }
 
 void setup(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
   if (D.encoding == BILOU)
     convert_bio_to_bilou(ec);
 }
 
 void takedown(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
 
   if (D.encoding == BILOU)
     for (size_t n=0; n<ec.size(); n++)
-    { MULTICLASS::label_t ylab = ec[n]->l.multi;
+    {
+      MULTICLASS::label_t ylab = ec[n]->l.multi;
       ylab.label = bilou_to_bio(ylab.label);
     }
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
   v_array<action> * y_allowed = &(D.allowed_actions);
   Search::predictor P(sch, (ptag)0);
   for (size_t pass=1; pass<=D.multipass; pass++)
-  { action last_prediction = 1;
+  {
+    action last_prediction = 1;
     for (size_t i=0; i<ec.size(); i++)
-    { action oracle = ec[i]->l.multi.label;
+    {
+      action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
       P.set_tag((ptag)i+1);
       P.set_learner_id(pass-1);
       if (D.encoding == BIO)
-      { if      (last_prediction == 1)       P.set_allowed(y_allowed->begin(), len-1);
+      {
+        if      (last_prediction == 1)       P.set_allowed(y_allowed->begin(), len-1);
         else if (last_prediction % 2 == 0) { (*y_allowed)[len-1] = last_prediction+1; P.set_allowed(*y_allowed); }
         else                               { (*y_allowed)[len-1] = last_prediction;   P.set_allowed(*y_allowed); }
         if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle-1))
           oracle = 1; // if we are supposed to I-X, but last wasn't B-X or I-X, then say O
       }
       else if (D.encoding == BILOU)
-      { if ((last_prediction == 1) || ((last_prediction-2) % 4 == 0) || ((last_prediction-2) % 4 == 3))   // O or unit-X or last-X
-        { P.set_allowed(D.allowed_actions);
+      {
+        if ((last_prediction == 1) || ((last_prediction-2) % 4 == 0) || ((last_prediction-2) % 4 == 3))   // O or unit-X or last-X
+        {
+          P.set_allowed(D.allowed_actions);
           // we cannot allow in-X or last-X next
           if ((oracle > 1) && (((oracle-2) % 4 == 2) || ((oracle-2) % 4 == 3)))
             oracle = 1;
         }
         else     // begin-X or in-X
-        { action other = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
+        {
+          action other = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
           P.set_allowed(last_prediction+1);
           P.add_allowed(other);
           if ((oracle != last_prediction+1) && (oracle != other))
@@ -213,7 +238,8 @@ void run(Search::search& sch, vector<example*>& ec)
 namespace SequenceTaskCostToGo
 {
 void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
-{ sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
+{
+  sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
                    Search::EXAMPLES_DONT_CHANGE     |    // we don't do any internal example munging
                    Search::ACTION_COSTS             |    // we'll provide cost-per-action (rather than oracle)
@@ -222,11 +248,13 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*v
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ size_t K = * sch.get_task_data<size_t>();
+{
+  size_t K = * sch.get_task_data<size_t>();
   float*costs = calloc_or_throw<float>(K);
   Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
-  { action oracle     = ec[i]->l.multi.label;
+  {
+    action oracle     = ec[i]->l.multi.label;
     for (size_t k=0; k<K; k++) costs[k] = 1.;
     costs[oracle-1] = 0.;
     size_t prediction =
@@ -245,13 +273,15 @@ void run(Search::search& sch, vector<example*>& ec)
 namespace ArgmaxTask
 {
 struct task_data
-{ float false_negative_cost;
+{
+  float false_negative_cost;
   float negative_weight;
   bool predict_max;
 };
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
-{ task_data* D = new task_data();
+{
+  task_data* D = new task_data();
 
   po::options_description argmax_opts("argmax options");
   argmax_opts.add_options()
@@ -272,12 +302,14 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
 }
 
 void finish(Search::search& sch)
-{ task_data* D = sch.get_task_data<task_data>();
+{
+  task_data* D = sch.get_task_data<task_data>();
   delete D;
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
   uint32_t max_label = 1;
 
@@ -285,7 +317,8 @@ void run(Search::search& sch, vector<example*>& ec)
     max_label = max(ec[i]->l.multi.label, max_label);
 
   for (ptag i=0; i<ec.size(); i++)
-  { // labels should be 1 or 2, and our output is MAX of all predicted values
+  {
+    // labels should be 1 or 2, and our output is MAX of all predicted values
     uint32_t oracle = D.predict_max ? max_label : ec[i]->l.multi.label;
     uint32_t prediction = sch.predict(*ec[i], i+1, &oracle, 1, &i, "p");
 
@@ -308,16 +341,19 @@ namespace SequenceTask_DemoLDF    // this is just to debug/show off how to do LD
 {
 namespace CS=COST_SENSITIVE;
 struct task_data
-{ example* ldf_examples;
+{
+  example* ldf_examples;
   size_t   num_actions;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
-{ CS::wclass default_wclass = { 0., 0, 0., 0. };
+{
+  CS::wclass default_wclass = { 0., 0, 0., 0. };
 
   example* ldf_examples = VW::alloc_examples(sizeof(CS::label), num_actions);
   for (size_t a=0; a<num_actions; a++)
-  { CS::label& lab = ldf_examples[a].l.cs;
+  {
+    CS::label& lab = ldf_examples[a].l.cs;
     CS::cs_label.default_label(&lab);
     lab.costs.push_back(default_wclass);
   }
@@ -333,7 +369,8 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*v
 }
 
 void finish(Search::search& sch)
-{ task_data *data = sch.get_task_data<task_data>();
+{
+  task_data *data = sch.get_task_data<task_data>();
   for (size_t a=0; a<data->num_actions; a++)
     VW::dealloc_example(CS::cs_label.delete_label, data->ldf_examples[a]);
   free(data->ldf_examples);
@@ -343,19 +380,24 @@ void finish(Search::search& sch)
 
 // this is totally bogus for the example -- you'd never actually do this!
 void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
-{ size_t ss = sch.get_stride_shift();
+{
+  size_t ss = sch.get_stride_shift();
   for (features& fs : *ec)
     for (feature_index& idx : fs.indicies)
       idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ task_data *data = sch.get_task_data<task_data>();
+{
+  task_data *data = sch.get_task_data<task_data>();
   Search::predictor P(sch, (ptag)0);
   for (ptag i=0; i<ec.size(); i++)
-  { for (uint32_t a=0; a<data->num_actions; a++)
-    { if (sch.predictNeedsExample())   // we can skip this work if `predict` won't actually use the example data
-      { VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+  {
+    for (uint32_t a=0; a<data->num_actions; a++)
+    {
+      if (sch.predictNeedsExample())   // we can skip this work if `predict` won't actually use the example data
+      {
+        VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
         // now, offset it appropriately for the action id
         my_update_example_indicies(sch, true, &data->ldf_examples[a], 28904713, 4832917 * (uint64_t)a);
       }

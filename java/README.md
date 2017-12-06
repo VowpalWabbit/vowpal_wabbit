@@ -6,18 +6,18 @@ class Foo {
     static {
         // Create the model.  The model type is checked here
         VWScalarLearner learner = VWLearners.create("-f model.vw");
-        
+
         // Learn some data
         learner.learn("0 | price:.23 sqft:.25 age:.05 2006");
         learner.learn("1 2 'second_house | price:.18 sqft:.15 age:.35 1976");
         learner.learn("0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924");
-        
+
         // Closing finalizes the model and frees up the native memory
         learner.close();
-        
+
         VWScalarLearner learner = VWLearners.create("-i model.vw -t --quiet");
         // Get a prediction.
-        float prediction = learner.predict("| price:0.23 sqft:0.25 age:0.05 2006"); 
+        float prediction = learner.predict("| price:0.23 sqft:0.25 age:0.05 2006");
         learner.close();
     }
 }
@@ -30,7 +30,7 @@ More examples can be found in the [Java tests](src/test/java/vowpalWabbit/learne
 1.  Most standard Vowpal Wabbit command line options are supported when calling create.  If you find some that work from the regular command line and not within the JNI please file a bug.
 2.  The type returned from the create function is checked on the C side.  This means that the type will vary depending on the arguments supplied to create.  While this doesn't give full compile time safety it does fail as early as possible at runtime.  This also means that the expected output type can be safely used and checked at compile time.
 3.  There is only a small amount of memory used on the Java side including a pointer to the VW model on the C side.  Because of this the Java base interface implements `Closeable` and models MUST BE CLOSED or else you will leak memory.  The Java garbage collector will not clean up the C memory.
-    
+
 # Installation
 The Java artifacts are periodically released to [Maven Central](https://mvnrepository.com/artifact/com.github.johnlangford/vw-jni) and can be included like any other Java dependency.  Prior to version 8.4.1 some precompiled native libraries were included in the jar.  This made usage easier for users on supported platforms but became a nightmare to manage as the number of platforms grew.  It also added problems as these precompiled libraries used specific boost versions that had to be matched.  This is no longer the case as from 8.4.1 onwards the jars are much slimmer and only contain Java code.  The following is called within the Java code
 
@@ -49,3 +49,4 @@ It should also be noted that Vowpal Wabbit makes all attempts at compatibility b
 | VW Version | Git Commit Hash                          |
 | ---------- | ---------------------------------------- |
 | 8.4.1      | 10bd09ab06f59291e04ad7805e88fd3e693b7159 |
+| 8.1.0      | 9e5831a72d5b0a124c845dcaec75879f498b355f |

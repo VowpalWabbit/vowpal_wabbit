@@ -8,20 +8,20 @@ Reading datafile = train-sets/cb_test256.json
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.933333 1.933333            1            1.0    known        0:0.966667...        9
-0.966667 0.000000            2            2.0    known        1:0.975...        6
-0.491667 0.016667            4            4.0    known        1:0.975...        6
-0.254167 0.016667            8            8.0    known        1:0.975...        6
-0.135417 0.016667           16           16.0    known        1:0.975...        6
-0.076042 0.016667           32           32.0    known        1:0.975...        6
-0.046354 0.016667           64           64.0    known        1:0.975...        6
-0.031510 0.016667          128          128.0    known        1:0.975...        6
-0.024089 0.016667          256          256.0    known        1:0.975...        6
+0.666667 0.666667            1            1.0    known        2:0.333333...        9
+0.333333 0.000000            2            2.0    known        1:0.5...        6
+0.333333 0.333333            4            4.0    known        1:0.591752...        6
+0.297761 0.262189            8            8.0    known        1:0.732739...        6
+0.237339 0.176917           16           16.0    known        1:0.666667...        6
+0.179808 0.122276           32           32.0    known        1:0.873...        6
+0.132652 0.085496           64           64.0    known        1:0.910913...        6
+0.096385 0.060119          128          128.0    known        1:0.937254...        6
+0.069389 0.042393          256          256.0    known        1:0.955719...        6
 
 finished run
 number of examples per pass = 260
 passes used = 1
 weighted example sum = 260.000000
 weighted label sum = 0.000000
-average loss = 0.023974
+average loss = 0.068875
 total feature number = 1950

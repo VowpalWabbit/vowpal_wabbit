@@ -69,16 +69,16 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
   ## this should not create an unnecessary copy of the arguments
   data_args = list(train = training_data, val = validation_data)
   path_data_args = list(path_vw_data_train, path_vw_data_val)
-  for(i in 1:2)
+  for(i in seq_along(data_args))
   {
-    if("data.frame" %in% class(data_args[[i]]))
+    if (inherits(data_args[[i]], "data.frame"))
     {
       if(is.null(target))
         stop(paste0(names(data_args)[i],
                     "data argument: input argument is a data.frame, argument 'target' should be specified "))
 
-      if(class(path_data_args[[i]]) != "character")
-        path_data_args[[i]] = paste0(tempdir(),"/", names(data_args)[i],".vw")
+      if(! is.character(path_data_args[[i]]))
+        path_data_args[[i]] = file.path(tempdir(),paste0(names(data_args)[i],".vw"))
 
       dt2vw(data = data_args[[i]], fileName = path_data_args[[i]],
             namespaces = namespaces, target = target, weight = weight, tag = tag)
@@ -117,29 +117,29 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
 
   if(is.null(out_probs))
   {
-    out_probs = paste0(tempdir(),"/preds.vw")
-    del_prob = T
+    out_probs = file.path(tempdir(),"preds.vw")
+    del_prob = TRUE
   }
   else
-    del_prob = F
+    del_prob = FALSE
 
   validation_data = path_data_args[[2]]
   predict = sprintf('vw -t -i %s -p %s %s -d %s', model, out_probs, link_function, validation_data)
   system(predict)
 
   if(do_evaluation){
-    if("data.frame" %in% class(data_args[[2]]))
+    if(inherits(data_args[[2]], "data.frame"))
     {
       if(is.null(validation_labels))
       {
-        del_val = T
-        validation_labels = paste0(tempdir(),"/val_labs.vw")
+        del_val = TRUE
+        validation_labels = file.path(tempdir(),"val_labs.vw")
       }
       else
-        del_val = F
+        del_val = FALSE
 
-      write.table(x = data_args[[2]][[target]], file = validation_labels, row.names = F,
-                  col.names = F)
+      write.table(x = data_args[[2]][[target]], file = validation_labels, row.names = FALSE,
+                  col.names = FALSE)
     }
 
     if(use_perf){
@@ -151,7 +151,7 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
     }
   }
 
-  if(verbose & do_evaluation){
+  if(verbose && do_evaluation){
     cat('Model Parameters\n')
     cat(cmd)
     verbose_log = sprintf('AUC: %s', auc)
@@ -162,8 +162,8 @@ vw <- function(training_data, validation_data,  model='mdl.vw',
     probs = fread(out_probs)[['V1']]
   
   ## delete temporary files
-  for(i in 1:2)
-    if("data.frame" %in% class(data_args[[i]]))
+  for(i in seq_along(data_args))
+    if(inherits(data_args[[i]], "data.frame"))
       file.remove(path_data_args[[i]])
   if(del_prob)
     file.remove(out_probs)
@@ -184,8 +184,8 @@ roc_auc <- function(out_probs, validation_labels, plot_roc, cmd, ...){
     stop('The length of the probabilities and labels is different')
 
   # Fix cmd for adding it in title
-  cmd = sapply(strsplit(cmd, '-f'), function(x) paste0(x, collapse='\n'))
-  cmd = sapply(strsplit(cmd, '-c'), function(x) paste0(x, collapse='\n'))
+  cmd = vapply(strsplit(cmd, '-f'), function(x) paste0(x, collapse='\n'), character(1))
+  cmd = vapply(strsplit(cmd, '-c'), function(x) paste0(x, collapse='\n'), character(1))
 
   # Plot ROC curve and return AUC
   roc = roc(labels, probs, auc=TRUE, print.auc=TRUE, print.thres=TRUE)

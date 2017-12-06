@@ -12,23 +12,27 @@ This implements the allreduce function using threads.
 using namespace std;
 
 AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m_run(true)
-{ m_mutex = new mutex;
+{
+  m_mutex = new mutex;
   m_cv = new condition_variable;
   buffers = new void*[total];
 }
 
 AllReduceSync::~AllReduceSync()
-{ delete m_mutex;
+{
+  delete m_mutex;
   delete m_cv;
   delete buffers;
 }
 
 void AllReduceSync::waitForSynchronization()
-{ unique_lock<mutex> l(*m_mutex);
+{
+  unique_lock<mutex> l(*m_mutex);
   m_count++;
 
   if (m_count >= m_total)
-  { assert(m_count == m_total);
+  {
+    assert(m_count == m_total);
 
     m_cv->notify_all();
 
@@ -40,7 +44,8 @@ void AllReduceSync::waitForSynchronization()
     m_run = !m_run;
   }
   else
-  { bool current_run = m_run;
+  {
+    bool current_run = m_run;
     // this predicate cannot depend on m_count, as somebody can race ahead and m_count++
     // FYI just wait can spuriously wake-up
     m_cv->wait(l, [this, current_run] { return m_run != current_run; });
@@ -58,7 +63,9 @@ AllReduceThreads::AllReduceThreads(const size_t ptotal, const size_t pnode)
 }
 
 AllReduceThreads::~AllReduceThreads()
-{ if (m_syncOwner)
-  { delete m_sync;
+{
+  if (m_syncOwner)
+  {
+    delete m_sync;
   }
 }

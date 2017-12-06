@@ -9,7 +9,8 @@ license as described in the file LICENSE.
 #include "v_array.h"
 using namespace std;
 struct interact
-{ unsigned char n1, n2;  //namespaces to interact
+{
+  unsigned char n1, n2;  //namespaces to interact
   features feat_store;
   vw *all;
   float n1_feat_sq;
@@ -18,17 +19,20 @@ struct interact
 };
 
 bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, interact& in)
-{ // first feature must be 1 so we're sure that the anchor feature is present
+{
+  // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0)
     return false;
 
   if (f_src1.values[0] != 1)
-  { all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+  {
+    all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
-  { all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+  {
+    all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -36,7 +40,8 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 }
 
 void multiply(features& f_dest, features& f_src2, interact& in)
-{ f_dest.erase();
+{
+  f_dest.erase();
   features& f_src1 = in.feat_store;
   vw* all = in.all;
   uint64_t weight_mask = all->weights.mask();
@@ -49,23 +54,27 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   uint64_t prev_id2 = 0;
 
   for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
-  { // calculating the relative offset from the namespace offset used to match features
+  {
+    // calculating the relative offset from the namespace offset used to match features
     uint64_t cur_id1 = (uint64_t)(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
     uint64_t cur_id2 = (uint64_t)(((f_src2.indicies[i2] & weight_mask) - base_id2) & weight_mask);
 
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
-    { cout << "interact features are out of order: " << cur_id1 << " > " << prev_id1 << ". Skipping features." << endl;
+    {
+      cout << "interact features are out of order: " << cur_id1 << " > " << prev_id1 << ". Skipping features." << endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
-    { cout << "interact features are out of order: " << cur_id2 << " > " << prev_id2 << ". Skipping features." << endl;
+    {
+      cout << "interact features are out of order: " << cur_id2 << " > " << prev_id2 << ". Skipping features." << endl;
       return;
     }
 
     if(cur_id1 == cur_id2)
-    { f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
+    {
+      f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
       i1++;
       i2++;
     }
@@ -78,11 +87,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 
 template <bool is_learn, bool print_all>
 void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
-{ features& f1 = ec.feature_space[in.n1];
+{
+  features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
-  
+
   if (!contains_valid_namespaces(*in.all, f1, f2, in))
-  { if (is_learn)
+  {
+    if (is_learn)
       base.learn(ec);
     else
       base.predict(ec);
@@ -110,8 +121,10 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
   // remove 2nd namespace
   int n2_i = -1;
   for (size_t i = 0; i < ec.indices.size(); i++)
-  { if (ec.indices[i] == in.n2)
-    { n2_i = (int)i;
+  {
+    if (ec.indices[i] == in.n2)
+    {
+      n2_i = (int)i;
       memmove(&ec.indices[n2_i], &ec.indices[n2_i + 1], sizeof(unsigned char) * (ec.indices.size() - n2_i - 1));
       ec.indices.decr();
       break;
@@ -135,11 +148,13 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
 void finish(interact& in) { in.feat_store.delete_v(); }
 
 LEARNER::base_learner* interact_setup(vw& all)
-{ if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
+{
+  if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
     return nullptr;
   string s = all.vm["interact"].as<string>();
   if(s.length() != 2)
-  { cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+  {
+    cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
   }
 
