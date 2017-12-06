@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -31,6 +31,9 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw_static</RootNamespace>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
+    <!-- This is the ruleset file for code analysis, you can change it in VS -->
+    <CodeAnalysisRuleSet>..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -348,6 +351,7 @@
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
+    <ClInclude Include="baseline.h" />
     <ClInclude Include="best_constant.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -362,6 +366,7 @@
     <ClInclude Include="constant.h" />
     <ClInclude Include="crossplat_compat.h" />
     <ClInclude Include="csoaa.h" />
+    <ClInclude Include="cs_active.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="explore_eval.h" />
@@ -432,6 +437,7 @@
     <ClInclude Include="v_array.h" />
     <ClInclude Include="vw_versions.h" />
     <ClInclude Include="v_hashmap.h" />
+    <ClInclude Include="classweight.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
@@ -440,6 +446,7 @@
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
     <ClCompile Include="allreduce_sockets.cc" />
+    <ClCompile Include="baseline.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
@@ -452,6 +459,7 @@
     <ClCompile Include="comp_io.cc" />
     <ClCompile Include="confidence.cc" />
     <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="cs_active.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
@@ -516,6 +524,7 @@
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="vw_exception.cc" />
     <ClCompile Include="vw_validate.cc" />
+    <ClCompile Include="classweight.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
@@ -615,4 +624,5 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
     
   </Target>
+  <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -288,12 +288,15 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
 
+			// delete native array of pointers, keep examples
+			examples.delete_v();
+
 			header->EventId = gcnew String(interaction.eventId.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
 			int index = 0;
 			for (auto a : interaction.actions)
 				header->Actions[index++] = (int)a;
-			
+
 			header->Probabilities = gcnew cli::array<float>((int)interaction.probabilities.size());
 			index = 0;
 			for (auto p : interaction.probabilities)
@@ -339,7 +342,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
-			  
+
 			  if (m_vw->audit)
 				VW::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), get_example_from_pool, &state);
 			  else
@@ -818,14 +821,14 @@ cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 
 	for (auto iter = weights.begin(); iter != weights.end(); ++iter)
 	{   // over topics
-		auto v = iter.begin();
-		for (uint64_t k = 0; k < K; k++, ++v)
-			allocation[(int)k][(int)iter.index()] = *v + lda_rho;
+		weight* wp = &(*iter);
+		for (uint64_t k = 0; k < K; k++)
+			allocation[(int)k][(int)iter.index()] = wp[k] + lda_rho;
 	}
 
 	return allocation;
 }
-  
+
 cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 {
 	// over weights
@@ -835,4 +838,3 @@ cli::array<cli::array<float>^>^  VowpalWabbit::GetTopicAllocation()
 		return FillTopicAllocation(m_vw->weights.dense_weights);
   }
 }
-

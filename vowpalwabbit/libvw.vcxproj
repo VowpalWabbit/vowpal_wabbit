@@ -32,6 +32,9 @@
     <RootNamespace>vw</RootNamespace>
     <ProjectName>libvw</ProjectName>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
+    <!-- This is the ruleset file for code analysis, you can change it in VS -->
+    <CodeAnalysisRuleSet>..\sdl\SDL-7.0-Recommended.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -335,4 +338,5 @@
     <Error Condition="!Exists('packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
     <Error Condition="!Exists('packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
   </Target>
+  <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

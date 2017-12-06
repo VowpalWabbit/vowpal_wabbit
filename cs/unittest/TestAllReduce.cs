@@ -1,4 +1,4 @@
-﻿using cs_unittest.cbadf;
+using cs_unittest.cbadf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -43,12 +43,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        public void TestAllReduce()
-        {
-            TestAllReduceInternal().Wait();
-        }
-
-        internal async Task TestAllReduceInternal()
+        [TestCategory("Vowpal Wabbit")]
+        public async Task TestAllReduce()
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();
 

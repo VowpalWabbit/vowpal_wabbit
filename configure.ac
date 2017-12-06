@@ -1,4 +1,4 @@
-AC_INIT([vowpal_wabbit], [8.4.0], [jl@hunch.net], [vowpal_wabbit], [https://github.com/JohnLangford/vowpal_wabbit])
+AC_INIT([vowpal_wabbit], [8.5.0], [jl@hunch.net], [vowpal_wabbit], [https://github.com/JohnLangford/vowpal_wabbit])
 AC_CONFIG_HEADERS(vowpalwabbit/config.h)
 AM_INIT_AUTOMAKE([subdir-objects foreign])
 
