@@ -28,10 +28,12 @@ then
 fi
 
 VW_EXEC=../../vowpalwabbit/vw
+NUM_CLASSES=`cat ${DATADIR}/dbpedia_csv/classes.txt | wc -l`
 
 ${VW_EXEC} -d "${DATADIR}/dbpedia.train" \
   --cache_file "${RESULTDIR}/dbpedia.cache" -f "${RESULTDIR}/dbpedia.bin" \
-  --oaa 14 --passes 5 --ngram 2 --loss_function hinge \
+  --oaa ${NUM_CLASSES} --passes 5 --ngram 2 --skips 2 \
+  --loss_function hinge --bit_precision 25 --l2 1e-5 \
   -k --threads
 
 ${VW_EXEC} -t -d "${DATADIR}/dbpedia.test" \
