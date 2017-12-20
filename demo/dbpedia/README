@@ -16,3 +16,9 @@ In order to run:
   (b) Train a model
   (c) Evaluate the model
   (d) Output the predictions
+
+You can also evaluate the predictions (you'll need python and scikit-learn and
+its dependencies installed). After running the script above you can run the
+evaluation script (thanks to @Scott-Graham-Bose):
+
+  python eval.py --truth data/dbpedia.test --pred result/dbpedia.test.predict
