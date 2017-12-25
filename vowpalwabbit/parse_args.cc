@@ -577,6 +577,7 @@ void parse_feature_tweaks(vw& all)
   ("keep", po::value< vector<string> >(), "keep namespaces beginning with character <arg>")
   ("redefine", po::value< vector<string> >(), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
   ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
+  ("hash_seed", po::value<size_t>(), "seed for hash function")
   ("noconstant", "Don't add a constant feature")
   ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
   ("ngram", po::value< vector<string> >(), "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
@@ -662,6 +663,13 @@ void parse_feature_tweaks(vw& all)
     all.num_bits = new_bits;
 
     VW::validate_num_bits(all);
+  }
+
+  if (vm.count("hash_seed"))
+  { all.hash_seed = (uint32_t)vm["hash_seed"].as<size_t>();
+    *all.file_options << " --hash_seed " << vm["hash_seed"].as<size_t>();
+  } else {
+    all.hash_seed = 0;
   }
 
   all.permutations = vm.count("permutations") > 0;

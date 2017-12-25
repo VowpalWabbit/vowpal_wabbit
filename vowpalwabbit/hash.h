@@ -44,6 +44,4 @@ static inline uint32_t fmix(uint32_t h)
 }
 }
 
-const uint32_t hash_base = 0;
-
 uint64_t uniform_hash(const void *key, size_t length, uint64_t seed);
