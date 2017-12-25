@@ -138,6 +138,7 @@ if __name__ == '__main__':
         errors += do_test(filename, '--random_seed 55')
         errors += do_test(filename, '--min_prediction 0.1')
         errors += do_test(filename, '--max_prediction 0.1')
+        errors += do_test(filename, '--hash_seed 10')
         errors += do_test(filename, '--loss_function logistic')
         errors += do_test(filename, '--boosting 10')
         errors += do_test(filename, '--bootstrap 10', known_failure=True)

@@ -1601,3 +1601,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 165: cs_active high mellowness
 {VW} --cs_active 3 -d ../test/train-sets/cs_test --cost_max 2 --mellowness 1.0 --simulation --adax
     train-sets/ref/cs_active_1.0.stderr
+
+# Test 166: hash_seed train
+{VW} --hash_seed 5 -d train-sets/rcv1_mini.dat --holdout_off --passes 2 -f hash_seed5.model -c -k --ngram 2 -q ::
+    train-sets/ref/hash_seed_train.stderr
+
+# Test 167: hash_seed test
+{VW} -d train-sets/rcv1_mini.dat -i hash_seed5.model -t
+    train-sets/ref/hash_seed_test.stderr
