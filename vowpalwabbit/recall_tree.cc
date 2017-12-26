@@ -19,14 +19,16 @@ namespace recall_tree_ns
 {
 
 struct node_pred
-{ uint32_t label;
+{
+  uint32_t label;
   double label_count;
 
   node_pred (uint32_t a) : label (a), label_count (0) { }
 };
 
 struct node
-{ uint32_t parent;
+{
+  uint32_t parent;
   float recall_lbest;
 
   bool internal;
@@ -57,7 +59,8 @@ struct node
 };
 
 struct recall_tree
-{ vw* all;
+{
+  vw* all;
   uint32_t k;
   bool node_only;
 
@@ -72,7 +75,8 @@ struct recall_tree
 };
 
 float to_prob (float x)
-{ static const float alpha = 2.0f;
+{
+  static const float alpha = 2.0f;
   // http://stackoverflow.com/questions/2789481/problem-calling-stdmax
   return (std::max) (0.f, (std::min) (1.f, 0.5f * (1.0f + alpha * x)));
 }
@@ -81,8 +85,10 @@ void init_tree (recall_tree& b,
                 uint32_t     root,
                 uint32_t     depth,
                 uint32_t&    routers_used)
-{ if (depth <= b.max_depth)
-  { uint32_t left_child;
+{
+  if (depth <= b.max_depth)
+  {
+    uint32_t left_child;
     uint32_t right_child;
     left_child = (uint32_t)b.nodes.size ();
     b.nodes.push_back (node ());
@@ -104,7 +110,8 @@ void init_tree (recall_tree& b,
 }
 
 void init_tree (recall_tree& b)
-{ uint32_t routers_used = 0;
+{
+  uint32_t routers_used = 0;
 
   b.nodes.push_back (node ());
   init_tree (b, 0, 1, routers_used);
@@ -112,7 +119,8 @@ void init_tree (recall_tree& b)
 }
 
 node_pred* find (recall_tree& b, uint32_t cn, example& ec)
-{ node_pred* ls;
+{
+  node_pred* ls;
 
   for (ls = b.nodes[cn].preds.begin ();
        ls != b.nodes[cn].preds.end () && ls->label != ec.l.multi.label;
@@ -122,10 +130,12 @@ node_pred* find (recall_tree& b, uint32_t cn, example& ec)
 }
 
 node_pred* find_or_create (recall_tree& b, uint32_t cn, example& ec)
-{ node_pred* ls = find (b, cn, ec);
+{
+  node_pred* ls = find (b, cn, ec);
 
   if (ls == b.nodes[cn].preds.end ())
-  { node_pred newls (ec.l.multi.label);
+  {
+    node_pred newls (ec.l.multi.label);
     b.nodes[cn].preds.push_back (newls);
     ls = b.nodes[cn].preds.end () - 1;
   }
@@ -134,7 +144,8 @@ node_pred* find_or_create (recall_tree& b, uint32_t cn, example& ec)
 }
 
 void compute_recall_lbest (recall_tree& b, node* n)
-{ if (n->n <= 0)
+{
+  if (n->n <= 0)
     return;
 
   double mass_at_k = 0;
@@ -143,7 +154,8 @@ void compute_recall_lbest (recall_tree& b, node* n)
        ls != n->preds.end () &&
        ls < n->preds.begin () + b.max_candidates;
        ++ls)
-  { mass_at_k += ls->label_count;
+  {
+    mass_at_k += ls->label_count;
   }
 
   float f = (float)mass_at_k / (float)n->n;
@@ -157,11 +169,13 @@ void compute_recall_lbest (recall_tree& b, node* n)
 }
 
 double plogp (double c, double n)
-{ return (c == 0) ? 0 : (c / n) * log (c / n);
+{
+  return (c == 0) ? 0 : (c / n) * log (c / n);
 }
 
 double updated_entropy (recall_tree& b, uint32_t cn, example& ec)
-{ node_pred* ls = find (b, cn, ec);
+{
+  node_pred* ls = find (b, cn, ec);
 
   // entropy = -\sum_k (c_k/n) Log[c_k/n]
   // c_0 <- c_0 + 1, n <- n + 1
@@ -189,7 +203,8 @@ double updated_entropy (recall_tree& b, uint32_t cn, example& ec)
 }
 
 void insert_example_at_node (recall_tree& b, uint32_t cn, example& ec)
-{ node_pred* ls = find_or_create (b, cn, ec);
+{
+  node_pred* ls = find_or_create (b, cn, ec);
 
   b.nodes[cn].entropy = updated_entropy (b, cn, ec);
 
@@ -197,7 +212,8 @@ void insert_example_at_node (recall_tree& b, uint32_t cn, example& ec)
 
   while (ls != b.nodes[cn].preds.begin () &&
          ls[-1].label_count < ls[0].label_count)
-  { std::swap (ls[-1], ls[0]);
+  {
+    std::swap (ls[-1], ls[0]);
     --ls;
   }
 
@@ -218,11 +234,14 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
   features& fs = ec.feature_space[node_id_namespace];
 
   if (b.node_only)
-  { fs.push_back (1., ((868771 * cn) << ss) & mask);
+  {
+    fs.push_back (1., (((uint64_t)868771 * cn) << ss) & mask);
   }
   else
-  { while (cn > 0)
-    { fs.push_back (1., ((868771 * cn) << ss) & mask);
+  {
+    while (cn > 0)
+    {
+      fs.push_back (1., (((uint64_t)868771 * cn) << ss) & mask);
       cn = b.nodes[cn].parent;
     }
   }
@@ -232,7 +251,8 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
 }
 
 void remove_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
-{ features& fs = ec.feature_space[node_id_namespace];
+{
+  features& fs = ec.feature_space[node_id_namespace];
   fs.erase ();
   ec.indices.pop ();
 }
@@ -241,7 +261,8 @@ uint32_t oas_predict (recall_tree& b,
                       base_learner& base,
                       uint32_t cn,
                       example& ec)
-{ MULTICLASS::label_t mc = ec.l.multi;
+{
+  MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   uint32_t amaxscore = 0;
@@ -254,9 +275,11 @@ uint32_t oas_predict (recall_tree& b,
        ls != b.nodes[cn].preds.end () &&
        ls < b.nodes[cn].preds.begin () + b.max_candidates;
        ++ls)
-  { base.predict (ec, b.max_routers + ls->label - 1);
+  {
+    base.predict (ec, b.max_routers + ls->label - 1);
     if (amaxscore == 0 || ec.partial_prediction > maxscore)
-    { maxscore = ec.partial_prediction;
+    {
+      maxscore = ec.partial_prediction;
       amaxscore = ls->label;
     }
   }
@@ -270,11 +293,13 @@ uint32_t oas_predict (recall_tree& b,
 }
 
 bool is_candidate (recall_tree& b, uint32_t cn, example& ec)
-{ for (node_pred* ls = b.nodes[cn].preds.begin ();
+{
+  for (node_pred* ls = b.nodes[cn].preds.begin ();
        ls != b.nodes[cn].preds.end ()
        && ls < b.nodes[cn].preds.begin () + b.max_candidates;
        ++ls)
-  { if (ls->label == ec.l.multi.label)
+  {
+    if (ls->label == ec.l.multi.label)
       return true;
   }
 
@@ -282,11 +307,13 @@ bool is_candidate (recall_tree& b, uint32_t cn, example& ec)
 }
 
 inline uint32_t descend (node& n, float prediction)
-{ return prediction < 0 ? n.left : n.right;
+{
+  return prediction < 0 ? n.left : n.right;
 }
 
 struct predict_type
-{ uint32_t node_id;
+{
+  uint32_t node_id;
   uint32_t class_prediction;
 
   predict_type (uint32_t a, uint32_t b) : node_id (a), class_prediction (b) { }
@@ -295,7 +322,8 @@ struct predict_type
 bool stop_recurse_check (recall_tree& b,
                          uint32_t parent,
                          uint32_t child)
-{ return b.bern_hyper > 0 &&
+{
+  return b.bern_hyper > 0 &&
          b.nodes[parent].recall_lbest >= b.nodes[child].recall_lbest;
 }
 
@@ -303,12 +331,14 @@ predict_type predict_from (recall_tree& b,
                            base_learner& base,
                            example& ec,
                            uint32_t cn)
-{ MULTICLASS::label_t mc = ec.l.multi;
+{
+  MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   ec.l.simple = {FLT_MAX, 0.f, 0.f};
   while (b.nodes[cn].internal)
-  { base.predict (ec, b.nodes[cn].base_router);
+  {
+    base.predict (ec, b.nodes[cn].base_router);
     uint32_t newcn = descend (b.nodes[cn], ec.partial_prediction);
     bool cond = stop_recurse_check (b, cn, newcn);
 
@@ -325,7 +355,8 @@ predict_type predict_from (recall_tree& b,
 }
 
 void predict (recall_tree& b,  base_learner& base, example& ec)
-{ predict_type pred = predict_from (b, base, ec, 0);
+{
+  predict_type pred = predict_from (b, base, ec, 0);
 
   ec.pred.multiclass = pred.class_prediction;
 }
@@ -334,7 +365,8 @@ float train_node (recall_tree& b,
                   base_learner& base,
                   example& ec,
                   uint32_t cn)
-{ MULTICLASS::label_t mc = ec.l.multi;
+{
+  MULTICLASS::label_t mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   // minimize entropy
@@ -368,24 +400,28 @@ float train_node (recall_tree& b,
 
 
 void learn (recall_tree& b, base_learner& base, example& ec)
-{ predict (b, base, ec);
+{
+  predict (b, base, ec);
 
   if (b.all->training &&
       ec.l.multi.label != (uint32_t)-1) // if training the tree
-  { uint32_t cn = 0;
+  {
+    uint32_t cn = 0;
 
     while (b.nodes[cn].internal)
-    { float which = train_node (b, base, ec, cn);
+    {
+      float which = train_node (b, base, ec, cn);
 
       if (b.randomized_routing)
-	which = (merand48(b.all->random_state) > to_prob (which) ? -1.f : 1.f);
+        which = (merand48(b.all->random_state) > to_prob (which) ? -1.f : 1.f);
 
       uint32_t newcn = descend (b.nodes[cn], which);
       bool cond = stop_recurse_check (b, cn, newcn);
       insert_example_at_node (b, cn, ec);
 
       if (cond)
-      { insert_example_at_node (b, newcn, ec);
+      {
+        insert_example_at_node (b, newcn, ec);
         break;
       }
 
@@ -396,7 +432,8 @@ void learn (recall_tree& b, base_learner& base, example& ec)
       insert_example_at_node (b, cn, ec);
 
     if (is_candidate (b, cn, ec))
-    { MULTICLASS::label_t mc = ec.l.multi;
+    {
+      MULTICLASS::label_t mc = ec.l.multi;
       uint32_t save_pred = ec.pred.multiclass;
 
       add_node_id_feature (b, cn, ec);
@@ -409,7 +446,8 @@ void learn (recall_tree& b, base_learner& base, example& ec)
            ls != b.nodes[cn].preds.end ()
            && ls < b.nodes[cn].preds.begin () + b.max_candidates;
            ++ls)
-      { if (ls->label != mc.label)
+      {
+        if (ls->label != mc.label)
           base.learn (ec, b.max_routers + ls->label - 1);
       }
 
@@ -422,7 +460,8 @@ void learn (recall_tree& b, base_learner& base, example& ec)
 }
 
 void finish (recall_tree& b)
-{ for (size_t i = 0; i < b.nodes.size (); ++i)
+{
+  for (size_t i = 0; i < b.nodes.size (); ++i)
     b.nodes[i].preds.delete_v ();
   b.nodes.delete_v ();
 }
@@ -457,17 +496,21 @@ void finish (recall_tree& b)
   while (0);
 
 void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
-{ if (model_file.files.size() > 0)
-  { stringstream msg;
+{
+  if (model_file.files.size() > 0)
+  {
+    stringstream msg;
 
     writeit (b.k, "k");
     writeit (b.node_only, "node_only");
     writeitvar (b.nodes.size (), "nodes", n_nodes);
 
     if (read)
-    { b.nodes.erase ();
+    {
+      b.nodes.erase ();
       for (uint32_t j = 0; j < n_nodes; ++j)
-      { b.nodes.push_back (node ());
+      {
+        b.nodes.push_back (node ());
       }
     }
 
@@ -475,7 +518,8 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
     writeit (b.max_depth, "max_depth");
 
     for (uint32_t j = 0; j < n_nodes; ++j)
-    { node* cn = &b.nodes[j];
+    {
+      node* cn = &b.nodes[j];
 
       writeit (cn->parent, "parent");
       writeit (cn->recall_lbest, "recall_lbest");
@@ -491,22 +535,26 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       writeitvar (cn->preds.size (), "n_preds", n_preds);
 
       if (read)
-      { cn->preds.erase ();
+      {
+        cn->preds.erase ();
 
         for (uint32_t k = 0; k < n_preds; ++k)
-        { cn->preds.push_back (node_pred (0));
+        {
+          cn->preds.push_back (node_pred (0));
         }
       }
 
       for (uint32_t k = 0; k < n_preds; ++k)
-      { node_pred* pred = &cn->preds[k];
+      {
+        node_pred* pred = &cn->preds[k];
 
         writeit (pred->label, "label");
         writeit (pred->label_count, "label_count");
       }
 
       if (read)
-      { compute_recall_lbest (b, cn);
+      {
+        compute_recall_lbest (b, cn);
       }
     }
   }
@@ -515,7 +563,8 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 } // namespace
 
 base_learner* recall_tree_setup(vw& all)
-{ using namespace recall_tree_ns;
+{
+  using namespace recall_tree_ns;
 
   if (missing_option<size_t, true>(all,
                                    "recall_tree",
@@ -555,12 +604,12 @@ base_learner* recall_tree_setup(vw& all)
 
   if (! all.quiet)
     all.trace_message << "recall_tree:"
-              << " node_only = " << tree.node_only
-              << " bern_hyper = " << tree.bern_hyper
-              << " max_depth = " << tree.max_depth
-              << " routing = "
-              << (all.training ? (tree.randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
-              << std::endl;
+                      << " node_only = " << tree.node_only
+                      << " bern_hyper = " << tree.bern_hyper
+                      << " max_depth = " << tree.max_depth
+                      << " routing = "
+                      << (all.training ? (tree.randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
+                      << std::endl;
 
   learner<recall_tree>& l =
     init_multiclass_learner (&tree,

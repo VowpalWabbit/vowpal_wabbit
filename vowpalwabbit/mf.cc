@@ -16,7 +16,8 @@ using namespace std;
 using namespace LEARNER;
 
 struct mf
-{ vector<string> pairs;
+{
+  vector<string> pairs;
 
   size_t rank;
 
@@ -40,7 +41,8 @@ struct mf
 
 template <bool cache_sub_predictions>
 void predict(mf& data, base_learner& base, example& ec)
-{ float prediction = 0;
+{
+  float prediction = 0;
   if (cache_sub_predictions)
     data.sub_predictions.resize(2*data.rank+1);
 
@@ -61,12 +63,15 @@ void predict(mf& data, base_learner& base, example& ec)
 
   // add interaction terms to prediction
   for (string& i : data.pairs)
-  { int left_ns = (int) i[0];
+  {
+    int left_ns = (int) i[0];
     int right_ns = (int) i[1];
 
     if (ec.feature_space[left_ns].size() > 0 && ec.feature_space[right_ns].size() > 0)
-    { for (size_t k = 1; k <= data.rank; k++)
-      { ec.indices[0] = left_ns;
+    {
+      for (size_t k = 1; k <= data.rank; k++)
+      {
+        ec.indices[0] = left_ns;
 
         // compute l^k * x_l using base learner
         base.predict(ec, k);
@@ -97,7 +102,8 @@ void predict(mf& data, base_learner& base, example& ec)
 }
 
 void learn(mf& data, base_learner& base, example& ec)
-{ // predict with current weights
+{
+  // predict with current weights
   predict<true>(data, base, ec);
   float predicted = ec.pred.scalar;
 
@@ -130,7 +136,8 @@ void learn(mf& data, base_learner& base, example& ec)
       data.temp_features.deep_copy_from(ec.feature_space[left_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
-      { features& fs = ec.feature_space[left_ns];
+      {
+        features& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
         for (size_t i= 0; i < fs.size(); ++i)
           fs.values[i] *= data.sub_predictions[2*k];
@@ -154,7 +161,8 @@ void learn(mf& data, base_learner& base, example& ec)
       data.temp_features.deep_copy_from(ec.feature_space[right_ns]);
 
       for (size_t k = 1; k <= data.rank; k++)
-      { features& fs = ec.feature_space[right_ns];
+      {
+        features& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
         for (size_t i = 0; i < fs.size(); ++i)
           fs.values[i] *= data.sub_predictions[2*k-1];
@@ -176,7 +184,8 @@ void learn(mf& data, base_learner& base, example& ec)
 }
 
 void finish(mf& o)
-{ // restore global pairs
+{
+  // restore global pairs
   o.all->pairs = o.pairs;
 
   // clean up local v_arrays
@@ -185,7 +194,8 @@ void finish(mf& o)
 }
 
 base_learner* mf_setup(vw& all)
-{ if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
+{
+  if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
     return nullptr;
 
   mf& data = calloc_or_throw<mf>();

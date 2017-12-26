@@ -262,8 +262,8 @@ public:
 		// TODO: this is level-1 copy (weight* are stilled shared)
 		if (!_seeded)
 		{
-			for (auto& pair : _map)
-				free(pair.second);
+		  for (auto iter = _map.begin(); iter != _map.end(); ++iter)
+				free(iter->second);
 		}
 		_map = input._map;
 		_weight_mask = input._weight_mask;
@@ -317,9 +317,9 @@ public:
 	~sparse_parameters()
 	{if (!_delete && !_seeded)  // don't free weight vector if it is shared with another instance
 		{
-		for (auto& pair : _map)
-			free(pair.second);
-		 _map.clear();
+    for (auto iter = _map.begin(); iter != _map.end(); ++iter)
+      free(iter->second);
+    _map.clear();
 		 _delete = true;
 		}
     if (default_data != nullptr)

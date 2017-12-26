@@ -7,7 +7,8 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 
 void unique_features(features& fs, int max)
-{ if (fs.indicies.empty())
+{
+  if (fs.indicies.empty())
     return;
 
   features::features_value_index_audit_range range = fs.values_indices_audit();
@@ -17,7 +18,8 @@ void unique_features(features& fs, int max)
   for (features::iterator_all i = ++range.begin(); i != end; ++i)
     if (i.index() != last_index.index())
       if (i != ++last_index)
-      { last_index.value() = i.value();
+      {
+        last_index.value() = i.value();
         last_index.index() = i.index();
         if (!fs.space_names.empty())
           last_index.audit() = i.audit();
@@ -28,7 +30,8 @@ void unique_features(features& fs, int max)
 }
 
 void unique_sort_features(uint64_t parse_mask, example* ae)
-{ for (features& fs : *ae)
+{
+  for (features& fs : *ae)
     if (fs.sort(parse_mask))
       unique_features(fs);
 

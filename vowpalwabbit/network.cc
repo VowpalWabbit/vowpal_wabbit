@@ -39,7 +39,8 @@ int open_socket(const char* host)
   short unsigned int port = 26542;
   hostent* he;
   if (colon != nullptr)
-  { port = atoi(colon+1);
+  {
+    port = atoi(colon+1);
     string hostname(host,colon-host);
     he = gethostbyname(hostname.c_str());
   }

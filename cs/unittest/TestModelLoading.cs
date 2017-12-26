@@ -74,7 +74,7 @@ namespace cs_unittest
                 vw.SaveModel("model");
 
                 vw.ID = "def";
-                vw.SaveModel("model.1");
+                vw.SaveModel("model.TestID");
             }
 
             using (var vw = new VowpalWabbit("-i model"))
@@ -82,12 +82,12 @@ namespace cs_unittest
                 Assert.AreEqual("abc", vw.ID);
             }
 
-            using (var vw = new VowpalWabbit("-i model.1"))
+            using (var vw = new VowpalWabbit("-i model.TestID"))
             {
                 Assert.AreEqual("def", vw.ID);
             }
 
-            using (var vwm = new VowpalWabbitModel("-i model.1"))
+            using (var vwm = new VowpalWabbitModel("-i model.TestID"))
             {
                 Assert.AreEqual("def", vwm.ID);
                 using (var vw = new VowpalWabbit(new VowpalWabbitSettings { Model = vwm }))
@@ -128,7 +128,7 @@ namespace cs_unittest
             using (var vw = new VowpalWabbit(""))
             {
                 vw.ID = "def";
-                vw.SaveModel("model.1");
+                vw.SaveModel("model.TestReload");
 
                 vw.Reload();
 

@@ -61,7 +61,8 @@ namespace GraphTask
 Search::search_task task = { "graph", run, initialize, finish, setup, takedown };
 
 struct task_data
-{ // global data
+{
+  // global data
   size_t num_loops;
   size_t K;  // number of labels, *NOT* including the +1 for 'unlabeled'
   size_t numN; // number of neighbor predictions (equals K+1 for undirected, or 2*(K+1) for directed)
@@ -92,7 +93,8 @@ struct task_data
 inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
 
 void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
-{ task_data * D = new task_data();
+{
+  task_data * D = new task_data();
   po::options_description sspan_opts("search graphtask options");
   sspan_opts.add_options()("search_graph_num_loops", po::value<size_t>(), "how many loops to run [def: 2]");
   sspan_opts.add_options()("search_graph_no_structure", "turn off edge features");
@@ -128,7 +130,8 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
 }
 
 void finish(Search::search& sch)
-{ task_data * D = sch.get_task_data<task_data>();
+{
+  task_data * D = sch.get_task_data<task_data>();
   free(D->neighbor_predictions);
   free(D->confusion_matrix);
   free(D->true_counts);
@@ -138,7 +141,8 @@ void finish(Search::search& sch)
 inline bool example_is_edge(example*e) { return e->l.cs.costs.size() > 1; }
 
 void run_bfs(task_data &D, vector<example*>& ec)
-{ D.bfs.clear();
+{
+  D.bfs.clear();
   vector<bool> touched;
   for (size_t n=0; n<D.N; n++) touched.push_back(false);
 
@@ -147,13 +151,17 @@ void run_bfs(task_data &D, vector<example*>& ec)
 
   size_t i = 0;
   while (D.bfs.size() < D.N)
-  { while (i < D.bfs.size())
-    { uint32_t n = D.bfs[i];
+  {
+    while (i < D.bfs.size())
+    {
+      uint32_t n = D.bfs[i];
       for (size_t id : D.adj[n])
         for (size_t j=0; j<ec[id]->l.cs.costs.size(); j++)
-        { uint32_t m = ec[id]->l.cs.costs[j].class_index;
+        {
+          uint32_t m = ec[id]->l.cs.costs[j].class_index;
           if ((m > 0) && (!touched[m-1]))
-          { D.bfs.push_back(m-1);
+          {
+            D.bfs.push_back(m-1);
             touched[m-1] = true;
           }
         }
@@ -164,7 +172,8 @@ void run_bfs(task_data &D, vector<example*>& ec)
       // we finished a SCC, need to find another
       for (uint32_t n=0; n<D.N; n++)
         if (! touched[n])
-        { touched[n] = true;
+        {
+          touched[n] = true;
           D.bfs.push_back(n);
           break;
         }
@@ -173,23 +182,25 @@ void run_bfs(task_data &D, vector<example*>& ec)
 
 void setup(Search::search& sch, vector<example*>& ec)
 {
-	task_data& D = *sch.get_task_data<task_data>();
-	D.multiplier = D.wpp << D.ss;
-	D.wpp = sch.get_vw_pointer_unsafe().wpp;
-	D.mask = sch.get_vw_pointer_unsafe().weights.mask();
-	D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
+  task_data& D = *sch.get_task_data<task_data>();
+  D.multiplier = D.wpp << D.ss;
+  D.wpp = sch.get_vw_pointer_unsafe().wpp;
+  D.mask = sch.get_vw_pointer_unsafe().weights.mask();
+  D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
   D.N = 0;
   D.E = 0;
   for (size_t i=0; i<ec.size(); i++)
     if (example_is_edge(ec[i]))
       D.E++;
     else   // it's a node!
-    { if (D.E > 0)
+    {
+      if (D.E > 0)
         THROW("error: got a node after getting edges!");
 
       D.N++;
       if (ec[i]->l.cs.costs.size() > 0)
-      { D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
+      {
+        D.true_counts[ec[i]->l.cs.costs[0].class_index] += 1.;
         D.true_counts_total += 1.;
       }
     }
@@ -200,12 +211,15 @@ void setup(Search::search& sch, vector<example*>& ec)
   D.adj = vector<vector<size_t>>(D.N, vector<size_t>(0));
 
   for (size_t i=D.N; i<ec.size(); i++)
-  { for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++)
-    { if (ec[i]->l.cs.costs[n].class_index > D.N)
+  {
+    for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++)
+    {
+      if (ec[i]->l.cs.costs[n].class_index > D.N)
         THROW("error: edge source points to too large of a node id: " << (ec[i]->l.cs.costs[n].class_index) << " > " << D.N);
     }
     for (size_t n=0; n<ec[i]->l.cs.costs.size(); n++)
-    { size_t nn = ec[i]->l.cs.costs[n].class_index;
+    {
+      size_t nn = ec[i]->l.cs.costs[n].class_index;
       if ((nn > 0) && (((D.adj[nn-1].size() == 0) || (D.adj[nn-1][D.adj[nn-1].size()-1] != i)))) // don't allow dups
         D.adj[nn-1].push_back(i);
     }
@@ -219,7 +233,8 @@ void setup(Search::search& sch, vector<example*>& ec)
 }
 
 void takedown(Search::search& sch, vector<example*>& /*ec*/)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
   D.bfs.clear();
   D.pred.clear();
   for (auto x : D.adj) x.clear();
@@ -227,16 +242,19 @@ void takedown(Search::search& sch, vector<example*>& /*ec*/)
 }
 
 void add_edge_features_group_fn(task_data&D, float fv, uint64_t fx)
-{ example*node = D.cur_node;
+{
+  example*node = D.cur_node;
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   for (size_t k=0; k<D.numN; k++)
-  { if (D.neighbor_predictions[k] == 0.) continue;
+  {
+    if (D.neighbor_predictions[k] == 0.) continue;
     node->feature_space[neighbor_namespace].push_back(fv * D.neighbor_predictions[k], (uint64_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
   }
 }
 
 void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
-{ example*node = D.cur_node;
+{
+  example*node = D.cur_node;
   features& fs = node->feature_space[neighbor_namespace];
   uint64_t fx2 = fx / (uint64_t)D.multiplier;
   size_t k = (size_t) D.neighbor_predictions[0];
@@ -244,25 +262,30 @@ void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
 }
 
 void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example*>&ec)
-{ D.cur_node = ec[n];
+{
+  D.cur_node = ec[n];
 
   for (size_t i : D.adj[n])
-  { for (size_t k=0; k<D.numN; k++) D.neighbor_predictions[k] = 0.;
+  {
+    for (size_t k=0; k<D.numN; k++) D.neighbor_predictions[k] = 0.;
 
     float pred_total = 0.;
     uint32_t last_pred = 0;
     if (D.use_structure)
-    { bool n_in_sink = true;
+    {
+      bool n_in_sink = true;
       if (D.directed)
         for (size_t j=0; j<ec[i]->l.cs.costs.size()-1; j++)
-        { size_t m = ec[i]->l.cs.costs[j].class_index;
+        {
+          size_t m = ec[i]->l.cs.costs[j].class_index;
           if (m == 0) break;
           if (m-1 == n) { n_in_sink = false; break; }
         }
 
       bool m_in_sink = false;
       for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++)
-      { size_t m = ec[i]->l.cs.costs[j].class_index;
+      {
+        size_t m = ec[i]->l.cs.costs[j].class_index;
         if (m == 0) { m_in_sink = true; continue; }
         if (j == ec[i]->l.cs.costs.size()-1) m_in_sink = true;
         m--;
@@ -274,7 +297,8 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
       }
     }
     else
-    { D.neighbor_predictions[0] += 1.;
+    {
+      D.neighbor_predictions[0] += 1.;
       pred_total += 1.;
       last_pred = 0;
     }
@@ -285,7 +309,8 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
     example&edge = *ec[i];
 
     if (pred_total <= 1.)    // single edge
-    { D.neighbor_predictions[0] = (float)last_pred;
+    {
+      D.neighbor_predictions[0] = (float)last_pred;
       GD::foreach_feature<task_data,uint64_t,add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
     else   // lots of edges
@@ -297,10 +322,12 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
 
   vw& all = sch.get_vw_pointer_unsafe();
   for (string& i : all.pairs)
-  { int i0 = (int)i[0];
+  {
+    int i0 = (int)i[0];
     int i1 = (int)i[1];
     if ((i0 == (int)neighbor_namespace) || (i1 == (int)neighbor_namespace))
-    { ec[n]->num_features      += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
+    {
+      ec[n]->num_features      += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
       ec[n]->total_sum_feat_sq += ec[n]->feature_space[i0].sum_feat_sq*ec[n]->feature_space[i1].sum_feat_sq;
     }
   }
@@ -308,7 +335,8 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
 }
 
 void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec)
-{ ec[n]->indices.pop();
+{
+  ec[n]->indices.pop();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();
@@ -318,20 +346,24 @@ void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec)
 #define IDX(i,j) ( (i) * (D.K+1) + j )
 
 float macro_f(task_data& D)
-{ float total_f1 = 0.;
+{
+  float total_f1 = 0.;
   float count_f1 = 0.;
   for (size_t k=1; k<=D.K; k++)
-  { float trueC = 0.;
+  {
+    float trueC = 0.;
     float predC = 0.;
     for (size_t j=1; j<=D.K; j++)
-    { trueC += (float)D.confusion_matrix[ IDX(k,j) ];
+    {
+      trueC += (float)D.confusion_matrix[ IDX(k,j) ];
       predC += (float)D.confusion_matrix[ IDX(j,k) ];
     }
     if (trueC == 0) continue;
     float correctC = (float)D.confusion_matrix[ IDX(k,k) ];
     count_f1++;
     if (correctC > 0)
-    { float pre = correctC / predC;
+    {
+      float pre = correctC / predC;
       float rec = correctC / trueC;
       total_f1 += 2 * pre * rec / (pre + rec);
     }
@@ -340,16 +372,19 @@ float macro_f(task_data& D)
 }
 
 void run(Search::search& sch, vector<example*>& ec)
-{ task_data& D = *sch.get_task_data<task_data>();
+{
+  task_data& D = *sch.get_task_data<task_data>();
   float loss_val = 0.5f / (float)D.num_loops;
   for (size_t n=0; n<D.N; n++) D.pred[n] = D.K+1;
 
   for (size_t loop=0; loop<D.num_loops; loop++)
-  { bool last_loop = loop == (D.num_loops-1);
+  {
+    bool last_loop = loop == (D.num_loops-1);
     int start = 0; int end = D.N; int step = 1;
     if (loop % 2 == 1) { start = D.N-1; end=-1; step = -1; } // go inward on odd loops
     for (int n_id = start; n_id != end; n_id += step)
-    { uint32_t n = D.bfs[n_id];
+    {
+      uint32_t n = D.bfs[n_id];
       uint32_t k = (ec[n]->l.cs.costs.size() > 0) ? ec[n]->l.cs.costs[0].class_index : 0;
 
       bool add_features = /* D.use_structure && */ sch.predictNeedsExample();
@@ -359,7 +394,8 @@ void run(Search::search& sch, vector<example*>& ec)
       Search::predictor P = Search::predictor(sch, n+1);
       P.set_input(*ec[n]);
       if (false && (k > 0))
-      { float min_count = 1e12f;
+      {
+        float min_count = 1e12f;
         for (size_t k2=1; k2<=D.K; k2++)
           min_count = min(min_count, D.true_counts[k2]);
         float w = min_count / D.true_counts[k];
@@ -373,8 +409,10 @@ void run(Search::search& sch, vector<example*>& ec)
         P.set_oracle(k);
       // add all the conditioning
       for (size_t i=0; i<D.adj[n].size(); i++)
-      { for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++)
-        { uint32_t m = ec[i]->l.cs.costs[j].class_index;
+      {
+        for (size_t j=0; j<ec[i]->l.cs.costs.size(); j++)
+        {
+          uint32_t m = ec[i]->l.cs.costs[j].class_index;
           if (m == 0) continue;
           m--;
           if (m == n) continue;

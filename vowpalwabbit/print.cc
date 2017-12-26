@@ -6,24 +6,29 @@ using namespace std;
 struct print { vw* all; }; //regressor, feature loop
 
 void print_feature(vw& all, float value, uint64_t index)
-{ cout << index;
+{
+  cout << index;
   if (value != 1.)
     cout << ":" << value;
   cout << " ";
 }
 
 void learn(print& p, LEARNER::base_learner&, example& ec)
-{ label_data& ld = ec.l.simple;
+{
+  label_data& ld = ec.l.simple;
   if (ld.label != FLT_MAX)
-  { cout << ld.label << " ";
+  {
+    cout << ld.label << " ";
     if (ec.weight != 1 || ld.initial != 0)
-    { cout << ec.weight << " ";
+    {
+      cout << ec.weight << " ";
       if (ld.initial != 0)
         cout << ld.initial << " ";
     }
   }
   if (ec.tag.size() > 0)
-  { cout << '\'';
+  {
+    cout << '\'';
     cout.write(ec.tag.begin(), ec.tag.size());
   }
   cout << "| ";
@@ -32,7 +37,8 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
 }
 
 LEARNER::base_learner* print_setup(vw& all)
-{ if (missing_option(all, true, "print", "print examples")) return nullptr;
+{
+  if (missing_option(all, true, "print", "print examples")) return nullptr;
 
   print& p = calloc_or_throw<print>();
   p.all = &all;
