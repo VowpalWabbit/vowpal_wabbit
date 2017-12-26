@@ -99,8 +99,10 @@ void finish_example(vw& all, example* ec);
 void empty_example(vw& all, example& ec);
 
 void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
-void copy_example_data(bool audit, example*, example*);  // don't copy the label
+void copy_example_metadata(bool audit, example*, example*);
+void copy_example_data(bool audit, example*, example*);  // metadata + features, don't copy the label
 void clear_example_data(example&);  // don't clear the label
+void move_feature_namespace(example* dst, example* src, namespace_index c);
 
 // after export_example, must call releaseFeatureSpace to free native memory
 primitive_feature_space* export_example(vw& all, example* e, size_t& len);
@@ -147,10 +149,10 @@ inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-{ return (&all.weights[index << all.weights.stride_shift()])[offset]; }
+{ return (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset]; }
 
 inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-{ (&all.weights[index << all.weights.stride_shift()])[offset] = value; }
+{ (&all.weights[((uint64_t)index) << all.weights.stride_shift()])[offset] = value; }
 
 inline uint32_t num_weights(vw& all)
 { return (uint32_t)all.length();}

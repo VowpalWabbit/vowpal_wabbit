@@ -1,3 +1,4 @@
+parsed 4 class weights
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
@@ -8,14 +9,12 @@ num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 0.000000 0.000000            1            1.0        1        1        2
-0.000000 0.000000            2            2.0        2        2        2
-0.500000 1.000000            4            4.0        4        3        2
-0.750000 1.000000            8            8.0        8        6        2
+0.909091 1.000000            2           11.0        2        1        2
 
 finished run
 number of examples per pass = 10
 passes used = 1
-weighted example sum = 10.000000
+weighted example sum = 19.100000
 weighted label sum = 0.000000
-average loss = 0.800000
+average loss = 0.947644
 total feature number = 20

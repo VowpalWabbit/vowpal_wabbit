@@ -36,6 +36,7 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
+	vowpalwabbit/baseline.h \
 	vowpalwabbit/bfgs.h \
 	vowpalwabbit/binary.h \
 	vowpalwabbit/bs.h \

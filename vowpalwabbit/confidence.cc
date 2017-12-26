@@ -4,9 +4,7 @@
 
 using namespace LEARNER;
 using namespace std;
-struct confidence
-{ vw* all;//statistics, loss
-};
+struct confidence { vw* all;};
 
 template <bool is_learn, bool is_confidence_after_training>
 void predict_or_learn_with_confidence(confidence& c, base_learner& base, example& ec)

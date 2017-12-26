@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,8 @@ namespace cs_unittest
     public class TestLabelsClass
     {
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLabels()
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleContext>(string.Empty))
@@ -36,7 +37,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestLabelsNoAnnotation()
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleContextNoAnnotation>(
@@ -58,7 +60,8 @@ namespace cs_unittest
         }
 
         [TestMethod]
-        [TestCategory("Marshal")]
+        [TestCategory("Vowpal Wabbit/Marshal")]
+        [TestCategory("Vowpal Wabbit")]
         public void TestStringLabels()
         {
             using (var vw = new VowpalWabbitExampleValidator<SimpleStringContext>(string.Empty))

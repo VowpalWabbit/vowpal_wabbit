@@ -18,46 +18,82 @@ using namespace std;
 #include <math.h>
 #include <algorithm>
 #include <stdarg.h>
-
+#include <numeric>
 #include "rand48.h"
 #include "global_data.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 #include "vw_versions.h"
 
-template <class T> class set_initial_wrapper 
+template <class T> class set_initial_wrapper
 {
 public:
-    static void func(typename T::iterator& iter, float& initial) { *iter = initial; }    
+  static void func(weight& w, float& initial, uint64_t index) { w = initial; }
 };
-	
-template <class T> class random_positive_wrapper 
+
+template <class T> class random_positive_wrapper
 {
 public:
-   static void func(typename T::iterator& iter)
-    {
-      uint64_t index = iter.index();
-      *iter = (float)(0.1 * merand48(index));
-    }
+  static void func(weight& w, uint64_t index) { w = (float)(0.1 * merand48(index)); }
 };
 
 template <class T> class random_weights_wrapper
 {
-public:    
-    static void func(typename T::iterator& iter)
+public:
+  static void func(weight& w, uint64_t index) { w = (float)(merand48(index) - 0.5); }
+};
+// box-muller polar implementation
+template <class T> class polar_normal_weights_wrapper
+{
+public:
+  static void func(weight& w, uint64_t index)
     {
-      uint64_t index = iter.index();
-      *iter = (float)(merand48(index) - 0.5);
+        static float x1 = 0.0;
+        static float x2 = 0.0;
+        static float temp  = 0.0;
+         do {
+                 x1 = 2.0 * merand48(index) - 1.0;
+                 x2 = 2.0 * merand48(index) - 1.0;
+                 temp = x1 * x1 + x2 * x2;
+         } while ( (temp >= 1.0) || (temp == 0.0) );
+         temp = sqrt( (-2.0 * log( temp ) ) / temp );
+         w = x1 * temp;
     }
 };
+// re-scaling to re-picking values outside the truncating boundary.
+// note:- boundary is twice the standard deviation.
+template<class T> void truncate(vw& all,T& weights)
+{
+  static double sd = calculate_sd(all,weights);
+  for_each(weights.begin(), weights.end(), [](float& v) {
+	if( abs(v) > sd*2 ) {
+           v = std::remainder(v,sd*2);
+        }
+  });
+}
 
+template<class T> double calculate_sd(vw& all,T& weights)
+{
+  static int my_size = 0;
+  for_each(weights.begin(), weights.end(), [](float v) {my_size += 1;});
+  double sum = accumulate(weights.begin(), weights.end(), 0.0);
+  double mean = sum / my_size;
+  vector<double> diff(my_size);
+  transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
+  double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  return sqrt(sq_sum / my_size);
+}
 template<class T> void initialize_regressor(vw& all, T& weights)
 { // Regressor is already initialized.
+
   if (weights.not_null())
     return;
   size_t length = ((size_t)1) << all.num_bits;
   try
-    { new(&weights) T(length, weights.stride_shift()); }
+    {
+      uint32_t ss = weights.stride_shift();
+      weights.~T();//dealloc so that we can realloc, now with a known size
+      new(&weights) T(length, ss); }
   catch (VW::vw_exception anExc)
     { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
     }
@@ -69,6 +105,13 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     weights.template set_default<random_positive_wrapper<T> >();
   else if (all.random_weights)
     weights.template set_default<random_weights_wrapper<T> >();
+  else if (all.normal_weights){
+    weights.template set_default<polar_normal_weights_wrapper<T> >();
+  }
+  else if (all.tnormal_weights){
+    weights.template set_default<polar_normal_weights_wrapper<T> >();
+    truncate(all,weights);
+  }
 }
 
 void initialize_regressor(vw& all)

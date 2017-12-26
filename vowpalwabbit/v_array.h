@@ -65,7 +65,7 @@ public:
       }
       else
         _begin = temp;
-      if (old_len < length)
+      if (old_len < length && _begin+old_len != nullptr)
         memset(_begin+old_len, 0, (length-old_len)*sizeof(T));
       _end = _begin+old_len;
       end_array = _begin + length;
