@@ -14,4 +14,4 @@ include_directories(${vw_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} ds_api.cc ds_vw.cc event_hub_client.cc)
 
-target_link_libraries(ds PRIVATE vwlib ${Boost_LIBRARIES} ${cpprest_LIBRARY} OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${cpprest_LIBRARY} OpenSSL::SSL OpenSSL::Crypto)
