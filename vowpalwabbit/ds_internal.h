@@ -14,7 +14,7 @@ namespace ds {
   class IRanker {
   public:
     virtual std::vector<ActionProbability> rank(const char* context) = 0;
-    virtual ~IRanker() = 0;
+    virtual ~IRanker() { }
   };
 
   template<typename TObject>
@@ -34,7 +34,7 @@ namespace ds {
         _val = nullptr;
       }
     }
-    
+
     inline TObject* val() { return _val; }
 
     const int version;
@@ -71,12 +71,12 @@ namespace ds {
     int used_objects;
 
   public:
-    ObjectPool() 
+    ObjectPool()
       : version(0), factory(nullptr), used_objects(0)
     { }
 
     ~ObjectPool() {
-      // TODO: I'm not sure this is needed as we better not have outstanding 
+      // TODO: I'm not sure this is needed as we better not have outstanding
       // make sure we have synchronized access
       boost::unique_lock<boost::mutex> lock(_mutex);
 
@@ -105,7 +105,7 @@ namespace ds {
         used_objects++;
         return new PooledObject<TObject>((*factory)(), version);
       }
-        
+
       auto back = pool.back();
       pool.pop_back();
 
@@ -114,7 +114,7 @@ namespace ds {
 
     void return_to_pool(PooledObject<TObject>* obj) {
       boost::unique_lock<boost::mutex> lock(_mutex);
-      
+
       if (version == obj->version) {
         pool.push_back(obj);
         return;
@@ -131,7 +131,7 @@ namespace ds {
       if (factory)
         delete factory;
       factory = new_factory;
-      
+
       // increment the version
       version++;
 

@@ -6,25 +6,23 @@
  #include "ds_api.h"
 %}
 
- %include "std_vector.i"
+%include "std_vector.i"
 
 namespace std {
-  #ifdef SWIGCSHARP
-   %template(ListFloat) vector<float>;
-   %template(ListInt) vector<int>;
-/*
-   %template(ListActionProbability) vector<ds::ActionProbability>;
- */
+   #ifdef SWIGCSHARP
+       %template(ListFloat) vector<float>;
+       %template(ListInt) vector<int>;
    #else
-   %template(vector_int) vector<int>;
-   %template(vector_float) vector<float>;
+       %template(vector_int) vector<int>;
+       %template(vector_float) vector<float>;
    #endif
 }
+
+%include "std_string.i"
 
 #ifdef SWIGCSHARP
         %rename("%(camelcase)s", notregexmatch$name=".*_template") "";
 
-        %include "std_string.i"
 
         %include "arrays_csharp.i"
         /* %apply float FIXED[] {float *x_array} */

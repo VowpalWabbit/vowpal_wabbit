@@ -23,7 +23,7 @@ namespace ds {
     vw* _vw;
     std::vector<example*> _example_pool;
     example* _empty_example;
-  
+
   public:
     VowpalWabbit(std::shared_ptr<VowpalWabbitModel> model, vw* vw);
     ~VowpalWabbit();

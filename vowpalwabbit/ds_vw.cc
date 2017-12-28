@@ -36,7 +36,7 @@ namespace ds {
 
   VowpalWabbit::VowpalWabbit(std::shared_ptr<VowpalWabbitModel> model, vw* vw)
     : _model(model), _vw(vw)
-  { 
+  {
     // create an empty example
     _empty_example = VW::alloc_examples(0, 1);
     _vw->p->lp.default_label(&_empty_example->l);
@@ -77,7 +77,7 @@ namespace ds {
     // get last element
     example* ex = _example_pool.back();
     _example_pool.pop_back();
-   
+
     VW::empty_example(*_vw, *ex);
     _vw->p->lp.default_label(&ex->l);
 
@@ -120,7 +120,7 @@ namespace ds {
     std::vector<ActionProbability> ranking;
     if (first_example)
       for (auto&& a_s : first_example->pred.a_s)
-        ranking.push_back({ a_s.action, a_s.score });
+        ranking.push_back({ (int)a_s.action, a_s.score });
 
     // push examples back into pool for re-use
     for (auto&& ex : examples)
