@@ -13,71 +13,32 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
-from shutil import copy, copytree, rmtree
+from shutil import copy, copytree, rmtree, ignore_patterns
 
 
 system = platform.system()
 here = path.abspath(path.dirname(__file__))
 pylibvw = Extension('pylibvw', sources=['python/pylibvw.cc'])
 
-
-def find_boost():
-    """Find correct boost-python library information """
-    if system == 'Linux':
-        # use version suffix if present
-        boost_lib = 'boost_python-py{v[0]}{v[1]}'.format(v=sys.version_info)
-        if sys.version_info.major == 3:
-            for candidate in ['-py36', '-py35', '-py34', '3']:
-                boost_lib = 'boost_python{}'.format(candidate)
-                if find_library(boost_lib):
-                    exit
-        if not find_library(boost_lib):
-            boost_lib = "boost_python"
-    elif system == 'Darwin':
-        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
-    elif system == 'Cygwin':
-        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
-    else:
-        raise Exception('Building on this system is not currently supported')
-
-    if not find_library(boost_lib):
-        raise Exception('Could not find boost python library')
-
-    return boost_lib
-
+def removesilent(path):
+    try:
+        remove(path)
+    except OSError:
+        pass
 
 def prep():
     """Prepare source directories for building extension """
 
-    # helper function to exclude subdirectories during copytree calls
-    def exclude_dirs(cur_dir, _):
-        return next(walk(cur_dir))[1]
-
-    # don't create src folder if it already exists
-    if not path.exists(path.join(here, 'src')):
-        # add main directory (exclude children to avoid recursion)
-        copytree(path.join(here, '..'), path.join(here, 'src'), ignore=exclude_dirs)
-
-        # add python directory (exclude children to avoid recursion)
-        copytree(path.join(here), path.join(here, 'src', 'python'), ignore=exclude_dirs)
-        subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', 'python'))
-
-        # add explore
-        copytree(path.join(here, '..', 'explore'), path.join(here, 'src', 'explore'))
-        copytree(path.join(here, '..', 'rapidjson'), path.join(here, 'src', 'rapidjson'))
-
-        # add folders necessary to run 'make python'
-        for folder in ['library', 'vowpalwabbit']:
-            copytree(path.join(here, '..', folder), path.join(here, 'src', folder))
-            subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', folder))
+    subprocess.check_call(['git', 'checkout-index', '--all', '--prefix', 'python/src/'], cwd=path.join(here, '..'))
+    # some pruning
+    for d in ['cs', 'java', 'test', 'demo']:
+        rmtree(path.join(here, 'src', d), ignore_errors=False)
 
 class Clean(_clean):
     """Clean up after building python package directories """
     def run(self):
-        try:
-            remove(path.join(here, '.coverage'))
-        except OSError:
-            pass
+	exit()
+        removesilent(path.join(here, '.coverage'))
 
         rmtree(path.join(here, '.cache'), ignore_errors=True)
         rmtree(path.join(here, '.tox'), ignore_errors=True)
@@ -86,7 +47,6 @@ class Clean(_clean):
         rmtree(path.join(here, 'build'), ignore_errors=True)
         rmtree(path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
         _clean.run(self)
-
 
 class Sdist(_sdist):
     def run(self):
@@ -100,8 +60,8 @@ class Sdist(_sdist):
 class VWBuildExt(_build_ext):
     """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
-        prep()
-        target_dir = path.dirname(self.get_ext_fullpath(ext.name))
+	# prep()
+        target_dir = path.join(here, path.dirname(self.get_ext_fullpath(ext.name)))
         if not path.isdir(target_dir):
             makedirs(target_dir)
         if system == 'Windows':
@@ -114,13 +74,12 @@ class VWBuildExt(_build_ext):
             else:
                raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:
-            env = environ
-            env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
-            env['PYTHON_LIBS'] = '-l {}'.format(find_boost())
-            subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=env)
-            ext_suffix = 'so' if not system == 'Cygwin' else 'dll'
-            copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
-                 self.get_ext_fullpath(ext.name))
+            cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + target_dir,
+                          '-DPYTHON_EXECUTABLE=' + sys.executable,
+                          '-DPIP_INSTALL=true']
+
+            subprocess.check_call(['cmake', '.'] + cmake_args, cwd=path.join(here, 'src'))
+            subprocess.check_call(['cmake', '--build', '.', '--', '-j'], cwd=path.join(here, 'src'))
 
 class InstallLib(_install_lib):
     def build(self):
@@ -160,19 +119,10 @@ class Tox(_test):
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-# Get the current version for the python package from the configure.ac file
-version = '0.0.0'
-for config_path in [path.join(here, '..', 'configure.ac'), path.join(here, 'src', 'configure.ac')]:
-    try:
-        with open(config_path, encoding='utf-8') as f:
-            line = f.readline().strip()
-        version = line.split(',')[1].strip(' []')
-    except IOError:
-        continue
-
 setup(
     name='vowpalwabbit',
-    version=version,
+    # TODO: use setup py
+    version='8.5.0',
     description='Vowpal Wabbit Python package',
     long_description=long_description,
     url='https://github.com/JohnLangford/vowpal_wabbit',

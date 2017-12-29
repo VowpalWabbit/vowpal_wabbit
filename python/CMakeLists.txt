@@ -11,6 +11,9 @@ include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED pylibvw.cc)
 
+# strip lib prefix to keep setup.py happy
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PREFIX "")
+
 target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
 find_program(PYTHON "python")
