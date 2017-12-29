@@ -14,6 +14,9 @@
 #include <chrono>
 #include <thread>
 
+// DS config
+#include <locale>
+#include <codecvt>
 // SAS code
 using namespace std::chrono_literals;
 
@@ -29,30 +32,30 @@ namespace ds {
   DecisionServiceConfiguration DecisionServiceConfiguration::Download(const char* url)
   {
     // download configuration
-    http_client client(U(url));
+    http_client client(conversions::to_string_t(url));
     auto json = client
       .request(methods::GET)
       .then([=](http_response response) { return response.extract_json(/* ignore content type */ true); })
       .get();
 
     DecisionServiceConfiguration config;
-    config.model_url = json[U("ModelBlobUri")].as_string();
-    config.eventhub_interaction_connection_string = json[U("EventHubInteractionConnectionString")].as_string();
-    config.eventhub_observation_connection_string = json[U("EventHubObservationConnectionString")].as_string();
+    config.model_url = conversions::to_utf8string(json[U("ModelBlobUri")].as_string());
+    config.eventhub_interaction_connection_string = conversions::to_utf8string(json[U("EventHubInteractionConnectionString")].as_string());
+    config.eventhub_observation_connection_string = conversions::to_utf8string(json[U("EventHubObservationConnectionString")].as_string());
     // with event sizes of 3kb & 5s batching, 2 connections can get 50Mbps
     config.num_parallel_connection = 2;
     config.batching_timeout_in_seconds = 5;
     config.batching_queue_max_size = 8 * 1024;
-
     return config;
   }
+
 
   class DecisionServiceClientInternal {
   private:
     unique_ptr<VowpalWabbitThreadSafe> _pool;
     DecisionServiceConfiguration _config;
 
-    boost::lockfree::queue<std::stringstream*> _queue;
+    boost::lockfree::queue<vector<unsigned char>*> _queue;
 
     std::vector<EventHubClient> _event_hub_interactions;
     EventHubClient _event_hub_observation;
@@ -81,9 +84,9 @@ namespace ds {
       _upload_interaction_thread.join();
 
       // delete all elements from _queue
-      std::stringstream* ostr;
-      while (_queue.pop(ostr))
-        delete ostr;
+      vector<unsigned char>* item;
+      while (_queue.pop(item))
+        delete item;
     }
 
     void upload_reward(const char* event_id, const char* reward)
@@ -96,9 +99,12 @@ namespace ds {
 
     void enqueue_interaction(RankResponse& rankResponse)
     {
-      std::stringstream* ostr = new std::stringstream;
-      *ostr << rankResponse;
-      _queue.push(ostr);
+      std::ostringstream ostr;
+      ostr << rankResponse;
+      auto s = ostr.str();
+
+      vector<unsigned char>* buffer = new vector<unsigned char>(s.begin(), s.end());
+      _queue.push(buffer);
     }
 
   private:
@@ -109,8 +115,8 @@ namespace ds {
 
     void upload_interactions()
     {
-      std::stringstream* json;
-      std::stringstream* json2;
+      vector<unsigned char>* json;
+      vector<unsigned char>* json2;
 
       // populate initial already finished tasks
       vector<pplx::task<http_response>> open_requests;
@@ -145,10 +151,11 @@ namespace ds {
           else
           {
             // check if we enough space
-            if (json->tellp() + json2->tellp() < 256 * 1024 - 1)
+            if (json->size() + json2->size() < 256 * 1024 - 1)
             {
               // move get pointer to the beginning
-              *json << "\n" << json2->str();
+              json->push_back('\n');
+              json->insert(json->end(), json2->begin(), json2->end());
 
               batch_count++;
 
@@ -164,18 +171,19 @@ namespace ds {
           // send data
           auto ready_response = pplx::when_any(open_requests.begin(), open_requests.end()).get();
 
-          // materialize payload
-          string json_str = json->str();
+          // need to wait delete
+          //// materialize payload
+          //string json_str = json->str();
 
-          // free memory
-          delete json;
+          //// free memory
+          //delete json;
 
           //printf("ready: %d length: %d batch count: %d status: %d\n",
           //  (int)ready_response.second, (int)json_str.length(), batch_count, ready_response.first.status_code());
 
           // send request and add back to task list
           open_requests[ready_response.second] =
-            _event_hub_interactions[ready_response.second].Send(json_str.c_str());
+            _event_hub_interactions[ready_response.second].Send(json);
 
           // continue draining if we have another non-append json element
           json = json2;

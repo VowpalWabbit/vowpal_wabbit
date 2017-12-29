@@ -67,7 +67,7 @@ namespace ds {
     //config.set_validate_certificates(false);
     //config.set_proxy(web_proxy(U("http://127.0.0.1:8888")));
 
-    _client = make_unique<http_client>(U(url.str()), config);
+    _client = make_unique<http_client>(conversions::to_string_t(url.str()), config);
   }
 
   EventHubClient::EventHubClient(const EventHubClient& other)
@@ -76,19 +76,33 @@ namespace ds {
 
   pplx::task<http_response> EventHubClient::Send(const char* data)
   {
+    http_request req(methods::POST);
+
+    req.headers().add(U("Authorization"), Authorization().c_str());
+    req.headers().add(U("Host"), _event_hub_namespace_host.c_str());
+
+    req.set_body(conversions::to_string_t(data), U("application/atom+xml;type=entry;charset=utf-8"));
+
+    return _client->request(req);
+  }
+
+  pplx::task<http_response> EventHubClient::Send(vector<unsigned char>* data)
+  {
     // create header
     http_request req(methods::POST);
 
-    req.headers().add(U("Authorization"), Authorization());
-    req.headers().add(U("Host"), _event_hub_namespace_host);
+    // TODO: refactor
+    req.headers().add(U("Authorization"), Authorization().c_str());
+    req.headers().add(U("Host"), _event_hub_namespace_host.c_str());
+    req.headers().add(U("Content-Type"), "application/atom+xml;type=entry;charset=utf-8");
 
-    req.set_body(data, U("application/atom+xml;type=entry;charset=utf-8"));
+    req.set_body(*data);
 
     // TODO: handle errors
     // 1. 201 -> ok
     // 2. ??? -> if we exceed capacity, retry with dela
     // 3. 401 -> access denied
-    return _client->request(req);
+    return _client->request(req).then([=](http_response resp) { delete data; return resp; });
   }
 
   std::string& EventHubClient::Authorization()
@@ -104,7 +118,8 @@ namespace ds {
       ostringstream resource_stream;
       resource_stream << "https://" << _event_hub_namespace_host << "/" << _event_hub;
 
-      string encoded_uri = web::uri::encode_data_string(resource_stream.str());
+      // encode(resource_stream)
+      string encoded_uri = conversions::to_utf8string(web::uri::encode_data_string(conversions::to_string_t(resource_stream.str())));
 
       // to get equivalent result as C# SharedAccessSignatureTokenProvider.GetSharedAccessSignature lowercase the %xx
       // boost::regex fix_encoding_casing_expression("%[0-9A-F][0-9A-F]");
@@ -116,21 +131,24 @@ namespace ds {
       string data = data_stream.str();
 
       // compute HMAC of data
-      unsigned char digest[EVP_MAX_MD_SIZE];
+      vector<unsigned char> digest(EVP_MAX_MD_SIZE);
       unsigned int digest_len;
 
       // https://www.openssl.org/docs/man1.0.2/crypto/hmac.html
-      if (!HMAC(EVP_sha256(), _key.c_str(), _key.length(), (const unsigned char*)data.c_str(), data.length(), digest, &digest_len))
+      if (!HMAC(EVP_sha256(), _key.c_str(), (int)_key.length(), (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len))
         throw "failed to generate SAS hash"; // TODO: throw proper
 
+      digest.resize(digest_len);
+      // TODO: double check that the content is valid
+
       // encode digest (base64 + url encoding)
-      auto encoded_digest = web::uri::encode_data_string(encode64(string((const char*)digest, digest_len)));
+      auto encoded_digest = web::uri::encode_data_string(conversions::to_base64(digest));
 
       // construct SAS
       ostringstream authorization_stream;
       authorization_stream
         << "SharedAccessSignature sr=" << encoded_uri
-        << "&sig=" << encoded_digest
+        << "&sig=" << conversions::to_utf8string(encoded_digest)
         << "&se=" << _authorization_valid_until
         << "&skn=" << _key_name;
 

@@ -30,5 +30,7 @@ namespace ds {
     EventHubClient(const EventHubClient& other);
 
     pplx::task<web::http::http_response> Send(const char* data);
+
+    pplx::task<web::http::http_response> EventHubClient::Send(std::vector<unsigned char>* data);
   };
 }

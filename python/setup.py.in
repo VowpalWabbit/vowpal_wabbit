@@ -15,37 +15,32 @@ from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import copy, copytree, rmtree, ignore_patterns
 
-
 system = platform.system()
 here = path.abspath(path.dirname(__file__))
 pylibvw = Extension('pylibvw', sources=['python/pylibvw.cc'])
 
-def removesilent(path):
-    try:
-        remove(path)
-    except OSError:
-        pass
-
 def prep():
     """Prepare source directories for building extension """
 
+    rmtree(path.join(here, 'src'))
+
     subprocess.check_call(['git', 'checkout-index', '--all', '--prefix', 'python/src/'], cwd=path.join(here, '..'))
+
     # some pruning
-    for d in ['cs', 'java', 'test', 'demo']:
+    for d in ['cs', 'java', 'test', 'demo', 'logo_assets']:
         rmtree(path.join(here, 'src', d), ignore_errors=False)
 
 class Clean(_clean):
     """Clean up after building python package directories """
     def run(self):
-	exit()
-        removesilent(path.join(here, '.coverage'))
+        try:
+            remove('.coverage')
+        except OSError:
+            pass
 
-        rmtree(path.join(here, '.cache'), ignore_errors=True)
-        rmtree(path.join(here, '.tox'), ignore_errors=True)
-        rmtree(path.join(here, 'src'), ignore_errors=True)
-        rmtree(path.join(here, 'dist'), ignore_errors=True)
-        rmtree(path.join(here, 'build'), ignore_errors=True)
-        rmtree(path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
+        for d in ['.cache', '.tox', 'src', 'dist', 'build', 'vowpalwabbit.egg-info']:
+            rmtree(path.join(here, d), ignore_errors=True)
+
         _clean.run(self)
 
 class Sdist(_sdist):
@@ -60,10 +55,11 @@ class Sdist(_sdist):
 class VWBuildExt(_build_ext):
     """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
-	# prep()
-        target_dir = path.join(here, path.dirname(self.get_ext_fullpath(ext.name)))
+	# moving the binary into install folder to make allow for multiple versions
+        target_dir = path.join(here, path.dirname(self.get_ext_fullpath(ext.name)), 'vowpalwabbit')
         if not path.isdir(target_dir):
             makedirs(target_dir)
+
         if system == 'Windows':
             if sys.version_info[0] == 2 and sys.version_info[1] == 7:
                copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
@@ -75,11 +71,10 @@ class VWBuildExt(_build_ext):
                raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:
             cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + target_dir,
-                          '-DPYTHON_EXECUTABLE=' + sys.executable,
                           '-DPIP_INSTALL=true']
 
             subprocess.check_call(['cmake', '.'] + cmake_args, cwd=path.join(here, 'src'))
-            subprocess.check_call(['cmake', '--build', '.', '--', '-j'], cwd=path.join(here, 'src'))
+            subprocess.check_call(['cmake', '--build', '.', '--target', 'pylibvw', '--', '-j'], cwd=path.join(here, 'src'))
 
 class InstallLib(_install_lib):
     def build(self):
@@ -121,8 +116,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='vowpalwabbit',
-    # TODO: use setup py
-    version='8.5.0',
+    version='${PACKAGE_VERSION}',
     description='Vowpal Wabbit Python package',
     long_description=long_description,
     url='https://github.com/JohnLangford/vowpal_wabbit',

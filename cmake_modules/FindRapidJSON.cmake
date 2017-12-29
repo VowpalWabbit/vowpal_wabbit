@@ -3,5 +3,5 @@ find_path (RAPIDJSON_INCLUDES
     PATH_SUFFIXES include
     )
 
-      message (STATUS "Found components for RapidJSON")
-      message (STATUS "RAPIDJSON_INCLUDES  = ${RAPIDJSON_INCLUDES}")
+message (STATUS "Found components for RapidJSON")
+message (STATUS "RAPIDJSON_INCLUDES  = ${RAPIDJSON_INCLUDES}")

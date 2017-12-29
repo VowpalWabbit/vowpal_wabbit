@@ -4,36 +4,26 @@ project (pylibvw)
 set (CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Boost 1.58.0 COMPONENTS python)
+find_package(Boost ${Boost_VERSION} COMPONENTS python)
 find_package(PythonLibs REQUIRED)
 
 include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}) 
 
 add_library(${PROJECT_NAME} SHARED pylibvw.cc)
+target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
 # strip lib prefix to keep setup.py happy
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES PREFIX "")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
-
 find_program(PYTHON "python")
 
-# if (NOT DEFINED PIP_INSTALL)
-# if (PYTHON)
-    # set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-    # set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-    # set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/vowpalwabbit/__init__.py")
-    # set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+if(PYTHON)
+    configure_file(setup.py.in setup.py)
 
-    # configure_file(${SETUP_PY_IN} ${SETUP_PY})
+    SET(PYTHON-TARBALL "dist/vowpalwabbit-${PACKAGE_VERSION}.tar.gz")
 
-    # add_custom_command(OUTPUT ${OUTPUT}
-                       # COMMAND ${PYTHON} ${SETUP_PY} build
-                       # COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-                       # DEPENDS ${DEPS})
-
-    # add_custom_target(python-package ALL DEPENDS ${OUTPUT})
-
-    # install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install)")
-# endif()
-# endif()
+    add_custom_command(OUTPUT ${PYTHON-TARBALL}
+                       COMMAND ${PYTHON} setup.py sdist
+                       DEPENDS setup.py.in)
+    add_custom_target(python-package DEPENDS ${PYTHON-TARBALL})
+endif()

@@ -3,13 +3,25 @@ project (vw)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -fno-strict-aliasing")
+if(WIN32)
+	# /MP multi processor
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64 /MP")
 
-# DSVM only has Boost 1.58.0 installed
+	# if(VW_SSE2)
+	#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+	# endif()
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -fno-strict-aliasing -msse2")
+
+	#if(VW_SSE2)
+	#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+	#endif()
+endif()
+
 # TODO: add filesystem once the windows build works
-find_package(Boost 1.58.0 COMPONENTS program_options)
+find_package(Boost ${Boost_VERSION} COMPONENTS program_options)
 find_package(RapidJSON REQUIRED)
-find_package(Threads REQUIRED)
+find_package(Threads REQUIRED)  
 find_package(ZLIB REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS}) 
@@ -23,11 +35,11 @@ add_library(vw hash.cc global_data.cc io_buf.cc parse_regressor.cc parse_primiti
 
 target_link_libraries(vw PUBLIC allreduce vwcommon ${Boost_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES} )
 
-set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR} ${vwcommon_INCLUDE_DIRS}
+set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR} ${vwcommon_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
     CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
 
 # build main executable
-add_executable(vw-bin main.cc)
+add_executable(vw-bin main.cc) 
 target_link_libraries(vw-bin PRIVATE vw)
 SET_TARGET_PROPERTIES(vw-bin PROPERTIES OUTPUT_NAME vw)
 install(TARGETS vw-bin RUNTIME DESTINATION bin)

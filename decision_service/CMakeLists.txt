@@ -4,7 +4,7 @@ project (ds)
 set (CMAKE_CXX_STANDARD 14)
 
 # BOOST python
-find_package(Boost 1.58.0 COMPONENTS regex)
+find_package(Boost ${Boost_VERSION} COMPONENTS regex)
 find_package(cpprestsdk REQUIRED)
 find_package(OpenSSL REQUIRED)
 

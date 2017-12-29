@@ -15,7 +15,7 @@ license as described in the file LICENSE.
 #if !defined(VW_NO_INLINE_SIMD)
 #  if defined(__ARM_NEON__)
 #include <arm_neon.h>
-#  elif defined(__SSE2__)
+#  elif defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64)
 #include <xmmintrin.h>
 #  endif
 #endif

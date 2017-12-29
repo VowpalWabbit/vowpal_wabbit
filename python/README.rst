@@ -134,6 +134,16 @@ Directory Structure:
 
 **Note:** neither examples nor tests directories are included in the distributed package, they are only for development purposes.
 
+**Tips**
+
+* python setup.py develop
+* python setup.py build
+* python setup.py install
+* pip install dist/vowpalwabbit-8.5.0.tar.gz
+* Documentation
+** https://docs.python.org/3/distutils/apiref.html#distutils.core.Extension
+** https://docs.python.org/3/distutils/setupscript.html
+
 .. _issues: https://github.com/JohnLangford/vowpal_wabbit/issues
 .. _repo: https://github.com/JohnLangford/vowpal_wabbit
 .. _pytest: http://pytest.org/latest/getting-started.html
