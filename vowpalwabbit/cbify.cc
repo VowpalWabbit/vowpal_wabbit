@@ -44,6 +44,18 @@ float loss(cbify& data, uint32_t label, uint32_t final_prediction)
     return data.loss0;
 }
 
+float loss_cs(cbify& data, v_array<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+{
+  float cost = 0.;
+  for (auto wc : costs)
+  { if (wc.class_index == final_prediction)
+    { cost = wc.x;
+      break;
+    }
+  }
+  return data.loss0 + (data.loss1 - data.loss0) * cost;
+}
+
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
 void finish(cbify& data)
@@ -92,11 +104,17 @@ void copy_example_to_adf(cbify& data, example& ec)
   }
 }
 
-template <bool is_learn>
+template <bool is_learn, bool use_cs>
 void predict_or_learn(cbify& data, single_learner& base, example& ec)
 {
-  //Store the multiclass input label
-  MULTICLASS::label_t ld = ec.l.multi;
+  //Store the multiclass or cost-sensitive input label
+  MULTICLASS::label_t ld;
+  COST_SENSITIVE::label csl;
+  if (use_cs)
+    csl = ec.l.cs;
+  else
+    ld = ec.l.multi;
+
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
@@ -115,7 +133,10 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
-  cl.cost = loss(data, ld.label, cl.action);
+  if (use_cs)
+    cl.cost = loss_cs(data, csl.costs, cl.action);
+  else
+    cl.cost = loss(data, ld.label, cl.action);
 
   //Create a new cb label
   data.cb_label.costs.push_back(cl);
@@ -123,15 +144,23 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   base.learn(ec);
   data.a_s.clear();
   data.a_s = ec.pred.a_s;
-  ec.l.multi = ld;
-  ec.pred.multiclass = chosen_action + 1;
+  if (use_cs)
+    ec.l.cs = csl;
+  else
+    ec.l.multi = ld;
+  ec.pred.multiclass = cl.action;
 }
 
-template <bool is_learn>
+template <bool is_learn, bool use_cs>
 void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
-  //Store the multiclass input label
-  MULTICLASS::label_t ld = ec.l.multi;
+  //Store the multiclass or cost-sensitive input label
+  MULTICLASS::label_t ld;
+  COST_SENSITIVE::label csl;
+  if (use_cs)
+    csl = ec.l.cs;
+  else
+    ld = ec.l.multi;
 
   copy_example_to_adf(data, ec);
   base.predict(data.adf_data.ecs);
@@ -148,7 +177,11 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
-  cl.cost = loss(data, ld.label, cl.action);
+
+  if (use_cs)
+    cl.cost = loss_cs(data, csl.costs, cl.action);
+  else
+    cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
@@ -176,9 +209,11 @@ base_learner* cbify_setup(arguments& arg)
 {
   uint32_t num_actions=0;
   auto data = scoped_calloc_or_throw<cbify>();
+  bool use_cs;
 
   if (arg.new_options("Make Multiclass into Contextual Bandit")
       .critical("cbify", num_actions, "Convert multiclass on <k> classes into a contextual bandit problem")
+      (use_cs, "cbify_cs", "consume cost-sensitive classification examples instead of multiclass")
       ("loss0", data->loss0, 0.f, "loss for correct label")
       ("loss1", data->loss1, 1.f, "loss for incorrect label").missing())
     return nullptr;
@@ -211,12 +246,18 @@ base_learner* cbify_setup(arguments& arg)
   if (data->use_adf)
   {
     multi_learner* base = as_multiline(setup_base(arg));
-    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
+    if (use_cs)
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, 1);
+    else
+      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, arg.all->p, 1);
   }
   else
   {
     single_learner* base = as_singleline(setup_base(arg));
-    l = &init_multiclass_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, arg.all->p, 1);
+    if (use_cs)
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, arg.all->p, 1);
+    else
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, arg.all->p, 1);
   }
   l->set_finish(finish);
   arg.all->delete_prediction = nullptr;

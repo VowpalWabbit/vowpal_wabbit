@@ -113,8 +113,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
 void finish_example(vw& all, csoaa&, example& ec)
 {
-  output_example(all, ec);
-  VW::finish_example(all, ec);
+  COST_SENSITIVE::finish_example(all, ec);
 }
 
 void finish(csoaa& c)
