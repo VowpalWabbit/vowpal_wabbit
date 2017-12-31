@@ -193,23 +193,22 @@ void finish(mf& o)
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(vw& all)
+base_learner* mf_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
-    return nullptr;
-
   mf& data = calloc_or_throw<mf>();
-  data.all = &all;
-  data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
+  if (arg.new_options("Matrix Factorization Reduction")
+      .critical("new_mf", data.rank, "rank for reduction-based matrix factorization").missing())
+    return free_return(&data);
 
+  data.all = arg.all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data.pairs = all.pairs;
-  all.pairs.clear();
+  data.pairs = arg.all->pairs;
+  arg.all->pairs.clear();
 
-  all.random_positive_weights = true;
+  arg.all->random_positive_weights = true;
 
-  learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
+  learner<mf>& l = init_learner(&data, setup_base(arg), learn, predict<false>, 2*data.rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

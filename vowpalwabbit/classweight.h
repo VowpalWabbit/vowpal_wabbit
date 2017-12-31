@@ -1,1 +1,1 @@
-LEARNER::base_learner* classweight_setup(vw& all);
+LEARNER::base_learner* classweight_setup(arguments& arg);

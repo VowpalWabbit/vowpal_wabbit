@@ -32,8 +32,8 @@ struct direction
 
 struct ect
 {
-  uint32_t k;
-  uint32_t errors;
+  uint64_t k;
+  uint64_t errors;
   v_array<direction> directions;//The nodes of the tournament datastructure
 
   v_array<v_array<v_array<uint32_t > > > all_levels;
@@ -358,26 +358,20 @@ void finish(ect& e)
   e.tournaments_won.delete_v();
 }
 
-base_learner* ect_setup(vw& all)
+base_learner* ect_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
-    return nullptr;
-  new_options(all, "Error Correcting Tournament options")
-  ("error", po::value<size_t>()->default_value(0), "error in ECT");
-  add_options(all);
-
   ect& data = calloc_or_throw<ect>();
-  data.k = (int)all.vm["ect"].as<size_t>();
-  data.errors = (uint32_t)all.vm["error"].as<size_t>();
-  //append error flag to options_from_file so it is saved in regressor file later
-  *all.file_options << " --error " << data.errors;
+  if (arg.new_options("Error Correcting Tournament Options").
+      critical("ect", data.k, "Error correcting tournament with <k> labels")
+      .keep("error", data.errors, (uint64_t)0, "errors allowed by ECT").missing())
+    return free_return(&data);
 
   size_t wpp = create_circuit(data, data.k, data.errors+1);
 
-  learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
+  learner<ect>& l = init_multiclass_learner(&data, setup_base(arg), learn, predict, arg.all->p, wpp);
   l.set_finish(finish);
 
-  if (all.vm["link"].as<string>().compare("logistic") == 0)
+  if (arg.vm["link"].as<string>().compare("logistic") == 0)
     class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
   return make_base(l);

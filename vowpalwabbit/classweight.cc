@@ -69,20 +69,20 @@ void finish(classweights& data) { data.weights.~unordered_map();}
 
 using namespace CLASSWEIGHTS;
 
-LEARNER::base_learner* classweight_setup(vw& all)
+LEARNER::base_learner* classweight_setup(arguments& arg)
 {
-  if (missing_option<string, true>(all, "classweight", "importance weight multiplier for class"))
+  string classweight;
+  if (arg.new_options("importance weight classes")
+      .critical("classweight", classweight, "importance weight multiplier for class").missing())
     return nullptr;
-
-  string classweight = all.vm["classweight"].as<string>();
 
   classweights& cweights = calloc_or_throw<classweights>();
   new (&(cweights.weights)) std::unordered_map<uint32_t,float>();
   cweights.load_string(classweight);
-  if (!all.quiet)
-    all.trace_message << "parsed " << cweights.weights.size() << " class weights" << endl;
+  if (!arg.all->quiet)
+    arg.trace_message << "parsed " << cweights.weights.size() << " class weights" << endl;
 
-  LEARNER::base_learner* base = setup_base(all);
+  LEARNER::base_learner* base = setup_base(arg);
 
   LEARNER::learner<classweights>* ret;
 

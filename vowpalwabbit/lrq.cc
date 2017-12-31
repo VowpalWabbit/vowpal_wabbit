@@ -172,49 +172,38 @@ void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
 
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
-base_learner* lrq_setup(vw& all)
+base_learner* lrq_setup(arguments& arg)
 {
-  //parse and set arguments
-  if (missing_option<vector<string>>(all, "lrq", "use low rank quadratic features"))
-    return nullptr;
-  new_options(all, "Lrq options")
-  ("lrqdropout", "use dropout training for low rank quadratic features");
-  add_options(all);
-
-  if(!all.vm.count("lrq"))
-    return nullptr;
-
   LRQstate& lrq = calloc_or_throw<LRQstate>();
+  if (arg.new_options("Low Rank Quadratics")
+      .critical_vector<string>("lrq", po::value<vector<string> >(), "use low rank quadratic features")
+      .keep("lrqdropout", "use dropout training for low rank quadratic features").missing())
+    return free_return(&lrq);
+
   uint32_t maxk = 0;
-  lrq.all = &all;
+  lrq.all = arg.all;
 
-  vector<string> arg = all.vm["lrq"].as<vector<string> > ();
-  for (size_t i = 0; i < arg.size(); i++) arg[i] = spoof_hex_encoded_namespaces( arg[i] );
+  vector<string> lrq_names = arg.vm["lrq"].as<vector<string> > ();
+  for (size_t i = 0; i < lrq_names.size(); i++) lrq_names[i] = spoof_hex_encoded_namespaces( lrq_names[i] );
 
-  new(&lrq.lrpairs) std::set<std::string> (arg.begin(), arg.end());
+  new(&lrq.lrpairs) std::set<std::string> (lrq_names.begin(), lrq_names.end());
 
-  lrq.initial_seed = lrq.seed = all.random_seed | 8675309;
-  if (all.vm.count("lrqdropout"))
-  {
+  lrq.initial_seed = lrq.seed = arg.all->random_seed | 8675309;
+  if (arg.vm.count("lrqdropout"))
     lrq.dropout = true;
-    *all.file_options << " --lrqdropout ";
-  }
   else
     lrq.dropout = false;
 
-  for (auto& i : lrq.lrpairs)
-    *all.file_options << " --lrq " << i;
-
-  if (! all.quiet)
+  if (! arg.all->quiet)
   {
-    all.trace_message << "creating low rank quadratic features for pairs: ";
+    arg.all->trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq.dropout)
-      all.trace_message << "(using dropout) ";
+      arg.all->trace_message << "(using dropout) ";
   }
 
   for (string const& i : lrq.lrpairs)
   {
-    if(!all.quiet)
+    if(!arg.all->quiet)
     {
       if (( i.length() < 3 ) || ! valid_int (i.c_str () + 2))
       {
@@ -222,7 +211,7 @@ base_learner* lrq_setup(vw& all)
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
       }
 
-      all.trace_message << i << " ";
+      arg.all->trace_message << i << " ";
     }
     // TODO: colon-syntax
 
@@ -234,11 +223,11 @@ base_learner* lrq_setup(vw& all)
     maxk = max (maxk, k);
   }
 
-  if(!all.quiet)
-    all.trace_message<<endl;
+  if(!arg.all->quiet)
+    arg.trace_message<<endl;
 
-  all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>,
+  arg.all->wpp = arg.all->wpp * (uint64_t)(1 + maxk);
+  learner<LRQstate>& l = init_learner(&lrq, setup_base(arg), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);

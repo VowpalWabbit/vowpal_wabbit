@@ -133,80 +133,63 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(vw& all)
+base_learner* cb_algs_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
-    return nullptr;
-  new_options(all, "CB options")
-  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
-  ("eval", "Evaluate a policy rather than optimizing.");
-  add_options(all);
-
   cb& data = calloc_or_throw<cb>();
-  cb_to_cs& c = data.cbcs;
-  c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
+  std::string type_string;
+  bool eval=false;
 
-  bool eval = false;
-  if (all.vm.count("eval"))
-    eval = true;
+  if (arg.new_options("Contextual Bandit Options")
+      .critical("cb", data.cbcs.num_actions, "Use contextual bandit learning with <k> costs")
+      .keep("cb_type", type_string,(string)"dr", "contextual bandit method to use in {ips,dm,dr}")
+      (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
+    return nullptr;
+
+  cb_to_cs& c = data.cbcs;
 
   size_t problem_multiplier = 2;//default for DR
-  if (all.vm.count("cb_type"))
-  {
-    std::string type_string;
-
-    type_string = all.vm["cb_type"].as<std::string>();
-    *all.file_options << " --cb_type " << type_string;
-
-    if (type_string.compare("dr") == 0)
-      c.cb_type = CB_TYPE_DR;
-    else if (type_string.compare("dm") == 0)
+  if (type_string.compare("dr") == 0)
+    c.cb_type = CB_TYPE_DR;
+  else if (type_string.compare("dm") == 0)
     {
       if (eval)
-      {
-        free(&data);
-        THROW( "direct method can not be used for evaluation --- it is biased.");
-      }
+        {
+          free(&data);
+          THROW( "direct method can not be used for evaluation --- it is biased.");
+        }
 
       c.cb_type = CB_TYPE_DM;
       problem_multiplier = 1;
     }
-    else if (type_string.compare("ips") == 0)
+  else if (type_string.compare("ips") == 0)
     {
       c.cb_type = CB_TYPE_IPS;
       problem_multiplier = 1;
     }
-    else
+  else
     {
       std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
       c.cb_type = CB_TYPE_DR;
     }
-  }
-  else
-  {
-    //by default use doubly robust
-    c.cb_type = CB_TYPE_DR;
-    *all.file_options << " --cb_type dr";
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--csoaa") == 0)
+  if (count(arg.args.begin(), arg.args.end(),"--csoaa") == 0)
   {
-    all.args.push_back("--csoaa");
+    arg.args.push_back("--csoaa");
     stringstream ss;
-    ss << all.vm["cb"].as<size_t>();
-    all.args.push_back(ss.str());
+    ss << arg.vm["cb"].as<size_t>();
+    arg.args.push_back(ss.str());
   }
 
-  base_learner* base = setup_base(all);
+  base_learner* base = setup_base(arg);
   if (eval)
   {
-    all.p->lp = CB_EVAL::cb_eval;
-    all.label_type = label_type::cb_eval;
+    arg.all->p->lp = CB_EVAL::cb_eval;
+    arg.all->label_type = label_type::cb_eval;
   }
   else
   {
-    all.p->lp = CB::cb_label;
-    all.label_type = label_type::cb;
+    arg.all->p->lp = CB::cb_label;
+    arg.all->label_type = label_type::cb;
   }
 
   learner<cb>* l;
@@ -221,7 +204,7 @@ base_learner* cb_algs_setup(vw& all)
                       problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  c.scorer = all.scorer;
+  c.scorer = arg.all->scorer;
 
   l->set_finish(finish);
   return make_base(*l);

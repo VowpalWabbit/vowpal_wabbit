@@ -5,7 +5,7 @@ license as described in the file LICENSE.
 */
 #pragma once
 
-LEARNER::base_learner* cb_explore_adf_setup(vw& all);
+LEARNER::base_learner* cb_explore_adf_setup(arguments& arg);
 
 namespace CB_EXPLORE_ADF
 {

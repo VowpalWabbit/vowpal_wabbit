@@ -1,6 +1,6 @@
 #pragma once
 
-LEARNER::base_learner* cb_adf_setup(vw& all);
+LEARNER::base_learner* cb_adf_setup(arguments& arg);
 
 namespace CB_ADF
 {

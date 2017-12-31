@@ -234,32 +234,24 @@ void finish_example(vw& all, bs& d, example& ec)
 void finish(bs& d)
 { delete d.pred_vec; }
 
-base_learner* bs_setup(vw& all)
+base_learner* bs_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "bootstrap", "k-way bootstrap by online importance resampling"))
-    return nullptr;
-  new_options(all, "Bootstrap options")("bs_type", po::value<string>(),
-                                        "prediction type {mean,vote}");
-  add_options(all);
-
   bs& data = calloc_or_throw<bs>();
+  std::string type_string("mean");
+  if (arg.new_options("Bootstrap")
+      .critical("bootstrap", data.B, "k-way bootstrap by online importance resampling")
+      .keep("bs_type", type_string, "prediction type {mean,vote}").missing())
+    return free_return(&data);
+
   data.ub = FLT_MAX;
   data.lb = -FLT_MAX;
-  data.B = (uint32_t)all.vm["bootstrap"].as<size_t>();
 
-  std::string type_string("mean");
-  if (all.vm.count("bs_type"))
+  if (arg.vm.count("bs_type"))
   {
-    type_string = all.vm["bs_type"].as<std::string>();
-
     if (type_string.compare("mean") == 0)
-    {
       data.bs_type = BS_TYPE_MEAN;
-    }
     else if (type_string.compare("vote") == 0)
-    {
       data.bs_type = BS_TYPE_VOTE;
-    }
     else
     {
       std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
@@ -268,13 +260,12 @@ base_learner* bs_setup(vw& all)
   }
   else //by default use mean
     data.bs_type = BS_TYPE_MEAN;
-  *all.file_options << " --bs_type " << type_string;
 
   data.pred_vec = new vector<double>();
   data.pred_vec->reserve(data.B);
-  data.all = &all;
+  data.all = arg.all;
 
-  learner<bs>& l = init_learner(&data, setup_base(all), predict_or_learn<true>,
+  learner<bs>& l = init_learner(&data, setup_base(arg), predict_or_learn<true>,
                                 predict_or_learn<false>, data.B);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

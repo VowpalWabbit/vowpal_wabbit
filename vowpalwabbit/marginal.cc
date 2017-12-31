@@ -355,30 +355,21 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 
 using namespace MARGINAL;
 
-LEARNER::base_learner* marginal_setup(vw& all)
+LEARNER::base_learner* marginal_setup(arguments& arg)
 {
-  if (missing_option<string, true>(all, "marginal", "substitute marginal label estimates for ids"))
-    return nullptr;
-  new_options(all)
-  ("initial_denominator", po::value<float>()->default_value(1.f), "initial denominator")
-  ("initial_numerator", po::value<float>()->default_value(0.5f), "initial numerator")
-  ("compete", "enable competition with marginal features")
-  ("update_before_learn",po::value<bool>()->default_value(false), "update marginal values before learning")
-  ("unweighted_marginals",po::value<bool>()->default_value(false), "ignore importance weights when computing marginals")
-  ("decay", po::value<float>()->default_value(0.f), "decay multiplier per event (1e-3 for example)");
-  add_options(all);
-
   MARGINAL::data& d = calloc_or_throw<MARGINAL::data>();
-  d.initial_numerator = all.vm["initial_numerator"].as<float>();
-  d.initial_denominator = all.vm["initial_denominator"].as<float>();
-  d.decay = all.vm["decay"].as<float>();
-  d.compete = false;
-  if(all.vm.count("compete"))
-    d.compete = true;
-  d.update_before_learn = all.vm["update_before_learn"].as<bool>();
-  d.unweighted_marginals = all.vm["unweighted_marginals"].as<bool>();
-  d.all = &all;
-  string s = (string)all.vm["marginal"].as<string>();
+  if (arg.new_options("Marginal")
+      .critical<string>("marginal", po::value<string>(), "substitute marginal label estimates for ids")
+      ("initial_denominator", po::value<float>(&d.initial_denominator)->default_value(1.f), "initial denominator")
+      ("initial_numerator", po::value<float>(&d.initial_numerator)->default_value(0.5f), "initial numerator")
+      (d.compete, "compete", "enable competition with marginal features")
+      ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false), "update marginal values before learning")
+      ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
+      ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)").missing())
+    return free_return(&d);
+
+  d.all = arg.all;
+  string s = (string)arg.vm["marginal"].as<string>();
 
   for (size_t u = 0; u < 256; u++)
     if (s.find((char)u) != string::npos)
@@ -387,7 +378,7 @@ LEARNER::base_learner* marginal_setup(vw& all)
   new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<MARGINAL::data>& ret =
-    init_learner(&d, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(&d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_finish(finish);
   ret.set_save_load(save_load);
 

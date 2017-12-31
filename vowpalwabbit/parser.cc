@@ -419,7 +419,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 void enable_sources(vw& all, bool quiet, size_t passes)
 {
   all.p->input->current = 0;
-  parse_cache(all, all.vm, all.data_filename, quiet);
+  parse_cache(all, all.opts_n_args.vm, all.data_filename, quiet);
 
   if (all.daemon || all.active)
   {
@@ -451,8 +451,8 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.vm.count("port"))
-      port = (uint16_t)all.vm["port"].as<size_t>();
+    if (all.opts_n_args.vm.count("port"))
+      port = (uint16_t)all.opts_n_args.vm["port"].as<size_t>();
     address.sin_port = htons(port);
 
     // attempt to bind to socket
@@ -464,7 +464,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       THROWERRNO("listen");
 
     // write port file
-    if (all.vm.count("port_file"))
+    if (all.opts_n_args.vm.count("port_file"))
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
@@ -472,26 +472,26 @@ void enable_sources(vw& all, bool quiet, size_t passes)
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       ofstream port_file;
-      port_file.open(all.vm["port_file"].as<string>().c_str());
+      port_file.open(all.opts_n_args.vm["port_file"].as<string>().c_str());
       if (!port_file.is_open())
-        THROW("error writing port file: " << all.vm["port_file"].as<string>());
+        THROW("error writing port file: " << all.opts_n_args.vm["port_file"].as<string>());
 
       port_file << ntohs(address.sin_port) << endl;
       port_file.close();
     }
 
     // background process (if foreground is not set)
-    if (!all.vm.count("foreground"))
+    if (!all.opts_n_args.vm.count("foreground"))
     {
       if (!all.active && daemon(1,1))
         THROWERRNO("daemon");
     }
 
     // write pid file
-    if (all.vm.count("pid_file"))
+    if (all.opts_n_args.vm.count("pid_file"))
     {
       ofstream pid_file;
-      pid_file.open(all.vm["pid_file"].as<string>().c_str());
+      pid_file.open(all.opts_n_args.vm["pid_file"].as<string>().c_str());
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
@@ -638,7 +638,7 @@ child:
         }
       }
 
-      if (all.vm.count("json") || all.vm.count("dsjson"))
+      if (all.opts_n_args.vm.count("json") || all.opts_n_args.vm.count("dsjson"))
       {
         // TODO: change to class with virtual method
         if (all.audit)
@@ -654,7 +654,7 @@ child:
           all.p->jsonp = new json_parser<false>;
         }
 
-        all.p->decision_service_json = all.vm.count("dsjson") > 0;
+        all.p->decision_service_json = all.opts_n_args.vm.count("dsjson") > 0;
       }
       else
         all.p->reader = read_features_string;

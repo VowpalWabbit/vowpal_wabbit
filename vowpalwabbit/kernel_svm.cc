@@ -27,6 +27,7 @@ license as described in the file LICENSE.
 #include "vw_allreduce.h"
 #include "rand48.h"
 #include "floatbits.h"
+#include "reductions.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -857,97 +858,58 @@ void finish(svm_params& params)
   params.all->trace_message<<"Done with finish "<<endl;
 }
 
-LEARNER::base_learner* kernel_svm_setup(vw &all)
+LEARNER::base_learner* kernel_svm_setup(arguments& arg)
 {
-  if (missing_option(all, true, "ksvm", "kernel svm")) return nullptr;
-  new_options(all, "KSVM options")
-  ("reprocess", po::value<size_t>(), "number of reprocess steps for LASVM")
-  //      ("active", "do active learning")
-  //("active_c", po::value<double>(), "parameter for query prob")
-  ("pool_greedy", "use greedy selection on mini pools")
-  ("para_active", "do parallel active learning")
-  ("pool_size", po::value<size_t>(), "size of pools for active learning")
-  ("subsample", po::value<size_t>(), "number of items to subsample from the pool")
-  ("kernel", po::value<string>(), "type of kernel (rbf or linear (default))")
-  ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
-  ("degree", po::value<int>(), "degree of poly kernel")
-  ("lambda", po::value<double>(), "saving regularization for test time");
-  add_options(all);
+  svm_params& params = calloc_or_throw<svm_params>();
+  std::string kernel_type;
+  float bandwidth=1.f;
+  int degree = 2;
+  if (arg.new_options("Kernel SVM").critical("ksvm", "kernel svm")
+      ("reprocess", params.reprocess, (size_t)1, "number of reprocess steps for LASVM")
+      (params.active_pool_greedy, "pool_greedy", "use greedy selection on mini pools")
+      ("para_active", "do parallel active learning")
+      ("pool_size", params.pool_size, (size_t)1, "size of pools for active learning")
+      ("subsample", params.subsample, (size_t)1, "number of items to subsample from the pool")
+      .keep("kernel", kernel_type, (string)"linear", "type of kernel (rbf or linear (default))")
+      .keep("bandwidth", bandwidth, 1.f, "bandwidth of rbf kernel")
+      .keep("degree", degree, 2, "degree of poly kernel")
+      .keep("lambda", params.lambda, "saving regularization for test time").missing())
+    return free_return(&params);
 
-  po::variables_map& vm = all.vm;
   string loss_function = "hinge";
   float loss_parameter = 0.0;
-  delete all.loss;
-  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
+  delete arg.all->loss;
+  arg.all->loss = getLossFunction(*arg.all, loss_function, (float)loss_parameter);
 
-  svm_params& params = calloc_or_throw<svm_params>();
   params.model = &calloc_or_throw<svm_model>();
   params.model->num_support = 0;
-  //params.curcache = 0;
   params.maxcache = 1024*1024*1024;
   params.loss_sum = 0.;
-  params.all = &all;
+  params.all = arg.all;
 
-  if(vm.count("reprocess"))
-    params.reprocess = vm["reprocess"].as<std::size_t>();
-  else
-    params.reprocess = 1;
-
-  if(vm.count("active"))
+  if(arg.vm.count("active"))
     params.active = true;
   if(params.active)
   {
-    if(vm.count("active_c"))
-      params.active_c = vm["active_c"].as<double>();
+    if(arg.vm.count("active_c"))
+      params.active_c = arg.vm["active_c"].as<double>();
     else
       params.active_c = 1.;
-    if(vm.count("pool_greedy"))
-      params.active_pool_greedy = 1;
-    /*if(vm.count("para_active"))
-      params.para_active = 1;*/
   }
-
-  if(vm.count("pool_size"))
-    params.pool_size = vm["pool_size"].as<std::size_t>();
-  else
-    params.pool_size = 1;
 
   params.pool = calloc_or_throw<svm_example*>(params.pool_size);
   params.pool_pos = 0;
 
-  if(vm.count("subsample"))
-    params.subsample = vm["subsample"].as<std::size_t>();
-  else if(params.para_active)
-    params.subsample = (size_t)ceil(params.pool_size / all.all_reduce->total);
-  else
-    params.subsample = 1;
+  if(!arg.vm.count("subsample") && params.para_active)
+    params.subsample = (size_t)ceil(params.pool_size / arg.all->all_reduce->total);
 
-  params.lambda = all.l2_lambda;
-
-  *all.file_options <<" --lambda "<< params.lambda;
-
+  params.lambda = arg.all->l2_lambda;
   params.all->trace_message<<"Lambda = "<<params.lambda<<endl;
-
-  std::string kernel_type;
-
-  if(vm.count("kernel"))
-    kernel_type = vm["kernel"].as<std::string>();
-  else
-    kernel_type = string("linear");
-
-  *all.file_options <<" --kernel "<< kernel_type;
-
   params.all->trace_message<<"Kernel = "<<kernel_type<<endl;
 
   if(kernel_type.compare("rbf") == 0)
   {
     params.kernel_type = SVM_KER_RBF;
-    float bandwidth = 1.;
-    if(vm.count("bandwidth"))
-    {
-      bandwidth = vm["bandwidth"].as<float>();
-      *all.file_options <<" --bandwidth "<<bandwidth;
-    }
     params.all->trace_message<<"bandwidth = "<<bandwidth<<endl;
     params.kernel_params = &calloc_or_throw<double>();
     *((float*)params.kernel_params) = bandwidth;
@@ -955,12 +917,6 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else if(kernel_type.compare("poly") == 0)
   {
     params.kernel_type = SVM_KER_POLY;
-    int degree = 2;
-    if(vm.count("degree"))
-    {
-      degree = vm["degree"].as<int>();
-      *all.file_options <<" --degree "<<degree;
-    }
     params.all->trace_message<<"degree = "<<degree<<endl;
     params.kernel_params = &calloc_or_throw<int>();
     *((int*)params.kernel_params) = degree;
@@ -968,7 +924,6 @@ LEARNER::base_learner* kernel_svm_setup(vw &all)
   else
     params.kernel_type = SVM_KER_LIN;
 
-  //params.all->weights->mask((uint64_t)LONG_MAX);
   params.all->weights.stride_shift(0);
 
   learner<svm_params>& l = init_learner(&params, learn, 1);

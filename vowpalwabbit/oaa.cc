@@ -14,10 +14,10 @@ license as described in the file LICENSE.
 using namespace std;
 struct oaa
 {
-  size_t k;
+  uint64_t k;
   vw* all; // for raw
   polyprediction* pred;  // for multipredict
-  size_t num_subsample; // for randomized subsampling, how many negatives to draw?
+  uint64_t num_subsample; // for randomized subsampling, how many negatives to draw?
   uint32_t* subsample_order; // for randomized subsampling, in what order should we touch classes
   size_t subsample_id; // for randomized subsampling, where do we live in the list
 };
@@ -202,38 +202,37 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   VW::finish_example(all, &ec);
 }
 
-LEARNER::base_learner* oaa_setup(vw& all)
+LEARNER::base_learner* oaa_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "oaa", "One-against-all multiclass with <k> labels"))
-    return nullptr;
-  new_options(all, "oaa options")
-  ("oaa_subsample", po::value<size_t>(), "subsample this number of negative examples when learning")
-  ("probabilities", "predict probabilites of all classes")
-  ("scores", "output raw scores per class");
-  add_options(all);
+  oaa& data = calloc_or_throw<oaa>();
+  bool probabilities = false;
+  bool scores = false;
+  if (arg.new_options("One Against All Options")
+      .critical<uint64_t>("oaa", po::value(&data.k), "One-against-all multiclass with <k> labels")
+      ("oaa_subsample", data.num_subsample, "subsample this number of negative examples when learning")
+      (probabilities, "probabilities", "predict probabilites of all classes")
+      (scores, "scores", "output raw scores per class").missing())
+    return free_return(&data);
 
-  oaa* data_ptr = calloc_or_throw<oaa>(1);
-  oaa& data = *data_ptr;
-  data.k = all.vm["oaa"].as<size_t>(); // number of classes
+  oaa* data_ptr = &data;
 
-  if (all.sd->ldict && (data.k != all.sd->ldict->getK()))
+  if (arg.all->sd->ldict && (data.k != arg.all->sd->ldict->getK()))
   {
     free(data_ptr);
-    THROW("error: you have " << all.sd->ldict->getK() << " named labels; use that as the argument to oaa")
+    THROW("error: you have " << arg.all->sd->ldict->getK() << " named labels; use that as the argument to oaa")
   }
 
-  data.all = &all;
+  data.all = arg.all;
   data.pred = calloc_or_throw<polyprediction>(data.k);
   data.num_subsample = 0;
   data.subsample_order = nullptr;
   data.subsample_id = 0;
-  if (all.vm.count("oaa_subsample"))
+  if (data.num_subsample > 0)
   {
-    data.num_subsample = all.vm["oaa_subsample"].as<size_t>();
     if (data.num_subsample >= data.k)
     {
       data.num_subsample = 0;
-      all.trace_message << "oaa is turning off subsampling because your parameter >= K" << endl;
+      arg.all->trace_message << "oaa is turning off subsampling because your parameter >= K" << endl;
     }
     else
     {
@@ -241,7 +240,7 @@ LEARNER::base_learner* oaa_setup(vw& all)
       for (size_t i=0; i<data.k; i++) data.subsample_order[i] = (uint32_t) i;
       for (size_t i=0; i<data.k; i++)
       {
-        size_t j = (size_t)(merand48(all.random_state) * (float)(data.k-i)) + i;
+        size_t j = (size_t)(merand48(arg.all->random_state) * (float)(data.k-i)) + i;
         uint32_t tmp = data.subsample_order[i];
         data.subsample_order[i] = data.subsample_order[j];
         data.subsample_order[j] = tmp;
@@ -250,32 +249,32 @@ LEARNER::base_learner* oaa_setup(vw& all)
   }
 
   LEARNER::learner<oaa>* l;
-  if( all.vm.count("probabilities") || all.vm.count("scores") )
+  if( probabilities || scores)
   {
-    all.delete_prediction = delete_scalars;
-    if (all.vm.count("probabilities"))
+    arg.all->delete_prediction = delete_scalars;
+    if (probabilities)
     {
-      if (!all.vm.count("loss_function") || all.vm["loss_function"].as<string>() != "logistic" )
-        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
+        arg.all->trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true, true>,
-                                            predict_or_learn<false, false, true, true>, all.p, data.k, prediction_type::scalars);
-      all.sd->report_multiclass_log_loss = true;
+      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, false, true, true>,
+                                            predict_or_learn<false, false, true, true>, arg.all->p, data.k, prediction_type::scalars);
+      arg.all->sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, false, true, false>,
-                                            predict_or_learn<false, false, true, false>, all.p, data.k, prediction_type::scalars);
+      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, false, true, false>,
+                                            predict_or_learn<false, false, true, false>, arg.all->p, data.k, prediction_type::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
-  else if (all.raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all), predict_or_learn<true, true, false, false>,
-                                          predict_or_learn<false, true, false, false>, all.p, data.k, prediction_type::multiclass);
+  else if (arg.all->raw_prediction > 0)
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, true, false, false>,
+                                          predict_or_learn<false, true, false, false>, arg.all->p, data.k, prediction_type::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(all),predict_or_learn<true, false, false, false>,
-                                          predict_or_learn<false, false, false, false>, all.p, data.k, prediction_type::multiclass);
+    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg),predict_or_learn<true, false, false, false>,
+                                          predict_or_learn<false, false, false, false>, arg.all->p, data.k, prediction_type::multiclass);
 
   if (data.num_subsample > 0)
     l->set_learn(learn_randomized);

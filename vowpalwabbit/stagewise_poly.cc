@@ -674,33 +674,25 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(vw &all)
+base_learner *stagewise_poly_setup(arguments& arg)
 {
-  if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
+  stagewise_poly& poly = calloc_or_throw<stagewise_poly>();
+  if (arg.new_options("Stagewise polynomial options")
+      .critical("stage_poly", "use stagewise polynomial feature learning")
+      ("sched_exponent", poly.sched_exponent, 1.f, "exponent controlling quantity of included features")
+      ("batch_sz", poly.batch_sz, (uint32_t)1000, "multiplier on batch size before including more features")
+      (poly.batch_sz_double, "batch_sz_no_doubling", "batch_sz does not double")
+#ifdef MAGIC_ARGUMENT
+      ("magic_argument", poly.magic_argument, 0., "magical feature flag")
+#endif //MAGIC_ARGUMENT
+      .missing())
     return nullptr;
 
-  new_options(all, "Stagewise poly options")
-  ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-  ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
-  ("batch_sz_no_doubling", "batch_sz does not double")
-#ifdef MAGIC_ARGUMENT
-  ("magic_argument", po::value<float>(), "magical feature flag")
-#endif //MAGIC_ARGUMENT
-  ;
-  add_options(all);
-
-  po::variables_map &vm = all.vm;
-  stagewise_poly& poly = calloc_or_throw<stagewise_poly>();
-  poly.all = &all;
+  poly.all = arg.all;
   depthsbits_create(poly);
   sort_data_create(poly);
 
-  poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
-  poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
-#ifdef MAGIC_ARGUMENT
-  poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
-#endif //MAGIC_ARGUMENT
+  poly.batch_sz_double = !poly.batch_sz_double;
 
   poly.sum_sparsity = 0;
   poly.sum_input_sparsity = 0;
@@ -714,7 +706,7 @@ base_learner *stagewise_poly_setup(vw &all)
   poly.original_ec = nullptr;
   poly.next_batch_sz = poly.batch_sz;
 
-  learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
+  learner<stagewise_poly>& l = init_learner(&poly, setup_base(arg), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

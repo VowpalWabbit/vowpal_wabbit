@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "vw.h"
 #include "rand48.h"
+#include "reductions.h"
 #include <math.h>
 
 using namespace std;
@@ -528,62 +529,27 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* OjaNewton_setup(vw& all)
+base_learner* OjaNewton_setup(arguments& arg)
 {
-  if (missing_option(all, false, "OjaNewton", "Online Newton with Oja's Sketch"))
-    return nullptr;
-
-  new_options(all, "OjaNewton options")
-  ("sketch_size", po::value<int>(), "size of sketch")
-  ("epoch_size", po::value<int>(), "size of epoch")
-  ("alpha", po::value<float>(), "mutiplicative constant for indentiy")
-  ("alpha_inverse", po::value<float>(), "one over alpha, similar to learning rate")
-  ("learning_rate_cnt", po::value<float>(), "constant for the learning rate 1/t")
-  ("normalize", po::value<bool>(), "normalize the features or not")
-  ("random_init", po::value<bool>(), "randomize initialization of Oja or not");
-  add_options(all);
-
-  po::variables_map& vm = all.vm;
-
   OjaNewton& ON = calloc_or_throw<OjaNewton>();
-  ON.all = &all;
+  if (arg.new_options("OjaNewton options")
+      .critical("OjaNewton", "Online Newton with Oja's Sketch")
+      ("sketch_size", ON.m, 10, "size of sketch")
+      ("epoch_size", ON.epoch_size, 1, "size of epoch")
+      ("alpha", ON.alpha, 1.f, "mutiplicative constant for indentiy")
+      ("alpha_inverse", po::value<float>(), "one over alpha, similar to learning rate")
+      ("learning_rate_cnt", ON.learning_rate_cnt, 2.f, "constant for the learning rate 1/t")
+      ("normalize", ON.normalize, true, "normalize the features or not")
+      ("random_init", ON.random_init, true, "randomize initialization of Oja or not").missing())
+    return free_return(&ON);
 
-  if (vm.count("sketch_size"))
-    ON.m = vm["sketch_size"].as<int>();
-  else
-    ON.m = 10;
+  ON.all = arg.all;
 
-  if (vm.count("epoch_size"))
-    ON.epoch_size = vm["epoch_size"].as<int>();
-  else
-    ON.epoch_size = 1;
-
-  if (vm.count("alpha"))
-    ON.alpha = vm["alpha"].as<float>();
-  else
-    ON.alpha = 1.f;
-
-  if (vm.count("alpha_inverse"))
-    ON.alpha = 1.f / vm["alpha_inverse"].as<float>();
-
-  if (vm.count("learning_rate_cnt"))
-    ON.learning_rate_cnt = vm["learning_rate_cnt"].as<float>();
-  else
-    ON.learning_rate_cnt = 2;
-
-  if (vm.count("normalize"))
-    ON.normalize = vm["normalize"].as<bool>();
-  else
-    ON.normalize = true;
-
-  if (vm.count("random_init"))
-    ON.random_init = vm["random_init"].as<bool>();
-  else
-    ON.random_init = true;
+  if (arg.vm.count("alpha_inverse"))
+    ON.alpha = 1.f / arg.vm["alpha_inverse"].as<float>();
 
   ON.cnt = 0;
   ON.t = 1;
-
   ON.ev = calloc_or_throw<float>(ON.m+1);
   ON.b = calloc_or_throw<float>(ON.m+1);
   ON.D = calloc_or_throw<float>(ON.m+1);
@@ -610,9 +576,9 @@ base_learner* OjaNewton_setup(vw& all)
   ON.data.AZx = calloc_or_throw<float>(ON.m+1);
   ON.data.delta = calloc_or_throw<float>(ON.m+1);
 
-  all.weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
+  arg.all->weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
 
-  learner<OjaNewton>& l = init_learner(&ON, learn, all.weights.stride());
+  learner<OjaNewton>& l = init_learner(&ON, learn, arg.all->weights.stride());
 
   l.set_predict(predict);
   l.set_save_load(save_load);

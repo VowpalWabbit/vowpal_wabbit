@@ -6,6 +6,7 @@
 #include <string>
 #include "correctedMath.h"
 #include "gd.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -236,68 +237,52 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(vw& all)
+base_learner* ftrl_setup(arguments& arg)
 {
-  if (missing_option(all, false, "ftrl", "FTRL: Follow the Proximal Regularized Leader") &&
-      missing_option(all, false, "pistol", "FTRL: Parameter-free Stochastic Learning"))
-  {
-    return nullptr;
-  }
-
-  new_options(all, "FTRL options")
-  ("ftrl_alpha", po::value<float>(), "Learning rate for FTRL optimization")
-  ("ftrl_beta", po::value<float>(), "FTRL beta parameter");
-
-  add_options(all);
-
-  po::variables_map& vm = all.vm;
-
   ftrl& b = calloc_or_throw<ftrl>();
-  b.all = &all;
+  if (arg.new_options("Follow the Regularized Leader")
+      .critical("ftrl", "FTRL: Follow the Proximal Regularized Leader")
+      ("ftrl_alpha", b.ftrl_alpha, "Learning rate for FTRL optimization")
+      ("ftrl_beta", b.ftrl_beta, "FTRL beta parameter").missing())
+    if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning").missing())
+      return free_return(&b);
+
+  b.all = arg.all;
   b.no_win_counter = 0;
   b.early_stop_thres = 3;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
   string algorithm_name;
-  if (vm.count("ftrl"))
+  if (arg.vm.count("ftrl"))
   {
     algorithm_name = "Proximal-FTRL";
-    if (all.audit)
+    if (arg.all->audit)
       learn_ptr=learn_proximal<true>;
     else
       learn_ptr=learn_proximal<false>;
-    if (vm.count("ftrl_alpha"))
-      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-    else
-      b.ftrl_alpha = 0.005f;
-    if (vm.count("ftrl_beta"))
-      b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    else
+    if (!arg.vm.count("ftrl_alpha"))
+      b.ftrl_beta = 0.005f;
+    if (!arg.vm.count("ftrl_beta"))
       b.ftrl_beta = 0.1f;
   }
-  else if (vm.count("pistol"))
+  else if (arg.vm.count("pistol"))
   {
     algorithm_name = "PiSTOL";
     learn_ptr=learn_pistol;
-    if (vm.count("ftrl_alpha"))
-      b.ftrl_alpha = vm["ftrl_alpha"].as<float>();
-    else
+    if (!arg.vm.count("ftrl_alpha"))
       b.ftrl_alpha = 1.0f;
-    if (vm.count("ftrl_beta"))
-      b.ftrl_beta = vm["ftrl_beta"].as<float>();
-    else
+    if (!arg.vm.count("ftrl_beta"))
       b.ftrl_beta = 0.5f;
-
   }
   b.data.ftrl_alpha = b.ftrl_alpha;
   b.data.ftrl_beta = b.ftrl_beta;
   b.data.l1_lambda = b.all->l1_lambda;
   b.data.l2_lambda = b.all->l2_lambda;
 
-  all.weights.stride_shift(2); // NOTE: for more parameter storage
+  arg.all->weights.stride_shift(2); // NOTE: for more parameter storage
 
-  if (!all.quiet)
+  if (!arg.all->quiet)
   {
     cerr << "Enabling FTRL based optimization" << endl;
     cerr << "Algorithm used: " << algorithm_name << endl;
@@ -305,20 +290,20 @@ base_learner* ftrl_setup(vw& all)
     cerr << "ftrl_beta = " << b.ftrl_beta << endl;
   }
 
-  if(!all.holdout_set_off)
+  if(!arg.all->holdout_set_off)
   {
-    all.sd->holdout_best_loss = FLT_MAX;
-    if(vm.count("early_terminate"))
-      b.early_stop_thres = vm["early_terminate"].as< size_t>();
+    arg.all->sd->holdout_best_loss = FLT_MAX;
+    if(arg.vm.count("early_terminate"))
+      b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << all.weights.stride_shift());
-  if (all.audit || all.hash_inv)
+  learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << arg.all->weights.stride_shift());
+  if (arg.all->audit || arg.all->hash_inv)
     l.set_predict(predict<true>);
   else
     l.set_predict(predict<false>);
   l.set_sensitivity(sensitivity);
-  if (all.audit || all.hash_inv)
+  if (arg.all->audit || arg.all->hash_inv)
     l.set_multipredict(multipredict<true>);
   else
     l.set_multipredict(multipredict<false>);

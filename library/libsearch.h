@@ -100,7 +100,7 @@ public:
     size_t num_actions = d->num_actions;
     my_task = task;
     if (my_task->initialize)
-      my_task->initialize(sch, num_actions, *d->var_map);
+      my_task->initialize(sch, num_actions, *d->arg);
   }
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }

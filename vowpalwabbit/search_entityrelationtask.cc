@@ -36,38 +36,23 @@ struct task_data
 };
 
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
-  vw& all = sch.get_vw_pointer_unsafe();
   task_data * my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
-  new_options(all, "Entity Relation Options")
-  ("relation_cost", po::value<float>(&(my_task_data->relation_cost))->default_value(1.0), "Relation Cost")
-  ("entity_cost", po::value<float>(&(my_task_data->entity_cost))->default_value(1.0), "Entity Cost")
-  ("constraints", "Use Constraints")
-  ("relation_none_cost", po::value<float>(&(my_task_data->relation_none_cost))->default_value(0.5), "None Relation Cost")
-  ("skip_cost", po::value<float>(&(my_task_data->skip_cost))->default_value(0.01f), "Skip Cost (only used when search_order = skip")
-  ("search_order", po::value<size_t>(&(my_task_data->search_order))->default_value(0), "Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)" );
-  add_options(all);
-
-  check_option<size_t>(my_task_data->search_order, all, vm, "search_order", false, size_equal,
-                       "warning: you specified a different value for --search_order than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<float>(my_task_data->relation_cost, all, vm, "relation_cost", false, float_equal,
-                      "warning: you specified a different value for --relation_cost than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<float>(my_task_data->entity_cost, all, vm, "entity_cost", false, float_equal,
-                      "warning: you specified a different value for --entity_cost than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<float>(my_task_data->relation_none_cost, all, vm, "relation_none_cost", false, float_equal,
-                      "warning: you specified a different value for --relation_none_cost than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<float>(my_task_data->skip_cost, all, vm, "skip_cost", false, float_equal,
-                      "warning: you specified a different value for --skip_cost than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option(my_task_data->constraints, all, vm, "constraints", false,
-               "warning: you specified a different value for --constraints than the one loaded from regressor. proceeding with loaded value: ");
+  arg.new_options("Entity Relation Options")
+    .keep("relation_cost", my_task_data->relation_cost, 1.0f, "Relation Cost")
+    .keep("entity_cost", my_task_data->entity_cost, 1.0f, "Entity Cost")
+    .keep(my_task_data->constraints, "constraints", "Use Constraints")
+    .keep("relation_none_cost", my_task_data->relation_none_cost, 0.5f, "None Relation Cost")
+    .keep("skip_cost", my_task_data->skip_cost, 0.01f, "Skip Cost (only used when search_order = skip")
+    .keep("search_order", my_task_data->search_order, (size_t)0, "Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)" ).missing();
 
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
   // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
-  my_task_data->constraints = vm.count("constraints") > 0;
+  my_task_data->constraints = arg.vm.count("constraints") > 0;
 
   for(int i=1; i<5; i++)
     my_task_data->y_allowed_entity.push_back(i);

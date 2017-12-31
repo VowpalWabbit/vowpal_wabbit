@@ -221,70 +221,38 @@ void finish(active_cover& ac)
   delete[] ac.lambda_d;
 }
 
-base_learner* active_cover_setup(vw& all)
+base_learner* active_cover_setup(arguments& arg)
 {
-  //parse and set arguments
-  if(missing_option(all, false, "active_cover", "enable active learning with cover"))
+  active_cover& data = calloc_or_throw<active_cover>();
+  if(arg.new_options("Active Learning with Cover")
+     .critical("active_cover", "enable active learning with cover")
+     ("mellowness", data.active_c0, 8.f, "active learning mellowness parameter c_0. Default 8.")
+     ("alpha", data.alpha, 1.f, "active learning variance upper bound parameter alpha. Default 1.")
+     ("beta_scale", data.beta_scale, sqrtf(10.f), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
+     .keep("cover", data.cover_size, (size_t)12, "cover size. Default 12.")
+     (data.oracular, "oracular", "Use Oracular-CAL style query or not. Default false.").missing())
     return nullptr;
 
-  new_options(all, "Active Learning with cover options")
-  ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8.")
-  ("alpha", po::value<float>(), "active learning variance upper bound parameter alpha. Default 1.")
-  ("beta_scale", po::value<float>(), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
-  ("cover", po::value<float>(), "cover size. Default 12.")
-  ("oracular", "Use Oracular-CAL style query or not. Default false.");
-  add_options(all);
+  data.all = arg.all;
 
-  active_cover& data = calloc_or_throw<active_cover>();
-  data.active_c0 = 8.f;
-  data.alpha = 1.f;
-  data.beta_scale = 10.f; // this is actually beta_scale^2
-  data.all = &all;
-  data.oracular = false;
-  data.cover_size = 12;
+  data.beta_scale *= data.beta_scale;
 
-  if(all.vm.count("mellowness"))
-  {
-    data.active_c0 = all.vm["mellowness"].as<float>();
-  }
-
-  if(all.vm.count("alpha"))
-  {
-    data.alpha = all.vm["alpha"].as<float>();
-  }
-
-  if(all.vm.count("beta_scale"))
-  {
-    data.beta_scale = all.vm["beta_scale"].as<float>();
-    data.beta_scale *= data.beta_scale;
-  }
-
-  if(all.vm.count("cover"))
-  {
-    data.cover_size = (size_t)all.vm["cover"].as<float>();
-  }
-
-  if(all.vm.count("oracular"))
-  {
-    data.oracular = true;
+  if(arg.vm.count("oracular"))
     data.cover_size = 0;
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--lda") != 0)
+  if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
   {
     free(&data);
     THROW("error: you can't combine lda and active learning");
   }
 
-
-  if (count(all.args.begin(), all.args.end(),"--active") != 0)
+  if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
   {
     free(&data);
     THROW("error: you can't use --active_cover and --active at the same time");
   }
 
-  *all.file_options <<" --active_cover --cover "<< data.cover_size;
-  base_learner* base = setup_base(all);
+  base_learner* base = setup_base(arg);
 
   data.lambda_n = new float[data.cover_size];
   data.lambda_d = new float[data.cover_size];
