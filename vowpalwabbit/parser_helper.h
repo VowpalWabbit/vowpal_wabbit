@@ -11,7 +11,7 @@ class vw;
 class arguments {
   po::options_description new_od;//a set of options
   po::variables_map add_options_skip_duplicates(po::options_description& opts, bool do_notify);
-  uint32_t critical_count;
+  bool missing_critical;
 
  public:
   po::options_description all_opts; //All specified options.
@@ -23,15 +23,15 @@ class arguments {
   vw* all;//backdoor that should go away over time.
 
   //initialization
- arguments(vw& all_in, std::string name_in=""):new_od(name_in), critical_count(0), all(&all_in) {file_options = new std::stringstream;};
- arguments():critical_count(0){};//this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
+ arguments(vw& all_in, std::string name_in=""):new_od(name_in), missing_critical(false), all(&all_in) {file_options = new std::stringstream;};
+ arguments():missing_critical(false){};//this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
 
   //reinitialization
   arguments& new_options(std::string name_in="")
   {
     (&new_od)->~options_description();//in place delete
     new (&new_od) po::options_description(name_in);
-    critical_count=0;
+    missing_critical=false;
     return *this;
   }
 
@@ -102,72 +102,41 @@ class arguments {
     { return critical<T>(option, po::value<T>(&store), description); }
   template<class T> arguments& critical(const char* option, po::typed_value<T>* type, const char* description)
     {
-      critical_count++;
-      operator()(option, type->notifier([this, option] (T arg)
-                                        {
-                                          critical_count--;
-                                          *this->file_options << " --" << option << " " << arg;
-                                        }), description);
-      if (missing())
-        {
-          new_options();
-          critical_count=1;        
-        }
-      else
-        new_options();
+      keep(option, type, description);
+      missing();
+      new_options();
+      missing_critical = !vm.count(option);
       return *this;
     }
   template<class T> arguments& critical_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description)
     {
-      critical_count++;
-      operator()(option, type->notifier([this, option] (std::vector<T> arg)
-                                        {
-                                          critical_count--;
-                                          for (auto i: arg)
-                                            *this->file_options << " --" << option << " " << i;
-                                        }), description);
-      if (missing())
-        {
-          new_options();
-          critical_count=1;        
-        }
-      else
-        new_options();
+      keep_vector(option, type, description);
+      missing();
+      new_options();
+      missing_critical = !vm.count(option);
       return *this;
     }
   template<class T> arguments& critical(const char* option, const char* description)
     { return critical<T>(option, po::value<T>(), description); }
   arguments& critical(const char* option, const char* description)
     {
-      operator()(option,
-                 po::bool_switch()->notifier([this, option] (bool temp)
-                                             {
-                                               if (temp)
-                                                 *this->file_options << " --" << option;
-                                               else
-                                                 ++this->critical_count;
-                                             }),
-                 description);
-      if (missing())
-        {
-          new_options();
-          critical_count=1;        
-        }
-      else
-        new_options();
+      keep(option, description);
+      missing();
+      new_options();
+      missing_critical = !vm[option].as<bool>();
       return *this;
     }
 
   bool missing()  //Return true if key options are missing.
   {
     all_opts.add(new_od);
-    if (critical_count == 0)
+    if (!missing_critical)
       {
         opts.add(new_od);    //compile options
         auto new_vm = add_options_skip_duplicates(new_od, true);//do notify
         for (auto& it : new_vm)
           vm.insert(it);
       }
-    return critical_count > 0;
+    return missing_critical;
   }
 };
