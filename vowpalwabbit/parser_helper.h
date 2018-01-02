@@ -103,35 +103,59 @@ class arguments {
   template<class T> arguments& critical(const char* option, po::typed_value<T>* type, const char* description)
     {
       critical_count++;
-      return operator()(option, type->notifier([this, option] (T arg)
-                                               {
-                                                 critical_count--;
-                                                 *this->file_options << " --" << option << " " << arg;
-                                               }), description); 
-   }
+      operator()(option, type->notifier([this, option] (T arg)
+                                        {
+                                          critical_count--;
+                                          *this->file_options << " --" << option << " " << arg;
+                                        }), description);
+      if (missing())
+        {
+          new_options();
+          critical_count=1;        
+        }
+      else
+        new_options();
+      return *this;
+    }
   template<class T> arguments& critical_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description)
     {
       critical_count++;
-      return operator()(option, type->notifier([this, option] (std::vector<T> arg)
-                                               {
-                                                 critical_count--;
-                                                 for (auto i: arg)
-                                                   *this->file_options << " --" << option << " " << i;
-                                               }), description);
+      operator()(option, type->notifier([this, option] (std::vector<T> arg)
+                                        {
+                                          critical_count--;
+                                          for (auto i: arg)
+                                            *this->file_options << " --" << option << " " << i;
+                                        }), description);
+      if (missing())
+        {
+          new_options();
+          critical_count=1;        
+        }
+      else
+        new_options();
+      return *this;
     }
   template<class T> arguments& critical(const char* option, const char* description)
     { return critical<T>(option, po::value<T>(), description); }
   arguments& critical(const char* option, const char* description)
     {
-      return operator()(option,
-                        po::bool_switch()->notifier([this, option] (bool temp)
-                                                    {
-                                                      if (temp)
-                                                        *this->file_options << " --" << option;
-                                                      else
-                                                        ++this->critical_count;
-                                                    }),
-                        description);
+      operator()(option,
+                 po::bool_switch()->notifier([this, option] (bool temp)
+                                             {
+                                               if (temp)
+                                                 *this->file_options << " --" << option;
+                                               else
+                                                 ++this->critical_count;
+                                             }),
+                 description);
+      if (missing())
+        {
+          new_options();
+          critical_count=1;        
+        }
+      else
+        new_options();
+      return *this;
     }
 
   bool missing()  //Return true if key options are missing.
