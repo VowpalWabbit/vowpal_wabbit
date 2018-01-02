@@ -173,7 +173,7 @@ base_learner* baseline_setup(arguments& arg)
       ("lr_multiplier", data.lr_multiplier, "learning rate multiplier for baseline model")
       .keep(data.global_only, "global_only", "use separate example with only global constant for baseline predictions")
       .keep(data.check_enabled, "check_enabled", "only use baseline when the example contains enabled flag").missing())
-    return free_return(&data);
+    return free_return(data);
   // initialize baseline example
   data.ec = VW::alloc_examples(simple_label.label_size, 1);
   data.ec->in_use = true;

@@ -247,7 +247,7 @@ base_learner* mwt_setup(arguments& arg)
       .critical("multiworld_test", s, "Evaluate features as a policies")
       ("learn", c.num_classes, "Do Contextual Bandit learning on <n> classes.")
       (exclude_eval, "exclude_eval", "Discard mwt policy features before learning").missing())
-    return free_return(&c);
+    return free_return(c);
 
   for (size_t i = 0; i < s.size(); i++)
     c.namespaces[(unsigned char)s[i]] = true;

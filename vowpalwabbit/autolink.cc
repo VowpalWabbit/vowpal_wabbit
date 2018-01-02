@@ -39,7 +39,7 @@ LEARNER::base_learner* autolink_setup(arguments& arg)
   autolink& data = calloc_or_throw<autolink>();
   if (arg.new_options("Autolink")
       .critical("autolink", data.d, "create link function with polynomial d").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.stride_shift = arg.all->weights.stride_shift();
 

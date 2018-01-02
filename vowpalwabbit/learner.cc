@@ -51,7 +51,7 @@ void process_example(vw& all, example* ec)
       final_regressor_name = string(ec->tag.begin()+5, (ec->tag).size()-5);
 
     if (!all.quiet)
-      all.trace_message << "saving regressor to " << final_regressor_name << endl;
+      all.opts_n_args.trace_message << "saving regressor to " << final_regressor_name << endl;
     save_predictor(all, final_regressor_name, 0);
 
     VW::finish_example(all,ec);

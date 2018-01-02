@@ -339,7 +339,7 @@ base_learner* gd_mf_setup(arguments& arg)
   gdmf& data = calloc_or_throw<gdmf>();
   if (arg.new_options("Gradient Descent Matrix Factorization")
       .critical("rank", data.rank, "rank for matrix factorization.").missing())
-    return free_return(&data);
+    return free_return(data);
 
   if (arg.vm.count("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");

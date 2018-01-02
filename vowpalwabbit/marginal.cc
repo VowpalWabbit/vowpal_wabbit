@@ -366,7 +366,7 @@ LEARNER::base_learner* marginal_setup(arguments& arg)
       ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false), "update marginal values before learning")
       ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
       ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)").missing())
-    return free_return(&d);
+    return free_return(d);
 
   d.all = arg.all;
   string s = (string)arg.vm["marginal"].as<string>();

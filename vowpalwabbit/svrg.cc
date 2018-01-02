@@ -174,7 +174,7 @@ base_learner* svrg_setup(arguments& arg)
   if (arg.new_options("Stochastic Variance Reduced Gradient")
       .critical("svrg", "Streaming Stochastic Variance Reduced Gradient")
       ("stage_size", s.stage_size, 1, "Number of passes per SVRG stage").missing())
-    return free_return(&s);
+    return free_return(s);
 
   s.all = arg.all;
   s.prev_pass = -1;

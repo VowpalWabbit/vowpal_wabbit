@@ -308,7 +308,7 @@ base_learner* cs_active_setup(arguments& arg)
       ("cost_max",data.cost_max, 1.f,"cost upper bound. Default 1.")
       ("cost_min",data.cost_min, 0.f,"cost lower bound. Default 0.")
       (data.print_debug_stuff, "csa_debug", "print debug stuff for cs_active").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all = arg.all;
   data.t = 1;

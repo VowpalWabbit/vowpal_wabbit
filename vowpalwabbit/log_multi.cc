@@ -502,7 +502,7 @@ base_learner* log_multi_setup(arguments& arg)	//learner setup
       .critical("log_multi", data.k, "Use online tree for multiclass")
       (data.progress, "no_progress", "disable progressive validation")
       ("swap_resistance", data.swap_resist, (uint32_t)4, "higher = more resistance to swap, default=4").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.progress = !data.progress;
 

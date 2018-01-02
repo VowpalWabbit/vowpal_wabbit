@@ -178,7 +178,7 @@ base_learner* lrq_setup(arguments& arg)
   if (arg.new_options("Low Rank Quadratics")
       .critical_vector<string>("lrq", po::value<vector<string> >(), "use low rank quadratic features")
       .keep("lrqdropout", "use dropout training for low rank quadratic features").missing())
-    return free_return(&lrq);
+    return free_return(lrq);
 
   uint32_t maxk = 0;
   lrq.all = arg.all;
@@ -196,9 +196,9 @@ base_learner* lrq_setup(arguments& arg)
 
   if (! arg.all->quiet)
   {
-    arg.all->trace_message << "creating low rank quadratic features for pairs: ";
+    arg.trace_message << "creating low rank quadratic features for pairs: ";
     if (lrq.dropout)
-      arg.all->trace_message << "(using dropout) ";
+      arg.trace_message << "(using dropout) ";
   }
 
   for (string const& i : lrq.lrpairs)
@@ -211,7 +211,7 @@ base_learner* lrq_setup(arguments& arg)
         THROW("error, low-rank quadratic features must involve two sets and a rank.");
       }
 
-      arg.all->trace_message << i << " ";
+      arg.trace_message << i << " ";
     }
     // TODO: colon-syntax
 

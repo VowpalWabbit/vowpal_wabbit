@@ -388,7 +388,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             all.opts_n_args.args.push_back(temp.str());
           }
           else
-            all.trace_message << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+            all.opts_n_args.trace_message << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
         }
 
       }
@@ -590,7 +590,7 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
       //all.trace_message << "initial_regressor = " << regs[0] << endl;
       if (regs.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
+        all.opts_n_args.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
       }
     }
   }

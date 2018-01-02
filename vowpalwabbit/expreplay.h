@@ -76,9 +76,9 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
 
   expreplay& er = calloc_or_throw<expreplay>();
   if (arg.new_options("Experience Replay")
-      .critical(replay_string.c_str(), er.N, (size_t)0, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
+      .critical(replay_string.c_str(), er.N, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
       (replay_count_string.c_str(), er.replay_count, (size_t)1, "how many times (in expectation) should each example be played (default: 1 = permuting)").missing() || er.N==0)
-    return free_return(&er);
+    return free_return(er);
 
   er.all = arg.all;
   er.buf = VW::alloc_examples(1, er.N);

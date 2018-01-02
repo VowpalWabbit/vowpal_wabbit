@@ -134,14 +134,6 @@ string find_in_path(vector<string> paths, string fname)
       return full;
   }
   return "";
-  /*
-    for (string path : paths) {
-      boost::filesystem::path p(path);
-      p /= fname;
-      if (boost::filesystem::exists(p) && !boost::filesystem::is_directory(p))
-        return p;
-    }
-  */
 }
 
 void parse_dictionary_argument(vw&all, string str)
@@ -172,7 +164,7 @@ void parse_dictionary_argument(vw&all, string str)
   io->close_file();
 
   if (! all.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
+    all.opts_n_args.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
@@ -268,7 +260,7 @@ void parse_dictionary_argument(vw&all, string str)
   free(ec);
 
   if (! all.quiet)
-    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s") << endl;
+    all.opts_n_args.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_throw<char>(strlen(s)+1), fd_hash, map };
@@ -376,7 +368,7 @@ void parse_diagnostics(arguments& arg)
             }
           else if (arg.all->progress_arg > 9.0)
             {
-              arg.all->trace_message    << "warning: multiplicative --progress <float>"
+              arg.trace_message    << "warning: multiplicative --progress <float>"
                                    << " is > 9.0: you probably meant to use an integer"
                                    << endl;
             }
@@ -388,7 +380,7 @@ void parse_diagnostics(arguments& arg)
 void parse_source(arguments& arg)
 {
   arg.new_options("Input options")
-    ("data,d", arg.all->data_filename, (string)"", "Example Set")
+    ("data,d", arg.all->data_filename, "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
     ("foreground", "in persistent daemon mode, do not run in the background")
     ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
@@ -401,7 +393,7 @@ void parse_source(arguments& arg)
     ("dsjson", "Enable Decision Service JSON parsing.")
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
-    (arg.all->stdin_off, "no_stdin", "do not default to reading from stdin");
+    (arg.all->stdin_off, "no_stdin", "do not default to reading from stdin").missing();
 
   // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;
@@ -632,7 +624,7 @@ void parse_feature_tweaks(arguments& arg)
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    arg.all->trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
+    arg.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
     if (!arg.all->pairs.empty()) arg.all->pairs.clear();
@@ -647,12 +639,12 @@ void parse_feature_tweaks(arguments& arg)
   if (arg.vm.count("quadratic"))
   {
     if (!arg.all->quiet)
-      arg.all->trace_message << "creating quadratic features for pairs: ";
+      arg.trace_message << "creating quadratic features for pairs: ";
 
     for (vector<string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet) arg.all->trace_message << *i << " ";
+      if (!arg.all->quiet) arg.trace_message << *i << " ";
     }
 
     expanded_interactions = INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
@@ -936,7 +928,7 @@ void parse_example_tweaks(arguments& arg)
   if (arg.vm.count("testonly") || arg.all->eta == 0.)
   {
     if (!arg.all->quiet)
-      arg.all->trace_message << "only testing" << endl;
+      arg.trace_message << "only testing" << endl;
     arg.all->training = false;
     if (arg.all->lda > 0)
       arg.all->eta = 0;
@@ -944,8 +936,10 @@ void parse_example_tweaks(arguments& arg)
   else
     arg.all->training = true;
 
-  if(arg.all->numpasses > 1 || arg.all->holdout_after > 0)
-    arg.all->holdout_set_off = false;
+  if((arg.all->numpasses > 1 || arg.all->holdout_after > 0) && !arg.vm["holdout_off"].as<bool>())
+    arg.all->holdout_set_off = false;//holdout is on unless explicitly off
+  else
+    arg.all->holdout_set_off = true;
 
   if (arg.vm.count("min_prediction") || arg.vm.count("max_prediction") || arg.vm.count("testonly"))
     arg.all->set_minmax = noop_mm;
@@ -954,19 +948,19 @@ void parse_example_tweaks(arguments& arg)
   {
     arg.all->sd->ldict = new namedlabels(named_labels);
     if (!arg.all->quiet)
-      arg.all->trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
+      arg.trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
   }
 
   arg.all->loss = getLossFunction(*arg.all, loss_function, loss_parameter);
 
   if (arg.all->l1_lambda < 0.)
   {
-    arg.all->trace_message << "l1_lambda should be nonnegative: resetting from " << arg.all->l1_lambda << " to 0" << endl;
+    arg.trace_message << "l1_lambda should be nonnegative: resetting from " << arg.all->l1_lambda << " to 0" << endl;
     arg.all->l1_lambda = 0.;
   }
   if (arg.all->l2_lambda < 0.)
   {
-    arg.all->trace_message << "l2_lambda should be nonnegative: resetting from " << arg.all->l2_lambda << " to 0" << endl;
+    arg.trace_message << "l2_lambda should be nonnegative: resetting from " << arg.all->l2_lambda << " to 0" << endl;
     arg.all->l2_lambda = 0.;
   }
   arg.all->reg_mode += (arg.all->l1_lambda > 0.) ? 1 : 0;
@@ -974,9 +968,9 @@ void parse_example_tweaks(arguments& arg)
   if (!arg.all->quiet)
   {
     if (arg.all->reg_mode %2 && !arg.vm.count("bfgs"))
-      arg.all->trace_message << "using l1 regularization = " << arg.all->l1_lambda << endl;
+      arg.trace_message << "using l1 regularization = " << arg.all->l1_lambda << endl;
     if (arg.all->reg_mode > 1)
-      arg.all->trace_message << "using l2 regularization = " << arg.all->l2_lambda << endl;
+      arg.trace_message << "using l2 regularization = " << arg.all->l2_lambda << endl;
   }
 }
 
@@ -1037,7 +1031,7 @@ void parse_output_preds(arguments& arg)
 void parse_output_model(arguments& arg)
 {
   if (arg.new_options("Output model")
-      ("final_regressor,f", arg.all->final_regressor_name, (string)"", "Final regressor")
+      ("final_regressor,f", arg.all->final_regressor_name, "Final regressor")
       ("readable_model", arg.all->text_regressor_name, "Output human-readable final regressor with numeric features")
       ("invert_hash", arg.all->inv_hash_regressor_name, "Output human-readable final regressor with feature names.  Computationally expensive.")
       (arg.all->save_resume, "save_resume", "save extra state so learning can be resumed later with new data")
@@ -1048,7 +1042,7 @@ void parse_output_model(arguments& arg)
       ("id", arg.all->id, "User supplied ID embedded into the final regressor").missing())
     return;
 
-  if (!arg.all->final_regressor_name.compare("") && !arg.all->quiet)
+  if (arg.all->final_regressor_name.compare("") && !arg.all->quiet)
       arg.trace_message << "final_regressor = " << arg.all->final_regressor_name << endl;
 
   if (arg.vm.count("invert_hash"))
@@ -1125,7 +1119,6 @@ void parse_reductions(arguments& arg)
   all.reduction_stack.push_back(lrqfa_setup);
   all.reduction_stack.push_back(stagewise_poly_setup);
   all.reduction_stack.push_back(scorer_setup);
-
   //Reductions
   all.reduction_stack.push_back(bs_setup);
   all.reduction_stack.push_back(binary_setup);
@@ -1151,10 +1144,8 @@ void parse_reductions(arguments& arg)
   all.reduction_stack.push_back(cb_explore_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(explore_eval_setup);
-
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);
-
   all.reduction_stack.push_back(audit_regressor_setup);
 
   all.l = setup_base(arg);
@@ -1191,8 +1182,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
   if (trace_listener)
   {
-    all.trace_message.trace_listener = trace_listener;
-    all.trace_message.trace_context = trace_context;
+    all.opts_n_args.trace_message.trace_listener = trace_listener;
+    all.opts_n_args.trace_message.trace_context = trace_context;
   }
 
   try
@@ -1316,12 +1307,12 @@ void parse_modules(vw& all, io_buf& model)
 
   if (!all.quiet)
   {
-    all.trace_message << "Num weight bits = " << all.num_bits << endl;
-    all.trace_message << "learning rate = " << all.eta << endl;
-    all.trace_message << "initial_t = " << all.sd->t << endl;
-    all.trace_message << "power_t = " << all.power_t << endl;
+    all.opts_n_args.trace_message << "Num weight bits = " << all.num_bits << endl;
+    all.opts_n_args.trace_message << "learning rate = " << all.eta << endl;
+    all.opts_n_args.trace_message << "initial_t = " << all.sd->t << endl;
+    all.opts_n_args.trace_message << "power_t = " << all.power_t << endl;
     if (all.numpasses > 1)
-      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      all.opts_n_args.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1331,9 +1322,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
     load_input_model(all, model);
 
   parse_source(all.opts_n_args);
-
   enable_sources(all, all.quiet, all.numpasses);
-
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
@@ -1344,11 +1333,10 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   if (all.opts_n_args.vm.count("help"))
   {
     /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << all.opts_n_args.opts << "\n";
+    cout << "\n" << all.opts_n_args.all_opts << "\n";
     exit(0);
   }
 }
-
 
 namespace VW
 {
@@ -1445,16 +1433,14 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_
 
     parse_modules(all, *model);
     parse_sources(all, *model, skipModelLoad);
-
     initialize_parser_datastructures(all);
-
     all.l->init_driver();
 
     return &all;
   }
   catch (std::exception& e)
   {
-    all.trace_message << "Error: " << e.what() << endl;
+    all.opts_n_args.trace_message << "Error: " << e.what() << endl;
     finish(all);
     throw;
   }
@@ -1525,48 +1511,48 @@ void finish(vw& all, bool delete_all)
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.quiet && !all.opts_n_args.vm.count("audit_regressor"))
   {
-    all.trace_message.precision(6);
-    all.trace_message << std::fixed;
-    all.trace_message << endl << "finished run";
+    all.opts_n_args.trace_message.precision(6);
+    all.opts_n_args.trace_message << std::fixed;
+    all.opts_n_args.trace_message << endl << "finished run";
     if(all.current_pass == 0)
-      all.trace_message << endl << "number of examples = " << all.sd->example_number;
+      all.opts_n_args.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.trace_message << endl << "passes used = " << all.current_pass;
+      all.opts_n_args.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      all.opts_n_args.trace_message << endl << "passes used = " << all.current_pass;
     }
-    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.trace_message << endl << "average loss = ";
+    all.opts_n_args.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
+    all.opts_n_args.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
+    all.opts_n_args.trace_message << endl << "average loss = ";
     if(all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
-        all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+        all.opts_n_args.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << "n.a.";
+        all.opts_n_args.trace_message << "n.a.";
     else if  ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      all.trace_message << "undefined (no holdout)";
+      all.opts_n_args.trace_message << "undefined (no holdout)";
     else
-      all.trace_message << all.sd->holdout_best_loss << " h";
+      all.opts_n_args.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
+        all.opts_n_args.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
+        all.opts_n_args.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
     float best_constant; float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.trace_message << endl << "best constant = " << best_constant;
+      all.opts_n_args.trace_message << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
+        all.opts_n_args.trace_message << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.trace_message << endl << "total feature number = " << all.sd->total_features;
+    all.opts_n_args.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.trace_message << endl << "total queries = " << all.sd->queries;
-    all.trace_message << endl;
+      all.opts_n_args.trace_message << endl << "total queries = " << all.sd->queries;
+    all.opts_n_args.trace_message << endl;
   }
 
   // implement finally.

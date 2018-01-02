@@ -61,7 +61,7 @@ LEARNER::base_learner* multilabel_oaa_setup(arguments& arg)
   if (arg.new_options("Multilabel One Against All")
       .critical("multilabel_oaa", data.k, "One-against-all multilabel with <k> labels")
       .missing())
-    return free_return(&data);
+    return free_return(data);
 
   LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(arg), predict_or_learn<true>,
                                    predict_or_learn<false>, data.k, prediction_type::multilabels);

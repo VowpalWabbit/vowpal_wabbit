@@ -391,7 +391,7 @@ base_learner* cb_adf_setup(arguments& arg)
       .keep(ld.rank_all, "rank_all", "Return actions sorted by score order")
       (ld.no_predict, "no_predict", "Do not do a prediction when training")
       .keep<string>("cb_type", type_string,(string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
-    return nullptr;
+    return free_return(ld);
 
   ld.all = arg.all;
 
@@ -407,23 +407,14 @@ base_learner* cb_adf_setup(arguments& arg)
       check_baseline_enabled = true;
     }
   else if (type_string.compare("ips") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
-      problem_multiplier = 1;
-    }
+    ld.gen_cs.cb_type = CB_TYPE_IPS;
   else if (type_string.compare("mtr") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_MTR;
-      problem_multiplier = 1;
-    }
+    ld.gen_cs.cb_type = CB_TYPE_MTR;
   else if (type_string.compare("dm") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_DM;
-      problem_multiplier = 1;
-    }
+    ld.gen_cs.cb_type = CB_TYPE_DM;
   else
     {
-      std::cerr << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
+      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
       ld.gen_cs.cb_type = CB_TYPE_IPS;
     }
 

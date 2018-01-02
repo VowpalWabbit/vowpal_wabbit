@@ -126,7 +126,7 @@ base_learner* csoaa_setup(arguments& arg)
   csoaa& c = calloc_or_throw<csoaa>();
   if (arg.new_options("Cost Sensitive One Against All")
       .critical("csoaa", c.num_classes, "One-against-all multiclass with <k> costs").missing())
-    return free_return(&c);
+    return free_return(c);
 
   c.pred = calloc_or_throw<polyprediction>(c.num_classes);
 
@@ -276,7 +276,7 @@ bool test_ldf_sequence(ldf& data, size_t start_K)
     if (COST_SENSITIVE::example_is_test(*ec) != isTest)
     {
       isTest = true;
-      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
+      data.all->opts_n_args.trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
@@ -811,7 +811,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   else if ((example_is_newline(ec) && is_test_ec) || need_to_break)
   {
     if (need_to_break && data.first_pass)
-      data.all->trace_message << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
+      data.all->opts_n_args.trace_message << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
     do_actual_learning<is_learn>(data, base);
     data.need_to_clear = true;
   }
@@ -832,10 +832,10 @@ base_learner* csldf_setup(arguments& arg)
   if (arg.new_options("Cost Sensitive One Against All with Label Dependent Features")
       .critical<string>("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
       ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-      .keep("csoaa_rank", "Return actions sorted by score order")
-      .keep("probabilities", "predict probabilites of all classes").missing())
+      .keep(ld.rank, "csoaa_rank", "Return actions sorted by score order")
+      .keep(ld.is_probabilities, "probabilities", "predict probabilites of all classes").missing())
     if (arg.new_options("").critical<string>("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.").missing())
-      return free_return(&ld);
+      return free_return(ld);
 
   ld.all = arg.all;
   ld.need_to_clear = true;
@@ -852,11 +852,8 @@ base_learner* csldf_setup(arguments& arg)
   }
   if ( arg.vm.count("ldf_override") )
     ldf_arg = arg.vm["ldf_override"].as<string>();
-  if (arg.vm.count("csoaa_rank"))
-  {
-    ld.rank = true;
+  if (ld.rank)
     arg.all->delete_prediction = delete_action_scores;
-  }
 
   arg.all->p->lp = COST_SENSITIVE::cs_label;
   arg.all->label_type = label_type::cs;
@@ -886,17 +883,14 @@ base_learner* csldf_setup(arguments& arg)
     }
   }
 
-  if( arg.vm.count("probabilities") )
+  if(ld.is_probabilities)
   {
-    ld.is_probabilities = true;
     arg.all->sd->report_multiclass_log_loss = true;
     if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
       arg.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld.treat_as_classifier)
       arg.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
-  else
-    ld.is_probabilities = false;
 
   arg.all->p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld.is_singleline;
 

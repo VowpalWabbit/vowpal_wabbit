@@ -26,13 +26,13 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+    all.opts_n_args.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+    all.opts_n_args.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 

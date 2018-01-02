@@ -105,7 +105,7 @@ LEARNER::base_learner* topk_setup(arguments& arg)
 {
   topk& data = calloc_or_throw<topk>();
   if (arg.new_options("Top K").critical("top", data.B, "top k recommendation").missing())
-    return free_return(&data);
+    return free_return(data);
 
   LEARNER::learner<topk>& l = init_learner(&data, setup_base(arg), predict_or_learn<true>,
                               predict_or_learn<false>);

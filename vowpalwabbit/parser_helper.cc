@@ -38,10 +38,8 @@ std::vector<std::string> opts_to_args(const std::vector<boost::program_options::
 // Strategy: add one argument after each other until we trigger multiple_occurrences exception. Special care has to be taken of arguments to options.
 po::variables_map arguments::add_options_skip_duplicates(po::options_description& opts, bool do_notify)
 {
+  std::vector<std::string> dup_args(args);
   po::variables_map new_vm;
-
-  cout << "opts to add in add_options_skip_duplicates = " << opts;
-  cout << "opts in new_od in add_options_skip_duplicates = " << new_od;
 
   for (int i = 0; i<2; i++)
     {
@@ -49,7 +47,7 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
       // i = 1: retry attempt after removing dups
       try
         {
-          po::parsed_options parsed = po::command_line_parser(args).
+          po::parsed_options parsed = po::command_line_parser(dup_args).
             style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
             options(opts).allow_unregistered().run();
           po::store(parsed, new_vm);
@@ -75,15 +73,19 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
       catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
         { }
 
-      args.clear();
+      cout << "args = ";
+      for(auto i: args)
+        cout << " " << i;
+      cout << endl;
+      dup_args.clear();
       bool previous_option_needs_argument = false;
       for (auto&& arg : args)
         {
           new_vm.clear();
-          args.push_back(arg);
+          dup_args.push_back(arg);
           try
             {
-              po::parsed_options parsed = po::command_line_parser(args).
+              po::parsed_options parsed = po::command_line_parser(dup_args).
                 style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                 options(opts).allow_unregistered().run();
               po::store(parsed, new_vm);
@@ -97,19 +99,19 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
             {
               auto ignored = arg;
 
-              args.pop_back();
+              dup_args.pop_back();
               if (previous_option_needs_argument)
                 {
-                  auto option = args.back();
+                  auto option = dup_args.back();
                   auto duplicate_value = ignored;
                   ignored =  option + " " + ignored;
-                  args.pop_back();
+                  dup_args.pop_back();
 
                   // check if at least the values are the same
 
                   // reparse arguments so far
                   new_vm.clear();
-                  po::parsed_options parsed_full = po::command_line_parser(args).
+                  po::parsed_options parsed_full = po::command_line_parser(dup_args).
                     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                     options(opts).allow_unregistered().run();
                   po::store(parsed_full, new_vm);

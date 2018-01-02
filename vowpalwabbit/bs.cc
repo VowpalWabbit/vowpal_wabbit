@@ -241,7 +241,7 @@ base_learner* bs_setup(arguments& arg)
   if (arg.new_options("Bootstrap")
       .critical("bootstrap", data.B, "k-way bootstrap by online importance resampling")
       .keep("bs_type", type_string, "prediction type {mean,vote}").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.ub = FLT_MAX;
   data.lb = -FLT_MAX;

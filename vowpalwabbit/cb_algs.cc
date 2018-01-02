@@ -141,9 +141,9 @@ base_learner* cb_algs_setup(arguments& arg)
 
   if (arg.new_options("Contextual Bandit Options")
       .critical("cb", data.cbcs.num_actions, "Use contextual bandit learning with <k> costs")
-      .keep("cb_type", type_string,(string)"dr", "contextual bandit method to use in {ips,dm,dr}")
+      .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
       (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
-    return nullptr;
+    return free_return(data);
 
   cb_to_cs& c = data.cbcs;
 

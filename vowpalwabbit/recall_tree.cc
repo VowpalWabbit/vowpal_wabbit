@@ -573,7 +573,7 @@ base_learner* recall_tree_setup(arguments& arg)
       .keep("max_depth", tree.max_depth, "maximum depth of the tree, default log_2 (#classes)")
       .keep("node_only", tree.node_only, false, "only use node features, not full path features")
       .keep("randomized_routing", tree.randomized_routing, false, "randomized routing").missing())
-    return free_return(&tree);
+    return free_return(tree);
 
   tree.all = arg.all;
   tree.max_candidates =

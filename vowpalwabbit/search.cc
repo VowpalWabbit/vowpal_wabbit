@@ -2473,7 +2473,6 @@ base_learner* setup(arguments& arg)
   search& sch = calloc_or_throw<search>();
   sch.priv = &calloc_or_throw<search_private>();
   search_private& priv = *sch.priv;
-  search_initialize(arg.all, sch);
   std::string task_string;
   std::string metatask_string;
   std::string interpolation_string = "data";
@@ -2481,9 +2480,18 @@ base_learner* setup(arguments& arg)
   std::string rollout_string = "mix_per_state";
   std::string rollin_string = "mix_per_state";
 
+  bool has_hook_task = false;
+  for (size_t i=0; i< arg.args.size()-1; i++)
+    if (arg.args[i] == "--search_task" && arg.args[i+1] == "hook")
+      has_hook_task = true;
+  if (has_hook_task)
+    for (int i = (int)arg.args.size()-2; i >= 0; i--)
+      if (arg.args[i] == "--search_task" && arg.args[i+1] != "hook")
+        arg.args.erase(arg.args.begin() + i, arg.args.begin() + i + 2);
+
   if (arg.new_options("Search options")
       .critical("search", priv.A, "Use learning to search, argument=maximum action id or 0 for LDF")
-      .critical("search_task", task_string, "the search task (use \"--search_task list\" to get a list of available tasks)", "error: you must specify a task using --search_task")
+      .critical("search_task", task_string, "the search task (use \"--search_task list\" to get a list of available tasks)")
       .keep("search_metatask",  metatask_string, "the search metatask (use \"--search_metatask list\" to get a list of available metatasks)")
       .keep("search_interpolation", interpolation_string, "at what level should interpolation happen? [*data|policy]")
       ("search_rollout",           rollout_string, "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
@@ -2497,7 +2505,6 @@ base_learner* setup(arguments& arg)
       ("search_total_nb_policies", priv.total_number_of_policies, "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
 
       ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
-
       ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
       ("search_subsample_time",    priv.subsample_timesteps,  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning")
       .keep("search_neighbor_features", neighbor_features_string, "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
@@ -2511,18 +2518,17 @@ base_learner* setup(arguments& arg)
       ("search_active_verify",    priv.active_csoaa_verify,  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
       ("search_save_every_k_runs", priv.save_every_k_runs, "save model every k runs").missing())
     {
-      search_finish(sch);
-      return free_return(&sch);
+      free(sch.priv);
+      return free_return(sch);
     }
+  for (auto a: arg.args)
+    cout << " " << a;
+  cout << endl;
+  for (auto a: arg.vm)
+    cout << " " << a.first;
+  cout << endl;
 
-  bool has_hook_task = false;
-  for (size_t i=0; i< arg.args.size()-1; i++)
-    if (arg.args[i] == "--search_task" && arg.args[i+1] == "hook")
-      has_hook_task = true;
-  if (has_hook_task)
-    for (int i = (int)arg.args.size()-2; i >= 0; i--)
-      if (arg.args[i] == "--search_task" && arg.args[i+1] != "hook")
-        arg.args.erase(arg.args.begin() + i, arg.args.begin() + i + 2);
+  search_initialize(arg.all, sch);
 
   parse_neighbor_features(neighbor_features_string, sch);
 
@@ -2533,9 +2539,7 @@ base_learner* setup(arguments& arg)
     priv.passes_per_policy = arg.all->numpasses;
     if (priv.current_policy > 1) priv.current_policy = 1;
   }
-  else if (interpolation_string.compare("policy") == 0)
-  {
-  }
+  else if (interpolation_string.compare("policy") == 0) ;
   else
     THROW("error: --search_interpolation must be 'data' or 'policy'");
 

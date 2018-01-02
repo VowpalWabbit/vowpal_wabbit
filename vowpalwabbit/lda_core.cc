@@ -1275,7 +1275,7 @@ LEARNER::base_learner *lda_setup(arguments& arg)
       ("minibatch", ld.minibatch, (size_t)1, "Minibatch size, for LDA")
       ("math-mode", ld.mmode, USE_SIMD, "Math mode: simd, accuracy, fast-approx")
       ("metrics", ld.compute_coherence_metrics, false, "Compute metrics").missing())
-    return free_return(&ld);
+    return free_return(ld);
 
   arg.all->lda = ld.topics;
   arg.all->delete_prediction = delete_scalars;

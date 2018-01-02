@@ -496,7 +496,6 @@ void predict_or_learn(cb_explore_adf& data, base_learner& base, example &ec)
     data.ec_seq.push_back(&ec);
   }
 }
-
 }
 
 
@@ -517,7 +516,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       .keep("softmax", "softmax exploration")
       .keep(data.greedify, "greedify", "always update first policy once in bagging")
       .keep("lambda", data.lambda, 1.0f, "parameter for softmax").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all = arg.all;
   if (count(arg.args.begin(), arg.args.end(), "--cb_adf") == 0)

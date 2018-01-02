@@ -385,10 +385,11 @@ LEARNER::base_learner* boosting_setup(arguments& arg)
   if (arg.new_options("Boosting")
       .critical("boosting", data.N, "Online boosting with <N> weak learners")
       ("gamma", po::value<float>(&data.gamma)->default_value(0.1f), "weak learner's edge (=0.1), used only by online BBM")
-      .keep("alg", *(data.alg), (string)"BBM", "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)").missing())
+      .keep("alg", *data.alg, (string)"BBM", "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)")
+      .missing())
     {
       delete data.alg;
-      return free_return(&data);
+      return free_return(data);
     }
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)

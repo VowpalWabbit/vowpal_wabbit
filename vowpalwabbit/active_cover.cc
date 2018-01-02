@@ -231,7 +231,7 @@ base_learner* active_cover_setup(arguments& arg)
      ("beta_scale", data.beta_scale, sqrtf(10.f), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
      .keep("cover", data.cover_size, (size_t)12, "cover size. Default 12.")
      (data.oracular, "oracular", "Use Oracular-CAL style query or not. Default false.").missing())
-    return nullptr;
+    return free_return(data);
 
   data.all = arg.all;
 

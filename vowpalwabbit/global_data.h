@@ -582,8 +582,6 @@ struct vw
 
   label_type::label_type_t label_type;
 
-  vw_ostream trace_message;
-
   vw();
 
 private://disable copying.

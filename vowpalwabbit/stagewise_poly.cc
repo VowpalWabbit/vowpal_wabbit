@@ -686,7 +686,7 @@ base_learner *stagewise_poly_setup(arguments& arg)
       ("magic_argument", poly.magic_argument, 0., "magical feature flag")
 #endif //MAGIC_ARGUMENT
       .missing())
-    return nullptr;
+    return free_return(poly);
 
   poly.all = arg.all;
   depthsbits_create(poly);

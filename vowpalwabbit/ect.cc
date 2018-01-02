@@ -364,7 +364,7 @@ base_learner* ect_setup(arguments& arg)
   if (arg.new_options("Error Correcting Tournament Options").
       critical("ect", data.k, "Error correcting tournament with <k> labels")
       .keep("error", data.errors, (uint64_t)0, "errors allowed by ECT").missing())
-    return free_return(&data);
+    return free_return(data);
 
   size_t wpp = create_circuit(data, data.k, data.errors+1);
 

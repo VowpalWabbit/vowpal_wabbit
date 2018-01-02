@@ -63,11 +63,11 @@ void finish(explore_eval& data)
   data.ec_seq.delete_v();
   if (!data.all->quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << endl;
+    data.all->opts_n_args.trace_message << "update count = " << data.update_count << endl;
     if (data.violations > 0)
-      data.all->trace_message << "violation count = " << data.violations << endl;
+      data.all->opts_n_args.trace_message << "violation count = " << data.violations << endl;
     if (!data.fixed_multiplier)
-      data.all->trace_message << "final multiplier = " << data.multiplier << endl;
+      data.all->opts_n_args.trace_message << "final multiplier = " << data.multiplier << endl;
   }
 }
 
@@ -254,7 +254,7 @@ base_learner* explore_eval_setup(arguments& arg)
   if (arg.new_options("Explore evaluation")
       .critical("explore_eval", "Evaluate explore_eval adf policies")
       ("multiplier", data.multiplier, "Multiplier used to make all rejection sample probabilities <= 1").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all = arg.all;
 

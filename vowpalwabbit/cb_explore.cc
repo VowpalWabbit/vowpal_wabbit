@@ -339,7 +339,7 @@ base_learner* cb_explore_setup(arguments& arg)
       .keep("bag", data.bag_size,"bagging-based exploration")
       .keep("cover", data.cover_size ,"Online cover based exploration")
       .keep("psi", data.psi, 1.0f, "disagreement parameter for cover").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all = arg.all;
   uint32_t num_actions = data.cbcs.num_actions;

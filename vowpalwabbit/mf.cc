@@ -198,7 +198,7 @@ base_learner* mf_setup(arguments& arg)
   mf& data = calloc_or_throw<mf>();
   if (arg.new_options("Matrix Factorization Reduction")
       .critical("new_mf", data.rank, "rank for reduction-based matrix factorization").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all = arg.all;
   // store global pairs in local data structure and clear global pairs

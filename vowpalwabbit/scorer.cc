@@ -52,7 +52,7 @@ LEARNER::base_learner* scorer_setup(arguments& arg)
   string link;
   if(arg.new_options("scorer options")
      .keep("link", link, (string)"identity", "Specify the link function: identity, logistic, glf1 or poisson").missing())
-    return free_return(&s);
+    return free_return(s);
 
   s.all = arg.all;
 

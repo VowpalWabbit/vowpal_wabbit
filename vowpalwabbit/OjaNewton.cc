@@ -541,7 +541,7 @@ base_learner* OjaNewton_setup(arguments& arg)
       ("learning_rate_cnt", ON.learning_rate_cnt, 2.f, "constant for the learning rate 1/t")
       ("normalize", ON.normalize, true, "normalize the features or not")
       ("random_init", ON.random_init, true, "randomize initialization of Oja or not").missing())
-    return free_return(&ON);
+    return free_return(ON);
 
   ON.all = arg.all;
 

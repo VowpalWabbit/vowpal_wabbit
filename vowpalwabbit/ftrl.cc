@@ -245,7 +245,7 @@ base_learner* ftrl_setup(arguments& arg)
       ("ftrl_alpha", b.ftrl_alpha, "Learning rate for FTRL optimization")
       ("ftrl_beta", b.ftrl_beta, "FTRL beta parameter").missing())
     if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning").missing())
-      return free_return(&b);
+      return free_return(b);
 
   b.all = arg.all;
   b.no_win_counter = 0;

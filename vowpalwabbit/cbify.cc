@@ -222,7 +222,7 @@ base_learner* cbify_setup(arguments& arg)
       .critical("cbify", num_actions, "Convert multiclass on <k> classes into a contextual bandit problem")
       ("loss0", data.loss0, 0.f, "loss for correct label")
       ("loss1", data.loss1, 1.f, "loss for incorrect label").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.use_adf = count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") > 0;
   data.recorder = new vw_recorder();

@@ -141,7 +141,7 @@ base_learner* active_setup(arguments& arg)
   if(arg.new_options("Active Learning").critical("active", "enable active learning")
      ("simulation", "active learning simulation mode")
      ("mellowness", data.active_c0, 8.f, "active learning mellowness parameter c_0. Default 8").missing())
-    return free_return(&data);
+    return free_return(data);
 
   data.all=arg.all;
 

@@ -418,7 +418,7 @@ base_learner* nn_setup(arguments& arg)
       .keep(n.multitask, "multitask", "Share hidden layer across all reduced tasks.")
       .keep(n.dropout, "dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.").missing())
-    return free_return(&n);
+    return free_return(n);
 
   n.all = arg.all;
 
