@@ -138,3 +138,12 @@ def test_regressor_args():
     # clean up
     os.remove('{}.cache'.format(data_file))
     os.remove('tmp.model')
+
+
+def test_keys_with_list_of_values():
+    # No exception in creating and executing model with a key/list pair
+    model = vw(quiet=True, q=["fa", "fb"])
+    model.learn('1 | a b c')
+    prediction = model.predict(' | a b c')
+    assert isinstance(prediction, float)
+    del model
