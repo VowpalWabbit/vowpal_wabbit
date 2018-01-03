@@ -403,6 +403,8 @@ void parse_source(arguments& arg)
                            options(arg.opts).positional(p).run();
   arg.vm = po::variables_map();
   po::store(pos, arg.vm);
+  if (arg.vm.count("data") > 0)
+    arg.all->data_filename = arg.vm["data"].as<string>();
 
   if ( (arg.vm.count("total") || arg.vm.count("node") || arg.vm.count("unique_id")) && !(arg.vm.count("total") && arg.vm.count("node") && arg.vm.count("unique_id")) )
     THROW("you must specificy unique_id, total, and node if you specify any");
