@@ -586,8 +586,8 @@ struct vw
 
   vw();
 
-private://disable copying.
   vw(const vw &);
+private://disable copying.
   vw& operator=(const vw& );
 };
 
