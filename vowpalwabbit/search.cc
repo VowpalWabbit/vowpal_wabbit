@@ -2238,7 +2238,6 @@ void search_initialize(vw* all, search& sch)
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
 
-  priv.A = 1;
   priv.num_learners = 1;
   priv.state = INITIALIZE;
   priv.mix_per_roll_policy = -2;
@@ -2248,19 +2247,14 @@ void search_initialize(vw* all, search& sch)
   priv.bad_string_stream = new stringstream();
   priv.bad_string_stream->clear(priv.bad_string_stream->badbit);
 
-  priv.beta = 0.5;
-  priv.alpha = 1e-10f;
-
   priv.rollout_method = MIX_PER_ROLL;
   priv.rollin_method  = MIX_PER_ROLL;
 
   priv.allow_current_policy = true;
   priv.adaptive_beta = true;
-  priv.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
   priv.total_number_of_policies = 1;
 
-  priv.history_length = 1;
   priv.acset.max_bias_ngram_length = 1;
 
   priv.acset.feature_value = 1.;
@@ -2481,7 +2475,7 @@ base_learner* setup(arguments& arg)
   std::string rollin_string = "mix_per_state";
 
   bool has_hook_task = false;
-  for (size_t i=0; i< arg.args.size()-1; i++)
+  for (int i=0; i< (int)(arg.args.size())-1; i++)
     if (arg.args[i] == "--search_task" && arg.args[i+1] == "hook")
       has_hook_task = true;
   if (has_hook_task)
@@ -2490,17 +2484,17 @@ base_learner* setup(arguments& arg)
         arg.args.erase(arg.args.begin() + i, arg.args.begin() + i + 2);
 
   if (arg.new_options("Search options")
-      .critical("search", priv.A, "Use learning to search, argument=maximum action id or 0 for LDF")
+      .keep("search", priv.A, (size_t)1, "Use learning to search, argument=maximum action id or 0 for LDF")
       .critical("search_task", task_string, "the search task (use \"--search_task list\" to get a list of available tasks)")
       .keep("search_metatask",  metatask_string, "the search metatask (use \"--search_metatask list\" to get a list of available metatasks)")
       .keep("search_interpolation", interpolation_string, "at what level should interpolation happen? [*data|policy]")
       ("search_rollout",           rollout_string, "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
       ("search_rollin",            rollin_string, "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
 
-      ("search_passes_per_policy", priv.passes_per_policy, "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
-      ("search_beta",              priv.beta,  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
+      ("search_passes_per_policy", priv.passes_per_policy, (size_t)1, "number of passes per policy (only valid for search_interpolation=policy)")
+      ("search_beta",              priv.beta, 0.5f, "interpolation rate for policies (only valid for search_interpolation=policy)")
 
-      ("search_alpha",            priv.alpha,  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
+      ("search_alpha",            priv.alpha, 1e-10f, "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)")
 
       ("search_total_nb_policies", priv.total_number_of_policies, "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
 
@@ -2508,12 +2502,12 @@ base_learner* setup(arguments& arg)
       ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
       ("search_subsample_time",    priv.subsample_timesteps,  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning")
       .keep("search_neighbor_features", neighbor_features_string, "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
-      ("search_rollout_num_steps", priv.rollout_num_steps, "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
-      .keep("search_history_length",   priv.history_length, "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
+      ("search_rollout_num_steps", priv.rollout_num_steps, "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (default means \"infinite\")")
+      .keep("search_history_length",   priv.history_length, (size_t)1, "some tasks allow you to specify how much history their depend on; specify that here")
 
       (priv.no_caching, "search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
       (priv.xv, "search_xv",                                     "train two separate policies, alternating prediction/learning")
-      ("search_perturb_oracle", priv.perturb_oracle, "perturb the oracle on rollin with this probability (def: 0)")
+      ("search_perturb_oracle", priv.perturb_oracle, 0.f, "perturb the oracle on rollin with this probability")
       (priv.linear_ordering, "search_linear_ordering", "insist on generating examples in linear order (def: hoopla permutation)")
       ("search_active_verify",    priv.active_csoaa_verify,  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
       ("search_save_every_k_runs", priv.save_every_k_runs, "save model every k runs").missing())
@@ -2521,12 +2515,6 @@ base_learner* setup(arguments& arg)
       free(sch.priv);
       return free_return(sch);
     }
-  for (auto a: arg.args)
-    cout << " " << a;
-  cout << endl;
-  for (auto a: arg.vm)
-    cout << " " << a.first;
-  cout << endl;
 
   search_initialize(arg.all, sch);
 

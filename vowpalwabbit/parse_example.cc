@@ -26,9 +26,9 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
     line += 3;
     num_chars -= 3;
   }
-  if (line[num_chars-1] == '\n')
+  if (num_chars>0 && line[num_chars-1] == '\n')
     num_chars--;
-  if (line[num_chars-1] == '\r')
+  if (num_chars>0 && line[num_chars-1] == '\r')
     num_chars--;
   return num_chars_initial;
 }

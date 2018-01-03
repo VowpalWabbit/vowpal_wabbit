@@ -176,7 +176,7 @@ base_learner* cb_algs_setup(arguments& arg)
   {
     arg.args.push_back("--csoaa");
     stringstream ss;
-    ss << arg.vm["cb"].as<size_t>();
+    ss << data.cbcs.num_actions;
     arg.args.push_back(ss.str());
   }
 

@@ -211,7 +211,7 @@ void init_driver(audit_regressor_data& dat)
 
   if (dat.all->opts_n_args.vm.count("csoaa"))
   {
-    size_t n = dat.all->opts_n_args.vm["csoaa"].as<size_t>();
+    size_t n = dat.all->opts_n_args.vm["csoaa"].as<uint32_t>();
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;

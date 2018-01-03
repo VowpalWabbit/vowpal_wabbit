@@ -325,7 +325,6 @@ vw::vw()
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
-  holdout_period = 10;
   holdout_after = 0;
   check_holdout_every_n_passes = 1;
   early_terminate = false;

@@ -177,7 +177,7 @@ base_learner* lrq_setup(arguments& arg)
   LRQstate& lrq = calloc_or_throw<LRQstate>();
   if (arg.new_options("Low Rank Quadratics")
       .critical_vector<string>("lrq", po::value<vector<string> >(), "use low rank quadratic features")
-      .keep("lrqdropout", "use dropout training for low rank quadratic features").missing())
+      .keep(lrq.dropout, "lrqdropout", "use dropout training for low rank quadratic features").missing())
     return free_return(lrq);
 
   uint32_t maxk = 0;
@@ -189,10 +189,6 @@ base_learner* lrq_setup(arguments& arg)
   new(&lrq.lrpairs) std::set<std::string> (lrq_names.begin(), lrq_names.end());
 
   lrq.initial_seed = lrq.seed = arg.all->random_seed | 8675309;
-  if (arg.vm.count("lrqdropout"))
-    lrq.dropout = true;
-  else
-    lrq.dropout = false;
 
   if (! arg.all->quiet)
   {

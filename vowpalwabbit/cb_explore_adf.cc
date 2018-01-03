@@ -508,7 +508,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
   if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
       .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
       .keep("first", data.tau, "tau-first exploration")
-      .keep("epsilon", data.epsilon, 0.05f, "epsilon-greedy exploration")
+      .keep("epsilon", data.epsilon, "epsilon-greedy exploration")
       .keep("bag", data.bag_size, "bagging-based exploration")
       .keep("cover", data.cover_size ,"Online cover based exploration")
       .keep("psi", data.psi, 1.0f, "disagreement parameter for cover")
@@ -538,10 +538,13 @@ base_learner* cb_explore_adf_setup(arguments& arg)
   }
   else if (arg.vm.count("first"))
     data.explore_type = EXPLORE_FIRST;
-  else if (arg.vm.count("softmax"))
+  else if (arg.vm["softmax"].as<bool>())
     data.explore_type = SOFTMAX;
-  else //epsilon is the default
-    data.explore_type = EPS_GREEDY;
+  else
+    {
+      if (!arg.vm.count("epsilon")) data.epsilon = 0.05f;
+      data.explore_type = EPS_GREEDY;
+    }
 
   base_learner* base = setup_base(arg);
   arg.all->p->lp = CB::cb_label;

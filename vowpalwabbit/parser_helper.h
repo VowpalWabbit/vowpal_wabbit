@@ -4,6 +4,7 @@
 #include "vw_exception.h"
 #include "error_reporting.h"
 #include<iostream>
+#include <string.h>
 namespace po = boost::program_options;
 
 class vw;
@@ -12,6 +13,15 @@ class arguments {
   po::options_description new_od;//a set of options
   po::variables_map add_options_skip_duplicates(po::options_description& opts, bool do_notify);
   bool missing_critical;
+
+  std::string long_only(const char* in)
+    {//strip off a trailing short option
+      char* maybe = strchr(const_cast<char*>(in), ',');
+      if (maybe==nullptr)
+        return std::string(in);
+      else
+        return std::string(in,maybe-in);
+    }
 
  public:
   po::options_description all_opts; //All specified options.
@@ -62,7 +72,7 @@ class arguments {
                         ->notifier([this, option, def] (T arg)
                                    {
                                      if (arg != def)
-                                       *this->file_options << " --" << option << " " << arg;
+                                       *this->file_options << " --" << long_only(option) << " " << arg;
                                    }),
                         description);
     }
@@ -70,7 +80,7 @@ class arguments {
     {
       return operator()(option,
                         type->notifier([this, option] (T arg)
-                                       { *this->file_options << " --" << option << " " << arg; }),
+                                       { *this->file_options << " --" << long_only(option) << " " << arg; }),
                         description);
     }
   template<class T> arguments& keep_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description)
@@ -79,7 +89,7 @@ class arguments {
                         type->notifier([this, option] (std::vector<T> arg)
                                        {
                                          for (auto i : arg)
-                                           *this->file_options << " --" << option << " " << i;
+                                           *this->file_options << " --" << long_only(option) << " " << i;
                                        }),
                         description);
     }
@@ -88,7 +98,7 @@ class arguments {
       return operator()(option,
                         po::bool_switch(&exists)
                         ->notifier([this, option] (bool v)
-                                   { if (v) *this->file_options << " --" << option; }),
+                                   { if (v) *this->file_options << " --" << long_only(option); }),
                         description);
     }
   arguments& keep(const char* option, const char* description)

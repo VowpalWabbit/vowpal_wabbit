@@ -347,12 +347,11 @@ base_learner* gd_mf_setup(arguments& arg)
     THROW("normalized is not implemented for matrix factorization");
   if (arg.vm.count("exact_adaptive_norm"))
     THROW("normalized adaptive updates is not implemented for matrix factorization");
-  if (arg.vm.count("bfgs") || arg.vm.count("conjugate_gradient"))
+  if (arg.vm["bfgs"].as<bool>() || arg.vm["conjugate_gradient"].as<bool>())
     THROW("bfgs is not implemented for matrix factorization");
 
   data.all = arg.all;
   data.no_win_counter = 0;
-  data.early_stop_thres = 3;
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
@@ -362,8 +361,7 @@ base_learner* gd_mf_setup(arguments& arg)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    if(arg.vm.count("early_terminate"))
-      data.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    data.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
   if(!arg.vm.count("learning_rate") && !arg.vm.count("l"))

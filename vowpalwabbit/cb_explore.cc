@@ -348,7 +348,7 @@ base_learner* cb_explore_setup(arguments& arg)
   {
     arg.args.push_back("--cb");
     stringstream ss;
-    ss << arg.vm["cb_explore"].as<size_t>();
+    ss << data.cbcs.num_actions;
     arg.args.push_back(ss.str());
   }
 

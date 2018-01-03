@@ -137,7 +137,7 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
 LEARNER::base_learner* lrqfa_setup(arguments& arg)
 {
   if (arg.new_options("Low Rank Quadratics FA")
-      .critical("lrqfa", "use low rank quadratic features with field aware weights").missing())
+      .critical<string>("lrqfa", "use low rank quadratic features with field aware weights").missing())
     return nullptr;
 
   LRQFAstate& lrq = calloc_or_throw<LRQFAstate>();

@@ -543,8 +543,8 @@ void parse_feature_tweaks(arguments& arg)
   vector<string> redefines;
   vector<string> dictionary_nses;
   if (arg.new_options("Feature options")
-      ("hash", po::value(&hash_function), "how to hash the features. Available options: strings, all")
-      ("ignore", po::value(&ignores), "ignore namespaces beginning with character <arg>")
+      .keep("hash", po::value(&hash_function), "how to hash the features. Available options: strings, all")
+      .keep_vector("ignore", po::value(&ignores), "ignore namespaces beginning with character <arg>")
       .keep_vector<string>("ignore_linear", po::value(&ignore_linears), "ignore namespaces beginning with character <arg> for linear terms only")
       .keep_vector<string>("keep", po::value(&keeps), "keep namespaces beginning with character <arg>")
       .keep_vector<string>("redefine", po::value(&redefines), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
@@ -908,9 +908,9 @@ void parse_example_tweaks(arguments& arg)
   if (arg.new_options("Example options")
       ("testonly,t", "Ignore label information and just test")
       (arg.all->holdout_set_off, "holdout_off", "no holdout data in multiple passes")
-      ("holdout_period", arg.all->holdout_period, "holdout period for test only, default 10")
+      ("holdout_period", arg.all->holdout_period, (uint32_t)10, "holdout period for test only")
       ("holdout_after", arg.all->holdout_after, "holdout after n training examples, default off (disables holdout_period)")
-      ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
+      ("early_terminate", po::value<size_t>()->default_value(3), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination")
       ("passes", arg.all->numpasses,"Number of Training Passes")
       ("initial_pass_length", arg.all->pass_length, "initial number of examples per pass")
       ("examples", arg.all->max_examples, "number of examples to parse")
@@ -1231,12 +1231,10 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
       all.all_reduce = new AllReduceSockets(vm["span_server"].as<string>(),
         vm["unique_id"].as<size_t>(), vm["total"].as<size_t>(), vm["node"].as<size_t>());
     }
-
     all.random_state = all.random_seed;
     parse_diagnostics(all.opts_n_args);
 
     all.initial_t = (float)all.sd->t;
-
     return all;
   }
   catch (...)
@@ -1333,7 +1331,7 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
   if (all.opts_n_args.vm.count("help"))
   {
     /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << all.opts_n_args.all_opts << "\n";
+    cout << all.opts_n_args.all_opts;
     exit(0);
   }
 }

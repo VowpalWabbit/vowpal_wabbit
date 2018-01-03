@@ -66,7 +66,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
     data->ex->indices.push_back((unsigned char)i+'A');
   data->ex->indices.push_back(constant_namespace);
 
-  data->old_style_labels = arg.vm.count("old_style_labels") > 0;
   if(data->one_learner)
     sch.set_num_learners(1);
   else

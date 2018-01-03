@@ -1310,7 +1310,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
-{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict
+{VW} -i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 

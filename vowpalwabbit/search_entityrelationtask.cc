@@ -52,8 +52,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
   // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
-  my_task_data->constraints = arg.vm.count("constraints") > 0;
-
   for(int i=1; i<5; i++)
     my_task_data->y_allowed_entity.push_back(i);
 

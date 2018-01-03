@@ -1098,13 +1098,11 @@ base_learner* bfgs_setup(arguments& arg)
   b.backstep_on = false;
   b.final_pass=arg.all->numpasses;
   b.no_win_counter = 0;
-  b.early_stop_thres = 3;
 
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    if(arg.vm.count("early_terminate"))
-      b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
   if (b.m==0)

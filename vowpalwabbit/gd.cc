@@ -1074,7 +1074,6 @@ base_learner* setup(arguments& arg)
   g.all->normalized_sum_norm_x = 0;
   g.no_win_counter = 0;
   g.total_weight = 0.;
-  g.early_stop_thres = 3;
   g.neg_norm_power = (arg.all->adaptive ? (arg.all->power_t - 1.f) : -1.f);
   g.neg_power_t = - arg.all->power_t;
   g.adaptive = arg.all->adaptive;
@@ -1093,12 +1092,10 @@ base_learner* setup(arguments& arg)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    if(arg.vm.count("early_terminate"))
-      g.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    g.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  if (arg.vm.count("constant"))
-    g.initial_constant = arg.vm["constant"].as<float>();
+  g.initial_constant = arg.all->initial_constant;
 
   if( arg.vm.count("sgd") || arg.vm.count("adaptive") || arg.vm.count("invariant") || arg.vm.count("normalized") )
   {

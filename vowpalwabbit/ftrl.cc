@@ -242,38 +242,31 @@ base_learner* ftrl_setup(arguments& arg)
   ftrl& b = calloc_or_throw<ftrl>();
   if (arg.new_options("Follow the Regularized Leader")
       .critical("ftrl", "FTRL: Follow the Proximal Regularized Leader")
-      ("ftrl_alpha", b.ftrl_alpha, "Learning rate for FTRL optimization")
-      ("ftrl_beta", b.ftrl_beta, "FTRL beta parameter").missing())
-    if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning").missing())
+      ("ftrl_alpha", b.ftrl_alpha, 0.005f, "Learning rate for FTRL optimization")
+      ("ftrl_beta", b.ftrl_beta, 0.1f, "FTRL beta parameter").missing())
+    if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning")
+        ("ftrl_alpha", b.ftrl_alpha, 1.0f, "Learning rate for FTRL optimization")
+        ("ftrl_beta", b.ftrl_beta, 0.5f, "FTRL beta parameter").missing())
       return free_return(b);
 
   b.all = arg.all;
   b.no_win_counter = 0;
-  b.early_stop_thres = 3;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
   string algorithm_name;
-  if (arg.vm.count("ftrl"))
+  if (arg.vm["ftrl"].as<bool>())
   {
     algorithm_name = "Proximal-FTRL";
     if (arg.all->audit)
       learn_ptr=learn_proximal<true>;
     else
       learn_ptr=learn_proximal<false>;
-    if (!arg.vm.count("ftrl_alpha"))
-      b.ftrl_beta = 0.005f;
-    if (!arg.vm.count("ftrl_beta"))
-      b.ftrl_beta = 0.1f;
   }
-  else if (arg.vm.count("pistol"))
+  else if (arg.vm["pistol"].as<bool>())
   {
     algorithm_name = "PiSTOL";
     learn_ptr=learn_pistol;
-    if (!arg.vm.count("ftrl_alpha"))
-      b.ftrl_alpha = 1.0f;
-    if (!arg.vm.count("ftrl_beta"))
-      b.ftrl_beta = 0.5f;
   }
   b.data.ftrl_alpha = b.ftrl_alpha;
   b.data.ftrl_beta = b.ftrl_beta;
@@ -293,8 +286,7 @@ base_learner* ftrl_setup(arguments& arg)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    if(arg.vm.count("early_terminate"))
-      b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
   learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << arg.all->weights.stride_shift());

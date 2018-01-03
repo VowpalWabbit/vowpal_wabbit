@@ -237,7 +237,7 @@ base_learner* active_cover_setup(arguments& arg)
 
   data.beta_scale *= data.beta_scale;
 
-  if(arg.vm.count("oracular"))
+  if(data.oracular)
     data.cover_size = 0;
 
   if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)

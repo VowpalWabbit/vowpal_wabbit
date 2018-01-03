@@ -501,12 +501,10 @@ int add(svm_params& params, svm_example* fec)
 
 bool update(svm_params& params, size_t pos)
 {
-
   //params.all->opts_n_args.trace_message<<"Update\n";
   svm_model* model = params.model;
   bool overshoot = false;
   //params.all->opts_n_args.trace_message<<"Updating model "<<pos<<" "<<model->num_support<<" ";
-  //params.all->opts_n_args.trace_message<<model->support_vec[pos]->example_counter<<endl;
   svm_example* fec = model->support_vec[pos];
   label_data& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
@@ -519,7 +517,7 @@ bool update(svm_params& params, size_t pos)
 
   float proj = alphaKi*ld.label;
   float ai = (params.lambda - proj)/inprods[pos];
-  //params.all->opts_n_args.trace_message<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld->label<<" "<<model->delta[pos]<<" ";
+  //params.all->opts_n_args.trace_message<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld.label<<" "<<model->delta[pos]<<" " << endl;
 
   if(ai > fec->ex.l.simple.weight)
     ai = fec->ex.l.simple.weight;
@@ -661,7 +659,6 @@ void train(svm_params& params)
   predict(params, params.pool, scores, params.pool_pos);
   //cout<<scores[0]<<endl;
 
-
   if(params.active)
   {
     if(params.active_pool_greedy)
@@ -686,7 +683,6 @@ void train(svm_params& params)
     }
     else
     {
-
       for(size_t i = 0; i < params.pool_pos; i++)
       {
         float queryp = 2.0f/(1.0f + expf((float)(params.active_c*fabs(scores[i]))*(float)pow(params.pool[i]->ex.example_counter,0.5f)));
@@ -712,7 +708,6 @@ void train(svm_params& params)
 
   if(params.all->training)
   {
-
     svm_model* model = params.model;
 
     for(size_t i = 0; i < params.pool_pos; i++)
@@ -790,9 +785,6 @@ void train(svm_params& params)
 void learn(svm_params& params, base_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all),&ec);
-  // for(int i = 0;i < fec->feature_map_len;i++)
-  //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
-  // cout<<endl;
   if(fec)
   {
     svm_example* sec = &calloc_or_throw<svm_example>();
@@ -887,15 +879,10 @@ LEARNER::base_learner* kernel_svm_setup(arguments& arg)
   params.loss_sum = 0.;
   params.all = arg.all;
 
-  if(arg.vm.count("active"))
+  if(arg.vm["active"].as<bool>())
     params.active = true;
   if(params.active)
-  {
-    if(arg.vm.count("active_c"))
-      params.active_c = arg.vm["active_c"].as<double>();
-    else
-      params.active_c = 1.;
-  }
+    params.active_c = 1.;
 
   params.pool = calloc_or_throw<svm_example*>(params.pool_size);
   params.pool_pos = 0;
