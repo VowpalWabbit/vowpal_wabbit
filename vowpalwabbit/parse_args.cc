@@ -544,6 +544,7 @@ void parse_feature_tweaks(arguments& arg)
   vector<string> dictionary_nses;
   if (arg.new_options("Feature options")
       .keep("hash", po::value(&hash_function), "how to hash the features. Available options: strings, all")
+      .keep("hash_seed", arg.all->hash_seed, (uint32_t)0, "seed for hash function")
       .keep_vector("ignore", po::value(&ignores), "ignore namespaces beginning with character <arg>")
       .keep_vector<string>("ignore_linear", po::value(&ignore_linears), "ignore namespaces beginning with character <arg> for linear terms only")
       .keep_vector<string>("keep", po::value(&keeps), "keep namespaces beginning with character <arg>")

@@ -448,6 +448,8 @@ struct vw
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
+  uint32_t hash_seed;
+
   std::string data_filename; // was vm["data"]
 
   bool daemon;

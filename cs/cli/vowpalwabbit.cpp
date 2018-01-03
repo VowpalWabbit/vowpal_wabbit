@@ -112,7 +112,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 }
 
 uint64_t VowpalWabbit::HashSpace(String^ s)
-{ auto newHash = m_hasher(s, hash_base);
+{ auto newHash = m_hasher(s, 0);
 
 #ifdef _DEBUG
   auto oldHash = HashSpaceNative(s);
