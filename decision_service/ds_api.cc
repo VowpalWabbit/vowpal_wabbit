@@ -327,7 +327,7 @@ namespace Microsoft {
     std::cout << "Decision Service simulator" << std::endl;
 
     // TODO: allow serialization to/from JSON, speed up startup?
-    Microsoft::DecisionService::DecisionServiceConfiguration config = Microsoft::DecisionService::DecisionServiceConfiguration::Download("https://storagev6d6i5yogkqpq.blob.core.windows.net/mwt-settings/client?sv=2017-04-17&sr=b&sig=ndoUJ0esholNKpH4QDV%2BB5IVhdM0zYixYctHXfobpqQ%3D&st=2017-12-27T17%3A29%3A11Z&se=2027-12-27T17%3A30%3A11Z&sp=r");
+    Microsoft::DecisionService::DecisionServiceConfiguration config = Microsoft::DecisionService::DecisionServiceConfiguration::Download("<INSERT>");
 
     Microsoft::DecisionService::DecisionServiceClient client(config);
 

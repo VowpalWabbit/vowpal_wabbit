@@ -108,8 +108,9 @@ python/dist/**
 python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
-python/Makefiel
+python/Makefile
 python/setup.py
+python/MANIFEST
 
 /COPYING
 /README
@@ -128,3 +129,4 @@ CMakeCache.txt
 *.vcxproj
 *.vcxproj.filters
 *.sln
+decision_service/swig
