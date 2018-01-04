@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 3.5)
 project (pylibvw)
 
-set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_STANDARD 14)
+# set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Boost ${Boost_VERSION} COMPONENTS python)
+find_package(Boost ${Boost_VERSION} REQUIRED COMPONENTS python)
 find_package(PythonLibs REQUIRED)
 
 include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}) 
@@ -27,3 +27,8 @@ if(PYTHON)
                        DEPENDS setup.py.in)
     add_custom_target(python-package DEPENDS ${PYTHON-TARBALL})
 endif()
+
+# TODO
+#continue python build
+#double check that the eventhub is send correctly (nunit)
+#test linux build

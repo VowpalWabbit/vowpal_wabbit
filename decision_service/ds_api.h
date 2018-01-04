@@ -4,73 +4,101 @@
 #include <string>
 #include <memory>
 
-namespace ds {
-  struct RankResponse {
-    RankResponse(int action, std::vector<int>& ranking, const char* event_id,
-      const char* model_version, std::vector<float>& probabilities, const char* features);
-    // Note: each ActionProbability is yet another object requiring disposal...
-    //std::vector<ActionProbability> ranking;
+namespace Microsoft {
+  namespace DecisionService {
+    class RankResponse {
+      // actions order by our decision process
+      // TODO: customs wig type. make RankResponse an iterable and return a small struct?
+      const std::vector<int> _ranking;
 
-    const char* features;
+      // parallel to ranking
+      const std::vector<float> _probabilities;
 
-    // top action == ranking[0]
-    // added to safe allocation as ranking is allocated dynamically
-    const int action;
+      const char* features;
 
-    // actions order by our decision process
-    // TODO: customs wig type. make RankResponse an iterable and return a small struct?
-    const std::vector<int> ranking;
+    public:
+#ifndef SWIG
+      RankResponse(std::vector<int>& ranking, const char* event_id,
+        const char* model_version, std::vector<float>& probabilities, const char* features);
+#endif
 
-    // use boost::UUID + timestamp + additional data
-    const std::string event_id;
+      // use boost::UUID + timestamp + additional data
+      const std::string event_id;
 
-    const std::string model_version;
+      const std::string model_version;
 
-    // parallel to ranking
-    const std::vector<float> probabilities;
-  };
+      int top_action();
 
-  std::ostream& operator<<(std::ostream& ostr, const RankResponse& rankResponse);
+      const std::vector<float>& probabilities();
 
-  struct DecisionServiceConfiguration {
-    static DecisionServiceConfiguration Download(const char* url);
+      const std::vector<int>& ranking();
 
-    std::string model_url;
+#ifndef ARRAYS_OPTIMIZED
+      int length();
 
-    std::string eventhub_interaction_connection_string;
+      int action(int index);
 
-    std::string eventhub_observation_connection_string;
+      float probability(int index);
+#endif
 
-    // defaults to 2
-    int num_parallel_connection;
+#ifndef SWIG
+      friend std::ostream& operator<<(std::ostream& ostr, const RankResponse& rankResponse);
+#endif
+    };
 
-    // defaults to 5
-    int batching_timeout_in_seconds;
+#ifndef SWIG
+    std::ostream& operator<<(std::ostream& ostr, const RankResponse& rankResponse);
+#endif
 
-    // defaults to 8*1024
-    int batching_queue_max_size;
+    template<typename T>
+    struct Array
+    {
+      T* data;
+      int length;
+    };
 
-    // int pollingForModelPeriod;
-    // int pollingForSettingsPeriod;
-  };
+    struct DecisionServiceConfiguration {
+      static DecisionServiceConfiguration Download(const char* url);
 
-  // avoid leakage to Swig
-  class DecisionServiceClientInternal;
+      std::string model_url;
 
-  // TODO: generat python doc: http://www.swig.org/Doc3.0/SWIGDocumentation.html#Python_nn65
-  class DecisionServiceClient {
-    std::unique_ptr<DecisionServiceClientInternal> _state;
+      std::string eventhub_interaction_connection_string;
 
-  public:
-    DecisionServiceClient(DecisionServiceConfiguration& config);
+      std::string eventhub_observation_connection_string;
 
-    ~DecisionServiceClient();
+      // defaults to 2
+      int num_parallel_connection;
 
-    // TODO: hand generate wrapper to get array size?
-    RankResponse* rank(const char* features, const char* event_id, int* default_ranking, size_t default_ranking_size);
+      // defaults to 5
+      int batching_timeout_in_seconds;
 
-    void reward(const char* event_id, const char* reward);
+      // defaults to 8*1024
+      int batching_queue_max_size;
 
-    void update_model(unsigned char* model, size_t offset, size_t len);
-  };
+      // int pollingForModelPeriod;
+      // int pollingForSettingsPeriod;
+    };
+
+    // avoid leakage to Swig
+    class DecisionServiceClientInternal;
+
+    // TODO: generat python doc: http://www.swig.org/Doc3.0/SWIGDocumentation.html#Python_nn65
+    class DecisionServiceClient {
+      std::unique_ptr<DecisionServiceClientInternal> _state;
+
+    public:
+      DecisionServiceClient(DecisionServiceConfiguration& config);
+
+      ~DecisionServiceClient();
+
+      // TODO: hand generate wrapper to get array size?
+      RankResponse* rank(const char* features, const char* event_id, int* default_ranking, int default_ranking_size);
+
+      RankResponse* rank(const char* features, const char* event_id, Array<int>& default_ranking);
+
+      void reward(const char* event_id, const char* reward);
+
+      void update_model(unsigned char* model, size_t offset, size_t len);
+    };
+  }
 }

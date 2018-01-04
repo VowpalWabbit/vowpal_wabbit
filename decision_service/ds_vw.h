@@ -6,48 +6,49 @@
 struct vw;
 struct example;
 
-namespace ds {
+namespace Microsoft {
+  namespace DecisionService {
+    class VowpalWabbitModel {
+      vw* _vw;
+    public:
+      VowpalWabbitModel(vw* vw);
 
-  class VowpalWabbitModel {
-    vw* _vw;
-  public:
-    VowpalWabbitModel(vw* vw);
+      ~VowpalWabbitModel();
 
-    ~VowpalWabbitModel();
+      inline vw* model();
+    };
 
-    inline vw* model();
-  };
+    class VowpalWabbit {
+      std::shared_ptr<VowpalWabbitModel> _model;
+      vw* _vw;
+      std::vector<example*> _example_pool;
+      example* _empty_example;
 
-  class VowpalWabbit {
-    std::shared_ptr<VowpalWabbitModel> _model;
-    vw* _vw;
-    std::vector<example*> _example_pool;
-    example* _empty_example;
+    public:
+      VowpalWabbit(std::shared_ptr<VowpalWabbitModel> model, vw* vw);
+      ~VowpalWabbit();
 
-  public:
-    VowpalWabbit(std::shared_ptr<VowpalWabbitModel> model, vw* vw);
-    ~VowpalWabbit();
+      std::vector<ActionProbability> rank(const char* context);
 
-    std::vector<ActionProbability> rank(const char* context);
+      example* get_or_create_example();
+    };
 
-    example* get_or_create_example();
-  };
+    class VowpalWabbitFactory {
+      std::shared_ptr<VowpalWabbitModel> _vw_model;
 
-  class VowpalWabbitFactory {
-    std::shared_ptr<VowpalWabbitModel> _vw_model;
+    public:
+      VowpalWabbitFactory(std::shared_ptr<VowpalWabbitModel> vw_model);
 
-  public:
-    VowpalWabbitFactory(std::shared_ptr<VowpalWabbitModel> vw_model);
+      VowpalWabbit* operator()();
+    };
 
-    VowpalWabbit* operator()();
-  };
+    class VowpalWabbitThreadSafe : public IRanker {
+      ObjectPool<VowpalWabbit, VowpalWabbitFactory> pool;
+    public:
+      VowpalWabbitThreadSafe();
+      virtual ~VowpalWabbitThreadSafe();
 
-  class VowpalWabbitThreadSafe : public IRanker {
-    ObjectPool<VowpalWabbit, VowpalWabbitFactory> pool;
-  public:
-    VowpalWabbitThreadSafe();
-    virtual ~VowpalWabbitThreadSafe();
-
-    virtual std::vector<ActionProbability> rank(const char* context);
-  };
+      virtual std::vector<ActionProbability> rank(const char* context);
+    };
+  }
 }

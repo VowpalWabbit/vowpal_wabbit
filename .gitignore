@@ -108,6 +108,8 @@ python/dist/**
 python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
+python/Makefiel
+python/setup.py
 
 /COPYING
 /README

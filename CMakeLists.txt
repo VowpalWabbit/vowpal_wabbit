@@ -18,14 +18,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # DSVM only has Boost 1.58.0 installed
 set(Boost_VERSION 1.58.0)
 
-set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_STATIC_LIBS OFF)   
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 #set(OPENSSL_USE_STATIC_LIBS TRUE)
  
-# set(VW_COMMON_SOURCE common/vw_exception.cc)
-
 # NOTE: The order matters! The most independent ones should go first.
 add_subdirectory(common)
 add_subdirectory(allreduce) 
