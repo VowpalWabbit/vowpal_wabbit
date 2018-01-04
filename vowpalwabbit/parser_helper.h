@@ -86,11 +86,12 @@ class arguments {
   template<class T> arguments& keep_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description)
     {
       return operator()(option,
-                        type->notifier([this, option] (std::vector<T> arg)
-                                       {
-                                         for (auto i : arg)
-                                           *this->file_options << " --" << long_only(option) << " " << i;
-                                       }),
+                        type->multitoken()->composing()
+                        ->notifier([this, option] (std::vector<T> arg)
+                                   {
+                                     for (auto i : arg)
+                                       *this->file_options << " --" << long_only(option) << " " << i;
+                                   }),
                         description);
     }
   arguments& keep(bool& exists, const char* option, const char* description)
