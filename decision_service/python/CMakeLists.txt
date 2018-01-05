@@ -29,6 +29,5 @@ SWIG_LINK_LIBRARIES(decision_service ds ${PYTHON_LIBRARIES})
 # openssl req -new -x509 -keyout unittest.pem -out unittest.pem -days 536500 -nodes -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
 # TODO: just grep the file using discover_python_unittest 
-add_test(test.test_ds_api.TestDecisionServiceConfiguration.test_upload ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceConfiguration.test_upload)
 add_test(test.test_ds_api.TestDecisionServiceConfiguration.test_not_found ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceConfiguration.test_not_found)
 add_test(test.test_ds_api.TestDecisionServiceConfiguration.test_download ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceConfiguration.test_download)

@@ -1,3 +1,9 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #include "ds_api.h"
 #include "ds_internal.h"
 #include "ds_vw.h"
@@ -14,9 +20,7 @@
 #include <chrono>
 #include <thread>
 
-// DS config
-#include <locale>
-#include <codecvt>
+
 // SAS code
 using namespace std::chrono_literals;
 
@@ -29,32 +33,6 @@ namespace Microsoft {
     using namespace web::http::client;
     using namespace concurrency;
     using namespace concurrency::streams;
-
-    DecisionServiceConfiguration DecisionServiceConfiguration::Download(const char* url/*, bool certificate_validation_enabled*/) throw(std::exception)
-    {
-      // mainly for unit tests
-      http_client_config http_config;
-      //http_config.set_validate_certificates(certificate_validation_enabled);
-
-      // download configuration
-      http_client client(conversions::to_string_t(url), http_config);
-      auto json = client
-        .request(methods::GET)
-        .then([=](http_response response) { return response.extract_json(/* ignore content type */ true); })
-        .get();
-
-      DecisionServiceConfiguration config;
-      config.model_url = conversions::to_utf8string(json[U("ModelBlobUri")].as_string());
-      config.eventhub_interaction_connection_string = conversions::to_utf8string(json[U("EventHubInteractionConnectionString")].as_string());
-      config.eventhub_observation_connection_string = conversions::to_utf8string(json[U("EventHubObservationConnectionString")].as_string());
-      // with event sizes of 3kb & 5s batching, 2 connections can get 50Mbps
-      config.num_parallel_connection = 2;
-      config.batching_timeout_in_seconds = 5;
-      config.batching_queue_max_size = 8 * 1024;
-      config.certificate_validation_enabled = true;
-
-      return config;
-    }
 
     class DecisionServiceClientInternal {
     private:
@@ -179,13 +157,6 @@ namespace Microsoft {
             // manage multiple outstanding requests...
             // send data
             auto ready_response = pplx::when_any(open_requests.begin(), open_requests.end()).get();
-
-            // need to wait delete
-            //// materialize payload
-            //string json_str = json->str();
-
-            //// free memory
-            //delete json;
 
             //printf("ready: %d length: %d batch count: %d status: %d\n",
             //  (int)ready_response.second, (int)json_str.length(), batch_count, ready_response.first.status_code());

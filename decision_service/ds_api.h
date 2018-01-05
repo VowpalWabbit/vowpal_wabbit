@@ -1,9 +1,14 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #pragma once
 
 #include <vector>
 #include <string>
 #include <memory>
-// #include <cpprest/http_msg.h>
 
 #ifndef DISABLE_NAMESPACE
 namespace Microsoft {
@@ -11,7 +16,6 @@ namespace Microsoft {
 #endif
     class RankResponse {
       // actions order by our decision process
-      // TODO: customs wig type. make RankResponse an iterable and return a small struct?
       const std::vector<int> _ranking;
 
       // parallel to ranking
@@ -53,6 +57,7 @@ namespace Microsoft {
     std::ostream& operator<<(std::ostream& ostr, const RankResponse& rankResponse);
 #endif
 
+    // helper type to avoid memory copy for C#
     template<typename T>
     struct Array
     {
@@ -62,6 +67,8 @@ namespace Microsoft {
 
     struct DecisionServiceConfiguration {
       static DecisionServiceConfiguration Download(const char* url/*, bool certificate_validation_enabled = true*/) throw(std::exception);
+
+      DecisionServiceConfiguration();
 
       std::string model_url;
 

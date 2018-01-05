@@ -31,14 +31,11 @@ class MockHandler(BaseHTTPRequestHandler):
 		self.send_header('Content-Type', 'application/json; charset=utf-8')
 		self.end_headers()
 
-		response_content = json.dumps({"ModelBlobUri": "http://localhost:%d/model" % self.mock_server.mock_server_port,
+		response_content = json.dumps({"ModelBlobUri": "http://localhost/model",
 			"EventHubInteractionConnectionString": "conn1",
 			"EventHubObservationConnectionString": "conn2"
 		})
 		self.wfile.write(response_content.encode('utf-8'))
-
-		# TODO: expose additional properties: https/http (or enable simpelhttp https)
-		# expose cert validation
 
 		self.mock_server.get = self.mock_server.get + 1
 
@@ -86,13 +83,14 @@ class MockServer:
 		self.mock_server.server_close()
 
 class TestDecisionServiceConfiguration(unittest.TestCase):
-
 	def test_download(self):
 		# can't easily disable cert validation w/o introducing yet another method (optional params not supported)
 		with MockServer(https_enabled = False) as server:
 			config = DecisionServiceConfiguration_Download(server.base_url + 'config.json')
 
-			self.assertEqual(config.model_url, server.base_url + 'model')
+			self.assertEqual(config.model_url, 'http://localhost/model')
+			self.assertEqual(config.eventhub_interaction_connection_string, 'conn1')
+			self.assertEqual(config.eventhub_observation_connection_string, 'conn2')
 
 			# make sure it's called once'
 			self.assertEqual(server.get, 1, 'HTTP server not called')
@@ -102,8 +100,10 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 			with self.assertRaises(SystemError):
 				DecisionServiceConfiguration_Download(server.base_url + 'notfound')
 
-	def test_upload(self):
-		self.assertEqual(1,1)
+class TestDecisionServiceClient:
+	def test_rank(self):
+		with MockServer() as server:
+			self.assertEqual(1,1)
 
 if __name__ == '__main__':
 	unittest.main()
