@@ -13,6 +13,7 @@
 #include <exception.i>
 %include <std_vector.i>
 
+// didn't work out
 // %include <std_shared_ptr.i>
 // %shared_ptr(Microsoft::DecisionService::DecisionServiceListener)
 // %shared_ptr(DecisionServiceListener)

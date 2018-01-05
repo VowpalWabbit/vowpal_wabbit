@@ -167,29 +167,21 @@ namespace Microsoft {
               try
               {
                 auto http_resp = resp.get();
-                cout << "before error message.1 " << endl;
-                if (http_resp.status_code() != 201 && _config._listener)
+                if (http_resp.status_code() != 201 && _config.listener)
                 {
-                  cout << "before error message " << endl;
                   ostringstream message;
                   message << "Failed to upload event: '" << http_resp.status_code() << "'";
-                  _config._listener->error(message.str().c_str());
+                  _config.listener->error(message.str());
                 }
               }
               catch (std::exception& e)
               {
-                cout << "before error message .2" << endl;
-
-                if (_config._listener)
+                if (_config.listener)
                 {
-                  cout << " inside error message" << endl;
-                  printf("listener: %p", _config._listener);
                   ostringstream message;
                   message << "Failed to upload event: '" << e.what() << "'";
-                  _config._listener->error(message.str().c_str());
+                  _config.listener->error(message.str());
                 }
-
-                cout << "after error message .2" << endl;
               }
             });
 

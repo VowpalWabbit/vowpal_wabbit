@@ -67,15 +67,16 @@ namespace Microsoft {
 
     class DecisionServiceListener {
     public:
-      virtual void trace(const char* message) { };
+      virtual ~DecisionServiceListener() { }
 
-      virtual void error(const char* message) { };
+      virtual void trace(const std::string& message) { }
+
+      virtual void error(const std::string& message) { }
 
       // TODO: add more events (e.g. model download)
     };
 
     class DecisionServiceConfiguration {
-      std::shared_ptr<DecisionServiceListener> _listener;
 
     public:
       static DecisionServiceConfiguration Download(const char* url/*, bool certificate_validation_enabled = true*/) throw(std::exception);
@@ -103,10 +104,7 @@ namespace Microsoft {
       // int pollingForSettingsPeriod;
 
       // Memory ownership is taken by this class
-      void set_listener(DecisionServiceListener* listener);
-
-      friend class DecisionServiceClient;
-      friend class DecisionServiceClientInternal;
+      DecisionServiceListener* listener;
     };
 
     // avoid leakage to Swig

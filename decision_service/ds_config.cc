@@ -45,10 +45,10 @@ namespace Microsoft {
       batching_queue_max_size(8 * 1024)
     { }
 
-    void DecisionServiceConfiguration::set_listener(DecisionServiceListener* listener)
-    {
-      printf("ptr registered: %p\n", listener);
-      _listener = shared_ptr<DecisionServiceListener>(listener);
-    }
+    //void DecisionServiceConfiguration::set_listener(DecisionServiceListener* listener)
+    //{
+    //  printf("ptr registered: %p\n", listener);
+    //  _listener = shared_ptr<DecisionServiceListener>(listener);
+    //}
   }
 }

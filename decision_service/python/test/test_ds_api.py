@@ -157,7 +157,12 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			self.config.set_listener(TestDecisionServiceListener())
+			# self.listener = 
+			# C++ owns the object by default. Read http://www.swig.org/Doc3.0/Python.html#Python_nn35 on how to reverse
+			# TODO: I don't understand how this work...
+			listener = TestDecisionServiceListener()
+			self.config.listener = listener
+
 
 			# make sure it's enabled and we'll internally throw
 			self.config.certificate_validation_enabled = True
@@ -173,7 +178,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			self.config.set_listener(TestDecisionServiceListener())
+			# self.config.set_listener(TestDecisionServiceListener())
 
 			client = DecisionServiceClient(self.config)
 			ranking = client.rank('{"a":2}', '', [1,2,3])
@@ -190,7 +195,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			self.config.set_listener(TestDecisionServiceListener())
+			# self.config.set_listener(TestDecisionServiceListener())
 
 			client = DecisionServiceClient(self.config)
 			ranking = client.rank('{"a":2}', 'abc', [1,2,3])

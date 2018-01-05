@@ -1,4 +1,4 @@
-%module decision_service
+%module(directors="1") decision_service
 
 #define ARRAYS_OPTIMIZED
 
