@@ -19,7 +19,7 @@ else()
 endif()
 
 # TODO: add filesystem once the windows build works
-find_package(Boost ${Boost_VERSION} REQUIRED COMPONENTS program_options)
+find_package(Boost ${Boost_VW_VERSION} REQUIRED COMPONENTS program_options)
 find_package(RapidJSON REQUIRED)
 find_package(Threads REQUIRED)  
 find_package(ZLIB REQUIRED)

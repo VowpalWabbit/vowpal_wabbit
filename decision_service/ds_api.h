@@ -3,9 +3,12 @@
 #include <vector>
 #include <string>
 #include <memory>
+// #include <cpprest/http_msg.h>
 
+#ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
+#endif
     class RankResponse {
       // actions order by our decision process
       // TODO: customs wig type. make RankResponse an iterable and return a small struct?
@@ -54,17 +57,19 @@ namespace Microsoft {
     struct Array
     {
       T* data;
-      int length;
+      size_t length;
     };
 
     struct DecisionServiceConfiguration {
-      static DecisionServiceConfiguration Download(const char* url);
+      static DecisionServiceConfiguration Download(const char* url/*, bool certificate_validation_enabled = true*/) throw(std::exception);
 
       std::string model_url;
 
       std::string eventhub_interaction_connection_string;
 
       std::string eventhub_observation_connection_string;
+
+      bool certificate_validation_enabled;
 
       // defaults to 2
       int num_parallel_connection;
@@ -91,14 +96,19 @@ namespace Microsoft {
 
       ~DecisionServiceClient();
 
-      // TODO: hand generate wrapper to get array size?
-      RankResponse* rank(const char* features, const char* event_id, int* default_ranking, int default_ranking_size);
+      // named rank1, 2, 3,... to ease ignore/rename matching in swig
 
-      RankResponse* rank(const char* features, const char* event_id, Array<int>& default_ranking);
+      RankResponse* rank_cstyle(const char* features, const char* event_id, const int* default_ranking, size_t default_ranking_size);
+
+      RankResponse* rank_struct(const char* features, const char* event_id, const Array<int>& default_ranking);
+
+      RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<int>& default_ranking);
 
       void reward(const char* event_id, const char* reward);
 
       void update_model(unsigned char* model, size_t offset, size_t len);
     };
+#ifndef DISABLE_NAMESPACE
   }
 }
+#endif

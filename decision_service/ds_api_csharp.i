@@ -1,3 +1,5 @@
+%module decision_service
+
 #define ARRAYS_OPTIMIZED
 
 %include "ds_api.i"
@@ -27,21 +29,23 @@ CSHARP_OUT_ARRAYS(int, int)
 %apply unsigned char FIXED[] {unsigned char* model}
 %csmethodmodifiers Microsoft::DecisionService::DecisionServiceClient::update_model "public unsafe"; 
 
-%typemap(cstype) Microsoft::DecisionService::Array<int>& "int[]"
+%typemap(cstype) const Microsoft::DecisionService::Array<int>& "int[]"
 %typemap(csin,
 	     pre=       "    fixed ( int* swig_ptrTo_$csinput = $csinput ) {\n" 
 					"        Array<T> swig_arrayTo_$csinput = { swig_ptrTo_$csinput, $csinput.Length }; ",
          terminator="    }") 
-		Microsoft::DecisionService::Array<int>& "swig_arrayTo_$csinput" 
+		const Microsoft::DecisionService::Array<int>& "swig_arrayTo_$csinput" 
 
 %csmethodmodifiers Microsoft::DecisionService::DecisionServiceClient::rank "public unsafe";
-
-// disable default constructor
-%nodefaultctor Microsoft::DecisionService::RankResponse;
 
 // required for fast vector copying
 %csmethodmodifiers Microsoft::DecisionService::RankResponse::probabilities "public unsafe";
 %csmethodmodifiers Microsoft::DecisionService::RankResponse::ranking "public unsafe";
+
+%ignore Microsoft::DecisionService::Array<int>;
+%ignore Microsoft::DecisionService::DecisionServiceClient::rank_cstyle;
+%ignore Microsoft::DecisionService::DecisionServiceClient::rank_vector;
+%rename(rank) Microsoft::DecisionService::DecisionServiceClient::rank_struct;
 
 // must be at the end
 %include "ds_api.h"

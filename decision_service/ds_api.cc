@@ -30,10 +30,14 @@ namespace Microsoft {
     using namespace concurrency;
     using namespace concurrency::streams;
 
-    DecisionServiceConfiguration DecisionServiceConfiguration::Download(const char* url)
+    DecisionServiceConfiguration DecisionServiceConfiguration::Download(const char* url/*, bool certificate_validation_enabled*/) throw(std::exception)
     {
+      // mainly for unit tests
+      http_client_config http_config;
+      //http_config.set_validate_certificates(certificate_validation_enabled);
+
       // download configuration
-      http_client client(conversions::to_string_t(url));
+      http_client client(conversions::to_string_t(url), http_config);
       auto json = client
         .request(methods::GET)
         .then([=](http_response response) { return response.extract_json(/* ignore content type */ true); })
@@ -47,9 +51,10 @@ namespace Microsoft {
       config.num_parallel_connection = 2;
       config.batching_timeout_in_seconds = 5;
       config.batching_queue_max_size = 8 * 1024;
+      config.certificate_validation_enabled = true;
+
       return config;
     }
-
 
     class DecisionServiceClientInternal {
     private:
@@ -73,8 +78,8 @@ namespace Microsoft {
         _queue(config.batching_queue_max_size),
         _thread_running(true),
         // initialize n-clients
-        _event_hub_interactions(config.num_parallel_connection, EventHubClient(config.eventhub_interaction_connection_string)),
-        _event_hub_observation(config.eventhub_observation_connection_string),
+        _event_hub_interactions(config.num_parallel_connection, EventHubClient(config.eventhub_interaction_connection_string, config.certificate_validation_enabled)),
+        _event_hub_observation(config.eventhub_observation_connection_string, config.certificate_validation_enabled),
         _upload_interaction_thread(&DecisionServiceClientInternal::upload_interactions, this),
         _download_model_thread(&DecisionServiceClientInternal::download_model, this)
       { }
@@ -82,7 +87,10 @@ namespace Microsoft {
       ~DecisionServiceClientInternal()
       {
         _thread_running = false;
+
+        // wait for the threads to finish, don't delete before completion
         _upload_interaction_thread.join();
+        _download_model_thread.join();
 
         // delete all elements from _queue
         vector<unsigned char>* item;
@@ -271,13 +279,22 @@ namespace Microsoft {
     DecisionServiceClient::~DecisionServiceClient()
     { }
 
-    RankResponse* DecisionServiceClient::rank(const char* context, const char* event_id, Array<int>& default_ranking)
+    RankResponse* DecisionServiceClient::rank_struct(const char* features, const char* event_id, const Array<int>& default_ranking)
     {
-      return rank(context, event_id, default_ranking.data, default_ranking.length);
+      return rank_cstyle(features, event_id, default_ranking.data, default_ranking.length);
     }
 
-    RankResponse* DecisionServiceClient::rank(const char* context, const char* event_id, int* default_ranking, int default_ranking_size)
+    RankResponse* DecisionServiceClient::rank_vector(const char* features, const char* event_id, const vector<int>& default_ranking)
     {
+      return rank_cstyle(features, event_id, &default_ranking[0], default_ranking.size());
+    }
+
+    RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const int* default_ranking, size_t default_ranking_size)
+    {
+      cout << "features: '" << features << "'" << endl;
+      for (size_t i = 0; i < default_ranking_size; i++)
+        cout << "Default Rank " << i << ": " << default_ranking[i] << endl;
+
       // generate event id if empty
       std::string l_event_id;
       if (!event_id || strlen(event_id) == 0)
@@ -300,7 +317,7 @@ namespace Microsoft {
 
       RankResponse* response = new RankResponse(
         ranking,
-        l_event_id.c_str(), "m1", probs, context);
+        l_event_id.c_str(), "m1", probs, features);
 
       // invoke sampling
       // need to port random generator
@@ -344,7 +361,7 @@ namespace Microsoft {
 
     while (true)
     {
-      client.rank(payload_str.c_str(), nullptr, nullptr, 0);
+      client.rank_cstyle(payload_str.c_str(), nullptr, nullptr, 0);
       std::this_thread::sleep_for(1ms / 10);
     }
 

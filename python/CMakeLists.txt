@@ -4,7 +4,7 @@ project (pylibvw)
 set(CMAKE_CXX_STANDARD 14)
 # set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Boost ${Boost_VERSION} REQUIRED COMPONENTS python)
+find_package(Boost ${Boost_VW_VERSION} REQUIRED COMPONENTS python)
 find_package(PythonLibs REQUIRED)
 
 include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}) 

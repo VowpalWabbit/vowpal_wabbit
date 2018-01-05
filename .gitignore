@@ -130,3 +130,4 @@ CMakeCache.txt
 *.vcxproj.filters
 *.sln
 decision_service/swig
+CTestTestfile.cmake

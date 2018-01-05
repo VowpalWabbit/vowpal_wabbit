@@ -44,7 +44,7 @@ namespace Microsoft {
     // Endpoint=sb://fooo.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=bar;EntityPath=interaction
     boost::regex event_hub_connection_string_expression("^Endpoint=sb://([^;]+)/;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=(.+)$");
 
-    EventHubClient::EventHubClient(std::string connection_string)
+    EventHubClient::EventHubClient(std::string connection_string, bool certificate_validation_enabled)
       : _connection_string(connection_string), _authorization_valid_until(0)
     {
       // extract event hub connection string information
@@ -64,15 +64,17 @@ namespace Microsoft {
 
       http_client_config config;
 
+      // mainly for unit tests
+      config.set_validate_certificates(certificate_validation_enabled);
+
       // useful when debugging with fiddler
-      //config.set_validate_certificates(false);
       //config.set_proxy(web_proxy(U("http://127.0.0.1:8888")));
 
       _client = make_unique<http_client>(conversions::to_string_t(url.str()), config);
     }
 
     EventHubClient::EventHubClient(const EventHubClient& other)
-      : EventHubClient(other._connection_string)
+      : EventHubClient(other._connection_string, other._client->client_config().validate_certificates())
     { }
 
     pplx::task<http_response> EventHubClient::Send(const char* data)

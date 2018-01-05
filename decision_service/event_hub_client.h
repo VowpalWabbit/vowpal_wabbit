@@ -25,7 +25,7 @@ namespace Microsoft {
       std::string& Authorization();
 
     public:
-      EventHubClient(std::string connection_string);
+      EventHubClient(std::string connection_string, bool certificate_validation_enabled = true);
 
       EventHubClient(const EventHubClient& other);
 
