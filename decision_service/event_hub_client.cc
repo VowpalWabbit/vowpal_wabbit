@@ -103,9 +103,13 @@ namespace Microsoft {
 
       // TODO: handle errors
       // 1. 201 -> ok
-      // 2. ??? -> if we exceed capacity, retry with dela
+      // 2. ??? -> if we exceed capacity, retry with delay
       // 3. 401 -> access denied
-      return _client->request(req).then([=](http_response resp) { delete data; return resp; });
+      return _client->request(req).then([=](pplx::task<http_response> resp) {
+        // use value based overhead to make sure it's always run
+        delete data; 
+        return resp.get();
+      });
     }
 
     std::string& EventHubClient::Authorization()

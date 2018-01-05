@@ -20,8 +20,6 @@ license as described in the file LICENSE.
 #include <chrono>
 #include <thread>
 
-
-// SAS code
 using namespace std::chrono_literals;
 
 namespace Microsoft {
@@ -106,16 +104,16 @@ namespace Microsoft {
         vector<unsigned char>* json2;
 
         // populate initial already finished tasks
-        vector<pplx::task<http_response>> open_requests;
+        vector<pplx::task<void>> open_requests;
 
         http_response initial_response;
         initial_response.set_status_code(201);
 
         for (auto& client : _event_hub_interactions)
         {
-          pplx::task_completion_event<http_response> evt;
-          evt.set(initial_response);
-          open_requests.push_back(pplx::task<http_response>(evt));
+          pplx::task_completion_event<void> evt;
+          evt.set();
+          open_requests.push_back(pplx::task<void>(evt));
         }
 
         while (_thread_running)
@@ -124,7 +122,7 @@ namespace Microsoft {
           {
             // empty
             // cout << "queue empty" << endl;
-            std::this_thread::sleep_for(std::chrono::seconds(_config.batching_timeout_in_seconds));
+            std::this_thread::sleep_for(std::chrono::milliseconds(_config.batching_timeout_in_milliseconds));
 
             continue;
           }
@@ -156,14 +154,44 @@ namespace Microsoft {
 
             // manage multiple outstanding requests...
             // send data
-            auto ready_response = pplx::when_any(open_requests.begin(), open_requests.end()).get();
+            auto ready_idx = pplx::when_any(open_requests.begin(), open_requests.end()).get();
 
             //printf("ready: %d length: %d batch count: %d status: %d\n",
             //  (int)ready_response.second, (int)json_str.length(), batch_count, ready_response.first.status_code());
 
             // send request and add back to task list
-            open_requests[ready_response.second] =
-              _event_hub_interactions[ready_response.second].Send(json);
+            open_requests[ready_idx] =
+              _event_hub_interactions[ready_idx]
+              .Send(json)
+              .then([=](pplx::task<http_response> resp) {
+              try
+              {
+                auto http_resp = resp.get();
+                cout << "before error message.1 " << endl;
+                if (http_resp.status_code() != 201 && _config._listener)
+                {
+                  cout << "before error message " << endl;
+                  ostringstream message;
+                  message << "Failed to upload event: '" << http_resp.status_code() << "'";
+                  _config._listener->error(message.str().c_str());
+                }
+              }
+              catch (std::exception& e)
+              {
+                cout << "before error message .2" << endl;
+
+                if (_config._listener)
+                {
+                  cout << " inside error message" << endl;
+                  printf("listener: %p", _config._listener);
+                  ostringstream message;
+                  message << "Failed to upload event: '" << e.what() << "'";
+                  _config._listener->error(message.str().c_str());
+                }
+
+                cout << "after error message .2" << endl;
+              }
+            });
 
             // continue draining if we have another non-append json element
             json = json2;
@@ -262,10 +290,11 @@ namespace Microsoft {
 
     RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const int* default_ranking, size_t default_ranking_size)
     {
+      /*
       cout << "features: '" << features << "'" << endl;
       for (size_t i = 0; i < default_ranking_size; i++)
         cout << "Default Rank " << i << ": " << default_ranking[i] << endl;
-
+      */
       // generate event id if empty
       std::string l_event_id;
       if (!event_id || strlen(event_id) == 0)

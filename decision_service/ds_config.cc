@@ -6,10 +6,12 @@ license as described in the file LICENSE.
 #include "ds_api.h"
 
 #include <cpprest/http_client.h>
+#include <memory>
 
 namespace Microsoft {
   namespace DecisionService {
 
+    using namespace std;
     using namespace utility;
     using namespace web::http;
     using namespace web::http::client;
@@ -39,8 +41,14 @@ namespace Microsoft {
       : certificate_validation_enabled(true),
       // with event sizes of 3kb & 5s batching, 2 connections can get 50Mbps
       num_parallel_connection(2),
-      batching_timeout_in_seconds(5),
+      batching_timeout_in_milliseconds(5 * 1000),
       batching_queue_max_size(8 * 1024)
     { }
+
+    void DecisionServiceConfiguration::set_listener(DecisionServiceListener* listener)
+    {
+      printf("ptr registered: %p\n", listener);
+      _listener = shared_ptr<DecisionServiceListener>(listener);
+    }
   }
 }

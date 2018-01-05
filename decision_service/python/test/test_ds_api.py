@@ -4,7 +4,7 @@ import socket
 from threading import Thread
 import json
 import ssl
-
+from time import sleep
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # add library output path
@@ -46,16 +46,45 @@ class MockHandler(BaseHTTPRequestHandler):
 		self.send_response(404)
 		self.end_headers()
 
+	def do_POST(self):
+		self.mock_server.post = self.mock_server.post + 1
+
+		response_code = 404
+		if (len(self.mock_server.post_status_codes) == 0):
+			# default behavior
+			# - respond with 201 (created) for known EventHubs
+			# - respond with 404 otherwise
+			if self.path.startswith("/interaction") or self.path.startswith("/observation"):
+				response_code = 201
+		else:
+			response_code = self.mock_server.post_status_codes.pop(0)
+
+		content_len = int(self.headers.get('content-length', 0))
+		post_body = self.rfile.read(content_len).decode('utf-8')
+
+		self.mock_server.posts.append({'path': self.path,
+			'response_code': response_code,
+			'body': post_body,
+			'content-type': self.headers.get('content-type')})
+
+		self.send_response(response_code)
+
+		self.end_headers()
+
 	# disable logging to stdout
 	def log_message(self, format, *args):
 		return
 
 class MockServer:
-	def __init__(self, https_enabled = True):
+	def __init__(self, https_enabled = True, post_status_codes = []):
 		self.https_enabled = https_enabled
+		self.post_status_codes = post_status_codes
 
 	def __enter__(self):
-		self.get = 0;
+		self.get = 0
+		self.post = 0
+		self.posts = []
+
 		# Configure mock server.
 		self.mock_server_port = get_free_port()
 
@@ -65,8 +94,9 @@ class MockServer:
 		self.mock_server = HTTPServer(('localhost', self.mock_server_port), handler)
 		proto = 'http'
 		if self.https_enabled:
-			self.mock_server.socket = ssl.wrap_socket (self.mock_server.socket, server_side=True,
-									certfile='unittest.pem')
+			self.mock_server.socket = ssl.wrap_socket(self.mock_server.socket,
+				server_side=True,
+				certfile='unittest.pem')
 			proto = 'https'
 
 		# Start running mock server in a separate thread.
@@ -100,15 +130,79 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 			with self.assertRaises(SystemError):
 				DecisionServiceConfiguration_Download(server.base_url + 'notfound')
 
-class TestDecisionServiceClient:
-	def test_rank(self):
+class TestDecisionServiceListener(DecisionServiceListener):
+	def __init__(self):
+		self.errors = []
+		self.trace = []
+		DecisionServiceListener.__init__(self)
+
+	def error(self, msg):
+		print("my error: " + msg)
+		self.errors.append(msg)
+
+	def trace(self, msg):
+		self.trace.append(msg)
+
+class TestDecisionServiceClient(unittest.TestCase):
+	def __init__(self, *args):
+		self.key = "SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=0t45SYSay1Rm8U4riSfgaaLIIKWPMzqJILmxpAQdOHg=" 
+		self.config = DecisionServiceConfiguration()
+
+		self.config.batching_timeout_in_milliseconds = 100
+		self.config.certificate_validation_enabled = False
+
+		unittest.TestCase.__init__(self, *args)
+
+	def test_cert_validation_fails(self):
 		with MockServer() as server:
-			self.assertEqual(1,1)
+			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
+			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			self.config.set_listener(TestDecisionServiceListener())
+
+			# make sure it's enabled and we'll internally throw
+			self.config.certificate_validation_enabled = True
+
+			client = DecisionServiceClient(self.config)
+			ranking = client.rank('{"a":2}', '', [1,2,3])
+
+			sleep(0.5)
+
+			self.assertEqual(len(server.posts), 0, "requests should not hit the server as cert validation should fail")
+
+	def test_rank_event_id_generated(self):
+		with MockServer() as server:
+			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
+			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			self.config.set_listener(TestDecisionServiceListener())
+
+			client = DecisionServiceClient(self.config)
+			ranking = client.rank('{"a":2}', '', [1,2,3])
+
+			sleep(0.5)
+						
+			self.assertEqual(len(server.posts), 1)
+			self.assertEqual(server.posts[0]['path'], '/interaction/messages?timeout=60&api-version=2014-01')
+			self.assertEqual(server.posts[0]['response_code'], 201)
+			self.assertEqual(server.posts[0]['content-type'], 'application/atom+xml;type=entry;charset=utf-8')
+			self.assertEqual(server.posts[0]['body'], '{"Version":"1","EventId":"' + ranking.event_id + '","a":[1,0],"c":{{"a":2}},"p":[0.8,0.2],"VWState":{"m":"m1"}}')
+
+	def test_rank1(self):
+		with MockServer() as server:
+			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
+			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			self.config.set_listener(TestDecisionServiceListener())
+
+			client = DecisionServiceClient(self.config)
+			ranking = client.rank('{"a":2}', 'abc', [1,2,3])
+
+			sleep(0.5)
+						
+			self.assertEqual(len(server.posts), 1)
+			self.assertEqual(server.posts[0]['path'], '/interaction/messages?timeout=60&api-version=2014-01')
+			self.assertEqual(server.posts[0]['response_code'], 201)
+			self.assertEqual(server.posts[0]['content-type'], 'application/atom+xml;type=entry;charset=utf-8')
+			self.assertEqual(server.posts[0]['body'], '{"Version":"1","EventId":"abc","a":[1,0],"c":{{"a":2}},"p":[0.8,0.2],"VWState":{"m":"m1"}}')
+
 
 if __name__ == '__main__':
 	unittest.main()
-
-# config = DecisionServiceConfiguration_Download("https://storagecloezroez3lrg.blob.core.windows.net/mwt-settings/client?sv=2017-04-17&sr=b&sig=j86B1Ir1z9UC8KJP9QJ7R62ESecFBCPr9BH6tx1AaL4%3D&st=2018-01-04T15%3A06%3A38Z&se=2028-01-04T15%3A07%3A38Z&sp=r")
-#print("hello world %s" % config.model_url)
-# client = DecisionServiceClient(config)
-# client.rank('{"a":123}', "abc", [1, 4, 5]);

@@ -65,7 +65,19 @@ namespace Microsoft {
       size_t length;
     };
 
-    struct DecisionServiceConfiguration {
+    class DecisionServiceListener {
+    public:
+      virtual void trace(const char* message) { };
+
+      virtual void error(const char* message) { };
+
+      // TODO: add more events (e.g. model download)
+    };
+
+    class DecisionServiceConfiguration {
+      std::shared_ptr<DecisionServiceListener> _listener;
+
+    public:
       static DecisionServiceConfiguration Download(const char* url/*, bool certificate_validation_enabled = true*/) throw(std::exception);
 
       DecisionServiceConfiguration();
@@ -81,14 +93,20 @@ namespace Microsoft {
       // defaults to 2
       int num_parallel_connection;
 
-      // defaults to 5
-      int batching_timeout_in_seconds;
+      // defaults to 5sec
+      int batching_timeout_in_milliseconds;
 
       // defaults to 8*1024
       int batching_queue_max_size;
 
       // int pollingForModelPeriod;
       // int pollingForSettingsPeriod;
+
+      // Memory ownership is taken by this class
+      void set_listener(DecisionServiceListener* listener);
+
+      friend class DecisionServiceClient;
+      friend class DecisionServiceClientInternal;
     };
 
     // avoid leakage to Swig

@@ -3,14 +3,12 @@
 
 // make sure this function can block on a thread and python threads can continue running
 %thread DecisionServiceConfiguration::Download;
+%thread DecisionServiceListener;
 
 #define ARRAYS_OPTIMIZED
 #define DISABLE_NAMESPACE
 
 %include "../ds_api.i"
-#include "exception.i"
-
-%include "std_vector.i"
 
 // try how the vector binding looks like... maybe it's ok
 // add update_model w/o offset to support bybuffer

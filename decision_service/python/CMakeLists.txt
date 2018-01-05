@@ -31,3 +31,4 @@ SWIG_LINK_LIBRARIES(decision_service ds ${PYTHON_LIBRARIES})
 # TODO: just grep the file using discover_python_unittest 
 add_test(test.test_ds_api.TestDecisionServiceConfiguration.test_not_found ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceConfiguration.test_not_found)
 add_test(test.test_ds_api.TestDecisionServiceConfiguration.test_download ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceConfiguration.test_download)
+add_test(test.test_ds_api.TestDecisionServiceClient.test_rank ${PYTHON_EXECUTABLE} "-m" "unittest" "-v" test.test_ds_api.TestDecisionServiceClient.test_rank)

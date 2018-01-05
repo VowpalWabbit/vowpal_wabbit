@@ -9,11 +9,21 @@
 %nspace *::DecisionServiceClient;
 %nspace *::DecisionServiceConfiguration;
 
-%include "std_string.i"
+%include <std_string.i>
+#include <exception.i>
+%include <std_vector.i>
+
+// %include <std_shared_ptr.i>
+// %shared_ptr(Microsoft::DecisionService::DecisionServiceListener)
+// %shared_ptr(DecisionServiceListener)
+// %template(SmartPtrFoo) SmartPtr<Foo>;
 
 // disable default constructor
 %nodefaultctor *::RankResponse;
 %nodefaultctor RankResponse;
+
+%feature("director") *::DecisionServiceListener;
+%feature("director") DecisionServiceListener;
 
 #ifndef ARRAYS_OPTIMIZED
 	%ignore Microsoft::DecisionService::RankResponse::probabilities();
