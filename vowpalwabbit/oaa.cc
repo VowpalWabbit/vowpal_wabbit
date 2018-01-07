@@ -204,50 +204,45 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
 
 LEARNER::base_learner* oaa_setup(arguments& arg)
 {
-  oaa& data = calloc_or_throw<oaa>();
+  auto data = scoped_calloc_or_throw<oaa>();
   bool probabilities = false;
   bool scores = false;
   if (arg.new_options("One Against All Options")
-      .critical<uint64_t>("oaa", po::value(&data.k), "One-against-all multiclass with <k> labels")
-      ("oaa_subsample", data.num_subsample, "subsample this number of negative examples when learning")
+      .critical<uint64_t>("oaa", po::value(&data->k), "One-against-all multiclass with <k> labels")
+      ("oaa_subsample", data->num_subsample, "subsample this number of negative examples when learning")
       (probabilities, "probabilities", "predict probabilites of all classes")
       (scores, "scores", "output raw scores per class").missing())
-    return free_return(data);
+    return nullptr;
 
-  oaa* data_ptr = &data;
-
-  if (arg.all->sd->ldict && (data.k != arg.all->sd->ldict->getK()))
-  {
-    free(data_ptr);
+  if (arg.all->sd->ldict && (data->k != arg.all->sd->ldict->getK()))
     THROW("error: you have " << arg.all->sd->ldict->getK() << " named labels; use that as the argument to oaa")
-  }
 
-  data.all = arg.all;
-  data.pred = calloc_or_throw<polyprediction>(data.k);
-  data.num_subsample = 0;
-  data.subsample_order = nullptr;
-  data.subsample_id = 0;
-  if (data.num_subsample > 0)
+  data->all = arg.all;
+  data->pred = calloc_or_throw<polyprediction>(data->k);
+  data->subsample_order = nullptr;
+  data->subsample_id = 0;
+  if (data->num_subsample > 0)
   {
-    if (data.num_subsample >= data.k)
+    if (data->num_subsample >= data->k)
     {
-      data.num_subsample = 0;
+      data->num_subsample = 0;
       arg.trace_message << "oaa is turning off subsampling because your parameter >= K" << endl;
     }
     else
     {
-      data.subsample_order = calloc_or_throw<uint32_t>(data.k);
-      for (size_t i=0; i<data.k; i++) data.subsample_order[i] = (uint32_t) i;
-      for (size_t i=0; i<data.k; i++)
+      data->subsample_order = calloc_or_throw<uint32_t>(data->k);
+      for (size_t i=0; i<data->k; i++) data->subsample_order[i] = (uint32_t) i;
+      for (size_t i=0; i<data->k; i++)
       {
-        size_t j = (size_t)(merand48(arg.all->random_state) * (float)(data.k-i)) + i;
-        uint32_t tmp = data.subsample_order[i];
-        data.subsample_order[i] = data.subsample_order[j];
-        data.subsample_order[j] = tmp;
+        size_t j = (size_t)(merand48(arg.all->random_state) * (float)(data->k-i)) + i;
+        uint32_t tmp = data->subsample_order[i];
+        data->subsample_order[i] = data->subsample_order[j];
+        data->subsample_order[j] = tmp;
       }
     }
   }
 
+  oaa* data_ptr = data.get();
   LEARNER::learner<oaa>* l;
   if( probabilities || scores)
   {
@@ -257,26 +252,26 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
       if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
         arg.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, false, true, true>,
-                                            predict_or_learn<false, false, true, true>, arg.all->p, data.k, prediction_type::scalars);
+      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, true>,
+                                            predict_or_learn<false, false, true, true>, arg.all->p, data->k, prediction_type::scalars);
       arg.all->sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, false, true, false>,
-                                            predict_or_learn<false, false, true, false>, arg.all->p, data.k, prediction_type::scalars);
+      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, false>,
+                                            predict_or_learn<false, false, true, false>, arg.all->p, data->k, prediction_type::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (arg.all->raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg), predict_or_learn<true, true, false, false>,
-                                          predict_or_learn<false, true, false, false>, arg.all->p, data.k, prediction_type::multiclass);
+    l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, true, false, false>,
+                                          predict_or_learn<false, true, false, false>, arg.all->p, data->k, prediction_type::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data_ptr, setup_base(arg),predict_or_learn<true, false, false, false>,
-                                          predict_or_learn<false, false, false, false>, arg.all->p, data.k, prediction_type::multiclass);
+    l = &LEARNER::init_multiclass_learner(data, setup_base(arg),predict_or_learn<true, false, false, false>,
+                                          predict_or_learn<false, false, false, false>, arg.all->p, data->k, prediction_type::multiclass);
 
-  if (data.num_subsample > 0)
+  if (data_ptr->num_subsample > 0)
     l->set_learn(learn_randomized);
   l->set_finish(finish);
 

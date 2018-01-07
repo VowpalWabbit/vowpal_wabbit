@@ -411,60 +411,61 @@ void finish(nn& n)
 
 base_learner* nn_setup(arguments& arg)
 {
-  nn& n = calloc_or_throw<nn>();
+  auto n = scoped_calloc_or_throw<nn>();
   if (arg.new_options("Neural Network")
-      .critical("nn", n.k, "Sigmoidal feedforward network with <k> hidden units")
-      .keep(n.inpass, "inpass", "Train or test sigmoidal feedforward network with input passthrough.")
-      .keep(n.multitask, "multitask", "Share hidden layer across all reduced tasks.")
-      .keep(n.dropout, "dropout", "Train or test sigmoidal feedforward network using dropout.")
+      .critical("nn", n->k, "Sigmoidal feedforward network with <k> hidden units")
+      .keep(n->inpass, "inpass", "Train or test sigmoidal feedforward network with input passthrough.")
+      .keep(n->multitask, "multitask", "Share hidden layer across all reduced tasks.")
+      .keep(n->dropout, "dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.").missing())
-    return free_return(n);
+    return nullptr;
 
-  n.all = arg.all;
+  n->all = arg.all;
 
-  if (n.multitask && ! arg.all->quiet)
+  if (n->multitask && ! arg.all->quiet)
     std::cerr << "using multitask sharing for neural network "
               << (arg.all->training ? "training" : "testing")
               << std::endl;
 
   if ( arg.vm.count("meanfield") )
   {
-    n.dropout = false;
+    n->dropout = false;
     if (! arg.all->quiet)
       std::cerr << "using mean field for neural network "
                 << (arg.all->training ? "training" : "testing")
                 << std::endl;
   }
 
-  if (n.dropout && !arg.all->quiet)
+  if (n->dropout && !arg.all->quiet)
       std::cerr << "using dropout for neural network "
                 << (arg.all->training ? "training" : "testing")
                 << std::endl;
 
-  if (n.inpass && !arg.all->quiet)
+  if (n->inpass && !arg.all->quiet)
     std::cerr << "using input passthrough for neural network "
               << (arg.all->training ? "training" : "testing")
               << std::endl;
 
-  n.finished_setup = false;
-  n.squared_loss = getLossFunction (*arg.all, "squared", 0);
+  n->finished_setup = false;
+  n->squared_loss = getLossFunction (*arg.all, "squared", 0);
 
-  n.xsubi = arg.all->random_seed;
+  n->xsubi = arg.all->random_seed;
 
-  n.save_xsubi = n.xsubi;
+  n->save_xsubi = n->xsubi;
 
-  n.hidden_units = calloc_or_throw<float>(n.k);
-  n.dropped_out = calloc_or_throw<bool>(n.k);
-  n.hidden_units_pred = calloc_or_throw<polyprediction>(n.k);
-  n.hiddenbias_pred = calloc_or_throw<polyprediction>(n.k);
+  n->hidden_units = calloc_or_throw<float>(n->k);
+  n->dropped_out = calloc_or_throw<bool>(n->k);
+  n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
+  n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
   base_learner* base = setup_base(arg);
-  n.increment = base->increment;//Indexing of output layer is odd.
-  learner<nn>&l = init_learner(&n, base,
+  n->increment = base->increment;//Indexing of output layer is odd.
+  nn& nv = *n.get();
+  learner<nn>&l = init_learner(n, base,
                                predict_or_learn_multi<true,true>,
                                predict_or_learn_multi<false,true>,
-                               n.k+1);
-  if (n.multitask)
+                               n->k+1);
+  if (nv.multitask)
     l.set_multipredict(multipredict);
   l.set_finish(finish);
   l.set_finish_example(finish_example);

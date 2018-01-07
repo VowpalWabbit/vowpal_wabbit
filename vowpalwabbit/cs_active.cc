@@ -295,79 +295,57 @@ void finish(cs_active& data)
 
 base_learner* cs_active_setup(arguments& arg)
 {
-  cs_active& data = calloc_or_throw<cs_active>();
+  auto data = scoped_calloc_or_throw<cs_active>();
   if (arg.new_options("Cost-sensitive Active Learning")
-      .critical("cs_active", data.num_classes, "Cost-sensitive active learning with <k> costs")
+      .critical("cs_active", data->num_classes, "Cost-sensitive active learning with <k> costs")
       ("simulation", "cost-sensitive active learning simulation mode")
-      (data.is_baseline, "baseline", "cost-sensitive active learning baseline")
+      (data->is_baseline, "baseline", "cost-sensitive active learning baseline")
       ("domination", "cost-sensitive active learning use domination. Default 1")
-      ("mellowness",data.c0, 0.1f,"mellowness parameter c_0. Default 0.1.")
-      ("range_c", data.c1, 0.5f,"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
-      ("max_labels", data.max_labels, (size_t)-1, "maximum number of label queries.")
-      ("min_labels", data.min_labels, (size_t)-1, "minimum number of label queries.")
-      ("cost_max",data.cost_max, 1.f,"cost upper bound. Default 1.")
-      ("cost_min",data.cost_min, 0.f,"cost lower bound. Default 0.")
-      (data.print_debug_stuff, "csa_debug", "print debug stuff for cs_active").missing())
-    return free_return(data);
+      ("mellowness",data->c0, 0.1f,"mellowness parameter c_0. Default 0.1.")
+      ("range_c", data->c1, 0.5f,"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
+      ("max_labels", data->max_labels, (size_t)-1, "maximum number of label queries.")
+      ("min_labels", data->min_labels, (size_t)-1, "minimum number of label queries.")
+      ("cost_max",data->cost_max, 1.f,"cost upper bound. Default 1.")
+      ("cost_min",data->cost_min, 0.f,"cost lower bound. Default 0.")
+      (data->print_debug_stuff, "csa_debug", "print debug stuff for cs_active").missing())
+    return nullptr;
 
-  data.all = arg.all;
-  data.t = 1;
-  data.use_domination = true;
-  data.num_any_queries = 0;
-  data.overlapped_and_range_small = 0;
-  data.labels_outside_range = 0;
-  data.distance_to_range = 0;
-  data.range = 0.0;
+  data->all = arg.all;
+  data->t = 1;
+  data->use_domination = true;
 
   if(arg.vm.count("domination") && !arg.vm["domination"].as<int>())
-    data.use_domination = false;
+    data->use_domination = false;
 
   string loss_function = arg.vm["loss_function"].as<string>();
   if (loss_function.compare("squared") != 0)
-  {
-    free(&data);
     THROW("error: you can't use non-squared loss with cs_active");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
-  {
-    free(&data);
     THROW("error: you can't combine lda and active learning");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
-  {
-    free(&data);
     THROW("error: you can't use --cs_active and --active at the same time");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--active_cover") != 0)
-  {
-    free(&data);
     THROW("error: you can't use --cs_active and --active_cover at the same time");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--csoaa") != 0)
-  {
-    free(&data);
     THROW("error: you can't use --cs_active and --csoaa at the same time");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--adax") == 0)
     arg.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
+  arg.all->p->lp = cs_label; // assigning the label parser
+  arg.all->set_minmax(arg.all->sd,data->cost_max);
+  arg.all->set_minmax(arg.all->sd,data->cost_min);
+  for (uint32_t i=0; i<data->num_classes+1; i++)
+    data->examples_by_queries.push_back(0);
+
   learner<cs_active>& l =
     (arg.vm.count("simulation") > 0)
-    ? init_learner(&data, setup_base(arg), predict_or_learn<true,true> , predict_or_learn<false,true >, data.num_classes, prediction_type::multilabels)
-    : init_learner(&data, setup_base(arg), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes,prediction_type::multilabels);
-
-  arg.all->set_minmax(arg.all->sd,data.cost_max);
-  arg.all->set_minmax(arg.all->sd,data.cost_min);
-  //cerr << "cs_active data = " << & data << endl;
-
-  arg.all->p->lp = cs_label; // assigning the label parser
-  for (uint32_t i=0; i<data.num_classes+1; i++)
-    data.examples_by_queries.push_back(0);
+    ? init_learner(data, setup_base(arg), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
+    : init_learner(data, setup_base(arg), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
 
   l.set_finish_example(finish_example);
   l.set_finish(finish);

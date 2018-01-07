@@ -195,20 +195,20 @@ void finish(mf& o)
 
 base_learner* mf_setup(arguments& arg)
 {
-  mf& data = calloc_or_throw<mf>();
+  auto data = scoped_calloc_or_throw<mf>();
   if (arg.new_options("Matrix Factorization Reduction")
-      .critical("new_mf", data.rank, "rank for reduction-based matrix factorization").missing())
-    return free_return(data);
+      .critical("new_mf", data->rank, "rank for reduction-based matrix factorization").missing())
+    return nullptr;
 
-  data.all = arg.all;
+  data->all = arg.all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data.pairs = arg.all->pairs;
+  data->pairs = arg.all->pairs;
   arg.all->pairs.clear();
 
   arg.all->random_positive_weights = true;
 
-  learner<mf>& l = init_learner(&data, setup_base(arg), learn, predict<false>, 2*data.rank+1);
+  learner<mf>& l = init_learner(data, setup_base(arg), learn, predict<false>, 2*data->rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

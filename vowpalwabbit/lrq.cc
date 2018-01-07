@@ -174,47 +174,44 @@ void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner* lrq_setup(arguments& arg)
 {
-  LRQstate& lrq = calloc_or_throw<LRQstate>();
+  auto lrq = scoped_calloc_or_throw<LRQstate>();
   if (arg.new_options("Low Rank Quadratics")
       .critical_vector<string>("lrq", po::value<vector<string> >(), "use low rank quadratic features")
-      .keep(lrq.dropout, "lrqdropout", "use dropout training for low rank quadratic features").missing())
-    return free_return(lrq);
+      .keep(lrq->dropout, "lrqdropout", "use dropout training for low rank quadratic features").missing())
+    return nullptr;
 
   uint32_t maxk = 0;
-  lrq.all = arg.all;
+  lrq->all = arg.all;
 
   vector<string> lrq_names = arg.vm["lrq"].as<vector<string> > ();
   for (size_t i = 0; i < lrq_names.size(); i++) lrq_names[i] = spoof_hex_encoded_namespaces( lrq_names[i] );
 
-  new(&lrq.lrpairs) std::set<std::string> (lrq_names.begin(), lrq_names.end());
+  new(&lrq->lrpairs) std::set<std::string> (lrq_names.begin(), lrq_names.end());
 
-  lrq.initial_seed = lrq.seed = arg.all->random_seed | 8675309;
+  lrq->initial_seed = lrq->seed = arg.all->random_seed | 8675309;
 
   if (! arg.all->quiet)
   {
     arg.trace_message << "creating low rank quadratic features for pairs: ";
-    if (lrq.dropout)
+    if (lrq->dropout)
       arg.trace_message << "(using dropout) ";
   }
 
-  for (string const& i : lrq.lrpairs)
+  for (string const& i : lrq->lrpairs)
   {
     if(!arg.all->quiet)
-    {
-      if (( i.length() < 3 ) || ! valid_int (i.c_str () + 2))
       {
-        free(&lrq);
-        THROW("error, low-rank quadratic features must involve two sets and a rank.");
-      }
+        if (( i.length() < 3 ) || ! valid_int (i.c_str () + 2))
+          THROW("error, low-rank quadratic features must involve two sets and a rank.");
 
-      arg.trace_message << i << " ";
-    }
+        arg.trace_message << i << " ";
+      }
     // TODO: colon-syntax
 
     unsigned int k = atoi (i.c_str () + 2);
 
-    lrq.lrindices[(int) i[0]] = 1;
-    lrq.lrindices[(int) i[1]] = 1;
+    lrq->lrindices[(int) i[0]] = 1;
+    lrq->lrindices[(int) i[1]] = 1;
 
     maxk = max (maxk, k);
   }
@@ -223,7 +220,7 @@ base_learner* lrq_setup(arguments& arg)
     arg.trace_message<<endl;
 
   arg.all->wpp = arg.all->wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate>& l = init_learner(&lrq, setup_base(arg), predict_or_learn<true>,
+  learner<LRQstate>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);

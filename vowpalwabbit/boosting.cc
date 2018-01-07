@@ -380,16 +380,16 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
 
 LEARNER::base_learner* boosting_setup(arguments& arg)
 {
-  boosting& data = calloc_or_throw<boosting>();
-  data.alg=new string();
+  free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
+  data->alg=new string();
   if (arg.new_options("Boosting")
-      .critical("boosting", data.N, "Online boosting with <N> weak learners")
-      ("gamma", po::value<float>(&data.gamma)->default_value(0.1f), "weak learner's edge (=0.1), used only by online BBM")
-      .keep("alg", *data.alg, (string)"BBM", "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)")
+      .critical("boosting", data->N, "Online boosting with <N> weak learners")
+      ("gamma", po::value<float>(&data->gamma)->default_value(0.1f), "weak learner's edge (=0.1), used only by online BBM")
+      .keep("alg", *data->alg, (string)"BBM", "specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)")
       .missing())
     {
-      delete data.alg;
-      return free_return(data);
+      delete data->alg;
+      return nullptr;
     }
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)
@@ -399,44 +399,38 @@ LEARNER::base_learner* boosting_setup(arguments& arg)
   // 	    using sampling rather than importance weighting)
 
   if (!arg.all->quiet)
-    cerr << "Number of weak learners = " << data.N << endl;
+    cerr << "Number of weak learners = " << data->N << endl;
   if (!arg.all->quiet)
-    cerr << "Gamma = " << data.gamma << endl;
+    cerr << "Gamma = " << data->gamma << endl;
 
-  data.C = std::vector<std::vector<long long> >(data.N,
-           std::vector<long long>(data.N,-1));
-
-  data.t = 0;
-
-  data.all = arg.all;
-  data.alpha = std::vector<float>(data.N,0);
-  data.v = std::vector<float>(data.N,1);
+  data->C = std::vector<std::vector<long long> >(data->N,
+           std::vector<long long>(data->N,-1));
+  data->t = 0;
+  data->all = arg.all;
+  data->alpha = std::vector<float>(data->N,0);
+  data->v = std::vector<float>(data->N,1);
 
   learner<boosting>* l;
-  if (*data.alg == "BBM")
-  {
-
-    l = &init_learner<boosting>(&data, setup_base(arg),
+  if (*data->alg == "BBM")
+    l = &init_learner<boosting>(data, setup_base(arg),
                                 predict_or_learn<true>,
-                                predict_or_learn<false>, data.N);
-  }
-  else if (*data.alg == "logistic")
-  {
-
-    l = &init_learner<boosting>(&data, setup_base(arg),
-                                predict_or_learn_logistic<true>,
-                                predict_or_learn_logistic<false>, data.N);
-    l->set_save_load(save_load);
-  }
-  else if (*data.alg == "adaptive")
-  {
-    l = &init_learner<boosting>(&data, setup_base(arg),
-                                predict_or_learn_adaptive<true>,
-                                predict_or_learn_adaptive<false>, data.N);
-    l->set_save_load(save_load_sampling);
-  }
+                                predict_or_learn<false>, data->N);
+  else if (*data->alg == "logistic")
+    {
+      l = &init_learner<boosting>(data, setup_base(arg),
+                                  predict_or_learn_logistic<true>,
+                                  predict_or_learn_logistic<false>, data->N);
+      l->set_save_load(save_load);
+    }
+  else if (*data->alg == "adaptive")
+    {
+      l = &init_learner<boosting>(data, setup_base(arg),
+                                  predict_or_learn_adaptive<true>,
+                                  predict_or_learn_adaptive<false>, data->N);
+      l->set_save_load(save_load_sampling);
+    }
   else
-    THROW("Unrecognized boosting algorithm: \'" << *data.alg << "\' Bailing!");
+    THROW("Unrecognized boosting algorithm: \'" << *data->alg << "\' Bailing!");
 
   l->set_finish(finish);
   l->set_finish_example(return_example);

@@ -167,21 +167,21 @@ void finish(baseline& data)
 
 base_learner* baseline_setup(arguments& arg)
 {
-  baseline& data = calloc_or_throw<baseline>();
+  auto data = scoped_calloc_or_throw<baseline>();
   if (arg.new_options("Baseline options")
       .critical("baseline", "Learn an additive baseline (from constant features) and a residual separately in regression.")
-      ("lr_multiplier", data.lr_multiplier, "learning rate multiplier for baseline model")
-      .keep(data.global_only, "global_only", "use separate example with only global constant for baseline predictions")
-      .keep(data.check_enabled, "check_enabled", "only use baseline when the example contains enabled flag").missing())
-    return free_return(data);
+      ("lr_multiplier", data->lr_multiplier, "learning rate multiplier for baseline model")
+      .keep(data->global_only, "global_only", "use separate example with only global constant for baseline predictions")
+      .keep(data->check_enabled, "check_enabled", "only use baseline when the example contains enabled flag").missing())
+    return nullptr;
   // initialize baseline example
-  data.ec = VW::alloc_examples(simple_label.label_size, 1);
-  data.ec->in_use = true;
-  data.all = arg.all;
+  data->ec = VW::alloc_examples(simple_label.label_size, 1);
+  data->ec->in_use = true;
+  data->all = arg.all;
   if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
-    data.lr_scaling = true;
+    data->lr_scaling = true;
 
-  learner<baseline>& l = init_learner(&data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline>& l = init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish(finish);
 
   return make_base(l);

@@ -504,21 +504,21 @@ using namespace CB_EXPLORE_ADF;
 
 base_learner* cb_explore_adf_setup(arguments& arg)
 {
-  cb_explore_adf& data = calloc_or_throw<cb_explore_adf>();
+  auto data = scoped_calloc_or_throw<cb_explore_adf>();
   if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
       .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
-      .keep("first", data.tau, "tau-first exploration")
-      .keep("epsilon", data.epsilon, "epsilon-greedy exploration")
-      .keep("bag", data.bag_size, "bagging-based exploration")
-      .keep("cover", data.cover_size ,"Online cover based exploration")
-      .keep("psi", data.psi, 1.0f, "disagreement parameter for cover")
-      .keep(data.nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
+      .keep("first", data->tau, "tau-first exploration")
+      .keep("epsilon", data->epsilon, "epsilon-greedy exploration")
+      .keep("bag", data->bag_size, "bagging-based exploration")
+      .keep("cover", data->cover_size ,"Online cover based exploration")
+      .keep("psi", data->psi, 1.0f, "disagreement parameter for cover")
+      .keep(data->nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
       .keep("softmax", "softmax exploration")
-      .keep(data.greedify, "greedify", "always update first policy once in bagging")
-      .keep("lambda", data.lambda, 1.0f, "parameter for softmax").missing())
-    return free_return(data);
+      .keep(data->greedify, "greedify", "always update first policy once in bagging")
+      .keep("lambda", data->lambda, 1.0f, "parameter for softmax").missing())
+    return nullptr;
 
-  data.all = arg.all;
+  data->all = arg.all;
   if (count(arg.args.begin(), arg.args.end(), "--cb_adf") == 0)
     arg.args.push_back("--cb_adf");
 
@@ -528,54 +528,54 @@ base_learner* cb_explore_adf_setup(arguments& arg)
 
   if (arg.vm.count("cover"))
   {
-    data.explore_type = COVER;
-    problem_multiplier = data.cover_size+1;
+    data->explore_type = COVER;
+    problem_multiplier = data->cover_size+1;
   }
   else if (arg.vm.count("bag"))
   {
-    data.explore_type = BAG_EXPLORE;
-    problem_multiplier = data.bag_size;
+    data->explore_type = BAG_EXPLORE;
+    problem_multiplier = data->bag_size;
   }
   else if (arg.vm.count("first"))
-    data.explore_type = EXPLORE_FIRST;
+    data->explore_type = EXPLORE_FIRST;
   else if (arg.vm["softmax"].as<bool>())
-    data.explore_type = SOFTMAX;
+    data->explore_type = SOFTMAX;
   else
     {
-      if (!arg.vm.count("epsilon")) data.epsilon = 0.05f;
-      data.explore_type = EPS_GREEDY;
+      if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
+      data->explore_type = EPS_GREEDY;
     }
 
   base_learner* base = setup_base(arg);
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
-
   //Extract from lower level reductions.
-  data.gen_cs.scorer = arg.all->scorer;
-  data.cs_ldf_learner = arg.all->cost_sensitive;
-  data.gen_cs.cb_type = CB_TYPE_IPS;
+  data->gen_cs.scorer = arg.all->scorer;
+  data->cs_ldf_learner = arg.all->cost_sensitive;
+  data->gen_cs.cb_type = CB_TYPE_IPS;
   if (arg.vm.count("cb_type"))
   {
     std::string type_string;
     type_string = arg.vm["cb_type"].as<std::string>();
 
     if (type_string.compare("dr") == 0)
-      data.gen_cs.cb_type = CB_TYPE_DR;
+      data->gen_cs.cb_type = CB_TYPE_DR;
     else if (type_string.compare("ips") == 0)
-      data.gen_cs.cb_type = CB_TYPE_IPS;
+      data->gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
       if (arg.vm.count("cover"))
       {
         arg.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
-        data.gen_cs.cb_type = CB_TYPE_IPS;
+        data->gen_cs.cb_type = CB_TYPE_IPS;
       }
       else
-        data.gen_cs.cb_type = CB_TYPE_MTR;
+        data->gen_cs.cb_type = CB_TYPE_MTR;
     else
       arg.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
   }
+
+  learner<cb_explore_adf>& l = init_learner(data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
   l.set_finish(CB_EXPLORE_ADF::finish);

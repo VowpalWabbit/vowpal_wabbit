@@ -223,48 +223,41 @@ void finish(active_cover& ac)
 
 base_learner* active_cover_setup(arguments& arg)
 {
-  active_cover& data = calloc_or_throw<active_cover>();
+  auto data = scoped_calloc_or_throw<active_cover>();
   if(arg.new_options("Active Learning with Cover")
      .critical("active_cover", "enable active learning with cover")
-     ("mellowness", data.active_c0, 8.f, "active learning mellowness parameter c_0. Default 8.")
-     ("alpha", data.alpha, 1.f, "active learning variance upper bound parameter alpha. Default 1.")
-     ("beta_scale", data.beta_scale, sqrtf(10.f), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
-     .keep("cover", data.cover_size, (size_t)12, "cover size. Default 12.")
-     (data.oracular, "oracular", "Use Oracular-CAL style query or not. Default false.").missing())
-    return free_return(data);
+     ("mellowness", data->active_c0, 8.f, "active learning mellowness parameter c_0. Default 8.")
+     ("alpha", data->alpha, 1.f, "active learning variance upper bound parameter alpha. Default 1.")
+     ("beta_scale", data->beta_scale, sqrtf(10.f), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
+     .keep("cover", data->cover_size, (size_t)12, "cover size. Default 12.")
+     (data->oracular, "oracular", "Use Oracular-CAL style query or not. Default false.").missing())
+    return nullptr;
 
-  data.all = arg.all;
+  data->all = arg.all;
+  data->beta_scale *= data->beta_scale;
 
-  data.beta_scale *= data.beta_scale;
-
-  if(data.oracular)
-    data.cover_size = 0;
+  if(data->oracular)
+    data->cover_size = 0;
 
   if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
-  {
-    free(&data);
     THROW("error: you can't combine lda and active learning");
-  }
 
   if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
-  {
-    free(&data);
     THROW("error: you can't use --active_cover and --active at the same time");
-  }
 
   base_learner* base = setup_base(arg);
 
-  data.lambda_n = new float[data.cover_size];
-  data.lambda_d = new float[data.cover_size];
+  data->lambda_n = new float[data->cover_size];
+  data->lambda_d = new float[data->cover_size];
 
-  for(size_t i = 0; i < data.cover_size; i++)
+  for(size_t i = 0; i < data->cover_size; i++)
   {
-    data.lambda_n[i] = 0.f;
-    data.lambda_d[i] = 1.f/8.f;
+    data->lambda_n[i] = 0.f;
+    data->lambda_d[i] = 1.f/8.f;
   }
 
   //Create new learner
-  learner<active_cover>& l = init_learner(&data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data.cover_size + 1);
+  learner<active_cover>& l = init_learner(data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
   l.set_finish(finish);
 
   return make_base(l);

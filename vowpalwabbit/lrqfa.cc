@@ -140,20 +140,20 @@ LEARNER::base_learner* lrqfa_setup(arguments& arg)
       .critical<string>("lrqfa", "use low rank quadratic features with field aware weights").missing())
     return nullptr;
 
-  LRQFAstate& lrq = calloc_or_throw<LRQFAstate>();
-  lrq.all = arg.all;
+  auto lrq = scoped_calloc_or_throw<LRQFAstate>();
+  lrq->all = arg.all;
 
   string lrqopt = spoof_hex_encoded_namespaces( arg.vm["lrqfa"].as<string>() );
   size_t last_index = lrqopt.find_last_not_of("0123456789");
-  new(&lrq.field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
-  lrq.k = atoi(lrqopt.substr(last_index+1).c_str());
+  new(&lrq->field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
+  lrq->k = atoi(lrqopt.substr(last_index+1).c_str());
 
   int fd_id = 0;
-  for (char i : lrq.field_name)
-    lrq.field_id[(int)i] = fd_id++;
+  for (char i : lrq->field_name)
+    lrq->field_id[(int)i] = fd_id++;
 
-  arg.all->wpp = arg.all->wpp * (uint64_t)(1 + lrq.k);
-  learner<LRQFAstate>& l = init_learner(&lrq, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq.field_name.size() * lrq.k);
+  arg.all->wpp = arg.all->wpp * (uint64_t)(1 + lrq->k);
+  learner<LRQFAstate>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
 
   return make_base(l);
 }

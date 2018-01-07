@@ -357,28 +357,28 @@ using namespace MARGINAL;
 
 LEARNER::base_learner* marginal_setup(arguments& arg)
 {
-  MARGINAL::data& d = calloc_or_throw<MARGINAL::data>();
+  free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
   if (arg.new_options("Marginal")
       .critical<string>("marginal", po::value<string>(), "substitute marginal label estimates for ids")
-      ("initial_denominator", po::value<float>(&d.initial_denominator)->default_value(1.f), "initial denominator")
-      ("initial_numerator", po::value<float>(&d.initial_numerator)->default_value(0.5f), "initial numerator")
-      (d.compete, "compete", "enable competition with marginal features")
-      ("update_before_learn",po::value<bool>(&d.update_before_learn)->default_value(false), "update marginal values before learning")
-      ("unweighted_marginals",po::value<bool>(&d.unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
-      ("decay", po::value<float>(&d.decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)").missing())
-    return free_return(d);
+      ("initial_denominator", po::value<float>(&d->initial_denominator)->default_value(1.f), "initial denominator")
+      ("initial_numerator", po::value<float>(&d->initial_numerator)->default_value(0.5f), "initial numerator")
+      (d->compete, "compete", "enable competition with marginal features")
+      ("update_before_learn",po::value<bool>(&d->update_before_learn)->default_value(false), "update marginal values before learning")
+      ("unweighted_marginals",po::value<bool>(&d->unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
+      ("decay", po::value<float>(&d->decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)").missing())
+    return nullptr;
 
-  d.all = arg.all;
+  d->all = arg.all;
   string s = (string)arg.vm["marginal"].as<string>();
 
   for (size_t u = 0; u < 256; u++)
     if (s.find((char)u) != string::npos)
-      d.id_features[u] = true;
-  new(&d.marginals)unordered_map<uint64_t,marginal>();
-  new(&d.expert_state)unordered_map<uint64_t,expert_pair>();
+      d->id_features[u] = true;
+  new(&d->marginals)unordered_map<uint64_t,marginal>();
+  new(&d->expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<MARGINAL::data>& ret =
-    init_learner(&d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_finish(finish);
   ret.set_save_load(save_load);
 

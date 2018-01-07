@@ -336,10 +336,10 @@ void finish(gdmf& d) { d.scalars.delete_v();}
 
 base_learner* gd_mf_setup(arguments& arg)
 {
-  gdmf& data = calloc_or_throw<gdmf>();
+  auto data = scoped_calloc_or_throw<gdmf>();
   if (arg.new_options("Gradient Descent Matrix Factorization")
-      .critical("rank", data.rank, "rank for matrix factorization.").missing())
-    return free_return(data);
+      .critical("rank", data->rank, "rank for matrix factorization.").missing())
+    return nullptr;
 
   if (arg.vm.count("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");
@@ -350,18 +350,18 @@ base_learner* gd_mf_setup(arguments& arg)
   if (arg.vm["bfgs"].as<bool>() || arg.vm["conjugate_gradient"].as<bool>())
     THROW("bfgs is not implemented for matrix factorization");
 
-  data.all = arg.all;
-  data.no_win_counter = 0;
+  data->all = arg.all;
+  data->no_win_counter = 0;
 
   // store linear + 2*rank weights per index, round up to power of two
-  float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
+  float temp = ceilf(logf((float)(data->rank*2+1)) / logf (2.f));
   arg.all->weights.stride_shift((size_t) temp);
   arg.all->random_weights = true;
 
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    data.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    data->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
   if(!arg.vm.count("learning_rate") && !arg.vm.count("l"))
@@ -375,8 +375,7 @@ base_learner* gd_mf_setup(arguments& arg)
   }
   arg.all->eta *= powf((float)(arg.all->sd->t), arg.all->power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, UINT64_ONE << arg.all->weights.stride_shift());
-  l.set_predict(predict);
+  learner<gdmf>& l = init_learner(data, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);

@@ -48,35 +48,35 @@ inline float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(arguments& arg)
 {
-  scorer& s = calloc_or_throw<scorer>();
+  auto s = scoped_calloc_or_throw<scorer>();
   string link;
   if(arg.new_options("scorer options")
      .keep("link", link, (string)"identity", "Specify the link function: identity, logistic, glf1 or poisson").missing())
-    return free_return(s);
+    return nullptr;
 
-  s.all = arg.all;
+  s->all = arg.all;
 
   LEARNER::base_learner* base = setup_base(arg);
   LEARNER::learner<scorer>* l;
   void (*multipredict_f)(scorer&, LEARNER::base_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
 
   if ( link.compare("identity") == 0)
-    l = &init_learner(&s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
+    l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
   else if (link.compare("logistic") == 0)
   {
-    l = &init_learner(&s, base, predict_or_learn<true, logistic>,
+    l = &init_learner(s, base, predict_or_learn<true, logistic>,
                       predict_or_learn<false, logistic>);
     multipredict_f = multipredict<logistic>;
   }
   else if (link.compare("glf1") == 0)
   {
-    l = &init_learner(&s, base, predict_or_learn<true, glf1>,
+    l = &init_learner(s, base, predict_or_learn<true, glf1>,
                       predict_or_learn<false, glf1>);
     multipredict_f = multipredict<glf1>;
   }
   else if (link.compare("poisson") == 0)
   {
-    l = &init_learner(&s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
+    l = &init_learner(s, base, predict_or_learn<true, expf>, predict_or_learn<false, expf>);
     multipredict_f = multipredict<expf>;
   }
   else

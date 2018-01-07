@@ -36,15 +36,15 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
 
 LEARNER::base_learner* autolink_setup(arguments& arg)
 {
-  autolink& data = calloc_or_throw<autolink>();
+  free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
   if (arg.new_options("Autolink")
-      .critical("autolink", data.d, "create link function with polynomial d").missing())
-    return free_return(data);
+      .critical("autolink", data->d, "create link function with polynomial d").missing())
+    return nullptr;
 
-  data.stride_shift = arg.all->weights.stride_shift();
+  data->stride_shift = arg.all->weights.stride_shift();
 
   LEARNER::learner<autolink>& ret =
-    init_learner(&data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }

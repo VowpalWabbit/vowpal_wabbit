@@ -81,8 +81,8 @@ base_learner* confidence_setup(arguments& arg)
     return nullptr;
   }
 
-  confidence& data = calloc_or_throw<confidence>();
-  data.all=arg.all;
+  auto data = scoped_calloc_or_throw<confidence>();
+  data->all=arg.all;
 
   void (*learn_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
   void (*predict_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
@@ -99,7 +99,7 @@ base_learner* confidence_setup(arguments& arg)
   }
 
   //Create new learner
-  learner<confidence>& l = init_learner(&data, setup_base(arg), learn_with_confidence_ptr, predict_with_confidence_ptr);
+  learner<confidence>& l = init_learner(data, setup_base(arg), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
 

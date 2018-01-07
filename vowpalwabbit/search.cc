@@ -2464,9 +2464,9 @@ void parse_neighbor_features(string& nf_string, search&sch)
 
 base_learner* setup(arguments& arg)
 {
-  search& sch = calloc_or_throw<search>();
-  sch.priv = &calloc_or_throw<search_private>();
-  search_private& priv = *sch.priv;
+  free_ptr<search> sch = scoped_calloc_or_throw<search>();
+  sch->priv = &calloc_or_throw<search_private>();
+  search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
   std::string interpolation_string = "data";
@@ -2512,13 +2512,13 @@ base_learner* setup(arguments& arg)
       ("search_active_verify",    priv.active_csoaa_verify,  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
       ("search_save_every_k_runs", priv.save_every_k_runs, "save model every k runs").missing())
     {
-      free(sch.priv);
-      return free_return(sch);
+      free(sch->priv);
+      return nullptr;
     }
 
-  search_initialize(arg.all, sch);
+  search_initialize(arg.all, *sch.get());
 
-  parse_neighbor_features(neighbor_features_string, sch);
+  parse_neighbor_features(neighbor_features_string, *sch.get());
 
   if (interpolation_string.compare("data") == 0)   // run as dagger
   {
@@ -2616,7 +2616,7 @@ base_learner* setup(arguments& arg)
     if (task_string.compare((*mytask)->task_name) == 0)
     {
       priv.task = *mytask;
-      sch.task_name = (*mytask)->task_name;
+      sch->task_name = (*mytask)->task_name;
       break;
     }
   if (priv.task == nullptr)
@@ -2629,7 +2629,7 @@ base_learner* setup(arguments& arg)
     if (metatask_string.compare((*mytask)->metatask_name) == 0)
     {
       priv.metatask = *mytask;
-      sch.metatask_name = (*mytask)->metatask_name;
+      sch->metatask_name = (*mytask)->metatask_name;
       break;
     }
   arg.all->p->emptylines_separate_examples = true;
@@ -2659,9 +2659,9 @@ base_learner* setup(arguments& arg)
   arg.all->p->lp = MC::mc_label;
   arg.all->label_type = label_type::mc;
   if (priv.task && priv.task->initialize)
-    priv.task->initialize(sch, priv.A, arg);
+    priv.task->initialize(*sch.get(), priv.A, arg);
   if (priv.metatask && priv.metatask->initialize)
-    priv.metatask->initialize(sch, priv.A, arg);
+    priv.metatask->initialize(*sch.get(), priv.A, arg);
   priv.meta_t = 0;
 
   if (arg.vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, arg.vm["search_allowed_transitions"].as<string>().c_str());
@@ -2680,7 +2680,7 @@ base_learner* setup(arguments& arg)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search>& l = init_learner(&sch, base,
+  learner<search>& l = init_learner(sch, base,
                                     search_predict_or_learn<true>,
                                     search_predict_or_learn<false>,
                                     priv.total_number_of_policies * priv.num_learners);

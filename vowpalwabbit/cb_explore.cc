@@ -331,52 +331,52 @@ using namespace CB_EXPLORE;
 
 base_learner* cb_explore_setup(arguments& arg)
 {
-  cb_explore& data = calloc_or_throw<cb_explore>();
+  auto data = scoped_calloc_or_throw<cb_explore>();
   if (arg.new_options("Contextual Bandit Exploration")
-      .critical("cb_explore", data.cbcs.num_actions, "Online explore-exploit for a <k> action contextual bandit problem")
-      .keep("first", data.tau, "tau-first exploration")
-      .keep("epsilon", data.epsilon, 0.05f,"epsilon-greedy exploration")
-      .keep("bag", data.bag_size,"bagging-based exploration")
-      .keep("cover", data.cover_size ,"Online cover based exploration")
-      .keep("psi", data.psi, 1.0f, "disagreement parameter for cover").missing())
-    return free_return(data);
+      .critical("cb_explore", data->cbcs.num_actions, "Online explore-exploit for a <k> action contextual bandit problem")
+      .keep("first", data->tau, "tau-first exploration")
+      .keep("epsilon", data->epsilon, 0.05f,"epsilon-greedy exploration")
+      .keep("bag", data->bag_size,"bagging-based exploration")
+      .keep("cover", data->cover_size ,"Online cover based exploration")
+      .keep("psi", data->psi, 1.0f, "disagreement parameter for cover").missing())
+    return nullptr;
 
-  data.all = arg.all;
-  uint32_t num_actions = data.cbcs.num_actions;
+  data->all = arg.all;
+  uint32_t num_actions = data->cbcs.num_actions;
 
   if (count(arg.args.begin(), arg.args.end(),"--cb") == 0)
   {
     arg.args.push_back("--cb");
     stringstream ss;
-    ss << data.cbcs.num_actions;
+    ss << data->cbcs.num_actions;
     arg.args.push_back(ss.str());
   }
 
   arg.all->delete_prediction = delete_action_scores;
-  data.cbcs.cb_type = CB_TYPE_DR;
+  data->cbcs.cb_type = CB_TYPE_DR;
 
   base_learner* base = setup_base(arg);
+  data->cbcs.scorer = arg.all->scorer;
 
   learner<cb_explore>* l;
   if (arg.vm.count("cover"))
   {
-    data.cs = arg.all->cost_sensitive;
-    data.second_cs_label.costs.resize(num_actions);
-    data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
-    data.cover_probs = v_init<float>();
-    data.cover_probs.resize(num_actions);
-    data.preds = v_init<uint32_t>();
-    data.preds.resize(data.cover_size);
-    l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1, prediction_type::action_probs);
+    data->cs = arg.all->cost_sensitive;
+    data->second_cs_label.costs.resize(num_actions);
+    data->second_cs_label.costs.end() = data->second_cs_label.costs.begin()+num_actions;
+    data->cover_probs = v_init<float>();
+    data->cover_probs.resize(num_actions);
+    data->preds = v_init<uint32_t>();
+    data->preds.resize(data->cover_size);
+    l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1, prediction_type::action_probs);
   }
   else if (arg.vm.count("bag"))
-    l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
+    l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size, prediction_type::action_probs);
   else if (arg.vm.count("first") )
-    l = &init_learner(&data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
+    l = &init_learner(data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
   else//greedy
-    l = &init_learner(&data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
+    l = &init_learner(data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);
 
-  data.cbcs.scorer = arg.all->scorer;
   l->set_finish(finish);
   l->set_finish_example(finish_example);
   return make_base(*l);

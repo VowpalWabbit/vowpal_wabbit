@@ -135,17 +135,17 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 using namespace CB_ALGS;
 base_learner* cb_algs_setup(arguments& arg)
 {
-  cb& data = calloc_or_throw<cb>();
+  auto data = scoped_calloc_or_throw<cb>();
   std::string type_string;
   bool eval=false;
 
   if (arg.new_options("Contextual Bandit Options")
-      .critical("cb", data.cbcs.num_actions, "Use contextual bandit learning with <k> costs")
+      .critical("cb", data->cbcs.num_actions, "Use contextual bandit learning with <k> costs")
       .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
       (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
-    return free_return(data);
+    return nullptr;
 
-  cb_to_cs& c = data.cbcs;
+  cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;//default for DR
   if (type_string.compare("dr") == 0)
@@ -153,11 +153,7 @@ base_learner* cb_algs_setup(arguments& arg)
   else if (type_string.compare("dm") == 0)
     {
       if (eval)
-        {
-          free(&data);
-          THROW( "direct method can not be used for evaluation --- it is biased.");
-        }
-
+        THROW( "direct method can not be used for evaluation --- it is biased.");
       c.cb_type = CB_TYPE_DM;
       problem_multiplier = 1;
     }
@@ -176,7 +172,7 @@ base_learner* cb_algs_setup(arguments& arg)
   {
     arg.args.push_back("--csoaa");
     stringstream ss;
-    ss << data.cbcs.num_actions;
+    ss << data->cbcs.num_actions;
     arg.args.push_back(ss.str());
   }
 
@@ -195,12 +191,12 @@ base_learner* cb_algs_setup(arguments& arg)
   learner<cb>* l;
   if (eval)
   {
-    l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
-    l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>,
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>,
                       problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }

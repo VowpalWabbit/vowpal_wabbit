@@ -236,37 +236,37 @@ void finish(bs& d)
 
 base_learner* bs_setup(arguments& arg)
 {
-  bs& data = calloc_or_throw<bs>();
+  auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
   if (arg.new_options("Bootstrap")
-      .critical("bootstrap", data.B, "k-way bootstrap by online importance resampling")
+      .critical("bootstrap", data->B, "k-way bootstrap by online importance resampling")
       .keep("bs_type", type_string, "prediction type {mean,vote}").missing())
-    return free_return(data);
+    return nullptr;
 
-  data.ub = FLT_MAX;
-  data.lb = -FLT_MAX;
+  data->ub = FLT_MAX;
+  data->lb = -FLT_MAX;
 
   if (arg.vm.count("bs_type"))
   {
     if (type_string.compare("mean") == 0)
-      data.bs_type = BS_TYPE_MEAN;
+      data->bs_type = BS_TYPE_MEAN;
     else if (type_string.compare("vote") == 0)
-      data.bs_type = BS_TYPE_VOTE;
+      data->bs_type = BS_TYPE_VOTE;
     else
     {
       std::cerr << "warning: bs_type must be in {'mean','vote'}; resetting to mean." << std::endl;
-      data.bs_type = BS_TYPE_MEAN;
+      data->bs_type = BS_TYPE_MEAN;
     }
   }
   else //by default use mean
-    data.bs_type = BS_TYPE_MEAN;
+    data->bs_type = BS_TYPE_MEAN;
 
-  data.pred_vec = new vector<double>();
-  data.pred_vec->reserve(data.B);
-  data.all = arg.all;
+  data->pred_vec = new vector<double>();
+  data->pred_vec->reserve(data->B);
+  data->all = arg.all;
 
-  learner<bs>& l = init_learner(&data, setup_base(arg), predict_or_learn<true>,
-                                predict_or_learn<false>, data.B);
+  learner<bs>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
+                                predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
   l.set_finish(finish);
 

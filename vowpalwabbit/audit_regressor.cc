@@ -266,13 +266,13 @@ LEARNER::base_learner* audit_regressor_setup(arguments& arg)
 
   arg.all->audit = true;
 
-  audit_regressor_data& dat = calloc_or_throw<audit_regressor_data>();
-  dat.all = arg.all;
-  dat.ns_pre = new vector<string>(); // explicitly invoking vector's constructor
-  dat.out_file = new io_buf();
-  dat.out_file->open_file( out_file.c_str(), arg.all->stdin_off, io_buf::WRITE );
+  auto dat = scoped_calloc_or_throw<audit_regressor_data>();
+  dat->all = arg.all;
+  dat->ns_pre = new vector<string>(); // explicitly invoking vector's constructor
+  dat->out_file = new io_buf();
+  dat->out_file->open_file( out_file.c_str(), arg.all->stdin_off, io_buf::WRITE );
 
-  LEARNER::learner<audit_regressor_data>& ret = LEARNER::init_learner<audit_regressor_data>(&dat, setup_base(arg), audit_regressor, audit_regressor, 1);
+  LEARNER::learner<audit_regressor_data>& ret = LEARNER::init_learner(dat, setup_base(arg), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

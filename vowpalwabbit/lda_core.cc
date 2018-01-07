@@ -1265,28 +1265,28 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
 
 LEARNER::base_learner *lda_setup(arguments& arg)
 {
-  lda &ld = calloc_or_throw<lda>();
+  auto ld = scoped_calloc_or_throw<lda>();
   if (arg.new_options("Latent Dirichlet Allocation")
-      .critical("lda", ld.topics, "Run lda with <int> topics")
-      .keep("lda_alpha", ld.lda_alpha, 0.1f,"Prior on sparsity of per-document topic weights")
-      .keep("lda_rho", ld.lda_rho, 0.1f, "Prior on sparsity of topic distributions")
-      ("lda_D", ld.lda_D, 10000.f, "Number of documents")
-      ("lda_epsilon", ld.lda_epsilon, 0.001f, "Loop convergence threshold")
-      ("minibatch", ld.minibatch, (size_t)1, "Minibatch size, for LDA")
-      ("math-mode", ld.mmode, USE_SIMD, "Math mode: simd, accuracy, fast-approx")
-      ("metrics", ld.compute_coherence_metrics, false, "Compute metrics").missing())
-    return free_return(ld);
+      .critical("lda", ld->topics, "Run lda with <int> topics")
+      .keep("lda_alpha", ld->lda_alpha, 0.1f,"Prior on sparsity of per-document topic weights")
+      .keep("lda_rho", ld->lda_rho, 0.1f, "Prior on sparsity of topic distributions")
+      ("lda_D", ld->lda_D, 10000.f, "Number of documents")
+      ("lda_epsilon", ld->lda_epsilon, 0.001f, "Loop convergence threshold")
+      ("minibatch", ld->minibatch, (size_t)1, "Minibatch size, for LDA")
+      ("math-mode", ld->mmode, USE_SIMD, "Math mode: simd, accuracy, fast-approx")
+      ("metrics", ld->compute_coherence_metrics, false, "Compute metrics").missing())
+    return nullptr;
 
-  arg.all->lda = ld.topics;
+  arg.all->lda = ld->topics;
   arg.all->delete_prediction = delete_scalars;
-  ld.sorted_features = std::vector<index_feature>();
-  ld.total_lambda_init = 0;
-  ld.all = arg.all;
-  ld.example_t = arg.all->initial_t;
-  if (ld.compute_coherence_metrics)
+  ld->sorted_features = std::vector<index_feature>();
+  ld->total_lambda_init = 0;
+  ld->all = arg.all;
+  ld->example_t = arg.all->initial_t;
+  if (ld->compute_coherence_metrics)
   {
-    ld.feature_counts.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
-    ld.feature_to_example_map.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
+    ld->feature_counts.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
+    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
   }
 
   float temp = ceilf(logf((float)(arg.all->lda * 2 + 1)) / logf(2.f));
@@ -1301,16 +1301,17 @@ LEARNER::base_learner *lda_setup(arguments& arg)
     arg.all->eta = min(arg.all->eta, 1.f);
   }
 
-  size_t minibatch2 = next_pow2(ld.minibatch);
+  size_t minibatch2 = next_pow2(ld->minibatch);
   arg.all->p->ring_size = arg.all->p->ring_size > minibatch2 ? arg.all->p->ring_size : minibatch2;
 
-  ld.v.resize(arg.all->lda * ld.minibatch);
+  ld->v.resize(arg.all->lda * ld->minibatch);
 
-  ld.decay_levels.push_back(0.f);
+  ld->decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(&ld, ld.compute_coherence_metrics ? learn_with_metrics : learn, UINT64_ONE << arg.all->weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
+                                          ld->compute_coherence_metrics ? predict_with_metrics : predict,
+                                          UINT64_ONE << arg.all->weights.stride_shift(), prediction_type::scalars);
 
-  l.set_predict(ld.compute_coherence_metrics ? predict_with_metrics : predict);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);

@@ -74,32 +74,29 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
   std::string replay_count_string = replay_string;
   replay_count_string += "_count";
 
-  expreplay& er = calloc_or_throw<expreplay>();
+  auto er = scoped_calloc_or_throw<expreplay>();
   if (arg.new_options("Experience Replay")
-      .critical(replay_string.c_str(), er.N, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
-      (replay_count_string.c_str(), er.replay_count, (size_t)1, "how many times (in expectation) should each example be played (default: 1 = permuting)").missing() || er.N==0)
-    return free_return(er);
+      .critical(replay_string.c_str(), er->N, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
+      (replay_count_string.c_str(), er->replay_count, (size_t)1, "how many times (in expectation) should each example be played (default: 1 = permuting)").missing() || er->N==0)
+    return nullptr;
 
-  er.all = arg.all;
-  er.buf = VW::alloc_examples(1, er.N);
+  er->all = arg.all;
+  er->buf = VW::alloc_examples(1, er->N);
 
   if (er_level == 'c')
-    for (size_t n=0; n<er.N; n++)
-      er.buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+    for (size_t n=0; n<er->N; n++)
+      er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
 
-  er.filled = calloc_or_throw<bool>(er.N);
+  er->filled = calloc_or_throw<bool>(er->N);
 
   if (! arg.all->quiet)
-    std::cerr << "experience replay level=" << er_level << ", buffer=" << er.N << ", replay count=" << er.replay_count << std::endl;
+    std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
-  LEARNER::base_learner* base = setup_base(arg);
-  LEARNER::learner<expreplay>* l = &init_learner(&er, base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
+  er->base = setup_base(arg);
+  LEARNER::learner<expreplay>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);
-  er.base = base;
 
   return make_base(*l);
 }
-
-
 }

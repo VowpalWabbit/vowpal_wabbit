@@ -383,17 +383,17 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 using namespace CB_ADF;
 base_learner* cb_adf_setup(arguments& arg)
 {
-  cb_adf& ld = calloc_or_throw<cb_adf>();
+  auto ld = scoped_calloc_or_throw<cb_adf>();
   std::string type_string;
 
   if (arg.new_options("Contextual Bandit with Action Dependent Features")
       .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
-      .keep(ld.rank_all, "rank_all", "Return actions sorted by score order")
-      (ld.no_predict, "no_predict", "Do not do a prediction when training")
+      .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
+      (ld->no_predict, "no_predict", "Do not do a prediction when training")
       .keep<string>("cb_type", type_string,(string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
-    return free_return(ld);
+    return nullptr;
 
-  ld.all = arg.all;
+  ld->all = arg.all;
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
@@ -401,28 +401,28 @@ base_learner* cb_adf_setup(arguments& arg)
 
   if (type_string.compare("dr") == 0)
     {
-      ld.gen_cs.cb_type = CB_TYPE_DR;
+      ld->gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
       // only use baseline when manually enabled for loss estimation
       check_baseline_enabled = true;
     }
   else if (type_string.compare("ips") == 0)
-    ld.gen_cs.cb_type = CB_TYPE_IPS;
+    ld->gen_cs.cb_type = CB_TYPE_IPS;
   else if (type_string.compare("mtr") == 0)
-    ld.gen_cs.cb_type = CB_TYPE_MTR;
+    ld->gen_cs.cb_type = CB_TYPE_MTR;
   else if (type_string.compare("dm") == 0)
-    ld.gen_cs.cb_type = CB_TYPE_DM;
+    ld->gen_cs.cb_type = CB_TYPE_DM;
   else
     {
       arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
+      ld->gen_cs.cb_type = CB_TYPE_IPS;
     }
 
   arg.all->delete_prediction = ACTION_SCORE::delete_action_scores;
 
   // Push necessary flags.
   if ( (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0 && count(arg.args.begin(), arg.args.end(), "--wap_ldf") == 0)
-       || ld.rank_all || arg.vm.count("csoaa_rank") == 0)
+       || ld->rank_all || arg.vm.count("csoaa_rank") == 0)
   {
     if (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0)
       arg.args.push_back("--csoaa_ldf");
@@ -438,11 +438,12 @@ base_learner* cb_adf_setup(arguments& arg)
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
+  cb_adf* bare = ld.get();
+  learner<cb_adf>& l = init_learner(ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
                                     prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
-  ld.gen_cs.scorer = arg.all->scorer;
+  bare->gen_cs.scorer = arg.all->scorer;
 
   l.set_finish(CB_ADF::finish);
   l.set_end_examples(CB_ADF::end_examples);

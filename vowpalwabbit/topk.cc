@@ -103,11 +103,11 @@ void finish(topk& d)
 
 LEARNER::base_learner* topk_setup(arguments& arg)
 {
-  topk& data = calloc_or_throw<topk>();
-  if (arg.new_options("Top K").critical("top", data.B, "top k recommendation").missing())
-    return free_return(data);
+  auto data = scoped_calloc_or_throw<topk>();
+  if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())
+    return nullptr;
 
-  LEARNER::learner<topk>& l = init_learner(&data, setup_base(arg), predict_or_learn<true>,
+  LEARNER::learner<topk>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

@@ -676,37 +676,37 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 
 base_learner *stagewise_poly_setup(arguments& arg)
 {
-  stagewise_poly& poly = calloc_or_throw<stagewise_poly>();
+  auto poly = scoped_calloc_or_throw<stagewise_poly>();
   if (arg.new_options("Stagewise polynomial options")
       .critical("stage_poly", "use stagewise polynomial feature learning")
-      ("sched_exponent", poly.sched_exponent, 1.f, "exponent controlling quantity of included features")
-      ("batch_sz", poly.batch_sz, (uint32_t)1000, "multiplier on batch size before including more features")
-      (poly.batch_sz_double, "batch_sz_no_doubling", "batch_sz does not double")
+      ("sched_exponent", poly->sched_exponent, 1.f, "exponent controlling quantity of included features")
+      ("batch_sz", poly->batch_sz, (uint32_t)1000, "multiplier on batch size before including more features")
+      (poly->batch_sz_double, "batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
-      ("magic_argument", poly.magic_argument, 0., "magical feature flag")
+      ("magic_argument", poly->magic_argument, 0., "magical feature flag")
 #endif //MAGIC_ARGUMENT
       .missing())
-    return free_return(poly);
+    return nullptr;
 
-  poly.all = arg.all;
-  depthsbits_create(poly);
-  sort_data_create(poly);
+  poly->all = arg.all;
+  depthsbits_create(*poly.get());
+  sort_data_create(*poly.get());
 
-  poly.batch_sz_double = !poly.batch_sz_double;
+  poly->batch_sz_double = !poly->batch_sz_double;
 
-  poly.sum_sparsity = 0;
-  poly.sum_input_sparsity = 0;
-  poly.num_examples = 0;
-  poly.sum_sparsity_sync = 0;
-  poly.sum_input_sparsity_sync = 0;
-  poly.num_examples_sync = 0;
-  poly.last_example_counter = -1;
-  poly.numpasses = 1;
-  poly.update_support = false;
-  poly.original_ec = nullptr;
-  poly.next_batch_sz = poly.batch_sz;
+  poly->sum_sparsity = 0;
+  poly->sum_input_sparsity = 0;
+  poly->num_examples = 0;
+  poly->sum_sparsity_sync = 0;
+  poly->sum_input_sparsity_sync = 0;
+  poly->num_examples_sync = 0;
+  poly->last_example_counter = -1;
+  poly->numpasses = 1;
+  poly->update_support = false;
+  poly->original_ec = nullptr;
+  poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly>& l = init_learner(&poly, setup_base(arg), learn, predict);
+  learner<stagewise_poly>& l = init_learner(poly, setup_base(arg), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

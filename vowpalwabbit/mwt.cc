@@ -240,47 +240,47 @@ using namespace MWT;
 
 base_learner* mwt_setup(arguments& arg)
 {
-  mwt& c = calloc_or_throw<mwt>();
+  auto c = scoped_calloc_or_throw<mwt>();
   string s;
   bool exclude_eval = false;
   if (arg.new_options("Multiworld Testing Options")
       .critical("multiworld_test", s, "Evaluate features as a policies")
-      ("learn", c.num_classes, "Do Contextual Bandit learning on <n> classes.")
+      ("learn", c->num_classes, "Do Contextual Bandit learning on <n> classes.")
       (exclude_eval, "exclude_eval", "Discard mwt policy features before learning").missing())
-    return free_return(c);
+    return nullptr;
 
   for (size_t i = 0; i < s.size(); i++)
-    c.namespaces[(unsigned char)s[i]] = true;
-  c.all = arg.all;
+    c->namespaces[(unsigned char)s[i]] = true;
+  c->all = arg.all;
 
-  calloc_reserve(c.evals, arg.all->length());
-  c.evals.end() = c.evals.begin() + arg.all->length();
+  calloc_reserve(c->evals, arg.all->length());
+  c->evals.end() = c->evals.begin() + arg.all->length();
 
   arg.all->delete_prediction = delete_scalars;
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  if (c.num_classes > 0)
+  if (c->num_classes > 0)
   {
-    c.learn = true;
+    c->learn = true;
 
     if (count(arg.args.begin(), arg.args.end(),"--cb") == 0)
     {
       arg.args.push_back("--cb");
       stringstream ss;
-      ss << c.num_classes;
+      ss << c->num_classes;
       arg.args.push_back(ss.str());
     }
   }
 
   learner<mwt>* l;
-  if (c.learn)
+  if (c->learn)
     if (exclude_eval)
-      l = &init_learner(&c, setup_base(arg), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, setup_base(arg), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
     else
-      l = &init_learner(&c, setup_base(arg), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, setup_base(arg), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
   else
-    l = &init_learner(&c, setup_base(arg), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+    l = &init_learner(c, setup_base(arg), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

@@ -170,21 +170,19 @@ using namespace SVRG;
 
 base_learner* svrg_setup(arguments& arg)
 {
-  svrg& s = calloc_or_throw<svrg>();
+  auto s = scoped_calloc_or_throw<svrg>();
   if (arg.new_options("Stochastic Variance Reduced Gradient")
       .critical("svrg", "Streaming Stochastic Variance Reduced Gradient")
-      ("stage_size", s.stage_size, 1, "Number of passes per SVRG stage").missing())
-    return free_return(s);
+      ("stage_size", s->stage_size, 1, "Number of passes per SVRG stage").missing())
+    return nullptr;
 
-  s.all = arg.all;
-  s.prev_pass = -1;
-  s.stable_grad_count = 0;
+  s->all = arg.all;
+  s->prev_pass = -1;
+  s->stable_grad_count = 0;
 
   // Request more parameter storage (4 floats per feature)
   arg.all->weights.stride_shift(2);
-  learner<svrg>& l = init_learner(&s, learn, UINT64_ONE << arg.all->weights.stride_shift());
-
-  l.set_predict(predict);
+  learner<svrg>& l = init_learner(s, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }

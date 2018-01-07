@@ -137,31 +137,28 @@ void return_active_example(vw& all, active& a, example& ec)
 
 base_learner* active_setup(arguments& arg)
 {
-  active& data = calloc_or_throw<active>();
+  auto data = scoped_calloc_or_throw<active>();
   if(arg.new_options("Active Learning").critical("active", "enable active learning")
      ("simulation", "active learning simulation mode")
-     ("mellowness", data.active_c0, 8.f, "active learning mellowness parameter c_0. Default 8").missing())
-    return free_return(data);
+     ("mellowness", data->active_c0, 8.f, "active learning mellowness parameter c_0. Default 8").missing())
+    return nullptr;
 
-  data.all=arg.all;
+  data->all=arg.all;
 
   if (count(arg.args.begin(), arg.args.end(), "--lda") != 0)
-  {
-    free(&data);
     THROW("error: you can't combine lda and active learning");
-  }
 
   base_learner* base = setup_base(arg);
 
   //Create new learner
   learner<active>* l;
   if (arg.vm.count("simulation"))
-    l = &init_learner(&data, base, predict_or_learn_simulation<true>,
+    l = &init_learner(data, base, predict_or_learn_simulation<true>,
                       predict_or_learn_simulation<false>);
   else
   {
     arg.all->active = true;
-    l = &init_learner(&data, base, predict_or_learn_active<true>,
+    l = &init_learner(data, base, predict_or_learn_active<true>,
                       predict_or_learn_active<false>);
     l->set_finish_example(return_active_example);
   }

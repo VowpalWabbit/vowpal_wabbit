@@ -852,69 +852,68 @@ void finish(svm_params& params)
 
 LEARNER::base_learner* kernel_svm_setup(arguments& arg)
 {
-  svm_params& params = calloc_or_throw<svm_params>();
+  auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;
   float bandwidth=1.f;
   int degree = 2;
   if (arg.new_options("Kernel SVM").critical("ksvm", "kernel svm")
-      ("reprocess", params.reprocess, (size_t)1, "number of reprocess steps for LASVM")
-      (params.active_pool_greedy, "pool_greedy", "use greedy selection on mini pools")
+      ("reprocess", params->reprocess, (size_t)1, "number of reprocess steps for LASVM")
+      (params->active_pool_greedy, "pool_greedy", "use greedy selection on mini pools")
       ("para_active", "do parallel active learning")
-      ("pool_size", params.pool_size, (size_t)1, "size of pools for active learning")
-      ("subsample", params.subsample, (size_t)1, "number of items to subsample from the pool")
+      ("pool_size", params->pool_size, (size_t)1, "size of pools for active learning")
+      ("subsample", params->subsample, (size_t)1, "number of items to subsample from the pool")
       .keep("kernel", kernel_type, (string)"linear", "type of kernel (rbf or linear (default))")
       .keep("bandwidth", bandwidth, 1.f, "bandwidth of rbf kernel")
       .keep("degree", degree, 2, "degree of poly kernel")
-      .keep("lambda", params.lambda, "saving regularization for test time").missing())
-    return free_return(params);
+      .keep("lambda", params->lambda, "saving regularization for test time").missing())
+    return nullptr;
 
   string loss_function = "hinge";
   float loss_parameter = 0.0;
   delete arg.all->loss;
   arg.all->loss = getLossFunction(*arg.all, loss_function, (float)loss_parameter);
 
-  params.model = &calloc_or_throw<svm_model>();
-  params.model->num_support = 0;
-  params.maxcache = 1024*1024*1024;
-  params.loss_sum = 0.;
-  params.all = arg.all;
+  params->model = &calloc_or_throw<svm_model>();
+  params->model->num_support = 0;
+  params->maxcache = 1024*1024*1024;
+  params->loss_sum = 0.;
+  params->all = arg.all;
 
   if(arg.vm["active"].as<bool>())
-    params.active = true;
-  if(params.active)
-    params.active_c = 1.;
+    params->active = true;
+  if(params->active)
+    params->active_c = 1.;
 
-  params.pool = calloc_or_throw<svm_example*>(params.pool_size);
-  params.pool_pos = 0;
+  params->pool = calloc_or_throw<svm_example*>(params->pool_size);
+  params->pool_pos = 0;
 
-  if(!arg.vm.count("subsample") && params.para_active)
-    params.subsample = (size_t)ceil(params.pool_size / arg.all->all_reduce->total);
+  if(!arg.vm.count("subsample") && params->para_active)
+    params->subsample = (size_t)ceil(params->pool_size / arg.all->all_reduce->total);
 
-  params.lambda = arg.all->l2_lambda;
-  params.all->opts_n_args.trace_message<<"Lambda = "<<params.lambda<<endl;
-  params.all->opts_n_args.trace_message<<"Kernel = "<<kernel_type<<endl;
+  params->lambda = arg.all->l2_lambda;
+  params->all->opts_n_args.trace_message<<"Lambda = "<<params->lambda<<endl;
+  params->all->opts_n_args.trace_message<<"Kernel = "<<kernel_type<<endl;
 
   if(kernel_type.compare("rbf") == 0)
   {
-    params.kernel_type = SVM_KER_RBF;
-    params.all->opts_n_args.trace_message<<"bandwidth = "<<bandwidth<<endl;
-    params.kernel_params = &calloc_or_throw<double>();
-    *((float*)params.kernel_params) = bandwidth;
+    params->kernel_type = SVM_KER_RBF;
+    params->all->opts_n_args.trace_message<<"bandwidth = "<<bandwidth<<endl;
+    params->kernel_params = &calloc_or_throw<double>();
+    *((float*)params->kernel_params) = bandwidth;
   }
   else if(kernel_type.compare("poly") == 0)
   {
-    params.kernel_type = SVM_KER_POLY;
-    params.all->opts_n_args.trace_message<<"degree = "<<degree<<endl;
-    params.kernel_params = &calloc_or_throw<int>();
-    *((int*)params.kernel_params) = degree;
+    params->kernel_type = SVM_KER_POLY;
+    params->all->opts_n_args.trace_message<<"degree = "<<degree<<endl;
+    params->kernel_params = &calloc_or_throw<int>();
+    *((int*)params->kernel_params) = degree;
   }
   else
-    params.kernel_type = SVM_KER_LIN;
+    params->kernel_type = SVM_KER_LIN;
 
-  params.all->weights.stride_shift(0);
+  params->all->weights.stride_shift(0);
 
-  learner<svm_params>& l = init_learner(&params, learn, 1);
-  l.set_predict(predict);
+  learner<svm_params>& l = init_learner(params, learn, predict, 1);
   l.set_save_load(save_load);
   l.set_finish(finish);
   return make_base(l);

@@ -41,11 +41,11 @@ LEARNER::base_learner* print_setup(arguments& arg)
   if (arg.new_options("Print psuedolearner").critical("print", "print examples").missing())
     return nullptr;
 
-  print& p = calloc_or_throw<print>();
-  p.all = arg.all;
+  auto p = scoped_calloc_or_throw<print>();
+  p->all = arg.all;
 
   arg.all->weights.stride_shift(0);
 
-  LEARNER::learner<print>& ret = init_learner(&p, learn, 1);
+  LEARNER::learner<print>& ret = init_learner(p, learn, learn, 1);
   return make_base(ret);
 }

@@ -57,14 +57,14 @@ void finish_example(vw& all, multi_oaa&, example& ec)
 
 LEARNER::base_learner* multilabel_oaa_setup(arguments& arg)
 {
-  multi_oaa& data = calloc_or_throw<multi_oaa>();
+  auto data = scoped_calloc_or_throw<multi_oaa>();
   if (arg.new_options("Multilabel One Against All")
-      .critical("multilabel_oaa", data.k, "One-against-all multilabel with <k> labels")
+      .critical("multilabel_oaa", data->k, "One-against-all multilabel with <k> labels")
       .missing())
-    return free_return(data);
+    return nullptr;
 
-  LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(&data, setup_base(arg), predict_or_learn<true>,
-                                   predict_or_learn<false>, data.k, prediction_type::multilabels);
+  LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true>,
+                                                         predict_or_learn<false>, data->k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
   arg.all->p->lp = MULTILABEL::multilabel;
   arg.all->label_type = label_type::multi;

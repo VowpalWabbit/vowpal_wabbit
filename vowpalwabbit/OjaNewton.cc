@@ -531,56 +531,54 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
 
 base_learner* OjaNewton_setup(arguments& arg)
 {
-  OjaNewton& ON = calloc_or_throw<OjaNewton>();
+  auto ON = scoped_calloc_or_throw<OjaNewton>();
   if (arg.new_options("OjaNewton options")
       .critical("OjaNewton", "Online Newton with Oja's Sketch")
-      ("sketch_size", ON.m, 10, "size of sketch")
-      ("epoch_size", ON.epoch_size, 1, "size of epoch")
-      ("alpha", ON.alpha, 1.f, "mutiplicative constant for indentiy")
+      ("sketch_size", ON->m, 10, "size of sketch")
+      ("epoch_size", ON->epoch_size, 1, "size of epoch")
+      ("alpha", ON->alpha, 1.f, "mutiplicative constant for indentiy")
       ("alpha_inverse", po::value<float>(), "one over alpha, similar to learning rate")
-      ("learning_rate_cnt", ON.learning_rate_cnt, 2.f, "constant for the learning rate 1/t")
-      ("normalize", ON.normalize, true, "normalize the features or not")
-      ("random_init", ON.random_init, true, "randomize initialization of Oja or not").missing())
-    return free_return(ON);
+      ("learning_rate_cnt", ON->learning_rate_cnt, 2.f, "constant for the learning rate 1/t")
+      ("normalize", ON->normalize, true, "normalize the features or not")
+      ("random_init", ON->random_init, true, "randomize initialization of Oja or not").missing())
+    return nullptr;
 
-  ON.all = arg.all;
+  ON->all = arg.all;
 
   if (arg.vm.count("alpha_inverse"))
-    ON.alpha = 1.f / arg.vm["alpha_inverse"].as<float>();
+    ON->alpha = 1.f / arg.vm["alpha_inverse"].as<float>();
 
-  ON.cnt = 0;
-  ON.t = 1;
-  ON.ev = calloc_or_throw<float>(ON.m+1);
-  ON.b = calloc_or_throw<float>(ON.m+1);
-  ON.D = calloc_or_throw<float>(ON.m+1);
-  ON.A = calloc_or_throw<float*>(ON.m+1);
-  ON.K = calloc_or_throw<float*>(ON.m+1);
-  for (int i = 1; i <= ON.m; i++)
+  ON->cnt = 0;
+  ON->t = 1;
+  ON->ev = calloc_or_throw<float>(ON->m+1);
+  ON->b = calloc_or_throw<float>(ON->m+1);
+  ON->D = calloc_or_throw<float>(ON->m+1);
+  ON->A = calloc_or_throw<float*>(ON->m+1);
+  ON->K = calloc_or_throw<float*>(ON->m+1);
+  for (int i = 1; i <= ON->m; i++)
   {
-    ON.A[i] = calloc_or_throw<float>(ON.m+1);
-    ON.K[i] = calloc_or_throw<float>(ON.m+1);
-    ON.A[i][i] = 1;
-    ON.K[i][i] = 1;
-    ON.D[i] = 1;
+    ON->A[i] = calloc_or_throw<float>(ON->m+1);
+    ON->K[i] = calloc_or_throw<float>(ON->m+1);
+    ON->A[i][i] = 1;
+    ON->K[i][i] = 1;
+    ON->D[i] = 1;
   }
 
-  ON.buffer = calloc_or_throw<example*>(ON.epoch_size);
-  ON.weight_buffer = calloc_or_throw<float>(ON.epoch_size);
+  ON->buffer = calloc_or_throw<example*>(ON->epoch_size);
+  ON->weight_buffer = calloc_or_throw<float>(ON->epoch_size);
 
-  ON.zv = calloc_or_throw<float>(ON.m+1);
-  ON.vv = calloc_or_throw<float>(ON.m+1);
-  ON.tmp = calloc_or_throw<float>(ON.m+1);
+  ON->zv = calloc_or_throw<float>(ON->m+1);
+  ON->vv = calloc_or_throw<float>(ON->m+1);
+  ON->tmp = calloc_or_throw<float>(ON->m+1);
 
-  ON.data.ON = &ON;
-  ON.data.Zx = calloc_or_throw<float>(ON.m+1);
-  ON.data.AZx = calloc_or_throw<float>(ON.m+1);
-  ON.data.delta = calloc_or_throw<float>(ON.m+1);
+  ON->data.ON = ON.get();
+  ON->data.Zx = calloc_or_throw<float>(ON->m+1);
+  ON->data.AZx = calloc_or_throw<float>(ON->m+1);
+  ON->data.delta = calloc_or_throw<float>(ON->m+1);
 
-  arg.all->weights.stride_shift((uint32_t)ceil(log2(ON.m + 2)));
+  arg.all->weights.stride_shift((uint32_t)ceil(log2(ON->m + 2)));
 
-  learner<OjaNewton>& l = init_learner(&ON, learn, arg.all->weights.stride());
-
-  l.set_predict(predict);
+  learner<OjaNewton>& l = init_learner(ON, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
   l.set_finish(finish);

@@ -1,7 +1,8 @@
 #pragma once
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
+#include<stdlib.h>
+#include<stdio.h>
+#include<iostream>
+#include<memory>
 
 template<class T>
 T* calloc_or_throw(size_t nmemb)
@@ -20,6 +21,11 @@ T* calloc_or_throw(size_t nmemb)
 
 template<class T> T& calloc_or_throw()
 { return *calloc_or_throw<T>(1); }
+
+typedef void (*free_fn)(void*);
+template<class T> using free_ptr = std::unique_ptr<T,free_fn>;
+template<class T> free_ptr<T> scoped_calloc_or_throw()
+{ return std::unique_ptr<T,free_fn>(calloc_or_throw<T>(1), free); }
 
 #ifdef MADV_MERGEABLE
 template<class T>

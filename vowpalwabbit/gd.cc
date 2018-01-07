@@ -1059,30 +1059,30 @@ uint64_t ceil_log_2(uint64_t v)
 
 base_learner* setup(arguments& arg)
 {
-  gd& g = calloc_or_throw<gd>();
+  auto g = scoped_calloc_or_throw<gd>();
   if (arg.new_options("Gradient Descent options")
       ("sgd", "use regular stochastic gradient descent update.")
       ("adaptive", "use adaptive, individual learning rates.")
       ("adax", "use adaptive learning rates with x^2 instead of g^2x^2")
       ("invariant", "use safe/importance aware updates.")
       ("normalized", "use per feature normalized updates")
-      ("sparse_l2", g.sparse_l2, 0.f, "use per feature normalized updates")
+      ("sparse_l2", g->sparse_l2, 0.f, "use per feature normalized updates")
       .missing())
-    return free_return(g);
+    return nullptr;
 
-  g.all = arg.all;
-  g.all->normalized_sum_norm_x = 0;
-  g.no_win_counter = 0;
-  g.total_weight = 0.;
-  g.neg_norm_power = (arg.all->adaptive ? (arg.all->power_t - 1.f) : -1.f);
-  g.neg_power_t = - arg.all->power_t;
-  g.adaptive = arg.all->adaptive;
-  g.normalized = arg.all->normalized_updates;
+  g->all = arg.all;
+  g->all->normalized_sum_norm_x = 0;
+  g->no_win_counter = 0;
+  g->total_weight = 0.;
+  g->neg_norm_power = (arg.all->adaptive ? (arg.all->power_t - 1.f) : -1.f);
+  g->neg_power_t = - arg.all->power_t;
+  g->adaptive = arg.all->adaptive;
+  g->normalized = arg.all->normalized_updates;
 
   if(arg.all->initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (arg.all->initial_t) previous fake datapoints all with norm 1
   {
-    g.all->normalized_sum_norm_x = arg.all->initial_t;
-    g.total_weight = arg.all->initial_t;
+    g->all->normalized_sum_norm_x = arg.all->initial_t;
+    g->total_weight = arg.all->initial_t;
   }
 
   bool feature_mask_off = true;
@@ -1092,10 +1092,10 @@ base_learner* setup(arguments& arg)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    g.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    g->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  g.initial_constant = arg.all->initial_constant;
+  g->initial_constant = arg.all->initial_constant;
 
   if( arg.vm.count("sgd") || arg.vm.count("adaptive") || arg.vm.count("invariant") || arg.vm.count("normalized") )
   {
@@ -1126,9 +1126,9 @@ base_learner* setup(arguments& arg)
   }
 
   if( arg.vm.count("adax"))
-    g.adax = arg.all->training && arg.vm.count("adax");
+    g->adax = arg.all->training && arg.vm.count("adax");
 
-  if(g.adax && !arg.all->adaptive)
+  if(g->adax && !arg.all->adaptive)
     THROW("Cannot use adax without adaptive");
 
   if (pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses) < 0.0001 )
@@ -1138,34 +1138,34 @@ base_learner* setup(arguments& arg)
   if (arg.all->reg_mode % 2)
     if (arg.all->audit || arg.all->hash_inv)
     {
-      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>;
+      g->predict = predict<true, true>;   g->multipredict = multipredict<true, true>;
     }
     else
     {
-      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>;
+      g->predict = predict<true, false>;  g->multipredict = multipredict<true, false>;
     }
   else if (arg.all->audit || arg.all->hash_inv)
   {
-    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>;
+    g->predict = predict<false, true>;    g->multipredict = multipredict<false, true>;
   }
   else
   {
-    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>;
+    g->predict = predict<false, false>;   g->multipredict = multipredict<false, false>;
   }
 
   uint64_t stride;
   if (arg.all->power_t == 0.5)
-    stride = set_learn<true>(*arg.all, feature_mask_off, g);
+    stride = set_learn<true>(*arg.all, feature_mask_off, *g.get());
   else
-    stride = set_learn<false>(*arg.all, feature_mask_off, g);
+    stride = set_learn<false>(*arg.all, feature_mask_off, *g.get());
 
   arg.all->weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << arg.all->weights.stride_shift()));
-  ret.set_predict(g.predict);
-  ret.set_sensitivity(g.sensitivity);
-  ret.set_multipredict(g.multipredict);
-  ret.set_update(g.update);
+  gd* bare=g.get();
+  learner<gd>& ret = init_learner(g, g->learn, bare->predict, ((uint64_t)1 << arg.all->weights.stride_shift()));
+  ret.set_sensitivity(bare->sensitivity);
+  ret.set_multipredict(bare->multipredict);
+  ret.set_update(bare->update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
   return make_base(ret);

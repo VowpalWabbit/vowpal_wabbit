@@ -239,18 +239,18 @@ void end_pass(ftrl& g)
 
 base_learner* ftrl_setup(arguments& arg)
 {
-  ftrl& b = calloc_or_throw<ftrl>();
+  auto b = scoped_calloc_or_throw<ftrl>();
   if (arg.new_options("Follow the Regularized Leader")
       .critical("ftrl", "FTRL: Follow the Proximal Regularized Leader")
-      ("ftrl_alpha", b.ftrl_alpha, 0.005f, "Learning rate for FTRL optimization")
-      ("ftrl_beta", b.ftrl_beta, 0.1f, "FTRL beta parameter").missing())
+      ("ftrl_alpha", b->ftrl_alpha, 0.005f, "Learning rate for FTRL optimization")
+      ("ftrl_beta", b->ftrl_beta, 0.1f, "FTRL beta parameter").missing())
     if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning")
-        ("ftrl_alpha", b.ftrl_alpha, 1.0f, "Learning rate for FTRL optimization")
-        ("ftrl_beta", b.ftrl_beta, 0.5f, "FTRL beta parameter").missing())
-      return free_return(b);
+        ("ftrl_alpha", b->ftrl_alpha, 1.0f, "Learning rate for FTRL optimization")
+        ("ftrl_beta", b->ftrl_beta, 0.5f, "FTRL beta parameter").missing())
+      return nullptr;
 
-  b.all = arg.all;
-  b.no_win_counter = 0;
+  b->all = arg.all;
+  b->no_win_counter = 0;
 
   void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
 
@@ -268,10 +268,10 @@ base_learner* ftrl_setup(arguments& arg)
     algorithm_name = "PiSTOL";
     learn_ptr=learn_pistol;
   }
-  b.data.ftrl_alpha = b.ftrl_alpha;
-  b.data.ftrl_beta = b.ftrl_beta;
-  b.data.l1_lambda = b.all->l1_lambda;
-  b.data.l2_lambda = b.all->l2_lambda;
+  b->data.ftrl_alpha = b->ftrl_alpha;
+  b->data.ftrl_beta = b->ftrl_beta;
+  b->data.l1_lambda = b->all->l1_lambda;
+  b->data.l2_lambda = b->all->l2_lambda;
 
   arg.all->weights.stride_shift(2); // NOTE: for more parameter storage
 
@@ -279,27 +279,27 @@ base_learner* ftrl_setup(arguments& arg)
   {
     cerr << "Enabling FTRL based optimization" << endl;
     cerr << "Algorithm used: " << algorithm_name << endl;
-    cerr << "ftrl_alpha = " << b.ftrl_alpha << endl;
-    cerr << "ftrl_beta = " << b.ftrl_beta << endl;
+    cerr << "ftrl_alpha = " << b->ftrl_alpha << endl;
+    cerr << "ftrl_beta = " << b->ftrl_beta << endl;
   }
 
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    b.early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>& l = init_learner(&b, learn_ptr, UINT64_ONE << arg.all->weights.stride_shift());
+  learner<ftrl>* l;
   if (arg.all->audit || arg.all->hash_inv)
-    l.set_predict(predict<true>);
+    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << arg.all->weights.stride_shift());
   else
-    l.set_predict(predict<false>);
-  l.set_sensitivity(sensitivity);
+    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << arg.all->weights.stride_shift());
+  l->set_sensitivity(sensitivity);
   if (arg.all->audit || arg.all->hash_inv)
-    l.set_multipredict(multipredict<true>);
+    l->set_multipredict(multipredict<true>);
   else
-    l.set_multipredict(multipredict<false>);
-  l.set_save_load(save_load);
-  l.set_end_pass(end_pass);
-  return make_base(l);
+    l->set_multipredict(multipredict<false>);
+  l->set_save_load(save_load);
+  l->set_end_pass(end_pass);
+  return make_base(*l);
 }

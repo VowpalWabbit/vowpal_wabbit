@@ -216,27 +216,27 @@ void init_adf_data(cbify& data, const size_t num_actions)
 base_learner* cbify_setup(arguments& arg)
 {
   uint32_t num_actions=0;
-  cbify& data = calloc_or_throw<cbify>();
+  auto data = scoped_calloc_or_throw<cbify>();
 
   if (arg.new_options("Make Multiclass into Contextual Bandit")
       .critical("cbify", num_actions, "Convert multiclass on <k> classes into a contextual bandit problem")
-      ("loss0", data.loss0, 0.f, "loss for correct label")
-      ("loss1", data.loss1, 1.f, "loss for incorrect label").missing())
-    return free_return(data);
+      ("loss0", data->loss0, 0.f, "loss for correct label")
+      ("loss1", data->loss1, 1.f, "loss for incorrect label").missing())
+    return nullptr;
 
-  data.use_adf = count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") > 0;
-  data.recorder = new vw_recorder();
-  data.mwt_explorer = new MwtExplorer<example>("vw",*data.recorder);
-  data.scorer = new vw_scorer();
-  data.a_s = v_init<action_score>();
-  //data.probs = v_init<float>();
-  data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);
-  data.all = arg.all;
+  data->use_adf = count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") > 0;
+  data->recorder = new vw_recorder();
+  data->mwt_explorer = new MwtExplorer<example>("vw",*data->recorder);
+  data->scorer = new vw_scorer();
+  data->a_s = v_init<action_score>();
+  //data->probs = v_init<float>();
+  data->generic_explorer = new GenericExplorer<example>(*data->scorer, (u32)num_actions);
+  data->all = arg.all;
 
-  if (data.use_adf)
-    init_adf_data(data, num_actions);
+  if (data->use_adf)
+    init_adf_data(*data.get(), num_actions);
 
-  if (count(arg.args.begin(), arg.args.end(),"--cb_explore") == 0 && !data.use_adf)
+  if (count(arg.args.begin(), arg.args.end(),"--cb_explore") == 0 && !data->use_adf)
   {
     arg.args.push_back("--cb_explore");
     stringstream ss;
@@ -247,17 +247,17 @@ base_learner* cbify_setup(arguments& arg)
   {
     arg.args.push_back("--lr_multiplier");
     stringstream ss;
-    ss << max<float>(abs(data.loss0), abs(data.loss1)) / (data.loss1 - data.loss0);
+    ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
     arg.args.push_back(ss.str());
   }
   base_learner* base = setup_base(arg);
 
   arg.all->delete_prediction = nullptr;
   learner<cbify>* l;
-  if (data.use_adf)
-    l = &init_multiclass_learner(&data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
+  if (data->use_adf)
+    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
   else
-    l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, arg.all->p, 1);
+    l = &init_multiclass_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, arg.all->p, 1);
   l->set_finish(finish);
 
   return make_base(*l);

@@ -497,24 +497,24 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 
 base_learner* log_multi_setup(arguments& arg)	//learner setup
 {
-  log_multi& data = calloc_or_throw<log_multi>();
+  auto data = scoped_calloc_or_throw<log_multi>();
   if (arg.new_options("Logarithmic Time Multiclass Tree")
-      .critical("log_multi", data.k, "Use online tree for multiclass")
-      (data.progress, "no_progress", "disable progressive validation")
-      ("swap_resistance", data.swap_resist, (uint32_t)4, "higher = more resistance to swap, default=4").missing())
-    return free_return(data);
+      .critical("log_multi", data->k, "Use online tree for multiclass")
+      (data->progress, "no_progress", "disable progressive validation")
+      ("swap_resistance", data->swap_resist, (uint32_t)4, "higher = more resistance to swap, default=4").missing())
+    return nullptr;
 
-  data.progress = !data.progress;
+  data->progress = !data->progress;
 
   string loss_function = "quantile";
   float loss_parameter = 0.5;
   delete(arg.all->loss);
   arg.all->loss = getLossFunction(*arg.all, loss_function, loss_parameter);
 
-  data.max_predictors = data.k - 1;
-  init_tree(data);
+  data->max_predictors = data->k - 1;
+  init_tree(*data.get());
 
-  learner<log_multi>& l = init_multiclass_learner(&data, setup_base(arg), learn, predict, arg.all->p, data.max_predictors);
+  learner<log_multi>& l = init_multiclass_learner(data, setup_base(arg), learn, predict, arg.all->p, data->max_predictors);
   l.set_save_load(save_load_tree);
   l.set_finish(finish);
 

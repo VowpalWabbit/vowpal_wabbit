@@ -160,16 +160,16 @@ LEARNER::base_learner* interact_setup(arguments& arg)
     return nullptr;
   }
 
-  interact& data = calloc_or_throw<interact>();
+  auto data = scoped_calloc_or_throw<interact>();
 
-  data.n1 = (unsigned char) s[0];
-  data.n2 = (unsigned char) s[1];
+  data->n1 = (unsigned char) s[0];
+  data->n2 = (unsigned char) s[1];
   if (!arg.all->quiet)
-    cerr <<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
-  data.all = arg.all;
+    cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
+  data->all = arg.all;
 
   LEARNER::learner<interact>* l;
-  l = &LEARNER::init_learner(&data, setup_base(arg), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l = &LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

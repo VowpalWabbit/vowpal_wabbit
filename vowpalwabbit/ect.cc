@@ -34,6 +34,8 @@ struct ect
 {
   uint64_t k;
   uint64_t errors;
+  float class_boundary;
+
   v_array<direction> directions;//The nodes of the tournament datastructure
 
   v_array<v_array<v_array<uint32_t > > > all_levels;
@@ -179,8 +181,6 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
   return e.last_pair + (eliminations-1);
 }
 
-float class_boundary = 0.;
-
 uint32_t ect_predict(ect& e, base_learner& base, example& ec)
 {
   if (e.k == (size_t)1)
@@ -200,7 +200,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > class_boundary)
+      if (ec.pred.scalar > e.class_boundary)
         finals_winner = finals_winner | (((size_t)1) << i);
     }
   }
@@ -210,7 +210,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
   {
     base.learn(ec, id - e.k);
 
-    if (ec.pred.scalar > class_boundary)
+    if (ec.pred.scalar > e.class_boundary)
       id = e.directions[id].right;
     else
       id = e.directions[id].left;
@@ -254,7 +254,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
     base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
     ec.weight = old_weight;
 
-    bool won = (ec.pred.scalar-class_boundary) * simple_temp.label > 0;
+    bool won = (ec.pred.scalar-e.class_boundary) * simple_temp.label > 0;
 
     if (won)
     {
@@ -304,7 +304,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
 
         base.learn(ec, problem_number);
 
-        if (ec.pred.scalar > class_boundary)
+        if (ec.pred.scalar > e.class_boundary)
           e.tournaments_won[j] = right;
         else
           e.tournaments_won[j] = left;
@@ -346,33 +346,29 @@ void finish(ect& e)
     e.all_levels[l].delete_v();
   }
   e.all_levels.delete_v();
-
   e.final_nodes.delete_v();
-
   e.up_directions.delete_v();
-
   e.directions.delete_v();
-
   e.down_directions.delete_v();
-
   e.tournaments_won.delete_v();
 }
 
 base_learner* ect_setup(arguments& arg)
 {
-  ect& data = calloc_or_throw<ect>();
+  auto data = scoped_calloc_or_throw<ect>();
   if (arg.new_options("Error Correcting Tournament Options").
-      critical("ect", data.k, "Error correcting tournament with <k> labels")
-      .keep("error", data.errors, (uint64_t)0, "errors allowed by ECT").missing())
-    return free_return(data);
+      critical("ect", data->k, "Error correcting tournament with <k> labels")
+      .keep("error", data->errors, (uint64_t)0, "errors allowed by ECT").missing())
+    return nullptr;
 
-  size_t wpp = create_circuit(data, data.k, data.errors+1);
+  size_t wpp = create_circuit(*data.get(), data->k, data->errors+1);
 
-  learner<ect>& l = init_multiclass_learner(&data, setup_base(arg), learn, predict, arg.all->p, wpp);
-  l.set_finish(finish);
-
+  base_learner* base = setup_base(arg);
   if (arg.vm["link"].as<string>().compare("logistic") == 0)
-    class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
+    data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
+
+  learner<ect>& l = init_multiclass_learner(data, base, learn, predict, arg.all->p, wpp);
+  l.set_finish(finish);
 
   return make_base(l);
 }
