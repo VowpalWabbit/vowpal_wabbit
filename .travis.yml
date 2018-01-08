@@ -4,14 +4,7 @@ compiler:
   - clang
 os:
   - linux
-  - osx
-addons:
-  apt:
-    packages:
-       -        - maven
-       - 
-       - libcpprest2.8
-       - rapidjson
+# - osx
 
 sudo: required
 
