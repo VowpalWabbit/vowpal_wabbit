@@ -374,8 +374,6 @@ LEARNER::base_learner* marginal_setup(arguments& arg)
   for (size_t u = 0; u < 256; u++)
     if (s.find((char)u) != string::npos)
       d->id_features[u] = true;
-  new(&d->marginals)unordered_map<uint64_t,marginal>();
-  new(&d->expert_state)unordered_map<uint64_t,expert_pair>();
 
   LEARNER::learner<MARGINAL::data>& ret =
     init_learner(d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
