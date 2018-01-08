@@ -8,9 +8,8 @@ os:
 addons:
   apt:
     packages:
-       - libboost-all-dev
-       - maven
-       - libcpprest-dev
+       -        - maven
+       - 
        - libcpprest2.8
        - rapidjson
 
@@ -21,6 +20,14 @@ services:
 
 before_install:
   - docker pull ubuntu:16.04
+  - docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash
+install:
+  - docker exec -ti travis-ci bash -c "apt-get update"
+  - docker exec -ti travis-ci bash -c "apt-get install -y build-essential cmake libboost-all-dev maven libcpprest-dev libcpprest2.8 rapidjson default-jre default-jdk python3"
+script:
+  - docker exec -ti travis-ci bash -c "cd /vw && bash cmake --build . -- -j"
+after_script:
+  - docker stop travis-ci
 
 sbefore_install:
   # - sudo apt-get update -qq
@@ -35,8 +42,8 @@ sbefore_install:
   # - conda config --set always_yes yes --set changeps1 no
   # - conda update -q conda
   # - conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
-script:
-  - cmake --build . -- -j
+#script:
+  #- cmake --build . -- -j
   # - make python
   # - mvn clean test -f java/pom.xml
   # - make test
