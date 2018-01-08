@@ -132,16 +132,11 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 
 class TestDecisionServiceListener(DecisionServiceListener):
 	def __init__(self):
-		self.errors = []
-		self.trace = []
+		self.messages = []
 		DecisionServiceListener.__init__(self)
 
-	def error(self, msg):
-		print("my error: " + msg)
-		self.errors.append(msg)
-
-	def trace(self, msg):
-		self.trace.append(msg)
+	def log(self, level, msg):
+		self.messages.append({'level':level, 'msg': msg})
 
 class TestDecisionServiceClient(unittest.TestCase):
 	def __init__(self, *args):
@@ -163,7 +158,6 @@ class TestDecisionServiceClient(unittest.TestCase):
 			listener = TestDecisionServiceListener()
 			self.config.listener = listener
 
-
 			# make sure it's enabled and we'll internally throw
 			self.config.certificate_validation_enabled = True
 
@@ -173,6 +167,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 			sleep(0.5)
 
 			self.assertEqual(len(server.posts), 0, "requests should not hit the server as cert validation should fail")
+			self.assertEqual(listener.messages, [{'level':1, 'msg':"Failed to upload event: 'Error in SSL handshake'"}])
 
 	def test_rank_event_id_generated(self):
 		with MockServer() as server:
@@ -208,6 +203,20 @@ class TestDecisionServiceClient(unittest.TestCase):
 			self.assertEqual(server.posts[0]['content-type'], 'application/atom+xml;type=entry;charset=utf-8')
 			self.assertEqual(server.posts[0]['body'], '{"Version":"1","EventId":"abc","a":[1,0],"c":{{"a":2}},"p":[0.8,0.2],"VWState":{"m":"m1"}}')
 
+	def test_update_model(self):
+		with MockServer() as server:
+			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
+			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			listener = TestDecisionServiceListener()
+			self.config.listener = listener
+			self.config.log_level = 4
+
+			client = DecisionServiceClient(self.config)
+
+			buf = bytearray(b'foo')
+			client.update_model(buf)
+
+			self.assertEqual(listener.messages, [{'level':1, 'msg':'update_model(len=3)'}])
 
 if __name__ == '__main__':
 	unittest.main()

@@ -12,7 +12,7 @@ find_package(PythonLibs REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS} ${cpprest_INCLUDE_DIRS} ${vw_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}) 
 include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}) 
 
-add_library(${PROJECT_NAME} ds_api.cc ds_config.cc ds_vw.cc event_hub_client.cc)
+add_library(${PROJECT_NAME} ds_client.cc ds_rank_response.cc ds_config.cc ds_vw.cc event_hub_client.cc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${cpprest_LIBRARY} OpenSSL::SSL OpenSSL::Crypto)
 

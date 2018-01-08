@@ -42,13 +42,13 @@ namespace Microsoft {
       // with event sizes of 3kb & 5s batching, 2 connections can get 50Mbps
       num_parallel_connection(2),
       batching_timeout_in_milliseconds(5 * 1000),
-      batching_queue_max_size(8 * 1024)
+      batching_queue_max_size(8 * 1024),
+      log_level(DecisionServiceLogLevel::error)
     { }
 
-    //void DecisionServiceConfiguration::set_listener(DecisionServiceListener* listener)
-    //{
-    //  printf("ptr registered: %p\n", listener);
-    //  _listener = shared_ptr<DecisionServiceListener>(listener);
-    //}
+    bool DecisionServiceConfiguration::can_log(DecisionServiceLogLevel level_of_message)
+    {
+      return listener && level_of_message <= log_level;
+    }
   }
 }

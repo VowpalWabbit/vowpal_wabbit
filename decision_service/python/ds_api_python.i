@@ -4,16 +4,19 @@
 
 %nothread;
 %thread DecisionServiceConfiguration::Download; 
-%thread DecisionServiceListener::error;
-%thread DecisionServiceListener::trace;
+%thread DecisionServiceListener::log;
 
 #define ARRAYS_OPTIMIZED
 #define DISABLE_NAMESPACE
 
+// generate documentation
+// TODO: https://github.com/m7thon/doxy2swig
+%feature("autodoc", "2");
+
 %include "../ds_api.i"
 
-// try how the vector binding looks like... maybe it's ok
-// add update_model w/o offset to support bybuffer
+%include <pybuffer.i>
+%pybuffer_binary(unsigned char* model, size_t len)
 
 namespace std
 {
@@ -53,6 +56,7 @@ namespace std
 %ignore Array<int>;
 %ignore DecisionServiceClient::rank_cstyle;
 %ignore DecisionServiceClient::rank_struct;
+%ignore DecisionServiceClient::update_model(unsigned char*, size_t, size_t);
 %rename(rank) DecisionServiceClient::rank_vector;
 
 

@@ -65,13 +65,19 @@ namespace Microsoft {
       size_t length;
     };
 
+
+    enum DecisionServiceLogLevel {
+      none = 0,
+      error = 1,
+      warning = 2,
+      trace = 4
+    };
+
     class DecisionServiceListener {
     public:
       virtual ~DecisionServiceListener() { }
 
-      virtual void trace(const std::string& message) { }
-
-      virtual void error(const std::string& message) { }
+      virtual void log(DecisionServiceLogLevel level, const std::string& message) { }
 
       // TODO: add more events (e.g. model download)
     };
@@ -103,8 +109,15 @@ namespace Microsoft {
       // int pollingForModelPeriod;
       // int pollingForSettingsPeriod;
 
-      // Memory ownership is taken by this class
+      // defaults to error
+      DecisionServiceLogLevel log_level;
+
+      // TODO: understand how memory ownership works...
       DecisionServiceListener* listener;
+
+#ifndef SWIG
+      bool can_log(DecisionServiceLogLevel log_level);
+#endif
     };
 
     // avoid leakage to Swig
@@ -130,7 +143,19 @@ namespace Microsoft {
       void reward(const char* event_id, const char* reward);
 
       void update_model(unsigned char* model, size_t offset, size_t len);
+
+      void update_model(unsigned char* model, size_t len);
     };
+
+#ifndef SWIG
+#define DS_LOG(config, level, msg) { \
+  if (config.can_log(level)) { \
+    std::ostringstream __message; \
+    __message << msg; \
+    config.listener->log(level, __message.str()); \
+  } }
+#endif
+
 #ifndef DISABLE_NAMESPACE
   }
 }
