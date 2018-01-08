@@ -24,4 +24,4 @@ requirements:
 about:
   home: https://github.com/JohnLangford/vowpal_wabbit
   license: BSD 3-Clause License
-  license_file: https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE
+  license_file: LICENSE
