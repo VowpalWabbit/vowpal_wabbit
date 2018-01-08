@@ -1,0 +1,2 @@
+cmake .
+cmake --build . -- -j

@@ -1,0 +1,27 @@
+package:
+  name: vowpalwabbitds
+  version: 8.4.0
+
+source:
+  git_rev: HEAD
+  git_url: https://github.com/eisber/vowpal_wabbit
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - swig
+    - rapidjson
+    - boost
+    - cmake
+    - zlib
+    - openssl
+  run:
+    - python
+
+# include cpprest
+
+about:
+  home: https://github.com/JohnLangford/vowpal_wabbit
+  license: BSD 3-Clause License
+  license_file: https://github.com/JohnLangford/vowpal_wabbit/blob/master/LICENSE
