@@ -16,7 +16,7 @@ before_install:
   - docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash
 install:
   - docker exec -ti travis-ci bash -c "apt-get update"
-  - docker exec -ti travis-ci bash -c "apt-get install -y build-essential cmake libboost-all-dev maven libcpprest-dev libcpprest2.8 rapidjson default-jre default-jdk python3"
+  - docker exec -ti travis-ci bash -c "apt-get install -y build-essential cmake libboost-all-dev libboost-program-options-dev libboost-python-dev libboost-regex-dev maven libcpprest-dev libcpprest2.8 rapidjson-dev default-jre default-jdk python3-dev swig3.0"
 script:
   - docker exec -ti travis-ci bash -c "cd /vw && bash cmake --build . -- -j"
 after_script:
