@@ -7,7 +7,7 @@
 #include <string.h>
 namespace po = boost::program_options;
 
-class vw;
+struct vw;
 
 class arguments {
   po::options_description new_od;//a set of options
