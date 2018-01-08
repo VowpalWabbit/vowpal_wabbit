@@ -254,6 +254,9 @@ struct search_private
   v_array< v_array<action_cache>* > memo_foreach_action; // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 };
 
+  search::search() { priv = &calloc_or_throw<search_private>(); }
+  search::~search() { free(priv); }
+
 string   audit_feature_space("conditional");
 uint64_t conditional_constant = 8290743;
 
@@ -2465,7 +2468,6 @@ void parse_neighbor_features(string& nf_string, search&sch)
 base_learner* setup(arguments& arg)
 {
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
-  sch->priv = &calloc_or_throw<search_private>();
   search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
@@ -2511,10 +2513,7 @@ base_learner* setup(arguments& arg)
       (priv.linear_ordering, "search_linear_ordering", "insist on generating examples in linear order (def: hoopla permutation)")
       ("search_active_verify",    priv.active_csoaa_verify,  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
       ("search_save_every_k_runs", priv.save_every_k_runs, "save model every k runs").missing())
-    {
-      free(sch->priv);
-      return nullptr;
-    }
+    return nullptr;
 
   search_initialize(arg.all, *sch.get());
 
