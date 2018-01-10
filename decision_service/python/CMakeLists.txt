@@ -27,7 +27,7 @@ macro (ds_pythonbuild PYVERSION)
 
         # -fPIC needed for static boost libs
         set_source_files_properties("swig${PYVERSION}/ds_api_pythonPYTHON_wrap"
-                    PROPERTIES COMPILE_FLAGS "-I${PYTHON_INCLUDE_DIRS} -fPIC")
+                    PROPERTIES COMPILE_FLAGS "-I${PYTHON_INCLUDE_DIRS}")
 
         SWIG_ADD_MODULE("decision_service${PYVERSION}" python ${ds_api_python})
         SWIG_LINK_LIBRARIES("decision_service${PYVERSION}" ds ${PYTHON_LIBRARIES})
