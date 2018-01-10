@@ -130,10 +130,10 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 			with self.assertRaises(SystemError):
 				DecisionServiceConfiguration_Download(server.base_url + 'notfound')
 
-class TestDecisionServiceListener(DecisionServiceListener):
+class TestDecisionServiceLogger(DecisionServiceLogger):
 	def __init__(self):
 		self.messages = []
-		DecisionServiceListener.__init__(self)
+		DecisionServiceLogger.__init__(self)
 
 	def log(self, level, msg):
 		self.messages.append({'level':level, 'msg': msg})
@@ -155,7 +155,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 			# self.listener = 
 			# C++ owns the object by default. Read http://www.swig.org/Doc3.0/Python.html#Python_nn35 on how to reverse
 			# TODO: I don't understand how this work...
-			listener = TestDecisionServiceListener()
+			listener = TestDecisionServiceLogger()
 			self.config.listener = listener
 
 			# make sure it's enabled and we'll internally throw

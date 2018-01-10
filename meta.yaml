@@ -4,7 +4,8 @@ package:
 
 source:
   git_rev: HEAD
-  git_url: https://github.com/eisber/vowpal_wabbit
+  git_url: .
+  # git_url: https://github.com/eisber/vowpal_wabbit
 
 requirements:
   build:
@@ -16,10 +17,13 @@ requirements:
     - cmake
     - zlib
     - openssl
+    - cpprest
   run:
     - python
+    - cpprest
 
-# include cpprest
+# build:
+#   include_recipe: False
 
 about:
   home: https://github.com/JohnLangford/vowpal_wabbit

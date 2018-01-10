@@ -73,9 +73,9 @@ namespace Microsoft {
       trace = 4
     };
 
-    class DecisionServiceListener {
+    class DecisionServiceLogger {
     public:
-      virtual ~DecisionServiceListener() { }
+      virtual ~DecisionServiceLogger() { }
 
       virtual void log(DecisionServiceLogLevel level, const std::string& message) { }
 
@@ -113,12 +113,48 @@ namespace Microsoft {
       DecisionServiceLogLevel log_level;
 
       // TODO: understand how memory ownership works...
-      DecisionServiceListener* listener;
+      DecisionServiceLogger* logger;
 
 #ifndef SWIG
       bool can_log(DecisionServiceLogLevel log_level);
 #endif
     };
+
+    class DecisionServicePredictionResult {
+      public:
+        void set(const std::vector<float>& score);
+        void set(const Array<float>& default_ranking);
+        void set(const float* default_ranking, size_t default_ranking_size);
+    };
+
+    // doesn't work with feature modifying reductions
+    // this bears some threading/timing issues:
+    // the closure will have to get a "version" lock 
+    // to make sure the same version is used through out the calls.
+    class DecisionServicePredictionIterator {
+    public:
+      virtual ~DecisionServicePredictionIterator() { }
+
+      // unclear how to solve memory handoff, or just copy?
+      // do a custom object, though this might be a pain to copy, at least it will involve memory copy
+      // result.set([....]);
+      virtual bool next_prediction(const std::vector<int>& previous_decisions, DecisionServicePredictionResult* result) { return false; }
+      // TODO: look into swig
+      // virtual bool next_prediction(const Array<int>& previous_decisions, DecisionServicePredictionResult* result) { return false; }
+
+      // don't pass the context back to avoid memory copy
+      // virtual std::vector<float> predict() { }
+    };
+
+    class DecisionServicePredictionIteratorSimple {
+      public:
+        // int and float
+        DecisionServicePredictionIteratorSimple(std::vector<float>& scores);
+    };
+
+    // ordered by actionId, pass numActions to understand numActions & numModels
+    // for CCB make the assumption that subsequent rounds make the same decision
+    // float[] scoresMatrix; // int length;
 
     // avoid leakage to Swig
     class DecisionServiceClientInternal;
@@ -140,8 +176,21 @@ namespace Microsoft {
 
       RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<int>& default_ranking);
 
+      // ClientLibrary cl;
+      // model m1;
+      // model m2;
+      // cl.rank("...", [m1, m2], 2);
+      // { DecisionServicePredictionResult r1; m1[0]->predict_ccb(&r1); }
+      //
+      void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
+      
+      // cl.rank("...", [scores]);
+      // cl.rank("...", lambda _, out: out.set([scores]); return false;)  
+      // cl.rank("...", DecisionServicePredictionIteratorSimple([scores]))
+
       void reward(const char* event_id, const char* reward);
 
+      // TODO: drop this. 
       void update_model(unsigned char* model, size_t offset, size_t len);
 
       void update_model(unsigned char* model, size_t len);
@@ -152,7 +201,7 @@ namespace Microsoft {
   if (config.can_log(level)) { \
     std::ostringstream __message; \
     __message << msg; \
-    config.listener->log(level, __message.str()); \
+    config.logger->log(level, __message.str()); \
   } }
 #endif
 

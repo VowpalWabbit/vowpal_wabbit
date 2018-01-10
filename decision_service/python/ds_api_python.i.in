@@ -1,10 +1,10 @@
-%module(threads="1", directors="1") decision_service
+%module(threads="1", directors="1") decision_service${PYVERSION}
 
 // make sure this function can block on a thread and python threads can continue running
 
 %nothread;
 %thread DecisionServiceConfiguration::Download; 
-%thread DecisionServiceListener::log;
+%thread DecisionServiceLogger::log;
 
 #define ARRAYS_OPTIMIZED
 #define DISABLE_NAMESPACE

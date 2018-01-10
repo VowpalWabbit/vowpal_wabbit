@@ -48,7 +48,7 @@ namespace Microsoft {
 
     bool DecisionServiceConfiguration::can_log(DecisionServiceLogLevel level_of_message)
     {
-      return listener && level_of_message <= log_level;
+      return logger && level_of_message <= log_level;
     }
   }
 }
