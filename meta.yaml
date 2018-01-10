@@ -13,9 +13,9 @@ requirements:
     - setuptools
     - swig
     - rapidjson
-    - libboost
-    - libboost_program_options
-    - libboost_regex
+    - libboost 1.61.0
+    - libboost_program_options-dev 1.61.0
+    - libboost_regex-dev 1.61.0
     - cmake
     - zlib
     - openssl
