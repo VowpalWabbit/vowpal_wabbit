@@ -23,8 +23,8 @@ requirements:
   run:
     - python
     - cpprest
-    - libboost_program_options
-    - libboost_regex
+    # - libboost_program_options
+    # - libboost_regex
 
 # build:
 #   include_recipe: False
