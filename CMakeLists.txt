@@ -39,7 +39,8 @@ add_subdirectory(vowpalwabbit)
 add_subdirectory(cluster) 
 add_subdirectory(library) 
 add_subdirectory(decision_service) 
-add_subdirectory(python) 
+# static/dynamic linking conflict for boost
+# add_subdirectory(python) 
 
 # install(TARGETS ${PROJECT_NAME}
         # RUNTIME DESTINATION bin
