@@ -1,5 +1,4 @@
-# Boost_USE_STATIC_LIBS ... there is no program options runtime package available, linking statically is the best we can do
-cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBoost_USE_STATIC_LIBS=ON .
+cmake -DCMAKE_INSTALL_PREFIX=${PREFIX}
 make -j
 
 cd decision_service/python
