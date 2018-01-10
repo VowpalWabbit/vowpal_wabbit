@@ -119,7 +119,7 @@ namespace Microsoft {
       bool can_log(DecisionServiceLogLevel log_level);
 #endif
     };
-
+/*
     class DecisionServicePredictionResult {
       public:
         void set(const std::vector<float>& score);
@@ -151,7 +151,7 @@ namespace Microsoft {
         // int and float
         DecisionServicePredictionIteratorSimple(std::vector<float>& scores);
     };
-
+*/
     // ordered by actionId, pass numActions to understand numActions & numModels
     // for CCB make the assumption that subsequent rounds make the same decision
     // float[] scoresMatrix; // int length;
@@ -182,7 +182,7 @@ namespace Microsoft {
       // cl.rank("...", [m1, m2], 2);
       // { DecisionServicePredictionResult r1; m1[0]->predict_ccb(&r1); }
       //
-      void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
+      / /void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
       
       // cl.rank("...", [scores]);
       // cl.rank("...", lambda _, out: out.set([scores]); return false;)  
