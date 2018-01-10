@@ -182,7 +182,7 @@ namespace Microsoft {
       // cl.rank("...", [m1, m2], 2);
       // { DecisionServicePredictionResult r1; m1[0]->predict_ccb(&r1); }
       //
-      / /void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
+      // void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
       
       // cl.rank("...", [scores]);
       // cl.rank("...", lambda _, out: out.set([scores]); return false;)  
