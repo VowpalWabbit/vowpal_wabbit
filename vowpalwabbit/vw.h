@@ -118,13 +118,13 @@ inline uint32_t hash_space(vw& all, std::string s)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return (uint32_t)all.p->hasher(ss,hash_base);
+  return (uint32_t)all.p->hasher(ss, all.hash_seed);
 }
 inline uint32_t hash_space_static(std::string s, std::string hash)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return (uint32_t)getHasher(hash)(ss, hash_base);
+  return (uint32_t)getHasher(hash)(ss, 0);
 }
 //Then use it as the seed for hashing features.
 inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)

@@ -113,6 +113,7 @@ if __name__ == '__main__':
     else:
         errors += do_test(filename, '')
         errors += do_test(filename, '-b 22')
+        errors += do_test(filename, '--hash_seed 10')
         errors += do_test(filename, '--loss_function logistic')
         errors += do_test(filename, '--boosting 10')
         errors += do_test(filename, '--bootstrap 10')

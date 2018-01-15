@@ -57,9 +57,12 @@ class vw(pylibvw.vw):
         you can also use key/value pairs as in:
           pyvw.vw(audit=True, b=24, k=True, c=True, l2=0.001)
         or a combination, for instance:
-          pyvw.vw("--audit", b=26)"""
+          pyvw.vw("--audit", b=26)
+        value in a pair could also be a list of values, for instance:
+          pyvw.vw("-q", ["ab", "ac"])
+        will be translated into passing two -q keys"""
 
-        def format_inputs(key, val):
+        def format_input_pair(key, val):
             if type(val) is bool and not val:
                 s = ''
             else:
@@ -68,7 +71,14 @@ class vw(pylibvw.vw):
                 s = '{p}{k}{v}'.format(p=prefix, k=key, v=value)
             return s
 
-        l = [format_inputs(k, v) for k, v in kw.items()]
+        def format_input(key, val):
+            if isinstance(val, list):
+                # if a list is passed as a parameter value - create a key for each list element
+                return ' '.join([format_input_pair(key, value) for value in val])
+            else:
+                return format_input_pair(key, val)
+
+        l = [format_input(k, v) for k, v in kw.items()]
         if arg_str is not None:
             l = [arg_str] + l
 
