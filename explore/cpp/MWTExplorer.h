@@ -628,26 +628,22 @@ private:
     { throw std::invalid_argument("At least one score must be positive.");
     }
 
-    float draw = random_generator.Uniform_Unit_Interval();
+    float draw = total * random_generator.Uniform_Unit_Interval();
+    if (draw > total) //make very sure that draw can not be greater than total.
+      draw = total;
 
-    uint32_t try_count = 0;
     float action_probability = 0.f;
     u32 action_index = num_weights - 1;
-    do {
-      float sum = 0.f;
-      for (u32 i = 0; i < num_weights; i++)
-        { weights[i] = weights[i] / total;
-          sum += weights[i];
-          if (sum > draw)
-            { action_index = i;
-              action_probability = weights[i];
-              break;
-            }
-        }
-      total = sum;
-    } while (draw > total && try_count++ < 10); // due to precision issues, this may happen so try again with a new renormalization.
-    if (try_count == 10)
-      throw std::invalid_argument("Something is wrong: Scores didn't normalize!");
+    float sum = 0.f;
+    for (u32 i = 0; i < num_weights; i++)
+      {
+        sum += weights[i];
+        if (sum > draw)
+          { action_index = i;
+            action_probability = weights[i]/total;
+            break;
+          }
+      }
 
     // action id is one-based
     return std::tuple<u32, float, bool>(action_index + 1, action_probability, true);
