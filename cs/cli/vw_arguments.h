@@ -40,7 +40,7 @@ internal:
     m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
     m_testonly(!vw->training),
     m_passes((int)vw->numpasses)
-  { po::variables_map& vm = vw->vm;
+  { po::variables_map& vm = vw->opts_n_args.vm;
     if (vm.count("initial_regressor") || vm.count("i"))
     { m_regressors = gcnew List<String^>;
 
@@ -50,13 +50,13 @@ internal:
     }
 
     StringBuilder^ sb = gcnew StringBuilder();
-    for (auto& s : vw->args)
+    for (auto& s : vw->opts_n_args.args)
       sb->AppendFormat("{0} ", gcnew String(s.c_str()));
 
     m_commandLine = sb->ToString()->TrimEnd();
 
-    if (vw->vm.count("cb"))
-      m_numberOfActions = (int)vw->vm["cb"].as<size_t>();
+    if (vw->opts_n_args.vm.count("cb"))
+      m_numberOfActions = (int)vw->opts_n_args.vm["cb"].as<size_t>();
 
 	m_learning_rate = vw->eta;
 	m_power_t = vw->power_t;
