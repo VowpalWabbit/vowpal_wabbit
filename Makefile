@@ -18,7 +18,7 @@ endif
 
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = -I /usr/include
+BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
 BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
 NPROCS := 1
 
