@@ -56,7 +56,7 @@ internal:
     m_commandLine = sb->ToString()->TrimEnd();
 
     if (vw->opts_n_args.vm.count("cb"))
-      m_numberOfActions = (int)vw->opts_n_args.vm["cb"].as<size_t>();
+      m_numberOfActions = (int)vw->opts_n_args.vm["cb"].as<unsigned int>();
 
 	m_learning_rate = vw->eta;
 	m_power_t = vw->power_t;
