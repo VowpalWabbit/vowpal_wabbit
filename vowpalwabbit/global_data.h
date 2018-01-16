@@ -587,8 +587,8 @@ struct vw
   vw();
 
   vw(const vw &);
-private://disable copying.
-  vw& operator=(const vw& );
+  //private://disable copying.
+  //vw& operator=(const vw& );
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);

@@ -216,6 +216,8 @@ int vw_ostream::vw_streambuf::sync()
 vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr)
 { trace_listener = trace_listener_cerr; }
 
+vw::vw(const vw&) { THROW("Copy constructor not supported"); }
+
 vw::vw()
 {
   sd = &calloc_or_throw<shared_data>();
