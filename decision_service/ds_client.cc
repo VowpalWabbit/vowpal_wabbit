@@ -56,6 +56,7 @@ namespace Microsoft {
         // initialize n-clients
         _event_hub_interactions(config.num_parallel_connection, EventHubClient(config.eventhub_interaction_connection_string, config.certificate_validation_enabled)),
         _event_hub_observation(config.eventhub_observation_connection_string, config.certificate_validation_enabled),
+        // TODO: daemon mode?
         _upload_interaction_thread(&DecisionServiceClientInternal::upload_interactions, this),
         _download_model_thread(&DecisionServiceClientInternal::download_model, this)
       { }
@@ -194,32 +195,60 @@ namespace Microsoft {
     DecisionServiceClient::~DecisionServiceClient()
     { }
 
-    RankResponse* DecisionServiceClient::rank_struct(const char* features, const char* event_id, const Array<int>& default_ranking)
+    RankResponse* DecisionServiceClient::rank_struct(const char* features, const char* event_id, const Array<float>& scores)
     {
-      return rank_cstyle(features, event_id, default_ranking.data, default_ranking.length);
+      return rank_cstyle(features, event_id, scores.data, scores.length);
     }
 
-    RankResponse* DecisionServiceClient::rank_vector(const char* features, const char* event_id, const vector<int>& default_ranking)
+    RankResponse* DecisionServiceClient::rank_vector(const char* features, const char* event_id, const vector<float>& scores)
     {
-      return rank_cstyle(features, event_id, &default_ranking[0], default_ranking.size());
+      return rank_cstyle(features, event_id, &scores[0], scores.size());
     }
 
-    RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const int* default_ranking, size_t default_ranking_size)
+    // the assumption is that the ranking is independent of other options present (e.g. A,B,C and B,C)
+    class DecisionServicePredictionIteratorSimple : public DecisionServicePredictionIterator {
+        vector<float> _scores;
+      public:
+        DecisionServicePredictionIteratorSimple(const float* scores, size_t n)
+          : _scores(scores, scores+n)
+        { }
+
+        virtual bool next_prediction(const std::vector<int>& previous_decisions, DecisionServicePredictionResult* output_result) 
+        {
+          output_result->set(_scores);
+          return false;
+        }
+    };
+
+    RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size)
     {
-      /*
-      cout << "features: '" << features << "'" << endl;
-      for (size_t i = 0; i < default_ranking_size; i++)
-        cout << "Default Rank " << i << ": " << default_ranking[i] << endl;
-      */
-      // generate event id if empty
+      DecisionServicePredictionIteratorSimple scores_as_iterator(scores, scores_size);
+      return rank2(features, event_id, &scores_as_iterator);
+    }
+
+    RankResponse* DecisionServiceClient::rank2(const char* features, const char* event_id, DecisionServicePredictionIterator* predictions)
+    {
+      // generate event id if not provided      
       std::string l_event_id;
       if (!event_id || strlen(event_id) == 0)
         l_event_id = boost::uuids::to_string(boost::uuids::random_generator()());
       else
         l_event_id = event_id;
 
-      // TODO: invoke VW
-      // TODO: if no model provided use default ranking and impose epsilon-greedy exploration
+      // TODO: input parameter checks
+      // used for CCB
+      std::vector<int> previous_decisions;
+      // previous_decisions.push_back(1);
+      
+      DecisionServicePredictionResult result;
+
+      // pass to exploration strategy
+      predictions->next_prediction(previous_decisions, &result);
+
+      // those are the scores
+      cout << "result: " << result._scores.size() << endl;
+      for(auto s : result._scores)
+        cout << "score: " << s << endl;
 
       // invoke scoring to get a distribution over actions
       // std::vector<ActionProbability> ranking = _pool->rank(context);
@@ -259,6 +288,12 @@ namespace Microsoft {
       DS_LOG(_state->_config, DecisionServiceLogLevel::error, "update_model(len=" << len << ")")
 
       // TODO: swap out model
+    }
+
+    // TOOD: move me to file
+    void DecisionServicePredictionResult::set(const std::vector<float>& scores)
+    { 
+      _scores = scores; 
     }
   }
 }

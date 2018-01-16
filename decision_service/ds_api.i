@@ -8,6 +8,9 @@
 %nspace *::RankResponse;
 %nspace *::DecisionServiceClient;
 %nspace *::DecisionServiceConfiguration;
+%nspace *::DecisionServiceLogger;
+%nspace *::DecisionServicePredictionResult;
+%nspace *::DecisionServicePredictionIterator;
 
 %include <std_string.i>
 #include <exception.i>
@@ -15,16 +18,19 @@
 
 // didn't work out
 // %include <std_shared_ptr.i>
-// %shared_ptr(Microsoft::DecisionService::DecisionServiceListener)
-// %shared_ptr(DecisionServiceListener)
+// %shared_ptr(Microsoft::DecisionService::DecisionServiceLogger)
+// %shared_ptr(DecisionServiceLogger)
 // %template(SmartPtrFoo) SmartPtr<Foo>;
 
 // disable default constructor
 %nodefaultctor *::RankResponse;
 %nodefaultctor RankResponse;
 
-%feature("director") *::DecisionServiceListener;
-%feature("director") DecisionServiceListener;
+%feature("director") *::DecisionServiceLogger;
+%feature("director") DecisionServiceLogger;
+
+%feature("director") *::DecisionServicePredictionIterator;
+%feature("director") DecisionServicePredictionIterator;
 
 #ifndef ARRAYS_OPTIMIZED
 	%ignore Microsoft::DecisionService::RankResponse::probabilities();

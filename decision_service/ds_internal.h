@@ -7,6 +7,10 @@
 
 namespace Microsoft {
   namespace DecisionService {
+
+
+
+    // replace with 
     struct ActionProbability {
       int action;
       float probability;

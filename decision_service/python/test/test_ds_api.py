@@ -7,9 +7,6 @@ import ssl
 from time import sleep
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# add library output path
-sys.path.append('swig')
-
 from decision_service import *
 
 def get_free_port():
@@ -155,8 +152,8 @@ class TestDecisionServiceClient(unittest.TestCase):
 			# self.listener = 
 			# C++ owns the object by default. Read http://www.swig.org/Doc3.0/Python.html#Python_nn35 on how to reverse
 			# TODO: I don't understand how this work...
-			listener = TestDecisionServiceLogger()
-			self.config.listener = listener
+			logger = TestDecisionServiceLogger()
+			self.config.logger = logger
 
 			# make sure it's enabled and we'll internally throw
 			self.config.certificate_validation_enabled = True
@@ -164,16 +161,15 @@ class TestDecisionServiceClient(unittest.TestCase):
 			client = DecisionServiceClient(self.config)
 			ranking = client.rank('{"a":2}', '', [1,2,3])
 
-			sleep(0.5)
+			sleep(0.2)
 
 			self.assertEqual(len(server.posts), 0, "requests should not hit the server as cert validation should fail")
-			self.assertEqual(listener.messages, [{'level':1, 'msg':"Failed to upload event: 'Error in SSL handshake'"}])
+			self.assertEqual(logger.messages, [{'level':1, 'msg':"Failed to upload event: 'Error in SSL handshake'"}])
 
 	def test_rank_event_id_generated(self):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			# self.config.set_listener(TestDecisionServiceListener())
 
 			client = DecisionServiceClient(self.config)
 			ranking = client.rank('{"a":2}', '', [1,2,3])
@@ -190,7 +186,6 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			# self.config.set_listener(TestDecisionServiceListener())
 
 			client = DecisionServiceClient(self.config)
 			ranking = client.rank('{"a":2}', 'abc', [1,2,3])
@@ -207,16 +202,51 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
-			listener = TestDecisionServiceListener()
-			self.config.listener = listener
+			logger = TestDecisionServiceLogger()
+			self.config.logger = logger
 			self.config.log_level = 4
 
 			client = DecisionServiceClient(self.config)
 
+			ranking = client.rank('{"a":2}', '', [1,2,3])
+
+# DONT this if dialog message, dummy rank('{}', sessionId, [1]) # interaction message for the session
+# 
+#  rank('{_sessionId:}', requestId 1,...)
+#  rank('{_sessionId:}', requestId 2,...)
+# 
+#  reward (requestId 2, click reward)
+# 
+#  loop over dialog message
+#  reward (requestId 1, session reward)
+#  reward (requestId 2, session reward)
 			buf = bytearray(b'foo')
 			client.update_model(buf)
 
-			self.assertEqual(listener.messages, [{'level':1, 'msg':'update_model(len=3)'}])
+			self.assertEqual(logger.messages, [{'level':1, 'msg':'update_model(len=3)'}])
+
+	def test_rank2(self):
+		class TestIterator(DecisionServicePredictionIterator):
+			def __init__(self):
+				# self.messages = []
+				DecisionServicePredictionIterator.__init__(self)
+
+			def next_prediction(self, previous_decisions, result):
+				print(previous_decisions)
+				result.set([.1,.2])
+
+				return True       
+
+		with MockServer() as server:
+			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
+			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			logger = TestDecisionServiceLogger()
+			self.config.logger = logger
+			self.config.log_level = 4
+
+			preds = TestIterator()
+			client = DecisionServiceClient(self.config)
+			ranking = client.rank2('{"a":2}', '', preds)
 
 if __name__ == '__main__':
 	unittest.main()

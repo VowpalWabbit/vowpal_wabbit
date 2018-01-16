@@ -10,6 +10,8 @@ license as described in the file LICENSE.
 #include <string>
 #include <memory>
 
+#include "ds_predictors.h"
+
 #ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
@@ -119,39 +121,7 @@ namespace Microsoft {
       bool can_log(DecisionServiceLogLevel log_level);
 #endif
     };
-/*
-    class DecisionServicePredictionResult {
-      public:
-        void set(const std::vector<float>& score);
-        void set(const Array<float>& default_ranking);
-        void set(const float* default_ranking, size_t default_ranking_size);
-    };
 
-    // doesn't work with feature modifying reductions
-    // this bears some threading/timing issues:
-    // the closure will have to get a "version" lock 
-    // to make sure the same version is used through out the calls.
-    class DecisionServicePredictionIterator {
-    public:
-      virtual ~DecisionServicePredictionIterator() { }
-
-      // unclear how to solve memory handoff, or just copy?
-      // do a custom object, though this might be a pain to copy, at least it will involve memory copy
-      // result.set([....]);
-      virtual bool next_prediction(const std::vector<int>& previous_decisions, DecisionServicePredictionResult* result) { return false; }
-      // TODO: look into swig
-      // virtual bool next_prediction(const Array<int>& previous_decisions, DecisionServicePredictionResult* result) { return false; }
-
-      // don't pass the context back to avoid memory copy
-      // virtual std::vector<float> predict() { }
-    };
-
-    class DecisionServicePredictionIteratorSimple {
-      public:
-        // int and float
-        DecisionServicePredictionIteratorSimple(std::vector<float>& scores);
-    };
-*/
     // ordered by actionId, pass numActions to understand numActions & numModels
     // for CCB make the assumption that subsequent rounds make the same decision
     // float[] scoresMatrix; // int length;
@@ -170,33 +140,25 @@ namespace Microsoft {
 
       // named rank1, 2, 3,... to ease ignore/rename matching in swig
 
-      RankResponse* rank_cstyle(const char* features, const char* event_id, const int* default_ranking, size_t default_ranking_size);
+      RankResponse* rank_cstyle(const char* features, const char* event_id, const float* scores, size_t default_ranking_size);
 
-      RankResponse* rank_struct(const char* features, const char* event_id, const Array<int>& default_ranking);
+      RankResponse* rank_struct(const char* features, const char* event_id, const Array<float>& scores);
 
-      RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<int>& default_ranking);
+      RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<float>& scores);
 
-      // ClientLibrary cl;
-      // model m1;
-      // model m2;
-      // cl.rank("...", [m1, m2], 2);
-      // { DecisionServicePredictionResult r1; m1[0]->predict_ccb(&r1); }
-      //
-      // void rank(const char* features, DecisionServicePredictionIterator* model_iterator);
-      
-      // cl.rank("...", [scores]);
-      // cl.rank("...", lambda _, out: out.set([scores]); return false;)  
-      // cl.rank("...", DecisionServicePredictionIteratorSimple([scores]))
+      // TODO: rename
+      RankResponse* rank2(const char* features, const char* event_id, DecisionServicePredictors* predictors);
 
       void reward(const char* event_id, const char* reward);
 
-      // TODO: drop this. 
+      // TODO: drop this and replace with vw::pool
       void update_model(unsigned char* model, size_t offset, size_t len);
 
       void update_model(unsigned char* model, size_t len);
     };
 
 #ifndef SWIG
+// TODO: config.logger and threading
 #define DS_LOG(config, level, msg) { \
   if (config.can_log(level)) { \
     std::ostringstream __message; \

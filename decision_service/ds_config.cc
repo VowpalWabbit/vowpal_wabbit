@@ -43,7 +43,8 @@ namespace Microsoft {
       num_parallel_connection(2),
       batching_timeout_in_milliseconds(5 * 1000),
       batching_queue_max_size(8 * 1024),
-      log_level(DecisionServiceLogLevel::error)
+      log_level(DecisionServiceLogLevel::error),
+      logger(nullptr)
     { }
 
     bool DecisionServiceConfiguration::can_log(DecisionServiceLogLevel level_of_message)
