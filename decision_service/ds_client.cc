@@ -7,7 +7,9 @@ license as described in the file LICENSE.
 #include "ds_api.h"
 #include "ds_internal.h"
 #include "ds_vw.h"
+#include "ds_predictor_container.h"
 #include "event_hub_client.h"
+#include "utility.h"
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -206,27 +208,27 @@ namespace Microsoft {
     }
 
     // the assumption is that the ranking is independent of other options present (e.g. A,B,C and B,C)
-    class DecisionServicePredictionIteratorSimple : public DecisionServicePredictionIterator {
+    class DecisionServicePredictorsSimple : public DecisionServicePredictors {
         vector<float> _scores;
       public:
-        DecisionServicePredictionIteratorSimple(const float* scores, size_t n)
+        DecisionServicePredictorsSimple(const float* scores, size_t n)
           : _scores(scores, scores+n)
         { }
 
-        virtual bool next_prediction(const std::vector<int>& previous_decisions, DecisionServicePredictionResult* output_result) 
+        virtual void get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) 
         {
+          // TODO: not sure on how to behave we've an index here... let's be safe
           output_result->set(_scores);
-          return false;
         }
     };
 
     RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size)
     {
-      DecisionServicePredictionIteratorSimple scores_as_iterator(scores, scores_size);
+      DecisionServicePredictorsSimple scores_as_iterator(scores, scores_size);
       return rank2(features, event_id, &scores_as_iterator);
     }
 
-    RankResponse* DecisionServiceClient::rank2(const char* features, const char* event_id, DecisionServicePredictionIterator* predictions)
+    RankResponse* DecisionServiceClient::rank2(const char* features, const char* event_id, DecisionServicePredictors* predictors)
     {
       // generate event id if not provided      
       std::string l_event_id;
@@ -237,18 +239,49 @@ namespace Microsoft {
 
       // TODO: input parameter checks
       // used for CCB
-      std::vector<int> previous_decisions;
+      // std::vector<int> previous_decisions;
       // previous_decisions.push_back(1);
       
-      DecisionServicePredictionResult result;
+      if (_state->_config.explorer)      
+      {
+        // TODO: CCB
+        PredictorContainer container(predictors);
 
-      // pass to exploration strategy
-      predictions->next_prediction(previous_decisions, &result);
+        std::vector<float> probability_distribution = _state->_config.explorer->explore(container);
 
-      // those are the scores
-      cout << "result: " << result._scores.size() << endl;
-      for(auto s : result._scores)
-        cout << "score: " << s << endl;
+        // TODO: validate distribution or re-normalize?
+
+        // TODO: this caused tons of confusion in the past
+        // m_app_id = HashUtils::Compute_Id_Hash(app_id);
+        uint64_t seed = HashUtils::Compute_Id_Hash(l_event_id);
+
+        PRG::prg random_generator(seed);
+
+        float draw = random_generator.Uniform_Unit_Interval();
+
+        float sum = 0f;
+        size_t action_chosen = 0;
+        for(size_t i=0;i<probability_distribution.size();++i)
+        {
+          sum += probability_distribution[i];
+
+          if (sum >= draw)
+          {
+              action_chosen = i;
+              break;
+          }
+        }
+      }
+
+      // DecisionServicePredictionResult result;
+
+      // // pass to exploration strategy
+      // predictions->next_prediction(previous_decisions, &result);
+
+      // // those are the scores
+      // cout << "result: " << result._scores.size() << endl;
+      // for(auto s : result._scores)
+      //   cout << "score: " << s << endl;
 
       // invoke scoring to get a distribution over actions
       // std::vector<ActionProbability> ranking = _pool->rank(context);
@@ -288,12 +321,6 @@ namespace Microsoft {
       DS_LOG(_state->_config, DecisionServiceLogLevel::error, "update_model(len=" << len << ")")
 
       // TODO: swap out model
-    }
-
-    // TOOD: move me to file
-    void DecisionServicePredictionResult::set(const std::vector<float>& scores)
-    { 
-      _scores = scores; 
     }
   }
 }

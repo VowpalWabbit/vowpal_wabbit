@@ -44,6 +44,7 @@ namespace Microsoft {
       batching_timeout_in_milliseconds(5 * 1000),
       batching_queue_max_size(8 * 1024),
       log_level(DecisionServiceLogLevel::error),
+      explorer(nullptr),
       logger(nullptr)
     { }
 

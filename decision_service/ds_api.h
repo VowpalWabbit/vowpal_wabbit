@@ -11,10 +11,13 @@ license as described in the file LICENSE.
 #include <memory>
 
 #include "ds_predictors.h"
+#include "ds_explore.h"
 
 #ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
+
+    //using Microsoft::DecisionService;
 #endif
     class RankResponse {
       // actions order by our decision process
@@ -110,6 +113,10 @@ namespace Microsoft {
 
       // int pollingForModelPeriod;
       // int pollingForSettingsPeriod;
+
+      // TODO: understand how memory ownership works...
+      // TODO: support dynamic server-side parameterization using config files
+      IExplorer* explorer;
 
       // defaults to error
       DecisionServiceLogLevel log_level;

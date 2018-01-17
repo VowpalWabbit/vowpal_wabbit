@@ -1,3 +1,9 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #include "ds_predictor_container.h"
 
 namespace Microsoft {
@@ -11,7 +17,7 @@ namespace Microsoft {
         PredictorContainer::PredictorContainer(DecisionServicePredictors* predictors, const std::vector<int>& previous_decisions)
             : _predictors(predictors), _previous_decisions(previous_decisions)
         {
-            _predictions = new DecisionServicePrediction*[predictors->count()];
+            _predictions = new DecisionServicePrediction[predictors->count()];
         }
         
         // move ctor
@@ -22,7 +28,7 @@ namespace Microsoft {
             other._predictors = nullptr;
         }
 
-        ~PredictorContainer::PredictorContainer()
+        PredictorContainer::~PredictorContainer()
         {
             if (_predictions)
             {
@@ -33,17 +39,17 @@ namespace Microsoft {
             _predictors = nullptr;
         }
 
-        iterator PredictorContainer::begin()
+        PredictorContainer::iterator PredictorContainer::begin()
         {
-            return iterator(_predictors, 0);
+            return PredictorContainer::iterator(this, 0);
         }
 
-        iterator PredictorContainer::end()
+        PredictorContainer::iterator PredictorContainer::end()
         {
-            return iterator(_predictors, _predictors->count());
+            return PredictorContainer::iterator(this, _predictors->count());
         }
 
-        size_t count() 
+        size_t PredictorContainer::count() 
         {
             return _predictors->count();
         }
@@ -57,7 +63,7 @@ namespace Microsoft {
             DecisionServicePrediction* prediction = _predictions + index;
             
             if (_predictions[index].scores().size() == 0)
-                _predictors.get_prediction(index, _previous_decisions, prediction);
+                _predictors->get_prediction(index, _previous_decisions, prediction);
 
             return prediction;
         }
@@ -77,14 +83,14 @@ namespace Microsoft {
         }
 
         // pre-increment
-        iterator& PredictorContainer::iterator::operator++()
+        PredictorContainer::iterator& PredictorContainer::iterator::operator++()
         {
             ++_index;
             return *this;
         }
 
         // post-increment
-        iterator PredictorContainer::iterator::operator++(int)
+        PredictorContainer::iterator PredictorContainer::iterator::operator++(int)
         {
             iterator tmp = *this;
             ++_index;

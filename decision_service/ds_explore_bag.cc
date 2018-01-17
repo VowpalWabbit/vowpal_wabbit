@@ -8,19 +8,22 @@ namespace Microsoft {
         : _min_epsilon(min_epsilon)
     { }
 
-    const std::vector<float>& BagExplorer::explore(PredictorContainer& container)
+    const std::vector<float> BagExplorer::explore(PredictorContainer& container)
     {
         // determine probability per model
         float prob = 1.f / (float)container.count();
         auto it = container.begin();
+        auto end = container.end();
         
-        _probability_distribution.resize(it->num_actions());
+        std::vector<float> probability_distribution(it->num_actions());
 
         // accumulate prob per top action of each model
         for(;it != end; ++it)
-            _probability_distribution[it->top_action()] += prob;
+            probability_distribution[it->top_action()] += prob;
 
-        return safety(_min_epsilon, true);
+        safety(probability_distribution, _min_epsilon, true);
+
+        return probability_distribution;
     }    
   }
 }

@@ -7,6 +7,9 @@ license as described in the file LICENSE.
 #pragma once
 
 #include <vector>
+#include <cstddef>
+
+#include "ds_predictors.h"
 
 namespace Microsoft {
   namespace DecisionService {
@@ -35,10 +38,6 @@ namespace Microsoft {
 
         ~PredictorContainer();
 
-        iterator begin();
-
-        iterator end();
-
         size_t count();
 
         class iterator
@@ -59,10 +58,25 @@ namespace Microsoft {
 
             // post-increment
             iterator operator++(int); 
+
+            friend bool operator==(const PredictorContainer::iterator& lhs, const  PredictorContainer::iterator& rhs);
+            friend bool operator!=(const PredictorContainer::iterator& lhs, const  PredictorContainer::iterator& rhs);
         };
 
+        iterator begin();
+
+        iterator end();
+
         friend class iterator;
+
       };
 
+      inline bool operator==(const PredictorContainer::iterator& lhs, const  PredictorContainer::iterator& rhs)
+      {
+        // play safe
+        return lhs._index == rhs._index && lhs._container == rhs._container;
+      }
+
+      inline bool operator!=(const PredictorContainer::iterator& lhs, const  PredictorContainer::iterator& rhs){ return !(lhs == rhs); }
   }
 }

@@ -1,24 +1,28 @@
 #pragma once
 
-#include "ds_api.h"
-
+#ifndef SWIG
+#include "ds_predictor_container.h"
+#endif
 #include <vector>
 
+#ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
-      
+#endif      
       class IExplorer
       {
           protected:
-            std::vector<float> _probability_distribution;
-
-            const std::vector<float>& safety(float min_prob, bool zeros);
+            void safety(std::vector<float>& probability_distribution, float min_prob, bool zeros);
 
           public:
-            virtual ~IExporer() = 0;
+            virtual ~IExplorer();
 
+// TODO: excluding from swig interface now to avoid PredictorContainer leakage and questions on memory for std::vector<float>&
+//       assuming the exploration algos are always
+#ifndef SWIG
             // returns distribution over actions... 
-            virtual const std::vector<float>& explore(PredictorContainer& container) = 0;
+            virtual const std::vector<float> explore(PredictorContainer& container) = 0;
+#endif
       };
 
       class EpsilonGreedyExplorer : public IExplorer
@@ -28,8 +32,10 @@ namespace Microsoft {
           public:
             EpsilonGreedyExplorer(float epsilon);
 
-            virtual const std::vector<float>& explore(PredictorContainer& container);
-      }
+#ifndef SWIG
+            virtual const std::vector<float> explore(PredictorContainer& container);
+#endif
+      };
 
       class SoftmaxExplorer : public IExplorer
       {
@@ -39,8 +45,10 @@ namespace Microsoft {
           public:
             SoftmaxExplorer(float lambda, float min_epsilon = 0);
 
-            virtual const std::vector<float>& explore(PredictorContainer& container);
-      }
+#ifndef SWIG
+            virtual const std::vector<float> explore(PredictorContainer& container);
+#endif
+      };
 
       class BagExplorer : public IExplorer
       {
@@ -49,13 +57,17 @@ namespace Microsoft {
           public:
             BagExplorer(float min_epsilon = 0);
 
-            virtual const std::vector<float>& explore(PredictorContainer& container);
-      }
+#ifndef SWIG
+            virtual const std::vector<float> explore(PredictorContainer& container);
+#endif
+      };
 
+/*
       class CoverExplorer : public IExplorer
       {
           public:
-            virtual const std::vector<float>& explore(PredictorContainer& container);
-      }
+            virtual const std::vector<float> explore(PredictorContainer& container);
+      };
+      */
   }
 }

@@ -8,19 +8,19 @@ namespace Microsoft {
         : _epsilon(epsilon)
     { }
 
-    const std::vector<float>& EpsilonGreedyExplorer::explore(PredictorContainer& container)
+    const std::vector<float> EpsilonGreedyExplorer::explore(PredictorContainer& container)
     {
         DecisionServicePrediction& prediction = *container.begin();
 
         float prob = _epsilon/(float)prediction.num_actions();
 
         // size & initialize vector to prob 
-        _probability_distribution.resize(prediction.num_actions(), prob);
+        std::vector<float> probability_distribution(prediction.num_actions(), prob);
 
         // boost the top element 
-        _probability_distribution[prediction.top_action()] += 1.f - _epsilon;
+        probability_distribution[prediction.top_action()] += 1.f - _epsilon;
 
-        return _probability_distribution;
+        return probability_distribution;
     }
   }
 }

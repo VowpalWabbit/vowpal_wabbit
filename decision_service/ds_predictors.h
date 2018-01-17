@@ -7,11 +7,13 @@ license as described in the file LICENSE.
 #pragma once
 
 #include <vector>
+#include <cstddef>
 
 #ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
 #endif
+
     class DecisionServicePrediction {
 
         std::vector<float> _scores;
@@ -49,7 +51,7 @@ namespace Microsoft {
 
       virtual void get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result);
 
-      size_ count() const;
+      size_t count() const;
     };
 
 #ifndef DISABLE_NAMESPACE

@@ -1,6 +1,13 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+*/
+
 #include "ds_predictors.h"
 
-#include 
+#include <algorithm>
+#include <cstddef>
 
 namespace Microsoft {
   namespace DecisionService {
@@ -34,14 +41,14 @@ namespace Microsoft {
       DecisionServicePredictors::DecisionServicePredictors() : DecisionServicePredictors(1)
       { }
 
-      DecisionServicePredictors(size_t count)
+      DecisionServicePredictors::DecisionServicePredictors(size_t count)
         : _count(count)
       { }
       
       DecisionServicePredictors::~DecisionServicePredictors()
       { }
 
-      void DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePredictionResult* output_result)
+      void DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result)
       { 
         // TODO: throw Exception()
         // this should be virtual, but doesn't play well with swig           
