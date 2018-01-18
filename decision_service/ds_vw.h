@@ -28,7 +28,7 @@ namespace Microsoft {
       VowpalWabbit(std::shared_ptr<VowpalWabbitModel> model, vw* vw);
       ~VowpalWabbit();
 
-      std::vector<ActionProbability> rank(const char* context);
+      std::vector<float> rank(const char* context);
 
       example* get_or_create_example();
     };
@@ -48,7 +48,7 @@ namespace Microsoft {
       VowpalWabbitThreadSafe();
       virtual ~VowpalWabbitThreadSafe();
 
-      virtual std::vector<ActionProbability> rank(const char* context);
+      virtual std::vector<float> rank(const char* context);
     };
   }
 }

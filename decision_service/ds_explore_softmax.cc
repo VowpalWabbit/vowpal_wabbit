@@ -4,12 +4,14 @@
 
 namespace Microsoft {
   namespace DecisionService {
+    using namespace std;
+    
     SoftmaxExplorer::SoftmaxExplorer(float lambda, float min_epsilon)
         : _lambda(lambda), _min_epsilon(min_epsilon)
     { }
 
     // from cb_explore_adf.cc 
-    const std::vector<float> SoftmaxExplorer::explore(PredictorContainer& container)
+    ActionProbabilities SoftmaxExplorer::explore(PredictorContainer& container)
     {
         DecisionServicePrediction& prediction = *container.begin();
 
@@ -17,19 +19,24 @@ namespace Microsoft {
         float max_score = prediction.max_score();
 
         // copy scores
-        std::vector<float> probability_distribution(prediction.scores()); 
+        ActionProbabilities probability_distribution(prediction.num_actions()); 
     
-        for (float& prob : probability_distribution)
+        // initialize action/probabilities 
+        vector<float>& scores = prediction.scores();
+        for(size_t i=0;i<probability_distribution.size();++i)
         {
-            prob = exp(_lambda*(prob - max_score));
+            float prob = exp(_lambda*(scores[i] - max_score));
             norm += prob;
+             
+            probability_distribution[i].probability = prob;
         }
 
         // normalize
-        for (float& prob : probability_distribution)
-            prob /= norm;
+        for (ActionProbability& actionProb : probability_distribution)
+            actionProb.probability /= norm;
 
-        safety(probability_distribution, _min_epsilon, true);
+        probability_distribution.safety(_min_epsilon, true);
+        probability_distribution.sort_by_probabilities_desc();
 
         return probability_distribution;
     }    

@@ -30,8 +30,8 @@ namespace Microsoft {
 
     public:
 #ifndef SWIG
-      RankResponse(std::vector<int>& ranking, const char* event_id,
-        const char* model_version, std::vector<float>& probabilities, const char* features);
+      RankResponse(std::vector<int>&& ranking, const char* event_id,
+        const char* model_version, std::vector<float>&& probabilities, const char* features);
 #endif
 
       // use boost::UUID + timestamp + additional data
@@ -94,6 +94,8 @@ namespace Microsoft {
 
       DecisionServiceConfiguration();
 
+      std::string app_id;
+
       std::string model_url;
 
       std::string eventhub_interaction_connection_string;
@@ -154,7 +156,7 @@ namespace Microsoft {
       RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<float>& scores);
 
       // TODO: rename
-      RankResponse* rank2(const char* features, const char* event_id, DecisionServicePredictors* predictors);
+      RankResponse* explore_and_log(const char* features, const char* event_id, DecisionServicePredictors* predictors);
 
       void reward(const char* event_id, const char* reward);
 

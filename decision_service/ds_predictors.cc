@@ -48,7 +48,7 @@ namespace Microsoft {
       DecisionServicePredictors::~DecisionServicePredictors()
       { }
 
-      void DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result)
+       void DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result)
       { 
         // TODO: throw Exception()
         // this should be virtual, but doesn't play well with swig           

@@ -90,7 +90,7 @@ namespace Microsoft {
       return *((VowpalWabbit*)v)->get_or_create_example();
     }
 
-    std::vector<ActionProbability> VowpalWabbit::rank(const char* context) {
+    std::vector<float> VowpalWabbit::rank(const char* context) {
       v_array<example*> examples = v_init<example*>();
       examples.push_back(get_or_create_example());
 
@@ -118,10 +118,13 @@ namespace Microsoft {
       _vw->l->finish_example(*_vw, *_empty_example);
 
       // prediction are in the first-example
-      std::vector<ActionProbability> ranking;
+      std::vector<float> ranking;
       if (first_example)
+      {
+        ranking.resize(first_example->pred.a_s.size());
         for (auto&& a_s : first_example->pred.a_s)
-          ranking.push_back({ (int)a_s.action, a_s.score });
+          ranking[a_s.action] = a_s.score;
+      }
 
       // push examples back into pool for re-use
       for (auto&& ex : examples)
@@ -139,7 +142,7 @@ namespace Microsoft {
     VowpalWabbitThreadSafe::~VowpalWabbitThreadSafe() {
     }
 
-    std::vector<ActionProbability> VowpalWabbitThreadSafe::rank(const char* context) {
+    std::vector<float> VowpalWabbitThreadSafe::rank(const char* context) {
       PooledObjectGuard<VowpalWabbit, VowpalWabbitFactory> guard(pool, pool.get_or_create());
 
       return guard.obj()->rank(context);

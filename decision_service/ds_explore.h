@@ -3,17 +3,48 @@
 #ifndef SWIG
 #include "ds_predictor_container.h"
 #endif
+
 #include <vector>
+//#include <cstdint>
 
 #ifndef DISABLE_NAMESPACE
 namespace Microsoft {
   namespace DecisionService {
 #endif      
+      #ifndef SWIG
+      struct ActionProbability
+      {
+          int action;
+
+          float probability;
+      };
+
+      class ActionProbabilities : public std::vector<ActionProbability>
+      {
+      public:
+        ActionProbabilities(size_t count);
+
+        ActionProbabilities(size_t count, float initial_probability);
+
+        void safety(float min_prob, bool zeros);
+
+        size_t sample(float draw);
+
+        void swap_first(size_t index);
+
+        void sort_by_probabilities_desc();
+
+        // probabilities ordered by action
+        vector<float> probabilities();
+
+        // actions as currently ordered
+        vector<int> actions();
+      };
+
+      #endif
+
       class IExplorer
       {
-          protected:
-            void safety(std::vector<float>& probability_distribution, float min_prob, bool zeros);
-
           public:
             virtual ~IExplorer();
 
@@ -21,7 +52,7 @@ namespace Microsoft {
 //       assuming the exploration algos are always
 #ifndef SWIG
             // returns distribution over actions... 
-            virtual const std::vector<float> explore(PredictorContainer& container) = 0;
+            virtual ActionProbabilities explore(PredictorContainer& container) = 0;
 #endif
       };
 
@@ -33,7 +64,7 @@ namespace Microsoft {
             EpsilonGreedyExplorer(float epsilon);
 
 #ifndef SWIG
-            virtual const std::vector<float> explore(PredictorContainer& container);
+            virtual ActionProbabilities explore(PredictorContainer& container);
 #endif
       };
 
@@ -46,7 +77,7 @@ namespace Microsoft {
             SoftmaxExplorer(float lambda, float min_epsilon = 0);
 
 #ifndef SWIG
-            virtual const std::vector<float> explore(PredictorContainer& container);
+            virtual ActionProbabilities explore(PredictorContainer& container);
 #endif
       };
 
@@ -58,7 +89,7 @@ namespace Microsoft {
             BagExplorer(float min_epsilon = 0);
 
 #ifndef SWIG
-            virtual const std::vector<float> explore(PredictorContainer& container);
+            virtual ActionProbabilities explore(PredictorContainer& container);
 #endif
       };
 
@@ -66,7 +97,7 @@ namespace Microsoft {
       class CoverExplorer : public IExplorer
       {
           public:
-            virtual const std::vector<float> explore(PredictorContainer& container);
+            virtual const std::vector<ActionProbability> explore(PredictorContainer& container);
       };
       */
   }

@@ -12,7 +12,7 @@ namespace Microsoft {
 
     using namespace std;
 
-    RankResponse::RankResponse(std::vector<int>& ranking, const char* pevent_id, const char* pmodel_version, std::vector<float>& pprobabilities, const char* pfeatures)
+    RankResponse::RankResponse(std::vector<int>&& ranking, const char* pevent_id, const char* pmodel_version, std::vector<float>&& pprobabilities, const char* pfeatures)
       : _ranking(ranking), event_id(pevent_id), model_version(pmodel_version), _probabilities(pprobabilities), features(pfeatures)
     {
       // check that ranking has more than 0 elements

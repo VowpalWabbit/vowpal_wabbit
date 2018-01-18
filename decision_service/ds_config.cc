@@ -33,7 +33,8 @@ namespace Microsoft {
       config.model_url = conversions::to_utf8string(json[U("ModelBlobUri")].as_string());
       config.eventhub_interaction_connection_string = conversions::to_utf8string(json[U("EventHubInteractionConnectionString")].as_string());
       config.eventhub_observation_connection_string = conversions::to_utf8string(json[U("EventHubObservationConnectionString")].as_string());
-      
+      config.app_id = conversions::to_utf8string(json[U("ApplicationID")].as_string());
+
       return config;
     }
 

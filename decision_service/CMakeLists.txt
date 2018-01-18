@@ -13,8 +13,8 @@ include_directories(${Boost_INCLUDE_DIRS} ${cpprest_INCLUDE_DIRS} ${vw_INCLUDE_D
         ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../explore/cpp") 
 # include_directories(${vw_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}) 
 
-add_library(${PROJECT_NAME} ds_client.cc ds_rank_response.cc ds_config.cc ds_vw.cc event_hub_client.cc 
-    ds_explore_epsilon.cc ds_explore_bag.cc ds_explore_softmax.cc
+add_library(${PROJECT_NAME} ds_client.cc ds_internal.cc ds_rank_response.cc ds_config.cc ds_vw.cc event_hub_client.cc 
+    ds_explore_epsilon.cc ds_explore_bag.cc ds_explore_softmax.cc ds_action_probabilities.cc
     ds_predictor_container.cc ds_predictors.cc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${cpprest_LIBRARY} OpenSSL::SSL OpenSSL::Crypto)

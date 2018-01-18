@@ -1,26 +1,45 @@
+
 #include "ds_explore.h"
+#include <algorithm>
 
 namespace Microsoft {
   namespace DecisionService {
     using namespace std;
 
     EpsilonGreedyExplorer::EpsilonGreedyExplorer(float epsilon)
-        : _epsilon(epsilon)
+      : _epsilon(epsilon)
     { }
 
-    const std::vector<float> EpsilonGreedyExplorer::explore(PredictorContainer& container)
+    struct ScoreComparator
     {
-        DecisionServicePrediction& prediction = *container.begin();
+      const vector<float>& _scores;
 
-        float prob = _epsilon/(float)prediction.num_actions();
+      ScoreComparator(const vector<float>& scores)
+        : _scores(scores) 
+      { }
 
-        // size & initialize vector to prob 
-        std::vector<float> probability_distribution(prediction.num_actions(), prob);
+      bool operator()(ActionProbability a, ActionProbability b)
+      {
+        return _scores[a.action] < _scores[b.action];
+      }
+    };
 
-        // boost the top element 
-        probability_distribution[prediction.top_action()] += 1.f - _epsilon;
+    ActionProbabilities EpsilonGreedyExplorer::explore(PredictorContainer& container)
+    {
+      DecisionServicePrediction& prediction = *container.begin();
 
-        return probability_distribution;
+      float prob = _epsilon/(float)prediction.num_actions();
+
+      // size & initialize vector to prob 
+      ActionProbabilities probability_distribution(prediction.num_actions(), prob);
+
+      // boost the top element 
+      probability_distribution[prediction.top_action()].probability += 1.f - _epsilon;
+
+      // we also need to propagate the order produced by the scores
+      sort(probability_distribution.begin(), probability_distribution.end(), ScoreComparator(prediction.scores()));
+
+      return probability_distribution;
     }
   }
 }

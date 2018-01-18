@@ -13,9 +13,10 @@ requirements:
     - setuptools
     - swig
     - rapidjson
-    - libboost
-    - libboost_program_options-dev
-    - libboost_regex-dev
+    - boost-cpp
+    # - libboost 1.65.1 # statiskit is b0rken
+    # - libboost_program_options-dev
+    # - libboost_regex-dev
     - cmake
     - zlib
     - openssl
@@ -29,8 +30,8 @@ requirements:
 # TODO: pinning for c++
 # TODO: pinning for cpprest
 
-# build:
-#   include_recipe: False
+build:
+   include_recipe: False
 
 about:
   home: https://github.com/JohnLangford/vowpal_wabbit

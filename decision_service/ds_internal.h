@@ -1,25 +1,59 @@
 #pragma once
 
-//#include "vw.h"
+#include "ds_api.h"
+#include "event_hub_client.h"
+
 #include <vector>
+#include <memory>
+#include <thread>
+
+#include <cpprest/http_client.h>
+
+#include <boost/lockfree/queue.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
 
 namespace Microsoft {
   namespace DecisionService {
+    class DecisionServiceClientInternal {
+    private:
+      // std::unique_ptr<VowpalWabbitThreadSafe> _pool;
+      DecisionServiceConfiguration _config;
+      uint64_t _seed_from_app_id;
 
+      boost::lockfree::queue<std::vector<unsigned char>*> _queue;
 
+      std::vector<EventHubClient> _event_hub_interactions;
+      EventHubClient _event_hub_observation;
 
-    // replace with 
-    struct ActionProbability {
-      int action;
-      float probability;
+      std::atomic_bool _thread_running;
+
+      std::thread _upload_interaction_thread;
+      std::thread _download_model_thread;
+
+    public:
+      DecisionServiceClientInternal(DecisionServiceConfiguration config);
+
+      ~DecisionServiceClientInternal();
+
+      void upload_reward(const char* event_id, const char* reward);
+
+      void enqueue_interaction(RankResponse& rankResponse);
+
+    private:
+      void download_model();
+
+      void upload_interactions();
+
+      friend class DecisionServiceClient;
     };
 
+    // TODO: move below!
     class IRanker {
     public:
-      virtual std::vector<ActionProbability> rank(const char* context) = 0;
       virtual ~IRanker() { }
+
+      virtual std::vector<float> rank(const char* context) = 0;
     };
 
     template<typename TObject>

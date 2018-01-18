@@ -68,7 +68,6 @@ namespace Microsoft {
         iterator end();
 
         friend class iterator;
-
       };
 
       inline bool operator==(const PredictorContainer::iterator& lhs, const  PredictorContainer::iterator& rhs)
