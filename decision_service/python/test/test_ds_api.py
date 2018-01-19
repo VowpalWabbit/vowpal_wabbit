@@ -30,15 +30,34 @@ class MockHandler(BaseHTTPRequestHandler):
 
 		response_content = json.dumps({"ModelBlobUri": "http://localhost/model",
 			"EventHubInteractionConnectionString": "conn1",
+			"EventHubObservationConnectionString": "conn2",
+			"ApplicationID": "app1"
+		})
+		self.wfile.write(response_content.encode('utf-8'))
+
+		self.mock_server.get = self.mock_server.get + 1
+
+	def do_GET_config_missing_appid(self):
+		# Process an HTTP GET request and return a response with an HTTP 200 status.
+		self.send_response(200)
+		self.send_header('Content-Type', 'application/json; charset=utf-8')
+		self.end_headers()
+
+		response_content = json.dumps({"ModelBlobUri": "http://localhost/model",
+			"EventHubInteractionConnectionString": "conn1",
 			"EventHubObservationConnectionString": "conn2"
 		})
 		self.wfile.write(response_content.encode('utf-8'))
 
 		self.mock_server.get = self.mock_server.get + 1
 
+
 	def do_GET(self):
 		if self.path == "/config.json":
 			return self.do_GET_config()
+		
+		if self.path == "/config_missing_appid.json":
+			return self.do_GET_config_missing_appid()
 
 		self.send_response(404)
 		self.end_headers()
@@ -118,6 +137,7 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 			self.assertEqual(config.model_url, 'http://localhost/model')
 			self.assertEqual(config.eventhub_interaction_connection_string, 'conn1')
 			self.assertEqual(config.eventhub_observation_connection_string, 'conn2')
+			self.assertEqual(config.app_id, 'app1')
 
 			# make sure it's called once'
 			self.assertEqual(server.get, 1, 'HTTP server not called')
@@ -126,6 +146,11 @@ class TestDecisionServiceConfiguration(unittest.TestCase):
 		with MockServer() as server:
 			with self.assertRaises(SystemError):
 				DecisionServiceConfiguration_Download(server.base_url + 'notfound')
+
+	def test_app(self):
+		with MockServer() as server:
+			with self.assertRaises(SystemError):
+				DecisionServiceConfiguration_Download(server.base_url + 'config_missing_appid.json')
 
 class TestDecisionServiceLogger(DecisionServiceLogger):
 	def __init__(self):
@@ -159,7 +184,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 			self.config.certificate_validation_enabled = True
 
 			client = DecisionServiceClient(self.config)
-			ranking = client.rank('{"a":2}', '', [1,2,3])
+			ranking = client.explore_and_log('{"a":2}', '', [1,2,3])
 
 			sleep(0.2)
 
@@ -170,9 +195,10 @@ class TestDecisionServiceClient(unittest.TestCase):
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
+			self.config.explorer = EpsilonGreedyExplorer(0.4)
 
 			client = DecisionServiceClient(self.config)
-			ranking = client.rank('{"a":2}', '', [1,2,3])
+			ranking = client.explore_and_log('{"a":2}', 'ab', [1,2])
 
 			sleep(0.5)
 						
@@ -188,7 +214,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 			self.config.eventhub_observation_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=observation" % (server.mock_server_port, self.key)
 
 			client = DecisionServiceClient(self.config)
-			ranking = client.rank('{"a":2}', 'abc', [1,2,3])
+			ranking = client.explore_and_log('{"a":2}', 'abc', [2,1,3,4])
 
 			sleep(0.5)
 						
@@ -196,7 +222,7 @@ class TestDecisionServiceClient(unittest.TestCase):
 			self.assertEqual(server.posts[0]['path'], '/interaction/messages?timeout=60&api-version=2014-01')
 			self.assertEqual(server.posts[0]['response_code'], 201)
 			self.assertEqual(server.posts[0]['content-type'], 'application/atom+xml;type=entry;charset=utf-8')
-			self.assertEqual(server.posts[0]['body'], '{"Version":"1","EventId":"abc","a":[1,0],"c":{{"a":2}},"p":[0.8,0.2],"VWState":{"m":"m1"}}')
+			self.assertEqual(server.posts[0]['body'], '{"Version":"1","EventId":"abc","a":[3,2,0,1],"c":{{"a":2}},"p":[0.85,0.05,0.05,0.05],"VWState":{"m":"m1"}}')
 
 	def test_update_model(self):
 		with MockServer() as server:
@@ -205,37 +231,25 @@ class TestDecisionServiceClient(unittest.TestCase):
 			logger = TestDecisionServiceLogger()
 			self.config.logger = logger
 			self.config.log_level = 4
+			self.config.explorer = EpsilonGreedyExplorer(0.3)
 
 			client = DecisionServiceClient(self.config)
 
-			ranking = client.rank('{"a":2}', '', [1,2,3])
+			ranking = client.explore_and_log('{"a":2}', '', [1,2])
 
-# DONT this if dialog message, dummy rank('{}', sessionId, [1]) # interaction message for the session
-# 
-#  rank('{_sessionId:}', requestId 1,...)
-#  rank('{_sessionId:}', requestId 2,...)
-# 
-#  reward (requestId 2, click reward)
-# 
-#  loop over dialog message
-#  reward (requestId 1, session reward)
-#  reward (requestId 2, session reward)
-			buf = bytearray(b'foo')
-			client.update_model(buf)
+			# buf = bytearray(b'foo')
+			# client.update_model(buf)
 
-			self.assertEqual(logger.messages, [{'level':1, 'msg':'update_model(len=3)'}])
+			# self.assertEqual(logger.messages, [{'level':1, 'msg':'update_model(len=3)'}])
 
 	def test_rank2(self):
-		class TestIterator(DecisionServicePredictionIterator):
+		class TestPredictor(DecisionServicePredictors):
 			def __init__(self):
 				# self.messages = []
-				DecisionServicePredictionIterator.__init__(self)
+				DecisionServicePredictors.__init__(self)
 
-			def next_prediction(self, previous_decisions, result):
-				print(previous_decisions)
-				result.set([.1,.2])
-
-				return True       
+			def get_prediction(self, index, previous_decisions):
+				return [.1,.2]
 
 		with MockServer() as server:
 			self.config.eventhub_interaction_connection_string = "Endpoint=sb://localhost:%d/;%s;EntityPath=interaction" % (server.mock_server_port, self.key)
@@ -244,9 +258,9 @@ class TestDecisionServiceClient(unittest.TestCase):
 			self.config.logger = logger
 			self.config.log_level = 4
 
-			preds = TestIterator()
+			preds = TestPredictor()
 			client = DecisionServiceClient(self.config)
-			ranking = client.rank2('{"a":2}', '', preds)
+			# ranking = client.explore_and_log('{"a":2}', '', preds)
 
 if __name__ == '__main__':
 	unittest.main()

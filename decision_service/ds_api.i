@@ -9,8 +9,8 @@
 %nspace *::DecisionServiceClient;
 %nspace *::DecisionServiceConfiguration;
 %nspace *::DecisionServiceLogger;
-%nspace *::DecisionServicePredictionResult;
-%nspace *::DecisionServicePredictionIterator;
+%nspace *::DecisionServicePrediction;
+%nspace *::DecisionServicePredictors;
 
 %include <std_string.i>
 #include <exception.i>
@@ -29,8 +29,8 @@
 %feature("director") *::DecisionServiceLogger;
 %feature("director") DecisionServiceLogger;
 
-%feature("director") *::DecisionServicePredictionIterator;
-%feature("director") DecisionServicePredictionIterator;
+%feature("director") *::DecisionServicePredictors;
+%feature("director") DecisionServicePredictors;
 
 #ifndef ARRAYS_OPTIMIZED
 	%ignore Microsoft::DecisionService::RankResponse::probabilities();
@@ -38,9 +38,9 @@
 
 	%ignore Microsoft::DecisionService::Array<int>;
 	%ignore Microsoft::DecisionService::Array<int>;
-	%ignore Microsoft::DecisionService::DecisionServiceClient::rank_struct;
-	%ignore Microsoft::DecisionService::DecisionServiceClient::rank_vector;
+	// %ignore Microsoft::DecisionService::DecisionServiceClient::rank_struct;
+	// %ignore Microsoft::DecisionService::DecisionServiceClient::rank_vector;
 
-	%ignore Microsoft::DecisionService::DecisionServiceClient::rank(const char* features, const char* event_id, const Microsoft::DecisionService::Array<int>& default_ranking);
-	%ignore Microsoft::DecisionService::DecisionServiceClient::rank(const char* features, const char* event_id, const std::vector<int>& default_ranking);
+	// %ignore Microsoft::DecisionService::DecisionServiceClient::rank(const char* features, const char* event_id, const Microsoft::DecisionService::Array<int>& default_ranking);
+	// %ignore Microsoft::DecisionService::DecisionServiceClient::rank(const char* features, const char* event_id, const std::vector<int>& default_ranking);
 #endif

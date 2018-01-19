@@ -31,6 +31,8 @@ namespace Microsoft {
       std::thread _upload_interaction_thread;
       std::thread _download_model_thread;
 
+      EpsilonGreedyExplorer _default_explorer;
+
     public:
       DecisionServiceClientInternal(DecisionServiceConfiguration config);
 

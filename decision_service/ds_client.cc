@@ -23,7 +23,7 @@ namespace Microsoft {
 
     using namespace std::chrono_literals;
     using namespace MultiWorldTesting;
- 
+    
     DecisionServiceClient::DecisionServiceClient(DecisionServiceConfiguration& config)
       : _state(new DecisionServiceClientInternal(config))
     { }
@@ -31,17 +31,6 @@ namespace Microsoft {
     DecisionServiceClient::~DecisionServiceClient()
     { }
 
-    RankResponse* DecisionServiceClient::rank_struct(const char* features, const char* event_id, const Array<float>& scores)
-    {
-      return rank_cstyle(features, event_id, scores.data, scores.length);
-    }
-
-    RankResponse* DecisionServiceClient::rank_vector(const char* features, const char* event_id, const vector<float>& scores)
-    {
-      return rank_cstyle(features, event_id, &scores[0], scores.size());
-    }
-
-    // the assumption is that the ranking is independent of other options present (e.g. A,B,C and B,C)
     class DecisionServicePredictorsSimple : public DecisionServicePredictors {
         vector<float> _scores;
       public:
@@ -49,20 +38,22 @@ namespace Microsoft {
           : _scores(scores, scores+n)
         { }
 
-        virtual void get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) 
+        virtual void get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception)
         {
-          // TODO: not sure on how to behave we've an index here... let's be safe
+          if (index != 0)
+            throw out_of_range("index must be 0");
+
           output_result->set(_scores);
         }
     };
 
-    RankResponse* DecisionServiceClient::rank_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size)
+    RankResponse* DecisionServiceClient::explore_and_log_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size) throw(std::exception)
     {
       DecisionServicePredictorsSimple scores_as_iterator(scores, scores_size);
       return explore_and_log(features, event_id, &scores_as_iterator);
     }
 
-    RankResponse* DecisionServiceClient::explore_and_log(const char* features, const char* event_id, DecisionServicePredictors* predictors)
+    RankResponse* DecisionServiceClient::explore_and_log(const char* features, const char* event_id, DecisionServicePredictors* predictors) throw(std::exception)
     {
       // generate event id if not provided      
       std::string l_event_id;
@@ -106,16 +97,17 @@ namespace Microsoft {
       _state->upload_reward(event_id, reward);
     }
 
-    void DecisionServiceClient::update_model(unsigned char* model, size_t len)
-    {
-      update_model(model, 0, len);
-    }
+    // TODO: move to VWPool 
+    // void DecisionServiceClient::update_model(unsigned char* model, size_t len)
+    // {
+    //   update_model(model, 0, len);
+    // }
 
-    void DecisionServiceClient::update_model(unsigned char* model, size_t offset, size_t len)
-    {
-      DS_LOG(_state->_config, DecisionServiceLogLevel::error, "update_model(len=" << len << ")")
+    // void DecisionServiceClient::update_model(unsigned char* model, size_t offset, size_t len)
+    // {
+    //   DS_LOG(_state->_config, DecisionServiceLogLevel::error, "update_model(len=" << len << ")")
 
-      // TODO: swap out model
-    }
+    //   // TODO: swap out model
+    // }
   }
 }

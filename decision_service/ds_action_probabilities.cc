@@ -106,7 +106,7 @@ namespace Microsoft {
 
             action_index++;
         }
-
+        
         // return the last index
         return size() - 1;
     }
@@ -118,7 +118,7 @@ namespace Microsoft {
 
     void ActionProbabilities::sort_by_probabilities_desc()
     {
-        std::sort(begin(), end(), [](const auto& a, const auto& b) {
+        std::stable_sort(begin(), end(), [](const auto& a, const auto& b) {
             return a.probability > b.probability;   
         });
     } 
@@ -126,9 +126,10 @@ namespace Microsoft {
     // probabilities ordered by action
     vector<float> ActionProbabilities::probabilities()
     {
-        vector<float> probs(size());
-        for (ActionProbability& actionProb : *this)
-            probs[actionProb.action] = actionProb.probability;
+        size_t n = size();
+        vector<float> probs(n);
+        for (size_t i=0;i<n;i++)
+            probs[i] = this->operator[](i).probability;
 
         return probs;
     }

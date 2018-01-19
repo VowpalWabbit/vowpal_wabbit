@@ -5,6 +5,9 @@ license as described in the file LICENSE.
 */
 
 #include "ds_predictor_container.h"
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
 
 namespace Microsoft {
   namespace DecisionService {
@@ -56,14 +59,22 @@ namespace Microsoft {
 
         DecisionServicePrediction* PredictorContainer::prediction(size_t index)
         {
-            // TODO: throw exception?
             if (index < 0 || index >= _predictors->count())
-                return nullptr;
+            {
+                ostringstream msg;
+                msg << "Predictor index out of range: " << index << ". Must be between 0 and " << _predictors->count();
+                throw out_of_range(msg.str());
+            }
 
             DecisionServicePrediction* prediction = _predictions + index;
             
-            if (_predictions[index].scores().size() == 0)
-                _predictors->get_prediction(index, _previous_decisions, prediction);
+            if (prediction->scores().size() == 0)
+            {
+                _predictors->get_prediction_out(index, _previous_decisions, prediction);
+
+                if (prediction->scores().size() == 0)
+                    throw out_of_range("at least 1 score must be provided by predictor");
+            }
 
             return prediction;
         }

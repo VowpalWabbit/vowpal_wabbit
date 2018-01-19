@@ -8,6 +8,8 @@ license as described in the file LICENSE.
 
 #include <algorithm>
 #include <cstddef>
+#include <stdexcept>
+#include <iostream>
 
 namespace Microsoft {
   namespace DecisionService {
@@ -48,10 +50,19 @@ namespace Microsoft {
       DecisionServicePredictors::~DecisionServicePredictors()
       { }
 
-       void DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result)
+      void DecisionServicePredictors::get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception)
       { 
-        // TODO: throw Exception()
-        // this should be virtual, but doesn't play well with swig           
+        output_result->set(this->get_prediction(index, previous_decisions));
+      }
+
+      std::vector<float> DecisionServicePredictors::get_prediction(size_t index, const std::vector<int>& previous_decisions) throw(std::exception)
+      {
+          throw domain_error("Missing implemention: please provide std::vector<float> get_prediction(index, const std::vector<int>&)");
+      }
+
+      size_t DecisionServicePredictors::count() const
+      {
+          return _count;
       }
   }
 }

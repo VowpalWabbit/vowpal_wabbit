@@ -1,6 +1,7 @@
 
 #include "ds_explore.h"
 #include <algorithm>
+#include <iostream>
 
 namespace Microsoft {
   namespace DecisionService {
@@ -20,7 +21,7 @@ namespace Microsoft {
 
       bool operator()(ActionProbability a, ActionProbability b)
       {
-        return _scores[a.action] < _scores[b.action];
+        return _scores[a.action] > _scores[b.action];
       }
     };
 
@@ -33,11 +34,11 @@ namespace Microsoft {
       // size & initialize vector to prob 
       ActionProbabilities probability_distribution(prediction.num_actions(), prob);
 
-      // boost the top element 
-      probability_distribution[prediction.top_action()].probability += 1.f - _epsilon;
-
       // we also need to propagate the order produced by the scores
-      sort(probability_distribution.begin(), probability_distribution.end(), ScoreComparator(prediction.scores()));
+      stable_sort(probability_distribution.begin(), probability_distribution.end(), ScoreComparator(prediction.scores()));
+
+      // boost the top element 
+      probability_distribution[0].probability += 1.f - _epsilon;
 
       return probability_distribution;
     }

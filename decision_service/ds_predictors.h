@@ -42,15 +42,20 @@ namespace Microsoft {
       size_t _count;
       
     public:
-    // TODO: change swig.i files (from Iterator)
       DecisionServicePredictors();
 
       DecisionServicePredictors(size_t count);
       
       virtual ~DecisionServicePredictors();
 
-      virtual void get_prediction(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result);
+#ifdef SWIG_PYTHON
+      virtual std::vector<float> get_prediction(size_t index, const std::vector<int>& previous_decisions) throw(std::exception);
+#else
+      // full library implementation
+      virtual void get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception);
 
+      virtual std::vector<float> get_prediction(size_t index, const std::vector<int>& previous_decisions) throw(std::exception);
+#endif
       size_t count() const;
     };
 

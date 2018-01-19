@@ -131,10 +131,6 @@ namespace Microsoft {
 #endif
     };
 
-    // ordered by actionId, pass numActions to understand numActions & numModels
-    // for CCB make the assumption that subsequent rounds make the same decision
-    // float[] scoresMatrix; // int length;
-
     // avoid leakage to Swig
     class DecisionServiceClientInternal;
 
@@ -148,22 +144,27 @@ namespace Microsoft {
       ~DecisionServiceClient();
 
       // named rank1, 2, 3,... to ease ignore/rename matching in swig
+#ifdef SWIG_PYTHON
+      RankResponse* explore_and_log(const char* features, const char* event_id, const std::vector<float>& scores) throw(std::exception)
+      { return explore_and_log_cstyle(features, event_id,  &scores[0], scores.size()); }
 
-      RankResponse* rank_cstyle(const char* features, const char* event_id, const float* scores, size_t default_ranking_size);
+#elif SWIG_CSHARP
+      RankResponse* explore_and_log(const char* features, const char* event_id, const Array<float>& scores) throw(std::exception)
+      { return explore_and_log_cstyle(features, event_id, scores.data, scores.length); }
+#endif
 
-      RankResponse* rank_struct(const char* features, const char* event_id, const Array<float>& scores);
+#ifndef SWIG
+      // map simple scores to DecisionServicePredictors* overload
+      RankResponse* explore_and_log_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size) throw(std::exception);
+#endif
 
-      RankResponse* rank_vector(const char* features, const char* event_id, const std::vector<float>& scores);
-
-      // TODO: rename
-      RankResponse* explore_and_log(const char* features, const char* event_id, DecisionServicePredictors* predictors);
+      RankResponse* explore_and_log(const char* features, const char* event_id, DecisionServicePredictors* predictors) throw(std::exception);
 
       void reward(const char* event_id, const char* reward);
 
       // TODO: drop this and replace with vw::pool
-      void update_model(unsigned char* model, size_t offset, size_t len);
-
-      void update_model(unsigned char* model, size_t len);
+      // void update_model(unsigned char* model, size_t offset, size_t len);
+      // void update_model(unsigned char* model, size_t len);
     };
 
 #ifndef SWIG

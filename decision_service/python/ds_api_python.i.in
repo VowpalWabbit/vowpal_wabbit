@@ -7,6 +7,7 @@
 %thread DecisionServiceLogger::log;
 
 #define ARRAYS_OPTIMIZED
+#define SWIG_PYTHON
 #define DISABLE_NAMESPACE
 
 // generate documentation
@@ -33,14 +34,22 @@ namespace std
     std::string err_msg("In method '$symname': ");
 
     PyObject* exc_str = PyObject_GetAttrString(exc, "__name__");
+    #if PY_MAJOR_VERSION >= 3
     err_msg += PyUnicode_AsUTF8(exc_str); 
+    #else
+    err_msg += std::string(PyString_AsString(exc_str));
+    #endif 
     Py_XDECREF(exc_str);
     
     if (val != NULL) 
     {
       PyObject* val_str = PyObject_Str(val);
       err_msg += ": ";
-      err_msg += PyUnicode_AsUTF8(val_str);
+      #if PY_MAJOR_VERSION >= 3
+      err_msg += PyUnicode_AsUTF8(val_str); 
+      #else
+      err_msg += std::string(PyString_AsString(val_str));
+      #endif 
       Py_XDECREF(val_str);
     }
 
@@ -52,13 +61,9 @@ namespace std
   }
 }
 
-
 %ignore Array<int>;
-%ignore DecisionServiceClient::rank_cstyle;
-%ignore DecisionServiceClient::rank_struct;
-%ignore DecisionServiceClient::update_model(unsigned char*, size_t, size_t);
-%rename(rank) DecisionServiceClient::rank_vector;
 
-
+%include "ds_predictors.h"
+%include "ds_explore.h"
 %include "ds_api.h"
 

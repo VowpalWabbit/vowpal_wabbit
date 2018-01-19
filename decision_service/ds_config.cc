@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 
 #include <cpprest/http_client.h>
 #include <memory>
+#include <stdexcept>
 
 namespace Microsoft {
   namespace DecisionService {
@@ -15,6 +16,19 @@ namespace Microsoft {
     using namespace utility;
     using namespace web::http;
     using namespace web::http::client;
+
+    std::string to_string(web::json::value json, string_t property)
+    {
+      auto val = json[property];
+      if (val.is_null() || !val.is_string())
+      {
+        ostringstream msg;
+        msg << "JSON property: '" << property << "' not found";
+        throw domain_error(msg.str());
+      }
+
+      return conversions::to_utf8string(val.as_string());
+    }
 
     DecisionServiceConfiguration DecisionServiceConfiguration::Download(const char* url/*, bool certificate_validation_enabled*/) throw(std::exception)
     {
@@ -30,10 +44,10 @@ namespace Microsoft {
         .get();
 
       DecisionServiceConfiguration config;
-      config.model_url = conversions::to_utf8string(json[U("ModelBlobUri")].as_string());
-      config.eventhub_interaction_connection_string = conversions::to_utf8string(json[U("EventHubInteractionConnectionString")].as_string());
-      config.eventhub_observation_connection_string = conversions::to_utf8string(json[U("EventHubObservationConnectionString")].as_string());
-      config.app_id = conversions::to_utf8string(json[U("ApplicationID")].as_string());
+      config.model_url = to_string(json, U("ModelBlobUri"));
+      config.eventhub_interaction_connection_string = to_string(json ,U("EventHubInteractionConnectionString"));
+      config.eventhub_observation_connection_string = to_string(json, U("EventHubObservationConnectionString"));
+      config.app_id = to_string(json, U("ApplicationID"));
 
       return config;
     }
