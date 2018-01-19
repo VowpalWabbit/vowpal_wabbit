@@ -59,6 +59,17 @@ namespace Microsoft {
       size_t count() const;
     };
 
+#ifndef SWIG
+    class DecisionServicePredictorsSimple : public DecisionServicePredictors {
+        std::vector<float> _scores;
+      public:
+        DecisionServicePredictorsSimple(const float* scores, size_t n);
+        DecisionServicePredictorsSimple(std::vector<float> scores);
+
+        virtual void get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception);
+    };
+#endif
+
 #ifndef DISABLE_NAMESPACE
   }
 }

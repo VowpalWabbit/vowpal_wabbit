@@ -31,22 +31,6 @@ namespace Microsoft {
     DecisionServiceClient::~DecisionServiceClient()
     { }
 
-    class DecisionServicePredictorsSimple : public DecisionServicePredictors {
-        vector<float> _scores;
-      public:
-        DecisionServicePredictorsSimple(const float* scores, size_t n)
-          : _scores(scores, scores+n)
-        { }
-
-        virtual void get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception)
-        {
-          if (index != 0)
-            throw out_of_range("index must be 0");
-
-          output_result->set(_scores);
-        }
-    };
-
     RankResponse* DecisionServiceClient::explore_and_log_cstyle(const char* features, const char* event_id, const float* scores, size_t scores_size) throw(std::exception)
     {
       DecisionServicePredictorsSimple scores_as_iterator(scores, scores_size);

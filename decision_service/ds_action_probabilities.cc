@@ -29,9 +29,6 @@ namespace Microsoft {
             size_t support_size = size();
             if (!zeros)
             {
-                // support_size -= count_if(probability_distribution.begin(), probability_distribution.end(), 
-                //     [](ActionProbability actionProb) { return actionProb.probability == 0; });
-  
                 for (ActionProbability& actionProb : *this)
                     if (actionProb.probability == 0)
                         support_size--;
@@ -72,11 +69,8 @@ namespace Microsoft {
         }
     }
 
-
     size_t ActionProbabilities::sample(float draw)
     {
-        // TODO: draw must be between 0 and 1 
-
         // Create a discrete_distribution based on the returned weights. This class handles the
         // case where the sum of the weights is < or > 1, by normalizing agains the sum.
         float total = 0.f;

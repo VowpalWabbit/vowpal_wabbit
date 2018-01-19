@@ -4,7 +4,7 @@ project (ds)
 set (CMAKE_CXX_STANDARD 14)
 
 # BOOST python
-find_package(Boost ${Boost_VW_VERSION} COMPONENTS regex)
+find_package(Boost ${Boost_VW_VERSION} COMPONENTS regex REQUIRED)
 find_package(cpprestsdk REQUIRED)
 find_package(OpenSSL REQUIRED)
 # find_package(PythonLibs REQUIRED)
@@ -38,4 +38,5 @@ set_property(SOURCE ds_api_python.i ds_api_csharp.i ds_api.i PROPERTY CPLUSPLUS 
 
 
 add_subdirectory(python)
+add_subdirectory(test)
 

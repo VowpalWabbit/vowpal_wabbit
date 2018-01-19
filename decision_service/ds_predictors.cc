@@ -64,6 +64,22 @@ namespace Microsoft {
       {
           return _count;
       }
+    
+      DecisionServicePredictorsSimple::DecisionServicePredictorsSimple(const float* scores, size_t n)
+          : _scores(scores, scores+n)
+      { }
+  
+      DecisionServicePredictorsSimple::DecisionServicePredictorsSimple(std::vector<float> scores)
+        : _scores(scores)
+      { }
+
+      void DecisionServicePredictorsSimple::get_prediction_out(size_t index, const std::vector<int>& previous_decisions, DecisionServicePrediction* output_result) throw(std::exception)
+      {
+          if (index != 0)
+          throw out_of_range("index must be 0");
+  
+          output_result->set(_scores);
+      }
   }
 }
   
