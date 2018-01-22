@@ -336,4 +336,26 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeIOBuf(VW_IOBUF bufferHandle) {
     delete static_cast<memory_io_buf*>(bufferHandle);
 }
 
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char * extraArgs)
+{
+  string s(extraArgs);
+  vw* origmodel = static_cast<vw*>(handle);
+
+  /*
+  hack to avoid having too many open files and prevent the following runtime error
+  terminating with uncaught exception of type VW::vw_exception: can't open: <model_name>errno = Too many open files
+  */
+  unique_ptr<memory_io_buf> buf(new memory_io_buf);
+  VW::save_predictor(*origmodel, *buf.get());
+
+  vw* new_model = VW::initialize(s, buf.get());
+
+  free_it(new_model->sd);
+  // reference model states stored in the specified VW instance
+  new_model->weights.shallow_copy(origmodel->weights); // regressor
+  new_model->sd = origmodel->sd; // shared data
+
+  return static_cast<VW_HANDLE>(new_model);
+}
+
 }
