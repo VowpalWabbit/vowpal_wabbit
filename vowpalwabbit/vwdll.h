@@ -67,6 +67,7 @@ VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_Initialize(const char16_t * pstrArgs)
 #endif
 VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs);
 VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(const char * pstrArgs, const char * modelData, size_t modelDataSize);
+VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char * extraArgs);
 
 VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle);
 VW_DLL_MEMBER void VW_CALLING_CONV VW_Finish(VW_HANDLE handle);
