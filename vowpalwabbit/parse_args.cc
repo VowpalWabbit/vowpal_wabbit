@@ -1448,6 +1448,8 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
     load_input_model(all, model);
+  else
+    model.close_file();
 
   parse_source(all);
 
