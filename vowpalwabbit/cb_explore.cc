@@ -20,6 +20,8 @@ struct cb_explore
   cb_to_cs cbcs;
   v_array<uint32_t> preds;
   v_array<float> cover_probs;
+  v_array<float> cost_lambda;
+  v_array<float> lambdas;
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
@@ -32,6 +34,8 @@ struct cb_explore
   size_t bag_size;
   size_t cover_size;
   float psi;
+  size_t lambda_size;
+	float n_2;
 
   size_t counter;
 
@@ -116,6 +120,146 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 
   ec.pred.a_s = probs;
 }
+
+/*
+template <bool is_learn>
+void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
+{
+	v_array<action_score> probs = ec.pred.a_s;
+  probs.erase();
+
+	for (uint32_t i = 0; i < data.cbcs.num_actions; i++)
+		probs.push_back({i,0.});
+	float prob = 1.f/(float)data.lambda_size;
+	for (size_t i = 0; i < data.lambda_size; i++)
+	{
+		if (is_learn && n_1 > 0)
+		{
+			//learn with lambda learning rate
+			n_1--;
+		}
+		else if (is_learn && n_1 <= 0)
+		{
+			//learn with 1-lambda learning rate
+			n_1--;
+		}
+		else
+		{
+			// predict
+			// select the lambda that has the minimum cumulative cost
+			base.predict(ec, i);
+			uint32_t chosen = ec.pred.multiclass-1;
+			probs[chosen].score += prob;
+		}		
+	}
+  ec.pred.a_s = probs;
+
+}
+*/
+float find_min(v_array<float> arr)
+{
+	float min_val = FLT_MAX;
+	uint32_t argmin = -1;
+
+	for (uint32_t i = 0; i < arr.size(); i++)
+	{
+		if (arr[i] < min_val)
+		{	
+			min_val = arr[i];
+			argmin = i;
+		}
+	}
+
+	return argmin;
+}
+
+
+
+template <bool is_learn>
+void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
+{
+	v_array<action_score> probs = ec.pred.a_s;
+  probs.erase();
+
+  data.cs_label.costs.erase();
+
+  for (uint32_t j = 0; j < data.cbcs.num_actions; j++)
+    data.cs_label.costs.push_back({FLT_MAX,j+1,0.,0.});
+
+  data.cb_label = ec.l.cb;
+
+  ec.l.cs = data.cs_label;
+	
+
+	// learn
+	if (is_learn)
+	{
+
+		// get the cost vector
+		//data.cs_label.costs.erase();
+		//data.cb_label = ec.l.cb;
+		//data.cbcs.known_cost = get_observed_cost(data.cb_label);
+		//gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+		
+		ec.l.cb = data.cb_label;
+    base.learn(ec);
+
+		cout<<data.cb_label.costs[0].action<<endl;
+
+    //1. Compute loss vector
+    data.cs_label.costs.erase();
+
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+
+    ec.l.cb = data.cb_label;
+    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+
+	
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+
+
+		for (size_t i = 0; i < data.lambda_size; i++)
+		{
+				//learn with lambda/(1-lambda) learning rate		
+				ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+				base.learn(ec, i);
+
+				base.predict(ec, i);
+				uint32_t chosen = ec.pred.multiclass-1;
+
+
+				//update the cumulative costs of the lambdas
+				
+				data.cost_lambda[i] = data.cost_lambda[i] + data.cs_label.costs[chosen].x;
+				cout<<"i = "<<i<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
+		}
+	}
+
+	float prob = data.epsilon/(float)data.cbcs.num_actions;
+	for (uint32_t i = 0; i < data.cbcs.num_actions; i++)
+		probs.push_back({i,prob});
+
+	// predict
+  // select the lambda that has the minimum cumulative cost (measured by IPS)
+	uint32_t argmin = find_min(data.cost_lambda);
+	//cout<<"lambda = " <<data.lambdas[argmin]<<endl;
+	base.predict(ec, argmin);
+	uint32_t chosen = ec.pred.multiclass-1;
+	probs[chosen].score = probs[chosen].score + (1 - data.epsilon);	
+	cout<<"chosen = "<<chosen<<endl;
+
+
+	ec.l.cb = data.cb_label;
+  ec.pred.a_s = probs;
+
+
+}
+
+
+
 
 void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
 {
@@ -227,10 +371,14 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     data.cs_label.costs.erase();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
+
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for(uint32_t i = 0; i < num_actions; i++)
       probabilities[i] = 0;
+
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
     ec.l.cs = data.second_cs_label;
     //2. Update functions
@@ -339,7 +487,9 @@ base_learner* cb_explore_setup(vw& all)
   ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
   ("bag",po::value<size_t>() ,"bagging-based exploration")
   ("cover",po::value<size_t>() ,"Online cover based exploration")
-  ("psi", po::value<float>(), "disagreement parameter for cover");
+  ("psi", po::value<float>(), "disagreement parameter for cover")
+  ("lambda",po::value<size_t>() ,"Online weighting based exploration")
+  ("n_2", po::value<float>(), "dataset size of source 2");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -388,13 +538,45 @@ base_learner* cb_explore_setup(vw& all)
     *all.file_options << " --psi " << type_string;
     l = &init_learner(&data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data.cover_size + 1, prediction_type::action_probs);
   }
+  else if (vm.count("lambda"))
+  {
+		data.lambda_size = (uint32_t)vm["lambda"].as<size_t>();
+		data.cs = all.cost_sensitive;
+		data.cost_lambda = v_init<float>();
+		for (uint32_t i = 0; i < data.lambda_size; i++)
+			data.cost_lambda.push_back(0.);
+
+		data.lambdas = v_init<float>();
+		for (uint32_t i = 0; i < data.lambda_size; i++)		
+			data.lambdas.push_back(((float) i )/ data.lambda_size);
+
+		data.second_cs_label.costs.resize(num_actions);
+		data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
+		*all.file_options << " --lambda "<< data.lambda_size;
+
+		if (vm.count("epsilon"))
+      data.epsilon = vm["epsilon"].as<float>();
+		else
+			data.epsilon = 0.05f;
+		//cout<<"epsilon = "<<data.epsilon<<endl;
+
+
+		//if (vm.count("n_2"))
+		//	data.n_2 = vm["n_2"].as<float>();
+		//data.preds = v_init<uint32_t>();
+ 		//data.preds.resize(data.lambda_size);
+		//sprintf(type_string, "%f", data.n_2);
+		//*all.file_options << " --phi " << type_string;
+		l = &init_learner(&data, base, predict_or_learn_lambda<true>, predict_or_learn_lambda<false>, data.lambda_size + 1, prediction_type::action_probs);
+
+  }
   else if (vm.count("bag"))
   {
     data.bag_size = (uint32_t)vm["bag"].as<size_t>();
     *all.file_options << " --bag "<< data.bag_size;
     l = &init_learner(&data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data.bag_size, prediction_type::action_probs);
   }
-  else if (vm.count("first") )
+  else if (vm.count("first"))
   {
     data.tau = (uint32_t)vm["first"].as<size_t>();
     *all.file_options << " --first "<< data.tau;

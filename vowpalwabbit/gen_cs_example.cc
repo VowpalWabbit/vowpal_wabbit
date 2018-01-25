@@ -112,6 +112,7 @@ void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_l
 //single line version
 void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {
+	//std::cout<<"-------"<<c.known_cost->action<<std::endl;
   //this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
   //generate cost-sensitive example
   cs_ld.costs.erase();
