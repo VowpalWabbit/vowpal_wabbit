@@ -2485,8 +2485,9 @@ base_learner* setup(arguments& arg)
       if (arg.args[i] == "--search_task" && arg.args[i+1] != "hook")
         arg.args.erase(arg.args.begin() + i, arg.args.begin() + i + 2);
 
+  priv.A = 1;
   if (arg.new_options("Search options")
-      .keep("search", priv.A, (size_t)1, "Use learning to search, argument=maximum action id or 0 for LDF")
+      .keep("search", priv.A, "Use learning to search, argument=maximum action id or 0 for LDF")
       .critical("search_task", task_string, "the search task (use \"--search_task list\" to get a list of available tasks)")
       .keep("search_metatask",  metatask_string, "the search metatask (use \"--search_metatask list\" to get a list of available metatasks)")
       .keep("search_interpolation", interpolation_string, "at what level should interpolation happen? [*data|policy]")

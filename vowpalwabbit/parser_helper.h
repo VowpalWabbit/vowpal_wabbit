@@ -71,8 +71,7 @@ class arguments {
                         po::value(&store)->default_value(def)
                         ->notifier([this, option, def] (T arg)
                                    {
-                                     if (arg != def)
-                                       *this->file_options << " --" << long_only(option) << " " << arg;
+                                     *this->file_options << " --" << long_only(option) << " " << arg;
                                    }),
                         description);
     }

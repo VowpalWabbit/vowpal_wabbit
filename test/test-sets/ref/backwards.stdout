@@ -5,8 +5,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --oaa 3
-Checksum: 4098939232
+options: --hash_seed 0 --oaa 3 --link identity
+Checksum: 4199872739
 :0
 Constant:202096:-0.129173
 Constant[1]:202097:0.0588574
