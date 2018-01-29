@@ -173,7 +173,57 @@ float find_min(v_array<float> arr)
 	return argmin;
 }
 
+/*
+  //Randomize over predictions from a base set of predictors
+  //Use cost sensitive oracle to cover actions to form distribution.
 
+  uint32_t num_actions = data.cbcs.num_actions;
+
+  v_array<action_score> probs = ec.pred.a_s;
+  probs.erase();
+  data.cs_label.costs.erase();
+
+  for (uint32_t j = 0; j < num_actions; j++)
+    data.cs_label.costs.push_back({FLT_MAX,j+1,0.,0.});
+
+  size_t cover_size = data.cover_size;
+  size_t counter = data.counter;
+  v_array<float>& probabilities = data.cover_probs;
+  v_array<uint32_t>& predictions = data.preds;
+
+  float additive_probability = 1.f / (float)cover_size;
+
+  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(counter * num_actions));
+
+  data.cb_label = ec.l.cb;
+
+  ec.l.cs = data.cs_label;
+  get_cover_probabilities(data, base, ec, probs);
+
+  if (is_learn)
+  {
+    ec.l.cb = data.cb_label;
+    base.learn(ec);
+
+    //Now update oracles
+
+    //1. Compute loss vector
+    data.cs_label.costs.erase();
+    float norm = min_prob * num_actions;
+    ec.l.cb = data.cb_label;
+
+    data.cbcs.known_cost = get_observed_cost(data.cb_label);
+
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+
+    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
+    for(uint32_t i = 0; i < num_actions; i++)
+      probabilities[i] = 0;
+
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+*/
 
 template <bool is_learn>
 void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
@@ -204,21 +254,23 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 		ec.l.cb = data.cb_label;
     base.learn(ec);
 
-		cout<<data.cb_label.costs[0].action<<endl;
+		//cout<<data.cb_label.costs.size()<<endl;
+		//cout<<data.cb_label.costs[0].action<<endl;
+		//cout<<data.cb_label.costs[0].cost<<endl;
 
     //1. Compute loss vector
     data.cs_label.costs.erase();
 
-		for (size_t i = 0; i < data.cbcs.num_actions; i++)
-			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
+		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
     ec.l.cb = data.cb_label;
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
 
 	
-		for (size_t i = 0; i < data.cbcs.num_actions; i++)
-			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
+		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
 
 		for (size_t i = 0; i < data.lambda_size; i++)
@@ -234,7 +286,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 				//update the cumulative costs of the lambdas
 				
 				data.cost_lambda[i] = data.cost_lambda[i] + data.cs_label.costs[chosen].x;
-				cout<<"i = "<<i<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
+				//cout<<"Expert "<<i<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
 		}
 	}
 
@@ -245,11 +297,11 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 	// predict
   // select the lambda that has the minimum cumulative cost (measured by IPS)
 	uint32_t argmin = find_min(data.cost_lambda);
-	//cout<<"lambda = " <<data.lambdas[argmin]<<endl;
+	cout<<"lambda = " <<data.lambdas[argmin]<<endl;
 	base.predict(ec, argmin);
 	uint32_t chosen = ec.pred.multiclass-1;
 	probs[chosen].score = probs[chosen].score + (1 - data.epsilon);	
-	cout<<"chosen = "<<chosen<<endl;
+	//cout<<"chosen = "<<chosen<<endl;
 
 
 	ec.l.cb = data.cb_label;
@@ -373,6 +425,12 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     ec.l.cb = data.cb_label;
 
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
+		cout<<"cbcs's cb type is "<<data.cbcs.cb_type<<endl;
+
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+
+
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for(uint32_t i = 0; i < num_actions; i++)
       probabilities[i] = 0;
@@ -547,8 +605,19 @@ base_learner* cb_explore_setup(vw& all)
 			data.cost_lambda.push_back(0.);
 
 		data.lambdas = v_init<float>();
-		for (uint32_t i = 0; i < data.lambda_size; i++)		
-			data.lambdas.push_back(((float) i )/ data.lambda_size);
+		for (uint32_t i = 0; i < data.lambda_size; i++)
+			if (i%2 == 0)
+			{
+				data.lambdas.push_back(pow(0.5f, floor(i/2) + 1));
+				//cout<<pow(0.5f, floor(i/2) + 1)<<endl;
+			}			
+			else
+			{	
+				data.lambdas.push_back(1 - pow(0.5f, floor(i/2) + 2));
+				//cout<<1 - pow(0.5f, floor(i/2) + 2)<<endl;
+			}
+
+
 
 		data.second_cs_label.costs.resize(num_actions);
 		data.second_cs_label.costs.end() = data.second_cs_label.costs.begin()+num_actions;
@@ -558,6 +627,9 @@ base_learner* cb_explore_setup(vw& all)
       data.epsilon = vm["epsilon"].as<float>();
 		else
 			data.epsilon = 0.05f;
+
+
+		//data.lambdas.push_back(((float) i )/ data.lambda_size);
 		//cout<<"epsilon = "<<data.epsilon<<endl;
 
 

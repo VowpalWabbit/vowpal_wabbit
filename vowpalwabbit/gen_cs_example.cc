@@ -118,6 +118,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
   cs_ld.costs.erase();
   if (ld.costs.size() == 1 && !is_test_label(ld))   //this is a typical example where we can perform all actions
   {
+		//std::cout<<"---typical----"<<std::endl;
     //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {
@@ -138,6 +139,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
   }
   else   //this is an example where we can only perform a subset of the actions
   {
+		//std::cout<<"---not typical----"<<std::endl;
     //in this case generate cost-sensitive example with only allowed actions
     for (auto& cl : ld.costs)
     {

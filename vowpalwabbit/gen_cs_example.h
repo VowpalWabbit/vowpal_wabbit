@@ -112,6 +112,7 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 
   //get cost prediction for this action
   wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
+	//std::cout<<"wc.x = "<<wc.x<<std::endl;
 
   c.pred_scores.costs.push_back(wc);
   //add correction if we observed cost for this action and regressor is wrong
