@@ -269,8 +269,8 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
 
 	
-		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
-		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		for (size_t i = 0; i < data.cbcs.num_actions; i++)
+			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
 
 		for (size_t i = 0; i < data.lambda_size; i++)
@@ -425,10 +425,10 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     ec.l.cb = data.cb_label;
 
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
-		cout<<"cbcs's cb type is "<<data.cbcs.cb_type<<endl;
+		//cout<<"cbcs's cb type is "<<data.cbcs.cb_type<<endl;
 
-		for (size_t i = 0; i < data.cbcs.num_actions; i++)
-			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
+		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
 
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
