@@ -71,14 +71,19 @@ using namespace CLASSWEIGHTS;
 
 LEARNER::base_learner* classweight_setup(vw& all)
 {
-  if (missing_option<string, true>(all, "classweight", "importance weight multiplier for class"))
+  if (missing_option<vector<string> >(all, "classweight", "importance weight multiplier for class"))
     return nullptr;
 
-  string classweight = all.vm["classweight"].as<string>();
+  vector<string> classweight_array = all.vm["classweight"].as< vector<string> >();
 
   classweights& cweights = calloc_or_throw<classweights>();
   new (&(cweights.weights)) std::unordered_map<uint32_t,float>();
-  cweights.load_string(classweight);
+
+  for (auto& s : classweight_array) {
+    *all.file_options << " --classweight " << s;
+    cweights.load_string(s);
+  }
+
   if (!all.quiet)
     all.trace_message << "parsed " << cweights.weights.size() << " class weights" << endl;
 
