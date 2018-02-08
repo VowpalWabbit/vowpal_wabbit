@@ -52,6 +52,13 @@ struct cbify
   cbify_adf_data adf_data;
   float loss0;
   float loss1;
+
+	size_t choices_lambda;
+	size_t warm_start_period;
+	v_array<float> cumulative_costs;
+	v_array<float> lambdas;
+	size_t num_actions;
+
 };
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
@@ -126,37 +133,109 @@ void copy_example_to_adf(cbify& data, example& ec)
   }
 }
 
+uint32_t find_min(v_array<float> arr)
+{
+	float min_val = FLT_MAX;
+	uint32_t argmin = 0;
+
+	for (uint32_t i = 0; i < arr.size(); i++)
+	{
+		if (arr[i] < min_val)
+		{	
+			min_val = arr[i];
+			argmin = i;
+		}
+	}
+
+	return argmin;
+}
+
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
-  //Store the multiclass input label
-  MULTICLASS::label_t ld = ec.l.multi;
-  data.cb_label.costs.erase();
-  ec.l.cb = data.cb_label;
-  ec.pred.a_s = data.a_s;
+	bool is_supervised;
 
-  //Call the cb_explore algorithm. It returns a vector of probabilities for each action
-  base.predict(ec);
-  //data.probs = ec.pred.scalars;
+	if (data.warm_start_period > 0)
+	{
+		is_supervised = true;
+		data.warm_start_period--;
+	}	
+	else
+		is_supervised = false;
 
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+	uint32_t argmin;
+	argmin = find_min(data.cumulative_costs);
+	if (argmin != 0)
+		cout<<"argmin is not zero"<<endl;
 
-  CB::cb_class cl;
-  cl.action = action;
-  cl.probability = ec.pred.a_s[action-1].score;
+	//Store the multiclass input label
+	MULTICLASS::label_t ld = ec.l.multi;
 
-  if(!cl.action)
-    THROW("No action with non-zero probability found!");
-  cl.cost = loss(data, ld.label, cl.action);
+	//cout<<ld.label<<endl;
+  
+	if (is_supervised)
+	{
+		//generate cost-sensitive label
+		COST_SENSITIVE::label csl;
+    csl.costs.resize(data.num_actions);
+    csl.costs.end() = csl.costs.begin()+data.num_actions;
+		for (uint32_t j = 0; j < data.num_actions; j++)
+		{
+			csl.costs[j].class_index = j+1;
+			csl.costs[j].x = loss(data, ld.label, j+1);
+		}
 
-  //Create a new cb label
-  data.cb_label.costs.push_back(cl);
-  ec.l.cb = data.cb_label;
-  base.learn(ec);
-  data.a_s.erase();
-  data.a_s = ec.pred.a_s;
-  ec.l.multi = ld;
-  ec.pred.multiclass = action;
+		ec.l.cs = csl;
+
+		//predict
+		data.all->cost_sensitive->predict(ec, argmin);
+		//uint32_t chosen = ec.pred.multiclass-1;	
+		//cout<<ec.pred.multiclass<<endl;
+
+
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			ec.weight = 1;
+			data.all->cost_sensitive->learn(ec, i);
+		}
+		ec.l.multi = ld;
+	}
+	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
+	{
+		data.cb_label.costs.erase();
+		ec.l.cb = data.cb_label;
+		ec.pred.a_s = data.a_s;
+		
+		base.predict(ec, argmin);
+		//base.predict(ec);
+		//data.probs = ec.pred.scalars;
+
+		uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+
+		CB::cb_class cl;
+		cl.action = action;
+		cl.probability = ec.pred.a_s[action-1].score;
+
+		if(!cl.action)
+		  THROW("No action with non-zero probability found!");
+		cl.cost = loss(data, ld.label, cl.action);
+
+		//Create a new cb label
+		data.cb_label.costs.push_back(cl);
+		ec.l.cb = data.cb_label;
+		//base.learn(ec);
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+			base.learn(ec, i);
+			data.cumulative_costs[i] += 0;
+		}
+
+		data.a_s.erase();
+		data.a_s = ec.pred.a_s;
+		ec.l.multi = ld;
+		ec.pred.multiclass = action;
+	}
 }
 
 template <bool is_learn>
@@ -213,6 +292,22 @@ void init_adf_data(cbify& data, const size_t num_actions)
   adf_data.empty_example->in_use = true;
 }
 
+void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
+{
+	lambdas = v_init<float>();
+	for (uint32_t i = 0; i < lambda_size; i++)
+		if (i%2 == 0)
+		{
+			lambdas.push_back(pow(0.5f, floor(i/2) + 1));
+			//cout<<pow(0.5f, floor(i/2) + 1)<<endl;
+		}			
+		else
+		{	
+			lambdas.push_back(1 - pow(0.5f, floor(i/2) + 2));
+			//cout<<1 - pow(0.5f, floor(i/2) + 2)<<endl;
+		}
+}
+
 base_learner* cbify_setup(vw& all)
 {
   //parse and set arguments
@@ -220,7 +315,9 @@ base_learner* cbify_setup(vw& all)
     return nullptr;
   new_options(all, "CBIFY options")
   ("loss0", po::value<float>(), "loss for correct label")
-  ("loss1", po::value<float>(), "loss for incorrect label");
+  ("loss1", po::value<float>(), "loss for incorrect label")
+	("warm_start", po::value<size_t>(), "number of training examples for fully-supervised warm start")
+  ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -237,6 +334,18 @@ base_learner* cbify_setup(vw& all)
   //data.probs = v_init<float>();
   data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);
   data.all = &all;
+
+	cout<<data.warm_start_period<<endl;
+	data.warm_start_period = vm.count("warm_start") ? vm["warm_start"].as<size_t>() : 0;
+	cout<<data.warm_start_period<<endl;
+	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
+
+	generate_lambdas(data.lambdas, data.choices_lambda);
+
+	for (size_t i = 0; i < data.choices_lambda; i++)
+		data.cumulative_costs.push_back(0.);
+
+	data.num_actions = num_actions;
 
   if (data.use_adf)
   {
@@ -263,11 +372,11 @@ base_learner* cbify_setup(vw& all)
   learner<cbify>* l;
   if (data.use_adf)
   {
-    l = &init_multiclass_learner(&data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, all.p, 1);
+    l = &init_multiclass_learner(&data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, all.p, data.choices_lambda);
   }
   else
   {
-    l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
+    l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, data.choices_lambda);
   }
   l->set_finish(finish);
 
