@@ -91,7 +91,7 @@ public:
       // featureValue --> ':' 'Float'
       ++reading_head;
       char *end_read = nullptr;
-      v = parseFloat(reading_head,&end_read);
+      v = parseFloat(reading_head, &end_read, endLine);
       if(end_read == reading_head)
       {
         parserWarning("malformed example! Float expected after : \"", beginLine, reading_head, "\"");
