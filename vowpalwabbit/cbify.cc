@@ -165,8 +165,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	else
 		is_supervised = false;
 
-	//uint32_t argmin;
-	//argmin = find_min(data.cumulative_costs);
+	uint32_t argmin;
+	argmin = find_min(data.cumulative_costs);
 	//cout<<argmin<<endl;
 	//if (argmin != 0)
 	//	cout<<"argmin is not zero"<<endl;
@@ -191,8 +191,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.cs = csl;
 
 		//predict
-		//data.all->cost_sensitive->predict(ec, argmin);
-		data.all->cost_sensitive->predict(ec);
+		data.all->cost_sensitive->predict(ec, argmin);
 		//uint32_t chosen = ec.pred.multiclass-1;	
 		//cout<<ec.pred.multiclass<<endl;
 
@@ -210,8 +209,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.cb = data.cb_label;
 		ec.pred.a_s = data.a_s;
 		
-		//base.predict(ec, argmin);
-		base.predict(ec);
+		base.predict(ec, argmin);
+		//base.predict(ec);
 		//data.probs = ec.pred.scalars;
 
 		uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
@@ -229,23 +228,23 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.cb = data.cb_label;
 
 		//IPS for approximating the cumulative costs for all lambdas
-		/*
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			example ec2 = ec;
-			data.all->cost_sensitive->predict(ec2, i);
-			if (ec2.pred.multiclass == cl.action)
+			//example ec2 = ec;
+			data.all->cost_sensitive->predict(ec, i);
+			//cout<<ec2.pred.multiclass<<endl;
+			if (ec.pred.multiclass == cl.action)
 				data.cumulative_costs[i] += cl.cost / cl.probability;
 			//cout<<data.cumulative_costs[i]<<endl;
 		}
+
+		
+		//base.learn(ec);
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
 			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
 			base.learn(ec, i);
 		}
-		*/
-
-		base.learn(ec);
 
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
@@ -388,11 +387,11 @@ base_learner* cbify_setup(vw& all)
   learner<cbify>* l;
   if (data.use_adf)
   {
-    l = &init_multiclass_learner(&data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, all.p, 1);
+    l = &init_multiclass_learner(&data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, all.p, data.choices_lambda);
   }
   else
   {
-    l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, 1);
+    l = &init_multiclass_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, all.p, data.choices_lambda);
   }
   l->set_finish(finish);
 
