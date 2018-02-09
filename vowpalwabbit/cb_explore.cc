@@ -269,8 +269,8 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
 
 	
-		for (size_t i = 0; i < data.cbcs.num_actions; i++)
-			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
+		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
 
 		for (size_t i = 0; i < data.lambda_size; i++)
@@ -286,8 +286,10 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 				//update the cumulative costs of the lambdas
 				
 				data.cost_lambda[i] = data.cost_lambda[i] + data.cs_label.costs[chosen].x;
-				//cout<<"Expert "<<i<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
+				cout<<"lambda "<<data.lambdas[i]<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
 		}
+		cout<<endl;
+
 	}
 
 	float prob = data.epsilon/(float)data.cbcs.num_actions;
@@ -297,7 +299,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 	// predict
   // select the lambda that has the minimum cumulative cost (measured by IPS)
 	uint32_t argmin = find_min(data.cost_lambda);
-	cout<<"lambda = " <<data.lambdas[argmin]<<endl;
+	//cout<<"lambda = " <<data.lambdas[argmin]<<endl;
 	base.predict(ec, argmin);
 	uint32_t chosen = ec.pred.multiclass-1;
 	probs[chosen].score = probs[chosen].score + (1 - data.epsilon);	
@@ -639,7 +641,7 @@ base_learner* cb_explore_setup(vw& all)
  		//data.preds.resize(data.lambda_size);
 		//sprintf(type_string, "%f", data.n_2);
 		//*all.file_options << " --phi " << type_string;
-		l = &init_learner(&data, base, predict_or_learn_lambda<true>, predict_or_learn_lambda<false>, data.lambda_size + 1, prediction_type::action_probs);
+		l = &init_learner(&data, base, predict_or_learn_lambda<true>, predict_or_learn_lambda<false>, data.lambda_size, prediction_type::action_probs);
 
   }
   else if (vm.count("bag"))
