@@ -140,12 +140,14 @@ uint32_t find_min(v_array<float> arr)
 
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
+		//cout<<arr[i]<<endl;
 		if (arr[i] < min_val)
 		{	
 			min_val = arr[i];
 			argmin = i;
 		}
 	}
+	//cout<<"argmin = "<<argmin<<endl;
 
 	return argmin;
 }
@@ -163,17 +165,18 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	else
 		is_supervised = false;
 
-	uint32_t argmin;
-	argmin = find_min(data.cumulative_costs);
-	if (argmin != 0)
-		cout<<"argmin is not zero"<<endl;
+	//uint32_t argmin;
+	//argmin = find_min(data.cumulative_costs);
+	//cout<<argmin<<endl;
+	//if (argmin != 0)
+	//	cout<<"argmin is not zero"<<endl;
 
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
 
 	//cout<<ld.label<<endl;
   
-	if (is_supervised)
+	if (is_supervised) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
 		COST_SENSITIVE::label csl;
@@ -188,7 +191,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.cs = csl;
 
 		//predict
-		data.all->cost_sensitive->predict(ec, argmin);
+		//data.all->cost_sensitive->predict(ec, argmin);
+		data.all->cost_sensitive->predict(ec);
 		//uint32_t chosen = ec.pred.multiclass-1;	
 		//cout<<ec.pred.multiclass<<endl;
 
@@ -206,8 +210,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.cb = data.cb_label;
 		ec.pred.a_s = data.a_s;
 		
-		base.predict(ec, argmin);
-		//base.predict(ec);
+		//base.predict(ec, argmin);
+		base.predict(ec);
 		//data.probs = ec.pred.scalars;
 
 		uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
@@ -223,13 +227,25 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
 		ec.l.cb = data.cb_label;
-		//base.learn(ec);
+
+		//IPS for approximating the cumulative costs for all lambdas
+		/*
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			example ec2 = ec;
+			data.all->cost_sensitive->predict(ec2, i);
+			if (ec2.pred.multiclass == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+			//cout<<data.cumulative_costs[i]<<endl;
+		}
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
 			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
 			base.learn(ec, i);
-			data.cumulative_costs[i] += 0;
 		}
+		*/
+
+		base.learn(ec);
 
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
@@ -335,9 +351,9 @@ base_learner* cbify_setup(vw& all)
   data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);
   data.all = &all;
 
-	cout<<data.warm_start_period<<endl;
+	//cout<<data.warm_start_period<<endl;
 	data.warm_start_period = vm.count("warm_start") ? vm["warm_start"].as<size_t>() : 0;
-	cout<<data.warm_start_period<<endl;
+	//cout<<data.warm_start_period<<endl;
 	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
 
 	generate_lambdas(data.lambdas, data.choices_lambda);
