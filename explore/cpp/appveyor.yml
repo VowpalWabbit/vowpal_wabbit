@@ -1,0 +1,19 @@
+version: 1.0.{build}
+configuration:
+- Release
+platform:
+- Win32
+- x64
+build:
+  verbosity: minimal
+test_script:
+- ps: >-
+    if($env:PLATFORM -eq "x64")
+    {
+        vstest.console /Platform:x64 /inIsolation bin\x64\Release\explore_tests.dll
+        git clone -q --branch=master https://github.com/multiworldtesting/explore-csharp.git C:\projects\explore-csharp
+        git clone -q --branch=master https://github.com/multiworldtesting/explore-test.git C:\projects\explore-test
+        cd C:\projects\explore-test
+        & "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe" .\Test.sln /p:Configuration=Release /p:Platform="Any CPU"
+        vstest.console /Platform:x64 /inIsolation bin\Release\blackbox.dll
+    }
