@@ -91,7 +91,7 @@ public:
       // featureValue --> ':' 'Float'
       ++reading_head;
       char *end_read = nullptr;
-      v = parseFloat(reading_head,&end_read);
+      v = parseFloat(reading_head, &end_read, endLine);
       if(end_read == reading_head)
       {
         parserWarning("malformed example! Float expected after : \"", beginLine, reading_head, "\"");
@@ -306,7 +306,7 @@ public:
 
   inline void listFeatures()
   {
-    while(*reading_head == ' ' || *reading_head == '\t')
+    while((*reading_head == ' ' || *reading_head == '\t') && (reading_head < endLine))
     {
       //listFeatures --> ' ' MaybeFeature ListFeatures
       ++reading_head;
@@ -359,7 +359,7 @@ public:
 
   inline void listNameSpace()
   {
-    while(*reading_head == '|')   // ListNameSpace --> '|' NameSpace ListNameSpace
+    while((*reading_head == '|') && (reading_head < endLine))   // ListNameSpace --> '|' NameSpace ListNameSpace
     {
       ++reading_head;
       nameSpace();
