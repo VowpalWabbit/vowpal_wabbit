@@ -164,7 +164,7 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                       auto duplicate_option_value = *duplicate_option->value.begin();
                       auto first_option_occurrence_value = *first_option_occurrence->value.begin();
 
-                      //THROW_EX(VW::vw_argument_disagreement_exception, "Disagreeing option values for '" << option << "': '" << first_option_occurrence_value << "' vs '" << duplicate_option_value << "'");
+                      THROW_EX(VW::vw_argument_disagreement_exception, "Disagreeing option values for '" << option << "': '" << first_option_occurrence_value << "' vs '" << duplicate_option_value << "'");
                     }
                   }
 
