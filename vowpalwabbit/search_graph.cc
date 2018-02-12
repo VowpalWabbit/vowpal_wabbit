@@ -87,28 +87,23 @@ struct task_data
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
-
 };
 
 inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   task_data * D = new task_data();
-  po::options_description sspan_opts("search graphtask options");
-  sspan_opts.add_options()("search_graph_num_loops", po::value<size_t>(), "how many loops to run [def: 2]");
-  sspan_opts.add_options()("search_graph_no_structure", "turn off edge features");
-  sspan_opts.add_options()("search_graph_separate_learners", "use a different learner for each pass");
-  sspan_opts.add_options()("search_graph_directed", "construct features based on directed graph semantics");
-  sch.add_program_options(vm, sspan_opts);
+  if (arg.new_options("search graphtask options")
+      ("search_graph_num_loops", D->num_loops, (size_t)2, "how many loops to run [def: 2]")
+      (D->use_structure, "search_graph_no_structure", "turn off edge features")
+      (D->separate_learners, "search_graph_separate_learners", "use a different learner for each pass")
+      (D->directed, "search_graph_directed", "construct features based on directed graph semantics").missing())
+    { delete D;
+      return;
+    }
 
-  D->num_loops = 2;
-  D->use_structure = true;
-  D->directed = false;
-  if (vm.count("search_graph_num_loops"))      D->num_loops = vm["search_graph_num_loops"].as<size_t>();
-  if (vm.count("search_graph_no_structure"))   D->use_structure = false;
-  if (vm.count("search_graph_separate_learners")) D->separate_learners = true;
-  if (vm.count("search_graph_directed"))       D->directed = true;
+  D->use_structure = !D->use_structure;
 
   if (D->num_loops <= 1) { D->num_loops = 1; D->separate_learners = false; }
 

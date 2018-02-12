@@ -718,8 +718,8 @@ size_t hashstring(String^ s, size_t u)
 Func<String^, size_t, size_t>^ VowpalWabbit::GetHasher()
 { //feature manipulation
   string hash_function("strings");
-  if (m_vw->vm.count("hash"))
-  { hash_function = m_vw->vm["hash"].as<string>();
+  if (m_vw->opts_n_args.vm.count("hash"))
+  { hash_function = m_vw->opts_n_args.vm["hash"].as<string>();
   }
 
   if (hash_function == "strings")
@@ -790,7 +790,7 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
 
   // TODO: better way of peaking into lda?
-  auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+  auto lda_rho = m_vw->opts_n_args.vm["lda_rho"].as<float>();
 
   std::vector<feature> top_weights;
   // over topics
@@ -817,7 +817,7 @@ cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 		allocation[k] = gcnew cli::array<float>((int)length);
 
 	// TODO: better way of peaking into lda?
-	auto lda_rho = m_vw->vm["lda_rho"].as<float>();
+	auto lda_rho = m_vw->opts_n_args.vm["lda_rho"].as<float>();
 
 	for (auto iter = weights.begin(); iter != weights.end(); ++iter)
 	{   // over topics

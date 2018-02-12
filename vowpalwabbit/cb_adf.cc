@@ -38,7 +38,7 @@ struct cb_adf
   action_scores a_s;//temporary storage for mtr
 
   uint64_t offset;
-  bool predict;
+  bool no_predict;
   bool rank_all;
 };
 
@@ -168,10 +168,10 @@ void do_actual_learning(cb_adf& data, base_learner& base)
       learn_DM(data, base, data.ec_seq);
       break;
     case CB_TYPE_MTR:
-      if (data.predict)
-        learn_MTR<true>(data, base, data.ec_seq);
-      else
+      if (data.no_predict)
         learn_MTR<false>(data, base, data.ec_seq);
+      else
+        learn_MTR<true>(data, base, data.ec_seq);
       break;
     default:
       THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
@@ -381,102 +381,69 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 
 }
 using namespace CB_ADF;
-base_learner* cb_adf_setup(vw& all)
+base_learner* cb_adf_setup(arguments& arg)
 {
-  if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
+  auto ld = scoped_calloc_or_throw<cb_adf>();
+  std::string type_string;
+
+  if (arg.new_options("Contextual Bandit with Action Dependent Features")
+      .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
+      .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
+      (ld->no_predict, "no_predict", "Do not do a prediction when training")
+      .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
     return nullptr;
-  new_options(all, "ADF Options")
-  ("rank_all", "Return actions sorted by score order")
-  ("no_predict", "Do not do a prediction when training")
-  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
-  add_options(all);
 
-  cb_adf& ld = calloc_or_throw<cb_adf>();
-
-  ld.all = &all;
+  ld->all = arg.all;
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
   bool check_baseline_enabled = false;
-  if (all.vm.count("cb_type"))
-  {
-    std::string type_string;
 
-    type_string = all.vm["cb_type"].as<std::string>();
-    *all.file_options << " --cb_type " << type_string;
-
-    if (type_string.compare("dr") == 0)
+  if (type_string.compare("dr") == 0)
     {
-      ld.gen_cs.cb_type = CB_TYPE_DR;
+      ld->gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
       // only use baseline when manually enabled for loss estimation
       check_baseline_enabled = true;
     }
-    else if (type_string.compare("ips") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
-      problem_multiplier = 1;
-    }
-    else if (type_string.compare("mtr") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_MTR;
-      problem_multiplier = 1;
-    }
-    else if (type_string.compare("dm") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_DM;
-      problem_multiplier = 1;
-    }
-    else
-    {
-      std::cerr << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
-    }
-  }
+  else if (type_string.compare("ips") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_IPS;
+  else if (type_string.compare("mtr") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_MTR;
+  else if (type_string.compare("dm") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_DM;
   else
-  {
-    //by default use ips
-    ld.gen_cs.cb_type = CB_TYPE_IPS;
-    *all.file_options << " --cb_type ips";
-  }
+    {
+      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
+      ld->gen_cs.cb_type = CB_TYPE_IPS;
+    }
 
-  if (all.vm.count("rank_all"))
-  {
-    ld.rank_all = true;
-    *all.file_options << " --rank_all";
-  }
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
-  if (all.vm.count("no_predict"))
-    ld.predict = false;
-  else
-    ld.predict = true;
+  arg.all->delete_prediction = ACTION_SCORE::delete_action_scores;
 
   // Push necessary flags.
-  if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
-       || all.vm.count("rank_all") || all.vm.count("csoaa_rank") == 0)
+  if ( (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0 && count(arg.args.begin(), arg.args.end(), "--wap_ldf") == 0)
+       || ld->rank_all || arg.vm.count("csoaa_rank") == 0)
   {
-    if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)
-      all.args.push_back("--csoaa_ldf");
-    if (count(all.args.begin(), all.args.end(), "multiline") == 0)
-      all.args.push_back("multiline");
-    if (count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
-      all.args.push_back("--csoaa_rank");
+    if (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0)
+      arg.args.push_back("--csoaa_ldf");
+    if (count(arg.args.begin(), arg.args.end(), "multiline") == 0)
+      arg.args.push_back("multiline");
+    if (count(arg.args.begin(), arg.args.end(), "--csoaa_rank") == 0)
+      arg.args.push_back("--csoaa_rank");
   }
-  if (count(all.args.begin(), all.args.end(), "--baseline") && check_baseline_enabled)
-  {
-    all.args.push_back("--check_enabled");
-  }
+  if (count(arg.args.begin(), arg.args.end(), "--baseline") && check_baseline_enabled)
+    arg.args.push_back("--check_enabled");
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  base_learner* base = setup_base(arg);
+  arg.all->p->lp = CB::cb_label;
+  arg.all->label_type = label_type::cb;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
+  cb_adf* bare = ld.get();
+  learner<cb_adf>& l = init_learner(ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
                                     prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
-  ld.gen_cs.scorer = all.scorer;
+  bare->gen_cs.scorer = arg.all->scorer;
 
   l.set_finish(CB_ADF::finish);
   l.set_end_examples(CB_ADF::end_examples);

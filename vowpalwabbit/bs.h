@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-LEARNER::base_learner* bs_setup(vw& all);
+LEARNER::base_learner* bs_setup(arguments& arg);
 
 namespace BS
 {

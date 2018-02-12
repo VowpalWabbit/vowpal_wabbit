@@ -16,7 +16,7 @@ namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf"
 
 namespace SequenceTask
 {
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& /*arg*/)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -108,15 +108,18 @@ struct task_data
   size_t multipass;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   task_data * D = new task_data();
-  po::options_description sspan_opts("search sequencespan options");
-  sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
-  sspan_opts.add_options()("search_span_multipass", po::value<size_t>(&(D->multipass))->default_value(1), "do multiple passes");
-  sch.add_program_options(vm, sspan_opts);
+  if (arg.new_options("search sequencespan options")
+      ("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding")
+      ("search_span_multipass", D->multipass, (size_t)1, "do multiple passes").missing())
+    {
+      delete D;
+      return;
+    }
 
-  if (vm.count("search_span_bilou"))
+  if (arg.vm.count("search_span_bilou"))
   {
     cerr << "switching to BILOU encoding for sequence span labeling" << endl;
     D->encoding = BILOU;
@@ -124,7 +127,6 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
   }
   else
     D->encoding = BIO;
-
 
   D->allowed_actions.erase();
 
@@ -237,7 +239,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
 namespace SequenceTaskCostToGo
 {
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -279,18 +281,17 @@ struct task_data
   bool predict_max;
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   task_data* D = new task_data();
-
-  po::options_description argmax_opts("argmax options");
-  argmax_opts.add_options()
-  ("cost", po::value<float>(&(D->false_negative_cost))->default_value(10.0), "False Negative Cost")
-  ("negative_weight", po::value<float>(&(D->negative_weight))->default_value(1), "Relative weight of negative examples")
-  ("max", "Disable structure: just predict the max");
-  sch.add_program_options(vm, argmax_opts);
-
-  D->predict_max = vm.count("max") > 0;
+  if (arg.new_options("argmax options")
+      ("cost", D->false_negative_cost, 10.0f, "False Negative Cost")
+      ("negative_weight", D->negative_weight, 1.f, "Relative weight of negative examples")
+      (D->predict_max, "max", "Disable structure: just predict the max").missing())
+    {
+      delete D;
+      return;
+    }
 
   sch.set_task_data(D);
 
@@ -346,7 +347,7 @@ struct task_data
   size_t   num_actions;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, arguments& /*arg*/)
 {
   CS::wclass default_wclass = { 0., 0, 0., 0. };
 

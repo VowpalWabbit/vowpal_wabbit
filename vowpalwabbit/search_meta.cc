@@ -47,7 +47,7 @@ void run(Search::search& sch, vector<example*>& ec)
 namespace SelectiveBranchingMT
 {
 void run(Search::search& sch, vector<example*>& ec);
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm);
+void initialize(Search::search& sch, size_t& num_actions, arguments& vm);
 void finish(Search::search& sch);
 Search::search_metatask metatask = { "selective_branching", run, initialize, finish, nullptr, nullptr };
 
@@ -85,15 +85,14 @@ struct task_data
   }
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  po::options_description opts("selective branching options");
-  opts.add_options()
-  ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
-  ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)");
-  sch.add_program_options(vm, opts);
+  if (arg.new_options("selective branching options")
+      ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
+      ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)").missing())
+    return;
 
   task_data* d = new task_data(max_branches, kbest);
   sch.set_metatask_data(d);

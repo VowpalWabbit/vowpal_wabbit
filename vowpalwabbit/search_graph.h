@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 namespace GraphTask
 {
-void initialize(Search::search&, size_t&, po::variables_map&);
+void initialize(Search::search&, size_t&, arguments&);
 void finish(Search::search&);
 void setup(Search::search&, std::vector<example*>&);
 void run(Search::search&, std::vector<example*>&);
