@@ -474,6 +474,7 @@ struct vw
 
   std::string data_filename; // was vm["data"]
 
+  bool onethread;
   bool daemon;
   size_t num_children;
 

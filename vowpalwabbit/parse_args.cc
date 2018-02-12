@@ -1313,7 +1313,9 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
     new_options(all, "VW options")
     ("random_seed", po::value<uint64_t>(&(all.random_seed)), "seed random number generator")
-    ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring");
+    ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
+    ("onethread", "Disable parse thread")
+    ;
     add_options(all);
 
     new_options(all, "Update options")
@@ -1340,6 +1342,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
       all.weights.sparse = true;
     else
       all.weights.sparse = false;
+
+    all.onethread = vm.count("onethread");
 
     new_options(all, "Parallelization options")
     ("span_server", po::value<string>(), "Location of server for setting up spanning tree")

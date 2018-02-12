@@ -101,13 +101,20 @@ int main(int argc, char *argv[])
     //struct timeb t_start, t_end;
     //ftime(&t_start);
 
-    VW::start_parser(all);
-    if (alls.size() == 1)
-      LEARNER::generic_driver(all);
-    else
-      LEARNER::generic_driver(alls);
+    if (all.onethread) {
+        if (alls.size() == 1)
+          LEARNER::generic_driver_onethread(all);
+        else
+          LEARNER::generic_driver_onethread(alls);
+    } else {
+        VW::start_parser(all);
+        if (alls.size() == 1)
+          LEARNER::generic_driver(all);
+        else
+          LEARNER::generic_driver(alls);
 
-    VW::end_parser(all);
+        VW::end_parser(all);
+    }
 
     // ftime(&t_end);
     // double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm));
