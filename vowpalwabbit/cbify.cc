@@ -58,6 +58,7 @@ struct cbify
 	v_array<float> cumulative_costs;
 	v_array<float> lambdas;
 	size_t num_actions;
+	COST_SENSITIVE::label csl;
 
 };
 
@@ -173,22 +174,24 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
+	COST_SENSITIVE::label csd = ec.l.cs;
 
 	//cout<<ld.label<<endl;
   
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
-		COST_SENSITIVE::label csl;
-    csl.costs.resize(data.num_actions);
-    csl.costs.end() = csl.costs.begin()+data.num_actions;
+		data.csl.costs.erase();
+    data.csl.costs.resize(data.num_actions);
+    data.csl.costs.end() = data.csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
 		{
-			csl.costs[j].class_index = j+1;
-			csl.costs[j].x = loss(data, ld.label, j+1);
+			data.csl.costs[j].class_index = j+1;
+			data.csl.costs[j].x = loss(data, ld.label, j+1);
 		}
 
-		ec.l.cs = csl;
+		ec.l.cs = data.csl;
+
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
@@ -202,6 +205,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			data.all->cost_sensitive->learn(ec, i);
 		}
 		ec.l.multi = ld;
+		ec.l.cs = csd;
 	}
 	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
@@ -249,6 +253,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
+		ec.l.cs = csd;
 		ec.pred.multiclass = action;
 	}
 }
