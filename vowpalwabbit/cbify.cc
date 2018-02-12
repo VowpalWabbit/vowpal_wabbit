@@ -58,7 +58,6 @@ struct cbify
 	v_array<float> cumulative_costs;
 	v_array<float> lambdas;
 	size_t num_actions;
-	COST_SENSITIVE::label csl;
 
 };
 
@@ -174,24 +173,22 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
-	COST_SENSITIVE::label csd = ec.l.cs;
 
 	//cout<<ld.label<<endl;
   
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
-		data.csl.costs.erase();
-    data.csl.costs.resize(data.num_actions);
-    data.csl.costs.end() = data.csl.costs.begin()+data.num_actions;
+		COST_SENSITIVE::label csl;
+    csl.costs.resize(data.num_actions);
+    csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
 		{
-			data.csl.costs[j].class_index = j+1;
-			data.csl.costs[j].x = loss(data, ld.label, j+1);
+			csl.costs[j].class_index = j+1;
+			csl.costs[j].x = loss(data, ld.label, j+1);
 		}
 
-		ec.l.cs = data.csl;
-
+		ec.l.cs = csl;
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
@@ -205,7 +202,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			data.all->cost_sensitive->learn(ec, i);
 		}
 		ec.l.multi = ld;
-		ec.l.cs = csd;
 	}
 	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
@@ -234,12 +230,12 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		//IPS for approximating the cumulative costs for all lambdas
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			//example ec2 = ec;
-			data.all->cost_sensitive->predict(ec, i);
+			example ec2 = ec;
+			data.all->cost_sensitive->predict(ec2, i);
 			//cout<<ec2.pred.multiclass<<endl;
-			if (ec.pred.multiclass == cl.action)
+			if (ec2.pred.multiclass == cl.action)
 				data.cumulative_costs[i] += cl.cost / cl.probability;
-			//cout<<data.cumulative_costs[i]<<endl;
+			  cout<<data.cumulative_costs[i]<<endl;
 		}
 
 		
@@ -253,7 +249,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
-		ec.l.cs = csd;
 		ec.pred.multiclass = action;
 	}
 }
