@@ -1587,11 +1587,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/classweight.stderr
 
 # Test 162: --classweight with multiclass
-{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3
     train-sets/ref/classweight_multiclass.stderr
 
 # Test 163: --classweight with multiclass
-{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3
     train-sets/ref/classweight_recall_tree.stderr
 
 # Test 164: cs_active low mellowness
