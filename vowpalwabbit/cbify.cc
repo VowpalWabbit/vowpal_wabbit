@@ -179,7 +179,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
-		COST_SENSITIVE::label csl;
+		COST_SENSITIVE::label csl = calloc_or_throw<COST_SENSITIVE::label>();
     csl.costs.resize(data.num_actions);
     csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
@@ -192,6 +192,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
+		auto old_pred = ec.pred;
 		//uint32_t chosen = ec.pred.multiclass-1;	
 		//cout<<ec.pred.multiclass<<endl;
 
@@ -202,6 +203,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			data.all->cost_sensitive->learn(ec, i);
 		}
 		ec.l.multi = ld;
+    ec.pred = old_pred;
 	}
 	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
@@ -210,6 +212,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.pred.a_s = data.a_s;
 		
 		base.predict(ec, argmin);
+		auto old_pred = ec.pred;
 		//base.predict(ec);
 		//data.probs = ec.pred.scalars;
 
@@ -223,23 +226,24 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		  THROW("No action with non-zero probability found!");
 		cl.cost = loss(data, ld.label, cl.action);
 
+		//IPS for approximating the cumulative costs for all lambdas
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			//example ec2 = ec;
+			//assert(0);
+			data.all->cost_sensitive->predict(ec, i);
+			//cout<<ec2.pred.multiclass<<endl;
+			if (ec.pred.multiclass == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+			  //cout<<data.cumulative_costs[i]<<endl;
+		}
+
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
 		ec.l.cb = data.cb_label;
 
-		//IPS for approximating the cumulative costs for all lambdas
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-		{
-			example ec2 = ec;
-			data.all->cost_sensitive->predict(ec2, i);
-			//cout<<ec2.pred.multiclass<<endl;
-			if (ec2.pred.multiclass == cl.action)
-				data.cumulative_costs[i] += cl.cost / cl.probability;
-			  cout<<data.cumulative_costs[i]<<endl;
-		}
-
-		
 		//base.learn(ec);
+		ec.pred = old_pred;
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
 			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
@@ -249,7 +253,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
-		ec.pred.multiclass = action;
+	  ec.pred.multiclass = action;
 	}
 }
 
