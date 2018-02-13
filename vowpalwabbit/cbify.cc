@@ -192,7 +192,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
-		auto old_pred = ec.pred;
+		//auto old_pred = ec.pred;
 		//uint32_t chosen = ec.pred.multiclass-1;	
 		//cout<<ec.pred.multiclass<<endl;
 
@@ -203,7 +203,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			data.all->cost_sensitive->learn(ec, i);
 		}
 		ec.l.multi = ld;
-    ec.pred = old_pred;
+    //ec.pred = old_pred;
 	}
 	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
@@ -229,14 +229,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		//IPS for approximating the cumulative costs for all lambdas
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			//example ec2 = ec;
 			//assert(0);
 			data.all->cost_sensitive->predict(ec, i);
-			//cout<<ec2.pred.multiclass<<endl;
+			//cout<<ec.pred.multiclass<<endl;
 			if (ec.pred.multiclass == cl.action)
-				data.cumulative_costs[i] += cl.cost / cl.probability;
-			  //cout<<data.cumulative_costs[i]<<endl;
+				data.cumulative_costs[i] += cl.cost / cl.probability; 
+			cout<<data.cumulative_costs[i]<<endl;
 		}
+		cout<<endl;
 
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
@@ -246,7 +246,9 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.pred = old_pred;
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+			//ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+			ec.l.cb.costs[0].cost *= data.lambdas[i] / (1-data.lambdas[i]);
+
 			base.learn(ec, i);
 		}
 
