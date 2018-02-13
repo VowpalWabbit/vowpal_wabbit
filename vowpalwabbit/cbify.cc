@@ -234,9 +234,9 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			//cout<<ec.pred.multiclass<<endl;
 			if (ec.pred.multiclass == cl.action)
 				data.cumulative_costs[i] += cl.cost / cl.probability; 
-			cout<<data.cumulative_costs[i]<<endl;
+			//cout<<data.cumulative_costs[i]<<endl;
 		}
-		cout<<endl;
+		//cout<<endl;
 
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
@@ -244,10 +244,12 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//base.learn(ec);
 		ec.pred = old_pred;
+
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			//ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
-			ec.l.cb.costs[0].cost *= data.lambdas[i] / (1-data.lambdas[i]);
+			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+			//ec.l.cb.costs[0].cost = 0;
+			//cl.cost * data.lambdas[i] / (1-data.lambdas[i]);
 
 			base.learn(ec, i);
 		}
@@ -316,17 +318,17 @@ void init_adf_data(cbify& data, const size_t num_actions)
 void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
 {
 	lambdas = v_init<float>();
+	uint32_t mid = lambda_size / 2;
 	for (uint32_t i = 0; i < lambda_size; i++)
-		if (i%2 == 0)
-		{
-			lambdas.push_back(pow(0.5f, floor(i/2) + 1));
-			//cout<<pow(0.5f, floor(i/2) + 1)<<endl;
-		}			
-		else
-		{	
-			lambdas.push_back(1 - pow(0.5f, floor(i/2) + 2));
-			//cout<<1 - pow(0.5f, floor(i/2) + 2)<<endl;
-		}
+		lambdas.push_back(0);
+
+	lambdas[mid] = 0.5;
+	for (uint32_t i = mid; i > 0; i--)
+		lambdas[i-1] = lambdas[i] / 2;
+
+	for (uint32_t i = mid+1; i < lambda_size; i++)
+		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
+
 }
 
 base_learner* cbify_setup(vw& all)

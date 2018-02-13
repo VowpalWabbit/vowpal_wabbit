@@ -31,9 +31,12 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
 {
   if (is_learn)
   {
-    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+    float old_weight = ec.weight;
+		if (cost == FLT_MAX) ec.weight = 0.f;
+    //ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
     base.learn(ec, i-1);
+    //ec.weight = old_weight;
   }
   else
     base.predict(ec, i-1);
