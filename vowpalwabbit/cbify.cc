@@ -58,6 +58,9 @@ struct cbify
 	v_array<float> cumulative_costs;
 	v_array<float> lambdas;
 	size_t num_actions;
+	bool ind_bandit;
+	bool ind_supervised;
+
 
 };
 
@@ -196,11 +199,13 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		//uint32_t chosen = ec.pred.multiclass-1;	
 		//cout<<ec.pred.multiclass<<endl;
 
-
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		if (data.ind_supervised)
 		{
-			ec.weight = 1;
-			data.all->cost_sensitive->learn(ec, i);
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				ec.weight = 1;
+				data.all->cost_sensitive->learn(ec, i);
+			}
 		}
 		ec.l.multi = ld;
     //ec.pred = old_pred;
@@ -244,16 +249,17 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//base.learn(ec);
 		ec.pred = old_pred;
-
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		if (data.ind_bandit)
 		{
-			ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
-			//ec.l.cb.costs[0].cost = 0;
-			//cl.cost * data.lambdas[i] / (1-data.lambdas[i]);
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+				//ec.l.cb.costs[0].cost = 0;
+				//cl.cost * data.lambdas[i] / (1-data.lambdas[i]);
 
-			base.learn(ec, i);
+				base.learn(ec, i);
+			}
 		}
-
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
@@ -340,7 +346,9 @@ base_learner* cbify_setup(vw& all)
   ("loss0", po::value<float>(), "loss for correct label")
   ("loss1", po::value<float>(), "loss for incorrect label")
 	("warm_start", po::value<size_t>(), "number of training examples for fully-supervised warm start")
-  ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate");
+  ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate")
+	("no_supervised", "indicator of using supervised only")
+	("no_bandit", "indicator of using bandit only");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -350,6 +358,9 @@ base_learner* cbify_setup(vw& all)
   data.use_adf = count(all.args.begin(), all.args.end(),"--cb_explore_adf") > 0;
   data.loss0 = vm.count("loss0") ? vm["loss0"].as<float>() : 0.f;
   data.loss1 = vm.count("loss1") ? vm["loss1"].as<float>() : 1.f;
+	data.ind_supervised = vm.count("no_supervised") ? false : true;
+	data.ind_bandit = vm.count("no_bandit") ? false : true;
+
   data.recorder = new vw_recorder();
   data.mwt_explorer = new MwtExplorer<example>("vw",*data.recorder);
   data.scorer = new vw_scorer();
