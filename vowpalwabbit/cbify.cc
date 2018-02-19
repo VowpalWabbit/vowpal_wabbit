@@ -159,6 +159,7 @@ template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
 	bool is_supervised;
+	float old_weight;
 
 	if (data.warm_start_period > 0)
 	{
@@ -249,11 +250,13 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//base.learn(ec);
 		ec.pred = old_pred;
+		old_weight = ec.weight;
+
 		if (data.ind_bandit)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
+				ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
 				//ec.l.cb.costs[0].cost = 0;
 				//cl.cost * data.lambdas[i] / (1-data.lambdas[i]);
 
@@ -264,6 +267,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
 	  ec.pred.multiclass = action;
+		ec.weight = old_weight;
 	}
 }
 
