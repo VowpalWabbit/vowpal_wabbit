@@ -155,6 +155,33 @@ uint32_t find_min(v_array<float> arr)
 	return argmin;
 }
 
+void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
+{
+	//IPS for approximating the cumulative costs for all lambdas
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	{
+		data.all->cost_sensitive->predict(ec, i);
+		if (ec.pred.multiclass == cl.action)
+			data.cumulative_costs[i] += cl.cost / cl.probability; 
+		//cout<<data.cumulative_costs[i]<<endl;
+	}
+	//cout<<endl;
+
+}
+
+void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl)
+{
+	//IPS for approximating the cumulative costs for all lambdas
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	{
+
+
+	}
+
+}
+
+
+
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
@@ -171,9 +198,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	uint32_t argmin;
 	argmin = find_min(data.cumulative_costs);
-	//cout<<argmin<<endl;
-	//if (argmin != 0)
-	//	cout<<"argmin is not zero"<<endl;
 
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
@@ -196,9 +220,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
-		//auto old_pred = ec.pred;
-		//uint32_t chosen = ec.pred.multiclass-1;	
-		//cout<<ec.pred.multiclass<<endl;
 
 		if (data.ind_supervised)
 		{
@@ -209,7 +230,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			}
 		}
 		ec.l.multi = ld;
-    //ec.pred = old_pred;
 	}
 	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
@@ -219,8 +239,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		
 		base.predict(ec, argmin);
 		auto old_pred = ec.pred;
-		//base.predict(ec);
-		//data.probs = ec.pred.scalars;
 
 		uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
 
@@ -232,23 +250,13 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		  THROW("No action with non-zero probability found!");
 		cl.cost = loss(data, ld.label, cl.action);
 
-		//IPS for approximating the cumulative costs for all lambdas
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-		{
-			//assert(0);
-			data.all->cost_sensitive->predict(ec, i);
-			//cout<<ec.pred.multiclass<<endl;
-			if (ec.pred.multiclass == cl.action)
-				data.cumulative_costs[i] += cl.cost / cl.probability; 
-			//cout<<data.cumulative_costs[i]<<endl;
-		}
-		//cout<<endl;
+		// accumulate the cumulative costs of lambdas
+		accumulate_costs_ips(data, base, ec);
 
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
 		ec.l.cb = data.cb_label;
 
-		//base.learn(ec);
 		ec.pred = old_pred;
 		old_weight = ec.weight;
 
@@ -257,9 +265,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
-				//ec.l.cb.costs[0].cost = 0;
-				//cl.cost * data.lambdas[i] / (1-data.lambdas[i]);
-
 				base.learn(ec, i);
 			}
 		}
@@ -274,39 +279,73 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 {
+	bool is_supervised;
+	float old_weight;
+
+	if (data.warm_start_period > 0)
+	{
+		is_supervised = true;
+		data.warm_start_period--;
+	}	
+	else
+		is_supervised = false;
+
+	uint32_t argmin;
+	argmin = find_min(data.cumulative_costs);
+
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
 
   copy_example_to_adf(data, ec);
-  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-  {
-    base.predict(data.adf_data.ecs[a]);
-  }
-  base.predict(*data.adf_data.empty_example);
-  // get output scores
-  auto& out_ec = data.adf_data.ecs[0];
-  uint32_t idx = data.mwt_explorer->Choose_Action(
-                   *data.generic_explorer,
-                   StringUtils::to_string(data.example_counter++), out_ec) - 1;
 
-  CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[idx].action + 1;
-  cl.probability = out_ec.pred.a_s[idx].score;
+	if (is_supervised) // Call the cost-sensitive learner directly
+	{
 
-  if(!cl.action)
-    THROW("No action with non-zero probability found!");
-  cl.cost = loss(data, ld.label, cl.action);
+	}
+	else // call the bandit learner
+	{
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		{
+		  base.predict(data.adf_data.ecs[a], argmin);
+		}
+		base.predict(*data.adf_data.empty_example, argmin);
+		// get output scores
+		auto& out_ec = data.adf_data.ecs[0];
+		uint32_t idx = data.mwt_explorer->Choose_Action(
+		                 *data.generic_explorer,
+		                 StringUtils::to_string(data.example_counter++), out_ec) - 1;
 
-  // add cb label to chosen action
-  auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
-  lab.costs.push_back(cl);
+		CB::cb_class cl;
+		cl.action = out_ec.pred.a_s[idx].action + 1;
+		cl.probability = out_ec.pred.a_s[idx].score;
 
-  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-  {
-    base.learn(data.adf_data.ecs[a]);
-  }
-  base.learn(*data.adf_data.empty_example);
-  ec.pred.multiclass = cl.action;
+		if(!cl.action)
+		  THROW("No action with non-zero probability found!");
+		cl.cost = loss(data, ld.label, cl.action);
+
+		// accumulate the cumulative costs of lambdas
+		accumulate_costs_ips_adf(data, base, ec);
+
+
+
+		// add cb label to chosen action
+		auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
+		lab.costs.push_back(cl);
+
+	
+		if (data.ind_bandit)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+				{
+					base.learn(data.adf_data.ecs[a], i);
+				}
+				base.learn(*data.adf_data.empty_example, i);
+			}
+		}
+		ec.pred.multiclass = cl.action;
+	}
 }
 
 void init_adf_data(cbify& data, const size_t num_actions)
