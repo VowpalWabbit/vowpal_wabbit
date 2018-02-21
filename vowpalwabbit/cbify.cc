@@ -169,14 +169,36 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 
 }
 
-void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl)
+void accumulate_costs_ips_adf(cbify& data, CB::cb_class& cl)
 {
+	float best_score = FLT_MAX;
+	uint32_t best_action;
+
+
 	//IPS for approximating the cumulative costs for all lambdas
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		{
+			//data.all->cost_sensitive->predict(data.adf_data.ecs[a], i);
+	
+  	  //data.adf_data.empty_example->in_use = true;
+	    //data.adf_data.empty_example->ft_offset = data.all->cost_sensitive->offset;
+			//data.all->cost_sensitive->predict(*data.adf_data.empty_example, i);
+			
+			if (data.adf_data.ecs[a].partial_prediction < best_score)
+			{
+				best_score = data.adf_data.ecs[a].partial_prediction;
+				best_action = a;
+			}
 
+		}
+		if (best_action == cl.action - 1)
+		data.cumulative_costs[i] += cl.cost / cl.probability; 
+	  //cout<<data.cumulative_costs[i]<<endl;
 
 	}
+	//cout<<endl;
 
 }
 
@@ -251,7 +273,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		cl.cost = loss(data, ld.label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
-		accumulate_costs_ips(data, base, ec);
+		accumulate_costs_ips(data, ec, cl);
 
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
@@ -300,9 +322,44 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
+		//generate cost-sensitive label
+		/*COST_SENSITIVE::label csl = calloc_or_throw<COST_SENSITIVE::label>();
+    csl.costs.resize(data.num_actions);
+    csl.costs.end() = csl.costs.begin()+data.num_actions;
+		for (uint32_t j = 0; j < data.num_actions; j++)
+		{
+			csl.costs[j].class_index = j+1;
+			csl.costs[j].x = loss(data, ld.label, j+1);
+		}
 
-	}
-	else // call the bandit learner
+		ec.l.cs = csl;
+		*/
+		//predict
+		//data.all->cost_sensitive->predict(ec, argmin);
+
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		{
+		  //data.all->cost_sensitive->predict(data.adf_data.ecs[a], argmin);
+			base.predict(data.adf_data.ecs[a], argmin);
+		}
+		//data.all->cost_sensitive->predict(*data.adf_data.empty_example, argmin);
+		base.predict(*data.adf_data.empty_example, argmin);
+
+
+		if (data.ind_supervised)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{		
+				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+				{
+					data.all->cost_sensitive->learn(data.adf_data.ecs[a], i);
+				}
+				data.all->cost_sensitive->learn(*data.adf_data.empty_example, i);
+			}
+		}
+		ec.l.multi = ld;
+	} 
+	else// call the bandit learner
 	{
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
@@ -324,27 +381,32 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		cl.cost = loss(data, ld.label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
-		accumulate_costs_ips_adf(data, base, ec);
-
-
+		accumulate_costs_ips_adf(data, cl);
 
 		// add cb label to chosen action
 		auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
 		lab.costs.push_back(cl);
 
-	
 		if (data.ind_bandit)
 		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
+			//for (uint32_t i = 0; i < data.choices_lambda; i++)
+			//{
+				//ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
-					base.learn(data.adf_data.ecs[a], i);
+					//old_weight = data.adf_data.ecs[a].weight;
+					//data.adf_data.ecs[a].weight = data.lambdas[i] / (1 - data.lambdas[i] );
+					base.learn(data.adf_data.ecs[a]);
+					//data.adf_data.ecs[a].weight = old_weight;
 				}
-				base.learn(*data.adf_data.empty_example, i);
-			}
+
+			  //old_weight = data.adf_data.empty_example->weight;
+				//data.adf_data.empty_example->weight = data.lambdas[i] / (1 - data.lambdas[i] );
+				base.learn(*data.adf_data.empty_example);
+				//data.adf_data.empty_example->weight = old_weight;
+			//}
 		}
-		ec.pred.multiclass = cl.action;
+		//ec.pred.multiclass = cl.action;
 	}
 }
 
