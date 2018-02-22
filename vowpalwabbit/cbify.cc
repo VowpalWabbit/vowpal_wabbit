@@ -196,9 +196,9 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 		if (best_action == cl.action)
 			data.cumulative_costs[i] += cl.cost / cl.probability;
 
-		cout<<data.cumulative_costs[i]<<endl;
+		//cout<<data.cumulative_costs[i]<<endl;
 	}
-	cout<<endl;
+	//cout<<endl;
 	
 }
 
