@@ -304,6 +304,9 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	bool is_supervised;
 	float old_weight;
 	uint32_t argmin;
+	uint32_t best_action;
+	float best_score;
+	example* ecs =  data.adf_data.ecs;
 
 	if (data.warm_start_period > 0)
 	{
@@ -323,10 +326,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
-		float best_score;
-		uint32_t best_action;
-		example* ecs =  data.adf_data.ecs;
-	
+
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
 		  base.predict(ecs[a], argmin);
@@ -341,13 +341,15 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				best_score = ecs[a].partial_prediction;
 			}
 		}
-		
+	
+		//cout<<best_action<<" "<<ecs[data.adf_data.num_actions-1].pred.multiclass<<endl;
+
 
 		//data.all->cost_sensitive->predict(ec,argmin);
 
 
 		//generate cost-sensitive label
-		COST_SENSITIVE::label& csl = data.csl;
+		/*COST_SENSITIVE::label& csl = data.csl;
     csl.costs.resize(data.num_actions);
     csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
@@ -357,38 +359,41 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		}
 
 		ec.l.cs = csl;
+		*/
+
+		COST_SENSITIVE::label& csl = data.csl;
+		COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
+		
+		csl.costs.erase();
+		csl.costs.push_back(wc);
 		
 		
-		/*
 		if (data.ind_supervised)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
-					COST_SENSITIVE::label& lab = ecs[a].l.cs;
-					lab.costs.erase();
-					lab.costs.resize(1);
+					csl.costs[0].class_index = a+1;
+					csl.costs[0].x = loss(data, ld.label, a+1);
 
-					lab.costs[0].class_index = a+1;
-					lab.costs[0].x = loss(data, ld.label, a+1);
+					ecs[a].l.cs = csl;
 
 					ecs[a].weight = 1;
 					//base.learn(ecs[a], i);
 					data.all->cost_sensitive->learn(ecs[a],i);
 				}
 				//base.learn(*data.adf_data.empty_example, i);
-				COST_SENSITIVE::label& lab = data.adf_data.empty_example->l.cs;
-				lab.costs.erase();
-				COST_SENSITIVE::wclass wc = { 0., 0, 0., 0. };
-				lab.costs.push_back(wc);				
-
+				
+				csl.costs[0].class_index = 0;
+				csl.costs[0].x = 0;
+				data.adf_data.empty_example->l.cs = csl;			
 				data.all->cost_sensitive->learn(*data.adf_data.empty_example,i);
 			}
 		}
 		
 
-
+		/*
 		if (data.ind_supervised)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -405,9 +410,20 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	{
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
-		  base.predict(data.adf_data.ecs[a], argmin);
+		  base.predict(ecs[a], argmin);
 		}
 		base.predict(*data.adf_data.empty_example, argmin);
+
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		{
+			if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
+			{
+				best_action = a + 1;
+				best_score = ecs[a].partial_prediction;
+			}
+		}
+
+
 		// get output scores
 		auto& out_ec = data.adf_data.ecs[0];
 		uint32_t idx = data.mwt_explorer->Choose_Action(
