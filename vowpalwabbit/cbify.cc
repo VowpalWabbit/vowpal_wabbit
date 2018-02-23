@@ -60,7 +60,8 @@ struct cbify
 	size_t num_actions;
 	bool ind_bandit;
 	bool ind_supervised;
-	COST_SENSITIVE::label csl;
+	COST_SENSITIVE::label* csls;
+	COST_SENSITIVE::label* csl_empty;
 
 
 };
@@ -92,6 +93,10 @@ void finish(cbify& data)
   delete_it(data.mwt_explorer);
   delete_it(data.recorder);
   data.a_s.delete_v();
+	data.lambdas.delete_v();
+	data.cumulative_costs.delete_v();
+	free(data.csls);
+		
   if (data.use_adf)
   {
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
@@ -101,6 +106,8 @@ void finish(cbify& data)
     VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
     free(data.adf_data.ecs);
     free(data.adf_data.empty_example);
+
+		free(data.csl_empty);
   }
 }
 
@@ -156,6 +163,49 @@ uint32_t find_min(v_array<float> arr)
 	return argmin;
 }
 
+uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
+{
+	uint32_t best_action, best_action_dir;
+	float best_score;
+
+	example* ecs = data.adf_data.ecs;
+	example* empty = data.adf_data.empty_example;
+
+
+	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	{
+	  base.predict(ecs[a], i);
+		//data.all->cost_sensitive->predict(ecs[a], argmin);
+	}
+	base.predict(*empty, i);
+	//data.all->cost_sensitive->predict(*empty, argmin);
+	
+
+	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	{
+		if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
+		{
+			best_action = a + 1;
+			best_score = ecs[a].partial_prediction;
+		}
+	}
+
+	/*for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	{
+		if ( ecs[a].pred.multiclass != 0 )
+			best_action_dir = ecs[a].pred.multiclass;
+	}
+
+	cout<<best_action<<" "<<best_action_dir<<endl;
+	*/
+	//assert(best_action == best_action_dir);
+
+	return best_action;
+
+}
+
+
+
 void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 {
 	//IPS for approximating the cumulative costs for all lambdas
@@ -172,26 +222,12 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 
 void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
 {
-	float best_score;
 	uint32_t best_action;
-	example* ecs = data.adf_data.ecs;
-
 
 	//IPS for approximating the cumulative costs for all lambdas
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
-		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		{
-		  base.predict(ecs[a], i);
-		
-			base.predict(*data.adf_data.empty_example, i);
-
-			if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
-			{
-				best_action = a + 1;
-				best_score = ecs[a].partial_prediction;
-			}
-		}
+		best_action = predict_sublearner(data, base, i);
 		
 		if (best_action == cl.action)
 			data.cumulative_costs[i] += cl.cost / cl.probability;
@@ -209,6 +245,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
 	bool is_supervised;
 	float old_weight;
+	uint32_t argmin;
 
 	if (data.warm_start_period > 0)
 	{
@@ -218,7 +255,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	else
 		is_supervised = false;
 
-	uint32_t argmin;
 	argmin = find_min(data.cumulative_costs);
 
 	//Store the multiclass input label
@@ -229,7 +265,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
-		COST_SENSITIVE::label& csl = data.csl;
+		COST_SENSITIVE::label& csl = *data.csls;
     csl.costs.resize(data.num_actions);
     csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
@@ -298,6 +334,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 }
 
+
 template <bool is_learn>
 void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 {
@@ -305,8 +342,8 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	float old_weight;
 	uint32_t argmin;
 	uint32_t best_action;
-	float best_score;
 	example* ecs =  data.adf_data.ecs;
+	example* empty_example = data.adf_data.empty_example;
 
 	if (data.warm_start_period > 0)
 	{
@@ -326,47 +363,14 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (is_supervised) // Call the cost-sensitive learner directly
 	{
+		best_action = predict_sublearner(data, base, argmin);
 
-		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		{
-		  base.predict(ecs[a], argmin);
-		}
-		base.predict(*data.adf_data.empty_example, argmin);
-
-		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		{
-			if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
-			{
-				best_action = a + 1;
-				best_score = ecs[a].partial_prediction;
-			}
-		}
-	
 		//cout<<best_action<<" "<<ecs[data.adf_data.num_actions-1].pred.multiclass<<endl;
-
-
 		//data.all->cost_sensitive->predict(ec,argmin);
 
-
 		//generate cost-sensitive label
-		/*COST_SENSITIVE::label& csl = data.csl;
-    csl.costs.resize(data.num_actions);
-    csl.costs.end() = csl.costs.begin()+data.num_actions;
-		for (uint32_t j = 0; j < data.num_actions; j++)
-		{
-			csl.costs[j].class_index = j+1;
-			csl.costs[j].x = loss(data, ld.label, j+1);
-		}
 
-		ec.l.cs = csl;
-		*/
-
-		COST_SENSITIVE::label& csl = data.csl;
-		COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
-		
-		csl.costs.erase();
-		csl.costs.push_back(wc);
-		
+		COST_SENSITIVE::label* csls = data.csls;
 		
 		if (data.ind_supervised)
 		{
@@ -374,35 +378,18 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
-					csl.costs[0].class_index = a+1;
-					csl.costs[0].x = loss(data, ld.label, a+1);
+					csls[a].costs[0].class_index = a+1;
+					csls[a].costs[0].x = loss(data, ld.label, a+1);
 
-					ecs[a].l.cs = csl;
-
-					ecs[a].weight = 1;
-					//base.learn(ecs[a], i);
+					ecs[a].l.cs = csls[a];
+					ecs[a].weight *= 1;
+					//					cout << "size cbify = " << ecs[a].l.cs.costs.size() << endl;
 					data.all->cost_sensitive->learn(ecs[a],i);
 				}
-				//base.learn(*data.adf_data.empty_example, i);
-				
-				csl.costs[0].class_index = 0;
-				csl.costs[0].x = 0;
-				data.adf_data.empty_example->l.cs = csl;			
-				data.all->cost_sensitive->learn(*data.adf_data.empty_example,i);
+				empty_example->l.cs = *data.csl_empty;			
+				data.all->cost_sensitive->learn(*empty_example,i);
 			}
 		}
-		
-
-		/*
-		if (data.ind_supervised)
-		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
-				data.all->cost_sensitive->learn(ec,i);
-			}
-		}
-		*/
-
 		ec.pred.multiclass = best_action;
 		ec.l.multi = ld;
 	}
@@ -412,17 +399,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		{
 		  base.predict(ecs[a], argmin);
 		}
-		base.predict(*data.adf_data.empty_example, argmin);
-
-		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		{
-			if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
-			{
-				best_action = a + 1;
-				best_score = ecs[a].partial_prediction;
-			}
-		}
-
+		base.predict(*empty_example, argmin);
 
 		// get output scores
 		auto& out_ec = data.adf_data.ecs[0];
@@ -441,8 +418,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		// accumulate the cumulative costs of lambdas
 		accumulate_costs_ips_adf(data, ec, cl, base);
 
-
-
 		// add cb label to chosen action
 		auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
 		lab.costs.push_back(cl);
@@ -454,12 +429,12 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
-					old_weight = data.adf_data.ecs[a].weight;
-					data.adf_data.ecs[a].weight = data.lambdas[i] / (1- data.lambdas[i]);
-					base.learn(data.adf_data.ecs[a], i);
-					data.adf_data.ecs[a].weight = old_weight;
+					old_weight = ecs[a].weight;
+					ecs[a].weight *= data.lambdas[i] / (1- data.lambdas[i]);
+					base.learn(ecs[a], i);
+					ecs[a].weight = old_weight;
 				}
-				base.learn(*data.adf_data.empty_example, i);
+				base.learn(*empty_example, i);
 			}
 		}
 		ec.pred.multiclass = cl.action;
@@ -480,6 +455,21 @@ void init_adf_data(cbify& data, const size_t num_actions)
   }
   CB::cb_label.default_label(&adf_data.empty_example->l.cb);
   adf_data.empty_example->in_use = true;
+
+	data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
+	data.csl_empty = calloc_or_throw<COST_SENSITIVE::label>(1);
+
+	data.csl_empty->costs.erase();					
+	data.csl_empty->costs.push_back({0, 0, 0, 0});
+	data.csl_empty->costs[0].class_index = 0;
+	data.csl_empty->costs[0].x = FLT_MAX;
+
+	for (size_t a = 0; a < num_actions; ++a)
+	{
+		data.csls[a].costs.erase();
+		data.csls[a].costs.push_back({0, 0, 0, 0});	
+	}
+
 }
 
 void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
@@ -529,7 +519,7 @@ base_learner* cbify_setup(vw& all)
   //data.probs = v_init<float>();
   data.generic_explorer = new GenericExplorer<example>(*data.scorer, (u32)num_actions);
   data.all = &all;
-	data.csl = calloc_or_throw<COST_SENSITIVE::label>();
+	
 
 	//cout<<data.warm_start_period<<endl;
 	data.warm_start_period = vm.count("warm_start") ? vm["warm_start"].as<size_t>() : 0;
@@ -542,11 +532,17 @@ base_learner* cbify_setup(vw& all)
 		data.cumulative_costs.push_back(0.);
 
 	data.num_actions = num_actions;
+	
 
   if (data.use_adf)
   {
     init_adf_data(data, num_actions);
   }
+	else
+	{
+		data.csls = calloc_or_throw<COST_SENSITIVE::label>(1);
+	}
+
 
   if (count(all.args.begin(), all.args.end(),"--cb_explore") == 0 && !data.use_adf)
   {

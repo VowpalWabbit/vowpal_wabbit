@@ -273,6 +273,7 @@ bool test_ldf_sequence(ldf& data, size_t start_K)
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   {
     example *ec = data.ec_seq[k];
+    //    cout << " size = " << ec->l.cs.costs.size();
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size()==1);
 
@@ -284,6 +285,7 @@ bool test_ldf_sequence(ldf& data, size_t start_K)
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
+  //  cout << endl;
   return isTest;
 }
 
@@ -404,11 +406,13 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base)
 {
+  //  cout << "called do_actual_learning" << endl;
   if (data.ec_seq.size() <= 0) return;  // nothing to do
   /////////////////////// handle label definitions
 
   if (ec_seq_is_label_definition(data.ec_seq))
   {
+    //    cout << "length is " << data.ec_seq.size() << endl;
     for (size_t i=0; i<data.ec_seq.size(); i++)
     {
       features new_fs = data.ec_seq[i]->feature_space[data.ec_seq[i]->indices[0]];
@@ -794,7 +798,12 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   data.ft_offset = ec.ft_offset;
   bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
-
+  /*if (is_learn)
+    cout << "is_learn ";
+  else
+  cout << "predict ";*/
+  //  cout << "data.ec_seq.size() = " << data.ec_seq.size() << " is_test_ec = " << is_test_ec << endl;
+  
   // singleline is used by library/ezexample_predict
   if (data.is_singleline)
   {
@@ -813,6 +822,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   }
   else if ((example_is_newline(ec) && is_test_ec) || need_to_break)
   {
+    //    cout << "newline" << endl;
     if (need_to_break && data.first_pass)
       data.all->trace_message << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
     do_actual_learning<is_learn>(data, base);
@@ -820,6 +830,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
   }
   else
   {
+    //    cout << "not newline" << endl;
     if (data.need_to_clear)    // should only happen if we're NOT driving
     {
       data.ec_seq.erase();

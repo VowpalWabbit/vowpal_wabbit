@@ -302,6 +302,7 @@ void output_example(vw& all, example& ec)
 bool example_is_test(example& ec)
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
+  //cout << "is_test " << costs.size() << endl;
   if (costs.size() == 0) return true;
   for (size_t j=0; j<costs.size(); j++)
     if (costs[j].x != FLT_MAX) return false;
