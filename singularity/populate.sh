@@ -9,7 +9,7 @@ for DEBRELEASE in stable unstable; do
   for ARCH in amd64 i386; do
      export DEBRELEASE ARCH
      eval "cat <<EOF
-$(cat "Singularity-template")
+$(cat "template")
 EOF
 " >| Singularity.debian-$DEBRELEASE-$ARCH
   done
