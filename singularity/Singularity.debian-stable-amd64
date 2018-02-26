@@ -22,5 +22,5 @@ ARCH: amd64
     # some external depends might have not been needed then
     eatmydata apt-get -y install markdown html2text rapidjson-dev libboost-python-dev  git
     chmod a+rX -R /etc/apt/sources.list.d
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/*
     apt-get clean
