@@ -62,6 +62,7 @@ struct cbify
 	bool ind_supervised;
 	COST_SENSITIVE::label* csls;
 	COST_SENSITIVE::label* csl_empty;
+	bool warm_start;
 
 
 };
@@ -99,11 +100,23 @@ void finish(cbify& data)
 		
   if (data.use_adf)
   {
-    for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
-    }
-    VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
+		if (data.warm_start)
+		{
+		  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		  {
+		    VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.adf_data.ecs[a]);
+		  }
+		  VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data.adf_data.empty_example);
+		}
+		else
+		{
+		  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		  {
+		    VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
+		  }
+		  VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
+		}
+
     free(data.adf_data.ecs);
     free(data.adf_data.empty_example);
 
@@ -243,17 +256,16 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
-	bool is_supervised;
 	float old_weight;
 	uint32_t argmin;
 
 	if (data.warm_start_period > 0)
 	{
-		is_supervised = true;
+		data.warm_start = true;
 		data.warm_start_period--;
 	}	
 	else
-		is_supervised = false;
+		data.warm_start = false;
 
 	argmin = find_min(data.cumulative_costs);
 
@@ -262,7 +274,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	//cout<<ld.label<<endl;
   
-	if (is_supervised) // Call the cost-sensitive learner directly
+	if (data.warm_start) // Call the cost-sensitive learner directly
 	{
 		//generate cost-sensitive label
 		COST_SENSITIVE::label& csl = *data.csls;
@@ -338,7 +350,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 {
-	bool is_supervised;
 	float old_weight;
 	uint32_t argmin;
 	uint32_t best_action;
@@ -347,11 +358,11 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start_period > 0)
 	{
-		is_supervised = true;
+		data.warm_start = true;
 		data.warm_start_period--;
 	}	
 	else
-		is_supervised = false;
+		data.warm_start = false;
 
 	
 	argmin = find_min(data.cumulative_costs);
@@ -361,8 +372,14 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
   copy_example_to_adf(data, ec);
 
-	if (is_supervised) // Call the cost-sensitive learner directly
+	if (data.warm_start) // Call the cost-sensitive learner directly
 	{
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		{
+			ecs[a].l.cs.costs.delete_v();
+		}
+
+
 		best_action = predict_sublearner(data, base, argmin);
 
 		//cout<<best_action<<" "<<ecs[data.adf_data.num_actions-1].pred.multiclass<<endl;
@@ -380,7 +397,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				{
 					csls[a].costs[0].class_index = a+1;
 					csls[a].costs[0].x = loss(data, ld.label, a+1);
-
+		
 					ecs[a].l.cs = csls[a];
 					ecs[a].weight *= 1;
 					//					cout << "size cbify = " << ecs[a].l.cs.costs.size() << endl;
