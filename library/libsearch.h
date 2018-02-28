@@ -91,11 +91,11 @@ private:
 };
 
 
-class BuiltInTask : public SearchTask< vector<example*>, vector<uint32_t> >
+class BuiltInTask : public SearchTask< v_array<example*>, vector<uint32_t> >
 {
 public:
   BuiltInTask(vw& vw_obj, Search::search_task* task)
-    : SearchTask< vector<example*>, vector<uint32_t> >(vw_obj)
+    : SearchTask< v_array<example*>, vector<uint32_t> >(vw_obj)
   { HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     size_t num_actions = d->num_actions;
     my_task = task;
@@ -105,7 +105,7 @@ public:
 
   ~BuiltInTask() { if (my_task->finish) my_task->finish(sch); }
 
-  void _run(Search::search& sch, vector<example*> & input_example, vector<uint32_t> & output)
+  void _run(Search::search& sch, v_array<example*> & input_example, vector<uint32_t> & output)
   { my_task->run(sch, input_example);
     sch.get_test_action_sequence(output);
   }

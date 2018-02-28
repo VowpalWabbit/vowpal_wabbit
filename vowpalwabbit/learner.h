@@ -104,10 +104,13 @@ typedef void (*tend_example)(vw& all, void* d, example& ec);
 
 typedef bool(*ttest_example)(example& ec);
 
- template<class T> learner<T>& init_learner(T*, base_learner*,
+ template<class T> learner<T>& init_learner(T* dat, base_learner* base,
                                             void (*learn)(T&, base_learner&, example&),
-                                            void (*predict)(T&, base_learner&, example&),
-                                            size_t ws, prediction_type::prediction_type_t);
+                                            void (*predict)(T&, base_learner&, example&), 
+                                            void(*multiline_learn)(T&, base_learner&, multi_ex&),
+                                            void(*multiline_predict)(T&, base_learner&, multi_ex&),
+                                            size_t ws,
+                                            prediction_type::prediction_type_t pred_type);
 
  template<class T> struct learner
 {

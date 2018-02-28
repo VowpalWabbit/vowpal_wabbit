@@ -97,7 +97,7 @@ void test_buildin_task()
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
-    vector<example*> V;
+    v_array<example*> V = v_init<example*>();
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
