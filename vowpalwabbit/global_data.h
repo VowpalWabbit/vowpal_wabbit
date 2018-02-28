@@ -440,6 +440,7 @@ struct vw
   LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.
 
   void learn(example*);
+  void learn(multi_ex&);
 
   void (*set_minmax)(shared_data* sd, float label);
 

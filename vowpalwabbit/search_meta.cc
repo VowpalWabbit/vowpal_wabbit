@@ -13,10 +13,10 @@ license as described in the file LICENSE.
 using namespace std;
 namespace DebugMT
 {
-void run(Search::search& sch, vector<example*>& ec);
+void run(Search::search& sch, multi_ex& ec);
 Search::search_metatask metatask = { "debug", run, nullptr, nullptr, nullptr, nullptr };
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   sch.base_task(ec)
   .foreach_action(
@@ -46,7 +46,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
 namespace SelectiveBranchingMT
 {
-void run(Search::search& sch, vector<example*>& ec);
+void run(Search::search& sch, multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, arguments& vm);
 void finish(Search::search& sch);
 Search::search_metatask metatask = { "selective_branching", run, initialize, finish, nullptr, nullptr };
@@ -100,7 +100,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 
 void finish(Search::search& sch) { delete sch.get_metatask_data<task_data>(); }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& d = *sch.get_metatask_data<task_data>();
 

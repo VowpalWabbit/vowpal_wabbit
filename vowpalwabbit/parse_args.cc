@@ -401,6 +401,7 @@ void parse_source(arguments& arg)
   po::parsed_options pos = po::command_line_parser(arg.args).
                            style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                            options(arg.opts).positional(p).run();
+
   arg.vm = po::variables_map();
   po::store(pos, arg.vm);
   if (arg.vm.count("data") > 0)

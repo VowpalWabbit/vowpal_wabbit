@@ -146,6 +146,14 @@ void vw::learn(example* ec)
     l->learn(*ec);
 }
 
+void vw::learn(multi_ex& ec)
+{
+  if (!training)
+    l->predict(ec);
+  else
+    l->learn(ec);
+}
+
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)

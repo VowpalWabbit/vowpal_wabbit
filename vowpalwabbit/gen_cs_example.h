@@ -166,16 +166,16 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
   }
 }
 
-void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_dm(v_array<example*> examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 { //size_t mysize = examples.size();
   c.pred_scores.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -219,7 +219,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, v_array<example*> examples, COST_SENSITI
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 { switch (c.cb_type)
   { case CB_TYPE_IPS:
       gen_cs_example_ips(ec_seq, cs_labels);
@@ -236,7 +236,7 @@ void gen_cs_example(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::
 }
 
 template<bool is_learn>
-void call_cs_ldf(LEARNER::base_learner& base, v_array<example*>& examples, v_array<CB::label>& cb_labels,
+void call_cs_ldf(LEARNER::base_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
                  COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 { cb_labels.erase();
   if (prepped_cs_labels.size() < cs_labels.costs.size()+1)
@@ -257,17 +257,9 @@ void call_cs_ldf(LEARNER::base_learner& base, v_array<example*>& examples, v_arr
   }
 
   // 2nd: predict for each ex
-  // // call base.predict for each vw exmaple in the sequence
-  for (example* ec : examples)
-  { uint64_t old_offset = ec->ft_offset;
-    ec->ft_offset = offset;
-    if (is_learn)
-      base.learn(*ec, id);
-    else
-      base.predict(*ec, id);
-    ec->ft_offset = old_offset;
+  // // call base.predict for all examples
+  LEARNER::base_learn_or_predict<is_learn>(base, examples, offset, id);
 
-  }
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = array.element.
   size_t i = 0;

@@ -10,7 +10,7 @@ namespace DepParserTask
 {
 void initialize(Search::search&, size_t&, arguments&);
 void finish(Search::search&);
-void run(Search::search&, std::vector<example*>&);
-void setup(Search::search&, std::vector<example*>&);
+void run(Search::search&, multi_ex&);
+void setup(Search::search&, multi_ex&);
 extern Search::search_task task;
 }

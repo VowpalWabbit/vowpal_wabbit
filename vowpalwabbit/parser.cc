@@ -971,6 +971,13 @@ void empty_example(vw& all, example& ec)
   ec.end_pass = false;
 }
 
+void finish_example(vw& all, multi_ex& ec_seq)
+{
+  for(auto ec : ec_seq)
+    finish_example(all, ec);
+  ec_seq.erase();
+}
+
 void finish_example(vw& all, example* ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated

@@ -55,6 +55,10 @@ struct learn_data
   void (*predict_f)(void* data, base_learner& base, example&);
   void (*update_f)(void* data, base_learner& base, example&);
   void (*multipredict_f)(void* data, base_learner& base, example&, size_t count, size_t step, polyprediction*pred, bool finalize_predictions);
+
+  void(*update_multiline_f)(void* data, base_learner& base, multi_ex&);
+  void(*learn_multiline_f)(void* data, base_learner& base, multi_ex&);
+  void(*predict_multiline_f)(void* data, base_learner& base, multi_ex&);
 };
 
 struct sensitivity_data
@@ -72,6 +76,12 @@ struct finish_example_data
 { void* data;
   base_learner* base;
   void (*finish_example_f)(vw&, void* data, example&);
+  void (*finish_multi_ex_f)(vw&, void* data, multi_ex&);
+};
+
+struct test_example_data
+{
+  bool(*test_example_f)(example&);
 };
 
 void generic_driver(vw& all);
@@ -81,12 +91,18 @@ inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 
+typedef void(*tlearn_multi_ex)(void* d, base_learner& base, multi_ex& ec);
 typedef void (*tlearn)(void* d, base_learner& base, example& ec);
+
 typedef float (*tsensitivity)(void* d, base_learner& base, example& ec);
 typedef void (*tmultipredict)(void* d, base_learner& base, example& ec, size_t, size_t, polyprediction*, bool);
 typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
 typedef void (*tfunc)(void*d);
+
+typedef void(*tend_multi_ex)(vw& all, void* d, multi_ex& ec);
 typedef void (*tend_example)(vw& all, void* d, example& ec);
+
+typedef bool(*ttest_example)(example& ec);
 
  template<class T> learner<T>& init_learner(T*, base_learner*,
                                             void (*learn)(T&, base_learner&, example&),
@@ -104,22 +120,42 @@ private:
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
+  test_example_data test_example_fd;
+  bool multi_ex_input;
 
 public:
+  bool inline accepts_multi_ex() const { return multi_ex_input;  }
   prediction_type::prediction_type_t pred_type;
   size_t weights; //this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
   //called once for each example.  Must work under reduction.
-  inline void learn(example& ec, size_t i=0)
-  { ec.ft_offset += (uint32_t)(increment*i);
+  inline void learn(example& ec, size_t i=0) { 
+    ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  inline void predict(example& ec, size_t i=0)
-  { ec.ft_offset += (uint32_t)(increment*i);
+  inline void learn(multi_ex& ec, size_t i=0) 
+  {
+    if (ec.size() > 0)
+    {
+      ec[0]->ft_offset += (uint32_t)(increment*i);
+      learn_fd.learn_multiline_f(learn_fd.data, *learn_fd.base, ec);
+      ec[0]->ft_offset -= (uint32_t)(increment*i);
+    }
+  }
+  inline void predict(example& ec, size_t i = 0){
+      ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
+  }
+  inline void predict(multi_ex& ec, size_t i = 0){
+    if (ec.size() > 0)
+    {
+      ec[0]->ft_offset += (uint32_t)(increment*i);
+      learn_fd.predict_multiline_f(learn_fd.data, *learn_fd.base, ec);
+      ec[0]->ft_offset -= (uint32_t)(increment*i);
+    }
   }
   inline void multipredict(example& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   { if (learn_fd.multipredict_f == NULL)
@@ -209,18 +245,44 @@ public:
   //called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, example& ec)
   { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
+  //called after learn example for each example.  Explicitly not recursive.
+  inline void finish_example(vw& all, multi_ex& ec)
+  {
+    finish_example_fd.finish_multi_ex_f(all, finish_example_fd.data, ec);
+  }
   void set_finish_example(void (*f)(vw& all, T&, example&))
   { finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = (tend_example)f;
   }
+  void set_finish_example(void(*f)(vw& all, T&, multi_ex&))
+  {
+    finish_example_fd.data = learn_fd.data;
+    finish_example_fd.finish_multi_ex_f = (tend_multi_ex)f;
+  }
+  //called to check if an example is a test example.  Used in creating multiline example
+  inline bool is_test_example(example& ec)
+  {
+    test_example_fd.test_example_f(ec);
+  }
+  void set_test_example(bool(*f)(example&))
+  {
+    test_example_fd.test_example_f = (ttest_example)f;
+  }
 
-  friend learner<T>& init_learner<>(T*, base_learner*, void (*l)(T&, base_learner&, example&),
-                                      void (*pred)(T&, base_learner&, example&), size_t, prediction_type::prediction_type_t);
+  friend learner<T>& init_learner<>(T*, base_learner*, 
+    void(*l)(T&, base_learner&, example&),
+    void(*pred)(T&, base_learner&, example&),
+    void(*mult_ex_l)(T&, base_learner&, multi_ex&),
+    void(*multi_ex_pred)(T&, base_learner&, multi_ex&),
+    size_t, prediction_type::prediction_type_t);
 };
 
  template<class T> learner<T>& init_learner(T* dat, base_learner* base,
                                             void (*learn)(T&, base_learner&, example&),
-                                            void (*predict)(T&, base_learner&, example&), size_t ws,
+                                            void (*predict)(T&, base_learner&, example&), 
+                                            void(*multiline_learn)(T&, base_learner&, multi_ex&),
+                                            void(*multiline_predict)(T&, base_learner&, multi_ex&),
+                                            size_t ws,
                                             prediction_type::prediction_type_t pred_type)
    {
      learner<T>& ret = calloc_or_throw<learner<T> >();
@@ -254,27 +316,74 @@ public:
      ret.learn_fd.learn_f = (tlearn)learn;
      ret.learn_fd.update_f = (tlearn)learn;
      ret.learn_fd.predict_f = (tlearn)predict;
+     ret.learn_fd.learn_multiline_f = (tlearn_multi_ex)multiline_learn;
+     ret.learn_fd.update_multiline_f = (tlearn_multi_ex)multiline_learn;
+     ret.learn_fd.predict_multiline_f = (tlearn_multi_ex)multiline_predict;
      ret.learn_fd.multipredict_f = nullptr;
      ret.pred_type = pred_type;
+
+     if (multiline_learn != nullptr || multiline_predict != nullptr)
+       ret.multi_ex_input = true;
+     else
+       ret.multi_ex_input = false;
      return ret;
    }
 
+ template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+   void(*learn)(T&, base_learner&, example&),
+   void(*predict)(T&, base_learner&, example&),
+   void(*multiline_learn)(T&, base_learner&, multi_ex&),
+   void(*multiline_predict)(T&, base_learner&, multi_ex&),
+   size_t ws,
+   prediction_type::prediction_type_t pred_type)
+   {
+     auto ret = &init_learner<T>(dat.get(), base, learn, predict, multiline_learn, multiline_predict, ws, pred_type);
+     dat.release();
+     return *ret;
+   }
+   
   template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
                                             void (*learn)(T&, base_learner&, example&),
                                             void (*predict)(T&, base_learner&, example&), size_t ws,
                                             prediction_type::prediction_type_t pred_type)
     {
-      auto ret = &init_learner(dat.get(), base, learn, predict, ws, pred_type);
+      typedef void(*fptr)(T&, base_learner&, multi_ex&);  // compile hint to resolve the right template
+      auto ret = &init_learner<T>(dat.get(), base, learn, predict, (fptr)nullptr, (fptr)nullptr, ws, pred_type);
       dat.release();
       return *ret;
     }
+
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+                                            void(*learn)(T&, base_learner&, multi_ex&),
+                                            void(*predict)(T&, base_learner&, multi_ex&), size_t ws,
+                                            prediction_type::prediction_type_t pred_type)
+  {
+    typedef void(*fptr)(T&, base_learner&, example&);  // compile hint to resolve the right template
+    auto ret = &init_learner(dat.get(), base, (fptr) nullptr, (fptr) nullptr, learn, predict, ws, pred_type);
+    dat.release();
+    return *ret;
+  }
 
   //base learner/predictor
   template<class T> learner<T>& init_learner(free_ptr<T>& dat,
                                              void (*learn)(T&, base_learner&, example&),
                                              void (*predict)(T&, base_learner&, example&),
                                              size_t params_per_weight)
-    { return init_learner(dat, nullptr, learn, predict, params_per_weight, prediction_type::scalar); }
+ {
+    typedef void(*fptr)(T&, base_learner&, multi_ex&);  // compile hint to resolve the right template
+    auto ret = &init_learner(dat.get(), nullptr, learn, predict, (fptr)nullptr, (fptr)nullptr, params_per_weight, prediction_type::scalar);
+    dat.release();
+    return *ret;
+  }
+
+  //base learner/predictor
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat,
+    void(*learn)(T&, base_learner&, multi_ex&),
+    void(*predict)(T&, base_learner&, multi_ex&),
+    size_t params_per_weight)
+  {
+    return init_learner(dat, nullptr, learn, predict, params_per_weight, prediction_type::scalar);
+  }
 
   //base predictor only
   template<class T> learner<T>& init_learner(free_ptr<T>& dat,
@@ -282,10 +391,11 @@ public:
                                              size_t params_per_weight)
     { return init_learner(dat, nullptr, predict, predict, params_per_weight, prediction_type::scalar); }
 
-    //base predictor only
-  template<class T> learner<T>& init_learner(void (*predict)(T&, base_learner&, example&),
-                                             size_t params_per_weight)
-    { return init_learner<T>(nullptr, nullptr, predict, predict, params_per_weight, prediction_type::scalar); }
+  //base predictor only
+  template<class T> learner<T>& init_learner(void(*predict)(T&, base_learner&, example&), size_t params_per_weight)
+ { typedef void(*fptr)(T&, base_learner&, multi_ex&);  // compile hint to resolve the right template
+   return init_learner<T>(nullptr, nullptr, predict, predict, (fptr)nullptr, (fptr)nullptr, params_per_weight, prediction_type::scalar);
+ }
 
   //base learner/predictor
   template<class T> learner<T>& init_learner(free_ptr<T>& dat,
@@ -296,12 +406,22 @@ public:
     { return init_learner(dat, nullptr, learn, predict, params_per_weight, pred_type); }
 
   //reduction with default prediction type
- template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
-                                            void(*learn)(T&, base_learner&, example&),
-                                            void(*predict)(T&, base_learner&, example&), size_t ws)
-   { return init_learner<T>(dat, base, learn, predict, ws, base->pred_type); }
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+    void(*learn)(T&, base_learner&, example&),
+    void(*predict)(T&, base_learner&, example&), size_t ws)
+  {
+    return init_learner<T>(dat, base, learn, predict, ws, base->pred_type);
+  }
 
- //reduction with default num_params
+  //reduction with default prediction type
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+    void(*learn)(T&, base_learner&, multi_ex&),
+    void(*predict)(T&, base_learner&, multi_ex&), size_t ws)
+  {
+    return init_learner<T>(dat, base, learn, predict, ws, base->pred_type);
+  }
+
+  //reduction with default num_params
  template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
                                             void(*learn)(T&, base_learner&, example&),
                                             void(*predict)(T&, base_learner&, example&))
@@ -311,7 +431,10 @@ public:
  template<class T> learner<T>& init_learner(base_learner* base,
                                             void(*learn)(T&, base_learner&, example&),
                                             void(*predict)(T&, base_learner&, example&))
-   { return init_learner<T>(nullptr, base, learn, predict, 1, base->pred_type); }
+ {
+   typedef void(*fptr)(T&, base_learner&, multi_ex&);  // compile hint to resolve the right template
+   return init_learner<T>(nullptr, base, learn, predict, (fptr)nullptr, (fptr)nullptr, 1, base->pred_type);
+ }
 
  //multiclass reduction
  template<class T> learner<T>& init_multiclass_learner(free_ptr<T>& dat, base_learner* base,
@@ -326,4 +449,30 @@ public:
    }
 
  template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
+
+ template<bool is_learn>
+ void base_learn_or_predict(base_learner& base, multi_ex& examples, uint64_t offset, uint32_t id = 0)
+ {
+   // if base can handle multiline example call it directly
+   // otherwise call it one at a time
+
+   if (base.accepts_multi_ex()) { 
+     if (is_learn)
+       base.learn(examples);
+     else
+       base.predict(examples);
+   }
+   else {
+     for (example* ec : examples) {
+       uint64_t old_offset = ec->ft_offset;
+       ec->ft_offset = offset;
+       if (is_learn)
+         base.learn(*ec, id);
+       else
+         base.predict(*ec, id);
+       ec->ft_offset = old_offset;
+     }
+   }
+ }
+
 }

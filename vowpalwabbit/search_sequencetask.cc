@@ -24,7 +24,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& /*arg*/
                    0);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
@@ -72,7 +72,7 @@ inline action bilou_to_bio(action y)
   return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
 }
 
-void convert_bio_to_bilou(vector<example*> ec)
+void convert_bio_to_bilou(multi_ex& ec)
 {
   for (size_t n=0; n<ec.size(); n++)
   {
@@ -165,14 +165,14 @@ void finish(Search::search& sch)
   delete D;
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   if (D.encoding == BILOU)
     convert_bio_to_bilou(ec);
 }
 
-void takedown(Search::search& sch, vector<example*>& ec)
+void takedown(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
 
@@ -184,7 +184,7 @@ void takedown(Search::search& sch, vector<example*>& ec)
     }
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   v_array<action> * y_allowed = &(D.allowed_actions);
@@ -249,7 +249,7 @@ void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
   sch.set_task_data<size_t>(&num_actions);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   size_t K = * sch.get_task_data<size_t>();
   float*costs = calloc_or_throw<float>(K);
@@ -308,7 +308,7 @@ void finish(Search::search& sch)
   delete D;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
@@ -388,7 +388,7 @@ void my_update_example_indicies(Search::search& sch, bool audit, example* ec, ui
       idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   Search::predictor P(sch, (ptag)0);

@@ -225,7 +225,7 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
   THROW("transition_eager failed");
 }
 
-void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
+void extract_features(Search::search& sch, uint32_t idx,  multi_ex &ec)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
@@ -526,7 +526,7 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
         actions_onelearner.push_back((uint32_t)(i+2+num_label));
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
@@ -564,7 +564,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     data->children[i].resize(n+(size_t)1);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_action_temp = data->valid_action_temp;

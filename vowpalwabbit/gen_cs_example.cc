@@ -42,7 +42,7 @@ float safe_probability(float prob)
 }
 
 //Multiline version
-void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -66,7 +66,7 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
 }
 
 //Multiline version
-void gen_cs_example_dm(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -90,7 +90,7 @@ void gen_cs_example_dm(v_array<example*> examples, COST_SENSITIVE::label& cs_lab
 }
 
 //Multiline version
-void gen_cs_test_example(v_array<example*> examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -158,7 +158,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
   }
 }
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, v_array<example*>& ec_seq, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
   bool shared = CB::ec_is_example_header(*(ec_seq[0]));
   c.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example

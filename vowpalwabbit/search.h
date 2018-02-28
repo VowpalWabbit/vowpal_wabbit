@@ -26,7 +26,7 @@ struct search;
 class BaseTask
 {
 public:
-  BaseTask(search* _sch, std::vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
+  BaseTask(search* _sch, multi_ex& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
   inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
   inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
   inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
@@ -37,7 +37,7 @@ public:
 
   // data
   search* sch;
-  std::vector<example*>& ec;
+  multi_ex& ec;
   bool _final_run;
   void (*_foreach_action)(search&,size_t,float,action,bool,float);
   void (*_post_prediction)(search&,size_t,action,float);
@@ -175,7 +175,7 @@ struct search
   std::string pretty_label(action a);
 
   // for meta-tasks:
-  BaseTask base_task(std::vector<example*>& ec) { return BaseTask(this, ec); }
+  BaseTask base_task(multi_ex& ec) { return BaseTask(this, ec); }
 
   // internal data that you don't get to see!
   search_private* priv;
@@ -194,25 +194,25 @@ struct search
 struct search_task
 { // required
   const char* task_name;
-  void (*run)(search&, std::vector<example*>&);
+  void (*run)(search&, multi_ex&);
 
   // optional
   void (*initialize)(search&, size_t&, arguments&);
   void (*finish)(search&);
-  void (*run_setup)(search&, std::vector<example*>&);
-  void (*run_takedown)(search&, std::vector<example*>&);
+  void (*run_setup)(search&, multi_ex&);
+  void (*run_takedown)(search&, multi_ex&);
 };
 
 struct search_metatask
 { // required
   const char* metatask_name;
-  void (*run)(search&,std::vector<example*>&);
+  void (*run)(search&,multi_ex&);
 
   // optional
   void (*initialize)(search&,size_t&,arguments&);
   void (*finish)(search&);
-  void (*run_setup)(search&,std::vector<example*>&);
-  void (*run_takedown)(search&,std::vector<example*>&);
+  void (*run_setup)(search&,multi_ex&);
+  void (*run_takedown)(search&,multi_ex&);
 };
 
 // to make calls to "predict" (and "predictLDF") cleaner when you
