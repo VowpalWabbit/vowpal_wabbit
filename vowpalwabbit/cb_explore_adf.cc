@@ -71,6 +71,7 @@ void multiline_learn_or_predict(base_learner& base, v_array<example*>& examples,
 {
   for (example* ec : examples)
   {
+    //cout << "example weight in m_l: " << ec->weight << endl;
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = offset;
     if (is_learn)
@@ -139,6 +140,7 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<ex
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<example*>& examples)
 {
+  //cout << "in p_or_l_g" << endl;
   //Explore uniform random an epsilon fraction of the time.
   if (is_learn && test_adf_sequence(data.ec_seq) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);

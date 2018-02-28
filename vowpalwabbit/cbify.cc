@@ -63,6 +63,7 @@ struct cbify
 	COST_SENSITIVE::label* csls;
 	COST_SENSITIVE::label* csl_empty;
 	bool warm_start;
+	float* old_weights; 
 
 
 };
@@ -121,6 +122,7 @@ void finish(cbify& data)
     free(data.adf_data.empty_example);
 
 		free(data.csl_empty);
+		free(data.old_weights);
   }
 }
 
@@ -178,9 +180,6 @@ uint32_t find_min(v_array<float> arr)
 
 uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 {
-	uint32_t best_action, best_action_dir;
-	float best_score;
-
 	example* ecs = data.adf_data.ecs;
 	example* empty = data.adf_data.empty_example;
 
@@ -194,26 +193,19 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 	//data.all->cost_sensitive->predict(*empty, argmin);
 	
 
-	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	{
-		if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
-		{
-			best_action = a + 1;
-			best_score = ecs[a].partial_prediction;
-		}
-	}
-
-	/*for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	{
-		if ( ecs[a].pred.multiclass != 0 )
-			best_action_dir = ecs[a].pred.multiclass;
-	}
-
-	cout<<best_action<<" "<<best_action_dir<<endl;
-	*/
+	//float best_score;
+	//for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	//{
+	//	if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
+	//	{
+	//		best_action = a + 1;
+	//		best_score = ecs[a].partial_prediction;
+	//	}
+	//}
+	//best_action_dir = ecs[0].pred.a_s[0].action+1;
 	//assert(best_action == best_action_dir);
 
-	return best_action;
+	return ecs[0].pred.a_s[0].action+1;
 
 }
 
@@ -350,7 +342,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 {
-	float old_weight;
 	uint32_t argmin;
 	uint32_t best_action;
 	example* ecs =  data.adf_data.ecs;
@@ -374,12 +365,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start) // Call the cost-sensitive learner directly
 	{
-		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		{
-			ecs[a].l.cs.costs.delete_v();
-		}
-
-
 		best_action = predict_sublearner(data, base, argmin);
 
 		//cout<<best_action<<" "<<ecs[data.adf_data.num_actions-1].pred.multiclass<<endl;
@@ -446,14 +431,23 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
-					old_weight = ecs[a].weight;
+					data.old_weights[a] = ecs[a].weight;
 					ecs[a].weight *= data.lambdas[i] / (1- data.lambdas[i]);
 					base.learn(ecs[a], i);
-					ecs[a].weight = old_weight;
 				}
 				base.learn(*empty_example, i);
+
+				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+					ecs[a].weight = data.old_weights[a];
+	
+				//old_weight = empty_example->weight;
+				//empty_example->weight = data.lambdas[i] / (1- data.lambdas[i]);
+				//empty_example->weight = old_weight;
+				//cout << "about to finish in cbify" << endl;		
+				//cout << "finished in cbify" << endl;
 			}
 		}
+
 		ec.pred.multiclass = cl.action;
 	}
 }
@@ -475,6 +469,8 @@ void init_adf_data(cbify& data, const size_t num_actions)
 
 	data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
 	data.csl_empty = calloc_or_throw<COST_SENSITIVE::label>(1);
+
+	data.old_weights = calloc_or_throw<float>(num_actions);
 
 	data.csl_empty->costs.erase();					
 	data.csl_empty->costs.push_back({0, 0, 0, 0});

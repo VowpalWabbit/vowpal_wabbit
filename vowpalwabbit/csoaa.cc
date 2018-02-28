@@ -371,10 +371,12 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K)
 
     simple_label.initial = 0.;
     float old_weight = ec->weight;
+    //cout << "weight = " << ec->weight << endl;
     if (!data.treat_as_classifier)   // treat like regression
       simple_label.label = costs[0].x;
     else     // treat like classification
     {
+      //cout << "here" << endl;
       if (costs[0].x <= min_cost)
       {
         simple_label.label = -1.;
