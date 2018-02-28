@@ -262,7 +262,7 @@ public:
   //called to check if an example is a test example.  Used in creating multiline example
   inline bool is_test_example(example& ec)
   {
-    test_example_fd.test_example_f(ec);
+    return test_example_fd.test_example_f(ec);
   }
   void set_test_example(bool(*f)(example&))
   {
