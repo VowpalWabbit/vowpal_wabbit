@@ -62,6 +62,8 @@ struct cbify
 	bool ind_supervised;
 	COST_SENSITIVE::label* csls;
 	COST_SENSITIVE::label* csl_empty;
+	CB::label* cbls;
+	CB::label* cbl_empty;
 	bool warm_start;
 	float* old_weights; 
 
@@ -97,33 +99,36 @@ void finish(cbify& data)
   data.a_s.delete_v();
 	data.lambdas.delete_v();
 	data.cumulative_costs.delete_v();
-	free(data.csls);
+	
 		
   if (data.use_adf)
   {
-		if (data.warm_start)
-		{
-		  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		  {
-		    VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.adf_data.ecs[a]);
-		  }
-		  VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data.adf_data.empty_example);
-		}
-		else
-		{
-		  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		  {
-		    VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
-		  }
-		  VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
-		}
+	  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	  {  
+			VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
+			data.adf_data.ecs[a].pred.a_s.delete_v();
+	  }
+	  VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
+		data.adf_data.empty_example->pred.a_s.delete_v();
 
     free(data.adf_data.ecs);
     free(data.adf_data.empty_example);
 
+		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+			data.csls[a].costs.delete_v();
+		
+		data.csl_empty->costs.delete_v();
+
 		free(data.csl_empty);
+		free(data.cbl_empty);
+
 		free(data.old_weights);
+		free(data.cbls);
+
   }
+	free(data.csls);
+	
+
 }
 
 void copy_example_to_adf(cbify& data, example& ec)
@@ -344,7 +349,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 {
 	uint32_t argmin;
 	uint32_t best_action;
-	example* ecs =  data.adf_data.ecs;
+	example* ecs = data.adf_data.ecs;
 	example* empty_example = data.adf_data.empty_example;
 
 	if (data.warm_start_period > 0)
@@ -367,12 +372,16 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	{
 		best_action = predict_sublearner(data, base, argmin);
 
-		//cout<<best_action<<" "<<ecs[data.adf_data.num_actions-1].pred.multiclass<<endl;
 		//data.all->cost_sensitive->predict(ec,argmin);
 
 		//generate cost-sensitive label
+		// ecs[a].weight *= 1;
+		//				cout << "size cbify = " << ecs[a].l.cs.costs.size() << endl;
 
 		COST_SENSITIVE::label* csls = data.csls;
+		COST_SENSITIVE::label* csl_empty = data.csl_empty;
+		CB::label* cbls = data.cbls;
+		CB::label* cbl_empty = data.cbl_empty;
 		
 		if (data.ind_supervised)
 		{
@@ -383,13 +392,17 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 					csls[a].costs[0].class_index = a+1;
 					csls[a].costs[0].x = loss(data, ld.label, a+1);
 		
+					cbls[a] = ecs[a].l.cb;
 					ecs[a].l.cs = csls[a];
-					ecs[a].weight *= 1;
-					//					cout << "size cbify = " << ecs[a].l.cs.costs.size() << endl;
 					data.all->cost_sensitive->learn(ecs[a],i);
 				}
-				empty_example->l.cs = *data.csl_empty;			
+				*cbl_empty = empty_example->l.cb;
+				empty_example->l.cs = *csl_empty;			
 				data.all->cost_sensitive->learn(*empty_example,i);
+
+				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+					ecs[a].l.cb = cbls[a];
+				empty_example->l.cb = *cbl_empty;
 			}
 		}
 		ec.pred.multiclass = best_action;
@@ -439,12 +452,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 					ecs[a].weight = data.old_weights[a];
-	
-				//old_weight = empty_example->weight;
-				//empty_example->weight = data.lambdas[i] / (1- data.lambdas[i]);
-				//empty_example->weight = old_weight;
-				//cout << "about to finish in cbify" << endl;		
-				//cout << "finished in cbify" << endl;
 			}
 		}
 
@@ -466,20 +473,23 @@ void init_adf_data(cbify& data, const size_t num_actions)
   }
   CB::cb_label.default_label(&adf_data.empty_example->l.cb);
   adf_data.empty_example->in_use = true;
+	adf_data.empty_example->pred.a_s = v_init<action_score>();
+
 
 	data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
 	data.csl_empty = calloc_or_throw<COST_SENSITIVE::label>(1);
+	data.cbls = calloc_or_throw<CB::label>(num_actions);
+	data.cbl_empty = calloc_or_throw<CB::label>(1);
+
 
 	data.old_weights = calloc_or_throw<float>(num_actions);
-
-	data.csl_empty->costs.erase();					
+				
 	data.csl_empty->costs.push_back({0, 0, 0, 0});
 	data.csl_empty->costs[0].class_index = 0;
 	data.csl_empty->costs[0].x = FLT_MAX;
 
 	for (size_t a = 0; a < num_actions; ++a)
 	{
-		data.csls[a].costs.erase();
 		data.csls[a].costs.push_back({0, 0, 0, 0});	
 	}
 
