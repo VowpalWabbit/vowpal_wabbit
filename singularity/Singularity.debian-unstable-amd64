@@ -1,7 +1,5 @@
-BootStrap: debootstrap
-OSVersion: unstable
-MirrorURL: http://ftp.us.debian.org/debian/
-ARCH: amd64
+BootStrap: docker
+From: debian:unstable
 
 # so if image is executed we just enter the environment
 %runscript

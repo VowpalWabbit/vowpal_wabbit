@@ -1,7 +1,5 @@
-BootStrap: debootstrap
-OSVersion: $DEBRELEASE
-MirrorURL: http://ftp.us.debian.org/debian/
-ARCH: $ARCH
+BootStrap: docker
+From: ${DOCKERARCHPREFIX}debian:$DEBRELEASE
 
 # so if image is executed we just enter the environment
 %runscript

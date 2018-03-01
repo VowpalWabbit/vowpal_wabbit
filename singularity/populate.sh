@@ -7,7 +7,12 @@ set -eu
 
 for DEBRELEASE in stable unstable; do
   for ARCH in amd64 i386; do
-     export DEBRELEASE ARCH
+     if [ $ARCH == amd64 ]; then
+         DOCKERARCHPREFIX=""  # it is the default one
+     else
+         DOCKERARCHPREFIX="$ARCH/"
+     fi
+     export DEBRELEASE ARCH DOCKERARCHPREFIX
      eval "cat <<EOF
 $(cat "template")
 EOF
