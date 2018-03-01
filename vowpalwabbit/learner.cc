@@ -133,6 +133,7 @@ void multi_ex_generic_driver(vw& all, T context)
   multi_ex ec_seq = v_init<example*>();
   example* ec = nullptr;
 
+  int i = 0;
   while (all.early_terminate == false) {
     if ((ec = VW::get_example(all.p)) != nullptr) {
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
@@ -143,9 +144,17 @@ void multi_ex_generic_driver(vw& all, T context)
         save(all, ec);
       else // empty example
         dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
+      i++;
     }
-    else 
+    else
+    {
+      if (ec_seq.size() > 0)
+      {
+        ec = &VW::get_unused_example(&all);
+        dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
+      }
       break;
+    }
   }
 
   if (all.early_terminate) //drain any extra examples from parser.
