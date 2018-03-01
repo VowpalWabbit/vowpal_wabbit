@@ -11,6 +11,15 @@ namespace CSOAA {
   LEARNER::base_learner* csldf_setup(arguments& arg);
   struct csoaa;
   void finish_example(vw& all, csoaa&, example& ec);
+
+  void inline remove_empty_last_example(multi_ex& ec_seq, vw &all)
+  {
+    if (ec_seq.size() > 1 && example_is_newline(*ec_seq.last()))
+    {
+      VW::finish_example(all, ec_seq.pop());
+    }
+  }
+
 }
 
 namespace LabelDict

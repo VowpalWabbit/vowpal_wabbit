@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "gd.h" // GD::foreach_feature() needed in subtract_example()
 #include "vw_exception.h"
 #include <algorithm>
+#include "csoaa.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -465,6 +466,8 @@ void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
   if (ec_seq_all.size() == 0) return;  // nothing to do
 
   data.ft_offset = ec_seq_all.last()->ft_offset;
+
+  remove_empty_last_example(ec_seq_all, *data.all);
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);

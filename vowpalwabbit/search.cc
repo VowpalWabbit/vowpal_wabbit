@@ -2078,14 +2078,6 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   }
 }
 
-void inline remove_empty_last_example(multi_ex& ec_seq, vw &all)
-{
-  if (ec_seq.size() > 1 && example_is_newline(*ec_seq.last()))
-  {
-      VW::finish_example(all,ec_seq.pop());
-  }
-}
-
 void inline adjust_auto_condition(search_private& priv)
 {
   if (priv.auto_condition_features)
@@ -2111,7 +2103,7 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   search_private& priv = *sch.priv;
   priv.offset = ec_seq.last()->ft_offset;
   priv.base_learner = &base;
-  remove_empty_last_example(ec_seq, sch.get_vw_pointer_unsafe());
+  CSOAA::remove_empty_last_example(ec_seq, sch.get_vw_pointer_unsafe());
   adjust_auto_condition(priv);
   const auto last_ec = ec_seq.last();
   priv.read_example_last_id = last_ec->example_counter;
