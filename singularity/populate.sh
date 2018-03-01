@@ -5,7 +5,7 @@
 #
 set -eu
 
-for DEBRELEASE in stable unstable; do
+for DEBRELEASE in unstable; do
   for ARCH in amd64 i386; do
      if [ $ARCH == amd64 ]; then
          DOCKERARCHPREFIX=""  # it is the default one
