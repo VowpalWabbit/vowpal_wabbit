@@ -49,7 +49,7 @@ void gen_cs_example_ips(v_array<example*> examples, COST_SENSITIVE::label& cs_la
   for (uint32_t i = 0; i < examples.size()-1; i++)
   {
     CB::label ld = examples[i]->l.cb;
-
+    //std::cout << "example weight = " << examples[i]->weight << std::endl;
     COST_SENSITIVE::wclass wc = {0.,i,0.,0.};
     if (shared && i > 0)
       wc.class_index = (uint32_t)i-1;

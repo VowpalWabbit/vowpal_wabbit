@@ -646,6 +646,7 @@ void learn(gd& g, base_learner& base, example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g,base,ec);
+  //cout << "iw = " << ec.weight << endl;
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g,base,ec);
 }
 
