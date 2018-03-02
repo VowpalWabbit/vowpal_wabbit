@@ -7,8 +7,6 @@ license as described in the file LICENSE.
 // This is the interface for a learning algorithm
 #include<iostream>
 #include "memory.h"
-#include "cb.h"
-#include "cost_sensitive.h"
 #include "multiclass.h"
 #include "simple_label.h"
 #include "parser.h"
@@ -148,7 +146,7 @@ public:
     }
   }
   inline void predict(example& ec, size_t i = 0){
-      ec.ft_offset += (uint32_t)(increment*i);
+    ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
@@ -279,6 +277,8 @@ public:
     void(*multi_ex_pred)(T&, base_learner&, multi_ex&),
     size_t, prediction_type::prediction_type_t);
 };
+
+ 
 
  template<class T> learner<T>& init_learner(T* dat, base_learner* base,
                                             void (*learn)(T&, base_learner&, example&),
@@ -459,7 +459,7 @@ public:
    // if base can handle multiline example call it directly
    // otherwise call it one at a time
 
-   if (base.accepts_multi_ex()) { 
+   if (base.accepts_multi_ex()) {
      if (is_learn)
        base.learn(examples);
      else
@@ -478,4 +478,24 @@ public:
    }
  }
 
+ template<bool is_learn>
+ void base_learn_or_predict(base_learner& base, example* ec, uint32_t id = 0)
+ {
+   // if base can handle multiline example call it directly
+   // otherwise call it one at a time
+
+   if (base.accepts_multi_ex()) {
+    multi_ex ec_seq{&ec,&ec+1,&ec+1,0};
+    if (is_learn)
+      base.learn(ec_seq);
+    else
+      base.predict(ec_seq);
+   }
+   else {
+    if (is_learn)
+      base.learn(*ec, id);
+    else
+      base.predict(*ec, id);
+   }
+ }
 }
