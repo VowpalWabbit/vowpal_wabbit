@@ -55,6 +55,8 @@ struct cbify
 
 	size_t choices_lambda;
 	size_t warm_start_period;
+	size_t bandit_period;
+
 	v_array<float> cumulative_costs;
 	v_array<float> lambdas;
 	size_t num_actions;
@@ -256,16 +258,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	float old_weight;
 	uint32_t argmin;
 
-	if (data.warm_start_period > 0)
-	{
-		data.warm_start = true;
-		data.warm_start_period--;
-	}	
-	else if (bandit_period > 0)
-	{
-		data.bandit = true;
-	}
-
 	argmin = find_min(data.cumulative_costs);
 
 	//Store the multiclass input label
@@ -273,8 +265,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	//cout<<ld.label<<endl;
   
-	if (data.warm_start) // Call the cost-sensitive learner directly
+	if (data.warm_start_period > 0) // Call the cost-sensitive learner directly
 	{
+		data.warm_start_period--;
+
 		//generate cost-sensitive label
 		COST_SENSITIVE::label& csl = *data.csls;
     csl.costs.resize(data.num_actions);
@@ -299,9 +293,12 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			}
 		}
 		ec.l.multi = ld;
+		ec.weight = 0;
 	}
-	else //Call the cb_explore algorithm. It returns a vector of probabilities for each action
+	else if (data.bandit_period > 0)//Call the cb_explore algorithm. It returns a vector of probabilities for each action
 	{
+		data.bandit_period--;
+
 		data.cb_label.costs.erase();
 		ec.l.cb = data.cb_label;
 		ec.pred.a_s = data.a_s;
@@ -343,6 +340,16 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	  ec.pred.multiclass = action;
 		ec.weight = old_weight;
 	}
+	else
+	{
+		//skipping
+		//base.predict(ec, argmin);
+		ec.pred.multiclass = 0;
+		ec.weight = 0;
+
+	}
+
+
 }
 
 
@@ -353,15 +360,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	uint32_t best_action;
 	example* ecs = data.adf_data.ecs;
 	example* empty_example = data.adf_data.empty_example;
-
-	if (data.warm_start_period > 0)
-	{
-		data.warm_start = true;
-		data.warm_start_period--;
-	}	
-	else
-		data.warm_start = false;
-
 	
 	argmin = find_min(data.cumulative_costs);
 
@@ -370,8 +368,10 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
   copy_example_to_adf(data, ec);
 
-	if (data.warm_start) // Call the cost-sensitive learner directly
+	if (data.warm_start_period > 0) // Call the cost-sensitive learner directly
 	{
+		data.warm_start_period--;
+
 		best_action = predict_sublearner(data, base, argmin);
 
 		//data.all->cost_sensitive->predict(ec,argmin);
@@ -410,8 +410,10 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.pred.multiclass = best_action;
 		ec.l.multi = ld;
 	}
-	else // call the bandit learner
+	else if (data.bandit_period > 0) // call the bandit learner
 	{
+		data.bandit_period--;
+
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
 		  base.predict(ecs[a], argmin);
@@ -458,6 +460,11 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		}
 
 		ec.pred.multiclass = cl.action;
+	}
+	else
+	{
+		ec.pred.multiclass = 0;
+		ec.weight = 0;
 	}
 }
 
@@ -522,6 +529,7 @@ base_learner* cbify_setup(vw& all)
   ("loss0", po::value<float>(), "loss for correct label")
   ("loss1", po::value<float>(), "loss for incorrect label")
 	("warm_start", po::value<size_t>(), "number of training examples for fully-supervised warm start")
+	("bandit", po::value<size_t>(), "number of training examples for bandit processing")
   ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate")
 	("no_supervised", "indicator of using supervised only")
 	("no_bandit", "indicator of using bandit only");
@@ -549,7 +557,6 @@ base_learner* cbify_setup(vw& all)
 	//cout<<data.warm_start_period<<endl;
 	data.warm_start_period = vm.count("warm_start") ? vm["warm_start"].as<size_t>() : 0;
 	data.bandit_period = vm.count("bandit") ?  vm["bandit"].as<size_t>() : UINT32_MAX; //ideally should be the size of the dataset
-	data.test_period = vm.count("test") ? vm["test"].as<size_t>() : 0;
 
 	//cout<<data.warm_start_period<<endl;
 	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
