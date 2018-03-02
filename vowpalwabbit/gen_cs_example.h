@@ -39,6 +39,9 @@ struct cb_to_cs_adf
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
   LEARNER::base_learner* scorer;
+
+	//for scaling the weights of MTR
+	uint32_t num_actions;
 };
 
 CB::cb_class* get_observed_cost(CB::label& ld);

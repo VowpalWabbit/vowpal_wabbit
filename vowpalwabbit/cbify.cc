@@ -261,8 +261,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.warm_start = true;
 		data.warm_start_period--;
 	}	
-	else
-		data.warm_start = false;
+	else if (bandit_period > 0)
+	{
+		data.bandit = true;
+	}
 
 	argmin = find_min(data.cumulative_costs);
 
@@ -546,6 +548,9 @@ base_learner* cbify_setup(vw& all)
 
 	//cout<<data.warm_start_period<<endl;
 	data.warm_start_period = vm.count("warm_start") ? vm["warm_start"].as<size_t>() : 0;
+	data.bandit_period = vm.count("bandit") ?  vm["bandit"].as<size_t>() : UINT32_MAX; //ideally should be the size of the dataset
+	data.test_period = vm.count("test") ? vm["test"].as<size_t>() : 0;
+
 	//cout<<data.warm_start_period<<endl;
 	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
 

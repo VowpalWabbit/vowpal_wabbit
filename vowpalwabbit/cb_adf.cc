@@ -113,7 +113,9 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
-  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
+
+	//adjust the importance weight to scale by a factor of 1/K (the last term)
+  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum) * (1.f / mydata.gen_cs.num_actions);
   GEN_CS::call_cs_ldf<true>(base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
@@ -394,6 +396,9 @@ base_learner* cb_adf_setup(vw& all)
   cb_adf& ld = calloc_or_throw<cb_adf>();
 
   ld.all = &all;
+
+	cb_to_cs_adf& c = ld.gen_cs;
+	c.num_actions = (uint32_t)(all.vm["cbify"].as<size_t>());
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
