@@ -467,7 +467,12 @@ void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
 
   data.ft_offset = ec_seq_all.last()->ft_offset;
 
-  remove_empty_last_example(ec_seq_all, *data.all);
+  // Remove last element if empty.  This reduction expects no empty examples at end
+  // how ever other reductions need empty example at the end.  So driver adds empty example
+  example* empty_ex = remove_empty_last_example(ec_seq_all);
+
+  // Although we mangle the example, return the collection the way we got it
+  restore_last_example(ec_seq_all, empty_ex); 
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);

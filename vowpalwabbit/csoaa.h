@@ -12,14 +12,24 @@ namespace CSOAA {
   struct csoaa;
   void finish_example(vw& all, csoaa&, example& ec);
 
-  void inline remove_empty_last_example(multi_ex& ec_seq, vw &all)
+  inline example* remove_empty_last_example(multi_ex& ec_seq)
   {
     if (ec_seq.size() > 1 && example_is_newline(*ec_seq.last()))
     {
-      VW::finish_example(all, ec_seq.pop());
+      return ec_seq.pop();
     }
+    return nullptr;
   }
 
+  class restore_last_example
+  {
+  public:
+    restore_last_example(multi_ex& coll, example* ex) :_coll(coll), _ex(ex) {};
+    ~restore_last_example() { if (_ex != nullptr) _coll.push_back(_ex); };
+  private:
+    multi_ex& _coll;
+    example* _ex;
+  };
 }
 
 namespace LabelDict
