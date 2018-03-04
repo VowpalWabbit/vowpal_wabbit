@@ -472,7 +472,7 @@ void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
   example* empty_ex = remove_empty_last_example(ec_seq_all);
 
   // Although we mangle the example, return the collection the way we got it
-  restore_last_example(ec_seq_all, empty_ex); 
+  restore_last_example sentry(ec_seq_all, empty_ex); 
 
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
@@ -809,6 +809,8 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
+    example* empty_ex = remove_empty_last_example(ec_seq);
+    restore_last_example sentry(ec_seq,empty_ex);
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
   }
