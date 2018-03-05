@@ -120,10 +120,16 @@ if(MSVC)
 endif()
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_CXX_STANDARD 11)
+
+if(BUILD_TESTING)
+    enable_testing()
+endif()
+
 
 # Add subdirectories:
 add_subdirectory(rapidjson)
 add_subdirectory(vowpalwabbit)
 add_subdirectory(library)
-# add_subdirectory(test)
+add_subdirectory(test)
 # add_subdirectory(c_test)

@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "crossplat_compat.h"
+#include "config.h"
 
 #include <float.h>
 #ifdef _WIN32
