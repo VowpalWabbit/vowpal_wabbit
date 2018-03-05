@@ -20,6 +20,10 @@ license as described in the file LICENSE.
 #  endif
 #endif
 
+#ifdef HAVE_XMMINTRIN_H
+#include <xmmintrin.h>
+#endif
+
 #include "gd.h"
 #include "accumulate.h"
 #include "reductions.h"

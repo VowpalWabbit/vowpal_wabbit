@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <vector>
 #include <queue>
 #include <utility>
@@ -8,11 +8,14 @@
 #include <iostream>
 #include <fstream>
 #include <errno.h>
-#include <unistd.h>
 #include <assert.h>
 #include <boost/program_options.hpp>
 
 #include "../vowpalwabbit/vw.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 using namespace std;
 namespace po = boost::program_options;

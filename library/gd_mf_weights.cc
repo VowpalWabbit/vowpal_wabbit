@@ -3,7 +3,7 @@
 #include "../vowpalwabbit/vw.h"
 #include <fstream>
 #include <iostream>
-#include <string.h>
+#include <string>
 #include <boost/program_options.hpp>
 
 using namespace std;

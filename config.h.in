@@ -1,0 +1,138 @@
+/* config.h.cmake: Configuration definitions detected by CMake */
+#ifndef VW_CONFIG_H_CMAKE
+
+#if !defined(__cplusplus)
+#  include <stdint.h>
+#else
+#  include <cstdint>
+#endif
+
+#cmakedefine HAVE_XMMINTRIN_H
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#cmakedefine PTHREAD_CREATE_JOINABLE
+
+/* Define to 1 if you have the ANSI C header files. */
+#cmakedefine STDC_HEADERS
+
+/* Define to 1 if <sys/types.h> exists */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define to 1 if <stdint.h> exists */
+#cmakedefine HAVE_STDINT_H
+
+/* Define to 1 if <stddef.h> exists */
+#cmakedefine HAVE_STDDEF_H
+
+/* Define to 1 if Boost is generally available */
+#cmakedefine HAVE_BOOST
+
+/* Define to 1 if boost::program_options library is available */
+#cmakedefine HAVE_BOOST_PROGRAM_OPTIONS
+
+/* Define to 1 if the size_t type exists (it should, ssize_t might not) */
+#cmakedefine HAVE_SIZE_T
+
+/* sizeof(size_t) */
+#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
+
+/* Define to 1 if the ssize_t type exists */
+#cmakedefine HAVE_SSIZE_T
+
+/* sizeof(unsigned int) */
+#cmakedefine SIZEOF_UINT_T @SIZEOF_UINT_T@
+
+/* sizeof(unsigned long) */
+#cmakedefine SIZEOF_ULONG_T @SIZEOF_ULONG_T@
+
+/* unsigned long long */
+#cmakedefine HAVE_ULONGLONG_T
+#cmakedefine SIZEOF_ULONGLONG_T @SIZEOF_ULONGLONG_T@
+
+/* uint64_t */
+#cmakedefine HAVE_UINT64_T
+#cmakedefine SIZEOF_UINT64_T @SIZEOF_UINT64_T@
+
+/* int64_t */
+#cmakedefine HAVE_INT64_T
+#cmakedefine SIZEOF_INT64_T @SIZEOF_INT64_T@
+
+/* has unistd h? */
+#cmakedefine HAVE_UNISTD_H
+
+/* Name of package */
+#define PACKAGE "vowpal_wabbit"
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "jl@hunch.net"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "vowpal_wabbit"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "vowpal_wabbit 7.10.1"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "vowpal_wabbit"
+
+/* project url */
+#define PACKAGE_URL "https://github.com/JohnLangford/vowpal_wabbit"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "7.10.1"
+
+/* Version number of package */
+#define VERSION "7.10.1"
+
+/*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/* General WinXX platform shorthand: */
+#if defined(_WIN32) || defined(_WIN64) || defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__)
+#define WINXX_PLATFORM
+#endif
+
+/* WinXX platform native API (no Cygwin) */
+#if defined(_WIN32) || defined(_WIN64) || defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+#define WINXX_NATIVE_API
+#endif
+
+#if defined(WINXX_NATIVE_API)
+/* Don't #define min/max: */
+#define NOMINMAX
+/* For int64_t */
+#  if !defined(__cplusplus)
+#    include <stdint.h>
+#  else
+#    include <cstdint>
+#  endif
+#endif
+
+/* ssize_t, if not available */
+#if !defined(HAVE_SSIZE_T)
+#  if !defined(HAVE_SIZE_T) || !defined(SIZEOF_SIZE_T)
+#pragma error "No size_t type defined?"
+#  elif SIZEOF_SIZE_T == 4
+typedef int32_t ssize_t;
+#  elif SIZEOF_SIZE_T == 8 && defined(HAVE_INT64_T)
+typedef int64_t ssize_t;
+#  else
+#pragma error "No suitable type for ssize_t defined."
+#  endif
+#endif
+
+/* Large scalar constants for size_t: */
+#if defined(SIZEOF_SIZE_T)
+#  if defined(SIZEOF_ULONGLONG_T) && SIZEOF_SIZE_T == SIZEOF_ULONGLONG_T && SIZEOF_ULONG_T < SIZEOF_ULONGLONG_T
+#    define SIZE_T_SCALAR(x) x##ull
+#  elif defined(SIZEOF_ULONG_T) && SIZEOF_SIZE_T == SIZEOF_ULONG_T
+#    define SIZE_T_SCALAR(x) x##ul
+#  else
+#    define SIZE_T_SCALAR(x) x
+#  endif
+#else
+#pragma error "sizeof(size_t) unknown?"
+#endif
+
+#define VW_CONFIG_H_CMAKE
+#endif

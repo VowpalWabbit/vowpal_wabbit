@@ -68,6 +68,7 @@ test/RunTests.last.times
 **/dll
 **/ipch
 **/target
+build/
 
 # VS files
 *.opensdf
