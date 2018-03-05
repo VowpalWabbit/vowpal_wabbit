@@ -6,6 +6,6 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include <tuple>
 
-LEARNER::base_learner* lda_setup(vw&);
+LEARNER::base_learner* lda_setup(arguments&);
 
 void get_top_weights(vw* all, int top_words_count, int topic, std::vector<feature>& output);

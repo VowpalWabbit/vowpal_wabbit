@@ -149,13 +149,13 @@ void end_examples(audit_regressor_data& d)
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  all.trace_message << std::left
-                    << std::setw(shared_data::col_example_counter) << ex_processed
-                    << " " << std::right
-                    << std::setw(9) << vals_found
-                    << " "  << std::right
-                    << std::setw(12) << progress << '%'
-                    << std::endl;
+  all.opts_n_args.trace_message << std::left
+                                << std::setw(shared_data::col_example_counter) << ex_processed
+                                << " " << std::right
+                                << std::setw(9) << vals_found
+                                << " "  << std::right
+                                << std::setw(12) << progress << '%'
+                                << std::endl;
 }
 
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
@@ -183,8 +183,8 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
-    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
-                           dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
+    dat.all->opts_n_args.trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
+      dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
 }
 
 template<class T>
@@ -198,7 +198,7 @@ void init_driver(audit_regressor_data& dat)
 {
   // checks a few settings that might be applied after audit_regressor_setup() is called
 
-  po::variables_map& vm = dat.all->vm;
+  po::variables_map& vm = dat.all->opts_n_args.vm;
   if ( (vm.count("cache_file") || vm.count("cache") ) && !vm.count("kill_cache") )
     THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
 
@@ -209,9 +209,9 @@ void init_driver(audit_regressor_data& dat)
   dat.increment = dat.all->l->increment/dat.all->l->weights;
   dat.total_class_cnt = dat.all->l->weights;
 
-  if (dat.all->vm.count("csoaa"))
+  if (dat.all->opts_n_args.vm.count("csoaa"))
   {
-    size_t n = dat.all->vm["csoaa"].as<size_t>();
+    size_t n = dat.all->opts_n_args.vm["csoaa"].as<uint32_t>();
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;
@@ -230,15 +230,15 @@ void init_driver(audit_regressor_data& dat)
 
   if (!dat.all->quiet)
   {
-    dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    dat.all->trace_message << std::left
+    dat.all->opts_n_args.trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    dat.all->opts_n_args.trace_message << std::left
                            << std::setw(shared_data::col_example_counter) << "example"
                            << " "
                            << std::setw(shared_data::col_example_weight) << "values"
                            << " "
                            << std::setw(shared_data::col_current_label) << "total"
                            << std::endl;
-    dat.all->trace_message << std::left
+    dat.all->opts_n_args.trace_message << std::left
                            << std::setw(shared_data::col_example_counter) << "counter"
                            << " "
                            << std::setw(shared_data::col_example_weight) << "audited"
@@ -251,28 +251,28 @@ void init_driver(audit_regressor_data& dat)
 
 
 
-LEARNER::base_learner* audit_regressor_setup(vw& all)
+LEARNER::base_learner* audit_regressor_setup(arguments& arg)
 {
-  if (missing_option<string,false>(all, "audit_regressor", "stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode.")) return nullptr;
+ string out_file;
+  if (arg.new_options("Audit Regressor")
+      .critical("audit_regressor", out_file, "stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode.").missing())
+    return nullptr;
 
-  po::variables_map& vm = all.vm;
-
-  string out_file = vm["audit_regressor"].as<string>();
   if (out_file.empty())
     THROW("audit_regressor argument (output filename) is missing.");
 
-  if (all.numpasses > 1)
+  if (arg.all->numpasses > 1)
     THROW("audit_regressor can't be used with --passes > 1.");
 
-  all.audit = true;
+  arg.all->audit = true;
 
-  audit_regressor_data& dat = calloc_or_throw<audit_regressor_data>();
-  dat.all = &all;
-  dat.ns_pre = new vector<string>(); // explicitly invoking vector's constructor
-  dat.out_file = new io_buf();
-  dat.out_file->open_file( out_file.c_str(), all.stdin_off, io_buf::WRITE );
+  auto dat = scoped_calloc_or_throw<audit_regressor_data>();
+  dat->all = arg.all;
+  dat->ns_pre = new vector<string>(); // explicitly invoking vector's constructor
+  dat->out_file = new io_buf();
+  dat->out_file->open_file( out_file.c_str(), arg.all->stdin_off, io_buf::WRITE );
 
-  LEARNER::learner<audit_regressor_data>& ret = LEARNER::init_learner<audit_regressor_data>(&dat, setup_base(all), audit_regressor, audit_regressor, 1);
+  LEARNER::learner<audit_regressor_data>& ret = LEARNER::init_learner(dat, setup_base(arg), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

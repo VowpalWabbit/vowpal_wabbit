@@ -63,9 +63,6 @@ struct search
   // to detect test examples!
   void set_label_parser(label_parser&lp, bool (*is_test)(polylabel&));
 
-  // for adding command-line options
-  void add_program_options(po::variables_map& vw, po::options_description& opts);
-
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
 
@@ -189,6 +186,8 @@ struct search
 
   vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
+  search();
+  ~search();
 };
 
 // for defining new tasks, you must fill out a search_task
@@ -198,7 +197,7 @@ struct search_task
   void (*run)(search&, std::vector<example*>&);
 
   // optional
-  void (*initialize)(search&,size_t&, po::variables_map&);
+  void (*initialize)(search&, size_t&, arguments&);
   void (*finish)(search&);
   void (*run_setup)(search&, std::vector<example*>&);
   void (*run_takedown)(search&, std::vector<example*>&);
@@ -210,7 +209,7 @@ struct search_metatask
   void (*run)(search&,std::vector<example*>&);
 
   // optional
-  void (*initialize)(search&,size_t&,po::variables_map&);
+  void (*initialize)(search&,size_t&,arguments&);
   void (*finish)(search&);
   void (*run_setup)(search&,std::vector<example*>&);
   void (*run_takedown)(search&,std::vector<example*>&);
@@ -318,17 +317,17 @@ private:
 };
 
 // some helper functions you might find helpful
-template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string)
+/*template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string)
 { if (vm.count(opt_name))
   { ret = vm[opt_name].as<T>();
-    *all.file_options << " --" << opt_name << " " << ret;
+    *all.args_n_opts.file_options << " --" << opt_name << " " << ret;
   }
   else if (strlen(required_error_string)>0)
   { std::cerr << required_error_string << std::endl;
     if (! vm.count("help"))
       THROW(required_error_string);
   }
-}
+  }*/
 
 void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
 bool string_equal(std::string a, std::string b);
@@ -337,5 +336,5 @@ bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(vw&);
+LEARNER::base_learner* setup(arguments& arg);
 }

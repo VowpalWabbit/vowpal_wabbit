@@ -36,15 +36,16 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   cout << endl;
 }
 
-LEARNER::base_learner* print_setup(vw& all)
+LEARNER::base_learner* print_setup(arguments& arg)
 {
-  if (missing_option(all, true, "print", "print examples")) return nullptr;
+  if (arg.new_options("Print psuedolearner").critical("print", "print examples").missing())
+    return nullptr;
 
-  print& p = calloc_or_throw<print>();
-  p.all = &all;
+  auto p = scoped_calloc_or_throw<print>();
+  p->all = arg.all;
 
-  all.weights.stride_shift(0);
+  arg.all->weights.stride_shift(0);
 
-  LEARNER::learner<print>& ret = init_learner(&p, learn, 1);
+  LEARNER::learner<print>& ret = init_learner(p, learn, learn, 1);
   return make_base(ret);
 }

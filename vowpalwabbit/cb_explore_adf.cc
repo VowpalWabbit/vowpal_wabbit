@@ -496,134 +496,89 @@ void predict_or_learn(cb_explore_adf& data, base_learner& base, example &ec)
     data.ec_seq.push_back(&ec);
   }
 }
-
 }
 
 
 using namespace CB_EXPLORE_ADF;
 
 
-base_learner* cb_explore_adf_setup(vw& all)
+base_learner* cb_explore_adf_setup(arguments& arg)
 {
-  //parse and set arguments
-  if (missing_option(all, true, "cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+  auto data = scoped_calloc_or_throw<cb_explore_adf>();
+  if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
+      .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
+      .keep("first", data->tau, "tau-first exploration")
+      .keep("epsilon", data->epsilon, "epsilon-greedy exploration")
+      .keep("bag", data->bag_size, "bagging-based exploration")
+      .keep("cover", data->cover_size ,"Online cover based exploration")
+      .keep("psi", data->psi, 1.0f, "disagreement parameter for cover")
+      .keep(data->nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
+      .keep("softmax", "softmax exploration")
+      .keep(data->greedify, "greedify", "always update first policy once in bagging")
+      .keep("lambda", data->lambda, 1.0f, "parameter for softmax").missing())
     return nullptr;
-  new_options(all, "CB_EXPLORE_ADF options")
-  ("first", po::value<size_t>(), "tau-first exploration")
-  ("epsilon", po::value<float>(), "epsilon-greedy exploration")
-  ("bag", po::value<size_t>(), "bagging-based exploration")
-  ("cover",po::value<size_t>() ,"Online cover based exploration")
-  ("psi", po::value<float>(), "disagreement parameter for cover")
-  ("nounif", "do not explore uniformly on zero-probability actions in cover")
-  ("softmax", "softmax exploration")
-  ("greedify", "always update first policy once in bagging")
-  ("lambda", po::value<float>(), "parameter for softmax");
-  add_options(all);
 
-  po::variables_map& vm = all.vm;
-  cb_explore_adf& data = calloc_or_throw<cb_explore_adf>();
+  data->all = arg.all;
+  if (count(arg.args.begin(), arg.args.end(), "--cb_adf") == 0)
+    arg.args.push_back("--cb_adf");
 
-  data.all = &all;
-  if (count(all.args.begin(), all.args.end(), "--cb_adf") == 0)
-    all.args.push_back("--cb_adf");
-
-  all.delete_prediction = delete_action_scores;
+  arg.all->delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
-  char type_string[10];
 
-  if (vm.count("epsilon"))
+  if (arg.vm.count("cover"))
   {
-    data.epsilon = vm["epsilon"].as<float>();
-    sprintf(type_string, "%f", data.epsilon);
-    *all.file_options << " --epsilon "<<type_string;
+    data->explore_type = COVER;
+    problem_multiplier = data->cover_size+1;
   }
-  if (vm.count("cover"))
+  else if (arg.vm.count("bag"))
   {
-    data.cover_size = (uint32_t)vm["cover"].as<size_t>();
-    data.explore_type = COVER;
-    problem_multiplier = data.cover_size+1;
-    *all.file_options << " --cover " << data.cover_size;
-
-    data.psi = 1.0f;
-    if (vm.count("psi"))
-      data.psi = vm["psi"].as<float>();
-
-    sprintf(type_string, "%f", data.psi);
-    *all.file_options << " --psi " << type_string;
-    if (vm.count("nounif"))
+    data->explore_type = BAG_EXPLORE;
+    problem_multiplier = data->bag_size;
+  }
+  else if (arg.vm.count("first"))
+    data->explore_type = EXPLORE_FIRST;
+  else if (arg.vm["softmax"].as<bool>())
+    data->explore_type = SOFTMAX;
+  else
     {
-      data.nounif = true;
-      *all.file_options << " --nounif";
+      if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
+      data->explore_type = EPS_GREEDY;
     }
-  }
-  else if (vm.count("bag"))
-  {
-    data.bag_size = (uint32_t)vm["bag"].as<size_t>();
-    data.greedify = vm.count("greedify") > 0;
-    data.explore_type = BAG_EXPLORE;
-    problem_multiplier = data.bag_size;
-    *all.file_options << " --bag "<< data.bag_size;
-    if (data.greedify)
-      *all.file_options << " --greedify";
-  }
-  else if (vm.count("first"))
-  {
-    data.tau = (uint32_t)vm["first"].as<size_t>();
-    data.explore_type = EXPLORE_FIRST;
-    *all.file_options << " --first "<< data.tau;
-  }
-  else if (vm.count("softmax"))
-  {
-    data.lambda = 1.0;
-    if (vm.count("lambda"))
-      data.lambda = (float)vm["lambda"].as<float>();
-    data.explore_type = SOFTMAX;
-    sprintf(type_string, "%f", data.lambda);
-    *all.file_options << " --softmax --lambda "<<type_string;
-  }
-  else if (vm.count("epsilon"))
-    data.explore_type = EPS_GREEDY;
-  else //epsilon
-  {
-    data.epsilon = 0.05f;
-    data.explore_type = EPS_GREEDY;
-  }
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
-
-  learner<cb_explore_adf>& l = init_learner(&data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
+  base_learner* base = setup_base(arg);
+  arg.all->p->lp = CB::cb_label;
+  arg.all->label_type = label_type::cb;
 
   //Extract from lower level reductions.
-  data.gen_cs.scorer = all.scorer;
-  data.cs_ldf_learner = all.cost_sensitive;
-  data.gen_cs.cb_type = CB_TYPE_IPS;
-  if (all.vm.count("cb_type"))
+  data->gen_cs.scorer = arg.all->scorer;
+  data->cs_ldf_learner = arg.all->cost_sensitive;
+  data->gen_cs.cb_type = CB_TYPE_IPS;
+  if (arg.vm.count("cb_type"))
   {
     std::string type_string;
-    type_string = all.vm["cb_type"].as<std::string>();
+    type_string = arg.vm["cb_type"].as<std::string>();
 
     if (type_string.compare("dr") == 0)
-      data.gen_cs.cb_type = CB_TYPE_DR;
+      data->gen_cs.cb_type = CB_TYPE_DR;
     else if (type_string.compare("ips") == 0)
-      data.gen_cs.cb_type = CB_TYPE_IPS;
+      data->gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
-      if (vm.count("cover"))
+      if (arg.vm.count("cover"))
       {
-        all.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
-        data.gen_cs.cb_type = CB_TYPE_IPS;
+        arg.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
+        data->gen_cs.cb_type = CB_TYPE_IPS;
       }
       else
-        data.gen_cs.cb_type = CB_TYPE_MTR;
+        data->gen_cs.cb_type = CB_TYPE_MTR;
     else
-      all.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+      arg.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
   }
+
+  learner<cb_explore_adf>& l = init_learner(data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
   l.set_finish(CB_EXPLORE_ADF::finish);
   l.set_end_examples(CB_EXPLORE_ADF::end_examples);
   return make_base(l);
 }
-

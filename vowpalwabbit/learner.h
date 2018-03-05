@@ -88,16 +88,12 @@ typedef void (*tsl)(void* d, io_buf& io, bool read, bool text);
 typedef void (*tfunc)(void*d);
 typedef void (*tend_example)(vw& all, void* d, example& ec);
 
-template<class T> learner<T>& init_learner(T*, void (*)(T&, base_learner&, example&), size_t, prediction_type::prediction_type_t pred = prediction_type::scalar);
-template<class T>
-learner<T>& init_learner(T*, base_learner*, void(*learn)(T&, base_learner&, example&),
-                         void(*predict)(T&, base_learner&, example&), size_t ws = 1);
-template<class T>
-learner<T>& init_learner(T*, base_learner*, void (*learn)(T&, base_learner&, example&),
-                         void (*predict)(T&, base_learner&, example&), size_t ws, prediction_type::prediction_type_t);
+ template<class T> learner<T>& init_learner(T*, base_learner*,
+                                            void (*learn)(T&, base_learner&, example&),
+                                            void (*predict)(T&, base_learner&, example&),
+                                            size_t ws, prediction_type::prediction_type_t);
 
-template<class T>
-struct learner
+ template<class T> struct learner
 {
 private:
   func_data init_fd;
@@ -218,84 +214,116 @@ public:
     finish_example_fd.finish_example_f = (tend_example)f;
   }
 
-  friend learner<T>& init_learner<>(T*, base_learner*, void(*l)(T&, base_learner&, example&),
-                                    void(*pred)(T&, base_learner&, example&), size_t);
-
-  friend learner<T>& init_learner<>(T*, void (*learn)(T&, base_learner&, example&), size_t, prediction_type::prediction_type_t);
   friend learner<T>& init_learner<>(T*, base_learner*, void (*l)(T&, base_learner&, example&),
-                                    void (*pred)(T&, base_learner&, example&), size_t, prediction_type::prediction_type_t);
+                                      void (*pred)(T&, base_learner&, example&), size_t, prediction_type::prediction_type_t);
 };
 
-template<class T>
-learner<T>& init_learner(T* dat, void (*learn)(T&, base_learner&, example&),
-                         size_t params_per_weight, prediction_type::prediction_type_t pred_type)
-{ // the constructor for all learning algorithms.
-  learner<T>& ret = calloc_or_throw<learner<T> >();
-  ret.weights = 1;
-  ret.increment = params_per_weight;
-  ret.end_pass_fd.func = noop;
-  ret.end_examples_fd.func = noop;
-  ret.init_fd.func = noop;
-  ret.save_load_fd.save_load_f = noop_sl;
-  ret.finisher_fd.data = dat;
-  ret.finisher_fd.func = noop;
+ template<class T> learner<T>& init_learner(T* dat, base_learner* base,
+                                            void (*learn)(T&, base_learner&, example&),
+                                            void (*predict)(T&, base_learner&, example&), size_t ws,
+                                            prediction_type::prediction_type_t pred_type)
+   {
+     learner<T>& ret = calloc_or_throw<learner<T> >();
 
-  ret.learn_fd.data = dat;
-  ret.learn_fd.learn_f = (tlearn)learn;
-  ret.learn_fd.update_f = (tlearn)learn;
-  ret.learn_fd.predict_f = (tlearn)learn;
-  ret.learn_fd.multipredict_f = nullptr;
-  ret.sensitivity_fd.sensitivity_f = (tsensitivity)noop_sensitivity;
-  ret.finish_example_fd.data = dat;
-  ret.finish_example_fd.finish_example_f = return_simple_example;
-  ret.pred_type = pred_type;
+     if (base !=nullptr)
+       {//a reduction
+         ret = *(learner<T>*)base;
+         ret.learn_fd.base = base;
+         ret.finisher_fd.data = dat;
+         ret.finisher_fd.base = base;
+         ret.finisher_fd.func = noop;
+         ret.weights = ws;
+         ret.increment = base->increment * ret.weights;
+       }
+     else //a base learner
+       {
+         ret.weights = 1;
+         ret.increment = ws;
+         ret.end_pass_fd.func = noop;
+         ret.end_examples_fd.func = noop;
+         ret.init_fd.func = noop;
+         ret.save_load_fd.save_load_f = noop_sl;
+         ret.finisher_fd.data = dat;
+         ret.finisher_fd.func = noop;
+         ret.sensitivity_fd.sensitivity_f = (tsensitivity)noop_sensitivity;
+         ret.finish_example_fd.data = dat;
+         ret.finish_example_fd.finish_example_f = return_simple_example;
+       }
 
-  return ret;
-}
+     ret.learn_fd.data = dat;
+     ret.learn_fd.learn_f = (tlearn)learn;
+     ret.learn_fd.update_f = (tlearn)learn;
+     ret.learn_fd.predict_f = (tlearn)predict;
+     ret.learn_fd.multipredict_f = nullptr;
+     ret.pred_type = pred_type;
+     return ret;
+   }
 
-template<class T>
-learner<T>& init_learner(T* dat, base_learner* base,
-                         void(*learn)(T&, base_learner&, example&),
-                         void(*predict)(T&, base_learner&, example&), size_t ws)
-{ return init_learner<T>(dat, base, learn, predict, ws, base->pred_type);
-}
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+                                            void (*learn)(T&, base_learner&, example&),
+                                            void (*predict)(T&, base_learner&, example&), size_t ws,
+                                            prediction_type::prediction_type_t pred_type)
+    {
+      auto ret = &init_learner(dat.get(), base, learn, predict, ws, pred_type);
+      dat.release();
+      return *ret;
+    }
 
-template<class T>
-learner<T>& init_learner(T* dat, base_learner* base,
-                         void (*learn)(T&, base_learner&, example&),
-                         void (*predict)(T&, base_learner&, example&), size_t ws,
-                         prediction_type::prediction_type_t pred_type)
-{ //the reduction constructor, with separate learn and predict functions
-  learner<T>& ret = calloc_or_throw<learner<T> >();
-  ret = *(learner<T>*)base;
+  //base learner/predictor
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat,
+                                             void (*learn)(T&, base_learner&, example&),
+                                             void (*predict)(T&, base_learner&, example&),
+                                             size_t params_per_weight)
+    { return init_learner(dat, nullptr, learn, predict, params_per_weight, prediction_type::scalar); }
 
-  ret.learn_fd.data = dat;
-  ret.learn_fd.learn_f = (tlearn)learn;
-  ret.learn_fd.update_f = (tlearn)learn;
-  ret.learn_fd.predict_f = (tlearn)predict;
-  ret.learn_fd.multipredict_f = nullptr;
-  ret.learn_fd.base = base;
+  //base predictor only
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat,
+                                             void (*predict)(T&, base_learner&, example&),
+                                             size_t params_per_weight)
+    { return init_learner(dat, nullptr, predict, predict, params_per_weight, prediction_type::scalar); }
 
-  ret.finisher_fd.data = dat;
-  ret.finisher_fd.base = base;
-  ret.finisher_fd.func = noop;
-  ret.pred_type = pred_type;
+    //base predictor only
+  template<class T> learner<T>& init_learner(void (*predict)(T&, base_learner&, example&),
+                                             size_t params_per_weight)
+    { return init_learner<T>(nullptr, nullptr, predict, predict, params_per_weight, prediction_type::scalar); }
 
-  ret.weights = ws;
-  ret.increment = base->increment * ret.weights;
-  return ret;
-}
+  //base learner/predictor
+  template<class T> learner<T>& init_learner(free_ptr<T>& dat,
+                                             void (*learn)(T&, base_learner&, example&),
+                                             void (*predict)(T&, base_learner&, example&),
+                                             size_t params_per_weight,
+                                             prediction_type::prediction_type_t pred_type)
+    { return init_learner(dat, nullptr, learn, predict, params_per_weight, pred_type); }
 
-template<class T> learner<T>&
-init_multiclass_learner(T* dat, base_learner* base,
-                        void (*learn)(T&, base_learner&, example&),
-                        void (*predict)(T&, base_learner&, example&), parser* p, size_t ws,
-                        prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
-{ learner<T>& l = init_learner(dat,base,learn,predict,ws,pred_type);
-  l.set_finish_example(MULTICLASS::finish_example<T>);
-  p->lp = MULTICLASS::mc_label;
-  return l;
-}
+  //reduction with default prediction type
+ template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+                                            void(*learn)(T&, base_learner&, example&),
+                                            void(*predict)(T&, base_learner&, example&), size_t ws)
+   { return init_learner<T>(dat, base, learn, predict, ws, base->pred_type); }
 
-template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
+ //reduction with default num_params
+ template<class T> learner<T>& init_learner(free_ptr<T>& dat, base_learner* base,
+                                            void(*learn)(T&, base_learner&, example&),
+                                            void(*predict)(T&, base_learner&, example&))
+   { return init_learner<T>(dat, base, learn, predict, 1, base->pred_type); }
+
+ //Reduction with no data.
+ template<class T> learner<T>& init_learner(base_learner* base,
+                                            void(*learn)(T&, base_learner&, example&),
+                                            void(*predict)(T&, base_learner&, example&))
+   { return init_learner<T>(nullptr, base, learn, predict, 1, base->pred_type); }
+
+ //multiclass reduction
+ template<class T> learner<T>& init_multiclass_learner(free_ptr<T>& dat, base_learner* base,
+                                                       void (*learn)(T&, base_learner&, example&),
+                                                       void (*predict)(T&, base_learner&, example&),
+                                                       parser* p, size_t ws,
+                                                       prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+   { learner<T>& l = init_learner(dat,base,learn,predict,ws,pred_type);
+     l.set_finish_example(MULTICLASS::finish_example<T>);
+     p->lp = MULTICLASS::mc_label;
+     return l;
+   }
+
+ template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
 }
