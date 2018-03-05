@@ -136,13 +136,17 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  inline void learn(multi_ex& ec, size_t i=0) 
+  inline void learn(multi_ex& ec_seq, size_t i=0) 
   {
-    if (ec.size() > 0)
+    if (ec_seq.size() > 0)
     {
-      ec[0]->ft_offset += (uint32_t)(increment*i);
-      learn_fd.learn_multiline_f(learn_fd.data, *learn_fd.base, ec);
-      ec[0]->ft_offset -= (uint32_t)(increment*i);
+      for(auto ec : ec_seq)
+        ec->ft_offset += (uint32_t)(increment*i);
+
+      learn_fd.learn_multiline_f(learn_fd.data, *learn_fd.base, ec_seq);
+      
+      for (auto ec : ec_seq)
+        ec->ft_offset -= (uint32_t)(increment*i);
     }
   }
   inline void predict(example& ec, size_t i = 0){
@@ -150,12 +154,16 @@ public:
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  inline void predict(multi_ex& ec, size_t i = 0){
-    if (ec.size() > 0)
+  inline void predict(multi_ex& ec_seq, size_t i = 0){
+    if (ec_seq.size() > 0)
     {
-      ec[0]->ft_offset += (uint32_t)(increment*i);
-      learn_fd.predict_multiline_f(learn_fd.data, *learn_fd.base, ec);
-      ec[0]->ft_offset -= (uint32_t)(increment*i);
+      for (auto ec : ec_seq)
+        ec->ft_offset += (uint32_t)(increment*i);
+
+      learn_fd.predict_multiline_f(learn_fd.data, *learn_fd.base, ec_seq);
+
+      for (auto ec : ec_seq)
+        ec->ft_offset -= (uint32_t)(increment*i);
     }
   }
   inline void multipredict(example& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
@@ -454,26 +462,23 @@ public:
  template<class T> base_learner* make_base(learner<T>& base) { return (base_learner*)&base; }
 
  template<bool is_learn>
- void base_learn_or_predict(base_learner& base, multi_ex& examples, uint64_t offset, uint32_t id = 0)
+ void base_learn_or_predict(base_learner& base, multi_ex& ec_seq, uint64_t offset, uint32_t id = 0)
  {
    // if base can handle multiline example call it directly
    // otherwise call it one at a time
 
    if (base.accepts_multi_ex()) {
      if (is_learn)
-       base.learn(examples);
+       base.learn(ec_seq, id);
      else
-       base.predict(examples);
+       base.predict(ec_seq, id);
    }
    else {
-     for (example* ec : examples) {
-       uint64_t old_offset = ec->ft_offset;
-       ec->ft_offset = offset;
+     for (example* ec : ec_seq) {
        if (is_learn)
          base.learn(*ec, id);
        else
          base.predict(*ec, id);
-       ec->ft_offset = old_offset;
      }
    }
  }
@@ -481,21 +486,22 @@ public:
  template<bool is_learn>
  void base_learn_or_predict(base_learner& base, example* ec, uint32_t id = 0)
  {
-   // if base can handle multiline example call it directly
-   // otherwise call it one at a time
+   // if base can handle multiline example, it cannot deal with single
+   // example.  so call it using a multiline example
 
    if (base.accepts_multi_ex()) {
-    multi_ex ec_seq{&ec,&ec+1,&ec+1,0};
-    if (is_learn)
-      base.learn(ec_seq);
-    else
-      base.predict(ec_seq);
+     multi_ex ec_seq{ &ec,&ec + 1,&ec + 1,0 };
+     if (is_learn)
+       base.learn(ec_seq, id);
+     else
+       base.predict(ec_seq, id);
    }
    else {
-    if (is_learn)
-      base.learn(*ec, id);
-    else
-      base.predict(*ec, id);
+     if (is_learn)
+       base.learn(*ec, id);
+     else
+       base.predict(*ec, id);
    }
  }
+
 }
