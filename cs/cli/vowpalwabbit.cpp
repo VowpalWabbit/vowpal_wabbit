@@ -172,11 +172,32 @@ void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
     
     m_vw->learn(ex_coll);
 
-    // as this is not a ring-based example it is not free'd
+    // as this is not a ring-based example it is not freed
     m_vw->l->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
   finally{ ex_coll.delete_v();
+  }
+}
+
+void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll = v_init<example*>();
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+
+    m_vw->l->predict(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    m_vw->l->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+    finally{ ex_coll.delete_v();
   }
 }
 
@@ -539,14 +560,13 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Predict(ex);
     }
 
     auto empty = GetOrCreateNativeExample();
     examples->Add(empty);
     empty->MakeEmpty(this);
-    Predict(empty);
+
+    Predict(examples);
   }
   finally
   { for each (auto ex in examples)

@@ -160,6 +160,10 @@ public:
   /// <param name="example">Example to learn from.</param>
   void Learn(VowpalWabbitExample^ example);
 
+  /// <summary>
+  /// Learns from the given multiline example.
+  /// </summary>
+  /// <param name="examples">Example to learn from.</param>
   void Learn(List<VowpalWabbitExample^>^ examples);
     
   /// <summary>
@@ -167,6 +171,12 @@ public:
   /// </summary>
   /// <param name="example">Example to predict for.</param>
   void Predict(VowpalWabbitExample^ example);
+
+  /// <summary>
+  /// Predicts for the given multiline example.
+  /// </summary>
+  /// <param name="examples">Example to predict for.</param>
+  void Predict(List<VowpalWabbitExample^>^ examples);
 
   /// <summary>
   /// Learns from string data.
