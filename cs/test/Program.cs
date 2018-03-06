@@ -1,17 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-
 using VW;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using VW.Serializer.Attributes;
-using System.Globalization;
-using cs_unittest.cbadf;
-using System.Threading.Tasks;
-using static cs_unittest.RunTestsHelper;
+using cs_unittest;
 
 namespace cs_test
 {
@@ -21,9 +13,9 @@ namespace cs_test
         static void Main(string[] args)
         {
             //NIPS2015Tutorial.AnnotationExample();
-            // AttributesSample.Attributes();
+            //AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
-            //LabDemo.Run();
+            ////LabDemo.Run();
             //RunFeaturesTest();
             //RunParserTest();
             //RunSpeedTest();
@@ -31,6 +23,13 @@ namespace cs_test
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
             //RunVWTest();
+            RunUnitTests();
+        }
+
+        private static void RunUnitTests()
+        {
+            TestCbAdfClass tw = new TestCbAdfClass();
+            tw.TestCbAdfExplore();
         }
 
         private static void RunVWTest()

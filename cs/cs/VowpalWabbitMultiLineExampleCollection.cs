@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Web.UI.WebControls;
 using VW.Labels;
 
 namespace VW
@@ -61,7 +62,7 @@ namespace VW
         /// <summary>
         /// Calls learn or predict for the set of examples. Does required filtering of potential new line examples.
         /// </summary>
-        private TPrediction Execute<TPrediction>(VowpalWabbit vw, Action<VowpalWabbitExample> predictOrLearn, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory = null)
+        private TPrediction Execute<TPrediction>(VowpalWabbit vw, Action<List<VowpalWabbitExample>> predictOrLearn, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory = null)
         {
             Contract.Requires(predictOrLearn != null);
 
@@ -70,17 +71,19 @@ namespace VW
             VowpalWabbitExample empty = null;
             try
             {
+                var ec_col = new List<VowpalWabbitExample>();
+
                 if (this.SharedExample != null && !this.SharedExample.IsNewLine)
                 {
-                    predictOrLearn(this.SharedExample);
                     firstExample = this.SharedExample;
+                    ec_col.Add(firstExample);
                 }
 
                 foreach (var ex in this.Examples)
                 {
                     if (!ex.IsNewLine)
                     {
-                        predictOrLearn(ex);
+                        ec_col.Add(ex);
 
                         if (firstExample == null)
                             firstExample = ex;
@@ -90,7 +93,9 @@ namespace VW
                 // signal end-of-block
                 empty = vw.GetOrCreateNativeExample();
                 empty.MakeEmpty(vw);
-                predictOrLearn(empty);
+                ec_col.Add(empty);
+
+                predictOrLearn(ec_col);
 
                 return predictionFactory != null ? firstExample.GetPrediction(vw, predictionFactory) : default(TPrediction);
             }

@@ -274,10 +274,8 @@ namespace VW
                 actionDependentFeatures,
                 (examples, _, __) =>
                 {
-                    foreach (var ex in examples)
-                    {
-                        vw.Learn(ex);
-                    }
+                    var ec_col = examples.ToList();
+                    vw.Learn(ec_col);
                 },
                 index,
                 label);
@@ -322,10 +320,8 @@ namespace VW
                 actionDependentFeatures,
                 (examples, validActionDependentFeatures, emptyActionDependentFeatures) =>
                 {
-                    foreach (var ex in examples)
-                    {
-                        vw.Learn(ex);
-                    }
+                    var ex_list = examples.ToList();
+                    vw.Learn(ex_list);
 
                     predictions = VowpalWabbitMultiLine.GetPrediction(vw, examples, validActionDependentFeatures, emptyActionDependentFeatures);
                 },
@@ -373,11 +369,8 @@ namespace VW
                 actionDependentFeatures,
                 (examples, validActionDependentFeatures, emptyActionDependentFeatures) =>
                 {
-                    foreach (var ex in examples)
-                    {
-                        vw.Predict(ex);
-                    }
-
+                    var ex_col = examples.ToList();
+                    vw.Predict(ex_col);
                     predictions = VowpalWabbitMultiLine.GetPrediction(vw, examples, validActionDependentFeatures, emptyActionDependentFeatures);
                 },
                 index,
