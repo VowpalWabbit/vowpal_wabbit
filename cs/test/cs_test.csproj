@@ -167,7 +167,9 @@
     <Compile Include="NIPS2015Tutorial.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RunTestsHelper.cs" />
     <Compile Include="VowpalWabbitInterface.cs" />
+    <Compile Include="VWTestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cs\cs.csproj">

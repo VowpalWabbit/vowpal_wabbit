@@ -11,7 +11,7 @@ using VW.Serializer.Attributes;
 using System.Globalization;
 using cs_unittest.cbadf;
 using System.Threading.Tasks;
-using cs_unittest;
+using static cs_unittest.RunTestsHelper;
 
 namespace cs_test
 {
@@ -20,16 +20,36 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            NIPS2015Tutorial.AnnotationExample();
+            //NIPS2015Tutorial.AnnotationExample();
             // AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
             //LabDemo.Run();
-            RunFeaturesTest();
-            RunParserTest();
-            RunSpeedTest();
-            RunFlatExampleTestEx();
+            //RunFeaturesTest();
+            //RunParserTest();
+            //RunSpeedTest();
+            //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
+            //RunVWTest();
+        }
+
+        private static void RunVWTest()
+        {
+            string cwd = Directory.GetCurrentDirectory();
+            //ExecuteTest(
+            //    1,
+            //    "-k -l 20 --initial_t 128000 --power_t 1 -d /s/vw_rajan/test/train-sets/0001.dat -f /s/vw_rajan/test/models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
+            //    "/s/vw_rajan/test/train-sets/0001.dat",
+            //    "/s/vw_rajan/test/train-sets/ref/0001.stderr",
+            //    "");
+
+            //ExecuteTest(
+            //    130,
+            //    "--cb_explore_adf --bag 3 -d /s/vw_rajan/test/train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict",
+            //    "/s/vw_rajan/test/train-sets/cb_test.ldf",
+            //    "/s/vw_rajan/test/train-sets/ref/cbe_adf_bag.stderr",
+            //    "/s/vw_rajan/test/pred-sets/ref/cbe_adf_bag.predict");
+
         }
 
         private static void RunFeaturesTest()
