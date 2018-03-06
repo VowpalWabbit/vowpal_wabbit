@@ -3,11 +3,9 @@ import numpy as np
 
 classes = 10
 m = 100
+kwperclass = 20
 
 def gen_keyword():
-
-	kwperclass = 20
-
 	keyword = np.zeros((classes, m))
 
 	for i in range(classes):
@@ -21,44 +19,26 @@ def gen_keyword():
 
 
 def classify(classifier, example):
-
 		result = classifier.dot(example)
-
 		return np.argmax(result)
 
-
-
-if __name__ == '__main__':
-
-
-	filename = "text_lownoise"
+def gen_datasets(filename, keyword, num_samples, fprob):
 
 	f = open(filename+".vw", "w")
 	g = open(filename+"_m.vw", "w")
 
-	keyword = gen_keyword()	
-
-
-	samples = 10000
-	fprob = 0
-
-	cs = False
-
-	for i in range(samples):
+	for i in range(num_samples):
 		c = random.randint(0, classes-1)
 
 		#generate a pair of datasets (one is cost-sensitive, the other is multiclass)
-		
 		for l in range(classes):
 			f.write(str(l+1)+':')
 			cost = 1
 			if l == c:
 				cost = 0
 			f.write(str(cost)+' ')
-		
-		g.write(str(c+1))
-			
 
+		g.write(str(c+1))
 
 		f.write(' | ')
 		g.write(' | ')
@@ -70,8 +50,8 @@ if __name__ == '__main__':
 			if flip:
 				vec[j] = 2 * (1-keyword[c][j]) - 1
 			else:
-				vec[j] = 2 * keyword[c][j] - 1		
-		
+				vec[j] = 2 * keyword[c][j] - 1
+
 		for j in range(m):
 			f.write('w'+str(j)+':')
 			f.write(str(vec[j])+' ')
@@ -79,14 +59,30 @@ if __name__ == '__main__':
 			g.write(str(vec[j])+' ')
 
 		#print 'Is the prediction equal to the class label? ', classify(keyword, vec) == c
-
 		f.write('\n')
 		g.write('\n')
 
 	f.close()
 	g.close()
-		
-		
 
 
 
+if __name__ == '__main__':
+
+	keyword = gen_keyword()
+	# Remember to generate a pair of datasets at the same time
+	# so that the class-dependent feature is retained
+
+
+	num_samples = 10000
+	fprob = 0.1
+	filename = "source1"+'_'+str(fprob)
+
+	gen_datasets(filename, keyword, num_samples, fprob)
+
+
+	num_samples = 10000
+	fprob = 0.1
+	filename = "source2"+'_'+str(fprob)
+
+	gen_datasets(filename, keyword, num_samples, fprob)
