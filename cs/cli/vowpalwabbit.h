@@ -160,6 +160,8 @@ public:
   /// <param name="example">Example to learn from.</param>
   void Learn(VowpalWabbitExample^ example);
 
+  void Learn(List<VowpalWabbitExample^>^ examples);
+    
   /// <summary>
   /// Predicts for the given example.
   /// </summary>

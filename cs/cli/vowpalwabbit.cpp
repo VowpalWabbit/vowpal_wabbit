@@ -159,6 +159,27 @@ uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
   }
 }
 
+void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll = v_init<example*>();
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+    
+    m_vw->learn(ex_coll);
+
+    // as this is not a ring-based example it is not free'd
+    m_vw->l->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+  finally{ ex_coll.delete_v();
+  }
+}
+
 void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 {
 #if _DEBUG
@@ -490,14 +511,13 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Learn(ex);
     }
 
     auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
     empty->MakeEmpty(this);
-    Learn(empty);
+    examples->Add(empty);
+
+    Learn(examples);
   }
   finally
   { for each (auto ex in examples)
