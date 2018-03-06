@@ -904,7 +904,6 @@ base_learner* csldf_setup(arguments& arg)
     pred_type = prediction_type::multiclass;
 
   ld->read_example_this_loop = 0;
-  ldf* bare = ld.get();
   learner<ldf>& l = init_learner(ld, setup_base(arg), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
