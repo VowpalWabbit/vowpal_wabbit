@@ -198,7 +198,7 @@ void generic_driver(vector<vw*> alls)
 
 void generic_driver(vw& all)
 {
-  if(all.l->accepts_multi_ex())
+  if(all.l->multiline_learn())
     multi_ex_generic_driver<vw&, process_multi_ex>(all, all);
   else
     generic_driver<vw&, process_example>(all, all);

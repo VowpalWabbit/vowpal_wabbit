@@ -122,10 +122,13 @@ private:
   func_data end_examples_fd;
   func_data finisher_fd;
   test_example_data test_example_fd;
-  bool multi_ex_input;
 
 public:
-  bool inline accepts_multi_ex() const { return multi_ex_input;  }
+  bool inline multiline_learn() const { return learn_fd.learn_multiline_f != nullptr; }
+  bool inline multiline_predict() const { return learn_fd.predict_multiline_f != nullptr; }
+  bool inline singleline_learn() const { return learn_fd.learn_f != nullptr; }
+  bool inline singleline_predict() const { return learn_fd.predict_f != nullptr; }
+
   prediction_type::prediction_type_t pred_type;
   size_t weights; //this stores the number of "weight vectors" required by the learner.
   size_t increment;
@@ -333,10 +336,6 @@ public:
      ret.learn_fd.multipredict_f = nullptr;
      ret.pred_type = pred_type;
 
-     if (multiline_learn != nullptr || multiline_predict != nullptr)
-       ret.multi_ex_input = true;
-     else
-       ret.multi_ex_input = false;
      return ret;
    }
 
@@ -467,7 +466,7 @@ public:
    // if base can handle multiline example call it directly
    // otherwise call it one at a time
 
-   if (base.accepts_multi_ex()) {
+   if (base.multiline_learn()) {
      if (is_learn)
        base.learn(ec_seq, id);
      else
@@ -489,7 +488,7 @@ public:
    // if base can handle multiline example, it cannot deal with single
    // example.  so call it using a multiline example
 
-   if (base.accepts_multi_ex()) {
+   if (base.multiline_learn()) {
      multi_ex ec_seq{ &ec,&ec + 1,&ec + 1,0 };
      if (is_learn)
        base.learn(ec_seq, id);

@@ -140,18 +140,30 @@ void noop_mm(shared_data*, float) {}
 
 void vw::learn(example* ec)
 {
-  if (ec->test_only || !training)
+  if (ec->test_only || !training){
+    if (!l->singleline_predict())
+      THROW("This predict function does not support single examples.");
     l->predict(*ec);
-  else
+  }
+  else{
+    if (!l->singleline_learn())
+      THROW("This learn function does not support single examples.");
     l->learn(*ec);
+  }
 }
 
 void vw::learn(multi_ex& ec)
 {
-  if (!training)
+  if (!training) {
+    if (!l->multiline_predict())
+      THROW("This predict function does not support example collection.");
     l->predict(ec);
-  else
+  }
+  else {
+    if (!l->multiline_learn())
+      THROW("This learn function does not support example collection.");
     l->learn(ec);
+  }
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
