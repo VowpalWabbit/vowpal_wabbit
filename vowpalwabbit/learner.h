@@ -77,7 +77,6 @@ struct finish_example_data
 void generic_driver(vw& all);
 void generic_driver(std::vector<vw*> alls);
 void generic_driver_onethread(vw& all);
-void generic_driver_onethread(std::vector<vw*> alls);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
