@@ -34,17 +34,17 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
   ec.indices.pop();
 }
 
-LEARNER::base_learner* autolink_setup(vw& all)
+LEARNER::base_learner* autolink_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "autolink", "create link function with polynomial d"))
+  free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
+  if (arg.new_options("Autolink")
+      .critical("autolink", data->d, "create link function with polynomial d").missing())
     return nullptr;
 
-  autolink& data = calloc_or_throw<autolink>();
-  data.d = (uint32_t)all.vm["autolink"].as<size_t>();
-  data.stride_shift = all.weights.stride_shift();
+  data->stride_shift = arg.all->weights.stride_shift();
 
   LEARNER::learner<autolink>& ret =
-    init_learner(&data, setup_base(all), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }

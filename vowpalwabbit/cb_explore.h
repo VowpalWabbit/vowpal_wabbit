@@ -10,7 +10,7 @@ namespace LEARNER
 typedef learner<char> base_learner;
 }
 
-LEARNER::base_learner* cb_explore_setup(vw& all);
+LEARNER::base_learner* cb_explore_setup(arguments& arg);
 
 namespace CB_EXPLORE
 {

@@ -4,6 +4,7 @@
 
 #include "gd.h"
 #include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -167,27 +168,21 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
 using namespace SVRG;
 
-base_learner* svrg_setup(vw& all)
+base_learner* svrg_setup(arguments& arg)
 {
-  if (missing_option(all, false, "svrg", "Streaming Stochastic Variance Reduced Gradient"))
-  {
-    return NULL;
-  }
-  new_options(all, "SVRG options")
-  ("stage_size", po::value<int>()->default_value(1), "Number of passes per SVRG stage");
-  add_options(all);
+  auto s = scoped_calloc_or_throw<svrg>();
+  if (arg.new_options("Stochastic Variance Reduced Gradient")
+      .critical("svrg", "Streaming Stochastic Variance Reduced Gradient")
+      ("stage_size", s->stage_size, 1, "Number of passes per SVRG stage").missing())
+    return nullptr;
 
-  svrg& s = calloc_or_throw<svrg>();
-  s.all = &all;
-  s.stage_size = all.vm["stage_size"].as<int>();
-  s.prev_pass = -1;
-  s.stable_grad_count = 0;
+  s->all = arg.all;
+  s->prev_pass = -1;
+  s->stable_grad_count = 0;
 
   // Request more parameter storage (4 floats per feature)
-  all.weights.stride_shift(2);
-  learner<svrg>& l = init_learner(&s, learn, UINT64_ONE << all.weights.stride_shift());
-
-  l.set_predict(predict);
+  arg.all->weights.stride_shift(2);
+  learner<svrg>& l = init_learner(s, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }

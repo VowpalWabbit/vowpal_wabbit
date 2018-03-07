@@ -44,7 +44,7 @@ const action REDUCE_LEFT  = 3;
 const action REDUCE       = 4;
 const uint32_t my_null = 9999999; /*representing_defalut*/
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
@@ -52,27 +52,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   data->ex = NULL;
   sch.set_task_data<task_data>(data);
 
-  new_options(all, "Dependency Parser Options")
-  ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
-  ("num_label", po::value<uint32_t>(&(data->num_label))->default_value(12), "Number of arc labels")
-  ("transition_system", po::value<uint32_t>(&(data->transition_system))->default_value(1), "1: arc-hybrid 2: arc-eager")
-  ("one_learner", "Using one learner instead of three learners for labeled parser")
-  ("cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
-  ("old_style_labels", "Use old hack of label information");
-  add_options(all);
-
-  check_option<size_t>(data->root_label, all, vm, "root_label", false, size_equal,
-                       "warning: you specified a different value for --root_label than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<uint32_t>(data->num_label, all, vm, "num_label", false, uint32_equal,
-                         "warning: you specified a different value for --num_label than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option(data->old_style_labels, all, vm, "old_style_labels", false,
-               "warning: you specified a different value for --old_style_labels than the one loaded from regressor. proceeding with loaded value: ");
-  check_option(data->cost_to_go, all, vm, "cost_to_go", false,
-               "warning: you specified a different value for --cost_to_go than the one loaded from regressor. proceeding with loaded value: ");
-  check_option(data->one_learner, all, vm, "one_learner", false,
-               "warning: you specified a different value for --one_learner than the one loaded from regressor. proceeding with loaded value: ");
-  check_option<uint32_t>(data->transition_system, all, vm, "transition_system", false, uint32_equal,
-                         "warning: you specified a different value for --transition_system than the one loaded from regressor. proceeding with loaded value: ", "");
+  arg.new_options("Dependency Parser Options")
+    .keep("root_label", data->root_label, (size_t)8, "Ensure that there is only one root in each sentence")
+    .keep("num_label", data->num_label, (uint32_t)12, "Number of arc labels")
+    .keep("transition_system", data->transition_system, (uint32_t)1, "1: arc-hybrid 2: arc-eager")
+    .keep(data->one_learner, "one_learner", "Using one learner instead of three learners for labeled parser")
+    .keep(data->cost_to_go, "cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
+    .keep(data->old_style_labels, "old_style_labels", "Use old hack of label information").missing();
 
   data->ex = VW::alloc_examples(sizeof(polylabel), 1);
   data->ex->indices.push_back(val_namespace);
@@ -80,7 +66,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
     data->ex->indices.push_back((unsigned char)i+'A');
   data->ex->indices.push_back(constant_namespace);
 
-  data->old_style_labels = vm.count("old_style_labels") > 0;
   if(data->one_learner)
     sch.set_num_learners(1);
   else

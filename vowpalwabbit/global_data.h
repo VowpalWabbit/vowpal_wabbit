@@ -27,6 +27,8 @@ namespace po = boost::program_options;
 #include <time.h>
 #include "hash.h"
 #include "crossplat_compat.h"
+#include "error_reporting.h"
+#include "parser_helper.h"
 
 struct version_struct
 { int major;
@@ -421,30 +423,6 @@ namespace label_type
 };
 }
 
-typedef void(*trace_message_t)(void *context, const std::string&);
-
-// TODO: change to virtual class
-
-// invoke trace_listener when << endl is encountered.
-class vw_ostream : public std::ostream
-{
-	class vw_streambuf : public std::stringbuf
-	{
-		vw_ostream& parent;
-	public:
-		vw_streambuf(vw_ostream& str);
-
-		virtual int sync();
-	};
-	vw_streambuf buf;
-
-public:
-	vw_ostream();
-
-	void* trace_context;
-	trace_message_t trace_listener;
-};
-
 struct vw
 { shared_data* sd;
 
@@ -474,7 +452,6 @@ struct vw
 
   std::string data_filename; // was vm["data"]
 
-  bool onethread;
   bool daemon;
   size_t num_children;
 
@@ -493,11 +470,7 @@ struct vw
   double normalized_sum_norm_x;
   bool vw_is_main;  // true if vw is executable; false in library mode
 
-  po::options_description opts;
-  po::options_description* new_opts;
-  po::variables_map vm;
-  std::stringstream* file_options;
-  std::vector<std::string> args;
+  arguments opts_n_args;
 
   void* /*Search::search*/ searchstr;
 
@@ -574,7 +547,7 @@ struct vw
 
   size_t length () { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(vw&)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(arguments&)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.
@@ -611,12 +584,11 @@ struct vw
 
   label_type::label_type_t label_type;
 
-  vw_ostream trace_message;
-
   vw();
 
-  // ostream doesn't have copy constructor and the python library used some boost code which code potentially invoke this
   vw(const vw &);
+  //private://disable copying.
+  //vw& operator=(const vw& );
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);
@@ -626,23 +598,3 @@ void get_prediction(int sock, float& res, float& weight);
 void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
-void add_options(vw& all, po::options_description& opts);
-inline po::options_description_easy_init new_options(vw& all, std::string name = "\0")
-{ all.new_opts = new po::options_description(name);
-  return all.new_opts->add_options();
-}
-bool no_new_options(vw& all);
-bool missing_option(vw& all, bool keep, const char* name, const char* description);
-template <class T> bool missing_option(vw& all, const char* name, const char* description)
-{ new_options(all)(name, po::value<T>(), description);
-  return no_new_options(all);
-}
-template <class T, bool keep> bool missing_option(vw& all, const char* name,
-    const char* description)
-{ if (missing_option<T>(all, name, description))
-    return true;
-  if (keep)
-    *all.file_options << " --" << name << " " << all.vm[name].as<T>();
-  return false;
-}
-void add_options(vw& all);

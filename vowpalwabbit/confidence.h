@@ -1,1 +1,1 @@
-LEARNER::base_learner* confidence_setup(vw& all);
+LEARNER::base_learner* confidence_setup(arguments& arg);

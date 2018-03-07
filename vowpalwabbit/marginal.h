@@ -1,1 +1,1 @@
-LEARNER::base_learner* marginal_setup(vw& all);
+LEARNER::base_learner* marginal_setup(arguments& arg);

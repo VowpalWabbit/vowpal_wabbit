@@ -334,51 +334,48 @@ void learn(gdmf& d, base_learner&, example& ec)
 
 void finish(gdmf& d) { d.scalars.delete_v();}
 
-base_learner* gd_mf_setup(vw& all)
+base_learner* gd_mf_setup(arguments& arg)
 {
-  if (missing_option<uint32_t, true>(all, "rank", "rank for matrix factorization."))
+  auto data = scoped_calloc_or_throw<gdmf>();
+  if (arg.new_options("Gradient Descent Matrix Factorization")
+      .critical("rank", data->rank, "rank for matrix factorization.").missing())
     return nullptr;
 
-  if (all.vm.count("adaptive"))
+  if (arg.vm.count("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");
-  if (all.vm.count("normalized"))
+  if (arg.vm.count("normalized"))
     THROW("normalized is not implemented for matrix factorization");
-  if (all.vm.count("exact_adaptive_norm"))
+  if (arg.vm.count("exact_adaptive_norm"))
     THROW("normalized adaptive updates is not implemented for matrix factorization");
-  if (all.vm.count("bfgs") || all.vm.count("conjugate_gradient"))
+  if (arg.vm["bfgs"].as<bool>() || arg.vm["conjugate_gradient"].as<bool>())
     THROW("bfgs is not implemented for matrix factorization");
 
-  gdmf& data = calloc_or_throw<gdmf>();
-  data.all = &all;
-  data.rank = all.vm["rank"].as<uint32_t>();
-  data.no_win_counter = 0;
-  data.early_stop_thres = 3;
+  data->all = arg.all;
+  data->no_win_counter = 0;
 
   // store linear + 2*rank weights per index, round up to power of two
-  float temp = ceilf(logf((float)(data.rank*2+1)) / logf (2.f));
-  all.weights.stride_shift((size_t) temp);
-  all.random_weights = true;
+  float temp = ceilf(logf((float)(data->rank*2+1)) / logf (2.f));
+  arg.all->weights.stride_shift((size_t) temp);
+  arg.all->random_weights = true;
 
-  if(!all.holdout_set_off)
+  if(!arg.all->holdout_set_off)
   {
-    all.sd->holdout_best_loss = FLT_MAX;
-    if(all.vm.count("early_terminate"))
-      data.early_stop_thres = all.vm["early_terminate"].as< size_t>();
+    arg.all->sd->holdout_best_loss = FLT_MAX;
+    data->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  if(!all.vm.count("learning_rate") && !all.vm.count("l"))
-    all.eta = 10; //default learning rate to 10 for non default update rule
+  if(!arg.vm.count("learning_rate") && !arg.vm.count("l"))
+    arg.all->eta = 10; //default learning rate to 10 for non default update rule
 
   //default initial_t to 1 instead of 0
-  if(!all.vm.count("initial_t"))
+  if(!arg.vm.count("initial_t"))
   {
-    all.sd->t = 1.f;
-    all.initial_t = 1.f;
+    arg.all->sd->t = 1.f;
+    arg.all->initial_t = 1.f;
   }
-  all.eta *= powf((float)(all.sd->t), all.power_t);
+  arg.all->eta *= powf((float)(arg.all->sd->t), arg.all->power_t);
 
-  learner<gdmf>& l = init_learner(&data, learn, UINT64_ONE << all.weights.stride_shift());
-  l.set_predict(predict);
+  learner<gdmf>& l = init_learner(data, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);

@@ -118,7 +118,7 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
 {
   if(!all.adaptive)
   {
-    all.trace_message<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
+    all.opts_n_args.trace_message<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
   uint32_t length = 1 << all.num_bits; //This is the number of parameters
@@ -145,4 +145,3 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
     all_reduce<float, add_float>(all, weights.dense_weights.first(), length*weights.stride_shift());
   delete[] local_weights;
 }
-

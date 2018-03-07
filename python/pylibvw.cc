@@ -71,7 +71,7 @@ const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 string get_arguments(vw_ptr all)
 {
 	string args;
-	for (auto& s : all->args)
+	for (auto& s : all->opts_n_args.args)
 	{
 		args.append(s);
 		args.append(" ");
@@ -593,34 +593,34 @@ void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
 bool po_exists(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return (*d->var_map).count(arg) > 0;
+  return d->arg->vm.count(arg) > 0;
 }
 
 string po_get_string(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return (*d->var_map)[arg].as<string>();
+  return d->arg->vm[arg].as<string>();
 }
 
 int32_t po_get_int(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  try { return (*d->var_map)[arg].as<int>(); }
+  try { return d->arg->vm[arg].as<int>(); }
   catch (...) {}
-  try { return (int32_t)(*d->var_map)[arg].as<size_t>(); }
+  try { return (int32_t)d->arg->vm[arg].as<size_t>(); }
   catch (...) {}
-  try { return (int32_t)(*d->var_map)[arg].as<uint32_t>(); }
+  try { return (int32_t)d->arg->vm[arg].as<uint32_t>(); }
   catch (...) {}
-  try { return (int32_t)(*d->var_map)[arg].as<uint64_t>(); }
+  try { return (int32_t)d->arg->vm[arg].as<uint64_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<uint16_t>(); }
+  try { return d->arg->vm[arg].as<uint16_t>(); }
   catch (...) {}
-  try { return (*d->var_map)[arg].as<int32_t>(); }
+  try { return d->arg->vm[arg].as<int32_t>(); }
   catch (...) {}
-  try { return (int32_t)(*d->var_map)[arg].as<int64_t>(); }
+  try { return (int32_t)d->arg->vm[arg].as<int64_t>(); }
   catch (...) {}
-  try { return (int32_t)(*d->var_map)[arg].as<int16_t>(); }
+  try { return (int32_t)d->arg->vm[arg].as<int16_t>(); }
   catch (...) {}
   // we know this'll fail but do it anyway to get the exception
-  return (*d->var_map)[arg].as<int>();
+  return d->arg->vm[arg].as<int>();
 }
 
 PyObject* po_get(search_ptr sch, string arg)

@@ -51,7 +51,7 @@ void process_example(vw& all, example* ec)
       final_regressor_name = string(ec->tag.begin()+5, (ec->tag).size()-5);
 
     if (!all.quiet)
-      all.trace_message << "saving regressor to " << final_regressor_name << endl;
+      all.opts_n_args.trace_message << "saving regressor to " << final_regressor_name << endl;
     save_predictor(all, final_regressor_name, 0);
 
     VW::finish_example(all,ec);
@@ -60,7 +60,7 @@ void process_example(vw& all, example* ec)
     dispatch_example(all, *ec);
 }
 
-template <class T, void(*f)(T, example*)> void generic_driver_onethread(vw& x_all, T context)
+  template <class T, void(*f)(T, example*)> void generic_driver_onethread(vw& x_all, T context)
 {
   vw* all = &x_all;
 
@@ -105,12 +105,11 @@ template <class T, void(*f)(T, example*)> void generic_driver_onethread(vw& x_al
 
       all->p->end_parsed_examples+=examples_available;
 
-      for (int i = 0; i < examples_available; ++i)
+      for (size_t i = 0; i < examples_available; ++i)
         f(context, examples[i]);
 
       examples.erase();
     }
-    all->l->end_examples();
   }
   catch (VW::vw_exception& e)
   {
@@ -157,19 +156,14 @@ void generic_driver(vector<vw*> alls)
     (*it)->l->end_examples();
 }
 
-void generic_driver_onethread(vector<vw*> alls)
-{
-  generic_driver_onethread<vector<vw*>, process_multiple>(**alls.begin(), alls);
-
-  // skip first as it already called end_examples()
-  auto it = alls.begin();
-  for (it++; it != alls.end(); it++)
-    (*it)->l->end_examples();
-}
-
 void generic_driver(vw& all)
 { generic_driver<vw&, process_example>(all, all); }
 
+  void set_done(parser& p){p.done=true;}
+
 void generic_driver_onethread(vw& all)
-{ generic_driver_onethread<vw&, process_example>(all, all); }
+{
+  generic_driver_onethread<vw&, process_example>(all, all);
+  all.l->end_examples();
+}
 }

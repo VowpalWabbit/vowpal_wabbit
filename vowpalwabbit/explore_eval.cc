@@ -63,11 +63,11 @@ void finish(explore_eval& data)
   data.ec_seq.delete_v();
   if (!data.all->quiet)
   {
-    data.all->trace_message << "update count = " << data.update_count << endl;
+    data.all->opts_n_args.trace_message << "update count = " << data.update_count << endl;
     if (data.violations > 0)
-      data.all->trace_message << "violation count = " << data.violations << endl;
+      data.all->opts_n_args.trace_message << "violation count = " << data.violations << endl;
     if (!data.fixed_multiplier)
-      data.all->trace_message << "final multiplier = " << data.multiplier << endl;
+      data.all->opts_n_args.trace_message << "final multiplier = " << data.multiplier << endl;
   }
 }
 
@@ -247,38 +247,32 @@ void predict_or_learn(explore_eval& data, base_learner& base, example &ec)
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(vw& all)
+base_learner* explore_eval_setup(arguments& arg)
 {
-  //parse and set arguments
-  if (missing_option(all, true, "explore_eval", "Evaluate explore_eval adf policies"))
+  auto data = scoped_calloc_or_throw<explore_eval>();
+
+  if (arg.new_options("Explore evaluation")
+      .critical("explore_eval", "Evaluate explore_eval adf policies")
+      ("multiplier", data->multiplier, "Multiplier used to make all rejection sample probabilities <= 1").missing())
     return nullptr;
-  new_options(all, "Explore evaluation options")
-  ("multiplier", po::value<float>(), "the multiplier needed to make all rejection sample probabilities <= 1");
-  add_options(all);
 
+  data->all = arg.all;
 
-  explore_eval& data = calloc_or_throw<explore_eval>();
-
-  data.all = &all;
-
-  if (all.vm.count("multiplier") > 0)
-  {
-    data.multiplier = all.vm["multiplier"].as<float>();
-    data.fixed_multiplier = true;
-  }
+  if (arg.vm.count("multiplier") > 0)
+    data->fixed_multiplier = true;
   else
-    data.multiplier = 1;
+    data->multiplier = 1;
 
-  if (count(all.args.begin(), all.args.end(), "--cb_explore_adf") == 0)
-    all.args.push_back("--cb_explore_adf");
+  if (count(arg.args.begin(), arg.args.end(), "--cb_explore_adf") == 0)
+    arg.args.push_back("--cb_explore_adf");
 
-  all.delete_prediction = nullptr;
+  arg.all->delete_prediction = nullptr;
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  base_learner* base = setup_base(arg);
+  arg.all->p->lp = CB::cb_label;
+  arg.all->label_type = label_type::cb;
 
-  learner<explore_eval>& l = init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::action_probs);
+  learner<explore_eval>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

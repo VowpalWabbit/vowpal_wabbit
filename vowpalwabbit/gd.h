@@ -15,7 +15,7 @@
 
 namespace GD
 {
-LEARNER::base_learner* setup(vw& all);
+LEARNER::base_learner* setup(arguments& arg);
 
 struct gd;
 
