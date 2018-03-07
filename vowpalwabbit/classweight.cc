@@ -71,13 +71,15 @@ using namespace CLASSWEIGHTS;
 
 LEARNER::base_learner* classweight_setup(arguments& arg)
 {
-  string classweight;
+  vector<string> classweight_array;
+  auto cweights = scoped_calloc_or_throw<classweights>();
   if (arg.new_options("importance weight classes")
-      .critical("classweight", classweight, "importance weight multiplier for class").missing())
+      .critical_vector<string>("classweight", po::value<vector<string> >(&classweight_array), "importance weight multiplier for class", false).missing())
     return nullptr;
 
-  auto cweights = scoped_calloc_or_throw<classweights>();
-  cweights->load_string(classweight);
+  for (auto& s : classweight_array)
+    cweights->load_string(s);
+
   if (!arg.all->quiet)
     arg.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
