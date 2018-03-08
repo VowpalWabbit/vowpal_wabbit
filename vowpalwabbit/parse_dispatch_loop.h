@@ -1,0 +1,55 @@
+#pragma once
+
+template <void (*dispatch)(vw& all, v_array<example*> examples)> void parse_dispatch(vw& all)
+{
+  v_array<example*> examples = v_init<example*>();
+  size_t example_number = 0;  // for variable-size batch learning algorithms
+
+  try
+  {
+    while(!all.p->done)
+    {
+      examples.push_back(&VW::get_unused_example(&all)); // need at least 1 example
+      if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number && all.p->reader(&all, examples) > 0)
+      {
+        VW::setup_examples(all, examples);
+        example_number+=examples.size();
+      }
+      else
+      {
+        reset_source(all, all.num_bits);
+        all.do_reset_source = false;
+        all.passes_complete++;
+
+        //setup an end_pass example
+        all.p->lp.default_label(&examples[0]->l);
+        examples[0]->end_pass = true;
+        all.p->in_pass_counter = 0;
+
+        if (all.passes_complete == all.numpasses && example_number == all.pass_length)
+        {
+          all.passes_complete = 0;
+          all.pass_length = all.pass_length*2+1;
+        }
+        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
+          lock_done(*all.p);
+        example_number = 0;
+      }
+
+      dispatch(all, examples);
+
+      examples.erase();
+    }
+  }
+  catch (VW::vw_exception& e)
+  {
+    std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "vw: example #" << example_number << e.what() << std::endl;
+  }
+
+  lock_done(*all.p);
+  examples.delete_v();
+}

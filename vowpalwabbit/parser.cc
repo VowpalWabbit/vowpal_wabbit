@@ -53,6 +53,7 @@ namespace po = boost::program_options;
 #include "interactions.h"
 #include "vw_exception.h"
 #include "parse_example_json.h"
+#include "parse_dispatch_loop.h"
 
 using namespace std;
 
@@ -671,12 +672,17 @@ child:
     all.opts_n_args.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
+void lock_done(parser& p)
+{
+  mutex_lock(&p.examples_lock);
+  p.done = true;
+  mutex_unlock(&p.examples_lock);
+}
+
 void set_done(vw& all)
 {
   all.early_terminate = true;
-  mutex_lock(&all.p->examples_lock);
-  all.p->done = true;
-  mutex_unlock(&all.p->examples_lock);
+  lock_done(*all.p);
 }
 
 void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
@@ -994,74 +1000,22 @@ void finish_example(vw& all, example* ec)
 }
 }
 
+void thread_dispatch(vw& all, v_array<example*> examples)
+{
+  mutex_lock(&all.p->examples_lock);
+  all.p->end_parsed_examples+=examples.size();
+  condition_variable_signal_all(&all.p->example_available);
+  mutex_unlock(&all.p->examples_lock);
+}
+
 #ifdef _WIN32
 DWORD WINAPI main_parse_loop(LPVOID in)
 #else
 void *main_parse_loop(void *in)
 #endif
 {
-  v_array<example*> examples = v_init<example*>();
   vw* all = (vw*)in;
-  size_t example_number = 0;  // for variable-size batch learning algorithms
-
-  try
-  {
-    size_t examples_available;
-    while(!all->p->done)
-    {
-      examples.push_back(&VW::get_unused_example(all)); // need at least 1 example
-      if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-          && all->p->reader(all, examples) > 0)
-      {
-        VW::setup_examples(*all, examples);
-        example_number+=examples.size();
-        examples_available=examples.size();
-      }
-      else
-      {
-        reset_source(*all, all->num_bits);
-        all->do_reset_source = false;
-        all->passes_complete++;
-
-        end_pass_example(*all, examples[0]);
-        if (all->passes_complete == all->numpasses && example_number == all->pass_length)
-        {
-          all->passes_complete = 0;
-          all->pass_length = all->pass_length*2+1;
-        }
-        if (all->passes_complete >= all->numpasses && all->max_examples >= example_number)
-        {
-          mutex_lock(&all->p->examples_lock);
-          all->p->done = true;
-          mutex_unlock(&all->p->examples_lock);
-        }
-        example_number = 0;
-        examples_available=1;
-      }
-      mutex_lock(&all->p->examples_lock);
-      all->p->end_parsed_examples+=examples_available;
-      condition_variable_signal_all(&all->p->example_available);
-      mutex_unlock(&all->p->examples_lock);
-      examples.erase();
-    }
-  }
-  catch (VW::vw_exception& e)
-  {
-    cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
-  }
-  catch (exception& e)
-  {
-    cerr << "vw: example #" << example_number << e.what() << endl;
-  }
-
-  if (!all->p->done)
-  {
-    mutex_lock(&all->p->examples_lock);
-    all->p->done = true;
-    mutex_unlock(&all->p->examples_lock);
-  }
-
-  examples.delete_v();
+  parse_dispatch<thread_dispatch>(*all);
   return 0L;
 }
 

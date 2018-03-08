@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
+#include "parse_dispatch_loop.h"
 using namespace std;
 
 void dispatch_example(vw& all, example& ec)
@@ -94,4 +95,17 @@ void generic_driver(vector<vw*> alls)
 
 void generic_driver(vw& all)
 { generic_driver<vw&, process_example>(all, all); }
+
+  void dispatch(vw& all, v_array<example*> examples)
+  {
+    all.p->end_parsed_examples+=examples.size();//divergence: lock & signal
+    for (size_t i = 0; i < examples.size(); ++i)
+      process_example(all, examples[i]);
+  }
+
+void generic_driver_onethread(vw& all)
+{
+  parse_dispatch<dispatch>(all);
+  all.l->end_examples();
+}
 }

@@ -1200,7 +1200,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
     all.opts_n_args.new_options("VW options")
       ("random_seed", all.random_seed, "seed random number generator")
-      ("ring_size", all.p->ring_size, "size of example ring").missing();
+      ("ring_size", all.p->ring_size, "size of example ring")
+      ("onethread", "Disable parse thread").missing();
 
     all.opts_n_args.new_options("Update options")
       ("learning_rate,l", all.eta, "Set learning rate")
