@@ -672,12 +672,17 @@ child:
     all.opts_n_args.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
+void lock_done(parser& p)
+{
+  mutex_lock(&p.examples_lock);
+  p.done = true;
+  mutex_unlock(&p.examples_lock);
+}
+
 void set_done(vw& all)
 {
   all.early_terminate = true;
-  mutex_lock(&all.p->examples_lock);
-  all.p->done = true;
-  mutex_unlock(&all.p->examples_lock);
+  lock_done(*all.p);
 }
 
 void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs,
@@ -995,13 +1000,6 @@ void finish_example(vw& all, example* ec)
 }
 }
 
-void lock_done(parser& p)
-{
-  mutex_lock(&p.examples_lock);
-  p.done = true;
-  mutex_unlock(&p.examples_lock);
-}
-
 void thread_dispatch(vw& all, v_array<example*> examples)
 {
   mutex_lock(&all.p->examples_lock);
@@ -1017,7 +1015,7 @@ void *main_parse_loop(void *in)
 #endif
 {
   vw* all = (vw*)in;
-  parse_dispatch<thread_dispatch, lock_done>(*all);
+  parse_dispatch<thread_dispatch>(*all);
   return 0L;
 }
 

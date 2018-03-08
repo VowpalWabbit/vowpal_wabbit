@@ -96,8 +96,6 @@ void generic_driver(vector<vw*> alls)
 void generic_driver(vw& all)
 { generic_driver<vw&, process_example>(all, all); }
 
-void set_done(parser& p){p.done=true;}
-
   void dispatch(vw& all, v_array<example*> examples)
   {
     all.p->end_parsed_examples+=examples.size();//divergence: lock & signal
@@ -107,7 +105,7 @@ void set_done(parser& p){p.done=true;}
 
 void generic_driver_onethread(vw& all)
 {
-  parse_dispatch<dispatch, set_done>(all);
+  parse_dispatch<dispatch>(all);
   all.l->end_examples();
 }
 }

@@ -1,4 +1,6 @@
-template <void (*dispatch)(vw& all, v_array<example*> examples), void (*set_done)(parser& p)> void parse_dispatch(vw& all)
+#pragma once
+
+template <void (*dispatch)(vw& all, v_array<example*> examples)> void parse_dispatch(vw& all)
 {
   v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
@@ -30,7 +32,7 @@ template <void (*dispatch)(vw& all, v_array<example*> examples), void (*set_done
           all.pass_length = all.pass_length*2+1;
         }
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
-          set_done(*all.p);
+          lock_done(*all.p);
         example_number = 0;
       }
 
@@ -48,6 +50,6 @@ template <void (*dispatch)(vw& all, v_array<example*> examples), void (*set_done
     std::cerr << "vw: example #" << example_number << e.what() << std::endl;
   }
 
-  set_done(*all.p);
+  lock_done(*all.p);
   examples.delete_v();
 }
