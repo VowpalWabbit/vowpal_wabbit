@@ -1008,7 +1008,6 @@ void thread_dispatch(vw& all, v_array<example*> examples)
   all.p->end_parsed_examples+=examples.size();
   condition_variable_signal_all(&all.p->example_available);
   mutex_unlock(&all.p->examples_lock);
-  examples.erase();
 }
 
 #ifdef _WIN32
