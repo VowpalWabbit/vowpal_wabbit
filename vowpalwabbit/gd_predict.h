@@ -5,7 +5,7 @@ license as described in the file LICENSE.
 */
 #pragma once
 
-#include "interactions.h"
+#include "interactions_predict.h"
 #include "v_array.h"
 
 namespace GD
@@ -62,10 +62,9 @@ namespace GD
   inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
   template <class W>
-  inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256], v_array<v_string>& interactions, bool permutations, example_predict& ec)
+  inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256], v_array<v_string>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
   {
-    float temp = ec.l.simple.initial;
-    foreach_feature<float, const float&, vec_add, W>(weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, temp);
-    return temp;
+    foreach_feature<float, const float&, vec_add, W>(weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
+    return initial;
   }
 }
