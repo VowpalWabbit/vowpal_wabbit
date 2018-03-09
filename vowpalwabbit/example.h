@@ -53,9 +53,11 @@ typedef union
 
 typedef unsigned char namespace_index;
 
-struct example // core example datatype.
-{ class iterator
-  { features* _feature_space;
+struct example_predict
+{
+  class iterator
+  {
+    features* _feature_space;
     namespace_index* _index;
   public:
     iterator(features* feature_space, namespace_index* index)
@@ -63,11 +65,13 @@ struct example // core example datatype.
     { }
 
     features& operator*()
-    { return _feature_space[*_index];
+    {
+      return _feature_space[*_index];
     }
 
     iterator& operator++()
-    { _index++;
+    {
+      _index++;
       return *this;
     }
 
@@ -77,18 +81,25 @@ struct example // core example datatype.
     bool operator!=(const iterator& rhs) { return _index != rhs._index; }
   };
 
-  //output prediction
-  polyprediction pred;
-
   // input fields
   polylabel l;
+
+  v_array<namespace_index> indices;
+  features feature_space[256]; //Groups of feature values.
+  uint64_t ft_offset;//An offset for all feature values.
+
+  iterator begin() { return iterator(feature_space, indices.begin()); }
+  iterator end() { return iterator(feature_space, indices.end()); }
+};
+
+struct example : public example_predict  // core example datatype.
+{
+  //output prediction
+  polyprediction pred;
 
   float weight;//a relative importance weight for the example, default = 1
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
-  v_array<namespace_index> indices;
-  features feature_space[256]; //Groups of feature values.
-  uint64_t ft_offset;//An offset for all feature values.
 
   //helpers
   size_t num_features;//precomputed, cause it's fast&easy.
@@ -103,9 +114,6 @@ struct example // core example datatype.
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
-
-  iterator begin() { return iterator(feature_space, indices.begin()); }
-  iterator end() { return iterator(feature_space, indices.end()); }
 };
 
 struct vw;

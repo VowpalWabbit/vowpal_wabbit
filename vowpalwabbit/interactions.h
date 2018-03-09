@@ -118,7 +118,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
 // and passes each of them to given function T()
 // it must be in header file to avoid compilation problems
  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W> // nullptr func can't be used as template param in old compilers
- inline void generate_interactions(vw& all, example& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+ inline void generate_interactions(v_array<v_string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
  {
    features* features_data = ec.feature_space;
 
@@ -136,7 +136,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   empty_ns_data.self_interaction = false;
 
   // loop throw the set of possible interactions
-  for (v_string& ns : all.interactions)
+  for (v_string& ns : interactions)
   { // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP
@@ -155,7 +155,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
             features& second = features_data[ns[1]];
             if (second.nonempty())
               {
-                const bool same_namespace = ( !all.permutations && ( ns[0] == ns[1] ) );
+                const bool same_namespace = ( !permutations && ( ns[0] == ns[1] ) );
 
                 for(size_t i = 0; i < first.indicies.size(); ++i)
                   { feature_index halfhash = FNV_prime * (uint64_t)first.indicies[i];
@@ -183,8 +183,8 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
         { features& third = features_data[ns[2]];
           if (third.nonempty())
           { // don't compare 1 and 3 as interaction is sorted
-            const bool same_namespace1 = ( !all.permutations && ( ns[0] == ns[1] ) );
-            const bool same_namespace2 = ( !all.permutations && ( ns[1] == ns[2] ) );
+            const bool same_namespace1 = ( !permutations && ( ns[0] == ns[1] ) );
+            const bool same_namespace2 = ( !permutations && ( ns[1] == ns[2] ) );
 
             for(size_t i = 0; i < first.indicies.size(); ++i)
             { if(audit) audit_func(dat, first.space_names[i].get());
@@ -248,7 +248,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
       // if any of interacting namespace has 0 features - whole interaction is skipped
       if (must_skip_interaction) continue; //no_data_to_interact
 
-      if (!all.permutations) // adjust state_data for simple combinations
+      if (!permutations) // adjust state_data for simple combinations
       { // if permutations mode is disabeled then namespaces in ns are already sorted and thus grouped
         // (in fact, currently they are sorted even for enabled permutations mode)
         // let's go throw the list and calculate number of features to skip in namespaces which
@@ -328,7 +328,7 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
         }
         else
         { // last namespace - iterate its features and go back
-          if (!all.permutations) // start value is not a constant in this case
+          if (!permutations) // start value is not a constant in this case
             start_i = fgd2->loop_idx;
 
           features& fs = *(fgd2->ft_arr);
@@ -364,22 +364,30 @@ inline void inner_kernel(R& dat, features::iterator_all& begin, features::iterat
   state_data.delete_v();
 }
 
-template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)> // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(vw& all, example& ec, R& dat) // default value removed to eliminate ambiguity in old complers
+template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*)>
+inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
-	if (all.weights.sparse)
-		generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all, ec, dat, all.weights.sparse_weights);
-	else
-		generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all, ec, dat, all.weights.dense_weights);
+  if (all.weights.sparse)
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+  else
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
 }
 
 template <class R>
 inline void dummy_func(R&, const audit_strings*) {} // should never be called due to call_audit overload
 
+template <class R, class S, void(*T)(R&, float, S), class W> // nullptr func can't be used as template param in old compilers
+inline void generate_interactions(v_array<v_string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+{ generate_interactions<R, S, T, false, dummy_func<R>, W>(interactions, permutations, ec, dat, weights);
+}
+
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
 template <class R, class S, void (*T)(R&, float, S)>
-inline void generate_interactions(vw& all, example& ec, R& dat)
-{ generate_interactions<R, S, T, false, dummy_func<R> > (all, ec, dat);
+inline void generate_interactions(vw& all, example_predict& ec, R& dat)
+{ if (all.weights.sparse)
+    generate_interactions<R, S, T, sparse_parameters>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+  else
+    generate_interactions<R, S, T, dense_parameters>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
 }
 
 // C(n,k) = n!/(k!(n-k)!)
