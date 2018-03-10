@@ -138,17 +138,17 @@ void set_mm(shared_data* sd, float label)
 
 void noop_mm(shared_data*, float) {}
 
-void vw::learn(example* ec)
+void vw::learn(example& ec)
 {
-  if (ec->test_only || !training){
+  if (ec.test_only || !training){
     if (!l->singleline_predict())
       THROW("This predict function does not support single examples.");
-    l->predict(*ec);
+    l->predict(ec);
   }
   else{
     if (!l->singleline_learn())
       THROW("This learn function does not support single examples.");
-    l->learn(*ec);
+    l->learn(ec);
   }
 }
 

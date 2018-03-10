@@ -227,7 +227,7 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_AddStringLabel(VW_HANDLE handle, VW_EXAMPL
 VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
-  pointer->learn(ex);
+  pointer->learn(*ex);
   return VW::get_prediction(ex);
 }
 

@@ -5,7 +5,7 @@ using namespace std;
 
 void dispatch_example(vw& all, example& ec)
 {
-  all.learn(&ec);
+  all.learn(ec);
   all.l->finish_example(all, ec);
 }
 

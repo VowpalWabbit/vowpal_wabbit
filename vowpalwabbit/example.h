@@ -149,4 +149,3 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
 
 typedef v_array<example*> multi_ex;
-typedef std::unique_ptr<multi_ex> mult_ex_ptr;
