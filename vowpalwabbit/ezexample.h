@@ -74,8 +74,8 @@ private:
   { static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (example_changed_since_prediction)
     { mini_setup_example();
-      vw_ref->learn(ec);
-      if (is_multiline) vw_ref->learn(empty_example);
+      vw_ref->learn(*ec);
+      if (is_multiline) vw_ref->learn(*empty_example);
       example_changed_since_prediction = false;
     }
   }
@@ -242,7 +242,7 @@ public:
     }
 
     if (!is_multiline)
-    { vw_ref->learn(ec);
+    { vw_ref->learn(*ec);
     }
     else       // is multiline
     { // we need to make a copy
@@ -250,7 +250,7 @@ public:
       assert(ec->in_use);
       VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
       assert(copy->in_use);
-      vw_ref->learn(copy);
+      vw_ref->learn(*copy);
       example_copies.push_back(copy);
     }
   }
@@ -265,7 +265,7 @@ public:
   void finish()
   { static example* empty_example = is_multiline ? VW::read_example(*vw_par_ref, (char*)"") : nullptr;
     if (is_multiline)
-    { vw_ref->learn(empty_example);
+    { vw_ref->learn(*empty_example);
       for (auto ecc : example_copies)
         if (ecc->in_use)
           VW::finish_example(*vw_par_ref, ecc);
