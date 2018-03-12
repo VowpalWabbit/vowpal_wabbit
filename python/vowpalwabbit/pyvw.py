@@ -110,6 +110,8 @@ class vw(pylibvw.vw):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+        elif isinstance(ec, list):
+            pylibvw.vw.learn(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
