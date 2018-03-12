@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 { vw* model = VW::initialize("--hash all -q st --noconstant -i train.w -f train2.vw --no_stdin");
 
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
-  model->learn(vec2);
+  model->learn(*vec2);
   cerr << "p2 = " << vec2->pred.scalar << endl;
   VW::finish_example(*model, vec2);
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   t->fs[2] = vw_feature_from_string(*model, "w^homme", t_hash, 1.0);
   example* vec3 = VW::import_example(*model, "", features, 2);
 
-  model->learn(vec3);
+  model->learn(*vec3);
   cerr << "p3 = " << vec3->pred.scalar << endl;
   // TODO: this does not invoke m_vw->l->finish_example()
   VW::finish_example(*model, vec3);
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
   vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw --no_stdin");
   vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
-  model2->learn(vec2);
+  model2->learn(*vec2);
   cerr << "p4 = " << vec2->pred.scalar << endl;
 
   size_t len=0;
