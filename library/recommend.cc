@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 
       if (!bf_hit(bf,estr))
       { example *ex = VW::read_example(*model, estr);
-        model->learn(ex);
+        model->learn(*ex);
 
         const string str(estr);
 

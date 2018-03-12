@@ -57,8 +57,8 @@ private:
   { HookTask::task_data* d = sch.template get_task_data<HookTask::task_data> (); // ugly calling convention :(
     d->extra_data  = (void*)&input_example;
     d->extra_data2 = (void*)&output;
-    vw_obj.learn(bogus_example);
-    vw_obj.learn(blank_line);   // this will cause our search_run_fn hook to get called
+    vw_obj.learn(*bogus_example);
+    vw_obj.learn(*blank_line);   // this will cause our search_run_fn hook to get called
   }
 
   static void _search_run_fn(Search::search&sch)
