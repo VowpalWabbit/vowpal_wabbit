@@ -47,9 +47,9 @@ struct example_predict
 };
 
 // make sure we have an exception safe version of example_predict
-class ezexample_predict : public example_predict
+class safe_example_predict : public example_predict
 {
 public:
-  ezexample_predict();
-  ~ezexample_predict();
+  safe_example_predict();
+  ~safe_example_predict();
 };

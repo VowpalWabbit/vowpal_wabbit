@@ -28,7 +28,7 @@ enum Namespaces
 int main(int argc, char *argv[])
 {
   // setup shared context
-  ezexample_predict shared;
+  safe_example_predict shared;
 
   shared.indices.push_back(SharedA);
   shared.indices.push_back(SharedB);
@@ -40,14 +40,14 @@ int main(int argc, char *argv[])
   shared.feature_space[SharedC].push_back(1, Features::NetworkType_Wired);
 
   // setup actions
-  ezexample_predict action1, action2, action3;
+  safe_example_predict action1, action2, action3;
   action1.indices.push_back(Namespaces::ActionDependentX);
   action2.indices.push_back(Namespaces::ActionDependentX);
   action3.indices.push_back(Namespaces::ActionDependentY);
 
   action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action1);
   action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action2);
-  action1.feature_space[Namespaces::ActionDependentY].push_back(1, Features::Action3);
+  action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action3);
 
   // TODO: load model
   // TODO: slim parser
