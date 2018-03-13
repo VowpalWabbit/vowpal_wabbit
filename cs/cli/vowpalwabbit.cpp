@@ -210,7 +210,7 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
     m_vw->l->finish_example(*m_vw, *ex->m_example);
@@ -229,7 +229,7 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
