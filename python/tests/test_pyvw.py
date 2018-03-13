@@ -81,21 +81,23 @@ def test_multiclass_prediction_type():
 
 def test_prob_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='mc', probabilities=True, quiet=True)
-    multi_ex = [model.example('1 | a b c')]
+    multi_ex = [model.example('1:0.2 | a b c'), model.example('2:0.8  | a b c')]
     model.learn(multi_ex)
     assert model.get_prediction_type() == model.pPROB
-    # prediction = model.predict(' | a b c')
-    # assert isinstance(prediction, float)
+    multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
+    prediction = model.predict(multi_ex)
+    assert isinstance(prediction, float)
     del model
 
 
 def test_action_scores_prediction_type():
     model = vw(loss_function='logistic', csoaa_ldf='m', quiet=True)
-    multi_ex = [model.example('1 | a b c')]
+    multi_ex = [model.example('1:1 | a b c'), model.example('2:-1  | a b c')]
     model.learn(multi_ex)
     assert model.get_prediction_type() == model.pMULTICLASS
-    # prediction = model.predict(' | a b c')
-    # assert isinstance(prediction, int)
+    multi_ex = [model.example('1 | a b c'), model.example('2 | a b c')]
+    prediction = model.predict(multi_ex)
+    assert isinstance(prediction, int)
     del model
 
 
