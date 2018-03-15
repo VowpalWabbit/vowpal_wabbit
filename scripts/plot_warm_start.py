@@ -2,7 +2,7 @@
 #matplotlib.use('Agg')
 #import matplotlib.pyplot as plt
 import subprocess
-import pylab
+#import pylab
 from itertools import product
 import os
 import math
@@ -81,7 +81,7 @@ def gen_comparison_graph(mod):
 	mod.num_lines = get_num_lines(mod.ds_path+mod.dataset)
 	mod.warm_start = int(math.floor(mod.warm_start_frac * mod.num_lines))
 	mod.bandit = mod.num_lines - mod.warm_start
-	mod.progress = int(math.floor(mod.bandit / mod.num_checkpoints))
+	mod.progress = int(math.ceil(mod.bandit / mod.num_checkpoints))
 
 	#config_name = str(mod.dataset) + '_' + str(mod.fprob1)+'_'+str(mod.fprob2)+'_'+str(mod.warm_start)+'_'+str(mod.bandit)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
 
@@ -167,8 +167,10 @@ def get_num_lines(dataset_name):
 	return int(output)
 
 def avg_error(mod):
+	print mod.vw_output_filename
 	vw_output = open(mod.vw_output_filename, 'r')
 	vw_output_text = vw_output.read()
+	print vw_output_text
 	rgx = re.compile('^average loss = (.*)$', flags=re.M)
 	return float(rgx.findall(vw_output_text)[0])
 
@@ -178,7 +180,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='vw job')
 	parser.add_argument('task_id', type=int, help='task ID, between 0 and num_tasks - 1')
 	parser.add_argument('num_tasks', type=int)
-	parser.add_argument('--results_dir', default='../figs/')
+	parser.add_argument('--results_dir', default='../../figs/')
 	args = parser.parse_args()
 	if args.task_id == 0:
 		if not os.path.exists(args.results_dir):
@@ -193,7 +195,7 @@ if __name__ == '__main__':
 	mod.num_tasks = args.num_tasks
 	mod.task_id = args.task_id
 
-	mod.ds_path = '../data/'
+	mod.ds_path = '../../vwshuffled/'
 	mod.vw_path = '../vowpalwabbit/vw'
 	mod.results_path = args.results_dir
 
