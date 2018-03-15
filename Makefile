@@ -56,7 +56,7 @@ endif
 JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing #-ffast-math #uncomment for speed, comment for testability
+OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
   WARN_FLAGS = -Wall
 else
@@ -77,7 +77,6 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 #FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
 
 FLAGS += -I ../rapidjson/include
-
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
