@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include <cfloat>
 #include <stdint.h>
 #include <cstdio>
+#include <inttypes.h>
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
@@ -31,9 +32,9 @@ namespace po = boost::program_options;
 #include "parser_helper.h"
 
 struct version_struct
-{ int major;
-  int minor;
-  int rev;
+{ int32_t major;
+  int32_t minor;
+  int32_t rev;
   version_struct(int maj = 0, int min = 0, int rv = 0)
   { major = maj;
     minor = min;
@@ -111,7 +112,7 @@ struct version_struct
   void from_string(const char* str)
   {
 #ifdef _WIN32
-    sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
+    sscanf_s(str,"%d.%d.%d",&major,&minor,&rev);
 #else
     std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
 #endif
