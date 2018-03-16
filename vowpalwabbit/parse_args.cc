@@ -1518,7 +1518,7 @@ void finish(vw& all, bool delete_all)
     all.opts_n_args.trace_message.precision(6);
     all.opts_n_args.trace_message << std::fixed;
     all.opts_n_args.trace_message << endl << "finished run";
-    if(all.current_pass == 0)
+    if(all.current_pass == 0 || all.current_pass == 1)
       all.opts_n_args.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
