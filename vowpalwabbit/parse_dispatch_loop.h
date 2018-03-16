@@ -14,6 +14,7 @@ template <void (*dispatch)(vw& all, v_array<example*> examples)> void parse_disp
       {
         VW::setup_examples(all, examples);
         example_number+=examples.size();
+        dispatch(all, examples);
       }
       else
       {
@@ -31,12 +32,11 @@ template <void (*dispatch)(vw& all, v_array<example*> examples)> void parse_disp
           all.passes_complete = 0;
           all.pass_length = all.pass_length*2+1;
         }
+        dispatch(all, examples);//must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;
       }
-
-      dispatch(all, examples);
 
       examples.erase();
     }
@@ -49,7 +49,6 @@ template <void (*dispatch)(vw& all, v_array<example*> examples)> void parse_disp
   {
     std::cerr << "vw: example #" << example_number << e.what() << std::endl;
   }
-
   lock_done(*all.p);
   examples.delete_v();
 }
