@@ -1,8 +1,8 @@
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import subprocess
-#import pylab
+import pylab
 from itertools import product
 import os
 import math
@@ -81,7 +81,7 @@ def gen_comparison_graph(mod):
 	mod.num_lines = get_num_lines(mod.ds_path+mod.dataset)
 	mod.warm_start = int(math.floor(mod.warm_start_frac * mod.num_lines))
 	mod.bandit = mod.num_lines - mod.warm_start
-	mod.progress = int(math.ceil(mod.bandit / mod.num_checkpoints))
+	mod.progress = int(math.ceil(float(mod.bandit) / float(mod.num_checkpoints)))
 
 	#config_name = str(mod.dataset) + '_' + str(mod.fprob1)+'_'+str(mod.fprob2)+'_'+str(mod.warm_start)+'_'+str(mod.bandit)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
 
@@ -93,10 +93,10 @@ def gen_comparison_graph(mod):
 	mod.no_exploration = False
 	mod.vw_output_filename = mod.results_path+config_name+'.txt'
 	execute_vw(mod)
-	'''
+
 	avg_loss_comb, last_loss_comb, wt_comb = collect_stats(mod)
 	line = plt.plot(wt_comb, avg_loss_comb, 'r', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
-	'''
+
 	avg_error_comb = avg_error(mod)
 
 	# bandit only approach
@@ -105,10 +105,10 @@ def gen_comparison_graph(mod):
 	mod.no_exploration = False
 	mod.vw_output_filename = mod.results_path+config_name+'_no_supervised'+'.txt'
 	execute_vw(mod)
-	'''
+
 	avg_loss_band_only, last_loss_band_only, wt_band_only = collect_stats(mod)
 	line = plt.plot(wt_band_only, avg_loss_band_only, 'b', label='Bandit only')
-	'''
+
 	avg_error_band_only = avg_error(mod)
 
 	# supervised only approach
@@ -117,22 +117,22 @@ def gen_comparison_graph(mod):
 	mod.no_exploration = False
 	mod.vw_output_filename = mod.results_path+config_name+'_no_bandit'+'.txt'
 	execute_vw(mod)
-	'''
+
 	avg_loss_sup_only, last_loss_sup_only, wt_sup_only = collect_stats(mod)
 	# for supervised only, we simply plot a horizontal line using the last point
 	len_avg_loss = len(avg_loss_sup_only)
 	avg_loss = avg_loss_sup_only[len_avg_loss-1]
 	avg_loss_sup_only = [avg_loss for i in range(len_avg_loss)]
 	line = plt.plot(wt_sup_only, avg_loss_sup_only, 'g', label='Supervised only')
-	'''
+
 	avg_error_sup_only = avg_error(mod)
 
 	summary_file = open(mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum', 'a')
 	summary_file.write(config_name + ' ' + str(avg_error_comb) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + '\n')
-
+	summary_file.close()
 	print('')
 
-	'''
+
 	pylab.legend()
 	pylab.xlabel('#bandit examples')
 	pylab.ylabel('Progressive validation error')
@@ -142,7 +142,7 @@ def gen_comparison_graph(mod):
 	plt.gcf().clear()
 
 	#plt.show()
-	'''
+
 
 def ds_files(ds_path):
 	prevdir = os.getcwd()
@@ -167,10 +167,10 @@ def get_num_lines(dataset_name):
 	return int(output)
 
 def avg_error(mod):
-	print mod.vw_output_filename
+	#print mod.vw_output_filename
 	vw_output = open(mod.vw_output_filename, 'r')
 	vw_output_text = vw_output.read()
-	print vw_output_text
+	#print vw_output_text
 	rgx = re.compile('^average loss = (.*)$', flags=re.M)
 	return float(rgx.findall(vw_output_text)[0])
 
@@ -212,7 +212,8 @@ if __name__ == '__main__':
 
 	# use fractions instead of absolute numbers
 
-	mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
+	mod.choices_warm_start = [0.01 * pow(2, i) for i in range(4,5)]
+	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
 	#mod.choices_warm_start = [pow(2,i) for i in range(11)] #put it here in order to plot 2d mesh
@@ -220,7 +221,8 @@ if __name__ == '__main__':
 	#choices_fprob1 = [0.1, 0.2, 0.3]
 	#choices_fprob2 = [0.1, 0.2, 0.3]
 	#choices_cb_types = ['mtr', 'ips']
-	choices_cb_types = ['mtr', 'ips']
+	#choices_cb_types = ['mtr', 'ips']
+	choices_cb_types = ['mtr']
 	#choices_choices_lambda = [pow(2,i) for i in range(10,11)]
 	choices_choices_lambda = [i for i in range(10,11)]
 
@@ -232,6 +234,7 @@ if __name__ == '__main__':
 	dss = ds_files(mod.ds_path)
 	mod.ds_task = ds_per_task(dss, args.num_tasks, args.task_id)
 
+	print 'task ' + str(mod.task_id) + ' of ' + str(mod.num_tasks) + ':'
 	print mod.ds_task
 
 	# we only need to vary the warm start fraction, and there is no need to vary the bandit fraction,
