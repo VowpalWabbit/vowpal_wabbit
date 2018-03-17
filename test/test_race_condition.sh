@@ -1,4 +1,4 @@
-exec python repeat.py 1024 ../vowpalwabbit/vw train-sets/rcv1_small.dat --holdout_after 100 --quiet
+exec python repeat.py 1024 ../vowpalwabbit/vw train-sets/rcv1_small.dat --holdout_after 100
 #Two race conditions to worry about
 #
 #Scencario 1: done-then-dispatch
