@@ -404,61 +404,10 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K, multi
   }
 }
 
-/* 
- * Process a single example as a label.  
- * Note: example should already be confirmed as a label
- */
-void inline process_label(ldf& data, example* ec)
-{
-  auto new_fs = ec->feature_space[ec->indices[0]];
-  auto& costs = ec->l.cs.costs;
-  for (size_t j = 0; j<costs.size(); j++)
-  {
-    const auto lab = (size_t) costs[j].x;
-    LabelDict::set_label_features(data.label_features, lab, new_fs);
-  }
-}
-
-/*
- * The begining of the multi_ex sequence may be labels.  Process those
- * and return the start index of the un-processed examples
- */
-multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
-{
-  example* ec = ec_seq_all[0];
-
-  // check the first element, if it's not a label, return
-  if (!ec_is_label_definition(*ec))
-    return ec_seq_all;
-
-  // process the first element as a label
-  process_label(data, ec);
-
-  size_t i = 1;
-  // process the rest of the elements that are labels
-  for (; i<ec_seq_all.size(); i++)
-  {
-    ec = ec_seq_all[i];
-    if (!ec_is_label_definition(*ec))
-    {
-      // return index of the first element that is not a label
-      return multi_ex {&ec,ec_seq_all._end,ec_seq_all.end_array,ec_seq_all.erase_count};
-    }
-
-    process_label(data, ec);
-  }
-
-  // all examples were labels return size
-  return multi_ex {nullptr,nullptr,nullptr,0};
-}
-
 /*
  * 1) process all labels at first 
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
- * 
- * 5) remove predict_or_learn
- * 6) remove ec_seq, need_to_clear from ldf
  */
 template <bool is_learn>
 void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
@@ -906,6 +855,54 @@ base_learner* csldf_setup(arguments& arg)
   l.set_test_example(COST_SENSITIVE::example_is_test);
   arg.all->cost_sensitive = make_base(l);
   return arg.all->cost_sensitive;
+}
+
+/*
+* Process a single example as a label.
+* Note: example should already be confirmed as a label
+*/
+void inline process_label(ldf& data, example* ec)
+{
+  auto new_fs = ec->feature_space[ec->indices[0]];
+  auto& costs = ec->l.cs.costs;
+  for (size_t j = 0; j<costs.size(); j++)
+  {
+    const auto lab = (size_t)costs[j].x;
+    LabelDict::set_label_features(data.label_features, lab, new_fs);
+  }
+}
+
+/*
+* The begining of the multi_ex sequence may be labels.  Process those
+* and return the start index of the un-processed examples
+*/
+multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
+{
+  example* ec = ec_seq_all[0];
+
+  // check the first element, if it's not a label, return
+  if (!ec_is_label_definition(*ec))
+    return ec_seq_all;
+
+  // process the first element as a label
+  process_label(data, ec);
+
+  size_t i = 1;
+  // process the rest of the elements that are labels
+  for (; i<ec_seq_all.size(); i++)
+  {
+    ec = ec_seq_all[i];
+    if (!ec_is_label_definition(*ec))
+    {
+      // return index of the first element that is not a label
+      return multi_ex{ &ec,ec_seq_all._end,ec_seq_all.end_array,ec_seq_all.erase_count };
+    }
+
+    process_label(data, ec);
+  }
+
+  // all examples were labels return size
+  return multi_ex{ nullptr,nullptr,nullptr,0 };
 }
 
 }
