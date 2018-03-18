@@ -64,18 +64,29 @@ T base_predict(
   int example_count = env->GetArrayLength(example_strings);
 
   // When doing multiline prediction the final result is stored in the FIRST example parsed.
+  multi_ex ex_coll = v_init<example*>();
+
   example* first_example = NULL;
   for (int i=0; i<example_count; i++)
   { jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
-    base_predict<T>(env, ex, learn, vwInstance, predictor, false);
+    ex_coll.push_back(ex);
     if (i == 0)
       first_example = ex;
   }
   env->DeleteLocalRef(example_strings);
 
-  example* ex = read_example("\0", vwInstance);
-  base_predict<T>(env, ex, learn, vwInstance, predictor, false);
+  try
+  { if (learn)
+      vwInstance->l->learn(ex_coll);
+    else
+      vwInstance->l->predict(ex_coll);
+  }
+  catch (...)
+  { rethrow_cpp_exception_as_java_exception(env);
+  }
+  
+  vwInstance->l->finish_example(*vwInstance, ex_coll);
 
   return predictor(first_example, env);
 }
