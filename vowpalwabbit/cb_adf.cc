@@ -313,11 +313,6 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
   clear_seq_and_finish_examples(all, ec_seq);
 }
 
-void end_examples(cb_adf& data)
-{
-  // noop
-}
-
 void finish(cb_adf& data)
 {
   data.gen_cs.mtr_ec_seq.delete_v();
@@ -413,7 +408,6 @@ base_learner* cb_adf_setup(arguments& arg)
   bare->gen_cs.scorer = arg.all->scorer;
   
   l.set_finish(CB_ADF::finish);
-  l.set_end_examples(CB_ADF::end_examples);
   l.set_save_load(CB_ADF::save_load);
   l.set_test_example(CB::example_is_test);
   return make_base(l);

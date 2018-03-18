@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Web.UI.WebControls;
 using VW.Labels;
 
 namespace VW

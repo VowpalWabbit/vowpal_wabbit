@@ -277,11 +277,6 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, multi_ex
   CB_EXPLORE::safety(preds, data.epsilon, true);
 }
 
-void end_examples(cb_explore_adf& data)
-{
-  // noop
-}
-
 void finish(cb_explore_adf& data)
 {
   data.action_probs.delete_v();
@@ -535,7 +530,6 @@ base_learner* cb_explore_adf_setup(arguments& arg)
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
   l.set_finish(CB_EXPLORE_ADF::finish);
-  l.set_end_examples(CB_EXPLORE_ADF::end_examples);
   l.set_test_example(CB::example_is_test);
   return make_base(l);
 }

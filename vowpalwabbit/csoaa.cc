@@ -817,11 +817,6 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
   clear_seq_and_finish_examples(all, data, ec_seq);
 }
 
-void end_examples(ldf& data)
-{
-// noop
-}
-
 void finish(ldf& data)
 {
   LabelDict::free_label_features(data.label_features);
@@ -907,7 +902,6 @@ base_learner* csldf_setup(arguments& arg)
   learner<ldf>& l = init_learner(ld, setup_base(arg), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
-  l.set_end_examples(end_examples);
   l.set_end_pass(end_pass);
   l.set_test_example(COST_SENSITIVE::example_is_test);
   arg.all->cost_sensitive = make_base(l);
