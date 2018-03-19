@@ -534,10 +534,6 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
       examples->Add(ex);
     }
 
-    auto empty = GetOrCreateNativeExample();
-    empty->MakeEmpty(this);
-    examples->Add(empty);
-
     Learn(examples);
   }
   finally
@@ -561,10 +557,6 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
     }
-
-    auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
-    empty->MakeEmpty(this);
 
     Predict(examples);
   }

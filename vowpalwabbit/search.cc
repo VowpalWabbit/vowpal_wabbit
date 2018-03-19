@@ -242,7 +242,6 @@ struct search_private
   LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
-  example* empty_example;
   CS::label empty_cs_label;
 
   search_task* task;    // your task!
@@ -1158,9 +1157,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-    priv.empty_example->in_use = true;
-    priv.empty_example->ft_offset = priv.offset;
-    tmp.push_back(priv.empty_example);
 
     base_learn_or_predict<false>(*priv.base_learner, tmp, policy);
 
@@ -1385,9 +1381,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
       }
-
-      priv.empty_example->ft_offset = priv.offset;
-      tmp.push_back(priv.empty_example);
 
       // learn with the multiline example
       base_learn_or_predict<true>(*priv.base_learner, tmp, learner);
@@ -2260,9 +2253,6 @@ void search_initialize(vw* all, search& sch)
   priv.active_uncertainty = v_init< pair<float,size_t> >();
   priv.active_known = v_init< v_array<pair<CS::wclass&,bool>> >();
 
-  priv.empty_example = VW::alloc_examples(sizeof(CS::label), 1);
-  CS::cs_label.default_label(&priv.empty_example->l.cs);
-  priv.empty_example->in_use = true;
   CS::cs_label.default_label(&priv.empty_cs_label);
 
   new (&priv.rawOutputString) string();
@@ -2319,9 +2309,6 @@ void search_finish(search& sch)
   priv.ptag_to_action.delete_v();
   clear_memo_foreach_action(priv);
   priv.memo_foreach_action.delete_v();
-
-  VW::dealloc_example(CS::cs_label.delete_label, *(priv.empty_example));
-  free(priv.empty_example);
 
   // destroy copied examples if we needed them
   if (! priv.examples_dont_change)
