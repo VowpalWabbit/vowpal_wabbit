@@ -105,8 +105,8 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
   if ((example_is_newline_not_header(*ec) && is_test_ec) 
       || need_to_break)
   {
-    ec_seq.push_back(ec);
-    if (ec_seq.size() == 1) {
+    VW::finish_example(all, ec);
+    if (ec_seq.size() == 0) {
       cout << "Something is wrong---an example with no choice.  Do you have all 0 features? Or multiple empty lines?" << endl;
       VW::finish_example(all, ec_seq);  // clean up 
       return false;
