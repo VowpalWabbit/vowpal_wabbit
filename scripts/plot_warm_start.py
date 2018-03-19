@@ -32,9 +32,12 @@ def collect_stats(mod):
 	f = open(vw_output_filename, 'r')
 	linenumber = 0
 	for line in f:
-		if not line.strip():
-			end_table = True
-		if linenumber >= 9 and (not end_table):
+		#if not line.strip():
+		#	end_table = True
+		#if linenumber >= 9 and (not end_table):
+		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]\s+\d+'
+		matchobj = re.match(vw_progress_patter, line)
+		if matchobj:
 			items = line.split()
 			avg_loss.append(float(items[0]))
 			last_loss.append(float(items[1]))
