@@ -2126,9 +2126,6 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   priv.offset = ec_seq.last()->ft_offset;
   priv.base_learner = &base;
 
-  example* empty_ex = CSOAA::remove_empty_last_example(ec_seq);
-  CSOAA::restore_last_example sentry(ec_seq, empty_ex);
-
   adjust_auto_condition(priv);
   const auto last_ec = ec_seq.last();
   priv.read_example_last_id = last_ec->example_counter;

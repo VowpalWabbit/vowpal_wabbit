@@ -76,11 +76,6 @@ T base_predict(
   }
   env->DeleteLocalRef(example_strings);
 
-  // some reductions assume an empty example at 
-  // the end
-  example* ex = read_example("\0", vwInstance);
-  ex_coll.push_back(ex);
-
   try
   { if (learn)
       vwInstance->l->learn(ex_coll);
