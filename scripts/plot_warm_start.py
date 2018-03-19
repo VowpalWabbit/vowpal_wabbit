@@ -36,7 +36,7 @@ def collect_stats(mod):
 		#	end_table = True
 		#if linenumber >= 9 and (not end_table):
 		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]\s+\d+'
-		matchobj = re.match(vw_progress_patter, line)
+		matchobj = re.match(vw_progress_pattern, line)
 		if matchobj:
 			items = line.split()
 			avg_loss.append(float(items[0]))
@@ -44,6 +44,7 @@ def collect_stats(mod):
 			wt.append(float(items[3]))
 		linenumber += 1
 
+	f.close()
 	return avg_loss, last_loss, wt
 
 def execute_vw(mod):
@@ -85,6 +86,7 @@ def gen_comparison_graph(mod):
 	mod.warm_start = int(math.floor(mod.warm_start_frac * mod.num_lines))
 	mod.bandit = mod.num_lines - mod.warm_start
 	mod.progress = int(math.ceil(float(mod.bandit) / float(mod.num_checkpoints)))
+	mod.num_classes = get_num_classes(mod.dataset)
 
 	#config_name = str(mod.dataset) + '_' + str(mod.fprob1)+'_'+str(mod.fprob2)+'_'+str(mod.warm_start)+'_'+str(mod.bandit)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
 
@@ -131,7 +133,7 @@ def gen_comparison_graph(mod):
 	avg_error_sup_only = avg_error(mod)
 
 	summary_file = open(mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum', 'a')
-	summary_file.write(config_name + ' ' + str(avg_error_comb) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + '\n')
+	summary_file.write(config_name + ' ' + str(avg_error_comb) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + ' '  + str(mod.choices_lambda) + '\n')
 	summary_file.close()
 	print('')
 
@@ -155,13 +157,23 @@ def ds_files(ds_path):
 	return dss
 
 
-def ds_per_task(dss, num_tasks, task_id):
-	ds_task = []
-	for i in range(len(dss)):
-		if (i % num_tasks == task_id):
-			ds_task.append(dss[i])
+def get_num_classes(ds):
+	did, n_actions = os.path.basename(ds).split('.')[0].split('_')[1:]
+	did, n_actions = int(did), int(n_actions)
+	return n_actions
 
-	return ds_task
+
+def ds_per_task(mod):
+	# put dataset name to the last coordinate so that the task workloads tend to be
+	# allocated equally
+ 	config_all = [item for item in product(mod.choices_cb_types, mod.choices_warm_start_frac, mod.choices_choices_lambda, mod.dss)]
+	config_task = []
+	for i in range(len(config_all)):
+		if (i % mod.num_tasks == mod.task_id):
+			config_task.append(config_all[i])
+			print config_all[i]
+
+	return config_task
 
 def get_num_lines(dataset_name):
 	ps = subprocess.Popen(('zcat', dataset_name), stdout=subprocess.PIPE)
@@ -175,15 +187,25 @@ def avg_error(mod):
 	vw_output_text = vw_output.read()
 	#print vw_output_text
 	rgx = re.compile('^average loss = (.*)$', flags=re.M)
-	return float(rgx.findall(vw_output_text)[0])
+	avge = float(rgx.findall(vw_output_text)[0])
+	vw_output.close()
+	return avge
 
+
+def main_loop(mod):
+
+	summary_file = open(mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum', 'w')
+	summary_file.close()
+
+	for mod.cb_type, mod.warm_start_frac, mod.choices_lambda, mod.dataset in mod.config_task:
+		gen_comparison_graph(mod)
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='vw job')
 	parser.add_argument('task_id', type=int, help='task ID, between 0 and num_tasks - 1')
 	parser.add_argument('num_tasks', type=int)
-	parser.add_argument('--results_dir', default='../../figs/')
+	parser.add_argument('--results_dir', default='../../../figs/')
 	args = parser.parse_args()
 	if args.task_id == 0:
 		if not os.path.exists(args.results_dir):
@@ -198,7 +220,7 @@ if __name__ == '__main__':
 	mod.num_tasks = args.num_tasks
 	mod.task_id = args.task_id
 
-	mod.ds_path = '../../vwshuffled/'
+	mod.ds_path = '../../../vwshuffled/'
 	mod.vw_path = '../vowpalwabbit/vw'
 	mod.results_path = args.results_dir
 
@@ -207,7 +229,7 @@ if __name__ == '__main__':
 	mod.num_checkpoints = 100
 	#mod.warm_start = 50
 	#mod.bandit = 4096
-	mod.num_classes = 10
+	#mod.num_classes = 10
 	#mod.cb_type = 'mtr'  #'ips'
     #mod.choices_lambda = 10
 	#mod.progress = 25
@@ -215,7 +237,7 @@ if __name__ == '__main__':
 
 	# use fractions instead of absolute numbers
 
-	mod.choices_warm_start = [0.01 * pow(2, i) for i in range(4,5)]
+	mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(3,5)]
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
@@ -224,26 +246,27 @@ if __name__ == '__main__':
 	#choices_fprob1 = [0.1, 0.2, 0.3]
 	#choices_fprob2 = [0.1, 0.2, 0.3]
 	#choices_cb_types = ['mtr', 'ips']
-	#choices_cb_types = ['mtr', 'ips']
-	choices_cb_types = ['mtr']
+	mod.choices_cb_types = ['mtr', 'ips']
+	#mod.choices_cb_types = ['mtr']
 	#choices_choices_lambda = [pow(2,i) for i in range(10,11)]
-	choices_choices_lambda = [i for i in range(10,11)]
+	mod.choices_choices_lambda = [i for i in range(1,3)]
+	#[i for i in range(10,11)]
 
 	#for correctness test
 	#mod.choices_warm_start = [20]
 	#choices_fprob1 = [0.1]
 	#choices_fprob2 = [0.1]
 
-	dss = ds_files(mod.ds_path)
-	mod.ds_task = ds_per_task(dss, args.num_tasks, args.task_id)
+	mod.dss = ds_files(mod.ds_path)
+
+	# here, we are generating the task specific parameter settings
+	# by first generate all parameter setting and pick every num_tasks of them
+	mod.config_task = ds_per_task(mod)
 
 	print 'task ' + str(mod.task_id) + ' of ' + str(mod.num_tasks) + ':'
-	print mod.ds_task
+
+	#print mod.ds_task
 
 	# we only need to vary the warm start fraction, and there is no need to vary the bandit fraction,
 	# as each run of vw automatically accumulates the bandit dataset
-
-	for mod.cb_type, mod.choices_lambda, mod.dataset, mod.warm_start_frac in product(choices_cb_types, choices_choices_lambda, mod.ds_task, mod.choices_warm_start):
-		#mod.dataset_supervised = './vw_' + str(mod.fprob1) + '_m.vw'
-		#mod.dataset_bandit = './source2_' + str(mod.fprob2) + '_m.vw'
-		gen_comparison_graph(mod)
+	main_loop(mod)
