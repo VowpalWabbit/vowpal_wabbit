@@ -22,8 +22,8 @@ namespace cs_test
             //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
-            //RunVWTest();
-            RunUnitTests();
+            RunVWTest();
+            //RunUnitTests();
         }
 
         private static void RunUnitTests()
@@ -35,6 +35,12 @@ namespace cs_test
         private static void RunVWTest()
         {
             string cwd = Directory.GetCurrentDirectory();
+            RunTestsHelper.ExecuteTest(
+                46,
+                "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
+                "train-sets/sequence_data",
+                "train-sets/ref/sequence_data.ldf.train.stderr",
+                "");
             //ExecuteTest(
             //    1,
             //    "-k -l 20 --initial_t 128000 --power_t 1 -d /s/vw_rajan/test/train-sets/0001.dat -f /s/vw_rajan/test/models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",

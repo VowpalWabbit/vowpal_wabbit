@@ -33,7 +33,7 @@ struct cb_to_cs_adf
   uint64_t action_sum;
   uint64_t event_sum;
   uint32_t mtr_example;
-  v_array<example*> mtr_ec_seq;//shared + the one example + an end example.
+  multi_ex mtr_ec_seq;//shared + the one example.
 
   //for DR
   COST_SENSITIVE::label pred_scores;
@@ -249,7 +249,7 @@ void call_cs_ldf(LEARNER::base_learner& base, multi_ex& examples, v_array<CB::la
   for (example* ec : examples)
   { cb_labels.push_back(ec->l.cb);
     prepped_cs_labels[index].costs.erase();
-    if (index != examples.size()-1)
+    if (index != examples.size())
       prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     else
       prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});

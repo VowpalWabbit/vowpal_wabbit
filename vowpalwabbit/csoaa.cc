@@ -175,17 +175,13 @@ bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just
   return true;
 }
 
-bool ec_seq_is_label_definition(v_array<example*>ec_seq)
+bool ec_seq_is_label_definition(multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return false;
   bool is_lab = ec_is_label_definition(*ec_seq[0]);
-  for (size_t i = 1; i<ec_seq.size(); i++)
-  {
+  for (size_t i = 1; i<ec_seq.size(); i++){
     if (is_lab != ec_is_label_definition(*ec_seq[i]))
-    {
-      if (!((i == ec_seq.size() - 1) && (example_is_newline(*ec_seq[i]))))
-        THROW("error: mixed label definition and examples in ldf data!");
-    }
+      THROW("error: mixed label definition and examples in ldf data!");
   }
   return is_lab;
 }
@@ -416,19 +412,12 @@ void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
 
   data.ft_offset = ec_seq_all.last()->ft_offset;
 
-  // Remove last element if empty.  This reduction expects no empty examples at end
-  // how ever other reductions need empty example at the end.  So driver adds empty example
-  example* empty_ex = remove_empty_last_example(ec_seq_all);
-
-  // Although we mangle the example, return the collection the way we got it
-  restore_last_example sentry(ec_seq_all, empty_ex); 
-
   // handle label definitions
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.size() == 0) return;  // nothing more to do
 
   // Ensure there are no more labels 
-  // (can be done in existing loops later but as a side effec learning 
+  // (can be done in existing loops later but as a side effect learning 
   //    will happen with bad example)
   if (ec_seq_has_label_definition(ec_seq))
   {
@@ -758,8 +747,6 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
   {
-    example* empty_ex = remove_empty_last_example(ec_seq);
-    restore_last_example sentry(ec_seq,empty_ex);
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
   }
