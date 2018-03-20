@@ -168,6 +168,7 @@ def ds_per_task(mod):
 	# allocated equally
  	config_all = [item for item in product(mod.choices_cb_types, mod.choices_warm_start_frac, mod.choices_choices_lambda, mod.dss)]
 	config_task = []
+	print len(config_all)
 	for i in range(len(config_all)):
 		if (i % mod.num_tasks == mod.task_id):
 			config_task.append(config_all[i])
@@ -237,7 +238,8 @@ if __name__ == '__main__':
 
 	# use fractions instead of absolute numbers
 
-	mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(3,5)]
+	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
+	mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
@@ -246,10 +248,12 @@ if __name__ == '__main__':
 	#choices_fprob1 = [0.1, 0.2, 0.3]
 	#choices_fprob2 = [0.1, 0.2, 0.3]
 	#choices_cb_types = ['mtr', 'ips']
+	#mod.choices_cb_types = ['mtr', 'ips']
 	mod.choices_cb_types = ['mtr', 'ips']
-	#mod.choices_cb_types = ['mtr']
 	#choices_choices_lambda = [pow(2,i) for i in range(10,11)]
-	mod.choices_choices_lambda = [i for i in range(1,3)]
+	#mod.choices_choices_lambda = [i for i in range(1,3)]
+	#mod.choices_choices_lambda = [i for i in range(1,2)]
+	mod.choices_choices_lambda = [1, 3, 5, 7]
 	#[i for i in range(10,11)]
 
 	#for correctness test
@@ -258,6 +262,7 @@ if __name__ == '__main__':
 	#choices_fprob2 = [0.1]
 
 	mod.dss = ds_files(mod.ds_path)
+	#mod.dss = mod.dss[:5]
 
 	# here, we are generating the task specific parameter settings
 	# by first generate all parameter setting and pick every num_tasks of them

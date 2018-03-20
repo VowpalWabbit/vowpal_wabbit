@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pylab
 import os
 import glob
+import pandas as pd
 
 
 def sum_files(result_path):
@@ -15,50 +16,43 @@ def sum_files(result_path):
 
 def parse_sum_file(sum_filename):
 	f = open(sum_filename, 'r')
-	line = f.readline()
-	num_cols = len(line.split())
-	f.seek(0)
-	results = [[] for i in range(num_cols)]
-
-	for line in f:
-		splitted = line.split()
-		for i in range(len(splitted)):
-			if (i == 0):
-				results[i].append(splitted[i])
-			else:
-				results[i].append(float(splitted[i]))
-	return results
+	table = pd.read_table(f, sep=' ', header=None, names=['dataset','combined','bandit_only','supervised_only','choices_lambda'],
+                       lineterminator='\n')
+	return table
 
 
 if __name__ == '__main__':
-	results_path = '../figs/'
+	results_path = '../../../figs/'
 	dss = sum_files(results_path)
 
-	all_results = []
+	all_results = None
 	for i in range(len(dss)):
 		result = parse_sum_file(results_path + dss[i])
-
 		if (i == 0):
 			all_results = result
 		else:
-			num_cols = len(result)
-			for j in range(num_cols):
-				all_results[j] += result[j]
-
+			all_results = all_results.append(result)
 	print all_results
 
+	#choices_choices_lambda = sorted(all_results['choices_lambda'].unique())
+	grouped = all_results.groupby('choices_lambda')
 
+	for cl, results_lambda in grouped:
+		#results_lambda = all_results[all_results['choices_lambda'] == cl]
+		# compare combined w/ supervised
+		results_combined = results_lambda['combined'].tolist()
+		results_bandit = results_lambda['bandit_only'].tolist()
+		results_supervised = results_lambda['supervised_only'].tolist()
 
-	# compare combined w/ supervised
-	plt.plot([0,1],[0,1])
-	plt.scatter(all_results[1], all_results[3])
-	plt.title('combined vs supervised only')
-	pylab.savefig('comb_v_super' +'.png')
-	plt.gcf().clear()
+		# compare combined w/ bandit
+		plt.plot([0,1],[0,1])
+		plt.scatter(results_combined, results_bandit)
+		plt.title('combined vs bandit only')
+		pylab.savefig('comb_v_bandit ' + 'choices_lambda=' + str(cl) +'.png')
+		plt.gcf().clear()
 
-	# compare combined w/ bandit
-	plt.plot([0,1],[0,1])
-	plt.scatter(all_results[1], all_results[2])
-	plt.title('combined vs bandit only')
-	pylab.savefig('comb_v_bandit' +'.png')
-	plt.gcf().clear()
+		plt.plot([0,1],[0,1])
+		plt.scatter(results_combined, results_supervised)
+		plt.title('combined vs supervised only')
+		pylab.savefig('comb_v_supervised ' + 'choices_lambda=' + str(cl) +'.png')
+		plt.gcf().clear()
