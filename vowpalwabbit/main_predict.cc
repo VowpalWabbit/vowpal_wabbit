@@ -1,5 +1,8 @@
 #include "example_predict.h"
-#include "array_parameters_dense.h"
+#include "vw_predict.h"
+
+#include <iostream>
+#include <fstream>
 
 enum Features
 {
@@ -25,8 +28,16 @@ enum Namespaces
   ActionDependentY = 4,
 };
 
+using namespace std;
+
 int main(int argc, char *argv[])
 {
+  if (argc != 4)
+  {
+    cout << "usage: " << argv[0] << " <model> <dataset> <prediction-output>" << endl;
+    return -1;
+  }
+
   // setup shared context
   safe_example_predict shared;
 
@@ -48,6 +59,17 @@ int main(int argc, char *argv[])
   action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action1);
   action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action2);
   action1.feature_space[Namespaces::ActionDependentX].push_back(1, Features::Action3);
+
+  // read from file
+  ifstream ifs(argv[1], ios::binary | ios::ate);
+  ifstream::pos_type model_size = ifs.tellg();
+
+  std::vector<char> model_file(model_size);
+
+  ifs.seekg(0, ios::beg);
+  ifs.read(&model_file[0], model_size);
+
+  vw_predict predictor(&model_file[0], model_size);
 
   // TODO: load model
   // TODO: slim parser

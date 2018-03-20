@@ -91,8 +91,8 @@ namespace INTERACTIONS
   // this templated function generates new features for given example and set of interactions
   // and passes each of them to given function T()
   // it must be in header file to avoid compilation problems
-  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W> // nullptr func can't be used as template param in old compilers
-  inline void generate_interactions(v_array<v_string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W, class I> // nullptr func can't be used as template param in old compilers
+  inline void generate_interactions(I& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
   {
     features* features_data = ec.feature_space;
 
@@ -110,7 +110,7 @@ namespace INTERACTIONS
     empty_ns_data.self_interaction = false;
 
     // loop throw the set of possible interactions
-    for (v_string& ns : interactions)
+    for (auto& ns : interactions)
     { // current list of namespaces to interact.
 
 #ifndef GEN_INTER_LOOP
@@ -123,10 +123,10 @@ namespace INTERACTIONS
 
       if (len == 2) //special case of pairs
       {
-        features& first = features_data[ns[0]];
+        features& first = features_data[(uint8_t)ns[0]];
         if (first.nonempty())
         {
-          features& second = features_data[ns[1]];
+          features& second = features_data[(uint8_t)ns[1]];
           if (second.nonempty())
           {
             const bool same_namespace = (!permutations && (ns[0] == ns[1]));
@@ -152,13 +152,13 @@ namespace INTERACTIONS
       }
       else if (len == 3) // special case for triples
       {
-        features& first = features_data[ns[0]];
+        features& first = features_data[(uint8_t)ns[0]];
         if (first.nonempty())
         {
-          features& second = features_data[ns[1]];
+          features& second = features_data[(uint8_t)ns[1]];
           if (second.nonempty())
           {
-            features& third = features_data[ns[2]];
+            features& third = features_data[(uint8_t)ns[2]];
             if (third.nonempty())
             { // don't compare 1 and 3 as interaction is sorted
               const bool same_namespace1 = (!permutations && (ns[0] == ns[1]));

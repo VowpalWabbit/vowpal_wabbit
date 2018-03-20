@@ -41,17 +41,9 @@ template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func
 inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters, v_array<v_string>>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
   else
-    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
-}
-
-template <class R>
-inline void dummy_func(R&, const audit_strings*) {} // should never be called due to call_audit overload
-
-template <class R, class S, void(*T)(R&, float, S), class W> // nullptr func can't be used as template param in old compilers
-inline void generate_interactions(v_array<v_string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
-{ generate_interactions<R, S, T, false, dummy_func<R>, W>(interactions, permutations, ec, dat, weights);
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters, v_array<v_string>>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6

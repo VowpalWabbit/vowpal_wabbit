@@ -1,4 +1,4 @@
-BINARIES = vw active_interactor
+BINARIES = vw vwpredict active_interactor
 MANPAGES = vw.1
 
 VWLIBS := -L. -l vw -l allreduce
@@ -23,6 +23,9 @@ vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)
 vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
+vwpredict_SOURCES = $(shell grep vwpredict_SOURCES Makefile.am | cut -d '=' -f 2)
+vwpredict_OBJECTS = $(patsubst %.cc,%.o,$(vwpredict_SOURCES))
+
 allreduce_SOURCES = $(shell grep liballreduce_la_SOURCES Makefile.am | cut -d '=' -f 2)
 allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 
@@ -44,6 +47,9 @@ libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 
 vw: main.o libvw.a liballreduce.a
 	$(CXX) $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+
+vwpredict: $(vwpredict_OBJECTS)
+	$(CXX) $(FLAGS) -o $@ $+ $(STDLIBS)
 
 active_interactor: active_interactor.cc
 	$(CXX) $(FLAGS) -o $@ $+

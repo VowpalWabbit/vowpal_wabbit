@@ -81,8 +81,8 @@ inline void foreach_feature(vw& all, example& ec, R& dat)
 inline float inline_predict(vw& all, example& ec)
 {
   return all.weights.sparse ?
-    inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial) :
-    inline_predict<dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial);
+    inline_predict<sparse_parameters, v_array<v_string>>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial) :
+    inline_predict<dense_parameters, v_array<v_string>>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear, all.interactions, all.permutations, ec, ec.l.simple.initial);
 }
 
 inline float sign(float w) { if (w < 0.) return -1.; else  return 1.; }
