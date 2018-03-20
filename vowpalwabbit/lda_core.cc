@@ -16,7 +16,6 @@ license as described in the file LICENSE.
 #include "vw_versions.h"
 #include "vw.h"
 #include "mwt.h"
-
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 
@@ -800,7 +799,6 @@ void return_example(vw& all, example& ec)
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
     all.sd->weighted_labels += ld.label * ec.weight;
-
   for (int f: all.final_prediction_sink)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
