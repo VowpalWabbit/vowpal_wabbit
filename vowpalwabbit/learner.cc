@@ -104,11 +104,9 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 
   if ((example_is_newline_not_header(*ec) && is_test_ec) 
       || need_to_break)
-  {
-    VW::finish_example(all, ec);
+  { VW::finish_example(all, ec);
     if (ec_seq.size() == 0) {
       cout << "Something is wrong---an example with no choice.  Do you have all 0 features? Or multiple empty lines?" << endl;
-      VW::finish_example(all, ec_seq);  // clean up 
       return false;
     }
     return true; // example complete
@@ -132,8 +130,6 @@ void multi_ex_generic_driver(vw& all, T context)
 {
   multi_ex ec_seq = v_init<example*>();
   example* ec = nullptr;
-
-  int i = 0;
   while (all.early_terminate == false) {
     if ((ec = VW::get_example(all.p)) != nullptr) {
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
@@ -142,17 +138,12 @@ void multi_ex_generic_driver(vw& all, T context)
         dispatch_end_pass(all, ec);
       else if (is_save_cmd(ec))
         save(all, ec);
-      else // empty example
+      else 
         dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
-      i++;
     }
-    else
-    {
+    else {
       if (ec_seq.size() > 0)
-      {
-        ec = &VW::get_unused_example(&all);
         dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
-      }
       break;
     }
   }

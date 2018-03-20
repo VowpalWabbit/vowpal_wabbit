@@ -249,10 +249,7 @@ void call_cs_ldf(LEARNER::base_learner& base, multi_ex& examples, v_array<CB::la
   for (example* ec : examples)
   { cb_labels.push_back(ec->l.cb);
     prepped_cs_labels[index].costs.erase();
-    if (index != examples.size()-1)
-      prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
-    else
-      prepped_cs_labels[index].costs.push_back({FLT_MAX,0,0.,0.});
+    prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     ec->l.cs = prepped_cs_labels[index++];
   }
 
