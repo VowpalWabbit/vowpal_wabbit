@@ -67,7 +67,7 @@ void process_example(vw& all, example* ec)
     dispatch_end_pass(all, ec);
   else if (is_save_cmd(ec))
     save(all, ec);
-  else // empty example
+  else 
     dispatch_example(all, *ec);
 }
 
@@ -117,11 +117,17 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 }
 
 template <class T, void(* f)(T, multi_ex&)>
+void dispatch_multi_ex(vw& all, T& context, multi_ex& ec_seq)
+{
+  f(context, ec_seq);               // call learn or predict
+  VW::finish_example(all, ec_seq);  // clean up 
+}
+
+template <class T, void(* f)(T, multi_ex&)>
 void dispatch_multi_ex(vw& all, T& context, example* ec, multi_ex& ec_seq)
 {
   if (complete_multi_ex(ec, ec_seq, all)) {
-    f(context, ec_seq);               // call learn or predict
-    VW::finish_example(all, ec_seq);  // clean up 
+     dispatch_multi_ex<T,f>(all,context,ec_seq);
   }
 }
 
@@ -143,7 +149,7 @@ void multi_ex_generic_driver(vw& all, T context)
     }
     else {
       if (ec_seq.size() > 0)
-        dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
+        dispatch_multi_ex<T,f>(all, context, ec_seq);
       break;
     }
   }
