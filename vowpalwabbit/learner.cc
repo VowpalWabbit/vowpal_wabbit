@@ -39,6 +39,7 @@ void process_example(vw& all, example* ec)
     dispatch_example(all, *ec);
   else if (ec->end_pass)
   {
+    all.current_pass++;
     all.l->end_pass();
     VW::finish_example(all, ec);
   }

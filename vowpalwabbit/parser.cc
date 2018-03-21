@@ -676,6 +676,8 @@ void lock_done(parser& p)
 {
   mutex_lock(&p.examples_lock);
   p.done = true;
+  //in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
+  condition_variable_signal_all(&p.example_available);
   mutex_unlock(&p.examples_lock);
 }
 
@@ -1031,7 +1033,6 @@ example* get_example(parser* p)
       cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
     assert((p->examples+ring_index)->in_use);
     mutex_unlock(&p->examples_lock);
-
     return p->examples + ring_index;
   }
   else
