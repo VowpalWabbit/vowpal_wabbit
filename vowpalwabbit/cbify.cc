@@ -3,31 +3,19 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "../explore/cpp/MWTExplorer.h"
+#include "sampling.h"
 #include "vw.h"
+#include "hash.h"
+#include "sampling.h"
+
+#include <vector>
 
 using namespace LEARNER;
-using namespace MultiWorldTesting;
-using namespace MultiWorldTesting::SingleAction;
+using namespace exploration;
 using namespace ACTION_SCORE;
+using namespace std;
 
 struct cbify;
-
-//Scorer class for use by the exploration library
-class vw_scorer : public IScorer<example>
-{
-public:
-  vector<float> Score_Actions(example& ctx);
-};
-
-struct vw_recorder : public IRecorder<example>
-{
-  void Record(example& context, u32 a, float p, string /*unique_key*/)
-  { }
-
-  virtual ~vw_recorder()
-  { }
-};
 
 struct cbify_adf_data
 {
@@ -39,11 +27,7 @@ struct cbify_adf_data
 struct cbify
 {
   CB::label cb_label;
-  GenericExplorer<example>* generic_explorer;
-  //v_array<float> probs;
-  vw_scorer* scorer;
-  MwtExplorer<example>* mwt_explorer;
-  vw_recorder* recorder;
+  uint64_t app_seed;
   v_array<action_score> a_s;
   // used as the seed
   size_t example_counter;
@@ -53,14 +37,6 @@ struct cbify
   float loss0;
   float loss1;
 };
-
-vector<float> vw_scorer::Score_Actions(example& ctx)
-{
-  vector<float> probs_vec;
-  for(uint32_t i = 0; i < ctx.pred.a_s.size(); i++)
-    probs_vec.push_back(ctx.pred.a_s[i].score);
-  return probs_vec;
-}
 
 float loss(cbify& data, uint32_t label, uint32_t final_prediction)
 {
@@ -75,11 +51,6 @@ template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 void finish(cbify& data)
 {
   CB::cb_label.delete_label(&data.cb_label);
-  //data.probs.delete_v();
-  delete_it(data.scorer);
-  delete_it(data.generic_explorer);
-  delete_it(data.mwt_explorer);
-  delete_it(data.recorder);
   data.a_s.delete_v();
   if (data.use_adf)
   {
@@ -126,6 +97,14 @@ void copy_example_to_adf(cbify& data, example& ec)
   }
 }
 
+vector<float> a_s_get_scores(ACTION_SCORE::action_scores& a_s)
+{
+  vector<float> scores(a_s.size());
+  for (uint32_t i = 0; i < a_s.size(); i++)
+    scores[i] = a_s[i].score;
+  return scores;
+}
+
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
@@ -139,11 +118,13 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   base.predict(ec);
   //data.probs = ec.pred.scalars;
 
-  uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+  vector<float> pdf = a_s_get_scores(ec.pred.a_s);
+  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], pdf.size());
 
   CB::cb_class cl;
-  cl.action = action;
-  cl.probability = ec.pred.a_s[action-1].score;
+  cl.action = s.index + 1;
+  // TODO: if pdf is not normalized, this prob is off. probably better to use s.probability
+  cl.probability = ec.pred.a_s[s.index].score;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -156,7 +137,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.a_s.erase();
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
-  ec.pred.multiclass = action;
+  ec.pred.multiclass = s.index + 1;
 }
 
 template <bool is_learn>
@@ -171,15 +152,16 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
     base.predict(data.adf_data.ecs[a]);
   }
   base.predict(*data.adf_data.empty_example);
-  // get output scores
+
   auto& out_ec = data.adf_data.ecs[0];
-  uint32_t idx = data.mwt_explorer->Choose_Action(
-                   *data.generic_explorer,
-                   StringUtils::to_string(data.example_counter++), out_ec) - 1;
+
+  vector<float> pdf = a_s_get_scores(out_ec.pred.a_s);
+  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], pdf.size());
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[idx].action + 1;
-  cl.probability = out_ec.pred.a_s[idx].score;
+  cl.action = out_ec.pred.a_s[s.index].action + 1;
+  // TODO: if pdf is not normalized, this prob is off. probably better to use s.probability
+  cl.probability = out_ec.pred.a_s[s.index].score;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -225,12 +207,8 @@ base_learner* cbify_setup(arguments& arg)
     return nullptr;
 
   data->use_adf = count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") > 0;
-  data->recorder = new vw_recorder();
-  data->mwt_explorer = new MwtExplorer<example>("vw",*data->recorder);
-  data->scorer = new vw_scorer();
+  data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
-  //data->probs = v_init<float>();
-  data->generic_explorer = new GenericExplorer<example>(*data->scorer, (u32)num_actions);
   data->all = arg.all;
 
   if (data->use_adf)
