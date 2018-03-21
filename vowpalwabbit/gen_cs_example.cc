@@ -192,6 +192,5 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
       cs_labels.costs.push_back(wc);
     }
   }
-  c.mtr_ec_seq.push_back(ec_seq[ec_seq.size()-1]);//must include the end-of-line example
 }
 }
