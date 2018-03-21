@@ -1,4 +1,3 @@
-#include "exploration.h"
 #include "hash.h"
 
 #include <string.h>
