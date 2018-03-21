@@ -412,6 +412,8 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
+    <ClInclude Include="sampling.h" />
+    <ClInclude Include="sampling.cc" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
