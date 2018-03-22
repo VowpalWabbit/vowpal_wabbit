@@ -48,7 +48,6 @@ namespace exploration
     if (total == 0)
       throw std::invalid_argument("At least one score must be positive.");
 
-    // printf("\tseed: %d\n", seed);
     float draw = total * uniform_random_merand48(seed);
     if (draw > total) //make very sure that draw can not be greater than total.
       draw = total;

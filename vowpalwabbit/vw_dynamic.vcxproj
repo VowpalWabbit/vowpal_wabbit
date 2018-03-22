@@ -369,6 +369,8 @@
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
+    <ClInclude Include="exploration.h" />
+    <ClInclude Include="exploration.cc" />
     <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />

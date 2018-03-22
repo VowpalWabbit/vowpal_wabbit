@@ -4,11 +4,15 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "cb_explore.h"
+#include "exploration.h"
+
+#include <vector>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
 using namespace std;
 using namespace CB_ALGS;
+using namespace exploration;
 //All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities are the probability with which each action should be replaced to the top of the list.
 
 //tau first
@@ -146,11 +150,13 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<e
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
-  float prob = data.epsilon/(float)num_actions;
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i].score = prob;
-  preds[0].score += 1.f - data.epsilon;
+
+  // generate distribution over actions
+  vector<float> pdf(preds.size());
+  epsilon_greedy(data.epsilon, 0, &pdf[0], pdf.size());
+
+  for (size_t i = 0; i <  pdf.size(); i++)
+    preds[i].score = pdf[i];
 }
 
 template <bool is_learn>
@@ -171,7 +177,8 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   data.action_probs.erase();
   for (uint32_t i = 0; i < num_actions; i++)
     data.action_probs.push_back({ i,0. });
-  float prob = 1.f / (float)data.bag_size;
+  vector<uint32_t> top_actions(num_actions);
+
   bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
   for (uint32_t i = 0; i < data.bag_size; i++)
   {
@@ -185,12 +192,19 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
     else
       multiline_learn_or_predict<false>(base, examples, data.offset, i);
     assert(preds.size() == num_actions);
-    data.action_probs[preds[0].action].score += prob;
+    top_actions[preds[0].action]++;
     if (is_learn && !test_sequence)
       for (uint32_t j = 1; j < count; j++)
         multiline_learn_or_predict<true>(base, examples, data.offset, i);
   }
 
+  // generate distribution over actions
+  vector<float> pdf(num_actions);
+  bag(&top_actions[0], &pdf[0], num_actions);
+  for (uint32_t i = 0; i < num_actions; i++)
+    data.action_probs[i].score = pdf[i];
+
+  // TODO: use exploration::safety
   CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
   qsort((void*) data.action_probs.begin(), data.action_probs.size(), sizeof(action_score), reverse_order);
 
