@@ -370,7 +370,6 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="exploration.h" />
-    <ClInclude Include="exploration.cc" />
     <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
@@ -415,7 +414,6 @@
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="sampling.h" />
-    <ClInclude Include="sampling.cc" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
@@ -467,6 +465,7 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
+    <ClCompile Include="exploration.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="audit_regressor.cc" />
@@ -511,6 +510,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
+    <ClCompile Include="sampling.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="search_graph.cc" />

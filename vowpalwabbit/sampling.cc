@@ -3,6 +3,7 @@
 #include <string.h>
 #include <algorithm>
 #include <stdexcept>
+#include <numeric>
 
 #include "sampling.h"
 

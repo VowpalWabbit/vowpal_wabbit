@@ -153,7 +153,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<e
 
   // generate distribution over actions
   vector<float> pdf(preds.size());
-  epsilon_greedy(data.epsilon, 0, &pdf[0], pdf.size());
+  epsilon_greedy(data.epsilon, 0, &pdf[0], (uint32_t)pdf.size());
 
   for (size_t i = 0; i <  pdf.size(); i++)
     preds[i].score = pdf[i];

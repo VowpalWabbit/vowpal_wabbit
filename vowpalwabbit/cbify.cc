@@ -119,7 +119,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   //data.probs = ec.pred.scalars;
 
   vector<float> pdf = a_s_get_scores(ec.pred.a_s);
-  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], pdf.size());
+  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], (uint32_t)pdf.size());
 
   CB::cb_class cl;
   cl.action = s.index + 1;
@@ -156,7 +156,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
   auto& out_ec = data.adf_data.ecs[0];
 
   vector<float> pdf = a_s_get_scores(out_ec.pred.a_s);
-  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], pdf.size());
+  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], (uint32_t)pdf.size());
 
   CB::cb_class cl;
   cl.action = out_ec.pred.a_s[s.index].action + 1;
