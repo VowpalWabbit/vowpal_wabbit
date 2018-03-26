@@ -34,60 +34,60 @@ enum Namespaces
   ActionDependentY = 40,
 };
 
-struct example_features_push_back_impl
-{
-  struct result
-  {
-    typedef void type;
-  };
-
-  void operator()(safe_example_predict& c, namespace_index const& ns, feature_index const& idx, feature_value const& x) const
-  {
-    c.feature_space[ns].push_back(x, idx);
-  }
-};
-
-boost::phoenix::function<example_features_push_back_impl> const example_features_push_back = example_features_push_back_impl();
-
-template <typename Iterator>
-bool parse_complex(Iterator first, Iterator last)
-{
-  using boost::spirit::ascii::space;
-
-  namespace phx = boost::phoenix;
-  namespace qi = boost::spirit::qi;
-
-  double label = 0.0;
-  namespace_index current_ns;
-  safe_example_predict ex;
-
-  bool r = qi::parse(first, last,
-    (
-      qi::double_[phx::ref(label) = qi::_1]
-      // namespaces
-      >> +( +space
-        >> '|' >> qi::int_[phx::push_back(phx::ref(ex.indices), qi::_1), phx::ref(current_ns) = qi::_1]
-        // features
-        >> +( +space
-          >> (qi::ulong_long >> ':' >> qi::double_)[example_features_push_back(phx::ref(ex), phx::ref(current_ns), qi::_1, qi::_2)]
-          )
-        )
-      )
-    );
-
-  std::cout << "label: " << label << std::endl;
-  for (auto& ns : ex.indices)
-  {
-    std::cout << "ns: " << (uint64_t)ns << std::endl;
-    for (auto& fi : ex.feature_space[ns])
-      std::cout << "\tidx: " << fi.index() << " " << fi.value() << std::endl;
-  }
-
-  if (!r || first != last) // fail if we did not get a full match
-    return false;
-  //c = std::complex<double>(rN, iN);
-  return r;
-}
+//struct example_features_push_back_impl
+//{
+//  struct result
+//  {
+//    typedef void type;
+//  };
+//
+//  void operator()(safe_example_predict& c, namespace_index const& ns, feature_index const& idx, feature_value const& x) const
+//  {
+//    c.feature_space[ns].push_back(x, idx);
+//  }
+//};
+//
+//boost::phoenix::function<example_features_push_back_impl> const example_features_push_back = example_features_push_back_impl();
+//
+//template <typename Iterator>
+//bool parse_complex(Iterator first, Iterator last)
+//{
+//  using boost::spirit::ascii::space;
+//
+//  namespace phx = boost::phoenix;
+//  namespace qi = boost::spirit::qi;
+//
+//  double label = 0.0;
+//  namespace_index current_ns;
+//  safe_example_predict ex;
+//
+//  bool r = qi::parse(first, last,
+//    (
+//      qi::double_[phx::ref(label) = qi::_1]
+//      // namespaces
+//      >> +( +space
+//        >> '|' >> qi::int_[phx::push_back(phx::ref(ex.indices), qi::_1), phx::ref(current_ns) = qi::_1]
+//        // features
+//        >> +( +space
+//          >> (qi::ulong_long >> ':' >> qi::double_)[example_features_push_back(phx::ref(ex), phx::ref(current_ns), qi::_1, qi::_2)]
+//          )
+//        )
+//      )
+//    );
+//
+//  std::cout << "label: " << label << std::endl;
+//  for (auto& ns : ex.indices)
+//  {
+//    std::cout << "ns: " << (uint64_t)ns << std::endl;
+//    for (auto& fi : ex.feature_space[ns])
+//      std::cout << "\tidx: " << fi.index() << " " << fi.value() << std::endl;
+//  }
+//
+//  if (!r || first != last) // fail if we did not get a full match
+//    return false;
+//  //c = std::complex<double>(rN, iN);
+//  return r;
+//}
 
 int main(int argc, char *argv[])
 {
@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
 
   vw_predict predictor(&model_file[0], model_size);
 
-  std::string str = "1 |0 25:1 28:4.2 |5 26:1 27:3.4";
-  parse_complex(str.begin(), str.end());
+  //std::string str = "1 |0 25:1 28:4.2 |5 26:1 27:3.4";
+  //parse_complex(str.begin(), str.end());
 
    // TODO: load model
   // TODO: slim parser
