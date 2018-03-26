@@ -123,8 +123,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
   CB::cb_class cl;
   cl.action = s.index + 1;
-  // TODO: if pdf is not normalized, this prob is off. probably better to use s.probability
-  cl.probability = ec.pred.a_s[s.index].score;
+  cl.probability = s.probability;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");

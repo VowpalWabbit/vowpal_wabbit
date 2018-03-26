@@ -4,7 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "cb_explore.h"
-#include "exploration.h"
+#include "exploration_cpp.h"
 
 #include <vector>
 
@@ -152,8 +152,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<e
   v_array<action_score>& preds = examples[0]->pred.a_s;
 
   // generate distribution over actions
-  vector<float> pdf(preds.size());
-  epsilon_greedy(data.epsilon, 0, &pdf[0], (uint32_t)pdf.size());
+  vector<float> pdf = epsilon_greedy(data.epsilon, 0, (uint32_t)preds.size());
 
   for (size_t i = 0; i <  pdf.size(); i++)
     preds[i].score = pdf[i];
@@ -199,8 +198,7 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   }
 
   // generate distribution over actions
-  vector<float> pdf(num_actions);
-  bag(&top_actions[0], &pdf[0], num_actions);
+  vector<float> pdf = bag(top_actions);
   for (uint32_t i = 0; i < num_actions; i++)
     data.action_probs[i].score = pdf[i];
 
@@ -287,21 +285,17 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
-  float norm = 0.;
-  float max_score = preds[0].score;
-  for (size_t i = 1; i < num_actions; i++)
-    if (max_score < preds[i].score)
-      max_score = preds[i].score;
 
-  for (size_t i = 0; i < num_actions; i++)
-  {
-    float prob = exp(data.lambda*(preds[i].score - max_score));
-    preds[i].score = prob;
-    norm += prob;
-  }
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i].score /= norm;
+  std::vector<float> scores(preds.size());
+  for (size_t i = 0; i < preds.size(); i++)
+    scores[i] = preds[i].score;
+
+
+  std::vector<float> pdf = softmax(data.lambda, scores);
+
+  for (size_t i = 0; i < preds.size(); i++)
+    preds[i].score = pdf[i];
+
   CB_EXPLORE::safety(preds, data.epsilon, true);
 }
 
