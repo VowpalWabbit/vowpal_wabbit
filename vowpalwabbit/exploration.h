@@ -45,9 +45,8 @@ namespace exploration
     }
 
     // normalize
-    if (norm > 0)
-      for (float* d = probability_distribution; d != prob_end; ++d)
-        *d /= norm;
+    for (float* d = probability_distribution; d != prob_end; ++d)
+      *d /= norm;
   }
 
   void bag(const uint32_t* top_actions, float* probability_distribution, uint32_t num_actions)
