@@ -21,7 +21,7 @@ vw --plt <num labels> <train dataset> -f <output model> --sgd -l <learning rate>
 vw -t -i <model file> <test dataset> --top_k <k top label> -p <prediction file>
 ```
 
-More examples can be found in xml_experiments directory.
+More examples and scripts to replicate results on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html) can be found in `xml_experiments` directory.
 
 
 # Vowpal Wabbit
