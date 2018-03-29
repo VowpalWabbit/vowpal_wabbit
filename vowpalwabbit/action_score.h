@@ -9,6 +9,40 @@ struct action_score
 
 typedef v_array<action_score> action_scores;
 
+class score_iterator
+{
+	action_score* _p;
+public:
+	score_iterator(action_score* p) : _p(p)
+	{ }
+
+	score_iterator& operator++()
+	{
+		++_p;
+		return *this;
+	}
+
+	score_iterator operator+(size_t n)
+	{ return score_iterator(_p + n); }
+
+	bool operator==(const score_iterator& other) const
+	{ return _p == other._p; }
+
+	bool operator!=(const score_iterator& other) const
+	{ return _p != other._p; }
+
+	size_t operator-(const score_iterator& other) const
+	{ return _p - other._p; }
+
+	float& operator*()
+	{ return _p->score; }
+};
+
+inline score_iterator begin_scores(action_scores& a_s) { return score_iterator(a_s.begin()); }
+
+inline score_iterator end_scores(action_scores& a_s) { return score_iterator(a_s.end()); }
+
+
 inline int cmp(size_t a, size_t b)
 { if (a == b) return 0;
   if (a > b) return 1;

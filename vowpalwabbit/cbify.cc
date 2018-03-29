@@ -28,7 +28,7 @@ struct cbify
 {
   CB::label cb_label;
   uint64_t app_seed;
-  v_array<action_score> a_s;
+  action_scores a_s;
   // used as the seed
   size_t example_counter;
   vw* all;

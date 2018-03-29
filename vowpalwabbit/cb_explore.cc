@@ -42,7 +42,7 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 {
   //Explore tau times, then act according to optimal.
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
 
   if (is_learn && ec.l.cb.costs[0].probability < 1)
     base.learn(ec);
@@ -73,7 +73,7 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 {
   //Explore uniform random an epsilon fraction of the time.
 
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
   probs.erase();
 
   if (is_learn)
@@ -94,7 +94,7 @@ template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 {
   //Randomize over predictions from a base set of predictors
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
   probs.erase();
 
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
@@ -195,7 +195,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
   probs.erase();
   data.cs_label.costs.erase();
 

@@ -8,8 +8,10 @@
 
 namespace exploration
 {
-  void epsilon_greedy(float epsilon, uint32_t top_action, float* probability_distribution, uint32_t num_actions)
+  template<typename OutputIt>
+  void epsilon_greedy(float epsilon, uint32_t top_action, OutputIt pdf_first, OutputIt pdf_last)
   {
+    size_t num_actions = pdf_last - pdf_first;
     if (num_actions == 0)
       return;
 
@@ -19,24 +21,23 @@ namespace exploration
     float prob = epsilon / (float)num_actions;
 
     // size & initialize vector to prob
-    float* prob_end = probability_distribution + num_actions;
-    for (float* d = probability_distribution; d != prob_end; ++d)
+    for (OutputIt d = pdf_first; d != pdf_last; ++d)
       *d = prob;
 
-    probability_distribution[top_action] += 1.f - epsilon;
+    *(pdf_first + top_action) += 1.f - epsilon;
   }
 
-  void softmax(float lambda, const float* scores, float* probability_distribution, uint32_t num_actions)
+  template<typename InputIt, typename OutputIt>
+  void softmax(float lambda, InputIt scores_begin, InputIt scores_last, OutputIt pdf_first, OutputIt pdf_last)
   {
-    if (num_actions == 0)
+    if (scores_begin == scores_last)
       return;
 
     float norm = 0.;
-    float max_score = *std::max_element(scores, scores + num_actions);
+    float max_score = *std::max_element(scores_begin, scores_last);
 
-    float* prob_end = probability_distribution + num_actions;
-    const float *s = scores;
-    for (float *d = probability_distribution; d != prob_end; ++d, ++s)
+    InputIt s = scores_begin;
+    for (OutputIt d = pdf_first; d != pdf_last && s != scores_last; ++d, ++s)
     {
       float prob = exp(lambda*(*s - max_score));
       norm += prob;
@@ -45,24 +46,26 @@ namespace exploration
     }
 
     // normalize
-    for (float* d = probability_distribution; d != prob_end; ++d)
+    for (OutputIt d = pdf_first; d != pdf_last; ++d)
       *d /= norm;
   }
 
-  void bag(const uint32_t* top_actions, float* probability_distribution, uint32_t num_actions)
+  template<typename InputIt, typename OutputIt>
+  void bag(InputIt top_actions_begin, InputIt top_actions_last, OutputIt pdf_first, OutputIt pdf_last)
   {
-    if (num_actions == 0)
+    if (pdf_first == pdf_last)
       return;
 
-    uint32_t num_models = std::accumulate(top_actions, top_actions + num_actions, 0);
+    uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
     if (num_models == 0)
       throw std::out_of_range("must supply at least one top_action from a model");
 
     // determine probability per model
     float prob = 1.f / (float)num_models;
 
-    for (size_t i = 0; i < num_actions; i++)
-      probability_distribution[i] = top_actions[i] * prob;
+    InputIt t_a = top_actions_begin;
+    for (OutputIt d = pdf_first; d != pdf_last && t_a != top_actions_last; ++d, ++t_a)
+      *d = *t_a * prob;
   }
 
   void enforce_minimum_probability(float min_prob, float* probability_distribution, uint32_t num_actions)
