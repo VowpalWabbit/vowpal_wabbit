@@ -36,11 +36,16 @@ struct plt
   float threshold; // inner threshold
   uint32_t top_k;
   float *nodes_t;
+
+  float* precision;
+  uint32_t prediction_count;
 };
 
 inline void learn_node(plt &p, uint32_t n, base_learner &base, example &ec)
-{ p.all->sd->t = p.nodes_t[n];
-  p.nodes_t[n] += ec.weight;
+{ if(!p.all->adaptive)
+  { p.all->sd->t = p.nodes_t[n];
+    p.nodes_t[n] += ec.weight;
+  }
   base.learn(ec, n);
 }
 
@@ -65,7 +70,7 @@ void learn(plt &p, base_learner &base, example &ec)
       }
     }
     if (multilabels.label_v[multilabels.label_v.size()-1] >= p.k)
-      cout << "label " << multilabels.label_v[multilabels.label_v.size()-1] << " is not in {0," << p.k - 1 << "} This won't work right." << endl;
+      cerr << "label " << multilabels.label_v[multilabels.label_v.size()-1] << " is not in {0," << p.k - 1 << "} This won't work right." << endl;
 
     queue <uint32_t> n_queue; // nodes queue
     n_queue.push(0);
@@ -103,10 +108,12 @@ void learn(plt &p, base_learner &base, example &ec)
 
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
+
+    //cerr << ec_loss << " ";
 }
 
-inline float predict_node(plt &p, uint32_t n, base_learner &base, example &ec) {
-  ec.l.simple = {FLT_MAX, 1.f, 0.f};
+inline float predict_node(plt &p, uint32_t n, base_learner &base, example &ec)
+{ ec.l.simple = {FLT_MAX, 1.f, 0.f};
   base.predict(ec, n);
   return 1.0f / (1.0f + exp(-ec.partial_prediction));
 }
@@ -146,6 +153,19 @@ void predict(plt &p, base_learner &base, example &ec)
     sort(positive_labels.rbegin(), positive_labels.rend());
     for (auto p : positive_labels)
       preds.label_v.push_back(p.n);
+
+    vector<uint32_t> true_labels;
+    for (uint32_t i = 0; i < multilabels.label_v.size(); ++i)
+      true_labels.push_back(multilabels.label_v[i]);
+
+    if (true_labels.size() > 0)
+    { for (size_t i = 0; i < preds.label_v.size(); ++i)
+      { if (find(true_labels.begin(), true_labels.end(), preds.label_v[i]) != true_labels.end())
+          p.precision[0] += 1.0f;
+      }
+    }
+
+    p.prediction_count += preds.label_v.size();
   }
 
   // top-k predictions
@@ -179,6 +199,19 @@ void predict(plt &p, base_learner &base, example &ec)
         }
       }
     }
+
+    vector<uint32_t> true_labels;
+    for (uint32_t i = 0; i < multilabels.label_v.size(); ++i)
+      true_labels.push_back(multilabels.label_v[i]);
+
+    if (p.top_k > 0 && true_labels.size() > 0)
+    { for (size_t i = 0; i < p.top_k; ++i)
+      { if (find(true_labels.begin(), true_labels.end(), preds.label_v[i]) != true_labels.end())
+          p.precision[i] += 1.0f;
+      }
+    }
+
+    ++p.prediction_count;
   }
 
   // for multilabel loss
@@ -194,7 +227,24 @@ void finish_example(vw& all, plt &p, example& ec)
 }
 
 void finish(plt &p)
-{ free(p.nodes_t);
+{ // threshold prediction
+  if (p.threshold > 0 && !p.all->training) {
+    if (p.prediction_count > 0)
+      cerr << "Precision = " << p.precision[0] / p.prediction_count << "\n";
+    else
+      cerr << "Precision unknown - nothing predicted" << endl;
+
+  // top-k predictions
+  } else if(p.top_k > 0 && !p.all->training)
+  { float correct = 0;
+    for (size_t i = 0; i < p.top_k; ++i)
+    { correct += p.precision[i];
+      cerr << "P@" << i + 1 << " = " << correct / (p.prediction_count * (i + 1)) << "\n";
+    }
+  }
+
+  free(p.nodes_t);
+  free(p.precision);
 }
 
 void save_load_nodes(plt &p, io_buf &model_file, bool read, bool text)
@@ -244,11 +294,11 @@ LEARNER::base_learner* plt_setup(vw &all) //learner setup
   data.ti = data.t - data.k;
   *(all.file_options) << " --kary_tree " << data.kary;
 
-  if (all.vm.count("threshold"))
-    data.threshold = all.vm["threshold"].as<float>();
-
   if (all.vm.count("top_k"))
     data.top_k = all.vm["top_k"].as<uint32_t>();
+  if (all.vm.count("threshold"))
+    data.threshold = all.vm["threshold"].as<float>();
+  data.precision = calloc_or_throw<float>(data.top_k > 0 ? data.top_k : 1);
 
   if (data.threshold >= 0)
     l = &init_learner(&data, setup_base(all), learn, predict<true>, data.t, prediction_type::multilabels);

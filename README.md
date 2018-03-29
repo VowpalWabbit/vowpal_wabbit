@@ -1,18 +1,30 @@
-# PLT in VW
+# Extweme Wabbit
 
-This fork implements Probabilistic Label Tree in Vowpal Wabbit for multilabel classification.
+This fork implements Probabilistic Label Tree (PLT) in Vowpal Wabbit for extreme multi-label classification.
 
 ## PLT options
 ```
---plt arg               Use PLT multilabel learning with arg labels
---kary_tree arg (=2)    Set k-ary tree for PLT. By default tree is binary
---top_k arg (=1)        Return k top labels
---threshold arg         Return labels with probabiltiy greather then arg
-
---sgd                   Recomended to use with --plt
+--plt arg               Use PLT multi-label learning with arg labels
+--kary_tree arg (=2)    Use arg-ary tree for PLT. By default tree is binary
+--top_k arg (=1)        Predict arg top labels
+--threshold arg         Predict labels with probability greater than arg
 ```
 
+We recommended to use `--sgd` with `--plt` for the fastest learning and the best memory efficiency.
 
+## Example of usage
+```
+# To train:
+vw --plt <num labels> <train dataset> -f <output model> --sgd -l <learning rate> --kary_tree <tree arity> --passes <num epochs> -b <number of bits in the feature table> -c
+
+# To test:
+vw -t -i <model file> <test dataset> --top_k <k top label> -p <prediction file>
+```
+
+More examples can be found in xml_experiments directory.
+
+
+# Vowpal Wabbit
 ```
 /*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
