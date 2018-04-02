@@ -31,9 +31,6 @@ struct label
 void output_example(vw& all, example& ec);
 extern label_parser cs_label;
 
-bool is_test_label(label& ld);
-bool example_is_test(example& ec);
-
 void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel, uint32_t prediction);
 bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }

@@ -223,7 +223,7 @@ void predict_or_learn(explore_eval& data, base_learner& base, example &ec)
   vw* all = data.all;
   //data.base = &base;
   data.offset = ec.ft_offset;
-  bool is_test_ec = CB::example_is_test(ec);
+  bool is_test_ec = CB::cb_label.test_label(&ec.l);
   bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
 
   if ((CB_ALGS::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)

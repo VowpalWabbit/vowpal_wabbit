@@ -29,16 +29,6 @@ void name_value(substring &s, v_array<substring>& name, float &v)
   }
 }
 
-bool is_test_label(label& ld)
-{
-  if (ld.costs.size() == 0)
-    return true;
-  for (unsigned int i=0; i<ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].x)
-      return false;
-  return true;
-}
-
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
@@ -104,7 +94,18 @@ void default_label(void* v)
   ld->costs.erase();
 }
 
-void delete_label(void* v)
+bool test_label(void* v)
+{
+  label* ld = (label*) v;
+  if (ld->costs.size() == 0)
+    return true;
+  for (unsigned int i=0; i<ld->costs.size(); i++)
+    if (FLT_MAX != ld->costs[i].x)
+      return false;
+  return true;
+}
+
+  void delete_label(void* v)
 {
   label* ld = (label*)v;
   if (ld) ld->costs.delete_v();
@@ -195,6 +196,7 @@ label_parser cs_label = {default_label, parse_label,
                          cache_label, read_cached_label,
                          delete_label, weight,
                          copy_label,
+                         test_label,
                          sizeof(label)
                         };
 
@@ -253,27 +255,27 @@ void output_example(vw& all, example& ec)
   label& ld = ec.l.cs;
 
   float loss = 0.;
-  if (!is_test_label(ld))
-  {
-    //need to compute exact loss
-    size_t pred = (size_t)ec.pred.multiclass;
-
-    float chosen_loss = FLT_MAX;
-    float min = FLT_MAX;
-    for (auto& cl : ld.costs)
+  if (!test_label(&ld))
     {
-      if (cl.class_index == pred)
-        chosen_loss = cl.x;
-      if (cl.x < min)
-        min = cl.x;
+      //need to compute exact loss
+      size_t pred = (size_t)ec.pred.multiclass;
+
+      float chosen_loss = FLT_MAX;
+      float min = FLT_MAX;
+      for (auto& cl : ld.costs)
+        {
+          if (cl.class_index == pred)
+            chosen_loss = cl.x;
+          if (cl.x < min)
+            min = cl.x;
+        }
+      if (chosen_loss == FLT_MAX)
+        cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
+
+      loss = chosen_loss - min;
     }
-    if (chosen_loss == FLT_MAX)
-      cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
 
-    loss = chosen_loss - min;
-  }
-
-  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (! all.sd->ldict)
@@ -296,7 +298,7 @@ void output_example(vw& all, example& ec)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, is_test_label(ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
+  print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
 }
 
 bool example_is_test(example& ec)

@@ -15,16 +15,6 @@ using namespace std;
 
 namespace CB
 {
-bool is_test_label(CB::label& ld)
-{
-  if (ld.costs.size() == 0)
-    return true;
-  for (size_t i=0; i<ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
-      return false;
-  return true;
-}
-
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
@@ -89,6 +79,17 @@ void default_label(void* v)
   CB::label* ld = (CB::label*) v;
   ld->costs.erase();
 }
+
+  bool test_label(void* v)
+  {
+    CB::label* ld = (CB::label*)v;
+    if (ld->costs.size() == 0)
+      return true;
+    for (size_t i=0; i<ld->costs.size(); i++)
+      if (FLT_MAX != ld->costs[i].cost && ld->costs[i].probability > 0.)
+        return false;
+    return true;
+  }
 
 void delete_label(void* v)
 {
@@ -167,17 +168,9 @@ label_parser cb_label = {default_label, parse_label,
                          cache_label, read_cached_label,
                          delete_label, weight,
                          copy_label,
+                         test_label,
                          sizeof(label)
                         };
-
-bool example_is_test(example& ec)
-{
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
-  if (costs.size() == 0) return true;
-  for (size_t j=0; j<costs.size(); j++)
-    if (costs[j].cost != FLT_MAX) return false;
-  return true;
-}
 
 bool ec_is_example_header(example& ec)  // example headers just have "shared"
 {
@@ -257,6 +250,13 @@ void default_label(void* v)
   ld->action = 0;
 }
 
+    bool test_label(void* v)
+  {
+    CB_EVAL::label* ld = (CB_EVAL::label*)v;
+    return CB::test_label(&ld->event);
+  }
+
+
 void delete_label(void* v)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
@@ -291,6 +291,7 @@ label_parser cb_eval = {default_label, parse_label,
                         cache_label, read_cached_label,
                         delete_label, CB::weight,
                         copy_label,
+                        test_label,
                         sizeof(CB_EVAL::label)
                        };
 }

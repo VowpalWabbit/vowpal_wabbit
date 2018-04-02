@@ -62,6 +62,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
 void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 {
+  cout << "is_learn = " << is_learn << endl;
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
     cout << "label " << mc_label_data.label << " is not in {1,"<< o.k << "} This won't work right." << endl;

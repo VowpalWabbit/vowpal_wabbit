@@ -115,7 +115,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
   //this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
   //generate cost-sensitive example
   cs_ld.costs.erase();
-  if (ld.costs.size() == 1 && !is_test_label(ld))   //this is a typical example where we can perform all actions
+  if (ld.costs.size() == 1 || ld.costs.size() == 0)   //this is a typical example where we can perform all actions
   {
     //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)

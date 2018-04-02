@@ -266,14 +266,14 @@ bool test_ldf_sequence(ldf& data, size_t start_K)
   if (start_K == data.ec_seq.size())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::example_is_test(*data.ec_seq[start_K]);
+    isTest = COST_SENSITIVE::cs_label.test_label(&data.ec_seq[start_K]->l);
   for (size_t k=start_K; k<data.ec_seq.size(); k++)
   {
     example *ec = data.ec_seq[k];
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size()==1);
 
-    if (COST_SENSITIVE::example_is_test(*ec) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
       isTest = true;
       data.all->opts_n_args.trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
@@ -578,7 +578,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   else
     predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::example_is_test(ec))
+  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
     for (size_t j=0; j<costs.size(); j++)
     {
@@ -610,7 +610,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<example*>* ec_seq)
@@ -626,7 +626,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::example_is_test(head_ec))
+  if (!COST_SENSITIVE::cs_label.test_label(&head_ec.l))
   {
     size_t idx = 0;
     for (example* ex : *ec_seq)
@@ -661,7 +661,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<exam
     all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(head_ec), head_ec, ec_seq, true, 0);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(vw& all, ldf& data)
@@ -743,7 +743,7 @@ void finish_singleline_example(vw& all, ldf& data, example& ec)
 {
   if (! ec_is_label_definition(ec))
   {
-    if (COST_SENSITIVE::example_is_test(ec))
+    if (COST_SENSITIVE::cs_label.test_label(&ec.l))
       all.sd->weighted_unlabeled_examples += ec.weight;
     else
       all.sd->weighted_labeled_examples += ec.weight;
@@ -789,7 +789,7 @@ void predict_or_learn(ldf& data, base_learner& base, example &ec)
 {
   vw* all = data.all;
   data.ft_offset = ec.ft_offset;
-  bool is_test_ec = COST_SENSITIVE::example_is_test(ec);
+  bool is_test_ec = COST_SENSITIVE::cs_label.test_label(&ec.l);
   bool need_to_break = data.ec_seq.size() >= all->p->ring_size - 2;
 
   // singleline is used by library/ezexample_predict

@@ -343,7 +343,7 @@ template <bool is_learn>
 void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
 {
   vw* all = data.all;
-  bool is_test_ec = CB::example_is_test(ec);
+  bool is_test_ec = CB::cb_label.test_label(&ec.l);
   bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
   data.offset = ec.ft_offset;
 

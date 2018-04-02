@@ -89,10 +89,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if(!is_test_label(ld))
+  if(!CB::cb_label.test_label(&ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
@@ -109,7 +109,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, is_test_label(ld), ec, nullptr, false);
+  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
 void finish(cb& data)

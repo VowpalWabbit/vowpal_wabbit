@@ -312,7 +312,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   for (int sink : all.final_prediction_sink)
     all.print_text(sink, ss.str(), ec.tag);
 
-  print_update_cb_explore(all, is_test_label(ld), ec, sso);
+  print_update_cb_explore(all, CB::cb_label.test_label(&ld), ec, sso);
 }
 
 void finish_example(vw& all, cb_explore& c, example& ec)

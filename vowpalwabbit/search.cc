@@ -2230,7 +2230,7 @@ void end_examples(search& sch)
 
 bool mc_label_is_test(polylabel& lab)
 {
-  return MC::label_is_test(&lab.multi);
+  return MC::mc_label.test_label(&lab.multi);
 }
 
 void search_initialize(vw* all, search& sch)

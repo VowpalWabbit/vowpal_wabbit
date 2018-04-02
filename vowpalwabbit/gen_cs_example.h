@@ -56,7 +56,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
   cs_ld.costs.erase();
   c.pred_scores.costs.erase();
 
-  if ((ld.costs.size() == 1 && !is_test_label(ld)) || ld.costs.size() == 0)   //this is a typical example where we can perform all actions
+  if (ld.costs.size() == 1 || ld.costs.size() == 0)   //this is a typical example where we can perform all actions
   { //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     { COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
@@ -138,11 +138,10 @@ void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
       COST_SENSITIVE::wclass c = { FLT_MAX, i, 0., 0. };
       cs_ld.costs.push_back(c);
     }
-  else if (ld.costs.size() == 1 && !is_test_label(ld)) //this is a typical example where we can perform all actions
+  else if (ld.costs.size() == 1 || ld.costs.size() == 0) //this is a typical example where we can perform all actions
     //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
-    { gen_cs_label<is_learn>(c, ec, cs_ld, i);
-    }
+      gen_cs_label<is_learn>(c, ec, cs_ld, i);
   else  //this is an example where we can only perform a subset of the actions
     //in this case generate cost-sensitive example with only allowed actions
     for (auto& cl : ld.costs)
