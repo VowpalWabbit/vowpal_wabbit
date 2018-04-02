@@ -90,21 +90,36 @@ def gen_comparison_graph(mod):
 
 	#config_name = str(mod.dataset) + '_' + str(mod.fprob1)+'_'+str(mod.fprob2)+'_'+str(mod.warm_start)+'_'+str(mod.bandit)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
 
-	config_name = str(mod.dataset) + '_'+str(mod.warm_start)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
+	config_name = str(mod.dataset) + '_'+str(mod.warm_start)+ '_' + str(mod.cb_type)
 
-	# combined approach
+	# combined approach, lambdas = 1
+	mod.choices_lambda = 1
 	mod.no_bandit = False
 	mod.no_supervised = False
 	mod.no_exploration = False
-	mod.vw_output_filename = mod.results_path+config_name+'.txt'
+	mod.vw_output_filename = mod.results_path+config_name+'choices_lambda='+str(mod.choices_lambda)+'.txt'
 	execute_vw(mod)
 
-	avg_loss_comb, last_loss_comb, wt_comb = collect_stats(mod)
-	line = plt.plot(wt_comb, avg_loss_comb, 'r', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
+	avg_loss_comb_1, last_loss_comb_1, wt_comb_1 = collect_stats(mod)
+	line = plt.plot(wt_comb_1, avg_loss_comb_1, 'r', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
 
-	avg_error_comb = avg_error(mod)
+	avg_error_comb_1 = avg_error(mod)
+
+	# combined approach, lambdas = 5
+	mod.choices_lambda = 5
+	mod.no_bandit = False
+	mod.no_supervised = False
+	mod.no_exploration = False
+	mod.vw_output_filename = mod.results_path+config_name+'choices_lambda='+str(mod.choices_lambda)+'.txt'
+	execute_vw(mod)
+
+	avg_loss_comb_5, last_loss_comb_5, wt_comb_5 = collect_stats(mod)
+	line = plt.plot(wt_comb_5, avg_loss_comb_5, 'm', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
+
+	avg_error_comb_5 = avg_error(mod)
 
 	# bandit only approach
+	mod.choices_lambda = 1
 	mod.no_bandit = False
 	mod.no_supervised = True
 	mod.no_exploration = False
@@ -117,6 +132,7 @@ def gen_comparison_graph(mod):
 	avg_error_band_only = avg_error(mod)
 
 	# supervised only approach
+	mod.choices_lambda = 1
 	mod.no_bandit = True
 	mod.no_supervised = False
 	mod.no_exploration = False
@@ -133,7 +149,7 @@ def gen_comparison_graph(mod):
 	avg_error_sup_only = avg_error(mod)
 
 	summary_file = open(mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum', 'a')
-	summary_file.write(config_name + ' ' + str(avg_error_comb) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + ' '  + str(mod.choices_lambda) + '\n')
+	summary_file.write(config_name + ' ' + str(avg_error_comb_1) + ' ' + str(avg_error_comb_5) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + ' ' + str(mod.bandit) + '\n')
 	summary_file.close()
 	print('')
 
@@ -166,7 +182,7 @@ def get_num_classes(ds):
 def ds_per_task(mod):
 	# put dataset name to the last coordinate so that the task workloads tend to be
 	# allocated equally
- 	config_all = [item for item in product(mod.choices_cb_types, mod.choices_warm_start_frac, mod.choices_choices_lambda, mod.dss)]
+ 	config_all = [item for item in product(mod.choices_cb_types, mod.choices_warm_start_frac, mod.dss)]
 	config_task = []
 	print len(config_all)
 	for i in range(len(config_all)):
@@ -198,7 +214,7 @@ def main_loop(mod):
 	summary_file = open(mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum', 'w')
 	summary_file.close()
 
-	for mod.cb_type, mod.warm_start_frac, mod.choices_lambda, mod.dataset in mod.config_task:
+	for mod.cb_type, mod.warm_start_frac, mod.dataset in mod.config_task:
 		gen_comparison_graph(mod)
 
 
@@ -239,7 +255,8 @@ if __name__ == '__main__':
 	# use fractions instead of absolute numbers
 
 	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
-	mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
+	#mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
+	mod.choices_warm_start_frac = [0.03]
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
@@ -249,11 +266,11 @@ if __name__ == '__main__':
 	#choices_fprob2 = [0.1, 0.2, 0.3]
 	#choices_cb_types = ['mtr', 'ips']
 	#mod.choices_cb_types = ['mtr', 'ips']
-	mod.choices_cb_types = ['mtr', 'ips']
+	mod.choices_cb_types = ['mtr']
 	#choices_choices_lambda = [pow(2,i) for i in range(10,11)]
 	#mod.choices_choices_lambda = [i for i in range(1,3)]
 	#mod.choices_choices_lambda = [i for i in range(1,2)]
-	mod.choices_choices_lambda = [1, 3, 5, 7]
+	#mod.choices_choices_lambda = [1, 3, 5, 7]
 	#[i for i in range(10,11)]
 
 	#for correctness test
