@@ -1,5 +1,6 @@
 Generating 2-grams for all namespaces.
 Generating 4-skips for all namespaces.
+final_regressor = cb_dm.reg
 Num weight bits = 24
 learning rate = 0.125
 initial_t = 0

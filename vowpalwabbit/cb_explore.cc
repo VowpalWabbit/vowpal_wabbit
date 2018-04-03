@@ -72,7 +72,6 @@ template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 {
   //Explore uniform random an epsilon fraction of the time.
-
   action_scores probs = ec.pred.a_s;
   probs.erase();
 
@@ -242,9 +241,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
         float pseudo_cost = data.cs_label.costs[j].x - data.psi * min_prob / (max(probabilities[j], min_prob) / norm) + 1;
         data.second_cs_label.costs[j].class_index = j+1;
         data.second_cs_label.costs[j].x = pseudo_cost;
-        //cout<<pseudo_cost<<" ";
       }
-      //cout<<epsilon<<" "<<endl;
       if (i != 0)
         data.cs->learn(ec,i+1);
       if (probabilities[predictions[i] - 1] < min_prob)
@@ -298,7 +295,6 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
   stringstream ss, sso;
   float maxprob = 0.;
   uint32_t maxid = 0;
-  //cout<<ec.pred.scalars.size()<<endl;
   for(uint32_t i = 0; i < ec.pred.a_s.size(); i++)
   {
     sprintf(temp_str,"%f ", ec.pred.a_s[i].score);
@@ -312,7 +308,6 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 
   sprintf(temp_str, "%d:%f", maxid, maxprob);
   sso << temp_str;
-  //cout<<sso.str()<<endl;
 
   for (int sink : all.final_prediction_sink)
     all.print_text(sink, ss.str(), ec.tag);
