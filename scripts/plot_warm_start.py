@@ -46,11 +46,21 @@ def collect_stats(mod):
 		linenumber += 1
 
 	f.close()
+
+	if len(avg_loss) == 0:
+		avg_loss = [0]
+		last_loss = [0]
+		wt = [0]
+
 	return avg_loss, last_loss, wt
 
 def execute_vw(mod):
 
 	alg_option = ' '
+	if mod.cover_on:
+		alg_option += ' --cb_explore ' + str(mod.num_classes) + ' --cover 5 --psi 0.01 '
+		mod.cb_type = 'dr'
+		mod.adf_on = False
 	if mod.no_bandit:
 		alg_option += ' --no_bandit '
 	if mod.no_supervised:
@@ -62,14 +72,21 @@ def execute_vw(mod):
 	if mod.adf_on:
 		alg_option += ' --cb_explore_adf '
 
+
 	# using two datasets
 	#cmd_catfile = '( head -n ' + str(mod.warm_start) + ' ' + mod.dataset_supervised + ';' + ' head -n ' + str(mod.bandit) + ' ' + mod.dataset_bandit + '; )'
 	# using only one dataset
 	#cmd_catfile = '( head -n ' + str(mod.warm_start + mod.bandit) + ' ' + mod.dataset + '; )'
 	#cmd_catfile = '( cat ' + mod.ds_path+mod.dataset + '; )'
 
-	cmd_vw = mod.vw_path + ' --cbify ' + str(mod.num_classes) + ' --cb_type ' + str(mod.cb_type) + ' --warm_start ' + str(mod.warm_start) + ' --bandit ' + str(mod.bandit) + ' --choices_lambda ' + str(mod.choices_lambda) + alg_option + ' --progress ' + str(mod.progress) + ' -d ' + mod.ds_path + mod.dataset
-
+	cmd_vw = mod.vw_path + ' --cbify ' + str(mod.num_classes) + ' --cb_type ' + str(mod.cb_type) + ' --warm_start ' + str(mod.warm_start) + ' --bandit ' + str(mod.bandit) + ' --choices_lambda ' + str(mod.choices_lambda) + alg_option + ' --progress ' + str(mod.progress) \
+	 + ' -d ' + mod.ds_path + mod.dataset \
+	 + ' --corrupt_type_supervised ' + str(mod.corrupt_type_supervised) \
+	 + ' --corrupt_prob_supervised ' + str(mod.corrupt_prob_supervised) \
+	 + ' --corrupt_type_bandit ' + str(mod.corrupt_type_bandit) \
+	 + ' --corrupt_prob_bandit ' + str(mod.corrupt_prob_bandit) \
+	 + ' --validation_method ' + str(mod.validation_method) \
+	 + ' --weighting_scheme ' + str(mod.weighting_scheme)
 	cmd = cmd_vw
 	#cmd = cmd_catfile + ' | ' + cmd_vw
 
@@ -93,37 +110,53 @@ def gen_comparison_graph(mod):
 
 	config_name = str(mod.dataset) + '_'+str(mod.warm_start)+ '_' + str(mod.cb_type)
 
-	# combined approach, lambdas = 1
-	mod.choices_lambda = 1
+	# combined approach, epsilon
+	mod.choices_lambda = 5
+	mod.weighting_scheme = 1
 	mod.no_bandit = False
 	mod.no_supervised = False
 	mod.no_exploration = False
+	mod.cover_on = False
 	mod.vw_output_filename = mod.results_path+config_name+'choices_lambda='+str(mod.choices_lambda)+'.txt'
+
 	execute_vw(mod)
 
 	avg_loss_comb_1, last_loss_comb_1, wt_comb_1 = collect_stats(mod)
-	line = plt.plot(wt_comb_1, avg_loss_comb_1, 'r', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
+	line = plt.plot(wt_comb_1, avg_loss_comb_1, 'r', label=('Combined approach, instance weighting'))
+	#line = plt.plot(wt_comb_1, avg_loss_comb_1, 'r', label=('Combined approach, lambda=1'))
 
 	avg_error_comb_1 = avg_error(mod)
 
-	# combined approach, lambdas = 5
+	# combined approach, cover
+	# combined approach, per-dataset weighting
+	#mod.choices_lambda = 1
+	#mod.no_bandit = False
+	#mod.no_supervised = False
+	#mod.no_exploration = False
+	#mod.cover_on = True
+	#mod.vw_output_filename = mod.results_path+config_name+'choices_lambda='+str(mod.choices_lambda)+'.txt'
 	mod.choices_lambda = 5
+	mod.weighting_scheme = 2
 	mod.no_bandit = False
 	mod.no_supervised = False
 	mod.no_exploration = False
+	mod.cover_on = False
 	mod.vw_output_filename = mod.results_path+config_name+'choices_lambda='+str(mod.choices_lambda)+'.txt'
 	execute_vw(mod)
 
 	avg_loss_comb_5, last_loss_comb_5, wt_comb_5 = collect_stats(mod)
-	line = plt.plot(wt_comb_5, avg_loss_comb_5, 'm', label=('Combined approach, #lambdas=' + str(mod.choices_lambda) ))
+	#line = plt.plot(wt_comb_5, avg_loss_comb_5, 'm', label=('Combined approach, lambda=5'))
+	line = plt.plot(wt_comb_5, avg_loss_comb_5, 'm', label=('Combined approach, dataset weighting'))
 
 	avg_error_comb_5 = avg_error(mod)
 
 	# bandit only approach
 	mod.choices_lambda = 1
+	mod.weighting_scheme = 1
 	mod.no_bandit = False
 	mod.no_supervised = True
 	mod.no_exploration = False
+	mod.cover_on = False
 	mod.vw_output_filename = mod.results_path+config_name+'_no_supervised'+'.txt'
 	execute_vw(mod)
 
@@ -134,9 +167,11 @@ def gen_comparison_graph(mod):
 
 	# supervised only approach
 	mod.choices_lambda = 1
+	mod.weighting_scheme = 1
 	mod.no_bandit = True
 	mod.no_supervised = False
 	mod.no_exploration = False
+	mod.cover_on = False
 	mod.vw_output_filename = mod.results_path+config_name+'_no_bandit'+'.txt'
 	execute_vw(mod)
 
@@ -206,7 +241,13 @@ def avg_error(mod):
 	vw_output_text = vw_output.read()
 	#print vw_output_text
 	rgx = re.compile('^average loss = (.*)$', flags=re.M)
-	avge = float(rgx.findall(vw_output_text)[0])
+
+	errs = rgx.findall(vw_output_text)
+	if not errs:
+		avge = 0
+	else:
+		avge = float(errs[0])
+
 	vw_output.close()
 	return avge
 
@@ -274,6 +315,15 @@ if __name__ == '__main__':
 	#mod.choices_choices_lambda = [i for i in range(1,2)]
 	#mod.choices_choices_lambda = [1, 3, 5, 7]
 	#[i for i in range(10,11)]
+	#mod.corrupt_type_supervised = 2
+	#mod.corrupt_prob_supervised = 0.3
+	mod.corrupt_type_supervised = 1
+	mod.corrupt_prob_supervised = 0.0
+
+	mod.corrupt_type_bandit = 1
+	mod.corrupt_prob_bandit = 0.3
+
+	mod.validation_method = 2
 
 	#for correctness test
 	#mod.choices_warm_start = [20]
