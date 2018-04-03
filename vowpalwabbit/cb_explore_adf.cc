@@ -177,6 +177,7 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
     data.action_probs.push_back({ i,0. });
   vector<uint32_t>& top_actions = *data.top_actions;
   top_actions.resize(num_actions);
+  std::fill(top_actions.begin(), top_actions.end(), 0);
 
   bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
   for (uint32_t i = 0; i < data.bag_size; i++)
