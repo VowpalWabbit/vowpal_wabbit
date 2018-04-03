@@ -69,8 +69,15 @@ struct cbify
 	CB::label* cbl_empty;
 	bool warm_start;
 	float* old_weights;
-	float label_corrupt;
 
+	float corrupt_prob_supervised;
+	float corrupt_prob_bandit;
+	size_t corrupt_type_supervised;
+	size_t corrupt_type_bandit;
+	size_t validation_method;
+	size_t bandit_iter;
+	size_t warm_start_iter;
+	v_array<example> supervised_validation;
 
 };
 
@@ -80,6 +87,7 @@ float rand_zeroone()
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> dis(0.0, 1.0);
 	return dis(gen);
+	//return 0.5;
 }
 
 
@@ -97,11 +105,16 @@ size_t generate_uar_action(size_t num_actions)
 
 }
 
-size_t corrupt_action(size_t action, size_t num_actions, float label_corrupt)
+size_t corrupt_action(size_t action, size_t num_actions, float label_corrupt, size_t type)
 {
 	float rand = rand_zeroone();
 	if (rand < label_corrupt)
-		return generate_uar_action(num_actions);
+	{
+		if (type == 1)
+			return generate_uar_action(num_actions);
+		else 
+			return (action % num_actions) + 1;
+	}
 	else
 		return action;
 
@@ -255,33 +268,95 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 
 void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 {
-	//IPS for approximating the cumulative costs for all lambdas
-	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	// validation using bandit data
+	if (data.validation_method == 1)
 	{
-		data.all->cost_sensitive->predict(ec, i);
-		if (ec.pred.multiclass == cl.action)
-			data.cumulative_costs[i] += cl.cost / cl.probability;
-		//cout<<data.cumulative_costs[i]<<endl;
+		//IPS for approximating the cumulative costs for all lambdas
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			data.all->cost_sensitive->predict(ec, i);
+			if (ec.pred.multiclass == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+			//cout<<data.cumulative_costs[i]<<endl;
+		}
+		//cout<<endl;
 	}
-	//cout<<endl;
+	else //validation using supervised data (their labels are already set to cost-sensitive labels)
+	{
+		//only update cumulative costs every warm_start_period iterations
+		if (data.bandit_iter % data.warm_start_period == 0)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+				data.cumulative_costs[i] = 0;
 
+			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				//go over the supervised validation set
+				for (uint32_t j = 0; j < data.supervised_validation.size(); j++)
+				{
+					example& ec_valid = data.supervised_validation[j];
+					data.all->cost_sensitive->predict(ec_valid, i);
+
+					//cout<<ec_valid.pred.multiclass<<endl;
+					//for (uint32_t a = 0; a < data.num_actions; a++)
+					//	cout<<ec_valid.l.cs.costs[a].class_index<<" "<<ec_valid.l.cs.costs[a].x<<endl;
+					//cout<<endl;
+
+					for (uint32_t a = 0; a < data.num_actions; a++)
+						if (ec_valid.pred.multiclass == ec_valid.l.cs.costs[a].class_index)
+							data.cumulative_costs[i] += ec_valid.l.cs.costs[a].x;
+				}
+				//cout<<data.cumulative_costs[i]<<endl;
+			}
+		}
+	}
 }
 
 void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
 {
-	uint32_t best_action;
-
-	//IPS for approximating the cumulative costs for all lambdas
-	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	
+	if (data.validation_method == 1)
 	{
-		best_action = predict_sublearner(data, base, i);
+		uint32_t best_action;
 
-		if (best_action == cl.action)
-			data.cumulative_costs[i] += cl.cost / cl.probability;
+		//IPS for approximating the cumulative costs for all lambdas
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			best_action = predict_sublearner(data, base, i);
 
-		//cout<<data.cumulative_costs[i]<<endl;
+			if (best_action == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+
+			//cout<<data.cumulative_costs[i]<<endl;
+		}
+		//cout<<endl;
 	}
-	//cout<<endl;
+	else
+	{
+		//only update cumulative costs every warm_start_period iterations
+		if (data.bandit_iter % data.warm_start_period == 0)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+				data.cumulative_costs[i] = 0;
+
+			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				for (uint32_t j = 0; j < data.supervised_validation.size(); j++)
+				{
+					example& ec_valid = data.supervised_validation[j];
+			  	copy_example_to_adf(data, ec_valid);
+					uint32_t pred_label = predict_sublearner(data, base, i);
+					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, pred_label);
+					//cout<<ec_valid.l.multi.label<<" "<<pred_label<<endl;
+				}
+				//cout<<data.cumulative_costs[i]<<endl;
+			}
+			
+		}
+		
+	}
 
 }
 
@@ -300,10 +375,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	//cout<<ld.label<<endl;
 
-	if (data.warm_start_period > 0) // Call the cost-sensitive learner directly
+	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
-		data.warm_start_period--;
-
 		/*
 		//generate cost-sensitive label
 		COST_SENSITIVE::label& csl = *data.csls;
@@ -322,10 +395,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		*/
 
 		//first, corrupt fully supervised example ec's label here
-		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.label_corrupt);
+		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_supervised, data.corrupt_type_supervised);
+		//use this for now; I am not sure if v_array is the same as STL's array where elements are copied when brought in
+		ld.label = corrupted_label;
 
 		//generate cost-sensitive label
-		COST_SENSITIVE::label& csl = *data.csls;
+		//COST_SENSITIVE::label& csl = *data.csls;
+		COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
+		COST_SENSITIVE::label csl = *cslp;
     csl.costs.resize(data.num_actions);
     csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
@@ -348,13 +425,23 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 				data.all->cost_sensitive->learn(ec, i);
 			}
 		}
-		ec.l.multi = ld;
+		
+		//ec.l.multi = ld;
 		ec.weight = 0;
-	}
-	else if (data.bandit_period > 0)//Call the cb_explore algorithm. It returns a vector of probabilities for each action
-	{
-		data.bandit_period--;
 
+		// This is purely a hack here - need to clean up; I also did not deallocate the label and the copied example in finish()
+		example* ecp = calloc_or_throw<example>(1);		
+		VW::copy_example_data(false, ecp, &ec);
+		ecp->l.cs = csl;
+
+		// I am not sure if written this way, ec will be deleted in some other stages and causes error
+		if (data.validation_method == 2)
+			data.supervised_validation.push_back(*ecp);
+
+		data.warm_start_iter++;
+	}
+	else if (data.bandit_iter < data.bandit_period)//Call the cb_explore algorithm. It returns a vector of probabilities for each action
+	{
 		data.cb_label.costs.erase();
 		ec.l.cb = data.cb_label;
 		ec.pred.a_s = data.a_s;
@@ -370,7 +457,9 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		if(!cl.action)
 		  THROW("No action with non-zero probability found!");
-		cl.cost = loss(data, ld.label, cl.action);
+
+		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_bandit, data.corrupt_type_bandit);
+		cl.cost = loss(data, corrupted_label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
 		accumulate_costs_ips(data, ec, cl);
@@ -395,6 +484,8 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.l.multi = ld;
 	  ec.pred.multiclass = action;
 		ec.weight = old_weight;
+
+		data.bandit_iter++;
 	}
 	else
 	{
@@ -422,9 +513,8 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
   copy_example_to_adf(data, ec);
 
-	if (data.warm_start_period > 0) // Call the cost-sensitive learner directly
+	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
-		data.warm_start_period--;
 
 		best_action = predict_sublearner(data, base, argmin);
 
@@ -439,10 +529,10 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		CB::label* cbls = data.cbls;
 		CB::label* cbl_empty = data.cbl_empty;
 
+		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_supervised, data.corrupt_type_supervised);
+
 		if (data.ind_supervised)
 		{
-			size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.label_corrupt);
-
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
@@ -466,10 +556,21 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.pred.multiclass = best_action;
 		ec.l.multi = ld;
 		ec.weight = 0;
+
+		//a hack here - allocated memories not deleted
+		example* ecp = calloc_or_throw<example>(1);	
+		VW::copy_example_data(false, ecp, &ec);
+		ecp->l.multi.label = corrupted_label;
+		ecp->l.multi.weight = 1.0;
+
+		if (data.validation_method == 2)
+			data.supervised_validation.push_back(*ecp);
+
+		data.warm_start_iter++;	
+
 	}
-	else if (data.bandit_period > 0) // call the bandit learner
+	else if (data.bandit_iter < data.bandit_period) // call the bandit learner
 	{
-		data.bandit_period--;
 
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
@@ -489,7 +590,9 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 		if(!cl.action)
 		  THROW("No action with non-zero probability found!");
-		cl.cost = loss(data, ld.label, cl.action);
+
+		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_bandit, data.corrupt_type_bandit);
+		cl.cost = loss(data, corrupted_label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
 		accumulate_costs_ips_adf(data, ec, cl, base);
@@ -517,6 +620,8 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		}
 
 		ec.pred.multiclass = cl.action;
+			
+		data.bandit_iter++;
 	}
 	else
 	{
@@ -563,6 +668,8 @@ void init_adf_data(cbify& data, const size_t num_actions)
 
 void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
 {
+	// The lambdas are in fact arranged in ascending order (the middle lambda is 0.5)
+
 	lambdas = v_init<float>();
 	uint32_t mid = lambda_size / 2;
 	for (uint32_t i = 0; i < lambda_size; i++)
@@ -590,7 +697,11 @@ base_learner* cbify_setup(vw& all)
   ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate")
 	("no_supervised", "indicator of using supervised only")
 	("no_bandit", "indicator of using bandit only")
-	("label_corrupt", po::value<float>(), "probability of label corruption in the supervised datasets (when corruption happens, the new label is chosen uniformly at random)");
+	("corrupt_prob_supervised", po::value<float>(), "probability of label corruption in the supervised part")
+	("corrupt_prob_bandit", po::value<float>(), "probability of label corruption in the bandit part")
+	("corrupt_type_supervised", po::value<size_t>(), "type of label corruption in the supervised part (1 is uar, 2 is circular)")
+	("corrupt_type_bandit", po::value<size_t>(), "probability of label corruption in the bandit part (1 is uar, 2 is circular)")
+	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -619,7 +730,15 @@ base_learner* cbify_setup(vw& all)
 	//cout<<data.warm_start_period<<endl;
 	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
 
-	data.label_corrupt = vm.count("label_corrupt") ? vm["label_corrupt"].as<float>() : 0.0;
+	data.corrupt_prob_supervised = vm.count("corrupt_prob_supervised") ? vm["corrupt_prob_supervised"].as<float>() : 0.0;
+	data.corrupt_prob_bandit = vm.count("corrupt_prob_bandit") ? vm["corrupt_prob_bandit"].as<float>() : 0.0;
+	data.corrupt_type_supervised = vm.count("corrupt_type_supervised") ? vm["corrupt_type_supervised"].as<size_t>() : 1;
+	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : 1;
+	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : 1;
+
+	data.bandit_iter = 0;
+	data.warm_start_iter = 0;
+	
 
 	generate_lambdas(data.lambdas, data.choices_lambda);
 
