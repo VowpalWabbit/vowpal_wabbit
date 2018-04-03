@@ -9,10 +9,18 @@ struct action_score
 
 typedef v_array<action_score> action_scores;
 
-class score_iterator
+class score_iterator : public std::iterator<
+	std::input_iterator_tag,	// iterator_cateogry
+	float,						// value_type
+	long,						// difference_type
+	float*,						// pointer
+	float						// reference
+	>
 {
 	action_score* _p;
 public:
+
+
 	score_iterator(action_score* p) : _p(p)
 	{ }
 

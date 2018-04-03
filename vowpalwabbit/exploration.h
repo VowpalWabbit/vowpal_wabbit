@@ -68,7 +68,8 @@ namespace exploration
       *d = *t_a * prob;
   }
 
-  void enforce_minimum_probability(float min_prob, float* probability_distribution, uint32_t num_actions)
+  // Note: must be inline to compile on Windows VS2017
+  inline void enforce_minimum_probability(float min_prob, float* probability_distribution, uint32_t num_actions)
   {
     float* prob_end = probability_distribution + num_actions;
     bool zeros = false;
