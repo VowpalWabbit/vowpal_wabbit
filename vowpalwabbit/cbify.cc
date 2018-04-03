@@ -5,6 +5,7 @@
 #include "bs.h"
 #include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
+#include <random>
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
@@ -68,9 +69,44 @@ struct cbify
 	CB::label* cbl_empty;
 	bool warm_start;
 	float* old_weights;
+	float label_corrupt;
 
 
 };
+
+float rand_zeroone()
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(0.0, 1.0);
+	return dis(gen);
+}
+
+
+size_t generate_uar_action(size_t num_actions)
+{
+	float rand = rand_zeroone();
+	for (size_t i = 1; i <= num_actions; i++)
+	{
+		if (rand <= float(i) / num_actions)
+			return i;
+	}	
+	return num_actions;
+
+}
+
+size_t corrupt_action(size_t action, size_t num_actions, float label_corrupt)
+{
+	float rand = rand_zeroone();
+	if (rand < label_corrupt)
+		return generate_uar_action(num_actions);
+	else
+		return action;
+
+}
+
+
+
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
 {
@@ -269,6 +305,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	{
 		data.warm_start_period--;
 
+		/*
 		//generate cost-sensitive label
 		COST_SENSITIVE::label& csl = *data.csls;
     csl.costs.resize(data.num_actions);
@@ -283,9 +320,29 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 		//predict
 		data.all->cost_sensitive->predict(ec, argmin);
+		*/
+
+		//predict
+		data.all->cost_sensitive->predict(ec, argmin);
+
+		//first, corrupt fully supervised example ec's label here
+		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.label_corrupt);
+
+		//generate cost-sensitive label
+		COST_SENSITIVE::label& csl = *data.csls;
+    csl.costs.resize(data.num_actions);
+    csl.costs.end() = csl.costs.begin()+data.num_actions;
+		for (uint32_t j = 0; j < data.num_actions; j++)
+		{
+			csl.costs[j].class_index = j+1;
+			csl.costs[j].x = loss(data, corrupted_label, j+1);
+		}
+
+		ec.l.cs = csl;		
 
 		if (data.ind_supervised)
 		{
+			
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				ec.weight = 1;
@@ -533,7 +590,8 @@ base_learner* cbify_setup(vw& all)
 	("bandit", po::value<size_t>(), "number of training examples for bandit processing")
   ("choices_lambda", po::value<size_t>(), "numbers of lambdas importance weights to aggregate")
 	("no_supervised", "indicator of using supervised only")
-	("no_bandit", "indicator of using bandit only");
+	("no_bandit", "indicator of using bandit only")
+	("label_corrupt", po::value<float>(), "probability of label corruption in the supervised datasets (when corruption happens, the new label is chosen uniformly at random)");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -561,6 +619,8 @@ base_learner* cbify_setup(vw& all)
 
 	//cout<<data.warm_start_period<<endl;
 	data.choices_lambda = vm.count("choices_lambda") ? vm["choices_lambda"].as<size_t>() : 1;
+
+	data.label_corrupt = vm.count("label_corrupt") ? vm["label_corrupt"].as<float>() : 0.0;
 
 	generate_lambdas(data.lambdas, data.choices_lambda);
 
