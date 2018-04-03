@@ -35,8 +35,9 @@ def collect_stats(mod):
 		#if not line.strip():
 		#	end_table = True
 		#if linenumber >= 9 and (not end_table):
-		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]\s+\d+'
+		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]+\s+\d+'
 		matchobj = re.match(vw_progress_pattern, line)
+
 		if matchobj:
 			items = line.split()
 			avg_loss.append(float(items[0]))
@@ -145,6 +146,7 @@ def gen_comparison_graph(mod):
 	avg_loss = avg_loss_sup_only[len_avg_loss-1]
 	avg_loss_sup_only = [avg_loss for i in range(len_avg_loss)]
 	line = plt.plot(wt_sup_only, avg_loss_sup_only, 'g', label='Supervised only')
+
 
 	avg_error_sup_only = avg_error(mod)
 
@@ -279,6 +281,7 @@ if __name__ == '__main__':
 	#choices_fprob2 = [0.1]
 
 	mod.dss = ds_files(mod.ds_path)
+	#mod.dss = ["ds_223_63.vw.gz"]
 	#mod.dss = mod.dss[:5]
 
 	# here, we are generating the task specific parameter settings
