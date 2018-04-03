@@ -86,6 +86,8 @@ float rand_zeroone()
 size_t generate_uar_action(size_t num_actions)
 {
 	float rand = rand_zeroone();
+	//cout<<rand<<endl;
+
 	for (size_t i = 1; i <= num_actions; i++)
 	{
 		if (rand <= float(i) / num_actions)
@@ -104,9 +106,6 @@ size_t corrupt_action(size_t action, size_t num_actions, float label_corrupt)
 		return action;
 
 }
-
-
-
 
 vector<float> vw_scorer::Score_Actions(example& ctx)
 {
@@ -322,9 +321,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.all->cost_sensitive->predict(ec, argmin);
 		*/
 
-		//predict
-		data.all->cost_sensitive->predict(ec, argmin);
-
 		//first, corrupt fully supervised example ec's label here
 		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.label_corrupt);
 
@@ -338,7 +334,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			csl.costs[j].x = loss(data, corrupted_label, j+1);
 		}
 
-		ec.l.cs = csl;		
+		ec.l.cs = csl;	
+
+		//predict (for vw's internal reason, this step has to be put after ec's cs label is created)
+		data.all->cost_sensitive->predict(ec, argmin);
 
 		if (data.ind_supervised)
 		{
@@ -405,8 +404,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.weight = 0;
 
 	}
-
-
 }
 
 
@@ -444,12 +441,14 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 		if (data.ind_supervised)
 		{
+			size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.label_corrupt);
+
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
 					csls[a].costs[0].class_index = a+1;
-					csls[a].costs[0].x = loss(data, ld.label, a+1);
+					csls[a].costs[0].x = loss(data, corrupted_label, a+1);
 
 					cbls[a] = ecs[a].l.cb;
 					ecs[a].l.cs = csls[a];
@@ -507,7 +506,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
 					data.old_weights[a] = ecs[a].weight;
-					ecs[a].weight *= data.lambdas[i] / (1- data.lambdas[i]);
+					ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
 					base.learn(ecs[a], i);
 				}
 				base.learn(*empty_example, i);
