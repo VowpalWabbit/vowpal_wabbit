@@ -82,7 +82,7 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree
+all:	vw library_example java spanning_tree vw_slim_predict
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -119,6 +119,9 @@ python: vw
 java: vw
 	cd java; $(MAKE) things
 
+vw_slim_predict:
+	cd vw_slim_predict; $(MAKE) things
+
 .FORCE:
 
 test: .FORCE vw library_example
@@ -145,5 +148,6 @@ clean:
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
 	cd java    && $(MAKE) clean
+	cd vw_slim_predict && $(MAKE) clean
 
-.PHONY: all clean install doc
+.PHONY: all clean install doc vw_slim_predict

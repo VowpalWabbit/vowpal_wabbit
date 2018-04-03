@@ -2,7 +2,7 @@ lib_LTLIBRARIES = liballreduce.la libvw.la libvw_c_wrapper.la
 
 liballreduce_la_SOURCES = allreduce_sockets.cc allreduce_threads.cc vw_exception.cc
 
-bin_PROGRAMS = vw vwpredict active_interactor
+bin_PROGRAMS = vw active_interactor
 
 libvw_la_SOURCES = hash.cc parser_helper.cc global_data.cc io_buf.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc binary.cc lrq.cc cost_sensitive.cc multilabel.cc label_dictionary.cc csoaa.cc cb.cc cb_adf.cc cb_algs.cc search.cc search_meta.cc search_sequencetask.cc search_dep_parser.cc search_hooktask.cc search_multiclasstask.cc search_entityrelationtask.cc search_graph.cc parse_example.cc scorer.cc network.cc parse_args.cc accumulate.cc gd.cc learner.cc mwt.cc lda_core.cc gd_mf.cc mf.cc bfgs.cc noop.cc print.cc example.cc parser.cc loss_functions.cc sender.cc nn.cc confidence.cc bs.cc cbify.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc active.cc active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc comp_io.cc interactions.cc vw_exception.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc action_score.cc cb_explore_adf.cc OjaNewton.cc parse_example_json.cc baseline.cc classweight.cc sampling.cc exploration.cc
 
@@ -11,8 +11,6 @@ libvw_c_wrapper_la_SOURCES = vwdll.cpp
 # accumulate.cc uses all_reduce
 libvw_la_LIBADD = liballreduce.la
 libvw_c_wrapper_la_LIBADD = libvw.la
-
-vwpredict_SOURCES = vw_exception.cc example_predict.cc main_predict.cc vw_predict.cc
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
@@ -59,7 +57,5 @@ vw_CXXFLAGS = $(AM_CXXFLAGS)
 
 vw_LDADD = libvw.la liballreduce.la
 vw_DEPENDENCIES = libvw.la liballreduce.la
-
-vwpredict_CXXFLAGS = $(AM_CXXFLAGS)
 
 active_interactor_SOURCES = active_interactor.cc
