@@ -77,6 +77,7 @@ struct cbify
 	size_t validation_method;
 	size_t bandit_iter;
 	size_t warm_start_iter;
+	size_t weighting_scheme;
 	v_array<example> supervised_validation;
 
 };
@@ -475,7 +476,11 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
+				if (data.weighting_scheme == 1)
+					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
+				else
+					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
+
 				base.learn(ec, i);
 			}
 		}
@@ -609,7 +614,12 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
 					data.old_weights[a] = ecs[a].weight;
-					ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
+
+					if (data.weighting_scheme == 1)
+						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
+					else
+						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );					
+
 					base.learn(ecs[a], i);
 				}
 				base.learn(*empty_example, i);
@@ -701,7 +711,8 @@ base_learner* cbify_setup(vw& all)
 	("corrupt_prob_bandit", po::value<float>(), "probability of label corruption in the bandit part")
 	("corrupt_type_supervised", po::value<size_t>(), "type of label corruption in the supervised part (1 is uar, 2 is circular)")
 	("corrupt_type_bandit", po::value<size_t>(), "probability of label corruption in the bandit part (1 is uar, 2 is circular)")
-	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)");
+	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)")
+	("weighting_scheme", po::value<size_t>(), "weighting scheme (1 is per instance weighting, 2 is per dataset weighting (where we use a diminishing weighting scheme) )");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -735,6 +746,8 @@ base_learner* cbify_setup(vw& all)
 	data.corrupt_type_supervised = vm.count("corrupt_type_supervised") ? vm["corrupt_type_supervised"].as<size_t>() : 1;
 	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : 1;
 	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : 1;
+	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : 1;
+
 
 	data.bandit_iter = 0;
 	data.warm_start_iter = 0;
