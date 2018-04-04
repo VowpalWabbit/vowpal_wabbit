@@ -17,6 +17,7 @@ ifeq ($(CXX),)
 endif
 
 UNAME := $(shell uname)
+ARCH_UNAME := $(shell uname -m)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
 BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
@@ -57,8 +58,12 @@ JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
-#OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
-OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing
+ifeq ($(ARCH_UNAME), ppc64le)
+  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing #-msse2 is not supported on power
+else
+  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
+endif
+
 ifeq ($(UNAME), FreeBSD)
   WARN_FLAGS = -Wall
 else
