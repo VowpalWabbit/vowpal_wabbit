@@ -399,6 +399,13 @@ void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K, multi
   }
 }
 
+
+/*
+* The begining of the multi_ex sequence may be labels.  Process those
+* and return the start index of the un-processed examples
+*/
+multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
+
 /*
  * 1) process all labels at first 
  * 2) verify no labels in the middle of data
