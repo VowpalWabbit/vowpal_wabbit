@@ -179,10 +179,9 @@ bool ec_seq_is_label_definition(multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0) return false;
   bool is_lab = ec_is_label_definition(*ec_seq[0]);
-  for (size_t i = 1; i<ec_seq.size(); i++){
+  for (size_t i = 1; i<ec_seq.size(); i++)
     if (is_lab != ec_is_label_definition(*ec_seq[i]))
       THROW("error: mixed label definition and examples in ldf data!");
-  }
   return is_lab;
 }
 

@@ -1157,7 +1157,6 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-
     base_learn_or_predict<false>(*priv.base_learner, tmp, policy);
 
     ecs[a].ft_offset = old_offset;
@@ -1384,7 +1383,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
 
       // learn with the multiline example
       base_learn_or_predict<true>(*priv.base_learner, tmp, learner);
-      cdbg << "generate_training_example called learn on empty_example" << endl;
 
       // restore the offsets in examples
       int i = 0;

@@ -144,7 +144,7 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, multi_ex& ex
 {
   //Randomize over predictions from a base set of predictors
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)(examples.size() - 1);
+  uint32_t num_actions = (uint32_t)examples.size();
   if (CB::ec_is_example_header(*examples[0]))
     num_actions--;
   if (num_actions == 0)

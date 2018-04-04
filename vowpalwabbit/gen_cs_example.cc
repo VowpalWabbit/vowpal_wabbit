@@ -46,7 +46,7 @@ void gen_cs_example_ips(multi_ex examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (uint32_t i = 0; i < examples.size()-1; i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
 
@@ -70,7 +70,7 @@ void gen_cs_example_dm(multi_ex examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (uint32_t i = 0; i < examples.size()-1; i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   {
     CB::label ld = examples[i]->l.cb;
 
@@ -94,7 +94,7 @@ void gen_cs_test_example(multi_ex examples, COST_SENSITIVE::label& cs_labels)
 {
   cs_labels.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
-  for (uint32_t i = 0; i < examples.size()-1; i++)
+  for (uint32_t i = 0; i < examples.size(); i++)
   {
     COST_SENSITIVE::wclass wc = {FLT_MAX,i,0.,0.};
     if (shared && i > 0)
