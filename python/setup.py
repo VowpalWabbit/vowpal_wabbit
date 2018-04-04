@@ -63,7 +63,6 @@ def prep():
         subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', 'python'))
 
         # add explore
-        copytree(path.join(here, '..', 'explore'), path.join(here, 'src', 'explore'))
         copytree(path.join(here, '..', 'rapidjson'), path.join(here, 'src', 'rapidjson'))
 
         # add folders necessary to run 'make python'
