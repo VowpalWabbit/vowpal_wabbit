@@ -70,27 +70,26 @@ namespace exploration
     return { action_probability, action_index };
   }
 
-  void sample_from_pdf(const char* seed, const float* pdf, const float* scores, uint32_t len, ranked_sample& result)
+  void sample_from_pdf(const char* seed, const float* pdf, const float* scores, uint32_t len, uint32_t* out_ranking, float* out_probability)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_from_pdf(seed_hash, pdf, scores, len, result);
+    return sample_from_pdf(seed_hash, pdf, scores, len, out_ranking, out_probability);
   }
 
-  void sample_from_pdf(uint64_t seed, const float* pdf, const float* scores, uint32_t len, ranked_sample& result)
+  void sample_from_pdf(uint64_t seed, const float* pdf, const float* scores, uint32_t len, uint32_t* out_ranking, float* out_probability)
   {
     sample s = sample_from_pdf(seed, pdf, len);
 
-    result.ranking.resize(len);
-    std::iota(result.ranking.begin(), result.ranking.end(), 0);
+    std::iota(out_ranking, out_ranking + len, 0);
 
     // sort indexes based on comparing values in scores
-    sort(result.ranking.begin(), result.ranking.end(),
+    std::sort(out_ranking, out_ranking + len,
       [&scores](size_t i1, size_t i2) {return scores[i1] > scores[i2]; });
 
     // swap top element with chosen one
-    std::iter_swap(result.ranking.begin(), result.ranking.begin() + s.index);
+    std::iter_swap(out_ranking, out_ranking + s.index);
 
-    result.probability = s.probability;
+    *out_probability = s.probability;
   }
 
 } // end-of-namespace

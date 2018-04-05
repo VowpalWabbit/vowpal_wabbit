@@ -13,20 +13,14 @@ namespace exploration
     uint32_t index;
   };
 
-  struct ranked_sample
-  {
-    // if the pdf is not normalized, this is the normalized probability
-    float probability;
-
-    std::vector<uint32_t> ranking;
-  };
-
   sample sample_from_pdf(const char* seed, const float* pdf, uint32_t len);
 
   sample sample_from_pdf(uint64_t seed, const float* pdf, uint32_t len);
 
-  void sample_from_pdf(const char* seed, const float* pdf, const float* scores, uint32_t len, ranked_sample& result);
+  // if the pdf is not normalized, out_probability is the normalized probability
+  void sample_from_pdf(const char* seed, const float* pdf, const float* scores, uint32_t len, uint32_t* out_ranking, float* out_probability);
 
-  void sample_from_pdf(uint64_t seed, const float* pdf, const float* scores, uint32_t len, ranked_sample& result);
+  // if the pdf is not normalized, out_probability is the normalized probability
+  void sample_from_pdf(uint64_t seed, const float* pdf, const float* scores, uint32_t len, uint32_t* out_ranking, float* out_probability);
 
 } // end-of-namespace
