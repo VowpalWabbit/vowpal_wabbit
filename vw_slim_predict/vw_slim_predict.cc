@@ -1,4 +1,4 @@
-#include "vw_predict.h"
+#include "vw_slim_predict.h"
 #include "gd_predict.h"
 
 #include <stdexcept>

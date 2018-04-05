@@ -1,6 +1,6 @@
 bin_PROGRAMS = vw_slim_predict
 
-vw_slim_predict_SOURCES = ../vowpalwabbit/vw_exception.cc ../vowpalwabbit/example_predict.cc main_predict.cc vw_predict.cc
+vw_slim_predict_SOURCES = ../vowpalwabbit/vw_exception.cc ../vowpalwabbit/example_predict.cc main_predict.cc vw_slim_predict.cc
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
