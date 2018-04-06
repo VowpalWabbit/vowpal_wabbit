@@ -9,6 +9,13 @@ import scipy.stats as stats
 from itertools import compress
 from math import sqrt
 
+# this part is changable
+#alg1 = 'epsilon'
+#alg2 = 'cover'
+#alg1 = 'choices_lambda_1'
+#alg2 = 'choices_lambda_5'
+alg1 = 'instance weighting'
+alg2 = 'dataset weighting'
 
 def sum_files(result_path):
 	prevdir = os.getcwd()
@@ -19,8 +26,9 @@ def sum_files(result_path):
 
 def parse_sum_file(sum_filename):
 	f = open(sum_filename, 'r')
-	table = pd.read_table(f, sep=' ', header=None, names=['dataset','choices_lambda_1','choices_lambda_5','bandit_only','supervised_only','size'],
-                       lineterminator='\n')
+	table = pd.read_table(f, sep=' ', header=None, 	names=['dataset',alg1,alg2,'bandit_only','supervised_only','size'],
+	                       lineterminator='\n')
+
 	return table
 
 def get_significance(errors_1, errors_2, sizes):
@@ -60,7 +68,14 @@ def plot_comparison(errors_1, errors_2, sizes, title, filename):
 
 
 if __name__ == '__main__':
-	results_path = '../../../figs/'
+	#results_path = '../../../lambdas/'
+	#results_path = '../../../warm_start_frac=0.1/'
+	#results_path = '../../../cover_vs_epsilon/'
+	#results_path = '../../../corrupt_supervised_type1_0.3/'
+	#results_path = '../../../corrupt_supervised_type2_0.3/'
+	#results_path = '../../../supervised_validation/'
+	results_path = '../../../weighting_schemes/'
+
 	dss = sum_files(results_path)
 
 	all_results = None
@@ -79,15 +94,15 @@ if __name__ == '__main__':
 	#results_lambda = all_results[all_results['choices_lambda'] == cl]
 	# compare combined w/ supervised
 
-	results_choices_lambda_1 = all_results['choices_lambda_1'].tolist()
-	results_choices_lambda_5 = all_results['choices_lambda_5'].tolist()
+	results_alg1 = all_results[alg1].tolist()
+	results_alg2 = all_results[alg2].tolist()
 	results_bandit = all_results['bandit_only'].tolist()
 	results_supervised = all_results['supervised_only'].tolist()
 	dataset_sizes = all_results['size'].tolist()
 
 	# compare combined w/ bandit
-	plot_comparison(results_choices_lambda_1, results_bandit, dataset_sizes, 'choices_lambda=1 vs bandit only', 'choices_lambda_1_v_bandit_only.png')
-	plot_comparison(results_choices_lambda_1, results_supervised, dataset_sizes, 'choices_lambda=1 vs supervised only', 'choices_lambda_1_v_supervised_only.png')
-	plot_comparison(results_choices_lambda_5, results_bandit, dataset_sizes, 'choices_lambda=5 vs bandit only', 'choices_lambda_5_v_bandit_only.png')
-	plot_comparison(results_choices_lambda_5, results_supervised, dataset_sizes, 'choices_lambda=5 vs supervised only', 'choices_lambda_5_v_supervised_only.png')
-	plot_comparison(results_choices_lambda_1, results_choices_lambda_5, dataset_sizes, 'choices_lambda=1 vs choices_lambda=5', 'choices_lambda_1_v_choices_lambda_5.png')
+	plot_comparison(results_alg1, results_bandit, dataset_sizes, alg1 + ' vs ' + 'bandit only', results_path + alg1 + ' vs ' + 'bandit only' + '.png')
+	plot_comparison(results_alg1, results_supervised, dataset_sizes, alg1 + ' vs ' + 'supervised only', results_path + alg1 + ' vs ' + 'supervised only' + '.png')
+	plot_comparison(results_alg2, results_bandit, dataset_sizes, alg2 + ' vs ' + 'bandit only', results_path + alg2 + ' vs ' + 'bandit only' + '.png')
+	plot_comparison(results_alg2, results_supervised, dataset_sizes, alg2 + ' vs ' + 'supervised only', results_path + alg2 + ' vs ' + 'supervised only' + '.png')
+	plot_comparison(results_alg1, results_alg2, dataset_sizes, alg1 + ' vs ' + alg2, results_path+alg1 + ' vs ' + alg2 + '.png')
