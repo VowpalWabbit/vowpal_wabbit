@@ -40,6 +40,10 @@ private:
   template<typename T>
   cli::array<cli::array<float>^>^ FillTopicAllocation(T& weights);
 
+  // Cached empty example.  
+  // This is used to emit empty lines to cache while handling multiline examples
+  void CacheEmptyLine();
+
 public:
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbit"/> instance.

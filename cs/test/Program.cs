@@ -36,11 +36,17 @@ namespace cs_test
         {
             string cwd = Directory.GetCurrentDirectory();
             RunTestsHelper.ExecuteTest(
-                46,
-                "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
-                "train-sets/sequence_data",
-                "train-sets/ref/sequence_data.ldf.train.stderr",
+                65,
+                "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
+                "train-sets/er_small.vw",
+                "train-sets/ref/search_er.stderr",
                 "");
+            //RunTestsHelper.ExecuteTest(
+            //    46,
+            //    "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
+            //    "train-sets/sequence_data",
+            //    "train-sets/ref/sequence_data.ldf.train.stderr",
+            //    "");
             //ExecuteTest(
             //    1,
             //    "-k -l 20 --initial_t 128000 --power_t 1 -d /s/vw_rajan/test/train-sets/0001.dat -f /s/vw_rajan/test/models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",

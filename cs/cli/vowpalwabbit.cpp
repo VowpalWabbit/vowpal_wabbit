@@ -519,6 +519,15 @@ generic<typename T> T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictio
   }
 }
 
+
+void VowpalWabbit::CacheEmptyLine()
+{
+	auto empty = GetOrCreateNativeExample();
+	empty->MakeEmpty(this);
+	ReturnExampleToPool(empty);
+}
+
+
 void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
 {
 #if _DEBUG
@@ -533,6 +542,9 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
     }
+
+		// Need to add an empty line to cache file
+		CacheEmptyLine();
 
     Learn(examples);
   }
