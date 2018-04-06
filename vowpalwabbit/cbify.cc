@@ -175,6 +175,14 @@ void finish(cbify& data)
 	data.lambdas.delete_v();
 	data.cumulative_costs.delete_v();
 
+	for (size_t i = 0; i < data.warm_start_period; ++i)
+	{
+		VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.supervised_validation[i]);
+		free(&data.supervised_validation[i]);
+	}
+
+	data.supervised_validation.delete_v();
+
 
   if (data.use_adf)
   {
@@ -402,47 +410,30 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
-		/*
-		//generate cost-sensitive label
-		COST_SENSITIVE::label& csl = *data.csls;
-    csl.costs.resize(data.num_actions);
-    csl.costs.end() = csl.costs.begin()+data.num_actions;
-		for (uint32_t j = 0; j < data.num_actions; j++)
-		{
-			csl.costs[j].class_index = j+1;
-			csl.costs[j].x = loss(data, ld.label, j+1);
-		}
-
-		ec.l.cs = csl;
-
-		//predict
-		data.all->cost_sensitive->predict(ec, argmin);
-		*/
-
 		//Note: v_array is different STL's array; elements' references are used in v_array
 		//first, corrupt fully supervised example ec's label here
 		size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
 
-		//generate cost-sensitive label
-		//COST_SENSITIVE::label& csl = *data.csls;
-		COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
-		COST_SENSITIVE::label csl = *cslp;
+		//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
+		COST_SENSITIVE::label& csl = *data.csls;
+		//COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
+		//COST_SENSITIVE::label csl = *cslp;
+		//csl.costs.end() = csl.costs.begin()+data.num_actions;
+
     csl.costs.resize(data.num_actions);
-    csl.costs.end() = csl.costs.begin()+data.num_actions;
 		for (uint32_t j = 0; j < data.num_actions; j++)
 		{
 			csl.costs[j].class_index = j+1;
 			csl.costs[j].x = loss(data, corrupted_label, j+1);
 		}
 
-		ec.l.cs = csl;	
+		ec.l.cs = csl;
 
 		//predict (for vw's internal reason, this step has to be put after ec's cs label is created)
 		data.all->cost_sensitive->predict(ec, argmin);
 
 		if (data.ind_supervised)
 		{
-			
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				ec.weight = 1;
@@ -450,21 +441,23 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			}
 		}
 		
-		//ec.l.multi = ld;
-		ec.weight = 0;
-
-		// This is purely a hack here - need to clean up; I also did not deallocate the label and the copied example in finish()
-		example* ecp = calloc_or_throw<example>(1);		
-		VW::copy_example_data(false, ecp, &ec);
-		ecp->l.cs = csl;
-
-		// I am not sure if written this way, ec will be deleted in some other stages and causes error
-		if (data.validation_method == SUPERVISED_VALI)
+		// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to 
+		// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (not sure why).
+		// I also did not deallocate the label and the copied example in finish()
+		if (data.validation_method == SUPERVISED_VALI)		
+		{
+			example* ecp = calloc_or_throw<example>(1);		
+			VW::copy_example_data(false, ecp, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
 			data.supervised_validation.push_back(*ecp);
+		}
+
+		//set the label of ec back to a multiclass label
+		ec.l.multi = ld;
+		ec.weight = 0;
 
 		data.warm_start_iter++;
 	}
-	else if (data.bandit_iter < data.bandit_period)//Call the cb_explore algorithm. It returns a vector of probabilities for each action
+	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
 		data.cb_label.costs.erase();
 		ec.l.cb = data.cb_label;
