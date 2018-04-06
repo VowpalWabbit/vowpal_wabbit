@@ -5,7 +5,19 @@
 #include "bs.h"
 #include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
-#include <random>
+
+#define SUPERVISED 1
+#define BANDIT 2
+
+#define UAR 1
+#define CIRCULAR 2
+
+#define BANDIT_VALI 1
+#define SUPERVISED_VALI 2
+
+#define INSTANCE_WT 1
+#define DATASET_WT 2
+
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
@@ -82,39 +94,51 @@ struct cbify
 
 };
 
-float rand_zeroone()
+float rand_zeroone(vw* all)
 {
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dis(0.0, 1.0);
-	return dis(gen);
-	//return 0.5;
+	float f = merand48(all->random_state);
+	//cout<<f<<endl;
+	return f;
 }
 
 
-size_t generate_uar_action(size_t num_actions)
+size_t generate_uar_action(cbify& data)
 {
-	float rand = rand_zeroone();
+	float rand = rand_zeroone(data.all);
 	//cout<<rand<<endl;
 
-	for (size_t i = 1; i <= num_actions; i++)
+	for (size_t i = 1; i <= data.num_actions; i++)
 	{
-		if (rand <= float(i) / num_actions)
+		if (rand <= float(i) / data.num_actions)
 			return i;
 	}	
-	return num_actions;
+	return data.num_actions;
 
 }
 
-size_t corrupt_action(size_t action, size_t num_actions, float label_corrupt, size_t type)
+size_t corrupt_action(size_t action, cbify& data, size_t data_type)
 {
-	float rand = rand_zeroone();
-	if (rand < label_corrupt)
+	float corrupt_prob;
+	size_t corrupt_type;
+
+	if (data_type == SUPERVISED)
 	{
-		if (type == 1)
-			return generate_uar_action(num_actions);
+		corrupt_prob = data.corrupt_prob_supervised;
+		corrupt_type = data.corrupt_type_supervised;
+	}
+	else
+	{
+		corrupt_prob = data.corrupt_prob_bandit;
+		corrupt_type = data.corrupt_type_bandit;
+	}
+
+	float rand = rand_zeroone(data.all);
+	if (rand < corrupt_prob)
+	{
+		if (corrupt_type == UAR)
+			return generate_uar_action(data);
 		else 
-			return (action % num_actions) + 1;
+			return (action % data.num_actions) + 1;
 	}
 	else
 		return action;
@@ -395,10 +419,9 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.all->cost_sensitive->predict(ec, argmin);
 		*/
 
+		//Note: v_array is different STL's array; elements' references are used in v_array
 		//first, corrupt fully supervised example ec's label here
-		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_supervised, data.corrupt_type_supervised);
-		//use this for now; I am not sure if v_array is the same as STL's array where elements are copied when brought in
-		ld.label = corrupted_label;
+		size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
 
 		//generate cost-sensitive label
 		//COST_SENSITIVE::label& csl = *data.csls;
@@ -436,7 +459,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ecp->l.cs = csl;
 
 		// I am not sure if written this way, ec will be deleted in some other stages and causes error
-		if (data.validation_method == 2)
+		if (data.validation_method == SUPERVISED_VALI)
 			data.supervised_validation.push_back(*ecp);
 
 		data.warm_start_iter++;
@@ -459,7 +482,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		if(!cl.action)
 		  THROW("No action with non-zero probability found!");
 
-		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_bandit, data.corrupt_type_bandit);
+		size_t corrupted_label = corrupt_action(ld.label, data, BANDIT);
 		cl.cost = loss(data, corrupted_label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
@@ -476,7 +499,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				if (data.weighting_scheme == 1)
+				if (data.weighting_scheme == INSTANCE_WT)
 					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
 				else
 					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
@@ -534,7 +557,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		CB::label* cbls = data.cbls;
 		CB::label* cbl_empty = data.cbl_empty;
 
-		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_supervised, data.corrupt_type_supervised);
+		size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
 
 		if (data.ind_supervised)
 		{
@@ -568,7 +591,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ecp->l.multi.label = corrupted_label;
 		ecp->l.multi.weight = 1.0;
 
-		if (data.validation_method == 2)
+		if (data.validation_method == SUPERVISED_VALI)
 			data.supervised_validation.push_back(*ecp);
 
 		data.warm_start_iter++;	
@@ -596,7 +619,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		if(!cl.action)
 		  THROW("No action with non-zero probability found!");
 
-		size_t corrupted_label = corrupt_action(ld.label, data.num_actions, data.corrupt_prob_bandit, data.corrupt_type_bandit);
+		size_t corrupted_label = corrupt_action(ld.label, data, BANDIT);
 		cl.cost = loss(data, corrupted_label, cl.action);
 
 		// accumulate the cumulative costs of lambdas
@@ -615,7 +638,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				{
 					data.old_weights[a] = ecs[a].weight;
 
-					if (data.weighting_scheme == 1)
+					if (data.weighting_scheme == INSTANCE_WT)
 						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
 					else
 						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );					
@@ -743,10 +766,10 @@ base_learner* cbify_setup(vw& all)
 
 	data.corrupt_prob_supervised = vm.count("corrupt_prob_supervised") ? vm["corrupt_prob_supervised"].as<float>() : 0.0;
 	data.corrupt_prob_bandit = vm.count("corrupt_prob_bandit") ? vm["corrupt_prob_bandit"].as<float>() : 0.0;
-	data.corrupt_type_supervised = vm.count("corrupt_type_supervised") ? vm["corrupt_type_supervised"].as<size_t>() : 1;
-	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : 1;
-	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : 1;
-	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : 1;
+	data.corrupt_type_supervised = vm.count("corrupt_type_supervised") ? vm["corrupt_type_supervised"].as<size_t>() : UAR; // 1 is the default value
+	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : UAR; // 1 is the default value
+	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : BANDIT_VALI; // 1 is the default value
+	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : INSTANCE_WT; // 1 is the default value
 
 
 	data.bandit_iter = 0;
