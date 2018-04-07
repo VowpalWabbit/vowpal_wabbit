@@ -90,7 +90,7 @@ struct cbify
 	size_t bandit_iter;
 	size_t warm_start_iter;
 	size_t weighting_scheme;
-	v_array<example> supervised_validation;
+	example* supervised_validation;
 
 };
 
@@ -177,11 +177,9 @@ void finish(cbify& data)
 
 	for (size_t i = 0; i < data.warm_start_period; ++i)
 	{
-		VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.supervised_validation[i]);
-		free(&data.supervised_validation[i]);
+		//VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.supervised_validation[i]);
 	}
-
-	data.supervised_validation.delete_v();
+	free(data.supervised_validation);
 
 
   if (data.use_adf)
@@ -209,6 +207,11 @@ void finish(cbify& data)
 		free(data.cbls);
 
   }
+	else
+	{
+		data.csls->costs.delete_v();
+	}
+
 	free(data.csls);
 
 
@@ -326,7 +329,7 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
 				//go over the supervised validation set
-				for (uint32_t j = 0; j < data.supervised_validation.size(); j++)
+				for (uint32_t j = 0; j < data.warm_start_period; j++)
 				{
 					example& ec_valid = data.supervised_validation[j];
 					data.all->cost_sensitive->predict(ec_valid, i);
@@ -337,8 +340,12 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 					//cout<<endl;
 
 					for (uint32_t a = 0; a < data.num_actions; a++)
+					{
+						//cout<<ec_valid.pred.multiclass<<" "<<ec_valid.l.cs.costs[a].class_index<<endl;
+
 						if (ec_valid.pred.multiclass == ec_valid.l.cs.costs[a].class_index)
 							data.cumulative_costs[i] += ec_valid.l.cs.costs[a].x;
+					}
 				}
 				//cout<<data.cumulative_costs[i]<<endl;
 			}
@@ -376,7 +383,7 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				for (uint32_t j = 0; j < data.supervised_validation.size(); j++)
+				for (uint32_t j = 0; j < data.warm_start_period; j++)
 				{
 					example& ec_valid = data.supervised_validation[j];
 			  	copy_example_to_adf(data, ec_valid);
@@ -418,9 +425,12 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		COST_SENSITIVE::label& csl = *data.csls;
 		//COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
 		//COST_SENSITIVE::label csl = *cslp;
-		//csl.costs.end() = csl.costs.begin()+data.num_actions;
-
+		
+		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
+		//This is crucial for 1. cost-sensitive learn 2. label copy
     csl.costs.resize(data.num_actions);
+		csl.costs.end() = csl.costs.begin()+data.num_actions;
+
 		for (uint32_t j = 0; j < data.num_actions; j++)
 		{
 			csl.costs[j].class_index = j+1;
@@ -428,6 +438,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		}
 
 		ec.l.cs = csl;
+
+		//cout<<"in predict or learn:"<<endl;
+		//for (uint32_t j = 0; j < data.num_actions; j++)
+		//	cout<<ec.l.cs.costs[j].class_index<<" "<<ec.l.cs.costs[j].x<<endl;
 
 		//predict (for vw's internal reason, this step has to be put after ec's cs label is created)
 		data.all->cost_sensitive->predict(ec, argmin);
@@ -446,11 +460,20 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		// I also did not deallocate the label and the copied example in finish()
 		if (data.validation_method == SUPERVISED_VALI)		
 		{
-			example* ecp = calloc_or_throw<example>(1);		
-			VW::copy_example_data(false, ecp, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
-			data.supervised_validation.push_back(*ecp);
+			example& ec_copy = data.supervised_validation[data.warm_start_iter];
+			//why doesn't the following two apporaches leak memory?			
+			VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
+			//copy_array(ec_copy.l.cs.costs, ec.l.cs.costs);
+			//VW::copy_example_data(false, &ec_copy, &ec);
+			//for (uint32_t j = 0; j < data.num_actions; j++)
+			//{
+			//	ec_copy.l.cs.costs.push_back(ec.l.cs.costs[j]);
+			//}
+			//cout<<"after copying"<<endl;
+			//for (uint32_t j = 0; j < data.num_actions; j++)
+			//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
 		}
-
+		
 		//set the label of ec back to a multiclass label
 		ec.l.multi = ld;
 		ec.weight = 0;
@@ -579,13 +602,14 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.weight = 0;
 
 		//a hack here - allocated memories not deleted
-		example* ecp = calloc_or_throw<example>(1);	
-		VW::copy_example_data(false, ecp, &ec);
-		ecp->l.multi.label = corrupted_label;
-		ecp->l.multi.weight = 1.0;
+		//example* ecp = calloc_or_throw<example>(1);	
+		//VW::copy_example_data(false, ecp, &ec);
+		//ecp->l.multi.label = corrupted_label;
+		//ecp->l.multi.weight = 1.0;
 
+		//to be corrected
 		if (data.validation_method == SUPERVISED_VALI)
-			data.supervised_validation.push_back(*ecp);
+			VW::copy_example_data(false, &data.supervised_validation[data.warm_start_iter], &ec, 0, MULTICLASS::mc_label.copy_label);
 
 		data.warm_start_iter++;	
 
@@ -763,6 +787,12 @@ base_learner* cbify_setup(vw& all)
 	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : UAR; // 1 is the default value
 	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : BANDIT_VALI; // 1 is the default value
 	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : INSTANCE_WT; // 1 is the default value
+
+
+	if (data.validation_method == SUPERVISED_VALI)
+	{
+		data.supervised_validation = calloc_or_throw<example>(data.warm_start_period);
+	}
 
 
 	data.bandit_iter = 0;
