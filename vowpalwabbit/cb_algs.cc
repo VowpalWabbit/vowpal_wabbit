@@ -42,7 +42,6 @@ template <bool is_learn>
 void predict_or_learn(cb& data, base_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
-
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))

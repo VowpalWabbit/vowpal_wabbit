@@ -225,7 +225,6 @@ public:
                                             prediction_type::prediction_type_t pred_type)
    {
      learner<T>& ret = calloc_or_throw<learner<T> >();
-
      if (base !=nullptr)
        {//a reduction
          ret = *(learner<T>*)base;

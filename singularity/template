@@ -15,7 +15,7 @@ From: ${DOCKERARCHPREFIX}debian:$DEBRELEASE
     apt-get update
     apt-get -y install eatmydata
     # just useful little tools
-    eatmydata apt-get -y install vim wget strace time ncdu gnupg curl procps
+    eatmydata apt-get -y install vim wget strace time ncdu gnupg curl procps netcat
     eatmydata apt-get -y build-dep vowpal-wabbit
     # some external depends might have not been needed then
     eatmydata apt-get -y install markdown html2text rapidjson-dev libboost-python-dev  git
