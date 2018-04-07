@@ -70,7 +70,14 @@ public:
 
     void set(float value)
     { if (value < 0 || value >1)
-        throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
+	  { //turn off exception throwing as long as the probability is within 1e-4 of 0 or 1
+		if (value < -0.0001 || value > 1.0001)
+		  throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
+	    else if (value < 0)
+		  value = 0;
+	    else
+		  value = 1;
+		}
 
       m_probability = value;
     }
