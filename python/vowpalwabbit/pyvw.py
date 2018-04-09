@@ -12,7 +12,6 @@ class SearchTask():
 
     def __del__(self):
         self.bogus_example.finish()
-        pass
 
     def _run(self, your_own_input_example):
         pass
@@ -242,41 +241,38 @@ class vw(pylibvw.vw):
             #             P.set_input_at(n, examples[n])
             #     else: # non-LDF
             #         P.set_input(examples)
-            if True:   # TODO: get rid of this
-                if oracle is None: pass
-                elif isinstance(oracle, list):
-                    assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    if len(oracle) > 0:
-                        P.set_oracles(oracle)
-                elif isinstance(oracle, int):
-                    assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    P.set_oracle(oracle)
-                else:
-                    raise TypeError('expecting oracle to be a list or an integer')
-
-                if condition is not None:
-                    if not isinstance(condition, list): condition = [condition]
-                    for c in condition:
-                        if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
-                        if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
-                            P.add_condition(max(0, c[0]), c[1])
-                        elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
-                            P.add_condition_range(max(0,c[0]), max(0,c[1]), c[2])
-                        else:
-                            raise TypeError('item ' + str(c) + ' in condition list malformed')
-
-                if allowed is None: pass
-                elif isinstance(allowed, list):
-                    assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    P.set_alloweds(allowed)
-                else: raise TypeError('allowed argument wrong type')
-
-                if learner_id != 0: P.set_learner_id(learner_id)
-
-                p = P.predict()
-                return p
+            if oracle is None: pass
+            elif isinstance(oracle, list):
+                assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                if len(oracle) > 0:
+                    P.set_oracles(oracle)
+            elif isinstance(oracle, int):
+                assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                P.set_oracle(oracle)
             else:
-                raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
+                raise TypeError('expecting oracle to be a list or an integer')
+
+            if condition is not None:
+                if not isinstance(condition, list): condition = [condition]
+                for c in condition:
+                    if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
+                    if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
+                        P.add_condition(max(0, c[0]), c[1])
+                    elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
+                        P.add_condition_range(max(0,c[0]), max(0,c[1]), c[2])
+                    else:
+                        raise TypeError('item ' + str(c) + ' in condition list malformed')
+
+            if allowed is None: pass
+            elif isinstance(allowed, list):
+                assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                P.set_alloweds(allowed)
+            else: raise TypeError('allowed argument wrong type')
+
+            if learner_id != 0: P.set_learner_id(learner_id)
+
+            p = P.predict()
+            return p
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
