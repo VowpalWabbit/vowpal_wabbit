@@ -570,6 +570,9 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
       examples->Add(ex);
     }
 
+    // Need to add an empty line to cache file
+    CacheEmptyLine();
+  
     Predict(examples);
   }
   finally
