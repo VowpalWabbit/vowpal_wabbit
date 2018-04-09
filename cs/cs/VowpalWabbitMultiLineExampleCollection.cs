@@ -92,7 +92,6 @@ namespace VW
                 // signal end-of-block
                 empty = vw.GetOrCreateNativeExample();
                 empty.MakeEmpty(vw);
-                ec_col.Add(empty);
 
                 predictOrLearn(ec_col);
 
