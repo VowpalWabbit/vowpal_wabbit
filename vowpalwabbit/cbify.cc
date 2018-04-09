@@ -716,7 +716,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
 
 }
 
-void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
+void generate_lambdas(cbify& data, v_array<float>& lambdas, size_t lambda_size)
 {
 	// The lambdas are in fact arranged in ascending order (the middle lambda is 0.5)
 
@@ -731,6 +731,23 @@ void generate_lambdas(v_array<float>& lambdas, size_t lambda_size)
 
 	for (uint32_t i = mid+1; i < lambda_size; i++)
 		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
+
+}
+
+void minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t bandit_period, size_t dim)
+{
+	if ( (epsilon / num_actions) * bandit_period >= dim )
+		return 1.0;
+	else
+	{
+		float z = sqrt( dim * ( (epsilon / num_actions) * bandit_period + warm_start_period) - (epsilon / num_actions) * bandit_period * warm_start_period );	
+
+		float numer = (epsilon / num_actions) + warm_start_period * (epsilon / num_actions) * (1/z);
+		float denom = 1 + (epsilon / num_actions) + (warm_start_period - bandit_period) * (epsilon / num_actions) * (1/z);
+
+		return numer / denom;
+
+	}
 
 }
 
@@ -752,7 +769,8 @@ base_learner* cbify_setup(vw& all)
 	("corrupt_type_supervised", po::value<size_t>(), "type of label corruption in the supervised part (1 is uar, 2 is circular)")
 	("corrupt_type_bandit", po::value<size_t>(), "probability of label corruption in the bandit part (1 is uar, 2 is circular)")
 	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)")
-	("weighting_scheme", po::value<size_t>(), "weighting scheme (1 is per instance weighting, 2 is per dataset weighting (where we use a diminishing weighting scheme) )");
+	("weighting_scheme", po::value<size_t>(), "weighting scheme (1 is per instance weighting, 2 is per dataset weighting (where we use a diminishing weighting scheme) )")
+	("lambda_scheme", po::value<size_t>(), "Lambda set scheme (1 is expanding based on center 0.5, 2 is expanding based on center=minimax lambda, 3 is expanding based on center=minimax lambda along with forcing 0,1 in Lambda )");
   add_options(all);
 
   po::variables_map& vm = all.vm;
