@@ -228,7 +228,6 @@ namespace VW
 
                 // signal we're finished using an empty example
                 emptyExample = vw.GetOrCreateNativeExample();
-                validExamples.Add(emptyExample);
                 emptyExample.MakeEmpty(vw);
 
                 predictOrLearn(validExamples, validActionDependentFeatures, emptyActionDependentFeatures);
