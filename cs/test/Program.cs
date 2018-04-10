@@ -34,13 +34,29 @@ namespace cs_test
 
         private static void RunVWTest()
         {
-            string cwd = Directory.GetCurrentDirectory();
-            RunTestsHelper.ExecuteTest(
-                65,
-                "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
-                "train-sets/er_small.vw",
-                "train-sets/ref/search_er.stderr",
-                "");
+            TestJsonDictClass tst = new TestJsonDictClass();
+            tst.TestJsonDictThreading();
+
+            //TestCbAdfClass tst = new TestCbAdfClass();
+            //tst.TestCbAdfExplore();
+
+            //TestCbAdfClass tst = new TestCbAdfClass();
+            //tst.Test87();
+
+            //RunTestsHelper.ExecuteTest(
+            //    125,
+            //    "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8",
+            //    "train-sets/wsj_small.dparser.vw.gz",
+            //    "train-sets/ref/search_dep_parser_arceager.stderr",
+            //    "");
+
+            //string cwd = Directory.GetCurrentDirectory();
+            //RunTestsHelper.ExecuteTest(
+            //    65,
+            //    "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
+            //    "train-sets/er_small.vw",
+            //    "train-sets/ref/search_er.stderr",
+            //    "");
             //RunTestsHelper.ExecuteTest(
             //    46,
             //    "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
