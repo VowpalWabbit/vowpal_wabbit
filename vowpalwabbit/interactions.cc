@@ -113,23 +113,49 @@ void sort_and_filter_duplicate_interactions(std::vector<std::string>& vec, bool 
   removed_cnt = 0;
   sorted_cnt = 0;
 
-  sort(vec.begin(), vec.end());
-
-  if (filter_duplicates) // filter duplicated interactions
+  // interaction value sort + original position
+  std::vector<std::pair<std::string, size_t>> vec_sorted;
+  for (size_t i = 0;i<vec.size();++i)
   {
-    removed_cnt = vec.size();
-    vec.erase(unique(vec.begin(), vec.end()), vec.end());
-    removed_cnt -= vec.size(); 
+    std::string sorted_i(vec[i]);
+    std::sort(std::begin(sorted_i), std::end(sorted_i));
+    vec_sorted.push_back(make_pair(sorted_i, i));
+  }
+      
+  if (filter_duplicates)
+  {
+    // remove duplicates 
+    sort(vec_sorted.begin(), vec_sorted.end(), 
+      [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first < b.first; });
+    auto last = unique(vec_sorted.begin(), vec_sorted.end(), 
+      [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first == b.first; });
+    vec_sorted.erase(last, vec_sorted.end());
+
+    // report number of removed interactions
+    removed_cnt = vec.size() - vec_sorted.size();
+
+    // restore original order
+    sort(vec_sorted.begin(), vec_sorted.end(), 
+      [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.second < b.second; });
   }
 
-  for (std::string& i : vec)
+  // we have original vector and vector with duplicates removed + corresponding indexes in original vector
+  // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
+  // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
+  std::vector<std::string> res;
+  for (auto& i : vec_sorted)
   {
-    // sort namespaces
-    std::sort(std::begin(i), std::end(i));
-
-    if (must_be_left_sorted(i))
+    if (must_be_left_sorted(i.first))
+    {
+      // if so - copy sorted data to result
+      res.push_back(i.first);
       ++sorted_cnt;
+    }
+    else // else - move unsorted data to result
+      res.push_back(vec[i.second]);
   }
+
+  vec = res;
 }
 
 /*

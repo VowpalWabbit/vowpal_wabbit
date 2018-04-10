@@ -715,7 +715,6 @@ void parse_feature_tweaks(arguments& arg)
     }
   }
 
-
   for (size_t i = 0; i < 256; i++)
     {
       arg.all->ignore[i] = false;

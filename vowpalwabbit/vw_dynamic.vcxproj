@@ -286,7 +286,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -369,7 +369,6 @@
     <ClInclude Include="cs_active.h" />
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
-    <ClInclude Include="exploration.h" />
     <ClInclude Include="explore_eval.h" />
     <ClInclude Include="feature_group.h" />
     <ClInclude Include="gd.h" />
@@ -414,7 +413,6 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
-    <ClInclude Include="sampling.h" />
     <ClInclude Include="scorer.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="search_sequencetask.h" />
