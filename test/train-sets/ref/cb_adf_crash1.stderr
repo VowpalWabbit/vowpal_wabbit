@@ -11,8 +11,7 @@ loss     last          counter         weight    label  predict features
 -14.624999 -14.624999            1            1.0    known        0:0.975...        4
 
 finished run
-number of examples per pass = 1
-passes used = 1
+number of examples = 1
 weighted example sum = 1.000000
 weighted label sum = 0.000000
 average loss = -14.624999

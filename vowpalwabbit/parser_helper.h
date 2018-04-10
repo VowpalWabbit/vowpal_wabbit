@@ -118,9 +118,12 @@ class arguments {
       missing_critical = !vm.count(option);
       return *this;
     }
-  template<class T> arguments& critical_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description)
+  template<class T> arguments& critical_vector(const char* option, po::typed_value<std::vector<T>>* type, const char* description, bool keep = true)
     {
-      keep_vector(option, type, description);
+      if (keep)
+        keep_vector(option, type, description);
+      else
+        operator()(option, type->multitoken()->composing(), description);
       missing();
       new_options();
       missing_critical = !vm.count(option);

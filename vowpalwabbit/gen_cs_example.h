@@ -56,7 +56,7 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
   cs_ld.costs.erase();
   c.pred_scores.costs.erase();
 
-  if (ld.costs.size() == 1 && !is_test_label(ld))   //this is a typical example where we can perform all actions
+  if ((ld.costs.size() == 1 && !is_test_label(ld)) || ld.costs.size() == 0)   //this is a typical example where we can perform all actions
   { //in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     { COST_SENSITIVE::wclass wc = {0., i, 0., 0.};

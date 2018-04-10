@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "vw.h"
 #include "parse_regressor.h"
+#include "parse_dispatch_loop.h"
 using namespace std;
 
 void dispatch_example(vw& all, example& ec)
@@ -35,6 +36,7 @@ namespace LEARNER
 
 void dispatch_end_pass(vw& all, example* ec)
 {
+  all.current_pass++;
   all.l->end_pass();
   VW::finish_example(all, ec);
 }
@@ -111,45 +113,44 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
     }
     return true; // example complete
   }
-
   ec_seq.push_back(ec);
   return false;
 }
 
-template <class T, void(* f)(T, multi_ex&)>
-void dispatch_multi_ex(vw& all, T& context, multi_ex& ec_seq)
+template <class T, void(* f)(vw&, multi_ex&)>
+void dispatch_multi_ex(vw& all, multi_ex& ec_seq)
 {
-  f(context, ec_seq);               // call learn or predict
+  f(all, ec_seq);               // call learn or predict
   VW::finish_example(all, ec_seq);  // clean up 
 }
 
-template <class T, void(* f)(T, multi_ex&)>
-void dispatch_multi_ex(vw& all, T& context, example* ec, multi_ex& ec_seq)
+template <class T, void(* f)(vw&, multi_ex&)>
+void dispatch_multi_ex(vw& all, example* ec, multi_ex& ec_seq)
 {
   if (complete_multi_ex(ec, ec_seq, all)) {
-     dispatch_multi_ex<T,f>(all,context,ec_seq);
+     dispatch_multi_ex<T,f>(all, ec_seq);
   }
 }
 
 template <class T, void(*f)(T, multi_ex&)>
-void multi_ex_generic_driver(vw& all, T context)
+void multi_ex_generic_driver(vw& all)
 {
   multi_ex ec_seq = v_init<example*>();
   example* ec = nullptr;
   while (all.early_terminate == false) {
     if ((ec = VW::get_example(all.p)) != nullptr) {
       if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
-        dispatch_multi_ex<T,f>(all, context, ec, ec_seq);
+        dispatch_multi_ex<T,f>(all, ec, ec_seq);
       else if (ec->end_pass)
         dispatch_end_pass(all, ec);
       else if (is_save_cmd(ec))
         save(all, ec);
       else 
-        dispatch_multi_ex<T, f>(all, context, ec, ec_seq);
+        dispatch_multi_ex<T, f>(all, ec, ec_seq);
     }
     else {
       if (ec_seq.size() > 0)
-        dispatch_multi_ex<T,f>(all, context, ec_seq);
+        dispatch_multi_ex<T,f>(all, ec_seq);
       break;
     }
   }
@@ -196,9 +197,22 @@ void generic_driver(vector<vw*> alls)
 void generic_driver(vw& all)
 {
   if(all.l->multiline_learn())
-    multi_ex_generic_driver<vw&, process_multi_ex>(all, all);
+    multi_ex_generic_driver<vw&, process_multi_ex>(all);
   else
     generic_driver<vw&, process_example>(all, all);
 
+}
+
+void dispatch(vw& all, v_array<example*> examples)
+{
+  all.p->end_parsed_examples+=examples.size();//divergence: lock & signal
+  for (size_t i = 0; i < examples.size(); ++i)
+    process_example(all, examples[i]);
+}
+
+void generic_driver_onethread(vw& all)
+{
+  parse_dispatch<dispatch>(all);
+  all.l->end_examples();
 }
 }

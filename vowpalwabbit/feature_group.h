@@ -1,4 +1,15 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+*/
+
+#pragma once
+
 #include <memory>
+#include <string>
+#include <cstddef>
+#include "v_array.h"
 
 typedef float feature_value;
 typedef uint64_t feature_index;
@@ -232,6 +243,9 @@ struct features
     space_names = v_init<audit_strings_ptr>();
     sum_feat_sq = 0.f;
   }
+
+  // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
+  // ~features() { ... } 
 
   inline size_t size() const { return values.size(); }
 

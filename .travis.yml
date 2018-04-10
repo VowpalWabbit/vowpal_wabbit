@@ -19,6 +19,9 @@ script:
   - make python
   - mvn clean test -f java/pom.xml
   - make test
+  - cd test
+  - ./test_race_condition.sh
+  - cd ..
   - make test_gcov --always-make
   - cd python
   - source activate test-python27

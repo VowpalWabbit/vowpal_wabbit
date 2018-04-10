@@ -1201,7 +1201,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
     all.opts_n_args.new_options("VW options")
       ("random_seed", all.random_seed, "seed random number generator")
-      ("ring_size", all.p->ring_size, "size of example ring").missing();
+      ("ring_size", all.p->ring_size, "size of example ring")
+      ("onethread", "Disable parse thread").missing();
 
     all.opts_n_args.new_options("Update options")
       ("learning_rate,l", all.eta, "Set learning rate")
@@ -1322,6 +1323,8 @@ void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
     load_input_model(all, model);
+  else
+    model.close_file();
 
   parse_source(all.opts_n_args);
   enable_sources(all, all.quiet, all.numpasses);
@@ -1516,7 +1519,7 @@ void finish(vw& all, bool delete_all)
     all.opts_n_args.trace_message.precision(6);
     all.opts_n_args.trace_message << std::fixed;
     all.opts_n_args.trace_message << endl << "finished run";
-    if(all.current_pass == 0)
+    if(all.current_pass == 0 || all.current_pass == 1)
       all.opts_n_args.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {

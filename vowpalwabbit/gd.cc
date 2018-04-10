@@ -154,8 +154,6 @@ void end_pass(gd& g)
   if (all.save_per_pass)
     save_predictor(all, all.final_regressor_name, all.current_pass);
 
-  all.current_pass++;
-
   if(!all.holdout_set_off)
   {
     if(summarize_holdout_set(all, g.no_win_counter))

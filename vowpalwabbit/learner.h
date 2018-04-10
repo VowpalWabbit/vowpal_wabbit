@@ -84,6 +84,7 @@ struct test_example_data
 
 void generic_driver(vw& all);
 void generic_driver(std::vector<vw*> alls);
+void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
@@ -300,7 +301,6 @@ public:
                                             prediction_type::prediction_type_t pred_type)
    {
      learner<T>& ret = calloc_or_throw<learner<T> >();
-
      if (base !=nullptr)
        {//a reduction
          ret = *(learner<T>*)base;
