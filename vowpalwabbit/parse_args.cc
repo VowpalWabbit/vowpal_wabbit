@@ -491,8 +491,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (v_string *i = vw1.interactions.begin(), *j = vw2.interactions.begin(); i != vw1.interactions.end(); i++, j++)
-    if (v_string2string(*i) != v_string2string(*j))
+  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions); ++i, ++j)
+    if (*i != *j)
       return "interaction mismatch";
 
   return nullptr;
@@ -620,7 +620,7 @@ void parse_feature_tweaks(arguments& arg)
   }
 
   // prepare namespace interactions
-  v_array<v_string> expanded_interactions = v_init<v_string>();
+  std::vector<std::string> expanded_interactions;
 
   if ( ( ((!arg.all->pairs.empty() || !arg.all->triples.empty() || !arg.all->interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (arg.vm.count("quadratic") || arg.vm.count("cubic") || arg.vm.count("interactions")) ) )
@@ -632,11 +632,7 @@ void parse_feature_tweaks(arguments& arg)
     // in case arrays were already filled in with values from old model file - reset them
     if (!arg.all->pairs.empty()) arg.all->pairs.clear();
     if (!arg.all->triples.empty()) arg.all->triples.clear();
-    if (arg.all->interactions.size() > 0)
-    {
-      for (v_string* i = arg.all->interactions.begin(); i != arg.all->interactions.end(); ++i) i->delete_v();
-      arg.all->interactions.delete_v();
-    }
+    if (!arg.all->interactions.empty()) arg.all->interactions.clear();
   }
 
   if (arg.vm.count("quadratic"))
@@ -665,9 +661,8 @@ void parse_feature_tweaks(arguments& arg)
       if (!arg.all->quiet) arg.trace_message << *i << " ";
     }
 
-    v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
-    push_many(expanded_interactions, exp_cubic.begin(), exp_cubic.size());
-    exp_cubic.delete_v();
+    std::vector<std::string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!arg.all->quiet) arg.trace_message << endl;
   }
@@ -682,9 +677,8 @@ void parse_feature_tweaks(arguments& arg)
       if (!arg.all->quiet) arg.trace_message << *i << " ";
     }
 
-    v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
-    push_many(expanded_interactions, exp_inter.begin(), exp_inter.size());
-    exp_inter.delete_v();
+    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
+    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!arg.all->quiet) arg.trace_message << endl;
   }
@@ -705,20 +699,19 @@ void parse_feature_tweaks(arguments& arg)
     if (arg.all->interactions.size() > 0)
     {
       // should be empty, but just in case...
-      for (v_string& i : arg.all->interactions) i.delete_v();
-      arg.all->interactions.delete_v();
+      arg.all->interactions.clear();
     }
 
     arg.all->interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (v_string& i : expanded_interactions)
+    for (auto& i : expanded_interactions)
     {
       const size_t len = i.size();
       if (len == 2)
-        arg.all->pairs.push_back(v_string2string(i));
+        arg.all->pairs.push_back(i);
       else if (len == 3)
-        arg.all->triples.push_back(v_string2string(i));
+        arg.all->triples.push_back(i);
     }
   }
 
@@ -1619,10 +1612,6 @@ void finish(vw& all, bool delete_all)
   delete all.loss;
 
   delete all.all_reduce;
-
-  // destroy all interactions and array of them
-  for (v_string& i : all.interactions) i.delete_v();
-  all.interactions.delete_v();
 
   if (delete_all) delete &all;
 

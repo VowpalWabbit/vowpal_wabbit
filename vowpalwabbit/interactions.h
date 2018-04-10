@@ -23,10 +23,10 @@ const uint64_t valid_ns_size = printable_end - printable_start - 1; // -1 to ski
 // exand all wildcard namespaces in vector<string>
 // req_length must be 0 if interactions of any length are allowed, otherwise contains required length
 // err_msg will be printed plus exception will be thrown if req_length != 0 and mismatch interaction length.
-v_array<v_string> expand_interactions(const std::vector<std::string> &vec, const size_t required_length, const std::string &err_msg);
+std::vector<std::string> expand_interactions(const std::vector<std::string> &vec, const size_t required_length, const std::string &err_msg);
 
 // remove duplicate interactions and sort namespaces in them (if required)
-void sort_and_filter_duplicate_interactions(v_array<v_string> &vec, bool filter_duplicates, size_t &removed_cnt, size_t &sorted_cnt);
+void sort_and_filter_duplicate_interactions(std::vector<std::string> &vec, bool filter_duplicates, size_t &removed_cnt, size_t &sorted_cnt);
 
 
 /*
@@ -41,9 +41,9 @@ template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func
 inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 {
   if (all.weights.sparse)
-    generate_interactions<R, S, T, audit, audit_func, sparse_parameters, v_array<v_string>>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
+    generate_interactions<R, S, T, audit, audit_func, sparse_parameters>(all.interactions, all.permutations, ec, dat, all.weights.sparse_weights);
   else
-    generate_interactions<R, S, T, audit, audit_func, dense_parameters, v_array<v_string>>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
+    generate_interactions<R, S, T, audit, audit_func, dense_parameters>(all.interactions, all.permutations, ec, dat, all.weights.dense_weights);
 }
 
 // this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6

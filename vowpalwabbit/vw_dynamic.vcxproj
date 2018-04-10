@@ -376,6 +376,7 @@
     <ClInclude Include="interactions.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
+    <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
@@ -465,7 +466,6 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="explore_eval.cc" />
-    <ClCompile Include="exploration.cc" />
     <ClCompile Include="gd.cc" />
     <ClCompile Include="interactions.cc" />
     <ClCompile Include="audit_regressor.cc" />
@@ -510,7 +510,6 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
-    <ClCompile Include="sampling.cc" />
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="search.cc" />
     <ClCompile Include="search_graph.cc" />

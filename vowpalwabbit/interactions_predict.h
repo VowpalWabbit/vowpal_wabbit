@@ -8,6 +8,8 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "constant.h"
 #include "feature_group.h"
+#include <vector>
+#include <string>
 
 namespace INTERACTIONS
 {
@@ -91,8 +93,8 @@ namespace INTERACTIONS
   // this templated function generates new features for given example and set of interactions
   // and passes each of them to given function T()
   // it must be in header file to avoid compilation problems
-  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W, class I> // nullptr func can't be used as template param in old compilers
-  inline void generate_interactions(I& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+  template <class R, class S, void(*T)(R&, float, S), bool audit, void(*audit_func)(R&, const audit_strings*), class W> // nullptr func can't be used as template param in old compilers
+  inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
   {
     features* features_data = ec.feature_space;
 

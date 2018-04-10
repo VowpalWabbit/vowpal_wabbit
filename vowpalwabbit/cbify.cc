@@ -3,7 +3,6 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "sampling.h"
 #include "vw.h"
 #include "hash.h"
 #include "sampling.h"
@@ -97,14 +96,6 @@ void copy_example_to_adf(cbify& data, example& ec)
   }
 }
 
-vector<float> a_s_get_scores(ACTION_SCORE::action_scores& a_s)
-{
-  vector<float> scores(a_s.size());
-  for (uint32_t i = 0; i < a_s.size(); i++)
-    scores[i] = a_s[i].score;
-  return scores;
-}
-
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
@@ -118,12 +109,11 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   base.predict(ec);
   //data.probs = ec.pred.scalars;
 
-  vector<float> pdf = a_s_get_scores(ec.pred.a_s);
-  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], (uint32_t)pdf.size());
+  uint32_t chosen_action = sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s));
 
   CB::cb_class cl;
-  cl.action = s.index + 1;
-  cl.probability = s.probability;
+  cl.action = chosen_action + 1;
+  cl.probability = ec.pred.a_s[chosen_action].score;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");
@@ -136,7 +126,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.a_s.erase();
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
-  ec.pred.multiclass = s.index + 1;
+  ec.pred.multiclass = chosen_action + 1;
 }
 
 template <bool is_learn>
@@ -154,13 +144,11 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
   auto& out_ec = data.adf_data.ecs[0];
 
-  vector<float> pdf = a_s_get_scores(out_ec.pred.a_s);
-  sample s = sample_from_pdf(data.app_seed + data.example_counter++, &pdf[0], (uint32_t)pdf.size());
+  uint32_t chosen_action = sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s));
 
   CB::cb_class cl;
-  cl.action = out_ec.pred.a_s[s.index].action + 1;
-  // TODO: if pdf is not normalized, this prob is off. probably better to use s.probability
-  cl.probability = out_ec.pred.a_s[s.index].score;
+  cl.action = out_ec.pred.a_s[chosen_action].action + 1;
+  cl.probability = out_ec.pred.a_s[chosen_action].score;
 
   if(!cl.action)
     THROW("No action with non-zero probability found!");

@@ -9,7 +9,7 @@
 namespace exploration
 {
   template<typename OutputIt>
-  void epsilon_greedy(float epsilon, uint32_t top_action, OutputIt pdf_first, OutputIt pdf_last)
+  void generate_epsilon_greedy(float epsilon, uint32_t top_action, OutputIt pdf_first, OutputIt pdf_last, std::output_iterator_tag pdf_tag)
   {
     size_t num_actions = pdf_last - pdf_first;
     if (num_actions == 0)
@@ -27,10 +27,23 @@ namespace exploration
     *(pdf_first + top_action) += 1.f - epsilon;
   }
 
-  template<typename InputIt, typename OutputIt>
-  void softmax(float lambda, InputIt scores_begin, InputIt scores_last, OutputIt pdf_first, OutputIt pdf_last)
+  template<typename OutputIt>
+  void generate_epsilon_greedy(float epsilon, uint32_t top_action, OutputIt pdf_first, OutputIt pdf_last)
   {
-    if (scores_begin == scores_last)
+    typedef typename std::iterator_traits<OutputIt>::iterator_category pdf_category;
+    generate_epsilon_greedy(epsilon, top_action, pdf_first, pdf_last, pdf_category());
+  }
+
+  template<typename InputIt, typename OutputIt>
+  void generate_softmax(float lambda, InputIt scores_begin, InputIt scores_last, std::input_iterator_tag scores_tag, OutputIt pdf_first, OutputIt pdf_last, std::output_iterator_tag pdf_tag)
+  {
+    size_t num_actions_scores = scores_last - scores_begin;
+    size_t num_actions_pdf = pdf_last - pdf_first;
+
+    if (num_actions_scores != num_actions_pdf)
+      throw std::invalid_argument("length of scores must be equal to length of pdf");
+
+    if (num_actions_scores == 0)
       return;
 
     float norm = 0.;
@@ -51,7 +64,16 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  void bag(InputIt top_actions_begin, InputIt top_actions_last, OutputIt pdf_first, OutputIt pdf_last)
+  void generate_softmax(float lambda, InputIt scores_begin, InputIt scores_last, OutputIt pdf_first, OutputIt pdf_last)
+  {
+    typedef typename std::iterator_traits<InputIt>::iterator_category scores_category;
+    typedef typename std::iterator_traits<OutputIt>::iterator_category pdf_category;
+
+    generate_softmax(lambda, scores_begin, scores_last, scores_category(), pdf_first, pdf_last, pdf_category());
+  }
+
+  template<typename InputIt, typename OutputIt>
+  void generate_bag(InputIt top_actions_begin, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::output_iterator_tag pdf_tag)
   {
     if (pdf_first == pdf_last)
       return;
@@ -60,12 +82,19 @@ namespace exploration
     if (num_models == 0)
       throw std::out_of_range("must supply at least one top_action from a model");
 
-    // determine probability per model
-    float prob = 1.f / (float)num_models;
-
+    // divide late to improve numeric stability
     InputIt t_a = top_actions_begin;
     for (OutputIt d = pdf_first; d != pdf_last && t_a != top_actions_last; ++d, ++t_a)
-      *d = *t_a * prob;
+      *d = *t_a / (float)num_models;
+  }
+
+  template<typename InputIt, typename OutputIt>
+  void generate_bag(InputIt top_actions_begin, InputIt top_actions_last, OutputIt pdf_first, OutputIt pdf_last)
+  {
+    typedef typename std::iterator_traits<InputIt>::iterator_category top_actions_category;
+    typedef typename std::iterator_traits<OutputIt>::iterator_category pdf_category;
+
+    generate_bag(top_actions_begin, top_actions_last, top_actions_category(), pdf_first, pdf_last, pdf_category());
   }
 
   // Note: must be inline to compile on Windows VS2017

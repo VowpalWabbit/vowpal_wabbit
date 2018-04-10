@@ -154,7 +154,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<e
   action_scores& preds = examples[0]->pred.a_s;
 
   // generate distribution over actions
-  epsilon_greedy(data.epsilon, 0, begin_scores(preds), end_scores(preds));
+  generate_epsilon_greedy(data.epsilon, 0, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>
@@ -199,7 +199,7 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   }
 
   // generate distribution over actions
-  bag(top_actions.begin(), top_actions.end(), begin_scores(data.action_probs), end_scores(data.action_probs));
+  generate_bag(begin(top_actions), end(top_actions), begin_scores(data.action_probs), end_scores(data.action_probs));
 
   // TODO: use exploration::safety
   CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
@@ -284,7 +284,7 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  softmax(data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
+  generate_softmax(data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
   CB_EXPLORE::safety(preds, data.epsilon, true);
 }

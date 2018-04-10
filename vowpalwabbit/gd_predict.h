@@ -40,16 +40,16 @@ namespace GD
   template <class R>
   inline void dummy_func(R&, const audit_strings*) {} // should never be called due to call_audit overload
 
-  template <class R, class S, void(*T)(R&, float, S), class W, class I> // nullptr func can't be used as template param in old compilers
-  inline void generate_interactions(I& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
+  template <class R, class S, void(*T)(R&, float, S), class W> // nullptr func can't be used as template param in old compilers
+  inline void generate_interactions(std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat, W& weights) // default value removed to eliminate ambiguity in old complers
   {
-    INTERACTIONS::generate_interactions<R, S, T, false, dummy_func<R>, W, I>(interactions, permutations, ec, dat, weights);
+    INTERACTIONS::generate_interactions<R, S, T, false, dummy_func<R>, W>(interactions, permutations, ec, dat, weights);
   }
 
   // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x, S)
   // where S is EITHER float& feature_weight OR uint64_t feature_index
-  template <class R, class S, void(*T)(R&, float, S), class W, class I>
-  inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_linear[256], I& interactions, bool permutations, example_predict& ec, R& dat)
+  template <class R, class S, void(*T)(R&, float, S), class W>
+  inline void foreach_feature(W& weights, bool ignore_some_linear, bool ignore_linear[256], std::vector<std::string>& interactions, bool permutations, example_predict& ec, R& dat)
   {
     uint64_t offset = ec.ft_offset;
     if (ignore_some_linear)
@@ -65,15 +65,15 @@ namespace GD
       for (features& f : ec)
         foreach_feature<R, T, W>(weights, f, dat, offset);
 
-    generate_interactions<R, S, T, W, I>(interactions, permutations, ec, dat, weights);
+    generate_interactions<R, S, T, W>(interactions, permutations, ec, dat, weights);
   }
 
   inline void vec_add(float& p, const float fx, const float& fw) { p += fw * fx; }
 
-  template <class W, class I>
-  inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256], I& interactions, bool permutations, example_predict& ec, float initial = 0.f)
+  template <class W>
+  inline float inline_predict(W& weights, bool ignore_some_linear, bool ignore_linear[256], std::vector<std::string>& interactions, bool permutations, example_predict& ec, float initial = 0.f)
   {
-    foreach_feature<float, const float&, vec_add, W, I>(weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
+    foreach_feature<float, const float&, vec_add, W>(weights, ignore_some_linear, ignore_linear, interactions, permutations, ec, initial);
     return initial;
   }
 }

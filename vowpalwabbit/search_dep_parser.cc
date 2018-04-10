@@ -78,13 +78,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  for (v_string& i : all.interactions)
-    i.delete_v();
-  all.interactions.erase();
-  for (string& i : all.pairs)
-    all.interactions.push_back(string2v_string(i));
-  for (string& i : all.triples)
-    all.interactions.push_back(string2v_string(i));
+  all.interactions.clear();
+  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
   if(data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else

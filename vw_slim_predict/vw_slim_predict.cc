@@ -133,5 +133,5 @@ vw_predict::vw_predict(const char* model, size_t length)
 void vw_predict::score(example_predict* shared, std::vector<example_predict*> actions, std::vector<float>& out_scores)
 {
   safe_example_predict ex;
-  GD::inline_predict<dense_parameters, vector<string>>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
+  GD::inline_predict<dense_parameters>(*_weights, false, _ignore_linear, _interactions, /* permutations */ false, ex);
 }
