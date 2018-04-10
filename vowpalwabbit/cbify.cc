@@ -18,6 +18,10 @@
 #define INSTANCE_WT 1
 #define DATASET_WT 2
 
+#define ABS_CENTRAL 1
+#define MINIMAX_CENTRAL 2
+#define MINIMAX_CENTRAL_ZEROONE 3
+
 
 using namespace LEARNER;
 using namespace MultiWorldTesting;
@@ -91,8 +95,60 @@ struct cbify
 	size_t warm_start_iter;
 	size_t weighting_scheme;
 	example* supervised_validation;
+	size_t lambda_scheme;
+	float epsilon;
 
 };
+
+float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t bandit_period, size_t dim)
+{
+	if ( (epsilon / num_actions) * bandit_period >= dim )
+		return 1.0;
+	else
+	{
+		float z = sqrt( dim * ( (epsilon / num_actions) * bandit_period + warm_start_period) - (epsilon / num_actions) * bandit_period * warm_start_period );
+
+		float numer = (epsilon / num_actions) + warm_start_period * (epsilon / num_actions) * (1/z);
+		float denom = 1 + (epsilon / num_actions) + (warm_start_period - bandit_period) * (epsilon / num_actions) * (1/z);
+
+		//cout<<"z = "<<z<<endl;
+		//cout<<"numer = "<<numer<<endl;
+		//cout<<"denom = "<<denom<<endl;
+		return numer / denom;
+
+	}
+}
+
+void setup_lambdas(cbify& data, example& ec)
+{
+	// The lambdas are in fact arranged in ascending order (the middle lambda is 0.5)
+	v_array<float>& lambdas = data.lambdas;
+
+	uint32_t mid = data.choices_lambda / 2;
+
+	if (data.lambda_scheme == ABS_CENTRAL)
+		lambdas[mid] = 0.5;
+	else
+		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions, data.warm_start_period, data.bandit_period, ec.num_features);
+
+	for (uint32_t i = mid; i > 0; i--)
+		lambdas[i-1] = lambdas[i] / 2;
+
+	for (uint32_t i = mid+1; i < data.choices_lambda; i++)
+		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
+
+	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE)
+	{
+		lambdas[0] = 0.0;
+		lambdas[data.choices_lambda-1] = 1.0 - 1e-4;
+	}
+
+	//cout<<"lambdas:"<<endl;
+	//for (uint32_t i = 0; i < data.choices_lambda; i++)
+	//	cout<<lambdas[i]<<endl;
+
+}
+
 
 float rand_zeroone(vw* all)
 {
@@ -111,7 +167,7 @@ size_t generate_uar_action(cbify& data)
 	{
 		if (rand <= float(i) / data.num_actions)
 			return i;
-	}	
+	}
 	return data.num_actions;
 
 }
@@ -137,7 +193,7 @@ size_t corrupt_action(size_t action, cbify& data, size_t data_type)
 	{
 		if (corrupt_type == UAR)
 			return generate_uar_action(data);
-		else 
+		else
 			return (action % data.num_actions) + 1;
 	}
 	else
@@ -355,7 +411,7 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 
 void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
 {
-	
+
 	if (data.validation_method == 1)
 	{
 		uint32_t best_action;
@@ -393,9 +449,9 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 				}
 				//cout<<data.cumulative_costs[i]<<endl;
 			}
-			
+
 		}
-		
+
 	}
 
 }
@@ -425,7 +481,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		COST_SENSITIVE::label& csl = *data.csls;
 		//COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
 		//COST_SENSITIVE::label csl = *cslp;
-		
+
 		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
 		//This is crucial for 1. cost-sensitive learn 2. label copy
     csl.costs.resize(data.num_actions);
@@ -454,14 +510,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 				data.all->cost_sensitive->learn(ec, i);
 			}
 		}
-		
-		// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to 
+
+		// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
 		// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (not sure why).
 		// I also did not deallocate the label and the copied example in finish()
-		if (data.validation_method == SUPERVISED_VALI)		
+		if (data.validation_method == SUPERVISED_VALI)
 		{
 			example& ec_copy = data.supervised_validation[data.warm_start_iter];
-			//why doesn't the following two apporaches leak memory?			
+			//why doesn't the following two apporaches leak memory?
 			VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
 			//copy_array(ec_copy.l.cs.costs, ec.l.cs.costs);
 			//VW::copy_example_data(false, &ec_copy, &ec);
@@ -473,7 +529,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			//for (uint32_t j = 0; j < data.num_actions; j++)
 			//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
 		}
-		
+
 		//set the label of ec back to a multiclass label
 		ec.l.multi = ld;
 		ec.weight = 0;
@@ -482,6 +538,10 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
+		// Need to initilize the lambda vector
+		if (data.bandit_iter == 0)
+			setup_lambdas(data, ec);
+
 		data.cb_label.costs.erase();
 		ec.l.cb = data.cb_label;
 		ec.pred.a_s = data.a_s;
@@ -602,7 +662,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.weight = 0;
 
 		//a hack here - allocated memories not deleted
-		//example* ecp = calloc_or_throw<example>(1);	
+		//example* ecp = calloc_or_throw<example>(1);
 		//VW::copy_example_data(false, ecp, &ec);
 		//ecp->l.multi.label = corrupted_label;
 		//ecp->l.multi.weight = 1.0;
@@ -611,11 +671,13 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		if (data.validation_method == SUPERVISED_VALI)
 			VW::copy_example_data(false, &data.supervised_validation[data.warm_start_iter], &ec, 0, MULTICLASS::mc_label.copy_label);
 
-		data.warm_start_iter++;	
+		data.warm_start_iter++;
 
 	}
 	else if (data.bandit_iter < data.bandit_period) // call the bandit learner
 	{
+		if (data.bandit_iter == 0)
+			setup_lambdas(data, ec);
 
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
@@ -658,7 +720,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 					if (data.weighting_scheme == INSTANCE_WT)
 						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
 					else
-						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );					
+						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
 
 					base.learn(ecs[a], i);
 				}
@@ -670,7 +732,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		}
 
 		ec.pred.multiclass = cl.action;
-			
+
 		data.bandit_iter++;
 	}
 	else
@@ -716,40 +778,6 @@ void init_adf_data(cbify& data, const size_t num_actions)
 
 }
 
-void generate_lambdas(cbify& data, v_array<float>& lambdas, size_t lambda_size)
-{
-	// The lambdas are in fact arranged in ascending order (the middle lambda is 0.5)
-
-	lambdas = v_init<float>();
-	uint32_t mid = lambda_size / 2;
-	for (uint32_t i = 0; i < lambda_size; i++)
-		lambdas.push_back(0);
-
-	lambdas[mid] = 0.5;
-	for (uint32_t i = mid; i > 0; i--)
-		lambdas[i-1] = lambdas[i] / 2;
-
-	for (uint32_t i = mid+1; i < lambda_size; i++)
-		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
-
-}
-
-void minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t bandit_period, size_t dim)
-{
-	if ( (epsilon / num_actions) * bandit_period >= dim )
-		return 1.0;
-	else
-	{
-		float z = sqrt( dim * ( (epsilon / num_actions) * bandit_period + warm_start_period) - (epsilon / num_actions) * bandit_period * warm_start_period );	
-
-		float numer = (epsilon / num_actions) + warm_start_period * (epsilon / num_actions) * (1/z);
-		float denom = 1 + (epsilon / num_actions) + (warm_start_period - bandit_period) * (epsilon / num_actions) * (1/z);
-
-		return numer / denom;
-
-	}
-
-}
 
 base_learner* cbify_setup(vw& all)
 {
@@ -805,7 +833,11 @@ base_learner* cbify_setup(vw& all)
 	data.corrupt_type_bandit = vm.count("corrupt_type_bandit") ? vm["corrupt_type_bandit"].as<size_t>() : UAR; // 1 is the default value
 	data.validation_method = vm.count("validation_method") ? vm["validation_method"].as<size_t>() : BANDIT_VALI; // 1 is the default value
 	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : INSTANCE_WT; // 1 is the default value
+	data.lambda_scheme = vm.count("lambda_scheme") ? vm["lambda_scheme"].as<size_t>() : ABS_CENTRAL;
+	data.epsilon = vm.count("epsilon") ? vm["epsilon"].as<float>() : 0.05;
 
+	//cout<<"does epsilon exist?"<<vm.count("epsilon")<<endl;
+	//cout<<"epsilon = "<<data.epsilon<<endl;
 
 	if (data.validation_method == SUPERVISED_VALI)
 	{
@@ -815,9 +847,13 @@ base_learner* cbify_setup(vw& all)
 
 	data.bandit_iter = 0;
 	data.warm_start_iter = 0;
-	
 
-	generate_lambdas(data.lambdas, data.choices_lambda);
+
+	//generate_lambdas(data.lambdas, data.choices_lambda);
+
+	data.lambdas = v_init<float>();
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+		data.lambdas.push_back(0.);
 
 	for (size_t i = 0; i < data.choices_lambda; i++)
 		data.cumulative_costs.push_back(0.);

@@ -320,8 +320,8 @@ if __name__ == '__main__':
 	mod.corrupt_type_supervised = 1
 	mod.corrupt_prob_supervised = 0.0
 
-	mod.corrupt_type_bandit = 1
-	mod.corrupt_prob_bandit = 0.3
+	mod.corrupt_type_bandit = 2
+	mod.corrupt_prob_bandit = 1.0
 
 	mod.validation_method = 2
 
