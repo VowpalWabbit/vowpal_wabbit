@@ -99,9 +99,9 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, multi_ex& 
 {
   //Explore tau times, then act according to optimal.
   if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
-    base_learn_or_predict<true>(base, examples, data.offset);
+    base.learn(examples, data.offset);
   else
-    base_learn_or_predict<false>(base, examples, data.offset);
+    base.predict(examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -127,9 +127,9 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, multi_ex&
 {
   //Explore uniform random an epsilon fraction of the time.
   if (is_learn && test_adf_sequence(examples) != nullptr)
-    base_learn_or_predict<true>(base, examples, data.offset);
+    base.learn(examples, data.offset);
   else
-    base_learn_or_predict<false>(base, examples, data.offset);
+    base.predict(examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -166,10 +166,12 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, multi_ex& ex
     uint32_t count = is_learn
                      ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
                      : 0;
+
     if (is_learn && count > 0 && !test_sequence)
-      base_learn_or_predict<true>(base, examples, data.offset, i);
-    else
-      base_learn_or_predict<false>(base, examples, data.offset, i);
+      base.learn(examples, i);
+     else
+      base.predict(examples, i);
+
     assert(preds.size() == num_actions);
     data.action_probs[preds[0].action].score += prob;
     if (is_learn && !test_sequence)
@@ -298,12 +300,12 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
 {
   if (ec_seq.size() <= 0) return;
 
-  auto& ec = *ec_seq[0];
-  if (CB_ALGS::example_is_newline_not_header(ec)) return;
 
   size_t num_features = 0;
 
   float loss = 0.;
+  
+  auto& ec = *ec_seq[0];
   ACTION_SCORE::action_scores preds = ec.pred.a_s;
 
   for (size_t i = 0; i < ec_seq.size(); i++)
