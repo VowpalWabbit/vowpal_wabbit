@@ -35,11 +35,6 @@ struct explore_eval
   bool fixed_multiplier;
 };
 
-void end_examples(explore_eval& data)
-{
-  // noop
-}
-
 void finish(explore_eval& data)
 {
   if (!data.all->quiet)
@@ -228,7 +223,6 @@ base_learner* explore_eval_setup(arguments& arg)
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
-  l.set_end_examples(end_examples);
   l.set_test_example(CB::example_is_test);
   return make_base(l);
 }
