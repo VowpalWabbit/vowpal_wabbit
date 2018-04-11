@@ -1024,7 +1024,7 @@ void *main_parse_loop(void *in)
 #endif
 {
   vw* all = (vw*)in;
-  parse_dispatch<thread_dispatch>(*all);
+  parse_dispatch(*all, thread_dispatch);
   return 0L;
 }
 

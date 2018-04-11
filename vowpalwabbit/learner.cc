@@ -117,42 +117,49 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
   return false;
 }
 
-template <class T, void(* f)(vw&, multi_ex&)>
+template <void(* f)(vw&, multi_ex&)>
 void dispatch_multi_ex(vw& all, multi_ex& ec_seq)
 {
   f(all, ec_seq);               // call learn or predict
   VW::finish_example(all, ec_seq);  // clean up 
 }
 
-template <class T, void(* f)(vw&, multi_ex&)>
+template <void(* f)(vw&, multi_ex&)>
 void dispatch_multi_ex(vw& all, example* ec, multi_ex& ec_seq)
 {
   if (complete_multi_ex(ec, ec_seq, all)) {
-     dispatch_multi_ex<T,f>(all, ec_seq);
+     dispatch_multi_ex<f>(all, ec_seq);
   }
 }
 
-template <class T, void(*f)(T, multi_ex&)>
+template <void(*f)(vw&, multi_ex&)>
+void on_new_partial_ex(example* ec, multi_ex& ec_seq, vw& all)
+{
+  if (ec != nullptr) {
+    if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
+      dispatch_multi_ex<f>(all, ec, ec_seq);
+    else if (ec->end_pass)
+      dispatch_end_pass(all, ec);
+    else if (is_save_cmd(ec))
+      save(all, ec);
+    else
+      dispatch_multi_ex<f>(all, ec, ec_seq);
+  }
+  else {
+    if (ec_seq.size() > 0)
+      dispatch_multi_ex<f>(all, ec_seq);
+  }
+}
+
+template <void(*f)(vw&, multi_ex&)>
 void multi_ex_generic_driver(vw& all)
 {
   multi_ex ec_seq = v_init<example*>();
   example* ec = nullptr;
   while (all.early_terminate == false) {
-    if ((ec = VW::get_example(all.p)) != nullptr) {
-      if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
-        dispatch_multi_ex<T,f>(all, ec, ec_seq);
-      else if (ec->end_pass)
-        dispatch_end_pass(all, ec);
-      else if (is_save_cmd(ec))
-        save(all, ec);
-      else 
-        dispatch_multi_ex<T, f>(all, ec, ec_seq);
-    }
-    else {
-      if (ec_seq.size() > 0)
-        dispatch_multi_ex<T,f>(all, ec_seq);
-      break;
-    }
+    ec = VW::get_example(all.p);
+    on_new_partial_ex<f>(ec,ec_seq,all);
+    if (ec == nullptr) break;
   }
 
   if (all.early_terminate) //drain any extra examples from parser.
@@ -197,7 +204,7 @@ void generic_driver(vector<vw*> alls)
 void generic_driver(vw& all)
 {
   if(all.l->multiline_learn())
-    multi_ex_generic_driver<vw&, process_multi_ex>(all);
+    multi_ex_generic_driver<process_multi_ex>(all);
   else
     generic_driver<vw&, process_example>(all, all);
 
@@ -205,14 +212,28 @@ void generic_driver(vw& all)
 
 void dispatch(vw& all, v_array<example*> examples)
 {
-  all.p->end_parsed_examples+=examples.size();//divergence: lock & signal
+  all.p->end_parsed_examples+=examples.size(); //divergence: lock & signal
   for (size_t i = 0; i < examples.size(); ++i)
     process_example(all, examples[i]);
 }
 
 void generic_driver_onethread(vw& all)
 {
-  parse_dispatch<dispatch>(all);
+  if (all.l->multiline_learn())
+  {
+    auto ctxt = v_init<example*>();
+    auto multi_ex_fptr = [&ctxt](vw& all, v_array<example*> examples)
+    {
+      all.p->end_parsed_examples += examples.size(); //divergence: lock & signal
+      for (size_t i = 0; i < examples.size(); ++i)
+        on_new_partial_ex<process_multi_ex>(examples[i],ctxt,all);
+    };
+
+    parse_dispatch(all, multi_ex_fptr);
+  }
+  else
+    parse_dispatch(all,dispatch);
+
   all.l->end_examples();
 }
 }
