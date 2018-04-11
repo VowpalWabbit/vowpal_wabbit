@@ -2,7 +2,7 @@
 
 using dispatch_fptr = std::function<void(vw&, v_array<example*>&)>;
 
-void parse_dispatch(vw& all, dispatch_fptr dispatch)
+inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
   v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
