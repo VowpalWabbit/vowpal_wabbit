@@ -230,6 +230,10 @@ void generic_driver_onethread(vw& all)
     };
 
     parse_dispatch(all, multi_ex_fptr);
+
+    // flush accumulated examples if there is no newline
+    // at the end of the file
+    on_new_partial_ex<process_multi_ex>(nullptr,ctxt,all);
   }
   else
     parse_dispatch(all,dispatch);
