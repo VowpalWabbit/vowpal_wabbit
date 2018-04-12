@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.stats as stats
 from itertools import compress
 from math import sqrt
+import argparse
 
 # this part is changable
 #alg1 = 'epsilon'
@@ -26,6 +27,7 @@ def sum_files(result_path):
 
 def parse_sum_file(sum_filename):
 	f = open(sum_filename, 'r')
+	#f.seek(0, 0)
 	table = pd.read_table(f, sep=' ',lineterminator='\n')
 
 	return table
@@ -33,6 +35,7 @@ def parse_sum_file(sum_filename):
 def get_z_scores(errors_1, errors_2, sizes):
 	z_scores = []
 	for i in range(len(errors_1)):
+		#print i
 		z_scores.append( z_score(errors_1[i], errors_2[i], sizes[i]) )
 	return z_scores
 
@@ -73,32 +76,53 @@ def plot_comparison(errors_1, errors_2, sizes, title, filename):
 
 
 if __name__ == '__main__':
-	#results_path = '../../../lambdas/'
-	#results_path = '../../../warm_start_frac=0.1/'
-	#results_path = '../../../cover_vs_epsilon/'
-	#results_path = '../../../corrupt_supervised_type1_0.3/'
-	#results_path = '../../../expt_0403/corrupt_supervised_type2_0.3/'
-	#results_path = '../../../expt_0403/supervised_validation/'
-	#results_path = '../../../weighting_schemes/'
-	#results_path = '../../../central_lambda/'
-	#results_path = '../../../central_lambda_naive/'
-	#results_path = '../../../central_lambda_zeroone/'
-	#results_path = '../../../type2_0.3/'
-	#results_path = '../../../type1_0.3/'
-	#results_path = '../../../type2_1/'
-	#results_path = '../../../type2_0.65/'
-	results_path = '../../../type2_0.3/'
+	parser = argparse.ArgumentParser(description='result summary')
+	parser.add_argument('--results_dir', default='../../../figs/')
+	args = parser.parse_args()
+	results_dir = args.results_dir
 
-	dss = sum_files(results_path)
+	#results_dir = '../../../lambdas/'
+	#results_dir = '../../../warm_start_frac=0.1/'
+	#results_dir = '../../../cover_vs_epsilon/'
+	#results_dir = '../../../corrupt_supervised_type1_0.3/'
+	#results_dir = '../../../expt_0403/corrupt_supervised_type2_0.3/'
+	#results_dir = '../../../expt_0403/supervised_validation/'
+	#results_dir = '../../../weighting_schemes/'
+	#results_dir = '../../../central_lambda/'
+	#results_dir = '../../../central_lambda_naive/'
+	#results_dir = '../../../central_lambda_zeroone/'
+	#results_dir = '../../../type2_0.3/'
+	#results_dir = '../../../type1_0.3/'
+	#results_dir = '../../../type2_1/'
+	#results_dir = '../../../type2_0.65/'
+	#results_dir = '../../../type2_0.3/'
+
+	dss = sum_files(results_dir)
+
+	#print dss[160]
 
 	all_results = None
+
 	for i in range(len(dss)):
-		result = parse_sum_file(results_path + dss[i])
+		print 'dataset name: ', dss[i]
+		result = parse_sum_file(results_dir + dss[i])
+
 		if (i == 0):
 			all_results = result
 		else:
 			all_results = all_results.append(result)
+
+
+		#if i >= 331 and i <= 340:
+		#	print 'result:', result
+		#	print 'all_results:', all_results
+
 	print all_results
+
+
+
+	#result = parse_sum_file(results_dir + '400of600.sum')
+	#print result
 
 	#choices_choices_lambda = sorted(all_results['choices_lambda'].unique())
 	#grouped = all_results.groupby('choices_lambda')
@@ -122,8 +146,8 @@ if __name__ == '__main__':
 	print results_alg1
 
 	# compare combined w/ bandit
-	plot_comparison(results_alg1, results_bandit, dataset_sizes, alg1 + ' vs ' + 'bandit only', results_path + alg1 + ' vs ' + 'bandit only' + '.png')
-	plot_comparison(results_alg1, results_supervised, dataset_sizes, alg1 + ' vs ' + 'supervised only', results_path + alg1 + ' vs ' + 'supervised only' + '.png')
-	plot_comparison(results_alg2, results_bandit, dataset_sizes, alg2 + ' vs ' + 'bandit only', results_path + alg2 + ' vs ' + 'bandit only' + '.png')
-	plot_comparison(results_alg2, results_supervised, dataset_sizes, alg2 + ' vs ' + 'supervised only', results_path + alg2 + ' vs ' + 'supervised only' + '.png')
-	plot_comparison(results_alg1, results_alg2, dataset_sizes, alg1 + ' vs ' + alg2, results_path+alg1 + ' vs ' + alg2 + '.png')
+	plot_comparison(results_alg1, results_bandit, dataset_sizes, alg1 + ' vs ' + 'bandit only', results_dir + alg1 + ' vs ' + 'bandit only' + '.png')
+	plot_comparison(results_alg1, results_supervised, dataset_sizes, alg1 + ' vs ' + 'supervised only', results_dir + alg1 + ' vs ' + 'supervised only' + '.png')
+	plot_comparison(results_alg2, results_bandit, dataset_sizes, alg2 + ' vs ' + 'bandit only', results_dir + alg2 + ' vs ' + 'bandit only' + '.png')
+	plot_comparison(results_alg2, results_supervised, dataset_sizes, alg2 + ' vs ' + 'supervised only', results_dir + alg2 + ' vs ' + 'supervised only' + '.png')
+	plot_comparison(results_alg1, results_alg2, dataset_sizes, alg1 + ' vs ' + alg2, results_dir+alg1 + ' vs ' + alg2 + '.png')

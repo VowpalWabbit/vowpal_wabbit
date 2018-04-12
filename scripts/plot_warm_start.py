@@ -125,7 +125,7 @@ def plot_errors(mod):
 def gen_comparison_graph(mod):
 
 	mod.num_lines = get_num_lines(mod.ds_path+mod.dataset)
-	mod.warm_start = int(math.floor(mod.warm_start_frac * mod.num_lines))
+	mod.warm_start = int(math.ceil(mod.warm_start_frac * mod.num_lines))
 	mod.bandit = mod.num_lines - mod.warm_start
 	mod.progress = int(math.ceil(float(mod.bandit) / float(mod.num_checkpoints)))
 	mod.num_classes = get_num_classes(mod.dataset)
