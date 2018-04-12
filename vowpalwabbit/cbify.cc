@@ -102,6 +102,7 @@ struct cbify
 
 float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t bandit_period, size_t dim)
 {
+	/*
 	if ( (epsilon / num_actions) * bandit_period >= dim )
 		return 1.0;
 	else
@@ -117,6 +118,8 @@ float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period
 		return numer / denom;
 
 	}
+	*/
+	return epsilon / (num_actions + epsilon);
 }
 
 void setup_lambdas(cbify& data, example& ec)

@@ -150,7 +150,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 			base.predict(ec, i);
 			uint32_t chosen = ec.pred.multiclass-1;
 			probs[chosen].score += prob;
-		}		
+		}
 	}
   ec.pred.a_s = probs;
 
@@ -164,7 +164,7 @@ float find_min(v_array<float> arr)
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
 		if (arr[i] < min_val)
-		{	
+		{
 			min_val = arr[i];
 			argmin = i;
 		}
@@ -239,7 +239,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
   data.cb_label = ec.l.cb;
 
   ec.l.cs = data.cs_label;
-	
+
 
 	// learn
 	if (is_learn)
@@ -250,7 +250,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 		//data.cb_label = ec.l.cb;
 		//data.cbcs.known_cost = get_observed_cost(data.cb_label);
 		//gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
-		
+
 		ec.l.cb = data.cb_label;
     base.learn(ec);
 
@@ -268,14 +268,14 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
 
-	
+
 		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
 		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
 
 		for (size_t i = 0; i < data.lambda_size; i++)
 		{
-				//learn with lambda/(1-lambda) learning rate		
+				//learn with lambda/(1-lambda) learning rate
 				ec.weight = data.lambdas[i] / (1-data.lambdas[i]);
 				base.learn(ec, i);
 
@@ -284,7 +284,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 
 
 				//update the cumulative costs of the lambdas
-				
+
 				data.cost_lambda[i] = data.cost_lambda[i] + data.cs_label.costs[chosen].x;
 				cout<<"lambda "<<data.lambdas[i]<<", cumulative cost = "<<data.cost_lambda[i]<<endl;
 		}
@@ -302,7 +302,7 @@ void predict_or_learn_lambda(cb_explore& data, base_learner& base, example& ec)
 	//cout<<"lambda = " <<data.lambdas[argmin]<<endl;
 	base.predict(ec, argmin);
 	uint32_t chosen = ec.pred.multiclass-1;
-	probs[chosen].score = probs[chosen].score + (1 - data.epsilon);	
+	probs[chosen].score = probs[chosen].score + (1 - data.epsilon);
 	//cout<<"chosen = "<<chosen<<endl;
 
 
@@ -437,8 +437,8 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
     for(uint32_t i = 0; i < num_actions; i++)
       probabilities[i] = 0;
 
-		for (size_t i = 0; i < data.cbcs.num_actions; i++)
-			cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
+		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
+		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
     ec.l.cs = data.second_cs_label;
     //2. Update functions
@@ -612,9 +612,9 @@ base_learner* cb_explore_setup(vw& all)
 			{
 				data.lambdas.push_back(pow(0.5f, floor(i/2) + 1));
 				//cout<<pow(0.5f, floor(i/2) + 1)<<endl;
-			}			
+			}
 			else
-			{	
+			{
 				data.lambdas.push_back(1 - pow(0.5f, floor(i/2) + 2));
 				//cout<<1 - pow(0.5f, floor(i/2) + 2)<<endl;
 			}
@@ -670,4 +670,3 @@ base_learner* cb_explore_setup(vw& all)
   l->set_finish_example(finish_example);
   return make_base(*l);
 }
-
