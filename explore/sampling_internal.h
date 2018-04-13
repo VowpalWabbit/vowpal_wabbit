@@ -84,7 +84,7 @@ namespace exploration
   void sample_from_pdf(uint64_t seed,
       InputPdfIt pdf_begin, InputPdfIt pdf_end, std::input_iterator_tag pdf_category,
       InputScoreIt scores_begin, InputScoreIt scores_end, std::random_access_iterator_tag scores_category,
-      OutputIt ranking_begin, OutputIt ranking_end, std::output_iterator_tag ranking_category)
+      OutputIt ranking_begin, OutputIt ranking_end, std::random_access_iterator_tag ranking_category)
   {
     uint32_t chosen_action = sample_from_pdf(seed, pdf_begin, pdf_end);
 
