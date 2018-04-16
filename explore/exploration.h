@@ -11,6 +11,9 @@ namespace exploration
   template<typename It>
   void generate_epsilon_greedy(float epsilon, uint32_t top_action, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
+    if (pdf_last < pdf_first)
+      return;
+
     size_t num_actions = pdf_last - pdf_first;
     if (num_actions == 0)
       return;
@@ -20,7 +23,6 @@ namespace exploration
 
     float prob = epsilon / (float)num_actions;
 
-    // size & initialize vector to prob
     for (It d = pdf_first; d != pdf_last; ++d)
       *d = prob;
 
@@ -37,15 +39,18 @@ namespace exploration
   template<typename InputIt, typename OutputIt>
   void generate_softmax(float lambda, InputIt scores_begin, InputIt scores_last, std::input_iterator_tag scores_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
+    if (scores_last < scores_begin || pdf_last < pdf_first)
+      return;
+
     size_t num_actions_scores = scores_last - scores_begin;
     size_t num_actions_pdf = pdf_last - pdf_first;
 
-	if (num_actions_scores != num_actions_pdf)
-	{
-		// fallback to the minimum
-		scores_last = scores_begin + std::min(num_actions_scores, num_actions_pdf);
-		pdf_last = pdf_first + std::min(num_actions_scores, num_actions_pdf);
-	}
+    if (num_actions_scores != num_actions_pdf)
+    {
+      // fallback to the minimum
+      scores_last = scores_begin + std::min(num_actions_scores, num_actions_pdf);
+      pdf_last = pdf_first + std::min(num_actions_scores, num_actions_pdf);
+    }
 
     if (num_actions_scores == 0)
       return;
@@ -79,7 +84,7 @@ namespace exploration
   template<typename InputIt, typename OutputIt>
   void generate_bag(InputIt top_actions_begin, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-    if (pdf_first == pdf_last)
+    if (pdf_first == pdf_last || pdf_last < pdf_first)
       return;
 
     uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
@@ -104,14 +109,11 @@ namespace exploration
     generate_bag(top_actions_begin, top_actions_last, top_actions_category(), pdf_first, pdf_last, pdf_category());
   }
 
-  // Note: must be inline to compile on Windows VS2017
   template<typename It>
   void enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
 	  size_t num_actions = pdf_last - pdf_first;
 
-    //input: a probability distribution
-    //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
     if (min_prob > 0.999) // uniform exploration
     {
       size_t support_size = num_actions;
@@ -132,6 +134,7 @@ namespace exploration
     min_prob /= num_actions;
     float touched_mass = 0.;
     float untouched_mass = 0.;
+    uint16_t num_actions_touched = 0;
 
 	  for (It d = pdf_first; d != pdf_last; ++d)
     {
@@ -140,6 +143,7 @@ namespace exploration
       {
         touched_mass += min_prob;
         prob = min_prob;
+        ++num_actions_touched;
       }
       else
         untouched_mass += prob;
@@ -147,14 +151,23 @@ namespace exploration
 
     if (touched_mass > 0.)
     {
-	#ifndef EXPLORE_NOEXCEPT
       if (touched_mass > 0.999)
-        throw std::invalid_argument("Cannot safety this distribution");
-  #endif
-      float ratio = (1.f - touched_mass) / untouched_mass;
-	    for (It d = pdf_first; d != pdf_last; ++d)
-        if (*d > min_prob)
-          *d *= ratio;
+      {
+        min_prob = (1.f - untouched_mass) / (float)num_actions_touched;
+        for (It d = pdf_first; d != pdf_last; ++d)
+        {
+          auto& prob = *d;
+          if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= min_prob)
+            prob = min_prob;
+        }
+      }
+      else
+      {
+        float ratio = (1.f - touched_mass) / untouched_mass;
+        for (It d = pdf_first; d != pdf_last; ++d)
+          if (*d > min_prob)
+            *d *= ratio;
+      }
     }
   }
 

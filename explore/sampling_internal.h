@@ -33,30 +33,17 @@ namespace exploration
     float total = 0.f;
     for (InputIt pdf = pdf_first; pdf != pdf_last; ++pdf)
     {
-#ifdef EXPLORE_NOEXCEPT
-      *pdf = 0;
-#else
       if (*pdf < 0)
-        throw std::invalid_argument("Probabilities must be non-negative.");
-#endif
+        *pdf = 0;
       total += *pdf;
     }
     if (total == 0)
     {
-#ifdef EXPLORE_NOEXCEPT
       // assume the first is the best
       *pdf_first = 1.f;
       total = 1.f;
-#else
-      throw std::invalid_argument("At least one score must be positive.");
-#endif
     }
     
-#ifndef EXPLORE_NOEXCEPT
-    if (total < (1.f-1e-3f))
-      throw std::invalid_argument("Total must some almost to one (1-1e-3f) positive.");
-#endif
-
     float draw = total * uniform_random_merand48(seed);
     if (draw > total) //make very sure that draw can not be greater than total.
       draw = total;

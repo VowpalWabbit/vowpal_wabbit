@@ -40,6 +40,9 @@ public:
 	bool operator!=(const score_iterator& other) const
 	{ return _p != other._p; }
 
+	bool operator<(const score_iterator& other) const
+	{ return _p < other._p; }
+
 	size_t operator-(const score_iterator& other) const
 	{ return _p - other._p; }
 
