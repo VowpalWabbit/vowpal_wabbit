@@ -48,8 +48,8 @@ namespace exploration
     if (num_actions_scores != num_actions_pdf)
     {
       // fallback to the minimum
-      scores_last = scores_begin + min(num_actions_scores, num_actions_pdf);
-      pdf_last = pdf_first + min(num_actions_scores, num_actions_pdf);
+      scores_last = scores_begin + ((std::min)(num_actions_scores, num_actions_pdf));
+      pdf_last = pdf_first + ((std::min)(num_actions_scores, num_actions_pdf));
     }
 
     if (num_actions_scores == 0)
