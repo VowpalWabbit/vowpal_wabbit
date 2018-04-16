@@ -311,8 +311,8 @@ public:
                                                         prediction_type::prediction_type_t pred_type)
    { auto ret = &learner<T,E>::init_learner(
                                              dat.get(), base, 
-                                             (learner<T, E>::fn)learn, 
-                                             (learner<T, E>::fn)predict, 
+                                             (typename learner<T, E>::fn)learn, 
+                                             (typename learner<T, E>::fn)predict, 
                                              ws, pred_type);
      
     dat.release();
@@ -327,8 +327,8 @@ public:
                                                                   size_t params_per_weight)
   { auto ret = &learner<T, E>::init_learner(
                                               dat.get(), nullptr, 
-                                              (learner<T, E>::fn)learn,
-                                              (learner<T, E>::fn)predict,
+                                              (typename learner<T, E>::fn)learn,
+                                              (typename learner<T, E>::fn)predict,
                                               params_per_weight, prediction_type::scalar);
     
     dat.release();
@@ -342,8 +342,8 @@ public:
                                                                   size_t params_per_weight)
   { auto ret = &learner<T, E>::init_learner(
                                               dat.get(), nullptr, 
-                                              (learner<T, E>::fn) predict,
-                                              (learner<T, E>::fn) predict,
+                                              (typename learner<T, E>::fn) predict,
+                                              (typename learner<T, E>::fn) predict,
                                               params_per_weight, prediction_type::scalar);
     
     dat.release();
@@ -356,8 +356,8 @@ public:
                                                                   size_t params_per_weight)
   { return learner<T, E>::init_learner(
                                           nullptr, nullptr, 
-                                          (learner<T, E>::fn) predict, 
-                                          (learner<T, E>::fn) predict, 
+                                          (typename learner<T, E>::fn) predict, 
+                                          (typename learner<T, E>::fn) predict, 
                                           params_per_weight, prediction_type::scalar);
   }
 
@@ -369,8 +369,8 @@ public:
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), nullptr, 
-                                            (learner<T, E>::fn) learn,
-                                            (learner<T, E>::fn) predict,
+                                            (typename learner<T, E>::fn) learn,
+                                            (typename learner<T, E>::fn) predict,
                                             params_per_weight, pred_type);
     
     dat.release();
@@ -386,8 +386,8 @@ public:
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
                                           dat.get(), nullptr, 
-                                          (learner<T, E>::fn) learn, 
-                                          (learner<T, E>::fn) predict, 
+                                          (typename learner<T, E>::fn) learn, 
+                                          (typename learner<T, E>::fn) predict, 
                                           params_per_weight, pred_type);
     dat.release();
     return *ret;
@@ -401,8 +401,8 @@ public:
                                                                   size_t ws)
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), base, 
-                                            (learner<T, E>::fn) learn, 
-                                            (learner<T, E>::fn) predict, 
+                                            (typename learner<T, E>::fn) learn, 
+                                            (typename learner<T, E>::fn) predict, 
                                             ws, base->pred_type);
 
     dat.release();
@@ -416,8 +416,8 @@ public:
                                                                   void(*predict)(T&, L&, E&))
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), base, 
-                                            (learner<T, E>::fn) learn,
-                                            (learner<T, E>::fn) predict,
+                                            (typename learner<T, E>::fn) learn,
+                                            (typename learner<T, E>::fn) predict,
                                             1, base->pred_type);
 
     dat.release();
@@ -431,8 +431,8 @@ public:
                                                                   void(*predict)(T&, L&, E&))
   { return learner<T, E>::init_learner(
                                           nullptr, base, 
-                                          (learner<T, E>::fn) learn,
-                                          (learner<T, E>::fn) predict,
+                                          (typename learner<T, E>::fn) learn,
+                                          (typename learner<T, E>::fn) predict,
                                           1, base->pred_type);
   }
 
@@ -445,8 +445,8 @@ public:
                                                                   prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
   { learner<T,E>& l = learner<T, E>::init_learner(
                                           dat.get(),base,
-                                          (learner<T, E>::fn) learn,
-                                          (learner<T, E>::fn) predict,
+                                          (typename learner<T, E>::fn) learn,
+                                          (typename learner<T, E>::fn) predict,
                                           ws,pred_type);
     
     dat.release();
