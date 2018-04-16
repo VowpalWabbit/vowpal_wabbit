@@ -16,11 +16,7 @@ namespace exploration
       return;
 
 	if (top_action >= num_actions)
-	#ifdef EXPLORE_NOEXCEPT
   	  top_action = (uint32_t)num_actions - 1;
-  #else
-      throw std::out_of_range("top_action must be smaller than num_actions");
-  #endif
 
     float prob = epsilon / (float)num_actions;
 
@@ -46,13 +42,9 @@ namespace exploration
 
 	if (num_actions_scores != num_actions_pdf)
 	{
-	#ifdef EXPLORE_NOEXCEPT
 		// fallback to the minimum
 		scores_last = scores_begin + std::min(num_actions_scores, num_actions_pdf);
 		pdf_last = pdf_first + std::min(num_actions_scores, num_actions_pdf);
-  #else    
-		throw std::invalid_argument("length of scores must be equal to length of pdf");
-  #endif
 	}
 
     if (num_actions_scores == 0)
@@ -91,15 +83,11 @@ namespace exploration
       return;
 
     uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
-	if (num_models == 0)
-	{
-	#ifdef EXPLORE_NOEXCEPT
-		*pdf_first = 1;
-		return;
-  #else
-		throw std::out_of_range("must supply at least one top_action from a model");
-  #endif
-	}
+    if (num_models == 0)
+    {
+      *pdf_first = 1;
+      return;
+    }
 
     // divide late to improve numeric stability
     InputIt t_a = top_actions_begin;
@@ -120,7 +108,7 @@ namespace exploration
   template<typename It>
   void enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-	size_t num_actions = pdf_last - pdf_first;
+	  size_t num_actions = pdf_last - pdf_first;
 
     //input: a probability distribution
     //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
@@ -145,7 +133,7 @@ namespace exploration
     float touched_mass = 0.;
     float untouched_mass = 0.;
 
-	for (It d = pdf_first; d != pdf_last; ++d)
+	  for (It d = pdf_first; d != pdf_last; ++d)
     {
       auto& prob = *d;
       if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= min_prob)
@@ -164,7 +152,7 @@ namespace exploration
         throw std::invalid_argument("Cannot safety this distribution");
   #endif
       float ratio = (1.f - touched_mass) / untouched_mass;
-	  for (It d = pdf_first; d != pdf_last; ++d)
+	    for (It d = pdf_first; d != pdf_last; ++d)
         if (*d > min_prob)
           *d *= ratio;
     }
