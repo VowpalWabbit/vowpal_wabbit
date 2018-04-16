@@ -86,7 +86,8 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 
   // pre-allocate pdf
   probs.resize(data.cbcs.num_actions);
-  probs.end() = probs.begin() + data.cbcs.num_actions;
+  for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
+    probs.push_back({i,0});
   generate_epsilon_greedy(data.epsilon, ec.pred.multiclass-1, begin_scores(probs), end_scores(probs));
 
   ec.pred.a_s = probs;
