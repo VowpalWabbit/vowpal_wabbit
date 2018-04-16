@@ -179,7 +179,7 @@ void output_example(vw& all, bs& d, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(bs& d, base_learner& base, example& ec)
+void predict_or_learn(bs& d, single_learner& base, example& ec)
 {
   vw& all = *d.all;
   bool shouldOutput = all.raw_prediction > 0;
@@ -265,7 +265,7 @@ base_learner* bs_setup(arguments& arg)
   data->pred_vec->reserve(data->B);
   data->all = arg.all;
 
-  learner<bs>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
+  learner<bs,example>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
                                 predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

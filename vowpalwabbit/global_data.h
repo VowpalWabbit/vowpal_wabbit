@@ -437,8 +437,8 @@ struct vw
   AllReduce* all_reduce;
 
   LEARNER::base_learner* l;//the top level learner
-  LEARNER::base_learner* scorer;//a scoring function
-  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.
+  LEARNER::single_learner* scorer;//a scoring function
+  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example& );
   void learn(multi_ex&);

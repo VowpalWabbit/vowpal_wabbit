@@ -40,7 +40,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
+void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 {
   base.predict(ec);
 
@@ -69,7 +69,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, base_learner& base, example& ec)
+void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -151,7 +151,7 @@ base_learner* active_setup(arguments& arg)
   base_learner* base = setup_base(arg);
 
   //Create new learner
-  learner<active>* l;
+  learner<active,example>* l;
   if (arg.vm.count("simulation"))
     l = &init_learner(data, base, predict_or_learn_simulation<true>,
                       predict_or_learn_simulation<false>);

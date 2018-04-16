@@ -7,7 +7,7 @@ using namespace std;
 struct confidence { vw* all;};
 
 template <bool is_learn, bool is_confidence_after_training>
-void predict_or_learn_with_confidence(confidence& c, base_learner& base, example& ec)
+void predict_or_learn_with_confidence(confidence& c, single_learner& base, example& ec)
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
@@ -84,8 +84,8 @@ base_learner* confidence_setup(arguments& arg)
   auto data = scoped_calloc_or_throw<confidence>();
   data->all=arg.all;
 
-  void (*learn_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
-  void (*predict_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
+  void (*learn_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
+  void (*predict_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
 
   if(arg.vm.count("confidence_after_training"))
   {
@@ -99,7 +99,7 @@ base_learner* confidence_setup(arguments& arg)
   }
 
   //Create new learner
-  learner<confidence>& l = init_learner(data, setup_base(arg), learn_with_confidence_ptr, predict_with_confidence_ptr);
+  learner<confidence,example>& l = init_learner(data, setup_base(arg), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
 

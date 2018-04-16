@@ -3,7 +3,7 @@
 
 using namespace std;
 template <bool is_learn>
-void predict_or_learn(char&, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -32,7 +32,7 @@ LEARNER::base_learner* binary_setup(arguments& arg)
       critical("binary", "report loss as binary classification on -1,1").missing())
     return nullptr;
 
-  LEARNER::learner<char>& ret =
+  LEARNER::learner<char,example>& ret =
     LEARNER::init_learner(setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }

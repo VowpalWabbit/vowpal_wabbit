@@ -22,7 +22,7 @@ struct oaa
   size_t subsample_id; // for randomized subsampling, where do we live in the list
 };
 
-void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
+void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
@@ -60,7 +60,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
 }
 
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
-void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -243,7 +243,7 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
   }
 
   oaa* data_ptr = data.get();
-  LEARNER::learner<oaa>* l;
+  LEARNER::learner<oaa,example>* l;
   if( probabilities || scores)
   {
     arg.all->delete_prediction = delete_scalars;

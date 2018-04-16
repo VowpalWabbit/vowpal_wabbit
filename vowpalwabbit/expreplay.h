@@ -13,11 +13,11 @@ struct expreplay
   example* buf;  //the deep copies of examples (N of them)
   bool* filled;  //which of buf[] is filled
   size_t replay_count; //each time er.learn() is called, how many times do we call base.learn()? default=1 (in which case we're just permuting)
-  LEARNER::base_learner* base;
+  LEARNER::single_learner* base;
 };
 
 template<bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
 { // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
@@ -41,7 +41,7 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay&, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+void multipredict(expreplay&, LEARNER::single_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
 { base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
@@ -92,8 +92,8 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
   if (! arg.all->quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
-  er->base = setup_base(arg);
-  LEARNER::learner<expreplay>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
+  er->base = LEARNER::as_singleline(setup_base(arg));
+  LEARNER::learner<expreplay,example>* l = &init_learner(er, make_base(*er->base), predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);
 

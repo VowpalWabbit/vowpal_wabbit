@@ -400,7 +400,7 @@ float dense_dot(float* v1, v_array<float> v2, size_t n)
 }
 
 
-void predict (svm_params& params, svm_example** ec_arr, float* scores, size_t n)
+void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
 {
   svm_model* model = params.model;
   for(size_t i = 0; i < n; i++)
@@ -410,7 +410,7 @@ void predict (svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, base_learner &, example& ec)
+void predict(svm_params& params, single_learner &, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all),&ec);
   if(fec)
@@ -782,7 +782,7 @@ void train(svm_params& params)
   //params.all->opts_n_args.trace_message<<params.model->support_vec[0]->example_counter<<endl;
 }
 
-void learn(svm_params& params, base_learner&, example& ec)
+void learn(svm_params& params, single_learner&, example& ec)
 {
   flat_example* fec = flatten_sort_example(*(params.all),&ec);
   if(fec)
@@ -913,7 +913,7 @@ LEARNER::base_learner* kernel_svm_setup(arguments& arg)
 
   params->all->weights.stride_shift(0);
 
-  learner<svm_params>& l = init_learner(params, learn, predict, 1);
+  learner<svm_params,example>& l = init_learner(params, learn, predict, 1);
   l.set_save_load(save_load);
   l.set_finish(finish);
   return make_base(l);

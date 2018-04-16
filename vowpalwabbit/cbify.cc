@@ -127,7 +127,7 @@ void copy_example_to_adf(cbify& data, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(cbify& data, base_learner& base, example& ec)
+void predict_or_learn(cbify& data, single_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
@@ -160,7 +160,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
+void predict_or_learn_adf(cbify& data, single_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
@@ -253,7 +253,7 @@ base_learner* cbify_setup(arguments& arg)
   base_learner* base = setup_base(arg);
 
   arg.all->delete_prediction = nullptr;
-  learner<cbify>* l;
+  learner<cbify,example>* l;
   if (data->use_adf)
     l = &init_multiclass_learner(data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
   else

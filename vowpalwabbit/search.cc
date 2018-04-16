@@ -239,7 +239,7 @@ struct search_private
   bool active_csoaa;
   float active_csoaa_verify;
 
-  LEARNER::base_learner* base_learner;
+  LEARNER::single_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -1016,7 +1016,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 
   cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
 
-  base_learn_or_predict<false>(*priv.base_learner, &ec, policy);
+  priv.base_learner->predict(ec, policy);
 
   uint32_t act = ec.pred.multiclass;
   cdbg << "a=" << act << " from"; if (allowed_actions) { for (size_t ii=0; ii<allowed_actions_cnt; ii++) cdbg << ' ' << allowed_actions[ii]; } cdbg << endl;
@@ -1157,7 +1157,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-    base_learn_or_predict<false>(*priv.base_learner, tmp, policy);
+    priv.base_learner->predict(ecs[a], policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1328,7 +1328,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       ec.in_use = true;
       cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
-      base_learn_or_predict<true>(*priv.base_learner, &ec, learner);
+      priv.base_learner->learn(ec, learner);
       cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
@@ -1352,9 +1352,6 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
 
-      // create an example collection for 
-      multi_ex tmp = v_init<example*>();
-      vector<uint64_t> tmp_offsets;
       for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       {
         example& ec = priv.learn_ec_ref[a];
@@ -1370,25 +1367,14 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
         ec.in_use = true;
         
         // store the offset to restore it later
-        tmp_offsets.push_back(ec.ft_offset);
+        auto tmp_offset = ec.ft_offset;
         
         ec.ft_offset = priv.offset;
-
-        // create the example collection used to learn
-        tmp.push_back(&ec);
+  
+        priv.base_learner->learn(ec, learner);
 
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
-      }
-
-      // learn with the multiline example
-      base_learn_or_predict<true>(*priv.base_learner, tmp, learner);
-
-      // restore the offsets in examples
-      int i = 0;
-      for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++, i++)
-      {
-        priv.learn_ec_ref[a].ft_offset = tmp_offsets[i];
       }
     }
 
@@ -2105,7 +2091,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(search& sch, single_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     return;  // nothing to do :)
@@ -2622,7 +2608,7 @@ base_learner* setup(arguments& arg)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = setup_base(arg);
+  single_learner* base = as_singleline(setup_base(arg));
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   arg.all->p->lp = MC::mc_label;
@@ -2649,7 +2635,7 @@ base_learner* setup(arguments& arg)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search>& l = init_learner(sch, base,
+  learner<search,multi_ex>& l = init_learner(sch, make_base(*base),
                                     do_actual_learning<true>,
                                     do_actual_learning<false>,
                                     priv.total_number_of_policies * priv.num_learners);

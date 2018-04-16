@@ -28,7 +28,7 @@ struct csoaa
 };
 
 template<bool is_learn>
-inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
+inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction)
 {
   if (is_learn)
@@ -52,7 +52,7 @@ inline void inner_loop(base_learner& base, example& ec, uint32_t i, float cost,
 #define DO_MULTIPREDICT true
 
 template <bool is_learn>
-void predict_or_learn(csoaa& c, base_learner& base, example& ec)
+void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 {
   //cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
@@ -132,7 +132,7 @@ base_learner* csoaa_setup(arguments& arg)
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
-  learner<csoaa>& l = init_learner(c, setup_base(arg), predict_or_learn<true>,
+  learner<csoaa,example>& l = init_learner(c, setup_base(arg), predict_or_learn<true>,
                                    predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
   arg.all->p->lp = cs_label;
   arg.all->label_type = label_type::cs;
@@ -241,7 +241,7 @@ void unsubtract_example(example *ec)
   ec->indices.decr();
 }
 
-void make_single_prediction(ldf& data, base_learner& base, example& ec)
+void make_single_prediction(ldf& data, single_learner& base, example& ec)
 {
   COST_SENSITIVE::label ld = ec.l.cs;
   label_data simple_label;
@@ -285,7 +285,7 @@ bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
   return isTest;
 }
 
-void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K, multi_ex& ec_seq)
+void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   vector<COST_SENSITIVE::wclass*> all_costs;
@@ -341,7 +341,7 @@ void do_actual_learning_wap(ldf& data, base_learner& base, size_t start_K, multi
   }
 }
 
-void do_actual_learning_oaa(ldf& data, base_learner& base, size_t start_K, multi_ex& ec_seq)
+void do_actual_learning_oaa(ldf& data, single_learner& base, size_t start_K, multi_ex& ec_seq)
 {
   size_t K = ec_seq.size();
   float  min_cost  = FLT_MAX;
@@ -412,7 +412,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
  * 3) learn_or_predict(data) with rest
  */
 template <bool is_learn>
-void do_actual_learning(ldf& data, base_learner& base, multi_ex& ec_seq_all)
+void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 {
   if (ec_seq_all.size() == 0) return;  // nothing to do
 
@@ -841,7 +841,7 @@ base_learner* csldf_setup(arguments& arg)
     pred_type = prediction_type::multiclass;
 
   ld->read_example_this_loop = 0;
-  learner<ldf>& l = init_learner(ld, setup_base(arg), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
+  learner<ldf,multi_ex>& l = init_learner(ld, setup_base(arg), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
   l.set_end_pass(end_pass);

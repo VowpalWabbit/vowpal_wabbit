@@ -86,7 +86,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
@@ -168,7 +168,7 @@ LEARNER::base_learner* interact_setup(arguments& arg)
     cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
   data->all = arg.all;
 
-  LEARNER::learner<interact>* l;
+  LEARNER::learner<interact,example>* l;
   l = &LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);

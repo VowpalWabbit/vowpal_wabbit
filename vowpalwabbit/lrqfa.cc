@@ -26,7 +26,7 @@ cheesyrand (uint64_t x)
 inline bool example_is_test (example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
+void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
   vw& all = *lrq.all;
 
@@ -153,7 +153,7 @@ LEARNER::base_learner* lrqfa_setup(arguments& arg)
     lrq->field_id[(int)i] = fd_id++;
 
   arg.all->wpp = arg.all->wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
+  learner<LRQFAstate,example>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
 
   return make_base(l);
 }

@@ -17,7 +17,7 @@ struct cb_to_cs
 { size_t cb_type;
   uint32_t num_actions;
   COST_SENSITIVE::label pred_scores;
-  LEARNER::base_learner* scorer;
+  LEARNER::single_learner* scorer;
   float avg_loss_regressors;
   size_t nb_ex_regressors;
   float last_pred_reg;
@@ -38,7 +38,7 @@ struct cb_to_cs_adf
   //for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  LEARNER::base_learner* scorer;
+  LEARNER::single_learner* scorer;
 };
 
 CB::cb_class* get_observed_cost(CB::label& ld);
@@ -236,7 +236,7 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 }
 
 template<bool is_learn>
-void call_cs_ldf(LEARNER::base_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
+void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
                  COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
 { cb_labels.erase();
   if (prepped_cs_labels.size() < cs_labels.costs.size()+1)
@@ -245,22 +245,31 @@ void call_cs_ldf(LEARNER::base_learner& base, multi_ex& examples, v_array<CB::la
   }
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
+  // also save offsets
+  std::vector<uint64_t> offsets(examples.size());
   size_t index = 0;
-  for (example* ec : examples)
+  for (auto ec : examples)
   { cb_labels.push_back(ec->l.cb);
     prepped_cs_labels[index].costs.erase();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     ec->l.cs = prepped_cs_labels[index++];
+    offsets.push_back(ec->ft_offset);
+    ec->ft_offset = offset;
   }
 
   // 2nd: predict for each ex
   // // call base.predict for all examples
-  LEARNER::base_learn_or_predict<is_learn>(base, examples, offset, id);
+  if(is_learn)
+    base.learn(examples, (int32_t)id);
+  else
+    base.predict(examples, (int32_t)id);
 
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = array.element.
-  size_t i = 0;
-  for (example* ec : examples)
-    ec->l.cb = cb_labels[i++];
+  // and restore offsets
+  for (auto i = 0; i < offsets.size(); ++i)
+  { examples[i]->ft_offset = offsets[i];
+    examples[i]->l.cb = cb_labels[i];
+  }
 }
 }

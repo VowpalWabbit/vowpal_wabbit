@@ -39,7 +39,7 @@ bool know_all_cost_example(CB::label& ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb& data, base_learner& base, example& ec)
+void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
@@ -65,12 +65,12 @@ void predict_or_learn(cb& data, base_learner& base, example& ec)
   }
 }
 
-void predict_eval(cb&, base_learner&, example&)
+void predict_eval(cb&, single_learner&, example&)
 {
   THROW("can not use a test label for evaluation");
 }
 
-void learn_eval(cb& data, base_learner&, example& ec)
+void learn_eval(cb& data, single_learner&, example& ec)
 {
   CB_EVAL::label ld = ec.l.cb_eval;
 
@@ -187,7 +187,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.all->label_type = label_type::cb;
   }
 
-  learner<cb>* l;
+  learner<cb,example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);

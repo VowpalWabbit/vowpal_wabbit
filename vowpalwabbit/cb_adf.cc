@@ -77,26 +77,26 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   return known_cost;
 }
 
-void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_ips(examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_DR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-void learn_DM(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_DM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dm(examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
 template<bool predict>
-void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   //uint32_t action = 0;
   if (predict) //first get the prediction to return
@@ -144,7 +144,7 @@ bool test_adf_sequence(multi_ex& ec_seq)
 }
 
 template <bool is_learn>
-void do_actual_learning(cb_adf& data, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
   data.gen_cs.known_cost = get_observed_cost(ec_seq);//need to set for test case
   if (is_learn && !test_adf_sequence(ec_seq))
@@ -400,7 +400,7 @@ base_learner* cb_adf_setup(arguments& arg)
   arg.all->label_type = label_type::cb;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf>& l = init_learner(ld, base, 
+  learner<cb_adf,multi_ex>& l = init_learner(ld, base, 
     CB_ADF::do_actual_learning<true>, CB_ADF::do_actual_learning<false>, 
     problem_multiplier, prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);

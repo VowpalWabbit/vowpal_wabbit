@@ -57,7 +57,7 @@ reset_seed (LRQstate& lrq)
 }
 
 template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, base_learner& base, example& ec)
+void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 {
   vw& all = *lrq.all;
 
@@ -220,7 +220,7 @@ base_learner* lrq_setup(arguments& arg)
     arg.trace_message<<endl;
 
   arg.all->wpp = arg.all->wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>,
+  learner<LRQstate,example>& l = init_learner(lrq, setup_base(arg), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);

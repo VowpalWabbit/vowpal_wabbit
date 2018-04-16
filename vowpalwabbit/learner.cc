@@ -7,7 +7,7 @@ using namespace std;
 void dispatch_example(vw& all, example& ec)
 {
   all.learn(ec);
-  all.l->finish_example(all, ec);
+  as_singleline(all.l)->finish_example(all, ec);
 }
 
 namespace prediction_type
@@ -76,7 +76,7 @@ void process_example(vw& all, example* ec)
 void process_multi_ex(vw& all, multi_ex& ec_seq)
 {
   all.learn(ec_seq);
-  all.l->finish_example(all, ec_seq);
+  as_multiline(all.l)->finish_example(all, ec_seq);
 }
 
 bool example_is_test(example& ec, vw& all)
@@ -203,7 +203,7 @@ void generic_driver(vector<vw*> alls)
 
 void generic_driver(vw& all)
 {
-  if(all.l->multiline_learn())
+  if(all.l->is_multiline)
     multi_ex_generic_driver<process_multi_ex>(all);
   else
     generic_driver<vw&, process_example>(all, all);
@@ -219,7 +219,7 @@ void dispatch(vw& all, v_array<example*> examples)
 
 void generic_driver_onethread(vw& all)
 {
-  if (all.l->multiline_learn())
+  if (all.l->is_multiline)
   {
     auto ctxt = v_init<example*>();
     auto multi_ex_fptr = [&ctxt](vw& all, v_array<example*> examples)
@@ -240,4 +240,5 @@ void generic_driver_onethread(vw& all)
 
   all.l->end_examples();
 }
+
 }

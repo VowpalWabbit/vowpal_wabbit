@@ -6,8 +6,7 @@ license as described in the file LICENSE.
 #pragma once
 
 namespace LEARNER
-{ template<class T> struct learner;
-typedef learner<char> base_learner;
+{ template<class T, class E> struct learner;
 }
 
 LEARNER::base_learner* cb_explore_setup(arguments& arg);

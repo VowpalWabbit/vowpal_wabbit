@@ -72,7 +72,7 @@ void value_policy(mwt& c, float val, uint64_t index)//estimate the value of a si
 }
 
 template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, base_learner& base, example& ec)
+void predict_or_learn(mwt& c, single_learner& base, example& ec)
 {
   c.observation = get_observed_cost(ec.l.cb);
 
@@ -273,7 +273,7 @@ base_learner* mwt_setup(arguments& arg)
     }
   }
 
-  learner<mwt>* l;
+  learner<mwt,example>* l;
   if (c->learn)
     if (exclude_eval)
       l = &init_learner(c, setup_base(arg), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);

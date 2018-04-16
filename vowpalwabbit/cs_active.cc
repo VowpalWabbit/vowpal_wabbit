@@ -80,7 +80,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template<bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float cost,
+inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i-1);
@@ -133,7 +133,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
   add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
+inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6;//1e-20;
 
@@ -160,7 +160,7 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
+void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
   //cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
@@ -342,7 +342,7 @@ base_learner* cs_active_setup(arguments& arg)
   for (uint32_t i=0; i<data->num_classes+1; i++)
     data->examples_by_queries.push_back(0);
 
-  learner<cs_active>& l =
+  learner<cs_active,example>& l =
     (arg.vm.count("simulation") > 0)
     ? init_learner(data, setup_base(arg), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
     : init_learner(data, setup_base(arg), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);

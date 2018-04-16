@@ -25,7 +25,7 @@ struct cb_explore
   COST_SENSITIVE::label cs_label;
   COST_SENSITIVE::label second_cs_label;
 
-  base_learner* cs;
+  learner<cb_explore,example>* cs;
 
   size_t tau;
   float epsilon;
@@ -39,7 +39,7 @@ struct cb_explore
 
 
 template <bool is_learn>
-void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
+void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
 {
   //Explore tau times, then act according to optimal.
   v_array<action_score> probs = ec.pred.a_s;
@@ -69,7 +69,7 @@ void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
+void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec)
 {
   //Explore uniform random an epsilon fraction of the time.
   v_array<action_score> probs = ec.pred.a_s;
@@ -90,7 +90,7 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
+void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   //Randomize over predictions from a base set of predictors
   v_array<action_score> probs = ec.pred.a_s;
@@ -158,7 +158,7 @@ void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
   }
 }
 
-void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, v_array<action_score>& probs)
+void get_cover_probabilities(cb_explore& data, single_learner& base, example& ec, v_array<action_score>& probs)
 {
   float additive_probability = 1.f / (float)data.cover_size;
   data.preds.erase();
@@ -187,7 +187,7 @@ void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, 
 }
 
 template <bool is_learn>
-void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
+void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
 {
   //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
@@ -353,10 +353,10 @@ base_learner* cb_explore_setup(arguments& arg)
   base_learner* base = setup_base(arg);
   data->cbcs.scorer = arg.all->scorer;
 
-  learner<cb_explore>* l;
+  learner<cb_explore,example>* l;
   if (arg.vm.count("cover"))
   {
-    data->cs = arg.all->cost_sensitive;
+    data->cs = decltype(data->cs)(arg.all->cost_sensitive);
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin()+num_actions;
     data->cover_probs = v_init<float>();

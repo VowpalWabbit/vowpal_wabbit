@@ -127,7 +127,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
   clear_seq_and_finish_examples(all, ec_seq);
 }
 
-template <bool is_learn> void do_actual_learning(explore_eval& data, base_learner& base, multi_ex& ec_seq)
+template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
 {
   example* label_example=CB_EXPLORE_ADF::test_adf_sequence(ec_seq);
 
@@ -136,7 +136,7 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, base_learne
     data.action_label = label_example->l.cb;
     label_example->l.cb = data.empty_label;
   }
-  base_learn_or_predict<false>(base, ec_seq, data.offset);
+  multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)	//restore label
     label_example->l.cb = data.action_label;
@@ -175,12 +175,12 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, base_learne
       }
       ec_found->l.cb.costs[0].probability = action_probability;
 
-      base_learn_or_predict<true>(base, ec_seq, data.offset);
+      multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
       if (threshold > 1)
       {
         float inv_threshold = 1.f / threshold;
-        for (example*& ec : ec_seq)
+        for (auto& ec : ec_seq)
           ec->weight *= inv_threshold;
       }
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
@@ -217,7 +217,7 @@ base_learner* explore_eval_setup(arguments& arg)
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  learner<explore_eval>& l = init_learner(data, base, 
+  learner<explore_eval,multi_ex>& l = init_learner(data, base, 
     do_actual_learning<true>, do_actual_learning<false>, 
     1, prediction_type::action_probs);
 

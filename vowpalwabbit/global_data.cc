@@ -141,28 +141,28 @@ void noop_mm(shared_data*, float) {}
 void vw::learn(example& ec)
 {
   if (ec.test_only || !training){
-    if (!l->singleline_predict())
+    if (l->is_multiline)
       THROW("This predict function does not support single examples.");
-    l->predict(ec);
+    LEARNER::as_singleline(l)->predict(ec);
   }
   else{
-    if (!l->singleline_learn())
+    if (l->is_multiline)
       THROW("This learn function does not support single examples.");
-    l->learn(ec);
+    LEARNER::as_singleline(l)->learn(ec);
   }
 }
 
 void vw::learn(multi_ex& ec)
 {
   if (!training) {
-    if (!l->multiline_predict())
+    if (!l->is_multiline)
       THROW("This predict function does not support example collection.");
-    l->predict(ec);
+    LEARNER::as_multiline(l)->predict(ec);
   }
   else {
-    if (!l->multiline_learn())
+    if (!l->is_multiline)
       THROW("This learn function does not support example collection.");
-    l->learn(ec);
+    LEARNER::as_multiline(l)->learn(ec);
   }
 }
 

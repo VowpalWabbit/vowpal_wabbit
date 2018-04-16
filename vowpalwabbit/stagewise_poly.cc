@@ -500,7 +500,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   }
 }
 
-void predict(stagewise_poly &poly, base_learner &base, example &ec)
+void predict(stagewise_poly &poly, single_learner &base, example &ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -510,7 +510,7 @@ void predict(stagewise_poly &poly, base_learner &base, example &ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly &poly, base_learner &base, example &ec)
+void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
   bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
@@ -706,7 +706,7 @@ base_learner *stagewise_poly_setup(arguments& arg)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly>& l = init_learner(poly, setup_base(arg), learn, predict);
+  learner<stagewise_poly,example>& l = init_learner(poly, setup_base(arg), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

@@ -46,7 +46,7 @@ struct cb_explore_adf
 
   bool need_to_clear;
   vw* all;
-  LEARNER::base_learner* cs_ldf_learner;
+  LEARNER::multi_learner* cs_ldf_learner;
 
   GEN_CS::cb_to_cs_adf gen_cs;
   COST_SENSITIVE::label cs_labels;
@@ -95,13 +95,13 @@ example* test_adf_sequence(multi_ex& ec_seq)
 }
 
 template <bool is_learn>
-void predict_or_learn_first(cb_explore_adf& data, base_learner& base, multi_ex& examples)
+void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   //Explore tau times, then act according to optimal.
   if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
-    base.learn(examples, data.offset);
+    multiline_learn_or_predict<true>(base, examples, data.offset);
   else
-    base.predict(examples, data.offset);
+    multiline_learn_or_predict<true>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -123,13 +123,13 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, multi_ex& 
 }
 
 template <bool is_learn>
-void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, multi_ex& examples)
+void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   //Explore uniform random an epsilon fraction of the time.
   if (is_learn && test_adf_sequence(examples) != nullptr)
-    base.learn(examples, data.offset);
+    multiline_learn_or_predict<true>(base, examples, data.offset);
   else
-    base.predict(examples, data.offset);
+    multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -140,7 +140,7 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, multi_ex&
 }
 
 template <bool is_learn>
-void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, multi_ex& examples)
+void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   //Randomize over predictions from a base set of predictors
   v_array<action_score>& preds = examples[0]->pred.a_s;
@@ -167,16 +167,17 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, multi_ex& ex
                      ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
                      : 0;
 
+    
     if (is_learn && count > 0 && !test_sequence)
-      base.learn(examples, i);
-     else
-      base.predict(examples, i);
+      multiline_learn_or_predict<true>(base, examples, data.offset, i);
+    else
+      multiline_learn_or_predict<false>(base, examples, data.offset, i);
 
     assert(preds.size() == num_actions);
     data.action_probs[preds[0].action].score += prob;
     if (is_learn && !test_sequence)
       for (uint32_t j = 1; j < count; j++)
-        base_learn_or_predict<true>(base, examples, data.offset, i);
+        multiline_learn_or_predict<true>(base, examples, data.offset, i);
   }
 
   CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
@@ -187,19 +188,19 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, multi_ex& ex
 }
 
 template <bool is_learn>
-void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, multi_ex& examples)
+void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
   if (is_learn)
   {
     GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
-    base_learn_or_predict<true>(base, examples, data.offset);
+    multiline_learn_or_predict<true>(base, examples, data.offset);
   }
   else
   {
     GEN_CS::gen_cs_example_ips(examples, data.cs_labels);
-    base_learn_or_predict<false>(base, examples, data.offset);
+    multiline_learn_or_predict<false>(base, examples, data.offset);
   }
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
@@ -253,12 +254,12 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, multi_ex& 
 }
 
 template <bool is_learn>
-void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, multi_ex& examples)
+void predict_or_learn_softmax(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
   if (is_learn && test_adf_sequence(examples) != nullptr)
-    base_learn_or_predict<true>(base, examples, data.offset);
+    multiline_learn_or_predict<true>(base, examples, data.offset);
   else
-    base_learn_or_predict<false>(base, examples, data.offset);
+    multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)preds.size();
@@ -375,7 +376,7 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
 }
 
 template <bool is_learn>
-void do_actual_learning(cb_explore_adf& data, base_learner& base, multi_ex& ec_seq)
+void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
   example* label_example=test_adf_sequence(ec_seq);
   data.gen_cs.known_cost = CB_ADF::get_observed_cost(ec_seq);
@@ -499,7 +500,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
 
   //Extract from lower level reductions.
   data->gen_cs.scorer = arg.all->scorer;
-  data->cs_ldf_learner = arg.all->cost_sensitive;
+  data->cs_ldf_learner = as_multiline(arg.all->cost_sensitive);
   data->gen_cs.cb_type = CB_TYPE_IPS;
   if (arg.vm.count("cb_type"))
   {
@@ -524,7 +525,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
 
   //learner<cb_explore_adf>& l = init_learner(data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
 
-  learner<cb_explore_adf>& l = init_learner(data, base,
+  learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
     CB_EXPLORE_ADF::do_actual_learning<true>,
     CB_EXPLORE_ADF::do_actual_learning<false>,
     problem_multiplier, 
