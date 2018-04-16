@@ -139,7 +139,8 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<ex
       preds[i].score = 0.;
     preds[0].score = 1.0;
   }
-  CB_EXPLORE::safety(preds, data.epsilon, true);
+
+  enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>
@@ -201,8 +202,7 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   // generate distribution over actions
   generate_bag(begin(top_actions), end(top_actions), begin_scores(data.action_probs), end_scores(data.action_probs));
 
-  // TODO: use exploration::safety
-  CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
+  enforce_minimum_probability(data.epsilon, true, begin_scores(data.action_probs), end_scores(data.action_probs));
   qsort((void*) data.action_probs.begin(), data.action_probs.size(), sizeof(action_score), reverse_order);
 
   for (size_t i = 0; i < num_actions; i++)
@@ -266,7 +266,7 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
     probs[action].score += additive_probability;
   }
 
-  CB_EXPLORE::safety(data.action_probs, min_prob * num_actions, !data.nounif);
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 
   qsort((void*) probs.begin(), probs.size(), sizeof(action_score), reverse_order);
   for (size_t i = 0; i < num_actions; i++)
@@ -286,7 +286,7 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
   v_array<action_score>& preds = examples[0]->pred.a_s;
   generate_softmax(data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
-  CB_EXPLORE::safety(preds, data.epsilon, true);
+  enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 void end_examples(cb_explore_adf& data)
