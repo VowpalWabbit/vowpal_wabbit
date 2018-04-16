@@ -1373,6 +1373,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
   
         priv.base_learner->learn(ec, learner);
 
+        ec.ft_offset = tmp_offset;
+
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
       }

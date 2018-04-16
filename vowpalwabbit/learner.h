@@ -369,7 +369,7 @@ public:
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), nullptr, 
-                                            (typename learner<T, E>::fn) learn,
+                                            (typename learner<T, E>::fn) predict,
                                             (typename learner<T, E>::fn) predict,
                                             params_per_weight, pred_type);
     
@@ -459,25 +459,25 @@ public:
 
   template<class T, class E> 
   multi_learner* as_multiline(learner<T, E>* l)
-  { assert(!l->is_multiline); // Tried to use a singleline reduction as a multiline reduction
+  { assert(l->is_multiline); // Tried to use a singleline reduction as a multiline reduction
     return (multi_learner*) (l);
   }
 
   template<class T, class E> 
   multi_learner& as_multiline(learner<T, E>& l)
-  { assert(!l.is_multiline); // Tried to use a singleline reduction as a multiline reduction
+  { assert(l.is_multiline); // Tried to use a singleline reduction as a multiline reduction
     return (multi_learner&) (l);
   }
 
   template<class T, class E> 
   single_learner* as_singleline(learner<T, E>* l)
-  { assert(l->is_multiline); // Tried to use a multiline reduction as a singleline reduction
+  { assert(!l->is_multiline); // Tried to use a multiline reduction as a singleline reduction
     return (single_learner*) (l);
   }
 
   template<class T, class E>
   single_learner & as_singleline(learner<T, E>& l)
-  { assert(l.is_multiline); // Tried to use a multiline reduction as a singleline reduction
+  { assert(!l.is_multiline); // Tried to use a multiline reduction as a singleline reduction
     return (single_learner&) (l);
   }
 
