@@ -267,8 +267,6 @@ public:
   {
      learner<T,E>& ret = calloc_or_throw<learner<T,E> >();
 
-     ret.is_multiline = std::is_same<multi_ex, E>::value;
-
      if (base !=nullptr)
        {//a reduction
          ret = *(learner<T, E>*)(base);
@@ -300,6 +298,7 @@ public:
      ret.learn_fd.predict_f = (learn_data::fn)predict;
      ret.learn_fd.multipredict_f = nullptr;
      ret.pred_type = pred_type;
+     ret.is_multiline = std::is_same<multi_ex, E>::value;
 
      return ret;
   }
