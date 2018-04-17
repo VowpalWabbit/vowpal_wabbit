@@ -356,15 +356,6 @@ void output_example_seq(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
   }
 }
 
-void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
-{
-  if (ec_seq.size() > 0)
-    for (auto ecc : ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, ecc);
-  ec_seq.erase();
-}
-
 void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
@@ -372,7 +363,7 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     CB_ADF::global_print_newline(all);
   }
-  clear_seq_and_finish_examples(all, ec_seq);
+  GEN_CS::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 template <bool is_learn>

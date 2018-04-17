@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include <algorithm>
 #include "csoaa.h"
+#include "gen_cs_example.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -735,15 +736,6 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
   }
 }
 
-void clear_seq_and_finish_examples(vw& all, ldf& data, multi_ex& ec_seq)
-{
-  if (ec_seq.size() > 0)
-    for (auto ec : ec_seq)
-      if (ec->in_use)
-        VW::finish_example(all, ec);
-  ec_seq.erase();
-}
-
 void end_pass(ldf& data)
 {
   data.first_pass = false;
@@ -756,7 +748,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
   }
-  clear_seq_and_finish_examples(all, data, ec_seq);
+  GEN_CS::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 void finish(ldf& data)

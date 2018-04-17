@@ -193,4 +193,14 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
     }
   }
 }
+
+void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
+{
+  if (ec_seq.size() > 0)
+    for (example* ecc : ec_seq)
+      if (ecc->in_use)
+        VW::finish_example(all, ecc);
+  ec_seq.erase();
+}
+
 }
