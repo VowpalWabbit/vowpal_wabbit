@@ -239,7 +239,7 @@ struct search_private
   bool active_csoaa;
   float active_csoaa_verify;
 
-  LEARNER::single_learner* base_learner;
+  LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
@@ -1016,7 +1016,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
 
   cdbg << "allowed_actions_cnt=" << allowed_actions_cnt << ", ec.l = ["; for (size_t i=0; i<ec.l.cs.costs.size(); i++) cdbg << ' ' << ec.l.cs.costs[i].class_index << ':' << ec.l.cs.costs[i].x; cdbg << " ]" << endl;
 
-  priv.base_learner->predict(ec, policy);
+  as_singleline(priv.base_learner)->predict(ec, policy);
 
   uint32_t act = ec.pred.multiclass;
   cdbg << "a=" << act << " from"; if (allowed_actions) { for (size_t ii=0; ii<allowed_actions_cnt; ii++) cdbg << ' ' << allowed_actions[ii]; } cdbg << endl;
@@ -1157,7 +1157,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
-    priv.base_learner->predict(ecs[a], policy);
+    as_multiline(priv.base_learner)->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1328,7 +1328,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       ec.in_use = true;
       cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
-      priv.base_learner->learn(ec, learner);
+      as_singleline(priv.base_learner)->learn(ec, learner);
       cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) del_example_conditioning(priv, ec);
@@ -1352,30 +1352,36 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
 
-      for (action a= (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
-      {
-        example& ec = priv.learn_ec_ref[a];
+      // create an example collection for 
 
+      multi_ex tmp = v_init<example*>();
+      vector<uint64_t> tmp_offsets;
+      for (action a = (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
+      { example& ec = priv.learn_ec_ref[a];
         CS::label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
-        {
-          CS::wclass wc = { 0., a - (uint32_t)start_K, 0., 0. };
+        { CS::wclass wc = { 0., a - (uint32_t)start_K, 0., 0. };
           lab.costs.push_back(wc);
         }
-        lab.costs[0].x = losses.cs.costs[a-start_K].x;
+        lab.costs[0].x = losses.cs.costs[a - start_K].x;
         //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
         ec.in_use = true;
-        
         // store the offset to restore it later
-        auto tmp_offset = ec.ft_offset;
-        
+        tmp_offsets.push_back(ec.ft_offset);
         ec.ft_offset = priv.offset;
-  
-        priv.base_learner->learn(ec, learner);
-
+        // create the example collection used to learn
+        tmp.push_back(&ec);
         cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
       }
+
+      // learn with the multiline example
+      as_multiline(priv.base_learner)->learn(tmp, learner);
+
+      // restore the offsets in examples
+      int i = 0;
+      for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++, i++)
+        priv.learn_ec_ref[a].ft_offset = tmp_offsets[i];
     }
 
     if (add_conditioning)
@@ -2091,7 +2097,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, single_learner& base, multi_ex& ec_seq)
+void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     return;  // nothing to do :)
