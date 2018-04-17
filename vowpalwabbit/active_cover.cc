@@ -92,7 +92,7 @@ float query_decision(active_cover& a, single_learner& l, example& ec, float pred
 
   for(size_t i = 0; i < a.cover_size; i++)
   {
-    l.predict(ec,i+1);
+    l.predict(ec,(int32_t)i+1);
     q2 += ((float)(sign(ec.pred.scalar) != sign(prediction))) * (a.lambda_n[i]/a.lambda_d[i]);
   }
 

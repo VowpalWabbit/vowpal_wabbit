@@ -156,12 +156,12 @@ public:
         //pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because = doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         adjust_offset(ec, increment, 1);
       }
-      adjust_offset(ec, increment, -(lo+count) );
+      adjust_offset(ec, increment, -((int32_t)(lo+count)) );
     }
     else
     { adjust_offset(ec, increment, lo);
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
-      adjust_offset(ec, increment, -lo);
+      adjust_offset(ec, increment, -(int32_t)lo);
     }
   }
 
@@ -188,9 +188,9 @@ public:
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
   }
   inline float sensitivity(E& ec, size_t i=0)
-  { adjust_offset(ec, increment, i);
+  { adjust_offset(ec, increment, (int32_t)i);
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, (void*)&ec);
-    adjust_offset(ec, increment, -i);
+    adjust_offset(ec, increment, -(int32_t)i);
     return ret;
   }
 
