@@ -8,6 +8,7 @@
 
 #define S_EXPLORATION_OK                0
 #define E_EXPLORATION_BAD_RANGE         1
+#define E_EXPLORATION_EMPTY_PDF         2
 
 namespace exploration
 {
@@ -19,7 +20,7 @@ namespace exploration
 
     size_t num_actions = pdf_last - pdf_first;
     if (num_actions == 0)
-      return S_EXPLORATION_OK;
+      return E_EXPLORATION_EMPTY_PDF;
 
 	if (top_action >= num_actions)
   	  top_action = (uint32_t)num_actions - 1;
@@ -64,7 +65,7 @@ namespace exploration
     }
 
     if (num_actions_scores == 0)
-      return S_EXPLORATION_OK;
+      return E_EXPLORATION_EMPTY_PDF;
 
     float norm = 0.;
     float max_score = *std::max_element(scores_begin, scores_last);
@@ -97,18 +98,19 @@ namespace exploration
   template<typename InputIt, typename OutputIt>
   int generate_bag(InputIt top_actions_begin, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-    if (pdf_first == pdf_last || pdf_last < pdf_first)
+    if (pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
+
+    if (pdf_first == pdf_last)
+      return E_EXPLORATION_EMPTY_PDF;
 
     uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
     if (num_models == 0)
     {
-      if (pdf_last - pdf_first > 0)
-      {
-        *pdf_first = 1;
-        for (OutputIt d = pdf_first + 1; d != pdf_last; ++d)
-          *d = 0;
-      }
+      // based on above checks we have at least 1 element in pdf
+      *pdf_first = 1;
+      for (OutputIt d = pdf_first + 1; d != pdf_last; ++d)
+        *d = 0;
 
       return S_EXPLORATION_OK;
     }
@@ -133,6 +135,9 @@ namespace exploration
   template<typename It>
   int enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
+    if (pdf_first == pdf_last)
+      return E_EXPLORATION_EMPTY_PDF;
+
     if (pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
