@@ -146,6 +146,7 @@ bool test_adf_sequence(multi_ex& ec_seq)
 template <bool is_learn>
 void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
+  data.offset = ec_seq[0]->ft_offset;
   data.gen_cs.known_cost = get_observed_cost(ec_seq);//need to set for test case
   if (is_learn && !test_adf_sequence(ec_seq))
   {
