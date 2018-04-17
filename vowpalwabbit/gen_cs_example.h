@@ -267,7 +267,7 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   // 3rd: restore cb_label for each example
   // (**ec).l.cb = array.element.
   // and restore offsets
-  for (auto i = 0; i < examples.size(); ++i)
+  for (size_t i = 0; i < examples.size(); ++i)
   { examples[i]->ft_offset = offsets[i];
     examples[i]->l.cb = cb_labels[i];
   }

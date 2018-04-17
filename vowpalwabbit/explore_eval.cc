@@ -115,7 +115,7 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     CB_ADF::global_print_newline(all);
   }
-  GEN_CS::clear_seq_and_finish_examples(all, ec_seq);
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)

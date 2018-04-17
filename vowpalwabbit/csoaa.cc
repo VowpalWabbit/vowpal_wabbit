@@ -748,7 +748,7 @@ void finish_multiline_example(vw& all, ldf& data, multi_ex& ec_seq)
     output_example_seq(all, data, ec_seq);
     global_print_newline(all);
   }
-  GEN_CS::clear_seq_and_finish_examples(all, ec_seq);
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 void finish(ldf& data)
