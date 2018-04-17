@@ -493,9 +493,7 @@ public:
     else
       base.predict(examples, id);
 
-    for (auto i = 0; i < saved_offsets.size(); i++)
+    for (auto i = 0; i < examples.size(); i++)
       examples[i]->ft_offset = saved_offsets[i];
   }
-
-
 }

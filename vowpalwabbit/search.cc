@@ -2614,7 +2614,7 @@ base_learner* setup(arguments& arg)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  single_learner* base = as_singleline(setup_base(arg));
+  base_learner* base = setup_base(arg);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   arg.all->p->lp = MC::mc_label;
