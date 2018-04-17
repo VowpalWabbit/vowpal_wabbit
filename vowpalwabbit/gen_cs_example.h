@@ -166,16 +166,16 @@ void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::lab
   }
 }
 
-void gen_cs_test_example(multi_ex examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_dm(multi_ex examples, COST_SENSITIVE::label& cs_labels);
+void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 { //size_t mysize = examples.size();
   c.pred_scores.costs.erase();
   bool shared = CB::ec_is_example_header(*examples[0]);
