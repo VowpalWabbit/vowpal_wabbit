@@ -28,6 +28,9 @@ namespace exploration
   template<typename InputIt>
   uint32_t sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last, std::input_iterator_tag pdf_category)
   {
+    if (pdf_first == pdf_last || pdf_last < pdf_first)
+      return 0;
+
     // Create a discrete_distribution based on the returned weights. This class handles the
     // case where the sum of the weights is < or > 1, by normalizing agains the sum.
     float total = 0.f;
