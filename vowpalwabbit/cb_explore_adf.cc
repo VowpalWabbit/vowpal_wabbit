@@ -514,8 +514,6 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       arg.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
   }
 
-  //learner<cb_explore_adf>& l = init_learner(data, base, CB_EXPLORE_ADF::predict_or_learn<true>, CB_EXPLORE_ADF::predict_or_learn<false>, problem_multiplier, prediction_type::action_probs);
-
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
     CB_EXPLORE_ADF::do_actual_learning<true>,
     CB_EXPLORE_ADF::do_actual_learning<false>,
