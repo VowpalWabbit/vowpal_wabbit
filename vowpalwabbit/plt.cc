@@ -108,8 +108,6 @@ void learn(plt &p, base_learner &base, example &ec)
 
   ec.pred.multilabels = preds;
   ec.l.multilabels = multilabels;
-
-    //cerr << ec_loss << " ";
 }
 
 inline float predict_node(plt &p, uint32_t n, base_learner &base, example &ec)
