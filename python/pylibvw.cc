@@ -168,7 +168,7 @@ void my_finish_example(vw_ptr all, example_ptr ec)
 
 void my_learn(vw_ptr all, example_ptr ec)
 { if (ec->test_only)
-  { all->l->predict(*ec);
+  { as_singleline(all->l)->predict(*ec);
   }
   else
   { all->learn(*ec.get());
@@ -184,7 +184,7 @@ float my_learn_string(vw_ptr all, char*str)
 }
 
 float my_predict(vw_ptr all, example_ptr ec)
-{ all->l->predict(*ec);
+{ as_singleline(all->l)->predict(*ec);
   return ec->partial_prediction;
 }
 
@@ -200,7 +200,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
     ex_coll.push_back(ecp.get());
   }
   if (learn) all->learn(ex_coll);
-  else all->l->predict(ex_coll);
+  else as_multiline(all->l)->predict(ex_coll);
   ex_coll.delete_v();
 }
 
@@ -212,7 +212,7 @@ void my_predict_multi_ex(vw_ptr& all, py::list& ec)
 
 float my_predict_string(vw_ptr all, char*str)
 { example*ec = VW::read_example(*all, str);
-  all->l->predict(*ec);
+  as_singleline(all->l)->predict(*ec);
   float pp = ec->partial_prediction;
   VW::finish_example(*all, ec);
   return pp;
