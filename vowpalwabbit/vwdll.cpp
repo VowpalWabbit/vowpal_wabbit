@@ -242,7 +242,7 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)
 VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
-  pointer->l->predict(*ex);
+  LEARNER::as_singleline(pointer->l)->predict(*ex);
   //BUG: The below method may return garbage as it assumes a certain structure for ex->ld
   //which may not be the actual one used (e.g., for cost-sensitive multi-class learning)
   return VW::get_prediction(ex);
@@ -251,7 +251,7 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 VW_DLL_MEMBER float VW_CALLING_CONV VW_PredictCostSensitive(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
-  pointer->l->predict(*ex);
+  LEARNER::as_singleline(pointer->l)->predict(*ex);
   return VW::get_cost_sensitive_prediction(ex);
 }
 
