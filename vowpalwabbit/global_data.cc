@@ -160,6 +160,22 @@ void vw::learn(multi_ex& ec)
     LEARNER::as_multiline(l)->learn(ec);
 }
 
+void vw::predict(example& ec)
+{
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  LEARNER::as_singleline(l)->predict(ec);
+}
+
+void vw::predict(multi_ex& ec)
+{
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  LEARNER::as_multiline(l)->predict(ec);
+}
+
 void vw::finish_example(example& ec)
 {
   if (l->is_multiline)

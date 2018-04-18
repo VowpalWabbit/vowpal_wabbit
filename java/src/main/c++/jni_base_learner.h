@@ -2,6 +2,7 @@
 #define VW_BASE_LEARNER_H
 
 #include <jni.h>
+#include <functional>
 
 void throw_java_exception(JNIEnv *env, const char* name, const char* msg);
 void rethrow_cpp_exception_as_java_exception(JNIEnv *env);
@@ -33,7 +34,7 @@ T base_predict(
     if (predict)
       result = predictor(ex, env);
 
-    vwInstance->finish_example(*vwInstance, *ex);
+    vwInstance->finish_example(*ex);
   }
   catch (...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -53,6 +54,13 @@ T base_predict(
   return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
 
+template<class T>
+struct always_delete { 
+  T _ar;
+  always_delete(T& ar):_ar(ar) {  } 
+  ~always_delete() { _ar.delete_v(); }
+};
+
 template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
@@ -65,6 +73,8 @@ T base_predict(
 
   // When doing multiline prediction the final result is stored in the FIRST example parsed.
   multi_ex ex_coll = v_init<example*>();
+  // always delete the array
+  always_delete<multi_ex> guard_obj(ex_coll);
 
   example* first_example = NULL;
   for (int i=0; i<example_count; i++)
@@ -86,7 +96,7 @@ T base_predict(
   { rethrow_cpp_exception_as_java_exception(env);
   }
   
-  as_multiline->finish_example(*vwInstance, ex_coll);
+  vwInstance->finish_example(ex_coll);
 
   ex_coll.delete_v();
 

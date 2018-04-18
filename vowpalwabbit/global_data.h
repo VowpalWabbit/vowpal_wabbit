@@ -442,6 +442,8 @@ struct vw
 
   void learn(example&);
   void learn(multi_ex&);
+  void predict(example&);
+  void predict(multi_ex&);
   void finish_example(example&);
   void finish_example(multi_ex&);
 
