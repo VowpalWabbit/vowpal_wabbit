@@ -5,9 +5,9 @@ This fork implements Probabilistic Label Trees (PLTs) in Vowpal Wabbit for extre
 ## PLT options
 ```
 --plt arg               Use PLT for multi-label learning with arg labels
---kary_tree arg (=2)    Use an arg-ary tree for PLT. By default the tree is binary
+--kary_tree arg (=2)    Use an arg-ary tree. By default the tree is binary
 --top_k arg (=1)        Predict arg top labels
---threshold arg         Predict labels with marginal probability greater than arg
+--threshold arg         Predict labels with marginal probabilities greater than arg
 ```
 
 We recommended to use `--sgd` with `--plt` for the fastest learning and the best memory efficiency.
@@ -21,15 +21,15 @@ vw --plt <num labels> <train dataset> -f <output model> --sgd -l <learning rate>
 vw -t -i <model file> <test dataset> --top_k <k top label> -p <prediction file>
 ```
 
-More examples and scripts to replicate results on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html) can be found in `xml_experiments` directory.
+More examples and scripts to replicate results on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html) can be found in the `xml_experiments` directory.
 
 ## References
 
-PLTs have been introduced in this publication.
+PLTs have been introduced in the following article:
 
-Kalina Jasinska\*, Krzysztof Dembczynski\*, Robert Busa-Fekete\*, Karlson Pfannschmidt\*, Timo Klerx\*, Eyke Hullermeier\*
-[*Extreme F-measure Maximization using Sparse Probability Estimates*](http://proceedings.mlr.press/v48/jasinska16.html)
-Proceedings of The 33rd International Conference on Machine Learning, PMLR 48:1435-1444, 2016.[1]
+Kalina Jasinska, Krzysztof Dembczynski, Robert Busa-Fekete, Karlson Pfannschmidt, Timo Klerx, Eyke Hullermeier
+[*Extreme F-measure Maximization using Sparse Probability Estimates*](http://proceedings.mlr.press/v48/jasinska16.html).
+Proceedings of The 33rd International Conference on Machine Learning, PMLR 48:1435-1444, 2016.
 
 ```
 @inproceedings{Jasinska_et_al_2016,
@@ -46,7 +46,7 @@ Proceedings of The 33rd International Conference on Machine Learning, PMLR 48:14
 }
 ```
 
-Please cite it when you use PLTs in your research. Remark that this implementation of PLTs does not contain procedures for optimizing the macro F-measure.
+Please cite this article when you use PLTs in your research. Remark that this implementation of PLTs does not contain procedures for optimizing the macro F-measure.
 
 # Vowpal Wabbit
 ```
