@@ -3,6 +3,11 @@
 #include <cstdint>
 #include <vector>
 
+#define S_SAMPLING_OK                             0
+#define E_SAMPLING_BAD_RANGE                      1
+#define E_SAMPLING_EMPTY_PDF                      2
+#define E_SAMPLING_PDF_RANKING_SIZE_MISMATCH      3
+
 namespace exploration
 {
   const uint64_t a = 0xeece66d5deece66dULL;
@@ -71,11 +76,23 @@ namespace exploration
   }
 
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  void sample_from_pdf(uint64_t seed,
+  int sample_from_pdf(uint64_t seed,
       InputPdfIt pdf_begin, InputPdfIt pdf_end, std::input_iterator_tag pdf_category,
       InputScoreIt scores_begin, InputScoreIt scores_end, std::random_access_iterator_tag scores_category,
       OutputIt ranking_begin, OutputIt ranking_end, std::random_access_iterator_tag ranking_category)
   {
+    if (pdf_end < pdf_begin || ranking_end < ranking_begin)
+      return E_SAMPLING_BAD_RANGE; 
+
+    size_t pdf_size = pdf_end - pdf_begin;
+    size_t ranking_size = ranking_end - ranking_begin;
+
+    if (pdf_size == 0)
+      return E_SAMPLING_EMPTY_PDF;
+
+    if (pdf_size != ranking_size)
+      return E_SAMPLING_PDF_RANKING_SIZE_MISMATCH;
+
     uint32_t chosen_action = sample_from_pdf(seed, pdf_begin, pdf_end);
 
     std::iota(ranking_begin, ranking_end, 0);
@@ -86,5 +103,7 @@ namespace exploration
 
     // swap top element with chosen one
     std::iter_swap(ranking_begin, ranking_end + chosen_action);
+
+    return S_SAMPLING_OK;
   }
 } // end-of-namespace
