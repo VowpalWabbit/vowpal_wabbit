@@ -4,7 +4,7 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "cb_explore.h"
-#include "exploration.h"
+#include "explore.h"
 
 #include <vector>
 

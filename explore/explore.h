@@ -1,5 +1,11 @@
 #pragma once
 
+#define S_EXPLORATION_OK                             0
+#define E_EXPLORATION_BAD_RANGE                      1
+#define E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH      2
+
+#include "explore_internal.h"
+
 namespace exploration { 
   /**
    * @brief Generates epsilon-greedy style exploration distribution.
@@ -63,10 +69,15 @@ namespace exploration {
    * @param seed The seed for the pseudo-random generator.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
-   * @return uint32_t returns the chosen a index.
+   * @param chosen_index returns the chosen a index.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputIt>
-  uint32_t sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last);
+  int sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index)
+  {
+    typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
+    return sample_from_pdf(seed, pdf_first, pdf_last, chosen_index, pdf_category());
+  }
 
   /**
    * @brief Sample an index from the provided pdf.
@@ -75,10 +86,15 @@ namespace exploration {
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
-   * @return uint32_t returns the chosen a index.
+   * @param chosen_index returns the chosen a index.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputIt>
-  uint32_t sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last);
+  int sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index)
+  {
+    typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
+    return sample_from_pdf(seed, pdf_first, pdf_last, chosen_index, pdf_category());
+  }
 
   /**
    * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
@@ -94,9 +110,14 @@ namespace exploration {
    * @param scores_end Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
    * @param ranking_end Iterator pointing to the pre-allocated end of the output ranking.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  void sample_from_pdf(const char* seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_end, OutputIt ranking_begin, OutputIt ranking_end);
+  int sample_from_pdf(const char* seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_end, OutputIt ranking_begin, OutputIt ranking_end)
+  {
+    uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
+    return sample_from_pdf(seed_hash, pdf_begin, pdf_end, scores_begin, scores_end, ranking_begin, ranking_end);
+  }
 
   /**
    * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
@@ -112,7 +133,15 @@ namespace exploration {
    * @param scores_end Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
    * @param ranking_end Iterator pointing to the pre-allocated end of the output ranking.
+   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  void sample_from_pdf(uint64_t seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_end, OutputIt ranking_begin, OutputIt ranking_end);
+  int sample_from_pdf(uint64_t seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_end, OutputIt ranking_begin, OutputIt ranking_end)
+  {
+    typedef typename std::iterator_traits<InputPdfIt>::iterator_category pdf_category;
+    typedef typename std::iterator_traits<InputScoreIt>::iterator_category scores_category;
+    typedef typename std::iterator_traits<OutputIt>::iterator_category ranking_category;
+
+    return sample_from_pdf(seed, pdf_begin, pdf_end, pdf_category(), scores_begin, scores_end, scores_category(), ranking_begin, ranking_end, ranking_category());
+  }
 }

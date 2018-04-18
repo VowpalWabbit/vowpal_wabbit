@@ -3,7 +3,7 @@
 #include "rand48.h"
 #include "bs.h"
 #include "gen_cs_example.h"
-#include "exploration.h"
+#include "explore.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;

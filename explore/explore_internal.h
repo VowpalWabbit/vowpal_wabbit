@@ -1,18 +1,37 @@
 #pragma once
 
+// get the error code defined in master
+#include "explore.h"
+
 #include <stdint.h>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
 #include <cstring>
 
-#define S_EXPLORATION_OK                0
-#define E_EXPLORATION_BAD_RANGE         1
-#define E_EXPLORATION_EMPTY_PDF         2
-
 namespace exploration
 {
-  template<typename It>
+  const uint64_t a = 0xeece66d5deece66dULL;
+  const uint64_t c = 2147483647;
+
+  const int bias = 127 << 23;
+
+  union int_float
+  {
+    int32_t i;
+    float f;
+  };
+
+  // uniform random between 0 and 1
+  inline float uniform_random_merand48(uint64_t initial)
+  {
+    initial = a * initial + c;
+    int_float temp;
+    temp.i = ((initial >> 25) & 0x7FFFFF) | bias;
+    return temp.f - 1;
+  }
+
+ template<typename It>
   int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
     if (pdf_last < pdf_first)
@@ -20,7 +39,7 @@ namespace exploration
 
     size_t num_actions = pdf_last - pdf_first;
     if (num_actions == 0)
-      return E_EXPLORATION_EMPTY_PDF;
+      return E_EXPLORATION_BAD_RANGE;
 
 	if (top_action >= num_actions)
   	  top_action = (uint32_t)num_actions - 1;
@@ -64,8 +83,8 @@ namespace exploration
         pdf_last = pdf_new_last;
     }
 
-    if (num_actions_scores == 0)
-      return E_EXPLORATION_EMPTY_PDF;
+    if (pdf_last - pdf_first == 0)
+      return E_EXPLORATION_BAD_RANGE;
 
     float norm = 0.;
     float max_score = *std::max_element(scores_begin, scores_last);
@@ -98,11 +117,9 @@ namespace exploration
   template<typename InputIt, typename OutputIt>
   int generate_bag(InputIt top_actions_begin, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-    if (pdf_last < pdf_first)
+    // iterators don't support <= in general
+    if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
-
-    if (pdf_first == pdf_last)
-      return E_EXPLORATION_EMPTY_PDF;
 
     uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
     if (num_models == 0)
@@ -135,10 +152,8 @@ namespace exploration
   template<typename It>
   int enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-    if (pdf_first == pdf_last)
-      return E_EXPLORATION_EMPTY_PDF;
-
-    if (pdf_last < pdf_first)
+    // iterators don't support <= in general
+    if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
 	  size_t num_actions = pdf_last - pdf_first;
@@ -153,7 +168,7 @@ namespace exploration
             support_size--;
       }
 
-	  for (It d = pdf_first; d != pdf_last; ++d)
+	    for (It d = pdf_first; d != pdf_last; ++d)
         if (update_zero_elements || *d > 0)
           *d = 1.f / support_size;
 
@@ -208,5 +223,83 @@ namespace exploration
 	  typedef typename std::iterator_traits<It>::iterator_category pdf_category;
 
 	  return enforce_minimum_probability(min_prob, update_zero_elements, pdf_first, pdf_last, pdf_category());
+  }
+  
+  template<typename InputIt>
+  int sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category)
+  {
+    if (pdf_first == pdf_last || pdf_last < pdf_first)
+      return E_EXPLORATION_BAD_RANGE;
+
+    // Create a discrete_distribution based on the returned weights. This class handles the
+    // case where the sum of the weights is < or > 1, by normalizing agains the sum.
+    float total = 0.f;
+    for (InputIt pdf = pdf_first; pdf != pdf_last; ++pdf)
+      total += (std::max)(0.f, *pdf);
+
+    // assume the first is the best
+    if (total == 0)
+    {
+      chosen_index = 0;
+      return S_EXPLORATION_OK;
+    }
+    
+    float draw = total * uniform_random_merand48(seed);
+    if (draw > total) //make very sure that draw can not be greater than total.
+      draw = total;
+
+    float sum = 0.f;
+    uint32_t i = 0;
+    for (InputIt pdf = pdf_first; pdf != pdf_last; ++pdf, ++i)
+    {
+      sum += (std::max)(0.f, *pdf);
+      if (sum > draw)
+      {
+        chosen_index = i;
+        return S_EXPLORATION_OK;
+      }
+    }
+
+    chosen_index = i - 1;
+    return S_EXPLORATION_OK;
+  }
+
+  template<typename InputIt>
+  uint32_t sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, std::input_iterator_tag pdf_category)
+  {
+    uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
+    return sample_from_pdf(seed_hash, pdf_first, pdf_last);
+  }
+
+  template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
+  int sample_from_pdf(uint64_t seed,
+      InputPdfIt pdf_begin, InputPdfIt pdf_end, std::input_iterator_tag pdf_category,
+      InputScoreIt scores_begin, InputScoreIt scores_end, std::random_access_iterator_tag scores_category,
+      OutputIt ranking_begin, OutputIt ranking_end, std::random_access_iterator_tag ranking_category)
+  {
+    if (pdf_end < pdf_begin || ranking_end < ranking_begin)
+      return E_EXPLORATION_BAD_RANGE; 
+
+    size_t pdf_size = pdf_end - pdf_begin;
+    size_t ranking_size = ranking_end - ranking_begin;
+
+    if (pdf_size == 0)
+      return E_EXPLORATION_BAD_RANGE;
+
+    if (pdf_size != ranking_size)
+      return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
+
+    uint32_t chosen_action = sample_from_pdf(seed, pdf_begin, pdf_end);
+
+    std::iota(ranking_begin, ranking_end, 0);
+
+    // sort indexes based on comparing values in scores
+    std::sort(ranking_begin, ranking_end,
+      [&scores_begin, &scores_end](size_t i1, size_t i2) { return scores_begin[i1] > scores_end[i2]; });
+
+    // swap top element with chosen one
+    std::iter_swap(ranking_begin, ranking_end + chosen_action);
+
+    return S_EXPLORATION_OK;
   }
 } // end-of-namespace

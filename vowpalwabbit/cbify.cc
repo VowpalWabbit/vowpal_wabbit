@@ -5,7 +5,7 @@
 #include "bs.h"
 #include "vw.h"
 #include "hash.h"
-#include "sampling.h"
+#include "explore.h"
 
 #include <vector>
 
@@ -109,7 +109,9 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   base.predict(ec);
   //data.probs = ec.pred.scalars;
 
-  uint32_t chosen_action = sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s));
+  uint32_t chosen_action;
+  if (sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
+    THROW("Failed to sample from pdf");
 
   CB::cb_class cl;
   cl.action = chosen_action + 1;
@@ -144,7 +146,9 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
   auto& out_ec = data.adf_data.ecs[0];
 
-  uint32_t chosen_action = sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s));
+  uint32_t chosen_action;
+  if (sample_from_pdf(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s), chosen_action))
+    THROW("Failed to sample from pdf");
 
   CB::cb_class cl;
   cl.action = out_ec.pred.a_s[chosen_action].action + 1;
