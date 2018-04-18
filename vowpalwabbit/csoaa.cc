@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include <algorithm>
 #include "csoaa.h"
-#include "gen_cs_example.h"
 
 using namespace std;
 using namespace LEARNER;

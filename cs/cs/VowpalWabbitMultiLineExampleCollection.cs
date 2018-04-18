@@ -70,19 +70,19 @@ namespace VW
             VowpalWabbitExample empty = null;
             try
             {
-                var ec_col = new List<VowpalWabbitExample>();
+                var ecCol = new List<VowpalWabbitExample>();
 
                 if (this.SharedExample != null && !this.SharedExample.IsNewLine)
                 {
                     firstExample = this.SharedExample;
-                    ec_col.Add(firstExample);
+                    ecCol.Add(firstExample);
                 }
 
                 foreach (var ex in this.Examples)
                 {
                     if (!ex.IsNewLine)
                     {
-                        ec_col.Add(ex);
+                        ecCol.Add(ex);
 
                         if (firstExample == null)
                             firstExample = ex;
@@ -93,7 +93,7 @@ namespace VW
                 empty = vw.GetOrCreateNativeExample();
                 empty.MakeEmpty(vw);
 
-                predictOrLearn(ec_col);
+                predictOrLearn(ecCol);
 
                 return predictionFactory != null ? firstExample.GetPrediction(vw, predictionFactory) : default(TPrediction);
             }

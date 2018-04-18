@@ -40,8 +40,13 @@ private:
   template<typename T>
   cli::array<cli::array<float>^>^ FillTopicAllocation(T& weights);
 
-  // Cached empty example.  
-  // This is used to emit empty lines to cache while handling multiline examples
+  /// <summary>
+  /// Write and empty line example to vw cache file.
+  /// </summary>
+  /// <remarks>
+  /// This is used to emit empty lines to cache while handling multiline examples.
+  /// Used internally by Learn(IEnumerable<String> lines)
+  /// </remarks>
   void CacheEmptyLine();
 
 public:

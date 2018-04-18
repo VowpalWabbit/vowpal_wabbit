@@ -273,8 +273,7 @@ namespace VW
                 actionDependentFeatures,
                 (examples, _, __) =>
                 {
-                    var ec_col = examples.ToList();
-                    vw.Learn(ec_col);
+                    vw.Learn(examples.ToList());
                 },
                 index,
                 label);

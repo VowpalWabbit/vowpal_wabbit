@@ -26,14 +26,14 @@ T base_predict(
 { T result = 0;
   try
   { if (learn)
-      as_singleline(vwInstance->l)->learn(*ex);
+      vwInstance->learn(*ex);
     else
-      as_singleline(vwInstance->l)->predict(*ex);
+      vwInstance->predict(*ex);
 
     if (predict)
       result = predictor(ex, env);
 
-    as_singleline(vwInstance->l)->finish_example(*vwInstance, *ex);
+    vwInstance->finish_example(*vwInstance, *ex);
   }
   catch (...)
   { rethrow_cpp_exception_as_java_exception(env);
@@ -78,15 +78,17 @@ T base_predict(
 
   try
   { if (learn)
-      as_multiline(vwInstance->l)->learn(ex_coll);
+      vwInstance->learn(ex_coll);
     else
-      as_multiline(vwInstance->l)->predict(ex_coll);
+      vwInstance->predict(ex_coll);
   }
   catch (...)
   { rethrow_cpp_exception_as_java_exception(env);
   }
   
-  as_multiline(vwInstance->l)->finish_example(*vwInstance, ex_coll);
+  as_multiline->finish_example(*vwInstance, ex_coll);
+
+  ex_coll.delete_v();
 
   return predictor(first_example, env);
 }

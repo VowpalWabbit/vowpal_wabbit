@@ -140,30 +140,40 @@ void noop_mm(shared_data*, float) {}
 
 void vw::learn(example& ec)
 {
-  if (ec.test_only || !training){
-    if (l->is_multiline)
-      THROW("This predict function does not support single examples.");
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  if (ec.test_only || !training)
     LEARNER::as_singleline(l)->predict(ec);
-  }
-  else{
-    if (l->is_multiline)
-      THROW("This learn function does not support single examples.");
+  else
     LEARNER::as_singleline(l)->learn(ec);
-  }
 }
 
 void vw::learn(multi_ex& ec)
 {
-  if (!training) {
-    if (!l->is_multiline)
-      THROW("This predict function does not support example collection.");
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  if (!training) 
     LEARNER::as_multiline(l)->predict(ec);
-  }
-  else {
-    if (!l->is_multiline)
-      THROW("This learn function does not support example collection.");
+  else 
     LEARNER::as_multiline(l)->learn(ec);
-  }
+}
+
+void vw::finish_example(example& ec)
+{
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  LEARNER::as_singleline(l)->finish_example(*this,ec);
+}
+
+void vw::finish_example(multi_ex& ec)
+{
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  LEARNER::as_multiline(l)->finish_example(*this,ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)

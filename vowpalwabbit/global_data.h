@@ -440,8 +440,10 @@ struct vw
   LEARNER::single_learner* scorer;//a scoring function
   LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.  can be single or multi line learner
 
-  void learn(example& );
+  void learn(example&);
   void learn(multi_ex&);
+  void finish_example(example&);
+  void finish_example(multi_ex&);
 
   void (*set_minmax)(shared_data* sd, float label);
 
