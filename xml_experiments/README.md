@@ -14,5 +14,5 @@
 | WikiLSHTC 325K | 0.416196 | 0.322053 | 0.267770 | 0.230858 | 0.203816 |
 | Amazon 670K | 0.368639 | 0.344385 | 0.324777 | 0.307536 | 0.291542 |
 
-Use a `run_<dataset name>.sh` script to reproduce the results for each dataset (run the script from this directory).
+Use a `run_<dataset name>.sh` script to reproduce the results for a given dataset (run the script from this directory).
 The scripts will download and process the datasets using scripts from the [datasets4vw](https://github.com/mwydmuch/datasets4vw) repository.

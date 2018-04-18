@@ -27,7 +27,7 @@ More examples and scripts to replicate results on datasets from [The Extreme Cla
 
 PLTs have been introduced in the following article:
 
-Kalina Jasinska, Krzysztof Dembczynski, Robert Busa-Fekete, Karlson Pfannschmidt, Timo Klerx, Eyke Hullermeier
+Kalina Jasinska, Krzysztof Dembczynski, Robert Busa-Fekete, Karlson Pfannschmidt, Timo Klerx, Eyke Hullermeier:
 [*Extreme F-measure Maximization using Sparse Probability Estimates*](http://proceedings.mlr.press/v48/jasinska16.html).
 Proceedings of The 33rd International Conference on Machine Learning, PMLR 48:1435-1444, 2016.
 
