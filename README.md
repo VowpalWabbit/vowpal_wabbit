@@ -1,13 +1,13 @@
 # Extweme Wabbit
 
-This fork implements Probabilistic Label Tree (PLT) in Vowpal Wabbit for extreme multi-label classification.
+This fork implements Probabilistic Label Trees (PLTs) in Vowpal Wabbit for extreme multi-label classification.
 
 ## PLT options
 ```
---plt arg               Use PLT multi-label learning with arg labels
---kary_tree arg (=2)    Use arg-ary tree for PLT. By default tree is binary
+--plt arg               Use PLT for multi-label learning with arg labels
+--kary_tree arg (=2)    Use an arg-ary tree for PLT. By default the tree is binary
 --top_k arg (=1)        Predict arg top labels
---threshold arg         Predict labels with probability greater than arg
+--threshold arg         Predict labels with marginal probability greater than arg
 ```
 
 We recommended to use `--sgd` with `--plt` for the fastest learning and the best memory efficiency.
@@ -23,6 +23,30 @@ vw -t -i <model file> <test dataset> --top_k <k top label> -p <prediction file>
 
 More examples and scripts to replicate results on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html) can be found in `xml_experiments` directory.
 
+## References
+
+PLTs have been introduced in this publication.
+
+Kalina Jasinska\*, Krzysztof Dembczynski\*, Robert Busa-Fekete\*, Karlson Pfannschmidt\*, Timo Klerx\*, Eyke Hullermeier\*
+[*Extreme F-measure Maximization using Sparse Probability Estimates*](http://proceedings.mlr.press/v48/jasinska16.html)
+Proceedings of The 33rd International Conference on Machine Learning, PMLR 48:1435-1444, 2016.[1]
+
+```
+@inproceedings{Jasinska_et_al_2016,
+  title = 	 {Extreme F-measure Maximization using Sparse Probability Estimates},
+  author = 	 {Kalina Jasinska and Krzysztof Dembczynski and Robert Busa-Fekete and Karlson Pfannschmidt and Timo Klerx and Eyke Hullermeier},
+  booktitle = 	 {Proceedings of The 33rd International Conference on Machine Learning},
+  pages = 	 {1435--1444},
+  year = 	 {2016},
+  editor = 	 {Maria Florina Balcan and Kilian Q. Weinberger},
+  volume = 	 {48},
+  series = 	 {Proceedings of Machine Learning Research},
+  address = 	 {New York, New York, USA},
+  publisher = 	 {PMLR},
+}
+```
+
+Please cite it when you use PLTs in your research. Remark that this implementation of PLTs does not contain procedures for optimizing the macro F-measure.
 
 # Vowpal Wabbit
 ```

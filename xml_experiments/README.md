@@ -1,4 +1,4 @@
-# Results on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html)
+# Results of PLTs on datasets from [The Extreme Classification Repository](http://manikvarma.org/downloads/XC/XMLRepository.html)
 
 | Dataset | P@1 | P@2 | P@3 | P@4 | P@5 |
 | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -14,5 +14,5 @@
 | WikiLSHTC 325K | 0.416196 | 0.322053 | 0.267770 | 0.230858 | 0.203816 |
 | Amazon 670K | 0.368639 | 0.344385 | 0.324777 | 0.307536 | 0.291542 |
 
-Use `run_<dataset name>.sh` scripts to reproduce the results.
-Scripts will download and process datasets using scripts from [datasets4vw](https://github.com/mwydmuch/datasets4vw) repository.
+Use a `run_<dataset name>.sh` script to reproduce the results for each dataset (run the script from this directory).
+The scripts will download and process the datasets using scripts from the [datasets4vw](https://github.com/mwydmuch/datasets4vw) repository.
