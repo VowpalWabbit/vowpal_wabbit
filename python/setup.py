@@ -30,7 +30,7 @@ def find_boost():
             for candidate in ['-py36', '-py35', '-py34', '3']:
                 boost_lib = 'boost_python{}'.format(candidate)
                 if find_library(boost_lib):
-                    exit
+                    break
         if not find_library(boost_lib):
             boost_lib = "boost_python"
     elif system == 'Darwin':
