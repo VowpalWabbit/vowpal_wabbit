@@ -93,7 +93,8 @@ void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
-inline float noop_sensitivity(void*, base_learner&, void*) { return 0.; }
+inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
+inline float noop_sensitivity(void*, base_learner&, multi_ex&) { return 0.; }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 { ex.ft_offset += static_cast<uint32_t>(increment * i);
