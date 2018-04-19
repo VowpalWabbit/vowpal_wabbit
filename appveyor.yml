@@ -8,6 +8,7 @@ clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
 - cd c:\vowpal_wabbit
+- '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\cs\explore\ds_explore_cs.sln" /m /verbosity:normal /p:Configuration=Release;Platform=Any CPU'
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure_worker\packages.config
@@ -19,10 +20,11 @@ build_script:
 - '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal /p:Configuration=Release;Platform=x64'
 test_script:
 - ps: >-
+    cd c:\vowpal_wabbit
+    cs\explore\bin\Release\ds_explore_cs_test.exe test\explore\test1-input.txt test\explore\test1-expected.txt
     if($env:PLATFORM -eq "x64")
 
     {
-       cd c:\vowpal_wabbit
        vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
     }
 on_failure:
