@@ -407,19 +407,19 @@ LEARNER::base_learner* boosting_setup(arguments& arg)
 
   learner<boosting,example>* l;
   if (data->alg == "BBM")
-    l = &init_learner<boosting,example>(data, setup_base(arg),
+    l = &init_learner<boosting,example>(data, as_singleline(setup_base(arg)),
                                 predict_or_learn<true>,
                                 predict_or_learn<false>, data->N);
   else if (data->alg == "logistic")
     {
-      l = &init_learner<boosting, example>(data, setup_base(arg),
+      l = &init_learner<boosting, example>(data, as_singleline(setup_base(arg)),
                                   predict_or_learn_logistic<true>,
                                   predict_or_learn_logistic<false>, data->N);
       l->set_save_load(save_load);
     }
   else if (data->alg == "adaptive")
     {
-      l = &init_learner<boosting, example>(data, setup_base(arg),
+      l = &init_learner<boosting, example>(data, as_singleline(setup_base(arg)),
                                   predict_or_learn_adaptive<true>,
                                   predict_or_learn_adaptive<false>, data->N);
       l->set_save_load(save_load_sampling);

@@ -169,7 +169,7 @@ LEARNER::base_learner* interact_setup(arguments& arg)
   data->all = arg.all;
 
   LEARNER::learner<interact,example>* l;
-  l = &LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l = &LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

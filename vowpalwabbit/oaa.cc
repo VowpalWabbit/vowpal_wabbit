@@ -244,6 +244,7 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
 
   oaa* data_ptr = data.get();
   LEARNER::learner<oaa,example>* l;
+  auto base = as_singleline(setup_base(arg));
   if( probabilities || scores)
   {
     arg.all->delete_prediction = delete_scalars;
@@ -252,23 +253,23 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
       if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
         arg.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, true>,
+      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
                                             predict_or_learn<false, false, true, true>, arg.all->p, data->k, prediction_type::scalars);
       arg.all->sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, false>,
+      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
                                             predict_or_learn<false, false, true, false>, arg.all->p, data->k, prediction_type::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (arg.all->raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, true, false, false>,
+    l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
                                           predict_or_learn<false, true, false, false>, arg.all->p, data->k, prediction_type::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data, setup_base(arg),predict_or_learn<true, false, false, false>,
+    l = &LEARNER::init_multiclass_learner(data, base,predict_or_learn<true, false, false, false>,
                                           predict_or_learn<false, false, false, false>, arg.all->p, data->k, prediction_type::multiclass);
 
   if (data_ptr->num_subsample > 0)

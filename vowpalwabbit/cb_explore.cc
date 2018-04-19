@@ -350,7 +350,7 @@ base_learner* cb_explore_setup(arguments& arg)
   arg.all->delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
-  base_learner* base = setup_base(arg);
+  single_learner* base = as_singleline(setup_base(arg));
   data->cbcs.scorer = arg.all->scorer;
 
   learner<cb_explore,example>* l;

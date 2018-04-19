@@ -458,7 +458,7 @@ base_learner* nn_setup(arguments& arg)
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   n->increment = base->increment;//Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn,example>&l = init_learner(n, base,

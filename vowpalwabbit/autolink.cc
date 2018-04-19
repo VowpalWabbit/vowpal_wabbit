@@ -44,7 +44,7 @@ LEARNER::base_learner* autolink_setup(arguments& arg)
   data->stride_shift = arg.all->weights.stride_shift();
 
   LEARNER::learner<autolink,example>& ret =
-    init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }

@@ -251,68 +251,62 @@ public:
   { test_example_fd.test_example_f = f;
   }
 
-  using fn = void(*)(T&, base_learner&, E&);
-  static learner<T, E>& init_learner(T* dat, base_learner* base,
-    fn learn,
-    fn predict,
+  template <class L>
+  static learner<T, E>& init_learner(T* dat, L* base,
+    void(*learn)(T&,L&,E&),
+    void(*predict)(T&,L&,E&),
     size_t ws,
-    prediction_type::prediction_type_t pred_type);
+    prediction_type::prediction_type_t pred_type)
+    {
+      learner<T,E>& ret = calloc_or_throw<learner<T,E> >();
+
+      if (base !=nullptr)
+        {//a reduction
+          ret = *(learner<T, E>*)(base);
+          ret.learn_fd.base = make_base(*base);
+          ret.finisher_fd.data = dat;
+          ret.finisher_fd.base = make_base(*base);
+          ret.finisher_fd.func = (func_data::fn)noop;
+          ret.weights = ws;
+          ret.increment = base->increment * ret.weights;
+        }
+      else //a base learner
+        {
+          ret.weights = 1;
+          ret.increment = ws;
+          ret.end_pass_fd.func = (func_data::fn)noop;
+          ret.end_examples_fd.func = (func_data::fn)noop;
+          ret.init_fd.func = (func_data::fn)noop;
+          ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
+          ret.finisher_fd.data = dat;
+          ret.finisher_fd.func = (func_data::fn)noop;
+          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
+          ret.finish_example_fd.data = dat;
+          ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
+        }
+
+      ret.learn_fd.data = dat;
+      ret.learn_fd.learn_f = (learn_data::fn)learn;
+      ret.learn_fd.update_f = (learn_data::fn)learn;
+      ret.learn_fd.predict_f = (learn_data::fn)predict;
+      ret.learn_fd.multipredict_f = nullptr;
+      ret.pred_type = pred_type;
+      ret.is_multiline = std::is_same<multi_ex, E>::value;
+
+      return ret;
+    }
 };
 
-  template <class T, class E> learner<T, E>& learner<T, E>::init_learner(T* dat, base_learner* base, 
-                                            fn learn,
-                                            fn predict,
-                                            size_t ws,
-                                            prediction_type::prediction_type_t pred_type)
-  {
-     learner<T,E>& ret = calloc_or_throw<learner<T,E> >();
-
-     if (base !=nullptr)
-       {//a reduction
-         ret = *(learner<T, E>*)(base);
-         ret.learn_fd.base = base;
-         ret.finisher_fd.data = dat;
-         ret.finisher_fd.base = base;
-         ret.finisher_fd.func = (func_data::fn)noop;
-         ret.weights = ws;
-         ret.increment = base->increment * ret.weights;
-       }
-     else //a base learner
-       {
-         ret.weights = 1;
-         ret.increment = ws;
-         ret.end_pass_fd.func = (func_data::fn)noop;
-         ret.end_examples_fd.func = (func_data::fn)noop;
-         ret.init_fd.func = (func_data::fn)noop;
-         ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
-         ret.finisher_fd.data = dat;
-         ret.finisher_fd.func = (func_data::fn)noop;
-         ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
-         ret.finish_example_fd.data = dat;
-         ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
-       }
-
-     ret.learn_fd.data = dat;
-     ret.learn_fd.learn_f = (learn_data::fn)learn;
-     ret.learn_fd.update_f = (learn_data::fn)learn;
-     ret.learn_fd.predict_f = (learn_data::fn)predict;
-     ret.learn_fd.multipredict_f = nullptr;
-     ret.pred_type = pred_type;
-     ret.is_multiline = std::is_same<multi_ex, E>::value;
-
-     return ret;
-  }
-
-  template<class T,class E,class L> learner<T,E>& init_learner(free_ptr<T>& dat, base_learner* base,
+  template<class T,class E,class L> learner<T,E>& init_learner(free_ptr<T>& dat, L* base,
                                                         void(*learn)(T&, L&, E&),
                                                         void(*predict)(T&, L&, E&),
                                                         size_t ws,
                                                         prediction_type::prediction_type_t pred_type)
    { auto ret = &learner<T,E>::init_learner(
-                                             dat.get(), base, 
-                                             (typename learner<T, E>::fn)learn, 
-                                             (typename learner<T, E>::fn)predict, 
-                                             ws, pred_type);
+                                            dat.get(), base, 
+                                            learn,
+                                            predict,
+                                            ws, pred_type);
      
     dat.release();
      return *ret;
@@ -325,9 +319,9 @@ public:
                                                                   void (*predict)(T&, L&, E&),
                                                                   size_t params_per_weight)
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), nullptr, 
-                                              (typename learner<T, E>::fn)learn,
-                                              (typename learner<T, E>::fn)predict,
+                                              dat.get(), (L*)nullptr, 
+                                              learn,
+                                              predict,
                                               params_per_weight, prediction_type::scalar);
     
     dat.release();
@@ -340,9 +334,9 @@ public:
                                                                   void (*predict)(T&, L&, E&),
                                                                   size_t params_per_weight)
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), nullptr, 
-                                              (typename learner<T, E>::fn) predict,
-                                              (typename learner<T, E>::fn) predict,
+                                              dat.get(), (L*)nullptr, 
+                                              predict,
+                                              predict,
                                               params_per_weight, prediction_type::scalar);
     
     dat.release();
@@ -354,9 +348,9 @@ public:
                                                                   void(*predict)(T&, L&, E&), 
                                                                   size_t params_per_weight)
   { return learner<T, E>::init_learner(
-                                          nullptr, nullptr, 
-                                          (typename learner<T, E>::fn) predict, 
-                                          (typename learner<T, E>::fn) predict, 
+                                          nullptr, (L*)nullptr, 
+                                          predict, 
+                                          predict, 
                                           params_per_weight, prediction_type::scalar);
   }
 
@@ -367,9 +361,9 @@ public:
                                                                   size_t params_per_weight,
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
-                                            dat.get(), nullptr, 
-                                            (typename learner<T, E>::fn) predict,
-                                            (typename learner<T, E>::fn) predict,
+                                            dat.get(), (L*)nullptr, 
+                                            predict,
+                                            predict,
                                             params_per_weight, pred_type);
     
     dat.release();
@@ -384,9 +378,9 @@ public:
                                                                   size_t params_per_weight,
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
-                                          dat.get(), nullptr, 
-                                          (typename learner<T, E>::fn) learn, 
-                                          (typename learner<T, E>::fn) predict, 
+                                          dat.get(), (L*)nullptr, 
+                                          learn, 
+                                          predict, 
                                           params_per_weight, pred_type);
     dat.release();
     return *ret;
@@ -394,14 +388,14 @@ public:
 
   //reduction with default prediction type
   template<class T, class E, class L> learner<T, E>& init_learner(
-                                                                  free_ptr<T>& dat, base_learner* base,
+                                                                  free_ptr<T>& dat, L* base,
                                                                   void(*learn)(T&, L&, E&),
                                                                   void(*predict)(T&, L&, E&), 
                                                                   size_t ws)
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), base, 
-                                            (typename learner<T, E>::fn) learn, 
-                                            (typename learner<T, E>::fn) predict, 
+                                            learn, 
+                                            predict, 
                                             ws, base->pred_type);
 
     dat.release();
@@ -410,13 +404,13 @@ public:
   
   //reduction with default num_params
   template<class T, class E, class L> learner<T, E>& init_learner(
-                                                                  free_ptr<T>& dat, base_learner* base,
+                                                                  free_ptr<T>& dat, L* base,
                                                                   void(*learn)(T&, L&, E&),
                                                                   void(*predict)(T&, L&, E&))
   { auto ret = &learner<T, E>::init_learner(
                                             dat.get(), base, 
-                                            (typename learner<T, E>::fn) learn,
-                                            (typename learner<T, E>::fn) predict,
+                                            learn,
+                                            predict,
                                             1, base->pred_type);
 
     dat.release();
@@ -425,27 +419,27 @@ public:
 
   //Reduction with no data.
   template<class T, class E, class L> learner<T, E>& init_learner(
-                                                                  base_learner* base,
+                                                                  L* base,
                                                                   void(*learn)(T&, L&, E&),
                                                                   void(*predict)(T&, L&, E&))
   { return learner<T, E>::init_learner(
                                           nullptr, base, 
-                                          (typename learner<T, E>::fn) learn,
-                                          (typename learner<T, E>::fn) predict,
+                                          learn,
+                                          predict,
                                           1, base->pred_type);
   }
 
   //multiclass reduction
   template<class T, class E, class L> learner<T, E>& init_multiclass_learner(
-                                                                  free_ptr<T>& dat, base_learner* base,
+                                                                  free_ptr<T>& dat, L* base,
                                                                   void (*learn)(T&, L&, E&),
                                                                   void (*predict)(T&, L&, E&),
                                                                   parser* p, size_t ws,
                                                                   prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
   { learner<T,E>& l = learner<T, E>::init_learner(
                                           dat.get(),base,
-                                          (typename learner<T, E>::fn) learn,
-                                          (typename learner<T, E>::fn) predict,
+                                          learn,
+                                          predict,
                                           ws,pred_type);
     
     dat.release();

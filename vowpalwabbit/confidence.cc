@@ -99,7 +99,7 @@ base_learner* confidence_setup(arguments& arg)
   }
 
   //Create new learner
-  learner<confidence,example>& l = init_learner(data, setup_base(arg), learn_with_confidence_ptr, predict_with_confidence_ptr);
+  learner<confidence,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
 

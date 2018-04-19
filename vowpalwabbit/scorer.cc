@@ -56,7 +56,7 @@ LEARNER::base_learner* scorer_setup(arguments& arg)
 
   s->all = arg.all;
 
-  LEARNER::base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   LEARNER::learner<scorer,example>* l;
   void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
 

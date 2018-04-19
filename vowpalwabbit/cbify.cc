@@ -250,7 +250,7 @@ base_learner* cbify_setup(arguments& arg)
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
     arg.args.push_back(ss.str());
   }
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   arg.all->delete_prediction = nullptr;
   learner<cbify,example>* l;

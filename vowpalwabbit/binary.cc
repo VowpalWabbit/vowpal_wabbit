@@ -33,6 +33,6 @@ LEARNER::base_learner* binary_setup(arguments& arg)
     return nullptr;
 
   LEARNER::learner<char,example>& ret =
-    LEARNER::init_learner(setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+    LEARNER::init_learner(as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }

@@ -376,7 +376,7 @@ LEARNER::base_learner* marginal_setup(arguments& arg)
       d->id_features[u] = true;
 
   LEARNER::learner<MARGINAL::data,example>& ret =
-    init_learner(d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(d, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_finish(finish);
   ret.set_save_load(save_load);
 

@@ -387,7 +387,7 @@ base_learner* cb_adf_setup(arguments& arg)
   if (count(arg.args.begin(), arg.args.end(), "--baseline") && check_baseline_enabled)
     arg.args.push_back("--check_enabled");
 
-  base_learner* base = setup_base(arg);
+  auto base = as_multiline(setup_base(arg));
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 

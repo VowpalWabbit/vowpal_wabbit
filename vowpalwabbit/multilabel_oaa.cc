@@ -63,7 +63,7 @@ LEARNER::base_learner* multilabel_oaa_setup(arguments& arg)
       .missing())
     return nullptr;
 
-  LEARNER::learner<multi_oaa,example>& l = LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true>,
+  LEARNER::learner<multi_oaa,example>& l = LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                                                          predict_or_learn<false>, data->k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
   arg.all->p->lp = MULTILABEL::multilabel;

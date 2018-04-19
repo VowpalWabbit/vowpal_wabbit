@@ -246,7 +246,7 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   // also save offsets
-  uint64_t saved_offset = ec[0]->ft_offset;
+  uint64_t saved_offset = examples[0]->ft_offset;
   size_t index = 0;
   for (auto ec : examples)
   { cb_labels.push_back(ec->l.cb);

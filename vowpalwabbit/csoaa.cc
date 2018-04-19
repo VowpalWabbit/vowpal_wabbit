@@ -132,7 +132,7 @@ base_learner* csoaa_setup(arguments& arg)
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
-  learner<csoaa,example>& l = init_learner(c, setup_base(arg), predict_or_learn<true>,
+  learner<csoaa,example>& l = init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true>,
                                    predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
   arg.all->p->lp = cs_label;
   arg.all->label_type = label_type::cs;
@@ -832,7 +832,7 @@ base_learner* csldf_setup(arguments& arg)
     pred_type = prediction_type::multiclass;
 
   ld->read_example_this_loop = 0;
-  learner<ldf,multi_ex>& l = init_learner(ld, setup_base(arg), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
+  learner<ldf,multi_ex>& l = init_learner(ld, &as_singleline(*setup_base(arg)), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
   l.set_end_pass(end_pass);

@@ -148,7 +148,7 @@ base_learner* active_setup(arguments& arg)
   if (count(arg.args.begin(), arg.args.end(), "--lda") != 0)
     THROW("error: you can't combine lda and active learning");
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   //Create new learner
   learner<active,example>* l;

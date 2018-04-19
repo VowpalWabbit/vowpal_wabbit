@@ -245,7 +245,7 @@ base_learner* active_cover_setup(arguments& arg)
   if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
     THROW("error: you can't use --active_cover and --active at the same time");
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];

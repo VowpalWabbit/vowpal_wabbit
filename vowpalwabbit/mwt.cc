@@ -276,11 +276,11 @@ base_learner* mwt_setup(arguments& arg)
   learner<mwt,example>* l;
   if (c->learn)
     if (exclude_eval)
-      l = &init_learner(c, setup_base(arg), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
     else
-      l = &init_learner(c, setup_base(arg), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
   else
-    l = &init_learner(c, setup_base(arg), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+    l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

@@ -204,7 +204,7 @@ base_learner* explore_eval_setup(arguments& arg)
 
   arg.all->delete_prediction = nullptr;
 
-  base_learner* base = setup_base(arg);
+  multi_learner* base = as_multiline(setup_base(arg));
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 

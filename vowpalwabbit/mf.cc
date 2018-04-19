@@ -208,7 +208,7 @@ base_learner* mf_setup(arguments& arg)
 
   arg.all->random_positive_weights = true;
 
-  learner<mf,example>& l = init_learner(data, setup_base(arg), learn, predict<false>, 2*data->rank+1);
+  learner<mf,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn, predict<false>, 2*data->rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

@@ -107,7 +107,7 @@ LEARNER::base_learner* topk_setup(arguments& arg)
   if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())
     return nullptr;
 
-  LEARNER::learner<topk,example>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
+  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

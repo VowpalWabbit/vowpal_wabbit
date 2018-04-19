@@ -344,8 +344,8 @@ base_learner* cs_active_setup(arguments& arg)
 
   learner<cs_active,example>& l =
     (arg.vm.count("simulation") > 0)
-    ? init_learner(data, setup_base(arg), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
-    : init_learner(data, setup_base(arg), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
+    ? init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
+    : init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
 
   l.set_finish_example(finish_example);
   l.set_finish(finish);

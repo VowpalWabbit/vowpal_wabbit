@@ -275,7 +275,7 @@ LEARNER::base_learner* audit_regressor_setup(arguments& arg)
   dat->out_file = new io_buf();
   dat->out_file->open_file( out_file.c_str(), arg.all->stdin_off, io_buf::WRITE );
 
-  LEARNER::learner<audit_regressor_data,example>& ret = LEARNER::init_learner(dat, setup_base(arg), audit_regressor, audit_regressor, 1);
+  LEARNER::learner<audit_regressor_data,example>& ret = LEARNER::init_learner(dat, as_singleline(setup_base(arg)), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

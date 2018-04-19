@@ -181,7 +181,7 @@ base_learner* baseline_setup(arguments& arg)
   if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
     data->lr_scaling = true;
 
-  learner<baseline,example>& l = init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish(finish);
 
   return make_base(l);

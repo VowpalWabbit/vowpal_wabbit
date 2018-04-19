@@ -93,7 +93,7 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
   er->base = LEARNER::as_singleline(setup_base(arg));
-  LEARNER::learner<expreplay,example>* l = &init_learner(er, make_base(*er->base), predict_or_learn<true,lp>, predict_or_learn<false,lp>);
+  LEARNER::learner<expreplay,example>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);
 

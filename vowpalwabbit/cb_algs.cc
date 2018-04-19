@@ -175,7 +175,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.args.push_back(ss.str());
   }
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   if (eval)
   {
     arg.all->p->lp = CB_EVAL::cb_eval;

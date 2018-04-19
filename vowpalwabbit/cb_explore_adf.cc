@@ -485,7 +485,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       data->explore_type = EPS_GREEDY;
     }
 
-  base_learner* base = setup_base(arg);
+  multi_learner* base = as_multiline(setup_base(arg));
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
