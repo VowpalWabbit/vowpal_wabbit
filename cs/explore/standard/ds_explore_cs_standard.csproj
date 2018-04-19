@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.0</TargetFramework>
+    <AssemblyName>Microsoft.DecisionService.Exploration</AssemblyName>
+    <PackageId>Microsoft.DecisionService.Exploration</PackageId>
+    <RootNamespace>Microsoft.DecisionService.Exploration</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\ExplorationStrategies.cs" Link="ExplorationStrategies.cs" />
+    <Compile Include="..\MurMurHash3.cs" Link="MurMurHash3.cs" />
+    <Compile Include="..\PRG.cs" Link="PRG.cs" />
+    <Compile Include="..\Sampling.cs" Link="Sampling.cs" />
+  </ItemGroup>
+</Project>
