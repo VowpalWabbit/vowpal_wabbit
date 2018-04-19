@@ -150,7 +150,7 @@ namespace exploration
   }
 
   template<typename It>
-  int enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
+  int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
   {
     // iterators don't support <= in general
     if (pdf_first == pdf_last || pdf_last < pdf_first)
@@ -158,7 +158,7 @@ namespace exploration
 
 	  size_t num_actions = pdf_last - pdf_first;
 
-    if (min_prob > 0.999) // uniform exploration
+    if (minimum_uniform > 0.999) // uniform exploration
     {
       size_t support_size = num_actions;
       if (!update_zero_elements)
@@ -175,7 +175,7 @@ namespace exploration
       return S_EXPLORATION_OK;
     }
 
-    min_prob /= num_actions;
+    minimum_uniform /= num_actions;
     float touched_mass = 0.;
     float untouched_mass = 0.;
     uint16_t num_actions_touched = 0;
@@ -183,10 +183,10 @@ namespace exploration
 	  for (It d = pdf_first; d != pdf_last; ++d)
     {
       auto& prob = *d;
-      if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= min_prob)
+      if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform)
       {
-        touched_mass += min_prob;
-        prob = min_prob;
+        touched_mass += minimum_uniform;
+        prob = minimum_uniform;
         ++num_actions_touched;
       }
       else
@@ -197,19 +197,19 @@ namespace exploration
     {
       if (touched_mass > 0.999)
       {
-        min_prob = (1.f - untouched_mass) / (float)num_actions_touched;
+        minimum_uniform = (1.f - untouched_mass) / (float)num_actions_touched;
         for (It d = pdf_first; d != pdf_last; ++d)
         {
           auto& prob = *d;
-          if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= min_prob)
-            prob = min_prob;
+          if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform)
+            prob = minimum_uniform;
         }
       }
       else
       {
         float ratio = (1.f - touched_mass) / untouched_mass;
         for (It d = pdf_first; d != pdf_last; ++d)
-          if (*d > min_prob)
+          if (*d > minimum_uniform)
             *d *= ratio;
       }
     }
@@ -218,11 +218,11 @@ namespace exploration
   }
 
   template<typename It>
-  int enforce_minimum_probability(float min_prob, bool update_zero_elements, It pdf_first, It pdf_last)
+  int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pdf_first, It pdf_last)
   {
 	  typedef typename std::iterator_traits<It>::iterator_category pdf_category;
 
-	  return enforce_minimum_probability(min_prob, update_zero_elements, pdf_first, pdf_last, pdf_category());
+	  return enforce_minimum_probability(minimum_uniform, update_zero_elements, pdf_first, pdf_last, pdf_category());
   }
   
   template<typename InputIt>
@@ -265,23 +265,24 @@ namespace exploration
   }
 
   template<typename InputIt>
-  uint32_t sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, std::input_iterator_tag pdf_category)
+  int sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_from_pdf(seed_hash, pdf_first, pdf_last);
+    return sample_from_pdf(seed_hash, pdf_first, pdf_last, chosen_index, pdf_category);
   }
+
 
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
   int sample_from_pdf(uint64_t seed,
       InputPdfIt pdf_begin, InputPdfIt pdf_end, std::input_iterator_tag pdf_category,
-      InputScoreIt scores_begin, InputScoreIt scores_end, std::random_access_iterator_tag scores_category,
-      OutputIt ranking_begin, OutputIt ranking_end, std::random_access_iterator_tag ranking_category)
+      InputScoreIt scores_begin, InputScoreIt scores_last, std::random_access_iterator_tag scores_category,
+      OutputIt ranking_begin, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
   {
-    if (pdf_end < pdf_begin || ranking_end < ranking_begin)
+    if (pdf_end < pdf_begin || ranking_last < ranking_begin)
       return E_EXPLORATION_BAD_RANGE; 
 
     size_t pdf_size = pdf_end - pdf_begin;
-    size_t ranking_size = ranking_end - ranking_begin;
+    size_t ranking_size = ranking_last - ranking_begin;
 
     if (pdf_size == 0)
       return E_EXPLORATION_BAD_RANGE;
@@ -289,16 +290,20 @@ namespace exploration
     if (pdf_size != ranking_size)
       return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
 
-    uint32_t chosen_action = sample_from_pdf(seed, pdf_begin, pdf_end);
+	uint32_t chosen_action;
+	int ret = sample_from_pdf(seed, pdf_begin, pdf_end, chosen_action);
+	if (ret)
+		return ret;
 
-    std::iota(ranking_begin, ranking_end, 0);
+    std::iota(ranking_begin, ranking_last, 0);
 
     // sort indexes based on comparing values in scores
-    std::sort(ranking_begin, ranking_end,
-      [&scores_begin, &scores_end](size_t i1, size_t i2) { return scores_begin[i1] > scores_end[i2]; });
+    std::sort(ranking_begin, ranking_last,
+      [&scores_begin](size_t i1, size_t i2) { return scores_begin[i1] > scores_begin[i2]; });
 
     // swap top element with chosen one
-    std::iter_swap(ranking_begin, ranking_end + chosen_action);
+	if (chosen_action != 0)
+		std::iter_swap(ranking_begin, ranking_last + chosen_action);
 
     return S_EXPLORATION_OK;
   }
