@@ -38,7 +38,7 @@ public:
   void set_default_value(V def) { default_value = def; }
 
   void init_dat(size_t min_size, V def, bool (*eq)(void*,K&,K&), void *eq_dat = nullptr)
-  { dat = v_init<hash_elem>();
+  {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
 
@@ -52,7 +52,7 @@ public:
   }
 
   void init(size_t min_size, V def, bool (*eq)(K&,K&))
-  { dat = v_array<hash_elem>();
+  {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size); // resize sets to 0 ==> occupied=false
 
@@ -66,7 +66,7 @@ public:
   }
 
   void init(size_t min_size, bool (*eq)(K&,K&))
-  { dat = v_array<hash_elem>();
+  {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size); // resize sets to 0 ==> occupied=false
 
