@@ -176,7 +176,7 @@ VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f)
 }
 VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
-  VW::finish_example(*pointer, static_cast<example*>(e));
+  VW::finish_example(*pointer, *(static_cast<example*>(e)));
 }
 #ifdef USE_CODECVT
 VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s)
