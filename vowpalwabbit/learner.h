@@ -95,13 +95,25 @@ inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, void*) { return 0.; }
 
-inline void adjust_offset(example& ex, const size_t increment, const int32_t i)
+inline void increment_offset(example& ex, const size_t increment, const size_t i)
 { ex.ft_offset += static_cast<uint32_t>(increment * i);
 }
 
-inline void adjust_offset(multi_ex& ec_seq, const size_t increment, const int32_t i)
+inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 { for (auto ec : ec_seq)
     ec->ft_offset += static_cast<uint32_t>(increment * i);
+}
+
+inline void decrement_offset(example& ex, const size_t increment, const size_t i)
+{ assert(ex.ft_offset >= increment * i);
+  ex.ft_offset -= static_cast<uint32_t>(increment * i);
+}
+
+inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+{ for (auto ec : ec_seq)
+  { assert(ec->ft_offset >= increment * i);
+    ec->ft_offset -= static_cast<uint32_t>(increment * i);
+  }
 }
 
 template<class T,class E> struct learner
@@ -128,40 +140,40 @@ public:
   using finish_fptr_type = void(*)(void*);
 
   //called once for each example.  Must work under reduction.
-  inline void learn(E& ec, int32_t i = 0)
+  inline void learn(E& ec, size_t i = 0)
   { assert((is_multiline && std::is_same<multi_ex, E>::value) ||
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    adjust_offset(ec, increment, i);
+    increment_offset(ec, increment, i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    adjust_offset(ec, increment, -i);
+    decrement_offset(ec, increment, i);
   }
   
-  inline void predict(E& ec, int32_t i = 0)
+  inline void predict(E& ec, size_t i = 0)
   { assert((is_multiline && std::is_same<multi_ex, E>::value) ||
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    adjust_offset(ec, increment, i);
+    increment_offset(ec, increment, i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    adjust_offset(ec, increment, -i);
+    decrement_offset(ec, increment, -i);
   }
 
   inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   { assert((is_multiline && std::is_same<multi_ex, E>::value) ||
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     if (learn_fd.multipredict_f == NULL)
-    { adjust_offset(ec, increment, lo);
+    { increment_offset(ec, increment, lo);
       for (size_t c=0; c<count; c++)
       { learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
         if (finalize_predictions) pred[c] = ec.pred; // TODO: this breaks for complex labels because = doesn't do deep copy!
         else                      pred[c].scalar = ec.partial_prediction;
         //pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because = doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
-        adjust_offset(ec, increment, 1);
+        increment_offset(ec, increment, 1);
       }
-      adjust_offset(ec, increment, -((int32_t)(lo+count)) );
+      decrement_offset(ec, increment, lo+count);
     }
     else
-    { adjust_offset(ec, increment, lo);
+    { increment_offset(ec, increment, lo);
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
-      adjust_offset(ec, increment, -(int32_t)lo);
+      decrement_offset(ec, increment, lo);
     }
   }
 
@@ -175,9 +187,9 @@ public:
   inline void update(E& ec, size_t i=0)
   { assert((is_multiline && std::is_same<multi_ex, E>::value) ||
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
-    adjust_offset(ec, increment, i);
+    increment_offset(ec, increment, i);
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    adjust_offset(ec, increment,-i);
+    decrement_offset(ec, increment,i);
   }
   template<class L>
   inline void set_update(void (*u)(T& data, L& base, E&)) { learn_fd.update_f = (learn_data::fn)u; }
@@ -188,9 +200,9 @@ public:
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
   }
   inline float sensitivity(E& ec, size_t i=0)
-  { adjust_offset(ec, increment, (int32_t)i);
+  { increment_offset(ec, increment, i);
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, (void*)&ec);
-    adjust_offset(ec, increment, -(int32_t)i);
+    decrement_offset(ec, increment, i);
     return ret;
   }
 
@@ -460,7 +472,7 @@ public:
   template<class T, class E> 
   multi_learner& as_multiline(learner<T, E>& l)
   { if(l.is_multiline) // Tried to use a singleline reduction as a multiline reduction
-    return (multi_learner&) (l);
+      return (multi_learner&) (l);
     THROW("Tried to use a singleline reduction as a multiline reduction");
   }
 
