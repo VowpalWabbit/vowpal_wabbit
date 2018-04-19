@@ -246,14 +246,13 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
 
   // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   // also save offsets
-  std::vector<uint64_t> offsets(examples.size());
+  uint64_t saved_offset = ec[0]->ft_offset;
   size_t index = 0;
   for (auto ec : examples)
   { cb_labels.push_back(ec->l.cb);
     prepped_cs_labels[index].costs.erase();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     ec->l.cs = prepped_cs_labels[index++];
-    offsets.push_back(ec->ft_offset);
     ec->ft_offset = offset;
   }
 
@@ -268,8 +267,8 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   // (**ec).l.cb = array.element.
   // and restore offsets
   for (size_t i = 0; i < examples.size(); ++i)
-  { examples[i]->ft_offset = offsets[i];
-    examples[i]->l.cb = cb_labels[i];
+  { examples[i]->l.cb = cb_labels[i];
+    examples[i]->ft_offset = saved_offset;
   }
 }
 }
