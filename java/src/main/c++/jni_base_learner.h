@@ -54,13 +54,6 @@ T base_predict(
   return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
 
-template<class T>
-struct always_delete { 
-  T _ar;
-  always_delete(T& ar):_ar(ar) {  } 
-  ~always_delete() { _ar.delete_v(); }
-};
-
 template<typename T, typename F>
 T base_predict(
   JNIEnv *env,
