@@ -230,14 +230,14 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
   ec.indices.delete_v();
 }
 
-void finish_example(vw&, example*);
+void finish_example(vw&, example&);
 
 void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
 {
   if (ec_seq.size() > 0)
     for (example* ecc : ec_seq)
       if (ecc->in_use)
-        VW::finish_example(all, ecc);
+        VW::finish_example(all, *ecc);
   ec_seq.erase();
 }
 

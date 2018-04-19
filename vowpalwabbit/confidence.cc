@@ -65,7 +65,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
 void return_confidence_example(vw& all, confidence& c, example& ec)
 {
   output_and_account_confidence_example(all, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 base_learner* confidence_setup(arguments& arg)

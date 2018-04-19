@@ -170,6 +170,6 @@ void finish_example(vw& all, example& ec)
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }

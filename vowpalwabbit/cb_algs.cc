@@ -122,13 +122,13 @@ void finish(cb& data)
 void finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void eval_finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }
 using namespace CB_ALGS;

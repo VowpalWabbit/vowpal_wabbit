@@ -93,7 +93,7 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, example& ec)
 void finish_example(vw& all, topk& d, example& ec)
 {
   output_example(all, d, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(topk& d)

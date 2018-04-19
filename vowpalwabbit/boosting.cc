@@ -335,7 +335,7 @@ void finish(boosting& o)
 void return_example(vw& all, boosting& a, example& ec)
 {
   output_and_account_example(all, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 void save_load(boosting &o, io_buf &model_file, bool read, bool text)

@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
           pr_queue.push(make_pair(ex->pred.scalar, str));
         }
 
-        VW::finish_example(*model, ex);
+        VW::finish_example(*model, *ex);
       }
       else
       { skipped++;

@@ -499,7 +499,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
     ON.cnt = 0;
     for (int k = 0; k < ON.epoch_size; k++)
     {
-      VW::finish_example(*ON.all, ON.buffer[k]);
+      VW::finish_example(*ON.all, *ON.buffer[k]);
     }
   }
 }

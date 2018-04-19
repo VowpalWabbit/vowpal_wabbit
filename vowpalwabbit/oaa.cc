@@ -199,7 +199,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     MULTICLASS::print_update_with_probability(all, ec, prediction);
   else
     MULTICLASS::print_update_with_score(all, ec, prediction);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 LEARNER::base_learner* oaa_setup(arguments& arg)

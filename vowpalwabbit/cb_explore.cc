@@ -318,7 +318,7 @@ void output_example(vw& all, cb_explore& data, example& ec, CB::label& ld)
 void finish_example(vw& all, cb_explore& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }
 using namespace CB_EXPLORE;

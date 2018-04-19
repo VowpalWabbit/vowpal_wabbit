@@ -805,7 +805,7 @@ void return_example(vw& all, example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
                          ec.num_features, all.progress_add, all.progress_arg);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 void learn_batch(lda &l)

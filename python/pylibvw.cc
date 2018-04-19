@@ -179,7 +179,7 @@ float my_learn_string(vw_ptr all, char*str)
 { example*ec = VW::read_example(*all, str);
   all->learn(*ec);
   float pp = ec->partial_prediction;
-  VW::finish_example(*all, ec);
+  VW::finish_example(*all, *ec);
   return pp;
 }
 
@@ -214,7 +214,7 @@ float my_predict_string(vw_ptr all, char*str)
 { example*ec = VW::read_example(*all, str);
   as_singleline(all->l)->predict(*ec);
   float pp = ec->partial_prediction;
-  VW::finish_example(*all, ec);
+  VW::finish_example(*all, *ec);
   return pp;
 }
 

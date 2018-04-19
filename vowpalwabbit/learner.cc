@@ -34,7 +34,7 @@ const char* to_string(prediction_type_t prediction_type)
 namespace LEARNER
 {
 
-void dispatch_end_pass(vw& all, example* ec)
+void dispatch_end_pass(vw& all, example& ec)
 {
   all.current_pass++;
   all.l->end_pass();
@@ -53,7 +53,7 @@ void save(vw& all, example* ec)
     all.opts_n_args.trace_message << "saving regressor to " << final_regressor_name << endl;
   save_predictor(all, final_regressor_name, 0);
 
-  VW::finish_example(all,ec);
+  VW::finish_example(all,*ec);
 }
 
 bool inline is_save_cmd(example* ec)
@@ -66,7 +66,7 @@ void process_example(vw& all, example* ec)
   if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
     dispatch_example(all, *ec);
   else if (ec->end_pass)
-    dispatch_end_pass(all, ec);
+    dispatch_end_pass(all, *ec);
   else if (is_save_cmd(ec))
     save(all, ec);
   else 
@@ -106,7 +106,7 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 
   if ((example_is_newline_not_header(*ec) && is_test_ec) 
       || need_to_break)
-  { VW::finish_example(all, ec);
+  { VW::finish_example(all, *ec);
     if (ec_seq.size() == 0) {
       cout << "Something is wrong---an example with no choice.  Do you have all 0 features? Or multiple empty lines?" << endl;
       return false;
@@ -139,7 +139,7 @@ void on_new_partial_ex(example* ec, multi_ex& ec_seq, vw& all)
     if (ec->indices.size() > 1)  // 1+ nonconstant feature. (most common case first)
       dispatch_multi_ex<f>(all, ec, ec_seq);
     else if (ec->end_pass)
-      dispatch_end_pass(all, ec);
+      dispatch_end_pass(all, *ec);
     else if (is_save_cmd(ec))
       save(all, ec);
     else
@@ -164,7 +164,7 @@ void multi_ex_generic_driver(vw& all)
 
   if (all.early_terminate) //drain any extra examples from parser.
     while ((ec = VW::get_example(all.p)) != nullptr)
-      VW::finish_example(all, ec);
+      VW::finish_example(all, *ec);
 
   all.l->end_examples();
 }
@@ -180,7 +180,7 @@ template <class T, void(*f)(T, example*)> void generic_driver(vw& all, T context
       break;
   if (all.early_terminate) //drain any extra examples from parser.
     while ((ec = VW::get_example(all.p)) != nullptr)
-      VW::finish_example(all, ec);
+      VW::finish_example(all, *ec);
   all.l->end_examples();
 }
 

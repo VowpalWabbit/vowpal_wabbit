@@ -183,7 +183,7 @@ void finish_example(vw& all, mwt& c, example& ec)
     CB::print_update(all, c.observation != nullptr, ec, nullptr, false);
     ec.pred.scalars = temp;
   }
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(mwt& c)

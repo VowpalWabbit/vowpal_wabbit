@@ -228,7 +228,7 @@ void predict_or_learn(bs& d, single_learner& base, example& ec)
 void finish_example(vw& all, bs& d, example& ec)
 {
   output_example(all, d, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(bs& d)

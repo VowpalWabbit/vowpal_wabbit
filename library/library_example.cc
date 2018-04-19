@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   example *vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);
   cerr << "p2 = " << vec2->pred.scalar << endl;
-  VW::finish_example(*model, vec2);
+  VW::finish_example(*model, *vec2);
 
   VW::primitive_feature_space features[2];
   VW::primitive_feature_space *s = features, *t = features + 1;
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   model->learn(*vec3);
   cerr << "p3 = " << vec3->pred.scalar << endl;
   // TODO: this does not invoke m_vw->l->finish_example()
-  VW::finish_example(*model, vec3);
+  VW::finish_example(*model, *vec3);
 
   VW::finish(*model);
 
@@ -60,6 +60,6 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
-  VW::finish_example(*model2, vec2);
+  VW::finish_example(*model2, *vec2);
   VW::finish(*model2);
 }

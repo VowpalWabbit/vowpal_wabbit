@@ -180,7 +180,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
     set_done(all);
   }
 
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(audit_regressor_data& dat)

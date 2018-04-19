@@ -132,7 +132,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
 void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 base_learner* active_setup(arguments& arg)
