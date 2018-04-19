@@ -9,7 +9,7 @@ clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
 - cd c:\vowpal_wabbit
-- '"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe" "C:\vowpal_wabbit\cs\explore\ds_explore_cs.sln" /m /verbosity:normal "/p:Configuration=Release;Platform=Any CPU"'
+- '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MsBuild.exe" "C:\vowpal_wabbit\cs\explore\ds_explore_cs.sln" /m /verbosity:normal "/p:Configuration=Release;Platform=Any CPU"'
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure_worker\packages.config
