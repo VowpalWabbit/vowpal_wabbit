@@ -70,14 +70,15 @@ namespace exploration {
    * @param seed The seed for the pseudo-random generator.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param chosen_index returns the chosen a index.
+   * @param chosen_index returns the chosen index.
+   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputIt>
-  int sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index)
+  int sample_after_normalizing(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, bool* pdf_updated = nullptr)
   {
     typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
-    return sample_from_pdf(seed, pdf_first, pdf_last, chosen_index, pdf_category());
+    return sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category(), pdf_updated);
   }
 
   /**
@@ -87,14 +88,15 @@ namespace exploration {
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param chosen_index returns the chosen a index.
+   * @param chosen_index returns the chosen index.
+   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputIt>
-  int sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index)
+  int sample_after_normalizing(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, bool* pdf_updated = nullptr)
   {
     typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
-    return sample_from_pdf(seed, pdf_first, pdf_last, chosen_index, pdf_category());
+    return sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category(), pdf_updated);
   }
 
   /**
@@ -111,13 +113,14 @@ namespace exploration {
    * @param scores_last Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
    * @param ranking_last Iterator pointing to the pre-allocated end of the output ranking.
+   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_from_pdf(const char* seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(const char* seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last, bool* pdf_updated = nullptr)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_from_pdf(seed_hash, pdf_begin, pdf_end, scores_begin, scores_last, ranking_begin, ranking_last);
+    return sample_after_normalizing(seed_hash, pdf_begin, pdf_end, scores_begin, scores_last, ranking_begin, ranking_last, pdf_updated);
   }
 
   /**
@@ -134,15 +137,16 @@ namespace exploration {
    * @param scores_last Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
    * @param ranking_last Iterator pointing to the pre-allocated end of the output ranking.
+   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_from_pdf(uint64_t seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(uint64_t seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last, bool* pdf_updated = nullptr)
   {
     typedef typename std::iterator_traits<InputPdfIt>::iterator_category pdf_category;
     typedef typename std::iterator_traits<InputScoreIt>::iterator_category scores_category;
     typedef typename std::iterator_traits<OutputIt>::iterator_category ranking_category;
 
-    return sample_from_pdf(seed, pdf_begin, pdf_end, pdf_category(), scores_begin, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category());
+    return sample_after_normalizing(seed, pdf_begin, pdf_end, pdf_category(), scores_begin, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category(), pdf_updated);
   }
 }

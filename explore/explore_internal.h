@@ -226,16 +226,28 @@ namespace exploration
   }
   
   template<typename InputIt>
-  int sample_from_pdf(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category)
+  int sample_after_normalizing(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category, bool* pdf_updated = nullptr)
   {
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
+
+    if (pdf_updated)
+      *pdf_updated = false;
 
     // Create a discrete_distribution based on the returned weights. This class handles the
     // case where the sum of the weights is < or > 1, by normalizing agains the sum.
     float total = 0.f;
     for (InputIt pdf = pdf_first; pdf != pdf_last; ++pdf)
-      total += (std::max)(0.f, *pdf);
+    {
+      if (*pdf < 0)
+      {
+        *pdf = 0;
+        if (pdf_updated)
+          *pdf_updated = true;
+      }
+
+      total += *pdf;
+    }
 
     // assume the first is the best
     if (total == 0)
@@ -252,7 +264,7 @@ namespace exploration
     uint32_t i = 0;
     for (InputIt pdf = pdf_first; pdf != pdf_last; ++pdf, ++i)
     {
-      sum += (std::max)(0.f, *pdf);
+      sum += *pdf;
       if (sum > draw)
       {
         chosen_index = i;
@@ -265,18 +277,18 @@ namespace exploration
   }
 
   template<typename InputIt>
-  int sample_from_pdf(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category)
+  int sample_after_normalizing(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category, bool* pdf_updated = nullptr)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_from_pdf(seed_hash, pdf_first, pdf_last, chosen_index, pdf_category);
+    return sample_after_normalizing(seed_hash, pdf_first, pdf_last, chosen_index, pdf_category, pdf_updated);
   }
 
 
   template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_from_pdf(uint64_t seed,
+  int sample_after_normalizing(uint64_t seed,
       InputPdfIt pdf_begin, InputPdfIt pdf_end, std::input_iterator_tag pdf_category,
       InputScoreIt scores_begin, InputScoreIt scores_last, std::random_access_iterator_tag scores_category,
-      OutputIt ranking_begin, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
+      OutputIt ranking_begin, OutputIt ranking_last, std::random_access_iterator_tag ranking_category, bool* pdf_updated = nullptr)
   {
     if (pdf_end < pdf_begin || ranking_last < ranking_begin)
       return E_EXPLORATION_BAD_RANGE; 
@@ -291,7 +303,7 @@ namespace exploration
       return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
 
 	uint32_t chosen_action;
-	int ret = sample_from_pdf(seed, pdf_begin, pdf_end, chosen_action);
+	int ret = sample_after_normalizing(seed, pdf_begin, pdf_end, chosen_action, pdf_updated);
 	if (ret)
 		return ret;
 
