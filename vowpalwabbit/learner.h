@@ -452,26 +452,30 @@ public:
 
   template<class T, class E> 
   multi_learner* as_multiline(learner<T, E>* l)
-  { assert(l->is_multiline); // Tried to use a singleline reduction as a multiline reduction
-    return (multi_learner*) (l);
+  { if(l->is_multiline) // Tried to use a singleline reduction as a multiline reduction
+      return (multi_learner*) (l);
+    THROW("Tried to use a singleline reduction as a multiline reduction");
   }
 
   template<class T, class E> 
   multi_learner& as_multiline(learner<T, E>& l)
-  { assert(l.is_multiline); // Tried to use a singleline reduction as a multiline reduction
+  { if(l.is_multiline) // Tried to use a singleline reduction as a multiline reduction
     return (multi_learner&) (l);
+    THROW("Tried to use a singleline reduction as a multiline reduction");
   }
 
   template<class T, class E> 
   single_learner* as_singleline(learner<T, E>* l)
-  { assert(!l->is_multiline); // Tried to use a multiline reduction as a singleline reduction
-    return (single_learner*) (l);
+  { if(!l->is_multiline) // Tried to use a multiline reduction as a singleline reduction
+      return (single_learner*) (l);
+    THROW("Tried to use a multiline reduction as a singleline reduction");
   }
 
   template<class T, class E>
   single_learner & as_singleline(learner<T, E>& l)
-  { assert(!l.is_multiline); // Tried to use a multiline reduction as a singleline reduction
-    return (single_learner&) (l);
+  { if(!l.is_multiline) // Tried to use a multiline reduction as a singleline reduction
+      return (single_learner&) (l);
+    THROW("Tried to use a multiline reduction as a singleline reduction");
   }
 
   template<bool is_learn>
