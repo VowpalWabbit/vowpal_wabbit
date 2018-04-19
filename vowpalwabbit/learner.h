@@ -93,8 +93,8 @@ void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
-inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
-inline float noop_sensitivity(void*, base_learner&, multi_ex&) { return 0.; }
+template<class E>
+inline float noop_sensitivity(void*, base_learner&, E&) { return 0.; }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 { ex.ft_offset += static_cast<uint32_t>(increment * i);
@@ -154,7 +154,7 @@ public:
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
     increment_offset(ec, increment, i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
-    decrement_offset(ec, increment, -i);
+    decrement_offset(ec, increment, i);
   }
 
   inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
@@ -293,7 +293,7 @@ public:
           ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
           ret.finisher_fd.data = dat;
           ret.finisher_fd.func = (func_data::fn)noop;
-          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
+          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity<E>;
           ret.finish_example_fd.data = dat;
           ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
         }
