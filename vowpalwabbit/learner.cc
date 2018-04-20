@@ -153,8 +153,8 @@ void on_new_partial_ex(example* ec, multi_ex& ec_seq, vw& all)
 
 template <void(*f)(vw&, multi_ex&)>
 void multi_ex_generic_driver(vw& all)
-{
-  multi_ex ec_seq = v_init<example*>();
+{ multi_ex ec_seq = v_init<example*>();
+  always_delete<multi_ex> guard_obj(ec_seq);
   example* ec = nullptr;
   while (all.early_terminate == false) {
     ec = VW::get_example(all.p);
@@ -222,6 +222,7 @@ void generic_driver_onethread(vw& all)
   if (all.l->is_multiline)
   {
     auto ctxt = v_init<example*>();
+    always_delete<multi_ex> guard_obj(ctxt);
     auto multi_ex_fptr = [&ctxt](vw& all, v_array<example*> examples)
     {
       all.p->end_parsed_examples += examples.size(); //divergence: lock & signal
