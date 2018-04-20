@@ -63,12 +63,8 @@ T base_predict(
   const F& predictor)
 { vw* vwInstance = (vw*)vwPtr;
   int example_count = env->GetArrayLength(example_strings);
-
-  // When doing multiline prediction the final result is stored in the FIRST example parsed.
-  multi_ex ex_coll = v_init<example*>();
-  // always delete the array
-  always_delete<multi_ex> guard_obj(ex_coll);
-
+  multi_ex ex_coll = v_init<example*>();   // When doing multiline prediction the final result is stored in the FIRST example parsed.
+  always_delete<multi_ex> guard_obj(ex_coll);    // always delete the array
   example* first_example = NULL;
   for (int i=0; i<example_count; i++)
   { jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
