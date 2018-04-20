@@ -64,46 +64,37 @@ namespace exploration {
   int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pdf_first, It pdf_last);
 
   /**
-   * @brief Sample an index from the provided pdf.
+   * @brief Sample an index from the provided pdf. If the pdf is not normalized it will be updated in-place.
    * 
-   * @tparam InputIt Iterator type of the pdf. Must be an InputIterator.
+   * @tparam InputIt Iterator type of the pdf. Must be an RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
    * @param chosen_index returns the chosen index.
-   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
-  template<typename InputIt>
-  int sample_after_normalizing(uint64_t seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, bool* pdf_updated = nullptr)
-  {
-    typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
-    return sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category(), pdf_updated);
-  }
+  template<typename It>
+  int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index);
 
   /**
-   * @brief Sample an index from the provided pdf.
+   * @brief Sample an index from the provided pdf.  If the pdf is not normalized it will be updated in-place.
    * 
-   * @tparam InputIt Iterator type of the pdf. Must be an InputIterator.
+   * @tparam It Iterator type of the pdf. Must be an RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
    * @param chosen_index returns the chosen index.
-   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
-  template<typename InputIt>
-  int sample_after_normalizing(const char* seed, InputIt pdf_first, InputIt pdf_last, uint32_t& chosen_index, bool* pdf_updated = nullptr)
-  {
-    typedef typename std::iterator_traits<InputIt>::iterator_category pdf_category;
-    return sample_after_normalizing(seed, pdf_first, pdf_last, chosen_index, pdf_category(), pdf_updated);
-  }
+  template<typename It>
+  int sample_after_normalizing(const char* seed, It pdf_first, It pdf_last, uint32_t& chosen_index);
 
   /**
    * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
    * Second the first index according to descending scores is swapped with the sampled index.
+   * If the pdf is not normalized it will be updated in-place.
    * 
-   * @tparam InputPdfIt Iterator type of the pdf. Must be an InputIterator.
+   * @tparam PdfIt Iterator type of the pdf. Must be an Iterator.
    * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
    * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
@@ -113,21 +104,16 @@ namespace exploration {
    * @param scores_last Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
    * @param ranking_last Iterator pointing to the pre-allocated end of the output ranking.
-   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
-  template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(const char* seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last, bool* pdf_updated = nullptr)
-  {
-    uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_after_normalizing(seed_hash, pdf_begin, pdf_end, scores_begin, scores_last, ranking_begin, ranking_last, pdf_updated);
-  }
+  template<typename PdfIt, typename InputScoreIt, typename OutputIt>
+  int sample_after_normalizing(const char* seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
 
   /**
    * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
    * Second the first index according to descending scores is swapped with the sampled index.
    * 
-   * @tparam InputPdfIt Iterator type of the pdf. Must be an InputIterator.
+   * @tparam PdfIt Iterator type of the pdf. Must be an Iterator.
    * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
    * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator.
@@ -140,13 +126,6 @@ namespace exploration {
    * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
-  template<typename InputPdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(uint64_t seed, InputPdfIt pdf_begin, InputPdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last, bool* pdf_updated = nullptr)
-  {
-    typedef typename std::iterator_traits<InputPdfIt>::iterator_category pdf_category;
-    typedef typename std::iterator_traits<InputScoreIt>::iterator_category scores_category;
-    typedef typename std::iterator_traits<OutputIt>::iterator_category ranking_category;
-
-    return sample_after_normalizing(seed, pdf_begin, pdf_end, pdf_category(), scores_begin, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category(), pdf_updated);
-  }
+  template<typename PdfIt, typename InputScoreIt, typename OutputIt>
+  int sample_after_normalizing(uint64_t seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
 }
