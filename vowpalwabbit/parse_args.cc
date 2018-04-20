@@ -183,7 +183,8 @@ void parse_dictionary_argument(vw&all, string str)
     THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
   }
 
-  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
+  feature_dict* map = &calloc_or_throw<feature_dict>();
+  map->init(1023, nullptr, substring_equal);
   example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
@@ -950,7 +951,8 @@ void parse_example_tweaks(arguments& arg)
 
   if (arg.vm.count("named_labels"))
   {
-    arg.all->sd->ldict = new namedlabels(named_labels);
+    arg.all->sd->ldict = &calloc_or_throw<namedlabels>();
+    new (arg.all->sd->ldict) namedlabels(named_labels);
     if (!arg.all->quiet)
       arg.trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
   }
@@ -1593,7 +1595,11 @@ void finish(vw& all, bool delete_all)
     seeded = false;
   if (!seeded)
   {
-    delete(all.sd->ldict);
+    if (all.sd->ldict)
+      {
+        all.sd->ldict->~namedlabels();
+        free(all.sd->ldict);
+      }
     free(all.sd);
   }
   all.reduction_stack.delete_v();
@@ -1615,7 +1621,7 @@ void finish(vw& all, bool delete_all)
 
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
-    delete all.loaded_dictionaries[i].dict;
+    free(all.loaded_dictionaries[i].dict);
   }
   delete all.loss;
 
