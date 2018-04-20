@@ -356,7 +356,7 @@ base_learner* cb_explore_setup(arguments& arg)
   learner<cb_explore,example>* l;
   if (arg.vm.count("cover"))
   {
-    data->cs = decltype(data->cs)(arg.all->cost_sensitive);
+    data->cs = (learner<cb_explore, example>*)(as_singleline(arg.all->cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin()+num_actions;
     data->cover_probs = v_init<float>();
