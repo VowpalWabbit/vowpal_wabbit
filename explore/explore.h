@@ -97,8 +97,8 @@ namespace exploration {
    * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
    * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
-   * @param pdf_begin Iterator pointing to the beginning of the pdf.
-   * @param pdf_end Iterator pointing to the end of the pdf.
+   * @param pdf_first Iterator pointing to the beginning of the pdf.
+   * @param pdf_last Iterator pointing to the end of the pdf.
    * @param scores_begin Iterator pointing to the beginning of the scores.
    * @param scores_last Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
@@ -106,7 +106,7 @@ namespace exploration {
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(const char* seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
+  int sample_after_normalizing(const char* seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
 
   /**
    * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
@@ -116,8 +116,8 @@ namespace exploration {
    * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
    * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator.
-   * @param pdf_begin Iterator pointing to the beginning of the pdf.
-   * @param pdf_end Iterator pointing to the end of the pdf.
+   * @param pdf_first Iterator pointing to the beginning of the pdf.
+   * @param pdf_last Iterator pointing to the end of the pdf.
    * @param scores_begin Iterator pointing to the beginning of the scores.
    * @param scores_last Iterator pointing to the end of the scores.
    * @param ranking_begin Iterator pointing to the pre-allocated beginning of the output ranking.
@@ -126,5 +126,5 @@ namespace exploration {
    * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
    */
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(uint64_t seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
+  int sample_after_normalizing(uint64_t seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last);
 }

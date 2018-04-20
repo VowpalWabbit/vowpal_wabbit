@@ -65,18 +65,18 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_softmax(float lambda, InputIt scores_begin, InputIt scores_last, std::input_iterator_tag scores_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
+  int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, std::input_iterator_tag scores_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
-    if (scores_last < scores_begin || pdf_last < pdf_first)
+    if (scores_last < scores_first || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
-    size_t num_actions_scores = scores_last - scores_begin;
+    size_t num_actions_scores = scores_last - scores_first;
     size_t num_actions_pdf = pdf_last - pdf_first;
 
     if (num_actions_scores != num_actions_pdf)
     {
       // fallback to the minimum
-      scores_last = scores_begin + ((std::min)(num_actions_scores, num_actions_pdf));
+      scores_last = scores_first + ((std::min)(num_actions_scores, num_actions_pdf));
       OutputIt pdf_new_last = pdf_first + ((std::min)(num_actions_scores, num_actions_pdf));
 
       // zero out pdf
@@ -90,9 +90,9 @@ namespace exploration
       return E_EXPLORATION_BAD_RANGE;
 
     float norm = 0.;
-    float max_score = *std::max_element(scores_begin, scores_last);
+    float max_score = *std::max_element(scores_first, scores_last);
 
-    InputIt s = scores_begin;
+    InputIt s = scores_first;
     for (OutputIt d = pdf_first; d != pdf_last && s != scores_last; ++d, ++s)
     {
       float prob = exp(lambda*(*s - max_score));
@@ -109,12 +109,12 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_softmax(float lambda, InputIt scores_begin, InputIt scores_last, OutputIt pdf_first, OutputIt pdf_last)
+  int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, OutputIt pdf_first, OutputIt pdf_last)
   {
     typedef typename std::iterator_traits<InputIt>::iterator_category scores_category;
     typedef typename std::iterator_traits<OutputIt>::iterator_category pdf_category;
 
-    return generate_softmax(lambda, scores_begin, scores_last, scores_category(), pdf_first, pdf_last, pdf_category());
+    return generate_softmax(lambda, scores_first, scores_last, scores_category(), pdf_first, pdf_last, pdf_category());
   }
 
   template<typename InputIt, typename OutputIt>
@@ -248,6 +248,7 @@ namespace exploration
     if (total == 0)
     {
       chosen_index = 0;
+      *pdf_first = 1;
       return S_EXPLORATION_OK;
     }
     
@@ -294,14 +295,14 @@ namespace exploration
 
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
   int sample_after_normalizing(uint64_t seed,
-      PdfIt pdf_begin, PdfIt pdf_end, std::random_access_iterator_tag pdf_category,
-      InputScoreIt scores_begin, InputScoreIt scores_last, std::random_access_iterator_tag scores_category,
+      PdfIt pdf_first, PdfIt pdf_last, std::random_access_iterator_tag pdf_category,
+      InputScoreIt scores_first, InputScoreIt scores_last, std::random_access_iterator_tag scores_category,
       OutputIt ranking_begin, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
   {
-    if (pdf_end < pdf_begin || ranking_last < ranking_begin)
+    if (pdf_last < pdf_first || ranking_last < ranking_begin)
       return E_EXPLORATION_BAD_RANGE; 
 
-    size_t pdf_size = pdf_end - pdf_begin;
+    size_t pdf_size = pdf_last - pdf_first;
     size_t ranking_size = ranking_last - ranking_begin;
 
     if (pdf_size == 0)
@@ -311,7 +312,7 @@ namespace exploration
       return E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH;
 
     uint32_t chosen_action;
-    int ret = sample_after_normalizing(seed, pdf_begin, pdf_end, chosen_action);
+    int ret = sample_after_normalizing(seed, pdf_first, pdf_last, chosen_action);
     if (ret)
       return ret;
 
@@ -319,7 +320,7 @@ namespace exploration
 
     // sort indexes based on comparing values in scores
     std::sort(ranking_begin, ranking_last,
-      [&scores_begin](size_t i1, size_t i2) { return scores_begin[i1] > scores_begin[i2]; });
+      [&scores_first](size_t i1, size_t i2) { return scores_first[i1] > scores_first[i2]; });
 
     // swap top element with chosen one
 	if (chosen_action != 0)
@@ -329,19 +330,19 @@ namespace exploration
   }
 
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(uint64_t seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(uint64_t seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
   {
     typedef typename std::iterator_traits<PdfIt>::iterator_category pdf_category;
     typedef typename std::iterator_traits<InputScoreIt>::iterator_category scores_category;
     typedef typename std::iterator_traits<OutputIt>::iterator_category ranking_category;
 
-    return sample_after_normalizing(seed, pdf_begin, pdf_end, pdf_category(), scores_begin, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category());
+    return sample_after_normalizing(seed, pdf_first, pdf_last, pdf_category(), scores_first, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category());
   }
 
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(const char* seed, PdfIt pdf_begin, PdfIt pdf_end, InputScoreIt scores_begin, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(const char* seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_after_normalizing(seed_hash, pdf_begin, pdf_end, scores_begin, scores_last, ranking_begin, ranking_last);
+    return sample_after_normalizing(seed_hash, pdf_first, pdf_last, scores_first, scores_last, ranking_begin, ranking_last);
   }
 } // end-of-namespace
