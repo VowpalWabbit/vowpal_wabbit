@@ -320,7 +320,7 @@ namespace exploration
 
     // swap top element with chosen one
 	if (chosen_action != 0)
-		std::iter_swap(ranking_begin, ranking_last + chosen_action);
+		std::iter_swap(ranking_begin, ranking_begin + chosen_action);
 
     return S_EXPLORATION_OK;
   }
