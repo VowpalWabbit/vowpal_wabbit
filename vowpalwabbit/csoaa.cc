@@ -798,11 +798,8 @@ base_learner* csldf_setup(arguments& arg)
   {
     if (arg.all->training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
-    if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
-    {
-      THROW("ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no longer supported");
-    }
-    else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0)
+    if ( ( ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) ||
+         ( ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) )
     {
       THROW("ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no longer supported");
     }
