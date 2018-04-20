@@ -5,7 +5,6 @@
 #define E_EXPLORATION_PDF_RANKING_SIZE_MISMATCH      2
 
 #include "explore_internal.h"
-#include "hash.h"
 
 namespace exploration { 
   /**

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hash.h"
+
 // get the error code defined in master
 #include "explore.h"
 
