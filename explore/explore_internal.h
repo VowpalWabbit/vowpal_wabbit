@@ -118,13 +118,13 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_bag(InputIt top_actions_begin, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
+  int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
   {
     // iterators don't support <= in general
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
-    uint32_t num_models = std::accumulate(top_actions_begin, top_actions_last, 0);
+    uint32_t num_models = std::accumulate(top_actions_first, top_actions_last, 0);
     if (num_models == 0)
     {
       // based on above checks we have at least 1 element in pdf
@@ -136,7 +136,7 @@ namespace exploration
     }
 
     // divide late to improve numeric stability
-    InputIt t_a = top_actions_begin;
+    InputIt t_a = top_actions_first;
     for (OutputIt d = pdf_first; d != pdf_last && t_a != top_actions_last; ++d, ++t_a)
       *d = *t_a / (float)num_models;
 
@@ -144,12 +144,12 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_bag(InputIt top_actions_begin, InputIt top_actions_last, OutputIt pdf_first, OutputIt pdf_last)
+  int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt pdf_first, OutputIt pdf_last)
   {
     typedef typename std::iterator_traits<InputIt>::iterator_category top_actions_category;
     typedef typename std::iterator_traits<OutputIt>::iterator_category pdf_category;
 
-    return generate_bag(top_actions_begin, top_actions_last, top_actions_category(), pdf_first, pdf_last, pdf_category());
+    return generate_bag(top_actions_first, top_actions_last, top_actions_category(), pdf_first, pdf_last, pdf_category());
   }
 
   template<typename It>
@@ -297,13 +297,13 @@ namespace exploration
   int sample_after_normalizing(uint64_t seed,
       PdfIt pdf_first, PdfIt pdf_last, std::random_access_iterator_tag pdf_category,
       InputScoreIt scores_first, InputScoreIt scores_last, std::random_access_iterator_tag scores_category,
-      OutputIt ranking_begin, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
+      OutputIt ranking_first, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
   {
-    if (pdf_last < pdf_first || ranking_last < ranking_begin)
+    if (pdf_last < pdf_first || ranking_last < ranking_first)
       return E_EXPLORATION_BAD_RANGE; 
 
     size_t pdf_size = pdf_last - pdf_first;
-    size_t ranking_size = ranking_last - ranking_begin;
+    size_t ranking_size = ranking_last - ranking_first;
 
     if (pdf_size == 0)
       return E_EXPLORATION_BAD_RANGE;
@@ -316,33 +316,33 @@ namespace exploration
     if (ret)
       return ret;
 
-    std::iota(ranking_begin, ranking_last, 0);
+    std::iota(ranking_first, ranking_last, 0);
 
     // sort indexes based on comparing values in scores
-    std::sort(ranking_begin, ranking_last,
+    std::sort(ranking_first, ranking_last,
       [&scores_first](size_t i1, size_t i2) { return scores_first[i1] > scores_first[i2]; });
 
     // swap top element with chosen one
 	if (chosen_action != 0)
-		std::iter_swap(ranking_begin, ranking_begin + chosen_action);
+		std::iter_swap(ranking_first, ranking_first + chosen_action);
 
     return S_EXPLORATION_OK;
   }
 
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(uint64_t seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(uint64_t seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_first, OutputIt ranking_last)
   {
     typedef typename std::iterator_traits<PdfIt>::iterator_category pdf_category;
     typedef typename std::iterator_traits<InputScoreIt>::iterator_category scores_category;
     typedef typename std::iterator_traits<OutputIt>::iterator_category ranking_category;
 
-    return sample_after_normalizing(seed, pdf_first, pdf_last, pdf_category(), scores_first, scores_last, scores_category(), ranking_begin, ranking_last, ranking_category());
+    return sample_after_normalizing(seed, pdf_first, pdf_last, pdf_category(), scores_first, scores_last, scores_category(), ranking_first, ranking_last, ranking_category());
   }
 
   template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(const char* seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_begin, OutputIt ranking_last)
+  int sample_after_normalizing(const char* seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_first, OutputIt ranking_last)
   {
     uint64_t seed_hash = uniform_hash(seed, strlen(seed), 0);
-    return sample_after_normalizing(seed_hash, pdf_first, pdf_last, scores_first, scores_last, ranking_begin, ranking_last);
+    return sample_after_normalizing(seed_hash, pdf_first, pdf_last, scores_first, scores_last, ranking_first, ranking_last);
   }
 } // end-of-namespace
