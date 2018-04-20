@@ -1154,6 +1154,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     ecs[a].l.cs = priv.ldf_test_label;
 
     multi_ex tmp = v_init<example*>();
+    always_delete<multi_ex> guard_obj(tmp);
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
@@ -1355,7 +1356,10 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       // create an example collection for 
 
       multi_ex tmp = v_init<example*>();
-      vector<uint64_t> tmp_offsets;
+      always_delete<multi_ex> guard_obj(tmp);
+      uint64_t tmp_offset = 0;
+      if(priv.learn_ec_ref_cnt > start_K) 
+        tmp_offset = priv.learn_ec_ref[start_K].ft_offset;
       for (action a = (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       { example& ec = priv.learn_ec_ref[a];
         CS::label& lab = ec.l.cs;
@@ -1364,10 +1368,8 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses.cs.costs[a - start_K].x;
-        //cerr << "cost[" << a << "] = " << losses[a] << " - " << min_loss << " = " << lab.costs[0].x << endl;
         ec.in_use = true;
         // store the offset to restore it later
-        tmp_offsets.push_back(ec.ft_offset);
         ec.ft_offset = priv.offset;
         // create the example collection used to learn
         tmp.push_back(&ec);
@@ -1381,7 +1383,7 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
       // restore the offsets in examples
       int i = 0;
       for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++, i++)
-        priv.learn_ec_ref[a].ft_offset = tmp_offsets[i];
+        priv.learn_ec_ref[a].ft_offset = tmp_offset;
     }
 
     if (add_conditioning)
