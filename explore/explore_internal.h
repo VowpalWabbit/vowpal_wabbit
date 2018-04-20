@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cstring>
+#include <cmath>
 
 namespace exploration
 {
