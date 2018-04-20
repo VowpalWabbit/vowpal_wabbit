@@ -4,11 +4,15 @@
 #include "bs.h"
 #include "gen_cs_example.h"
 #include "cb_explore.h"
+#include "explore.h"
+
+#include <vector>
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
 using namespace std;
 using namespace CB_ALGS;
+using namespace exploration;
 //All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities are the probability with which each action should be replaced to the top of the list.
 
 //tau first
@@ -29,6 +33,8 @@ struct cb_explore_adf
 {
   v_array<example*> ec_seq;
   v_array<action_score> action_probs;
+
+  vector<uint32_t>* top_actions;
 
   size_t explore_type;
 
@@ -133,7 +139,8 @@ void predict_or_learn_first(cb_explore_adf& data, base_learner& base, v_array<ex
       preds[i].score = 0.;
     preds[0].score = 1.0;
   }
-  CB_EXPLORE::safety(preds, data.epsilon, true);
+
+  enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>
@@ -145,12 +152,10 @@ void predict_or_learn_greedy(cb_explore_adf& data, base_learner& base, v_array<e
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
-  v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
-  float prob = data.epsilon/(float)num_actions;
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i].score = prob;
-  preds[0].score += 1.f - data.epsilon;
+  action_scores& preds = examples[0]->pred.a_s;
+
+  // generate distribution over actions
+  generate_epsilon_greedy(data.epsilon, 0, begin_scores(preds), end_scores(preds));
 }
 
 template <bool is_learn>
@@ -171,7 +176,10 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
   data.action_probs.erase();
   for (uint32_t i = 0; i < num_actions; i++)
     data.action_probs.push_back({ i,0. });
-  float prob = 1.f / (float)data.bag_size;
+  vector<uint32_t>& top_actions = *data.top_actions;
+  top_actions.resize(num_actions);
+  std::fill(top_actions.begin(), top_actions.end(), 0);
+
   bool test_sequence = test_adf_sequence(data.ec_seq) == nullptr;
   for (uint32_t i = 0; i < data.bag_size; i++)
   {
@@ -185,13 +193,16 @@ void predict_or_learn_bag(cb_explore_adf& data, base_learner& base, v_array<exam
     else
       multiline_learn_or_predict<false>(base, examples, data.offset, i);
     assert(preds.size() == num_actions);
-    data.action_probs[preds[0].action].score += prob;
+    top_actions[preds[0].action]++;
     if (is_learn && !test_sequence)
       for (uint32_t j = 1; j < count; j++)
         multiline_learn_or_predict<true>(base, examples, data.offset, i);
   }
 
-  CB_EXPLORE::safety(data.action_probs, data.epsilon, true);
+  // generate distribution over actions
+  generate_bag(begin(top_actions), end(top_actions), begin_scores(data.action_probs), end_scores(data.action_probs));
+
+  enforce_minimum_probability(data.epsilon, true, begin_scores(data.action_probs), end_scores(data.action_probs));
   qsort((void*) data.action_probs.begin(), data.action_probs.size(), sizeof(action_score), reverse_order);
 
   for (size_t i = 0; i < num_actions; i++)
@@ -255,7 +266,7 @@ void predict_or_learn_cover(cb_explore_adf& data, base_learner& base, v_array<ex
     probs[action].score += additive_probability;
   }
 
-  CB_EXPLORE::safety(data.action_probs, min_prob * num_actions, !data.nounif);
+  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 
   qsort((void*) probs.begin(), probs.size(), sizeof(action_score), reverse_order);
   for (size_t i = 0; i < num_actions; i++)
@@ -273,22 +284,9 @@ void predict_or_learn_softmax(cb_explore_adf& data, base_learner& base, v_array<
     multiline_learn_or_predict<false>(base, examples, data.offset);
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
-  float norm = 0.;
-  float max_score = preds[0].score;
-  for (size_t i = 1; i < num_actions; i++)
-    if (max_score < preds[i].score)
-      max_score = preds[i].score;
+  generate_softmax(data.lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
-  for (size_t i = 0; i < num_actions; i++)
-  {
-    float prob = exp(data.lambda*(preds[i].score - max_score));
-    preds[i].score = prob;
-    norm += prob;
-  }
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i].score /= norm;
-  CB_EXPLORE::safety(preds, data.epsilon, true);
+  enforce_minimum_probability(data.epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 void end_examples(cb_explore_adf& data)
@@ -299,6 +297,7 @@ void end_examples(cb_explore_adf& data)
 
 void finish(cb_explore_adf& data)
 {
+  delete data.top_actions;
   data.ec_seq.delete_v();
   data.action_probs.delete_v();
   data.cs_labels.costs.delete_v();
@@ -535,6 +534,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
   {
     data->explore_type = BAG_EXPLORE;
     problem_multiplier = data->bag_size;
+    data->top_actions = new vector<uint32_t>;
   }
   else if (arg.vm.count("first"))
     data->explore_type = EXPLORE_FIRST;

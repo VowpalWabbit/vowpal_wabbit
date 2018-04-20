@@ -16,7 +16,7 @@ private:
 public:
   typedef std::forward_iterator_tag iterator_category;
   typedef T value_type;
-  typedef ptrdiff_t difference_type;
+  typedef std::ptrdiff_t difference_type;
   typedef  T* pointer;
   typedef  T& reference;
 
@@ -119,6 +119,7 @@ public:
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
 
 #ifndef _WIN32
+#ifndef DISABLE_SHARED_WEIGHTS
   void share(size_t length)
   {
     float* shared_weights = (float*)mmap(0, (length << _stride_shift) * sizeof(float),
@@ -129,6 +130,7 @@ public:
     free(_begin);
     _begin = dest;
   }
+#endif
 #endif
 
   ~dense_parameters()

@@ -11,6 +11,12 @@ license as described in the file LICENSE.
 #include <cstddef>
 #include "v_array.h"
 
+#ifndef _WIN32
+#include <sys/types.h>
+#else
+#define ssize_t int64_t
+#endif
+
 typedef float feature_value;
 typedef uint64_t feature_index;
 typedef std::pair<std::string, std::string> audit_strings;

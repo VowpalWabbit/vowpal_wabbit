@@ -11,8 +11,3 @@ typedef learner<char> base_learner;
 }
 
 LEARNER::base_learner* cb_explore_setup(arguments& arg);
-
-namespace CB_EXPLORE
-{
-void safety(v_array<ACTION_SCORE::action_score>& distribution, float min_prob, bool zeros);
-}

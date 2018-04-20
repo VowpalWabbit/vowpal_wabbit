@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<iostream>
 #include<memory>
+#include "vw_exception.h"
 
 template<class T>
 T* calloc_or_throw(size_t nmemb)

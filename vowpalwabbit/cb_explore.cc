@@ -3,12 +3,14 @@
 #include "rand48.h"
 #include "bs.h"
 #include "gen_cs_example.h"
+#include "explore.h"
 
 using namespace LEARNER;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace std;
 using namespace CB_ALGS;
+using namespace exploration;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE
@@ -42,7 +44,7 @@ template <bool is_learn>
 void predict_or_learn_first(cb_explore& data, base_learner& base, example& ec)
 {
   //Explore tau times, then act according to optimal.
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
 
   if (is_learn && ec.l.cb.costs[0].probability < 1)
     base.learn(ec);
@@ -72,7 +74,9 @@ template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
 {
   //Explore uniform random an epsilon fraction of the time.
-  v_array<action_score> probs = ec.pred.a_s;
+  // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
+  // ec.pred.a_s = probs; will restore the than free'd memory
+  action_scores probs = ec.pred.a_s;
   probs.erase();
 
   if (is_learn)
@@ -80,11 +84,11 @@ void predict_or_learn_greedy(cb_explore& data, base_learner& base, example& ec)
   else
     base.predict(ec);
 
-  float prob = data.epsilon/(float)data.cbcs.num_actions;
+  // pre-allocate pdf
+  probs.resize(data.cbcs.num_actions);
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
-    probs.push_back({i,prob});
-  uint32_t chosen = ec.pred.multiclass-1;
-  probs[chosen].score += (1-data.epsilon);
+    probs.push_back({i,0});
+  generate_epsilon_greedy(data.epsilon, ec.pred.multiclass-1, begin_scores(probs), end_scores(probs));
 
   ec.pred.a_s = probs;
 }
@@ -93,7 +97,7 @@ template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
 {
   //Randomize over predictions from a base set of predictors
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
   probs.erase();
 
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
@@ -114,48 +118,6 @@ void predict_or_learn_bag(cb_explore& data, base_learner& base, example& ec)
   }
 
   ec.pred.a_s = probs;
-}
-
-void safety(v_array<action_score>& distribution, float min_prob, bool zeros)
-{
-  //input: a probability distribution
-  //output: a probability distribution with all events having probability > min_prob.  This includes events with probability 0 if zeros = true
-  if (min_prob > 0.999) // uniform exploration
-  {
-    size_t support_size = distribution.size();
-    if (!zeros)
-    {
-      for (size_t i = 0; i < distribution.size(); ++i)
-        if (distribution[i].score == 0)
-          support_size--;
-    }
-    for (size_t i = 0; i < distribution.size(); ++i)
-      if (zeros || distribution[i].score > 0)
-        distribution[i].score = 1.f / support_size;
-    return;
-  }
-
-  min_prob /= distribution.size();
-  float touched_mass = 0.;
-  float untouched_mass = 0.;
-  for (uint32_t i = 0; i < distribution.size(); i++)
-    if ((distribution[i].score > 0 || (distribution[i].score ==0 && zeros)) && distribution[i].score <= min_prob)
-    {
-      touched_mass += min_prob;
-      distribution[i].score = min_prob;
-    }
-    else
-      untouched_mass += distribution[i].score;
-
-  if (touched_mass > 0.)
-  {
-    if (touched_mass > 0.999)
-      THROW("Cannot safety this distribution");
-    float ratio = (1.f - touched_mass) / untouched_mass;
-    for (uint32_t i = 0; i < distribution.size(); i++)
-      if (distribution[i].score > min_prob)
-        distribution[i].score = distribution[i].score * ratio;
-  }
 }
 
 void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, v_array<action_score>& probs)
@@ -181,7 +143,7 @@ void get_cover_probabilities(cb_explore& data, base_learner& base, example& ec, 
 
   float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
 
-  safety(probs, min_prob*num_actions, false);
+  enforce_minimum_probability(min_prob*num_actions, false, begin_scores(probs), end_scores(probs));
 
   data.counter++;
 }
@@ -194,7 +156,7 @@ void predict_or_learn_cover(cb_explore& data, base_learner& base, example& ec)
 
   uint32_t num_actions = data.cbcs.num_actions;
 
-  v_array<action_score> probs = ec.pred.a_s;
+  action_scores probs = ec.pred.a_s;
   probs.erase();
   data.cs_label.costs.erase();
 

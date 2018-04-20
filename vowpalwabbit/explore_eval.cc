@@ -1,6 +1,5 @@
 #include "reductions.h"
 #include "cb_algs.h"
-#include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
 #include "cb_adf.h"
 #include "cb_explore_adf.h"
@@ -12,8 +11,6 @@
 
 using namespace LEARNER;
 using namespace CB_ALGS;
-using namespace MultiWorldTesting;
-using namespace MultiWorldTesting::SingleAction;
 using namespace std;
 
 namespace EXPLORE_EVAL

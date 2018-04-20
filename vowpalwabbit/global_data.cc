@@ -308,8 +308,6 @@ vw::vw()
     spelling_features[i] = 0;
   }
 
-  interactions = v_init<v_string>();
-
   //by default use invariant normalized adaptive updates
   adaptive = true;
   normalized_updates = true;
