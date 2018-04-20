@@ -27,7 +27,7 @@ extern label_parser cb_label;//for learning
 bool example_is_test(example& ec);
 bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 
-void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool multilabel);
+void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool action_scores);
 }
 
 namespace CB_EVAL

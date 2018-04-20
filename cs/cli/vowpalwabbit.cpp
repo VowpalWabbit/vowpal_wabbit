@@ -159,6 +159,48 @@ uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
   }
 }
 
+void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll = v_init<example*>();
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+    
+    m_vw->learn(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+  finally{ ex_coll.delete_v();
+  }
+}
+
+void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
+{
+  multi_ex ex_coll = v_init<example*>();
+  try
+  {
+    for each (auto ex in examples)
+    {
+      example* pex = ex->m_example;
+      ex_coll.push_back(pex);
+    }
+
+    as_multiline(m_vw->l)->predict(ex_coll);
+
+    // as this is not a ring-based example it is not freed
+    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+  }
+  CATCHRETHROW
+    finally{ ex_coll.delete_v();
+  }
+}
+
 void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 {
 #if _DEBUG
@@ -168,10 +210,10 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -187,12 +229,12 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
 #endif
 
   try
-  { m_vw->learn(ex->m_example);
+  { m_vw->learn(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -207,10 +249,10 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { m_vw->l->predict(*ex->m_example);
+  { as_singleline(m_vw->l)->predict(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+  as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -223,12 +265,12 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
 #endif
 
   try
-  { m_vw->l->predict(*ex->m_example);
+  { as_singleline(m_vw->l)->predict(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    m_vw->l->finish_example(*m_vw, *ex->m_example);
+    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -477,6 +519,15 @@ generic<typename T> T VowpalWabbit::Predict(String^ line, IVowpalWabbitPredictio
   }
 }
 
+
+void VowpalWabbit::CacheEmptyLine()
+{
+	auto empty = GetOrCreateNativeExample();
+	empty->MakeEmpty(this);
+	ReturnExampleToPool(empty);
+}
+
+
 void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
 {
 #if _DEBUG
@@ -490,14 +541,12 @@ void VowpalWabbit::Learn(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Learn(ex);
     }
 
-    auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
-    empty->MakeEmpty(this);
-    Learn(empty);
+		// Need to add an empty line to cache file
+		CacheEmptyLine();
+
+    Learn(examples);
   }
   finally
   { for each (auto ex in examples)
@@ -519,14 +568,12 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
   { for each (auto line in lines)
     { auto ex = ParseLine(line);
       examples->Add(ex);
-
-      Predict(ex);
     }
 
-    auto empty = GetOrCreateNativeExample();
-    examples->Add(empty);
-    empty->MakeEmpty(this);
-    Predict(empty);
+    // Need to add an empty line to cache file
+    CacheEmptyLine();
+  
+    Predict(examples);
   }
   finally
   { for each (auto ex in examples)

@@ -242,3 +242,12 @@ inline std::string v_string2string(const v_string& v_s)
     res.push_back(*i);
   return res;
 }
+
+// Utility class to always call delete on v_array when out of scope
+template<class T>
+struct always_delete { 
+  T& _ar;
+  always_delete(T& ar):_ar(ar) {  } 
+  ~always_delete() { _ar.delete_v(); }
+};
+

@@ -8,12 +8,12 @@ Reading datafile = train-sets/decisionservice.json
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--0.020408 -0.020408            1            1.0    known        0:0.816667...      362
--0.010204 0.000000            2            2.0    known        6:0.816667...      362
+-0.020408 -0.020408            1            1.0    known        0:0.816667...      361
+-0.010204 0.000000            2            2.0    known        6:0.816667...      361
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = -0.340136
-total feature number = 1086
+total feature number = 1083

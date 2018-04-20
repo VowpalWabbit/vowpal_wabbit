@@ -1125,7 +1125,7 @@ base_learner* bfgs_setup(arguments& arg)
   arg.all->bfgs = true;
   arg.all->weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(b, learn, predict, arg.all->weights.stride());
+  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

@@ -258,7 +258,7 @@ void remove_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
 }
 
 uint32_t oas_predict (recall_tree& b,
-                      base_learner& base,
+                      single_learner& base,
                       uint32_t cn,
                       example& ec)
 {
@@ -328,7 +328,7 @@ bool stop_recurse_check (recall_tree& b,
 }
 
 predict_type predict_from (recall_tree& b,
-                           base_learner& base,
+                           single_learner& base,
                            example& ec,
                            uint32_t cn)
 {
@@ -354,7 +354,7 @@ predict_type predict_from (recall_tree& b,
   return predict_type (cn, oas_predict (b, base, cn, ec));
 }
 
-void predict (recall_tree& b,  base_learner& base, example& ec)
+void predict (recall_tree& b,  single_learner& base, example& ec)
 {
   predict_type pred = predict_from (b, base, ec, 0);
 
@@ -362,7 +362,7 @@ void predict (recall_tree& b,  base_learner& base, example& ec)
 }
 
 float train_node (recall_tree& b,
-                  base_learner& base,
+                  single_learner& base,
                   example& ec,
                   uint32_t cn)
 {
@@ -399,7 +399,7 @@ float train_node (recall_tree& b,
 }
 
 
-void learn (recall_tree& b, base_learner& base, example& ec)
+void learn (recall_tree& b, single_learner& base, example& ec)
 {
   predict (b, base, ec);
 
@@ -594,8 +594,8 @@ base_learner* recall_tree_setup(arguments& arg)
                       << (arg.all->training ? (tree->randomized_routing ? "randomized" : "deterministic") : "n/a testonly")
                       << std::endl;
 
-  learner<recall_tree>& l =
-    init_multiclass_learner (tree, setup_base (arg), learn, predict,
+  learner<recall_tree,example>& l =
+    init_multiclass_learner (tree, as_singleline(setup_base (arg)), learn, predict,
                              arg.all->p, tree->max_routers + tree->k);
   l.set_save_load(save_load_tree);
   l.set_finish (finish);

@@ -40,7 +40,7 @@ struct mf
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, base_learner& base, example& ec)
+void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
   if (cache_sub_predictions)
@@ -101,7 +101,7 @@ void predict(mf& data, base_learner& base, example& ec)
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, base_learner& base, example& ec)
+void learn(mf& data, single_learner& base, example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
@@ -208,7 +208,7 @@ base_learner* mf_setup(arguments& arg)
 
   arg.all->random_positive_weights = true;
 
-  learner<mf>& l = init_learner(data, setup_base(arg), learn, predict<false>, 2*data->rank+1);
+  learner<mf,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn, predict<false>, 2*data->rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

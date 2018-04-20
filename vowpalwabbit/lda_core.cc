@@ -805,7 +805,7 @@ void return_example(vw& all, example& ec)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
     all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
                          ec.num_features, all.progress_add, all.progress_arg);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 void learn_batch(lda &l)
@@ -948,7 +948,7 @@ void learn_batch(lda &l)
   l.doc_lengths.erase();
 }
 
-void learn(lda &l, LEARNER::base_learner &, example &ec)
+void learn(lda &l, LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -966,7 +966,7 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
+void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -989,8 +989,8 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1306,9 +1306,12 @@ LEARNER::base_learner *lda_setup(arguments& arg)
 
   ld->decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
-                                          ld->compute_coherence_metrics ? predict_with_metrics : predict,
-                                          UINT64_ONE << arg.all->weights.stride_shift(), prediction_type::scalars);
+  LEARNER::learner<lda,example> &l = init_learner(
+                    ld, 
+                    ld->compute_coherence_metrics ? learn_with_metrics : learn,
+                    ld->compute_coherence_metrics ? predict_with_metrics : predict,
+                    UINT64_ONE << arg.all->weights.stride_shift(), 
+                    prediction_type::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

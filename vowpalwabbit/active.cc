@@ -40,7 +40,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
+void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 {
   base.predict(ec);
 
@@ -69,7 +69,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, base_learner& base, example& ec)
+void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -132,7 +132,7 @@ void output_and_account_example(vw& all, active& a, example& ec)
 void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 base_learner* active_setup(arguments& arg)
@@ -148,10 +148,10 @@ base_learner* active_setup(arguments& arg)
   if (count(arg.args.begin(), arg.args.end(), "--lda") != 0)
     THROW("error: you can't combine lda and active learning");
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   //Create new learner
-  learner<active>* l;
+  learner<active,example>* l;
   if (arg.vm.count("simulation"))
     l = &init_learner(data, base, predict_or_learn_simulation<true>,
                       predict_or_learn_simulation<false>);

@@ -1102,11 +1102,6 @@ __DATA__
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
 
-# Test 59: library test, run ezexample_predict
-../library/ezexample_predict models/library_train.w
-    train-sets/ref/ezexample_predict.stdout
-    train-sets/ref/ezexample_predict.stderr
-
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 echo "" | {VW}
