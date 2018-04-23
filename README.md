@@ -132,6 +132,28 @@ versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 make CXX='clang++ -static' clean vw test     # ignore warnings
 ```
 
+## Debian Python 3 Binding
+
+Ensure boost-library and c-compiler are installed:
+```
+apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev clang make automake
+```
+
+Set Python 3.x and its boost-library as default:
+```
+update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+update-alternatives --install /usr/bin/python python /usr/bin/python3.x 2
+
+ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.a /usr/lib/x86_64-linux-gnu/libboost_python.a
+ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.so /usr/lib/x86_64-linux-gnu/libboost_python.so
+```
+
+Install Vowpal Wabbit via pip:
+```
+pip3 install vowpalwabbit
+```
+
+
 ## Mac OS X-specific info
 
 OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
