@@ -66,7 +66,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), nullptr, ec);
 }
 
-void learn(sender& s, LEARNER::base_learner&, example& ec)
+void learn(sender& s, LEARNER::single_learner&, example& ec)
 {
   if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
     receive_result(s);
@@ -109,7 +109,7 @@ LEARNER::base_learner* sender_setup(arguments& arg)
   s->all = arg.all;
   s->delay_ring = calloc_or_throw<example*>(arg.all->p->ring_size);
 
-  LEARNER::learner<sender>& l = init_learner(s, learn, learn, 1);
+  LEARNER::learner<sender,example>& l = init_learner(s, learn, learn, 1);
   l.set_finish(finish);
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);

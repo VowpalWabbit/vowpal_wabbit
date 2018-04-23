@@ -261,7 +261,7 @@ size_t predict_relation(Search::search&sch, example* ex, v_array<size_t>& predic
   return prediction;
 }
 
-void entity_first_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions, bool isLdf=false)
+void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf=false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
@@ -275,7 +275,7 @@ void entity_first_decoding(Search::search& sch, vector<example*> ec, v_array<siz
   }
 }
 
-void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions)
+void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   uint32_t n_ent = (uint32_t)((sqrt(ec.size()*8+1)-1)/2);
@@ -305,7 +305,7 @@ void er_mixed_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>
   }
 }
 
-void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<size_t>& predictions)
+void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
@@ -363,7 +363,7 @@ void er_allow_skip_decoding(Search::search& sch, vector<example*> ec, v_array<si
   }
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data* my_task_data = sch.get_task_data<task_data>();
 

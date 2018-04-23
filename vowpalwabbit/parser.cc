@@ -979,10 +979,17 @@ void empty_example(vw& all, example& ec)
   ec.end_pass = false;
 }
 
-void finish_example(vw& all, example* ec)
+void finish_example(vw& all, multi_ex& ec_seq)
+{
+  for(auto ec : ec_seq)
+    finish_example(all, *ec);
+  ec_seq.erase();
+}
+
+void finish_example(vw& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if (!is_ring_example(all, ec))
+  if (!is_ring_example(all, &ec))
     return;
 
   mutex_lock(&all.p->output_lock);
@@ -990,11 +997,11 @@ void finish_example(vw& all, example* ec)
   condition_variable_signal(&all.p->output_done);
   mutex_unlock(&all.p->output_lock);
 
-  empty_example(all, *ec);
+  empty_example(all, ec);
 
   mutex_lock(&all.p->examples_lock);
-  assert(ec->in_use);
-  ec->in_use = false;
+  assert(ec.in_use);
+  ec.in_use = false;
   condition_variable_signal(&all.p->example_unused);
   if (all.p->done)
     condition_variable_signal_all(&all.p->example_available);
@@ -1017,7 +1024,7 @@ void *main_parse_loop(void *in)
 #endif
 {
   vw* all = (vw*)in;
-  parse_dispatch<thread_dispatch>(*all);
+  parse_dispatch(*all, thread_dispatch);
   return 0L;
 }
 

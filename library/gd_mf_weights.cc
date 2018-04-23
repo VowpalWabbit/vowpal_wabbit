@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     right_linear << endl;
     right_quadratic << endl;
 
-    VW::finish_example(*model, ec);
+    VW::finish_example(*model, *ec);
   }
 
   // write constant

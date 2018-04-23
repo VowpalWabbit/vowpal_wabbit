@@ -181,7 +181,7 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
   return e.last_pair + (eliminations-1);
 }
 
-uint32_t ect_predict(ect& e, base_learner& base, example& ec)
+uint32_t ect_predict(ect& e, single_learner& base, example& ec)
 {
   if (e.k == (size_t)1)
     return 1;
@@ -226,7 +226,7 @@ bool member(size_t t, v_array<size_t> ar)
   return false;
 }
 
-void ect_train(ect& e, base_learner& base, example& ec)
+void ect_train(ect& e, single_learner& base, example& ec)
 {
   if (e.k == 1)//nothing to do
     return;
@@ -316,7 +316,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
   }
 }
 
-void predict(ect& e, base_learner& base, example& ec)
+void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
@@ -325,7 +325,7 @@ void predict(ect& e, base_learner& base, example& ec)
   ec.l.multi = mc;
 }
 
-void learn(ect& e, base_learner& base, example& ec)
+void learn(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   predict(e, base, ec);
@@ -367,7 +367,7 @@ base_learner* ect_setup(arguments& arg)
   if (arg.vm["link"].as<string>().compare("logistic") == 0)
     data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
-  learner<ect>& l = init_multiclass_learner(data, base, learn, predict, arg.all->p, wpp);
+  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, arg.all->p, wpp);
   l.set_finish(finish);
 
   return make_base(l);

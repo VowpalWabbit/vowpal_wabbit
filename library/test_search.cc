@@ -27,7 +27,7 @@ public:
     for (size_t i=0; i<input_example.size(); i++)
     { example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
       action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
-      VW::finish_example(vw_obj, ex);
+      VW::finish_example(vw_obj, *ex);
       output.push_back(p);
     }
   }
@@ -97,7 +97,7 @@ void test_buildin_task()
   vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
   { // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
-    vector<example*> V;
+    v_array<example*> V = v_init<example*>();
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
     V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
@@ -110,7 +110,7 @@ void test_buildin_task()
       cerr << " " << out[i];
     cerr << endl;
     for (size_t i=0; i<V.size(); i++)
-      VW::finish_example(vw_obj, V[i]);
+      VW::finish_example(vw_obj, *V[i]);
   }
 
   VW::finish(vw_obj);

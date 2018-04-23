@@ -168,31 +168,53 @@ void my_finish_example(vw_ptr all, example_ptr ec)
 
 void my_learn(vw_ptr all, example_ptr ec)
 { if (ec->test_only)
-  { all->l->predict(*ec);
+  { as_singleline(all->l)->predict(*ec);
   }
   else
-  { all->learn(ec.get());
+  { all->learn(*ec.get());
   }
 }
 
 float my_learn_string(vw_ptr all, char*str)
 { example*ec = VW::read_example(*all, str);
-  all->learn(ec);
+  all->learn(*ec);
   float pp = ec->partial_prediction;
-  VW::finish_example(*all, ec);
+  VW::finish_example(*all, *ec);
   return pp;
 }
 
 float my_predict(vw_ptr all, example_ptr ec)
-{ all->l->predict(*ec);
+{ as_singleline(all->l)->predict(*ec);
   return ec->partial_prediction;
 }
 
+template<bool learn>
+void predict_or_learn(vw_ptr& all, py::list& ec)
+{ auto ex_coll = v_init<example*>();
+  for (ssize_t i = 0; i<len(ec); i++)
+  { py::object eci = ec[i];
+    py::extract<example_ptr> get_ex(eci);
+    example_ptr ecp;
+    if (get_ex.check())
+      ecp = get_ex();
+    ex_coll.push_back(ecp.get());
+  }
+  if (learn) all->learn(ex_coll);
+  else as_multiline(all->l)->predict(ex_coll);
+  ex_coll.delete_v();
+}
+
+void my_learn_multi_ex(vw_ptr& all, py::list& ec)
+{  predict_or_learn<true>(all, ec); }
+
+void my_predict_multi_ex(vw_ptr& all, py::list& ec)
+{ predict_or_learn<false>(all, ec); }
+
 float my_predict_string(vw_ptr all, char*str)
 { example*ec = VW::read_example(*all, str);
-  all->l->predict(*ec);
+  as_singleline(all->l)->predict(*ec);
   float pp = ec->partial_prediction;
-  VW::finish_example(*all, ec);
+  VW::finish_example(*all, *ec);
   return pp;
 }
 
@@ -692,6 +714,9 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_id", &get_model_id, "return the model id")
   .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
 
+  .def("learn", &my_learn_multi_ex, "given a pyvw example, learn (and predict) on that example")
+  .def("predict", &my_predict_multi_ex, "given a pyvw example, predict on that example")
+
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
   .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
@@ -706,7 +731,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def_readonly("pMULTILABELS", pMULTILABELS, "Multilabel prediction type")
   .def_readonly("pPROB", pPROB, "Probability prediction type")
   .def_readonly("pMULTICLASSPROBS", pMULTICLASSPROBS, "Multiclass probabilities prediction type")
-  ;
+;
 
   // define the example class
   py::class_<example, example_ptr>("example", py::no_init)
