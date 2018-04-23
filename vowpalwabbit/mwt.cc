@@ -91,7 +91,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
   }
   if (exclude || learn)
   {
-    c.indices.erase();
+    c.indices.clear();
     uint32_t stride_shift = c.all->weights.stride_shift();
     uint64_t weight_mask = c.all->weights.mask();
     for (unsigned char ns : ec.indices)
@@ -100,7 +100,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
         c.indices.push_back(ns);
         if (learn)
         {
-          c.feature_space[ns].erase();
+          c.feature_space[ns].clear();
           for ( features::iterator& f : ec.feature_space[ns])
           {
             uint64_t new_index=((f.index()& weight_mask) >> stride_shift)*c.num_classes +(uint64_t)f.value();
@@ -130,7 +130,7 @@ void predict_or_learn(mwt& c, single_learner& base, example& ec)
     }
 
   //modify the predictions to use a vector with a score for each evaluated feature.
-  preds.erase();
+  preds.clear();
   if (learn)
     preds.push_back((float)ec.pred.multiclass);
   for(uint64_t index : c.policies)

@@ -101,7 +101,7 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 
   if (scores)
   {
-    scores_array.erase();
+    scores_array.clear();
     for (uint32_t i=0; i<o.k; i++)
       scores_array.push_back(o.pred[i].scalar);
     ec.pred.scalars = scores_array;

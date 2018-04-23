@@ -253,7 +253,7 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
 void remove_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
 {
   features& fs = ec.feature_space[node_id_namespace];
-  fs.erase ();
+  fs.clear();
   ec.indices.pop ();
 }
 
@@ -507,7 +507,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
     if (read)
     {
-      b.nodes.erase ();
+      b.nodes.clear();
       for (uint32_t j = 0; j < n_nodes; ++j)
       {
         b.nodes.push_back (node ());
@@ -536,7 +536,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
       if (read)
       {
-        cn->preds.erase ();
+        cn->preds.clear();
 
         for (uint32_t k = 0; k < n_preds; ++k)
         {

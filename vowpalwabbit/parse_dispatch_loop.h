@@ -40,7 +40,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         example_number = 0;
       }
 
-      examples.erase();
+      examples.clear();
     }
   }
   catch (VW::vw_exception& e)

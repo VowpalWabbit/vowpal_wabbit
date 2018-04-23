@@ -30,7 +30,7 @@ void predict_or_learn(autolink& b, LEARNER::single_learner& base, example& ec)
     base.predict(ec);
 
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
-  fs.erase();
+  fs.clear();
   ec.indices.pop();
 }
 

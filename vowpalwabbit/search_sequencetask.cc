@@ -128,7 +128,7 @@ void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
   else
     D->encoding = BIO;
 
-  D->allowed_actions.erase();
+  D->allowed_actions.clear();
 
   if (D->encoding == BIO)
   {

@@ -20,7 +20,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
-  preds.label_v.erase();
+  preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX, 1.f, 0.f};
   uint32_t multilabel_index = 0;

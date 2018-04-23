@@ -53,8 +53,8 @@ void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
   float min = FLT_MAX;
   uint32_t argmin = 1;
   //generate cost sensitive example
-  cs_ld.costs.erase();
-  c.pred_scores.costs.erase();
+  cs_ld.costs.clear();
+  c.pred_scores.costs.clear();
 
   if ((ld.costs.size() == 1 && !is_test_label(ld)) || ld.costs.size() == 0)   //this is a typical example where we can perform all actions
   { //in this case generate cost-sensitive example with all actions
@@ -130,8 +130,8 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 { //this implements the doubly robust method
-  cs_ld.costs.erase();
-  c.pred_scores.costs.erase();
+  cs_ld.costs.clear();
+  c.pred_scores.costs.clear();
   if (ld.costs.size() == 0)//a test example
     for (uint32_t i = 1; i <= c.num_actions; i++)
     { //Explicit declaration for a weak compiler.
@@ -177,12 +177,12 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
 template <bool is_learn>
 void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 { //size_t mysize = examples.size();
-  c.pred_scores.costs.erase();
+  c.pred_scores.costs.clear();
   bool shared = CB::ec_is_example_header(*examples[0]);
   int startK = 0;
   if (shared) startK = 1;
 
-  cs_labels.costs.erase();
+  cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   { if (CB_ALGS::example_is_newline_not_header(*examples[i])) continue;
 
@@ -238,7 +238,7 @@ void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs
 template<bool is_learn>
 void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::label>& cb_labels,
                  COST_SENSITIVE::label& cs_labels, v_array<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset, size_t id = 0)
-{ cb_labels.erase();
+{ cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size()+1)
   { prepped_cs_labels.resize(cs_labels.costs.size()+1);
     prepped_cs_labels.end() = prepped_cs_labels.end_array;
@@ -250,7 +250,7 @@ void call_cs_ldf(LEARNER::multi_learner& base, multi_ex& examples, v_array<CB::l
   size_t index = 0;
   for (auto ec : examples)
   { cb_labels.push_back(ec->l.cb);
-    prepped_cs_labels[index].costs.erase();
+    prepped_cs_labels[index].costs.clear();
     prepped_cs_labels[index].costs.push_back(cs_labels.costs[index]);
     ec->l.cs = prepped_cs_labels[index++];
     ec->ft_offset = offset;

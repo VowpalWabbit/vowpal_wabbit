@@ -250,8 +250,8 @@ void parse_dictionary_argument(vw&all, string str)
     map->put(ss, hash, arr);
 
     // clear up ec
-    ec->tag.erase(); ec->indices.erase();
-    for (size_t i=0; i<256; i++) { ec->feature_space[i].erase();}
+    ec->tag.clear(); ec->indices.clear();
+    for (size_t i=0; i<256; i++) { ec->feature_space[i].clear();}
   }
   while ((rc != EOF) && (nread > 0));
   free(buffer);
@@ -1577,7 +1577,7 @@ void finish(vw& all, bool delete_all)
 
   free_parser(all);
   finalize_source(all.p);
-  all.p->parse_name.erase();
+  all.p->parse_name.clear();
   all.p->parse_name.delete_v();
   free(all.p);
   bool seeded;

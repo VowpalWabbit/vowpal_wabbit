@@ -101,7 +101,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
-  data.cb_label.costs.erase();
+  data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
@@ -125,7 +125,7 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
   base.learn(ec);
-  data.a_s.erase();
+  data.a_s.clear();
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
   ec.pred.multiclass = chosen_action + 1;

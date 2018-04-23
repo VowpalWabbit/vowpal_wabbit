@@ -153,12 +153,12 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
     num_actions--;
   if (num_actions == 0)
   {
-    preds.erase();
+    preds.clear();
     return;
   }
 
   data.action_probs.resize(num_actions);
-  data.action_probs.erase();
+  data.action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++)
     data.action_probs.push_back({ i,0. });
   vector<uint32_t>& top_actions = *data.top_actions;
@@ -218,7 +218,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   float additive_probability = 1.f / (float)data.cover_size;
   float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
-  probs.erase();
+  probs.clear();
   for(uint32_t i = 0; i < num_actions; i++)
     probs.push_back({i,0.});
 
@@ -232,7 +232,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
     //Create costs of each action based on online cover
     if (is_learn)
     {
-      data.cs_labels_2.costs.erase();
+      data.cs_labels_2.costs.clear();
       if (shared > 0)
         data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
       for (uint32_t j = 0; j < num_actions; j++)

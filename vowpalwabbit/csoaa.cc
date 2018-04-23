@@ -237,7 +237,7 @@ void unsubtract_example(example *ec)
   features& fs = ec->feature_space[wap_ldf_namespace];
   ec->num_features -= fs.size();
   ec->total_sum_feat_sq -= fs.sum_feat_sq;
-  fs.erase();
+  fs.clear();
   ec->indices.decr();
 }
 
@@ -445,8 +445,8 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   uint32_t predicted_K = start_K;
   if(data.rank)
   {
-    data.a_s.erase();
-    data.stored_preds.erase();
+    data.a_s.clear();
+    data.stored_preds.clear();
     if (start_K > 0)
       data.stored_preds.push_back(ec_seq[0]->pred.a_s);
     for (uint32_t k=start_K; k<K; k++)
@@ -486,7 +486,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
 
   if(data.rank)
   {
-    data.stored_preds[0].erase();
+    data.stored_preds[0].clear();
     if (start_K > 0)
     {
       ec_seq[0]->pred.a_s = data.stored_preds[0];

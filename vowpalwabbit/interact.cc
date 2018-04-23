@@ -41,7 +41,7 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
 void multiply(features& f_dest, features& f_src2, interact& in)
 {
-  f_dest.erase();
+  f_dest.clear();
   features& f_src1 = in.feat_store;
   vw* all = in.all;
   uint64_t weight_mask = all->weights.mask();

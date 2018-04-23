@@ -265,7 +265,7 @@ void clear_memo_foreach_action(search_private& priv)
       priv.memo_foreach_action[i]->delete_v();
       delete priv.memo_foreach_action[i];
     }
-  priv.memo_foreach_action.erase();
+  priv.memo_foreach_action.clear();
 }
 
 inline bool need_memo_foreach_action(search_private& priv)
@@ -515,7 +515,7 @@ void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
   ec.indices.decr();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
-  fs.erase();
+  fs.clear();
 }
 
 void add_neighbor_features(search_private& priv, multi_ex &ec_seq)
@@ -564,7 +564,7 @@ void add_neighbor_features(search_private& priv, multi_ex &ec_seq)
       me.num_features += sz;
     }
     else
-      fs.erase();
+      fs.clear();
   }
 }
 
@@ -606,7 +606,7 @@ void reset_search_structure(search_private& priv)
       delete ar.repr;
     }
   }
-  priv.ptag_to_action.erase();
+  priv.ptag_to_action.clear();
 
   if (! priv.cb_learner)   // was: if rollout_all_actions
   {
@@ -734,7 +734,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
     ec.num_features += con_fs.size();
   }
   else
-    con_fs.erase();
+    con_fs.clear();
 }
 
 void del_example_conditioning(search_private& priv, example& ec)
@@ -769,8 +769,8 @@ inline void cs_set_cost_loss(bool isCB, polylabel& ld, size_t k, float val)
 
 inline void cs_costs_erase(bool isCB, polylabel& ld)
 {
-  if (isCB) ld.cb.costs.erase();
-  else      ld.cs.costs.erase();
+  if (isCB) ld.cb.costs.clear();
+  else      ld.cs.costs.clear();
 }
 
 inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
@@ -1084,7 +1084,7 @@ action single_prediction_notLDF(search_private& priv, example& ec, int policy, c
       priv.active_known[priv.active_known.size()-1] = v_init<pair<CS::wclass&,bool>>();
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
-    priv.active_known[cur_t].erase();
+    priv.active_known[cur_t].clear();
     assert(ec.l.cs.costs.size() > 0);
     for (size_t k = 0; k < ec.l.cs.costs.size(); k++)
     {
@@ -1629,7 +1629,7 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       else   // we need to predict, and then cache, and maybe run foreach_action
       {
         size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
-        priv.last_action_repr.erase();
+        priv.last_action_repr.clear();
         if (priv.auto_condition_features)
           for (size_t n=start_K; n<ec_cnt; n++)
             add_example_conditioning(priv, ecs[n], condition_on_cnt, condition_on_names, priv.condition_on_actions.begin());
@@ -1737,7 +1737,7 @@ void hoopla_permute(size_t* B, size_t* end)
 
 void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
 {
-  timesteps.erase();
+  timesteps.clear();
 
   // if there's active learning, we need to
   if (priv.subsample_timesteps <= -1)
@@ -1963,8 +1963,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
   reset_search_structure(priv);
   clear_memo_foreach_action(priv);
   priv.state = INIT_TRAIN;
-  priv.active_uncertainty.erase();
-  priv.train_trajectory.erase();  // this is where we'll store the training sequence
+  priv.active_uncertainty.clear();
+  priv.train_trajectory.clear();  // this is where we'll store the training sequence
   run_task(sch, ec_seq);
 
   if (!ran_test)    // was  && !priv.ec_seq[0]->test_only) { but we know it's not test_only
@@ -1991,8 +1991,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
     cdbg << endl;
   }
 
-  if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
-  else                 priv.learn_losses.cs.costs.erase();
+  if (priv.cb_learner) priv.learn_losses.cb.costs.clear();
+  else                 priv.learn_losses.cs.costs.clear();
 
   for (size_t tid=0; tid<priv.timesteps.size(); tid++)
   {
@@ -2069,8 +2069,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, mult
         if (sch.priv->is_ldf) CS::cs_label.delete_label(&priv.learn_ec_copy[n].l.cs);
         else                  MC::mc_label.delete_label(&priv.learn_ec_copy[n].l.multi);
       }
-    if (priv.cb_learner) priv.learn_losses.cb.costs.erase();
-    else                 priv.learn_losses.cs.costs.erase();
+    if (priv.cb_learner) priv.learn_losses.cb.costs.clear();
+    else                 priv.learn_losses.cs.costs.clear();
   }
 
   if (priv.active_csoaa && (priv.save_every_k_runs > 1))
@@ -2383,7 +2383,7 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 void parse_neighbor_features(string& nf_string, search&sch)
 {
   search_private& priv = *sch.priv;
-  priv.neighbor_features.erase();
+  priv.neighbor_features.clear();
   size_t len = nf_string.length();
   if (len == 0) return;
 
@@ -2394,7 +2394,7 @@ void parse_neighbor_features(string& nf_string, search&sch)
   v_array<substring> cmd = v_init<substring>();
   while (p != 0)
   {
-    cmd.erase();
+    cmd.clear();
     substring me = { p, p+strlen(p) };
     tokenize(':', me, cmd, true);
 
@@ -2832,8 +2832,8 @@ predictor& predictor::reset()
 {
   this->erase_oracles();
   this->erase_alloweds();
-  condition_on_tags.erase();
-  condition_on_names.erase();
+  condition_on_tags.clear();
+  condition_on_names.clear();
   free_ec();
   return *this;
 }
@@ -2909,7 +2909,7 @@ predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_firs
   }
   else     // we've already allocated our own memory
   {
-    if (clear_first) A.erase();
+    if (clear_first) A.clear();
     A.push_back(a);
   }
   return *this;
@@ -2935,7 +2935,7 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
     }
     else     // we already have our own memory
     {
-      if (clear_first) A.erase();
+      if (clear_first) A.clear();
       if (a != nullptr) push_many<T>(A, a, count);
     }
   }
@@ -2955,7 +2955,7 @@ predictor& predictor::add_to(v_array<T>&A, bool& A_is_ptr, T*a, size_t count, bo
   return *this;
 }
 
-predictor& predictor::erase_oracles() { if (oracle_is_pointer) oracle_actions.end() = oracle_actions.begin(); else oracle_actions.erase(); return *this; }
+predictor& predictor::erase_oracles() { if (oracle_is_pointer) oracle_actions.end() = oracle_actions.begin(); else oracle_actions.clear(); return *this; }
 predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
 predictor& predictor::add_oracle(action*a, size_t action_count) { return add_to(oracle_actions, oracle_is_pointer, a, action_count, false); }
 predictor& predictor::add_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false); }
@@ -2968,8 +2968,8 @@ predictor& predictor::set_weight(float w) { weight = w; return *this; }
 
 predictor& predictor::erase_alloweds()
 {
-  if (allowed_is_pointer) allowed_actions.end() = allowed_actions.begin(); else allowed_actions.erase();
-  if (allowed_cost_is_pointer) allowed_actions_cost.end() = allowed_actions_cost.begin(); else allowed_actions_cost.erase();
+  if (allowed_is_pointer) allowed_actions.end() = allowed_actions.begin(); else allowed_actions.clear();
+  if (allowed_cost_is_pointer) allowed_actions_cost.end() = allowed_actions_cost.begin(); else allowed_actions_cost.clear();
   return *this;
 }
 predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
@@ -3026,7 +3026,7 @@ predictor& predictor::set_allowed(vector< pair<action,float> >& a) { erase_allow
 
 
 predictor& predictor::add_condition(ptag tag, char name) { condition_on_tags.push_back(tag); condition_on_names.push_back(name); return *this; }
-predictor& predictor::set_condition(ptag tag, char name) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition(tag, name); }
+predictor& predictor::set_condition(ptag tag, char name) { condition_on_tags.clear(); condition_on_names.clear(); return add_condition(tag, name); }
 
 predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
 {
@@ -3040,7 +3040,7 @@ predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
   }
   return *this;
 }
-predictor& predictor::set_condition_range(ptag hi, ptag count, char name0) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition_range(hi, count, name0); }
+predictor& predictor::set_condition_range(ptag hi, ptag count, char name0) { condition_on_tags.clear(); condition_on_names.clear(); return add_condition_range(hi, count, name0); }
 
 predictor& predictor::set_learner_id(size_t id) { learner_id = id; return *this; }
 

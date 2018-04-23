@@ -236,7 +236,7 @@ void ect_train(ect& e, single_learner& base, example& ec)
 
   simple_temp.initial = 0.;
 
-  e.tournaments_won.erase();
+  e.tournaments_won.clear();
 
   uint32_t id = e.directions[mc.label - 1].winner;
   bool left = e.directions[id].left == mc.label - 1;

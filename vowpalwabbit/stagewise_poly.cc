@@ -398,7 +398,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.sorted = ec.sorted;
   poly.synth_ec.in_use = ec.in_use;
 
-  poly.synth_ec.feature_space[tree_atomics].erase();
+  poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
 

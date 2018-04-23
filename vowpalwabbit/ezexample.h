@@ -36,10 +36,10 @@ private:
   example* get_new_example()
   { example* new_ec = VW::new_unused_example(*vw_par_ref);
     vw_par_ref->p->lp.default_label(&new_ec->l);
-    new_ec->tag.erase();
-    new_ec->indices.erase();
+    new_ec->tag.clear();
+    new_ec->indices.clear();
     for (size_t i=0; i<256; i++)
-      new_ec->feature_space[i].erase();
+      new_ec->feature_space[i].clear();
 
     new_ec->ft_offset = 0;
     new_ec->num_features = 0;
@@ -117,7 +117,7 @@ public:
     for (auto ecc : example_copies)
       if (ecc->in_use && VW::is_ring_example(*vw_par_ref, ec))
         VW::finish_example(*vw_par_ref, *ecc);
-    example_copies.erase();
+    example_copies.clear();
     free(example_copies.begin());
   }
 
@@ -132,7 +132,7 @@ public:
   void addns(char c)
   { if (ensure_ns_exists(c)) return;
 
-    ec->feature_space[(int)c].erase();
+    ec->feature_space[(int)c].clear();
     past_seeds.push_back(current_seed);
     current_ns = c;
     str[0] = c;
@@ -147,7 +147,7 @@ public:
     else
     { if (ns_exists[(int)current_ns])
       { ec->total_sum_feat_sq -= ec->feature_space[(int)current_ns].sum_feat_sq;
-        ec->feature_space[(int)current_ns].erase();
+        ec->feature_space[(int)current_ns].clear();
         ec->num_features -= ec->feature_space[(int)current_ns].size();
 
         ns_exists[(int)current_ns] = false;
@@ -269,7 +269,7 @@ public:
       for (auto ecc : example_copies)
         if (ecc->in_use)
           VW::finish_example(*vw_par_ref, *ecc);
-      example_copies.erase();
+      example_copies.clear();
     }
   }
 

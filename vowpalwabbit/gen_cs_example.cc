@@ -44,7 +44,7 @@ float safe_probability(float prob)
 //Multiline version
 void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
-  cs_labels.costs.erase();
+  cs_labels.costs.clear();
   bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
@@ -68,7 +68,7 @@ void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 //Multiline version
 void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
-  cs_labels.costs.erase();
+  cs_labels.costs.clear();
   bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
@@ -92,7 +92,7 @@ void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 //Multiline version
 void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {
-  cs_labels.costs.erase();
+  cs_labels.costs.clear();
   bool shared = CB::ec_is_example_header(*examples[0]);
   for (uint32_t i = 0; i < examples.size(); i++)
   {
@@ -114,7 +114,7 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 {
   //this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
   //generate cost-sensitive example
-  cs_ld.costs.erase();
+  cs_ld.costs.clear();
   if (ld.costs.size() == 1 && !is_test_label(ld))   //this is a typical example where we can perform all actions
   {
     //in this case generate cost-sensitive example with all actions
@@ -167,7 +167,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   c.event_sum++;
 
   c.mtr_ec_seq.clear();
-  cs_labels.costs.erase();
+  cs_labels.costs.clear();
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
     CB::label ld = ec_seq[i]->l.cb;

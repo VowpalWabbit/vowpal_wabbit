@@ -58,7 +58,7 @@ void predict(mf& data, single_learner& base, example& ec)
   copy_array(data.predict_indices, ec.indices);
 
   // erase indices
-  ec.indices.erase();
+  ec.indices.clear();
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
@@ -115,7 +115,7 @@ void learn(mf& data, single_learner& base, example& ec)
   copy_array(data.indices, ec.indices);
 
   // erase indices
-  ec.indices.erase();
+  ec.indices.clear();
   ec.indices.push_back(0);
 
   // update interaction terms

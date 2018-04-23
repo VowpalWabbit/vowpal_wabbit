@@ -28,7 +28,7 @@ bool is_test_label(CB::label& ld)
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->costs.erase();
+  ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(cb_class)*num;
   if (buf_read(cache, c, total) < total)
@@ -49,7 +49,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, total) < total)
@@ -87,7 +87,7 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
 }
 
 void delete_label(void* v)

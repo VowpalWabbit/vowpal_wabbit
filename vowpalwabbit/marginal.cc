@@ -66,7 +66,7 @@ void make_marginal(data& sm, example& ec)
     {
       std::swap(sm.temp[n],*i);
       features& f = *i;
-      f.erase();
+      f.clear();
       for (features::iterator j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
       {
         float first_value = j.value();

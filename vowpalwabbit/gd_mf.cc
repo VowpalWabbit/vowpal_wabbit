@@ -104,7 +104,7 @@ template<class T> float mf_predict(gdmf& d, example& ec, T& weights)
   }
 
   // clear stored predictions
-  d.scalars.erase();
+  d.scalars.clear();
 
   float linear_prediction = 0.;
   // linear terms

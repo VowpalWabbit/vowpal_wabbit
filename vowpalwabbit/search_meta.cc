@@ -105,9 +105,9 @@ void run(Search::search& sch, multi_ex& ec)
   task_data& d = *sch.get_metatask_data<task_data>();
 
   // generate an initial trajectory, but record possible branches
-  d.branches.erase();
-  d.final.erase();
-  d.trajectory.erase();
+  d.branches.clear();
+  d.final.clear();
+  d.trajectory.clear();
   d.total_cost = 0.;
   d.output_string = nullptr;
 
@@ -159,7 +159,7 @@ void run(Search::search& sch, multi_ex& ec)
   for (size_t i=0; i<min(d.max_branches, d.branches.size()); i++)
   {
     d.cur_branch = i;
-    d.trajectory.erase();
+    d.trajectory.clear();
     d.total_cost = 0.;
     d.output_string = nullptr;
 
@@ -241,9 +241,9 @@ void run(Search::search& sch, multi_ex& ec)
 
   // clean up memory
   for (size_t i=0; i<d.branches.size(); i++) d.branches[i].second.delete_v();
-  d.branches.erase();
+  d.branches.clear();
   for (size_t i=0; i<d.final.size(); i++) { d.final[i].first.second.delete_v(); delete d.final[i].second; }
-  d.final.erase();
+  d.final.clear();
   if (d.kbest_out) delete d.kbest_out; d.kbest_out = nullptr;
 }
 }

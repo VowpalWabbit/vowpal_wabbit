@@ -335,7 +335,7 @@ void del_edge_features(task_data&/*D*/, uint32_t n, multi_ex&ec)
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();
-  fs.erase();
+  fs.clear();
 }
 
 #define IDX(i,j) ( (i) * (D.K+1) + j )

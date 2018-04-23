@@ -51,7 +51,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, example& ec)
   else
     base.predict(ec);
 
-  probs.erase();
+  probs.clear();
   if(data.tau > 0)
   {
     float prob = 1.f/(float)data.cbcs.num_actions;
@@ -77,7 +77,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, example& ec
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
   // ec.pred.a_s = probs; will restore the than free'd memory
   action_scores probs = ec.pred.a_s;
-  probs.erase();
+  probs.clear();
 
   if (is_learn)
     base.learn(ec);
@@ -98,7 +98,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 {
   //Randomize over predictions from a base set of predictors
   action_scores probs = ec.pred.a_s;
-  probs.erase();
+  probs.clear();
 
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
     probs.push_back({i,0.});
@@ -123,7 +123,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
 void get_cover_probabilities(cb_explore& data, single_learner& base, example& ec, v_array<action_score>& probs)
 {
   float additive_probability = 1.f / (float)data.cover_size;
-  data.preds.erase();
+  data.preds.clear();
 
   for(uint32_t i = 0; i < data.cbcs.num_actions; i++)
     probs.push_back({i,0.});
@@ -157,8 +157,8 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
   uint32_t num_actions = data.cbcs.num_actions;
 
   action_scores probs = ec.pred.a_s;
-  probs.erase();
-  data.cs_label.costs.erase();
+  probs.clear();
+  data.cs_label.costs.clear();
 
   for (uint32_t j = 0; j < num_actions; j++)
     data.cs_label.costs.push_back({FLT_MAX,j+1,0.,0.});
@@ -185,7 +185,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     //Now update oracles
 
     //1. Compute loss vector
-    data.cs_label.costs.erase();
+    data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
     data.cbcs.known_cost = get_observed_cost(data.cb_label);

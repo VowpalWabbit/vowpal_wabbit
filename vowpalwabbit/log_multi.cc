@@ -90,7 +90,7 @@ struct log_multi
 inline void init_leaf(node& n)
 {
   n.internal = false;
-  n.preds.erase();
+  n.preds.clear();
   n.base_predictor = 0;
   n.norm_Eh = 0;
   n.Eh = 0;

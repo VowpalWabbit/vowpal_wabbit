@@ -42,7 +42,7 @@ bool is_test_label(label& ld)
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->costs.erase();
+  ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass)*num;
   if (buf_read(cache, c, (int)total) < total)
@@ -63,7 +63,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   label* ld = (label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, (int)total) < total)
@@ -101,7 +101,7 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   label* ld = (label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
 }
 
 void delete_label(void* v)
@@ -131,7 +131,7 @@ bool substring_eq(substring ss, const char* str)
 void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
-  ld->costs.erase();
+  ld->costs.clear();
 
   // handle shared and label first
   if (words.size() == 1)
