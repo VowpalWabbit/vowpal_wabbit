@@ -54,7 +54,6 @@ public:
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
-  T& get(size_t i) const { return _begin[i]; }
   inline size_t size() const {return _end-_begin;}
   void resize(size_t length)
   { if ((size_t)(end_array-_begin) != length)
@@ -72,7 +71,7 @@ public:
     }
   }
 
-  void erase()
+  void erase()//should be clear() for vector semantics
   { if (++erase_count & erase_point)
     { resize(_end-_begin);
       erase_count = 0;
@@ -242,12 +241,3 @@ inline std::string v_string2string(const v_string& v_s)
     res.push_back(*i);
   return res;
 }
-
-// Utility class to always call delete on v_array when out of scope
-template<class T>
-struct always_delete { 
-  T& _ar;
-  always_delete(T& ar):_ar(ar) {  } 
-  ~always_delete() { _ar.delete_v(); }
-};
-

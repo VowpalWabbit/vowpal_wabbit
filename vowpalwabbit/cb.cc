@@ -187,7 +187,7 @@ bool ec_is_example_header(example& ec)  // example headers just have "shared"
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool action_scores)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {

@@ -1153,8 +1153,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
     polylabel old_label = ecs[a].l;
     ecs[a].l.cs = priv.ldf_test_label;
 
-    multi_ex tmp = v_init<example*>();
-    always_delete<multi_ex> guard_obj(tmp);
+    multi_ex tmp;
     uint64_t old_offset = ecs[a].ft_offset;
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
@@ -1191,7 +1190,7 @@ action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, 
   {
     for (size_t i=0; i<this_cache->size(); i++)
     {
-      action_cache& ac = this_cache->get(i);
+      action_cache& ac = (*this_cache)[i];
       ac.min_cost = a_cost;
       ac.is_opt = (ac.k == best_action);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1353,12 +1352,11 @@ void generate_training_example(search_private& priv, polylabel& losses, float we
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
 
-      // create an example collection for 
+      // create an example collection for
 
-      multi_ex tmp = v_init<example*>();
-      always_delete<multi_ex> guard_obj(tmp);
+      multi_ex tmp;
       uint64_t tmp_offset = 0;
-      if(priv.learn_ec_ref_cnt > start_K) 
+      if(priv.learn_ec_ref_cnt > start_K)
         tmp_offset = priv.learn_ec_ref[start_K].ft_offset;
       for (action a = (uint32_t)start_K; a<priv.learn_ec_ref_cnt; a++)
       { example& ec = priv.learn_ec_ref[a];
@@ -1431,7 +1429,7 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
   cdbg << "memo_foreach_action size = " << cached->size() << endl;
   for (size_t id=0; id<cached->size(); id++)
   {
-    action_cache& ac = cached->get(id);
+    action_cache& ac = (*cached)[id];
     priv.metaoverride->_foreach_action(*priv.metaoverride->sch,
                                        t-priv.meta_t,
                                        ac.min_cost,
@@ -1562,8 +1560,8 @@ action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag my
       foreach_action_from_cache(priv,t,a_name);
       if (priv.memo_foreach_action[t])
       {
-        cdbg << "@ memo_foreach_action: t=" << t << ", a=" << a << ", cost=" << priv.memo_foreach_action[t]->get(a).cost << endl;
-        a_cost = priv.memo_foreach_action[t]->get(a).cost;
+        cdbg << "@ memo_foreach_action: t=" << t << ", a=" << a << ", cost=" << (*priv.memo_foreach_action[t])[a].cost << endl;
+        a_cost = (*priv.memo_foreach_action[t])[a].cost;
       }
     }
 
@@ -2108,17 +2106,15 @@ void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
   bool is_holdout_ex = false;
 
   search_private& priv = *sch.priv;
-  priv.offset = ec_seq.last()->ft_offset;
+  priv.offset = ec_seq[0]->ft_offset;
   priv.base_learner = &base;
 
   adjust_auto_condition(priv);
-  const auto last_ec = ec_seq.last();
-  priv.read_example_last_id = last_ec->example_counter;
-  priv.offset = last_ec->ft_offset;
-  
+  priv.read_example_last_id = ec_seq[ec_seq.size()-1]->example_counter;
+
   // hit_new_pass true would have already triggered a printout
   // finish_example(multi_ex).  so we can reset hit_new_pass here
-  priv.hit_new_pass = false;  
+  priv.hit_new_pass = false;
 
   for (size_t i=0; i<ec_seq.size(); i++)
   {

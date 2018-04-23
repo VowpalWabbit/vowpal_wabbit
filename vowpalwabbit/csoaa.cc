@@ -187,7 +187,7 @@ bool ec_seq_is_label_definition(multi_ex& ec_seq)
 
 bool ec_seq_has_label_definition(multi_ex& ec_seq)
 {
-  return std::any_of(ec_seq.cbegin(), ec_seq.cend(), 
+  return std::any_of(ec_seq.cbegin(), ec_seq.cend(),
     [](example* ec) { return ec_is_label_definition(*ec); }
   );
 }
@@ -407,7 +407,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, size_t start_K, mul
 multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all);
 
 /*
- * 1) process all labels at first 
+ * 1) process all labels at first
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
@@ -422,8 +422,8 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   auto ec_seq = process_labels(data, ec_seq_all);
   if (ec_seq.size() == 0) return;  // nothing more to do
 
-  // Ensure there are no more labels 
-  // (can be done in existing loops later but as a side effect learning 
+  // Ensure there are no more labels
+  // (can be done in existing loops later but as a side effect learning
   //    will happen with bad example)
   if (ec_seq_has_label_definition(ec_seq))
   {
@@ -433,7 +433,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
   /////////////////////// add headers
   uint32_t K = (uint32_t)ec_seq.size();
   uint32_t start_K = 0;
-  
+
   if (ec_is_example_header(*ec_seq[0]))
   {
     start_K = 1;
@@ -549,7 +549,7 @@ void global_print_newline(vw& all)
   }
 }
 
-void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_seq, ldf& data)
+void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf& data)
 {
   label& ld = ec.l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
@@ -570,20 +570,20 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
     // So we must compute it again.
     size_t start_K = 0;
     size_t K = ec_seq->size();
-    if (ec_is_example_header(*ec_seq->get(0)))
+    if (ec_is_example_header(*(*ec_seq)[0]))
       start_K = 1;
     uint32_t predicted_K = (uint32_t)start_K;
     float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
     {
-      example *ec = ec_seq->get(k);
+      example *ec = (*ec_seq)[k];
       if (ec->partial_prediction < min_score)
       {
         min_score = ec->partial_prediction;
         predicted_K = (uint32_t)k;
       }
     }
-    predicted_class = ec_seq->get(predicted_K)->l.cs.costs[0].class_index;
+    predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
   }
   else
     predicted_class = ec.pred.multiclass;
@@ -623,7 +623,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, v_array<example*>* ec_
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq, false, predicted_class);
 }
 
-void output_rank_example(vw& all, example& head_ec, bool& hit_loss, v_array<example*>* ec_seq)
+void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
 {
   label& ld = head_ec.l.cs;
   v_array<COST_SENSITIVE::wclass> costs = ld.costs;
@@ -787,6 +787,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   // process the first element as a label
   process_label(data, ec);
 
+  multi_ex ret;
   size_t i = 1;
   // process the rest of the elements that are labels
   for (; i<ec_seq_all.size(); i++)
@@ -794,15 +795,17 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
     ec = ec_seq_all[i];
     if (!ec_is_label_definition(*ec))
     {
+      for (size_t j = i; j < ec_seq_all.size(); j++)
+        ret.push_back(ec_seq_all[j]);
       // return index of the first element that is not a label
-      return multi_ex{ &ec,ec_seq_all._end,ec_seq_all.end_array,ec_seq_all.erase_count };
+      return ret;
     }
 
     process_label(data, ec);
   }
 
   // all examples were labels return size
-  return multi_ex{ nullptr,nullptr,nullptr,0 };
+  return ret;
 }
 
 base_learner* csldf_setup(arguments& arg)

@@ -983,7 +983,7 @@ void finish_example(vw& all, multi_ex& ec_seq)
 {
   for(auto ec : ec_seq)
     finish_example(all, *ec);
-  ec_seq.erase();
+  ec_seq.clear();
 }
 
 void finish_example(vw& all, example& ec)

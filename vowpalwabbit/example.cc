@@ -238,7 +238,7 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
     for (example* ecc : ec_seq)
       if (ecc->in_use)
         VW::finish_example(all, *ecc);
-  ec_seq.erase();
+  ec_seq.clear();
 }
 
 }

@@ -49,7 +49,7 @@ void finish(explore_eval& data)
 //are specified. We print the first action and probability, based on
 //ordering by scores in the final output.
 
-void output_example(vw& all, explore_eval& c, example& ec, v_array<example*>* ec_seq)
+void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -205,8 +205,8 @@ base_learner* explore_eval_setup(arguments& arg)
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  learner<explore_eval,multi_ex>& l = init_learner(data, base, 
-    do_actual_learning<true>, do_actual_learning<false>, 
+  learner<explore_eval,multi_ex>& l = init_learner(data, base,
+    do_actual_learning<true>, do_actual_learning<false>,
     1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);

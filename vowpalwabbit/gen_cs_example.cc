@@ -166,7 +166,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
     c.action_sum += 1;
   c.event_sum++;
 
-  c.mtr_ec_seq.erase();
+  c.mtr_ec_seq.clear();
   cs_labels.costs.erase();
   for (size_t i = 0; i < ec_seq.size(); i++)
   {

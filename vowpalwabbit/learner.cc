@@ -69,7 +69,7 @@ void process_example(vw& all, example* ec)
     dispatch_end_pass(all, *ec);
   else if (is_save_cmd(ec))
     save(all, ec);
-  else 
+  else
     dispatch_example(all, *ec);
 }
 
@@ -85,7 +85,7 @@ bool example_is_test(example& ec, vw& all)
 }
 
 /* example headers have the word "shared" */
-bool ec_is_example_header(example& ec)  
+bool ec_is_example_header(example& ec)
 {
   v_array<CB::cb_class> costs = ec.l.cb.costs;
   if (costs.size() != 1) return false;
@@ -104,7 +104,7 @@ bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
   const bool is_test_ec = example_is_test(*ec,all);
   const bool need_to_break = VW::is_ring_example(all, ec) && (ec_seq.size() >= all.p->ring_size - 2);
 
-  if ((example_is_newline_not_header(*ec) && is_test_ec) 
+  if ((example_is_newline_not_header(*ec) && is_test_ec)
       || need_to_break)
   { VW::finish_example(all, *ec);
     if (ec_seq.size() == 0) {
@@ -121,7 +121,7 @@ template <void(* f)(vw&, multi_ex&)>
 void dispatch_multi_ex(vw& all, multi_ex& ec_seq)
 {
   f(all, ec_seq);               // call learn or predict
-  VW::finish_example(all, ec_seq);  // clean up 
+  VW::finish_example(all, ec_seq);  // clean up
 }
 
 template <void(* f)(vw&, multi_ex&)>
@@ -153,8 +153,7 @@ void on_new_partial_ex(example* ec, multi_ex& ec_seq, vw& all)
 
 template <void(*f)(vw&, multi_ex&)>
 void multi_ex_generic_driver(vw& all)
-{ multi_ex ec_seq = v_init<example*>();
-  always_delete<multi_ex> guard_obj(ec_seq);
+{ multi_ex ec_seq;
   example* ec = nullptr;
   while (all.early_terminate == false) {
     ec = VW::get_example(all.p);
@@ -221,8 +220,7 @@ void generic_driver_onethread(vw& all)
 {
   if (all.l->is_multiline)
   {
-    auto ctxt = v_init<example*>();
-    always_delete<multi_ex> guard_obj(ctxt);
+    multi_ex ctxt;
     auto multi_ex_fptr = [&ctxt](vw& all, v_array<example*> examples)
     {
       all.p->end_parsed_examples += examples.size(); //divergence: lock & signal

@@ -198,7 +198,7 @@ label_parser cs_label = {default_label, parse_label,
                          sizeof(label)
                         };
 
-void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -211,13 +211,13 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       // If the first example is "shared", don't include its features.
       // These should be already included in each example (TODO: including quadratic and cubic).
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc = ec_seq->cbegin();
-      const example& first_ex = **ecc;
+      example** ecc = &((*ec_seq)[0]);
+      const example& first_ex = *(*ec_seq)[0];
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
 
-      for (; ecc!=ec_seq->cend(); ecc++)
+      for (; ecc!=&(*ec_seq->cend()); ecc++)
         num_current_features += (*ecc)->num_features;
     }
 

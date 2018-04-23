@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
+#include <vector>
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
@@ -121,7 +122,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
 
-typedef v_array<example*> multi_ex;
+typedef std::vector<example*> multi_ex;
 
 namespace VW {
 void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);

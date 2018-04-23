@@ -47,17 +47,19 @@ CB::cb_class get_observed_cost(multi_ex& examples)
   int index = -1;
   CB::cb_class known_cost;
 
+  size_t i=0;
   for (example*& ec : examples)
   {
     if (ec->l.cb.costs.size() == 1 &&
-      ec->l.cb.costs[0].cost != FLT_MAX &&
-      ec->l.cb.costs[0].probability > 0)
-    {
-      ld = ec->l.cb;
-      index = (int)(&ec - examples.begin());
-    }
+        ec->l.cb.costs[0].cost != FLT_MAX &&
+        ec->l.cb.costs[0].probability > 0)
+      {
+        ld = ec->l.cb;
+        index = i;
+      }
+    ++i;
   }
-  
+
 
   // handle -1 case.
   if (index == -1)
@@ -204,7 +206,7 @@ void global_print_newline(vw& all)
 
 // how to
 
-bool update_statistics(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   size_t num_features = 0;
 
@@ -225,7 +227,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_se
   return is_test;
 }
 
-void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -252,7 +254,7 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
   CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   label& ld = ec.l.cb;
   v_array<CB::cb_class> costs = ld.costs;
@@ -307,7 +309,7 @@ void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 
 void finish(cb_adf& data)
 {
-  data.gen_cs.mtr_ec_seq.delete_v();
+  data.gen_cs.mtr_ec_seq.~multi_ex();
   data.cb_labels.delete_v();
   for(size_t i = 0; i < data.prepped_cs_labels.size(); i++)
     data.prepped_cs_labels[i].costs.delete_v();
@@ -392,13 +394,13 @@ base_learner* cb_adf_setup(arguments& arg)
   arg.all->label_type = label_type::cb;
 
   cb_adf* bare = ld.get();
-  learner<cb_adf,multi_ex>& l = init_learner(ld, base, 
-    CB_ADF::do_actual_learning<true>, CB_ADF::do_actual_learning<false>, 
+  learner<cb_adf,multi_ex>& l = init_learner(ld, base,
+    CB_ADF::do_actual_learning<true>, CB_ADF::do_actual_learning<false>,
     problem_multiplier, prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
   bare->gen_cs.scorer = arg.all->scorer;
-  
+
   l.set_finish(CB_ADF::finish);
   l.set_save_load(CB_ADF::save_load);
   l.set_test_example(CB::example_is_test);

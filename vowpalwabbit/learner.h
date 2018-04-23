@@ -148,7 +148,7 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     decrement_offset(ec, increment, i);
   }
-  
+
   inline void predict(E& ec, size_t i = 0)
   { assert((is_multiline && std::is_same<multi_ex, E>::value) ||
       (!is_multiline && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -255,7 +255,7 @@ public:
   { finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = (end_fptr_type)(f);
   }
-  
+
   //called to check if an example is a test example.  Used in creating multiline example
   inline bool is_test_example(example& ec)
   { return test_example_fd.test_example_f(ec);
@@ -316,10 +316,10 @@ public:
                                                         size_t ws,
                                                         prediction_type::prediction_type_t pred_type)
    { auto ret = &learner<T,E>::init_learner(
-                                              dat.get(), base, 
+                                              dat.get(), base,
                                               learn, predict,
                                               ws, pred_type);
-     
+
     dat.release();
      return *ret;
    }
@@ -331,21 +331,21 @@ public:
                                                                   void (*predict)(T&, L&, E&),
                                                                   size_t params_per_weight)
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), (L*)nullptr, 
+                                              dat.get(), (L*)nullptr,
                                               learn, predict,
                                               params_per_weight, prediction_type::scalar);
-    
+
     dat.release();
     return *ret;
   }
 
   //base predictor only
   template<class T, class E, class L> learner<T, E>& init_learner(
-                                                                  void(*predict)(T&, L&, E&), 
+                                                                  void(*predict)(T&, L&, E&),
                                                                   size_t params_per_weight)
   { return learner<T, E>::init_learner(
-                                              nullptr, (L*)nullptr, 
-                                              predict, predict, 
+                                              nullptr, (L*)nullptr,
+                                              predict, predict,
                                               params_per_weight, prediction_type::scalar);
   }
 
@@ -356,8 +356,8 @@ public:
                                                                   size_t params_per_weight,
                                                                   prediction_type::prediction_type_t pred_type)
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), (L*)nullptr, 
-                                              learn, predict, 
+                                              dat.get(), (L*)nullptr,
+                                              learn, predict,
                                               params_per_weight, pred_type);
     dat.release();
     return *ret;
@@ -367,24 +367,24 @@ public:
   template<class T, class E, class L> learner<T, E>& init_learner(
                                                                   free_ptr<T>& dat, L* base,
                                                                   void(*learn)(T&, L&, E&),
-                                                                  void(*predict)(T&, L&, E&), 
+                                                                  void(*predict)(T&, L&, E&),
                                                                   size_t ws)
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), base, 
-                                              learn, predict, 
+                                              dat.get(), base,
+                                              learn, predict,
                                               ws, base->pred_type);
 
     dat.release();
     return *ret;
   }
-  
+
   //reduction with default num_params
   template<class T, class E, class L> learner<T, E>& init_learner(
                                                                   free_ptr<T>& dat, L* base,
                                                                   void(*learn)(T&, L&, E&),
                                                                   void(*predict)(T&, L&, E&))
   { auto ret = &learner<T, E>::init_learner(
-                                              dat.get(), base, 
+                                              dat.get(), base,
                                               learn, predict,
                                               1, base->pred_type);
 
@@ -398,7 +398,7 @@ public:
                                                                   void(*learn)(T&, L&, E&),
                                                                   void(*predict)(T&, L&, E&))
   { return learner<T, E>::init_learner(
-                                              nullptr, base, 
+                                              nullptr, base,
                                               learn, predict,
                                               1, base->pred_type);
   }
@@ -414,7 +414,7 @@ public:
                                           dat.get(),base,
                                           learn, predict,
                                           ws,pred_type);
-    
+
     dat.release();
     l.set_finish_example(MULTICLASS::finish_example<T>);
     p->lp = MULTICLASS::mc_label;
@@ -423,14 +423,14 @@ public:
 
   template<class T, class E> base_learner* make_base(learner<T,E>& base) { return (base_learner*)(&base); }
 
-  template<class T, class E> 
+  template<class T, class E>
   multi_learner* as_multiline(learner<T, E>* l)
   { if(l->is_multiline) // Tried to use a singleline reduction as a multiline reduction
       return (multi_learner*) (l);
     THROW("Tried to use a singleline reduction as a multiline reduction");
   }
 
-  template<class T, class E> 
+  template<class T, class E>
   single_learner* as_singleline(learner<T, E>* l)
   { if(!l->is_multiline) // Tried to use a multiline reduction as a singleline reduction
       return (single_learner*) (l);
@@ -438,7 +438,7 @@ public:
   }
 
   template<bool is_learn>
-  void multiline_learn_or_predict(multi_learner& base, v_array<example*>& examples, const uint64_t offset, const uint32_t id = 0)
+  void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
   { std::vector<uint64_t> saved_offsets(examples.size());
     for (auto ec : examples)
     { saved_offsets.push_back(ec->ft_offset);
