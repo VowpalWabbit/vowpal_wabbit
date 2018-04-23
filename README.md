@@ -148,7 +148,7 @@ ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.a /usr/lib/x86_64-linux-gn
 ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.so /usr/lib/x86_64-linux-gnu/libboost_python.so
 ```
 
-Install vowpal-wabbit via pip:
+Install Vowpal Wabbit via pip:
 ```
 pip3 install vowpalwabbit
 ```
