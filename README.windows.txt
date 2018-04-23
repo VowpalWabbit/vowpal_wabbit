@@ -33,6 +33,7 @@ You'll need Java to run unit tests
 	(c)	Open the Git bash shell
 		"C:\Program Files (x86)\Git\bin\sh.exe" --login -i
 		or some other bash shell
+	(d) 	If none of these work, try locating the command line tools based on directions here: https://docs.microsoft.com/en-us/dotnet/framework/tools/developer-command-prompt-for-vscd vo	
 
 **************************************************************************************************************
 (3) Setup Directories
