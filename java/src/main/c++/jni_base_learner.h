@@ -63,8 +63,7 @@ T base_predict(
   const F& predictor)
 { vw* vwInstance = (vw*)vwPtr;
   int example_count = env->GetArrayLength(example_strings);
-  multi_ex ex_coll = v_init<example*>();   // When doing multiline prediction the final result is stored in the FIRST example parsed.
-  always_delete<multi_ex> guard_obj(ex_coll);    // always delete the array
+  multi_ex ex_coll;   // When doing multiline prediction the final result is stored in the FIRST example parsed.
   example* first_example = NULL;
   for (int i=0; i<example_count; i++)
   { jstring example_string = (jstring) (env->GetObjectArrayElement(example_strings, i));
@@ -84,10 +83,8 @@ T base_predict(
   catch (...)
   { rethrow_cpp_exception_as_java_exception(env);
   }
-  
-  vwInstance->finish_example(ex_coll);
 
-  ex_coll.delete_v();
+  vwInstance->finish_example(ex_coll);
 
   return predictor(first_example, env);
 }

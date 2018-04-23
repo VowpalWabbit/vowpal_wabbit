@@ -190,7 +190,7 @@ float my_predict(vw_ptr all, example_ptr ec)
 
 template<bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec)
-{ auto ex_coll = v_init<example*>();
+{ multi_ex ex_coll;
   for (ssize_t i = 0; i<len(ec); i++)
   { py::object eci = ec[i];
     py::extract<example_ptr> get_ex(eci);
@@ -201,7 +201,6 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
   }
   if (learn) all->learn(ex_coll);
   else as_multiline(all->l)->predict(ex_coll);
-  ex_coll.delete_v();
 }
 
 void my_learn_multi_ex(vw_ptr& all, py::list& ec)
@@ -352,7 +351,7 @@ void ex_erase_namespace(example_ptr ec, unsigned char ns)
 { ec->num_features -= ec->feature_space[ns].size();
   ec->total_sum_feat_sq -= ec->feature_space[ns].sum_feat_sq;
   ec->feature_space[ns].sum_feat_sq = 0.;
-  ec->feature_space[ns].erase();
+  ec->feature_space[ns].clear();
 }
 
 bool ex_pop_namespace(example_ptr ec)
@@ -384,7 +383,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   }
 
   if (all.add_constant)
-  { ae->feature_space[constant_namespace].erase();
+  { ae->feature_space[constant_namespace].clear();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i=0; i<N; i++)
