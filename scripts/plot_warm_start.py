@@ -135,9 +135,9 @@ def gen_comparison_graph(mod):
 	config_name = str(mod.dataset) + '_'+str(mod.warm_start)+ '_' + str(mod.cb_type)
 
 	# combined approach, epsilon
-	mod.choices_lambda = 5
+	mod.choices_lambda = 2
 	mod.weighting_scheme = 1
-	mod.lambda_scheme = 2
+	mod.lambda_scheme = 3
 	mod.no_bandit = False
 	mod.no_supervised = False
 	mod.no_exploration = False
@@ -145,8 +145,8 @@ def gen_comparison_graph(mod):
 	mod.epsilon_on = True
 	mod.plot_color = 'r'
 	mod.plot_flat = False
-	mod.vw_output_filename = mod.results_path+config_name+'central_minimax'+'.txt'
-	mod.plot_label = 'Central lambda: minimax'
+	mod.vw_output_filename = mod.results_path+config_name+'zeroone'+'.txt'
+	mod.plot_label = 'zeroone only'
 	avg_error_comb_1 = plot_errors(mod)
 
 	# combined approach, cover
@@ -275,7 +275,7 @@ def avg_error(mod):
 def main_loop(mod):
 	mod.summary_file_name = mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum'
 	summary_file = open(mod.summary_file_name, 'w')
-	summary_file.write('dataset' + ' ' + 'central_minimax' + ' ' + 'central_minimax_zeroone' + ' ' + 'bandit_only' + ' ' + 'supervised_only' + ' ' + 'size' + '\n')
+	summary_file.write('dataset' + ' ' + 'zeroone_only' + ' ' + 'central_minimax_zeroone' + ' ' + 'bandit_only' + ' ' + 'supervised_only' + ' ' + 'size' + '\n')
 	summary_file.close()
 
 	for mod.cb_type, mod.warm_start_frac, mod.dataset in mod.config_task:
@@ -287,6 +287,11 @@ if __name__ == '__main__':
 	parser.add_argument('task_id', type=int, help='task ID, between 0 and num_tasks - 1')
 	parser.add_argument('num_tasks', type=int)
 	parser.add_argument('--results_dir', default='../../../figs/')
+	parser.add_argument('--warm_start_fraction', type=float)
+	parser.add_argument('--corrupt_prob_supervised', type=float)
+	parser.add_argument('--corrupt_prob_bandit',type=float)
+
+
 	args = parser.parse_args()
 	if args.task_id == 0:
 		if not os.path.exists(args.results_dir):
@@ -320,7 +325,8 @@ if __name__ == '__main__':
 
 	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
 	#mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
-	mod.choices_warm_start_frac = [0.03]
+	#mod.choices_warm_start_frac = [0.03]
+	mod.choices_warm_start_frac = [args.warm_start_fraction]
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
@@ -339,10 +345,11 @@ if __name__ == '__main__':
 	#mod.corrupt_type_supervised = 2
 	#mod.corrupt_prob_supervised = 0.3
 	mod.corrupt_type_supervised = 1
-	mod.corrupt_prob_supervised = 0.0
+	#mod.corrupt_prob_supervised = 0.3
+	mod.corrupt_prob_supervised = args.corrupt_prob_supervised
 
-	mod.corrupt_type_bandit = 2
-	mod.corrupt_prob_bandit = 1
+	mod.corrupt_type_bandit = 1
+	mod.corrupt_prob_bandit = args.corrupt_prob_bandit
 
 	mod.validation_method = 2
 	mod.epsilon = 0.05

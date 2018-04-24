@@ -35,7 +35,7 @@ def parse_sum_file(sum_filename):
 def get_z_scores(errors_1, errors_2, sizes):
 	z_scores = []
 	for i in range(len(errors_1)):
-		#print i
+		print i
 		z_scores.append( z_score(errors_1[i], errors_2[i], sizes[i]) )
 	return z_scores
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
 	dss = sum_files(results_dir)
 
-	#print dss[160]
+	#print dss[168]
 
 	all_results = None
 

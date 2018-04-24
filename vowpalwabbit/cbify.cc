@@ -97,6 +97,7 @@ struct cbify
 	example* supervised_validation;
 	size_t lambda_scheme;
 	float epsilon;
+	float cumulative_variance;
 
 };
 
@@ -143,7 +144,7 @@ void setup_lambdas(cbify& data, example& ec)
 	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE)
 	{
 		lambdas[0] = 0.0;
-		lambdas[data.choices_lambda-1] = 1.0 - 1e-4;
+		lambdas[data.choices_lambda-1] = 1.0;
 	}
 
 	//cout<<"lambdas:"<<endl;
@@ -459,6 +460,28 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 
 }
 
+size_t predict_cs(cbify& data, example& ec)
+{
+	uint32_t argmin = find_min(data.cumulative_costs);
+
+	COST_SENSITIVE::label& csl = *data.csls;
+
+	csl.costs.resize(data.num_actions);
+	csl.costs.end() = csl.costs.begin()+data.num_actions;
+
+	for (uint32_t j = 0; j < data.num_actions; j++)
+	{
+		csl.costs[j].class_index = j+1;
+		csl.costs[j].x = loss(data, corrupted_label, j+1);
+	}
+
+	ec.l.cs = csl;
+
+	data.all->cost_sensitive->predict(ec, argmin);
+
+	return ec.pred.multiclass;
+
+}
 
 
 template <bool is_learn>
@@ -509,8 +532,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				ec.weight = 1;
+				if (data.lambdas[i] >= 0.5)
+					ec.weight = (1 - data.lambdas[i]) / data.lambdas[i];
+				else
+					ec.weight = 1;
+
 				data.all->cost_sensitive->learn(ec, i);
+
+				ec.weight = 1;
 			}
 		}
 
@@ -541,7 +570,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
-		// Need to initilize the lambda vector
+		// Need to initialize the lambda vector
 		if (data.bandit_iter == 0)
 			setup_lambdas(data, ec);
 
@@ -578,14 +607,24 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				if (data.weighting_scheme == INSTANCE_WT)
-					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]);
+				float weight_multiplier;
+				if (data.lambdas[i] >= 0.5)
+					weight_multiplier = 1;
 				else
-					ec.weight = old_weight * data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
+					weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
+
+				if (data.weighting_scheme == INSTANCE_WT)
+					ec.weight = old_weight * weight_multiplier;
+				else
+					ec.weight = old_weight * weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
 
 				base.learn(ec, i);
 			}
 		}
+
+		size_t pred_best_approx = predict_cs(data, ec);
+		data.cumulative_variance += 1.0 / ec.pred.a_s[pred_best_approx-1].score;
+
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
 		ec.l.multi = ld;
@@ -593,6 +632,12 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		ec.weight = old_weight;
 
 		data.bandit_iter++;
+
+		if (data.bandit_iter == data.bandit_period)
+		{
+			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
+			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
+		}
 	}
 	else
 	{
@@ -604,6 +649,16 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 }
 
+size_t predict_cs_adf(cbify& data, example& ec)
+{
+	uint32_t argmin = find_min(data.cumulative_costs);
+
+	copy_example_to_adf(data, ec);
+
+	size_t best_action = predict_sublearner(data, base, argmin);
+
+	return best_action;
+}
 
 template <bool is_learn>
 void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
@@ -642,13 +697,24 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
+				float weight_multiplier;
+				if (data.lambdas[i] >= 0.5)
+					weight_multiplier = (1 - data.lambdas[i]) / data.lambdas[i];
+				else
+					weight_multiplier = 1;
+
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
+					data.old_weights[a] = ecs[a].weight;
+
 					csls[a].costs[0].class_index = a+1;
 					csls[a].costs[0].x = loss(data, corrupted_label, a+1);
 
 					cbls[a] = ecs[a].l.cb;
 					ecs[a].l.cs = csls[a];
+
+					ecs[a].weight *= weight_multiplier;
+
 					data.all->cost_sensitive->learn(ecs[a],i);
 				}
 				*cbl_empty = empty_example->l.cb;
@@ -656,7 +722,11 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				data.all->cost_sensitive->learn(*empty_example,i);
 
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+				{
 					ecs[a].l.cb = cbls[a];
+					ecs[a].weights = data.old_weights[a];
+				}
+
 				empty_example->l.cb = *cbl_empty;
 			}
 		}
@@ -716,14 +786,21 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		{
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
+				float weight_multiplier;
+
+				if (data.lambdas[i] >= 0.5)
+					weight_multiplier = 1;
+				else
+					weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
+
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
 					data.old_weights[a] = ecs[a].weight;
 
 					if (data.weighting_scheme == INSTANCE_WT)
-						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]);
+						ecs[a].weight *= weight_multiplier;
 					else
-						ecs[a].weight *= data.lambdas[i] / (1-data.lambdas[i]) * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
+						ecs[a].weight *= weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
 
 					base.learn(ecs[a], i);
 				}
@@ -734,9 +811,18 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 			}
 		}
 
+		size_t pred_best_approx = predict_cs(data, ec);
+		data.cumulative_variance += 1.0 / out_ec.pred.a_s[pred_best_approx-1].score;
+
 		ec.pred.multiclass = cl.action;
 
 		data.bandit_iter++;
+
+		if (data.bandit_iter == data.bandit_period)
+		{
+			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
+			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
+		}
 	}
 	else
 	{
@@ -860,6 +946,8 @@ base_learner* cbify_setup(vw& all)
 
 	for (size_t i = 0; i < data.choices_lambda; i++)
 		data.cumulative_costs.push_back(0.);
+
+	data.cumulative_variance = 0;
 
 	data.num_actions = num_actions;
 
