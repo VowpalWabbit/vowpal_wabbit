@@ -250,8 +250,8 @@ void parse_dictionary_argument(vw&all, string str)
     map->put(ss, hash, arr);
 
     // clear up ec
-    ec->tag.erase(); ec->indices.erase();
-    for (size_t i=0; i<256; i++) { ec->feature_space[i].erase();}
+    ec->tag.clear(); ec->indices.clear();
+    for (size_t i=0; i<256; i++) { ec->feature_space[i].clear();}
   }
   while ((rc != EOF) && (nread > 0));
   free(buffer);
@@ -402,6 +402,7 @@ void parse_source(arguments& arg)
   po::parsed_options pos = po::command_line_parser(arg.args).
                            style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                            options(arg.opts).positional(p).run();
+
   arg.vm = po::variables_map();
   po::store(pos, arg.vm);
   if (arg.vm.count("data") > 0)
@@ -1576,7 +1577,7 @@ void finish(vw& all, bool delete_all)
 
   free_parser(all);
   finalize_source(all.p);
-  all.p->parse_name.erase();
+  all.p->parse_name.clear();
   all.p->parse_name.delete_v();
   free(all.p);
   bool seeded;

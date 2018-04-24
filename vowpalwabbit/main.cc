@@ -21,8 +21,18 @@ using namespace std;
 
 vw* setup(int argc, char* argv[])
 {
-  vw* all = VW::initialize(argc, argv);
-
+  vw* all = nullptr;
+  try { all = VW::initialize(argc, argv);
+  }
+  catch(const exception& ex){
+    cout << ex.what() << endl;
+    throw;
+  }
+  catch(...)
+  {
+    cout << "unknown exception" << endl;
+    throw;
+  }
   all->vw_is_main = true;
 
   if (!all->quiet && !all->bfgs && !all->searchstr && !all->opts_n_args.vm.count("audit_regressor"))

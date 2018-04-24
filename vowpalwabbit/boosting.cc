@@ -59,7 +59,7 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -120,7 +120,7 @@ void predict_or_learn(boosting& o, LEARNER::base_learner& base, example& ec)
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -177,7 +177,7 @@ void predict_or_learn_logistic(boosting& o, LEARNER::base_learner& base, example
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
 {
   label_data& ld = ec.l.simple;
 
@@ -335,7 +335,7 @@ void finish(boosting& o)
 void return_example(vw& all, boosting& a, example& ec)
 {
   output_and_account_example(all, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 void save_load(boosting &o, io_buf &model_file, bool read, bool text)
@@ -405,21 +405,21 @@ LEARNER::base_learner* boosting_setup(arguments& arg)
   data->alpha = std::vector<float>(data->N,0);
   data->v = std::vector<float>(data->N,1);
 
-  learner<boosting>* l;
+  learner<boosting,example>* l;
   if (data->alg == "BBM")
-    l = &init_learner<boosting>(data, setup_base(arg),
+    l = &init_learner<boosting,example>(data, as_singleline(setup_base(arg)),
                                 predict_or_learn<true>,
                                 predict_or_learn<false>, data->N);
   else if (data->alg == "logistic")
     {
-      l = &init_learner<boosting>(data, setup_base(arg),
+      l = &init_learner<boosting, example>(data, as_singleline(setup_base(arg)),
                                   predict_or_learn_logistic<true>,
                                   predict_or_learn_logistic<false>, data->N);
       l->set_save_load(save_load);
     }
   else if (data->alg == "adaptive")
     {
-      l = &init_learner<boosting>(data, setup_base(arg),
+      l = &init_learner<boosting, example>(data, as_singleline(setup_base(arg)),
                                   predict_or_learn_adaptive<true>,
                                   predict_or_learn_adaptive<false>, data->N);
       l->set_save_load(save_load_sampling);
