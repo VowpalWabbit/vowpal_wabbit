@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
 [![Coverage Status](https://coveralls.io/repos/JohnLangford/vowpal_wabbit/badge.svg)](https://coveralls.io/r/JohnLangford/vowpal_wabbit)
 
-This is the *vowpal wabbit* fast online learning code.  For Windows, look at README.windows.txt
+This is the *vowpal wabbit* fast online learning code.  For Windows, look at [README.windows.txt](./README.windows.txt)
 
 ## Prerequisite software
 
@@ -131,6 +131,28 @@ versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 ```
 make CXX='clang++ -static' clean vw test     # ignore warnings
 ```
+
+## Debian Python 3 Binding
+
+Ensure boost-library and c-compiler are installed:
+```
+apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev clang make automake
+```
+
+Set Python 3.x and its boost-library as default:
+```
+update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+update-alternatives --install /usr/bin/python python /usr/bin/python3.x 2
+
+ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.a /usr/lib/x86_64-linux-gnu/libboost_python.a
+ln -sf /usr/lib/x86_64-linux-gnu/libboost_python-py3x.so /usr/lib/x86_64-linux-gnu/libboost_python.so
+```
+
+Install Vowpal Wabbit via pip:
+```
+pip3 install vowpalwabbit
+```
+
 
 ## Mac OS X-specific info
 

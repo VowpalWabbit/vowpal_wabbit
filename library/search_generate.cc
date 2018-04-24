@@ -308,7 +308,7 @@ public:
       }
       ex("w=" + tmp);
 
-      ref.erase();
+      ref.clear();
 
       /*
       vector<char>& best = ied.next();
@@ -495,4 +495,3 @@ int main(int argc, char *argv[])
   //predict();
   //run_easy();
 }
-

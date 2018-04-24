@@ -10,9 +10,9 @@ namespace HookTask
 {
 void initialize(Search::search&, size_t&, arguments&);
 void finish(Search::search&);
-void run(Search::search&, std::vector<example*>&);
-void run_setup(Search::search&, std::vector<example*>&);
-void run_takedown(Search::search&, std::vector<example*>&);
+void run(Search::search&, multi_ex&);
+void run_setup(Search::search&, multi_ex&);
+void run_takedown(Search::search&, multi_ex&);
 extern Search::search_task task;
 
 struct task_data

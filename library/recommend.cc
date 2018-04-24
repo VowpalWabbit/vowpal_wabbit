@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 
       if (!bf_hit(bf,estr))
       { example *ex = VW::read_example(*model, estr);
-        model->learn(ex);
+        model->learn(*ex);
 
         const string str(estr);
 
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
           pr_queue.push(make_pair(ex->pred.scalar, str));
         }
 
-        VW::finish_example(*model, ex);
+        VW::finish_example(*model, *ex);
       }
       else
       { skipped++;

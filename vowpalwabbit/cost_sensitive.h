@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #pragma once
 #include "label_parser.h"
+#include<vector>
 
 struct example;
 struct vw;
@@ -24,13 +25,11 @@ struct wclass
      if x > 0 then this is a label feature vector for (size_t)x
 */
 
-struct label
-{ v_array<wclass> costs;
-};
+struct label { v_array<wclass> costs;};
 
-void output_example(vw& all, example& ec);
-extern label_parser cs_label;
+ void output_example(vw& all, example& ec);
+ extern label_parser cs_label;
 
-void print_update(vw& all, bool is_test, example& ec, const v_array<example*> *ec_seq, bool multilabel, uint32_t prediction);
-bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
+ void print_update(vw& all, bool is_test, example& ec, std::vector<example*>* ec_seq, bool multilabel, uint32_t prediction);
+ bool ec_is_example_header(example& ec);  // example headers look like "0:-1" or just "shared"
 }

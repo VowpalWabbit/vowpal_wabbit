@@ -251,7 +251,7 @@ class HyperOptimizer(object):
         yh = open(self.holdout_set, 'r')
         self.y_true_holdout = []
         for line in yh:
-            self.y_true_holdout.append(float(line.split('|')[0]))
+            self.y_true_holdout.append(float(line.split()[0]))
         if not self.is_regression:
             self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
         self.logger.info("holdout length: %d" % len(self.y_true_holdout))

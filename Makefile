@@ -17,6 +17,7 @@ ifeq ($(CXX),)
 endif
 
 UNAME := $(shell uname)
+ARCH_UNAME := $(shell uname -m)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
 BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
@@ -56,7 +57,13 @@ endif
 JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
+
+ifeq ($(ARCH_UNAME), ppc64le)
+  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing #-msse2 is not supported on power
+else
+  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
+endif
+
 ifeq ($(UNAME), FreeBSD)
   WARN_FLAGS = -Wall
 else
@@ -76,7 +83,7 @@ FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 #FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
 
-FLAGS += -I ../rapidjson/include
+FLAGS += -I ../rapidjson/include -I ../explore
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
@@ -96,7 +103,7 @@ vw:
 	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
+vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 vw_gcov: CXX = g++
 vw_gcov:
 	cd vowpalwabbit && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) -j $(NPROCS) things
@@ -108,7 +115,7 @@ library_example: vw
 	cd library; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-library_example_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
+library_example_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 library_example_gcov: CXX = g++
 library_example_gcov: vw_gcov
 	cd library && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) things

@@ -1,10 +1,10 @@
 #include "reductions.h"
 #include "cb_algs.h"
-#include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
 #include "cb_adf.h"
 #include "cb_explore_adf.h"
 #include "rand48.h"
+#include "gen_cs_example.h"
 
 //Do evaluation of nonstationary policies.
 //input = contextual bandit label
@@ -12,8 +12,6 @@
 
 using namespace LEARNER;
 using namespace CB_ALGS;
-using namespace MultiWorldTesting;
-using namespace MultiWorldTesting::SingleAction;
 using namespace std;
 
 namespace EXPLORE_EVAL
@@ -22,8 +20,6 @@ namespace EXPLORE_EVAL
 struct explore_eval
 {
   CB::cb_class known_cost;
-  v_array<example*> ec_seq;
-  bool need_to_clear;
   vw* all;
   uint64_t offset;
   CB::label action_label;
@@ -37,30 +33,8 @@ struct explore_eval
   bool fixed_multiplier;
 };
 
-template<bool is_learn>
-void multiline_learn_or_predict(base_learner& base, v_array<example*>& examples, uint64_t offset, uint32_t id = 0)
-{
-  for (example* ec : examples)
-  {
-    uint64_t old_offset = ec->ft_offset;
-    ec->ft_offset = offset;
-    if (is_learn)
-      base.learn(*ec, id);
-    else
-      base.predict(*ec, id);
-    ec->ft_offset = old_offset;
-  }
-}
-
-void end_examples(explore_eval& data)
-{
-  if (data.need_to_clear)
-    data.ec_seq.erase();
-}
-
 void finish(explore_eval& data)
 {
-  data.ec_seq.delete_v();
   if (!data.all->quiet)
   {
     data.all->opts_n_args.trace_message << "update count = " << data.update_count << endl;
@@ -75,7 +49,7 @@ void finish(explore_eval& data)
 //are specified. We print the first action and probability, based on
 //ordering by scores in the final output.
 
-void output_example(vw& all, explore_eval& c, example& ec, v_array<example*>* ec_seq)
+void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 {
   if (example_is_newline_not_header(ec)) return;
 
@@ -121,58 +95,44 @@ void output_example(vw& all, explore_eval& c, example& ec, v_array<example*>* ec
   CB::print_update(all, is_test, ec, ec_seq, true);
 }
 
-void output_example_seq(vw& all, explore_eval& data)
+void output_example_seq(vw& all, explore_eval& data, multi_ex& ec_seq)
 {
-  if (data.ec_seq.size() > 0)
+  if (ec_seq.size() > 0)
   {
-    output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+    output_example(all, data, **(ec_seq.begin()), &(ec_seq));
     if (all.raw_prediction > 0)
-      all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+      all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
   }
 }
 
-
-void clear_seq_and_finish_examples(vw& all, explore_eval& data)
+void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
 {
-  if (data.ec_seq.size() > 0)
-    for (example* ecc : data.ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, ecc);
-  data.ec_seq.erase();
-}
-
-void finish_multiline_example(vw& all, explore_eval& data, example& ec)
-{
-  if (data.need_to_clear)
+  if (ec_seq.size() > 0)
   {
-    if (data.ec_seq.size() > 0)
-    {
-      output_example_seq(all, data);
-      CB_ADF::global_print_newline(all);
-    }
-    clear_seq_and_finish_examples(all, data);
-    data.need_to_clear = false;
+    output_example_seq(all, data, ec_seq);
+    CB_ADF::global_print_newline(all);
   }
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
-template <bool is_learn> void do_actual_learning(explore_eval& data, base_learner& base)
+template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
 {
-  example* label_example=CB_EXPLORE_ADF::test_adf_sequence(data.ec_seq);
+  example* label_example=CB_EXPLORE_ADF::test_adf_sequence(ec_seq);
 
   if (label_example != nullptr)//extract label
   {
     data.action_label = label_example->l.cb;
     label_example->l.cb = data.empty_label;
   }
-  multiline_learn_or_predict<false>(base, data.ec_seq, data.offset);
+  multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)	//restore label
     label_example->l.cb = data.action_label;
 
-  data.known_cost = CB_ADF::get_observed_cost(data.ec_seq);
+  data.known_cost = CB_ADF::get_observed_cost(ec_seq);
   if (label_example != nullptr && is_learn)
   {
-    ACTION_SCORE::action_scores& a_s = data.ec_seq[0]->pred.a_s;
+    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
     for (size_t i =0 ; i < a_s.size(); i++)
@@ -192,7 +152,7 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, base_learne
     if (merand48(data.all->random_state) < threshold)
     {
       example* ec_found = nullptr;
-      for (example*& ec : data.ec_seq)
+      for (example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 &&
             ec->l.cb.costs[0].cost != FLT_MAX &&
@@ -203,44 +163,17 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, base_learne
       }
       ec_found->l.cb.costs[0].probability = action_probability;
 
-      multiline_learn_or_predict<true>(base, data.ec_seq, data.offset);
+      multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
       if (threshold > 1)
       {
         float inv_threshold = 1.f / threshold;
-        for (example*& ec : data.ec_seq)
+        for (auto& ec : ec_seq)
           ec->weight *= inv_threshold;
       }
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
       data.update_count++;
     }
-  }
-}
-
-template <bool is_learn>
-void predict_or_learn(explore_eval& data, base_learner& base, example &ec)
-{
-  vw* all = data.all;
-  //data.base = &base;
-  data.offset = ec.ft_offset;
-  bool is_test_ec = CB::cb_label.test_label(&ec.l);
-  bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
-
-  if ((CB_ALGS::example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
-  {
-    data.ec_seq.push_back(&ec);
-    do_actual_learning<is_learn>(data, base);
-    // using flag to clear, because ec_seq is used in finish_example
-    data.need_to_clear = true;
-  }
-  else
-  {
-    if (data.need_to_clear)    // should only happen if we're NOT driving
-    {
-      data.ec_seq.erase();
-      data.need_to_clear = false;
-    }
-    data.ec_seq.push_back(&ec);
   }
 }
 }
@@ -268,14 +201,15 @@ base_learner* explore_eval_setup(arguments& arg)
 
   arg.all->delete_prediction = nullptr;
 
-  base_learner* base = setup_base(arg);
+  multi_learner* base = as_multiline(setup_base(arg));
   arg.all->p->lp = CB::cb_label;
   arg.all->label_type = label_type::cb;
 
-  learner<explore_eval>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, 1, prediction_type::action_probs);
+  learner<explore_eval,multi_ex>& l = init_learner(data, base,
+    do_actual_learning<true>, do_actual_learning<false>,
+    1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
-  l.set_end_examples(end_examples);
   return make_base(l);
 }

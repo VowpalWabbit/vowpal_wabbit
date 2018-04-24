@@ -18,7 +18,7 @@ namespace CB
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->costs.erase();
+  ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(cb_class)*num;
   if (buf_read(cache, c, total) < total)
@@ -39,7 +39,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, total) < total)
@@ -77,7 +77,7 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
 }
 
   bool test_label(void* v)
@@ -180,7 +180,7 @@ bool ec_is_example_header(example& ec)  // example headers just have "shared"
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool action_scores)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {

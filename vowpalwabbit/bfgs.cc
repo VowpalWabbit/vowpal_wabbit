@@ -668,7 +668,7 @@ int process_pass(vw& all, bfgs& b)
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
       if (!all.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
     }
   }
@@ -727,7 +727,7 @@ int process_pass(vw& all, bfgs& b)
           fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n",
                   "","",ratio,
                   new_step);
-        b.predictions.erase();
+        b.predictions.clear();
         update_weight(all, (float)(-b.step_size+new_step));
         b.step_size = (float)new_step;
         zero_derivative(all);
@@ -775,7 +775,7 @@ int process_pass(vw& all, bfgs& b)
           b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
           if (!all.quiet)
             fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-          b.predictions.erase();
+          b.predictions.clear();
           update_weight(all, b.step_size);
         }
       }
@@ -811,7 +811,7 @@ int process_pass(vw& all, bfgs& b)
 
       float d_mag = direction_magnitude(all);
 
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
@@ -1125,7 +1125,7 @@ base_learner* bfgs_setup(arguments& arg)
   arg.all->bfgs = true;
   arg.all->weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(b, learn, predict, arg.all->weights.stride());
+  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

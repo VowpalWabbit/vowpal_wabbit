@@ -66,7 +66,7 @@ void make_marginal(data& sm, example& ec)
     {
       std::swap(sm.temp[n],*i);
       features& f = *i;
-      f.erase();
+      f.clear();
       for (features::iterator j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
       {
         float first_value = j.value();
@@ -195,7 +195,7 @@ void update_marginal(data& sm, example& ec)
 
 
 template <bool is_learn>
-void predict_or_learn(data& sm, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(data& sm, LEARNER::single_learner& base, example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if (is_learn)
@@ -375,8 +375,8 @@ LEARNER::base_learner* marginal_setup(arguments& arg)
     if (s.find((char)u) != string::npos)
       d->id_features[u] = true;
 
-  LEARNER::learner<MARGINAL::data>& ret =
-    init_learner(d, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+  LEARNER::learner<MARGINAL::data,example>& ret =
+    init_learner(d, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_finish(finish);
   ret.set_save_load(save_load);
 

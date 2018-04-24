@@ -286,7 +286,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -375,6 +375,7 @@
     <ClInclude Include="interactions.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
+    <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
@@ -389,7 +390,6 @@
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
-    <ClInclude Include="hash.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
@@ -484,7 +484,6 @@
     <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
-    <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />

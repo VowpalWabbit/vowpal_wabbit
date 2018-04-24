@@ -39,7 +39,7 @@ bool know_all_cost_example(CB::label& ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb& data, base_learner& base, example& ec)
+void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
@@ -65,12 +65,12 @@ void predict_or_learn(cb& data, base_learner& base, example& ec)
   }
 }
 
-void predict_eval(cb&, base_learner&, example&)
+void predict_eval(cb&, single_learner&, example&)
 {
   THROW("can not use a test label for evaluation");
 }
 
-void learn_eval(cb& data, base_learner&, example& ec)
+void learn_eval(cb& data, single_learner&, example& ec)
 {
   CB_EVAL::label ld = ec.l.cb_eval;
 
@@ -122,13 +122,13 @@ void finish(cb& data)
 void finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void eval_finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }
 using namespace CB_ALGS;
@@ -175,7 +175,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.args.push_back(ss.str());
   }
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   if (eval)
   {
     arg.all->p->lp = CB_EVAL::cb_eval;
@@ -187,7 +187,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.all->label_type = label_type::cb;
   }
 
-  learner<cb>* l;
+  learner<cb,example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);

@@ -32,7 +32,7 @@ void name_value(substring &s, v_array<substring>& name, float &v)
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->costs.erase();
+  ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass)*num;
   if (buf_read(cache, c, (int)total) < total)
@@ -53,7 +53,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   label* ld = (label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, (int)total) < total)
@@ -91,7 +91,7 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   label* ld = (label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
 }
 
 bool test_label(void* v)
@@ -132,7 +132,7 @@ bool substring_eq(substring ss, const char* str)
 void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
-  ld->costs.erase();
+  ld->costs.clear();
 
   // handle shared and label first
   if (words.size() == 1)
@@ -200,7 +200,7 @@ label_parser cs_label = {default_label, parse_label,
                          sizeof(label)
                         };
 
-void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* ec_seq, bool action_scores, uint32_t prediction)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -213,13 +213,13 @@ void print_update(vw& all, bool is_test, example& ec, const v_array<example*>* e
       // If the first example is "shared", don't include its features.
       // These should be already included in each example (TODO: including quadratic and cubic).
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example** ecc = ec_seq->cbegin();
-      const example& first_ex = **ecc;
+      example** ecc = &((*ec_seq)[0]);
+      const example& first_ex = *(*ec_seq)[0];
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
 
-      for (; ecc!=ec_seq->cend(); ecc++)
+      for (; ecc!=&(*ec_seq->cend()); ecc++)
         num_current_features += (*ecc)->num_features;
     }
 

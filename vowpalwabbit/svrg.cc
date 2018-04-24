@@ -53,7 +53,7 @@ float predict_stable(const svrg& s, example& ec)
   return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, base_learner&, example& ec)
+void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
@@ -104,7 +104,7 @@ void update_stable(const svrg& s, example& ec)
   GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, base_learner& base, example& ec)
+void learn(svrg& s, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -182,7 +182,7 @@ base_learner* svrg_setup(arguments& arg)
 
   // Request more parameter storage (4 floats per feature)
   arg.all->weights.stride_shift(2);
-  learner<svrg>& l = init_learner(s, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
+  learner<svrg,example>& l = init_learner(s, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }
