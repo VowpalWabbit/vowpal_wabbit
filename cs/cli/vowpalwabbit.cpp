@@ -161,7 +161,7 @@ uint64_t VowpalWabbit::HashFeatureNative(String^ s, uint64_t u)
 
 void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
 {
-  multi_ex ex_coll = v_init<example*>();
+  multi_ex ex_coll;
   try
   {
     for each (auto ex in examples)
@@ -169,20 +169,19 @@ void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
       example* pex = ex->m_example;
       ex_coll.push_back(pex);
     }
-    
+
     m_vw->learn(ex_coll);
 
     // as this is not a ring-based example it is not freed
     as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
-  finally{ ex_coll.delete_v();
-  }
+  finally{ }
 }
 
 void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
 {
-  multi_ex ex_coll = v_init<example*>();
+  multi_ex ex_coll;
   try
   {
     for each (auto ex in examples)
@@ -197,8 +196,7 @@ void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
     as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
-    finally{ ex_coll.delete_v();
-  }
+    finally{ }
 }
 
 void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
@@ -572,7 +570,7 @@ void VowpalWabbit::Predict(IEnumerable<String^>^ lines)
 
     // Need to add an empty line to cache file
     CacheEmptyLine();
-  
+
     Predict(examples);
   }
   finally
