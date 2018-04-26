@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ds_async_batch.h" />
+    <ClInclude Include="ds_async_batcher.h" />
     <ClInclude Include="ds_concurrent_queue.h" />
     <ClInclude Include="ds_event.h" />
     <ClInclude Include="ds_eventhub.h" />
