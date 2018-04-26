@@ -30,6 +30,7 @@ namespace decision_service {
 		http_request request(methods::POST);
 		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
 		request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
+
 		request.set_body(data);
 
 		return _client.request(request).then([](http_response response)
@@ -55,9 +56,12 @@ namespace decision_service {
 	eventhub::eventhub(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)
 		: _client(build_url(host, name)),
 		_eventhub_host(host), _shared_access_key_name(key_name), _shared_access_key(key), _eventhub_name(name)
-	{}
+	{
+		//init authorize token
+		authorization();
+	}
 
-	//for tests: typically url = "http://localhost:8080"
+	//for tests
 	eventhub::eventhub(const std::string& url)
 		: _client(conversions::to_string_t(url)),
 		_eventhub_host(""), _shared_access_key_name(""), _shared_access_key(""), _eventhub_name("")
