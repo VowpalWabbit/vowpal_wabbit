@@ -7,6 +7,7 @@
 
 namespace decision_service {
 
+	//this class wraps logging utilities, nicely exposed for the driver class
 	class logger {
 
 	public:

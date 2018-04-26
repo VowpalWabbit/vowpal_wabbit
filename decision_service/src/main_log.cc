@@ -10,15 +10,14 @@ using namespace decision_service;
 int main_log()
 {
 	eventhub eh("http://localhost:8080");
-	eh.send("plop data 0");
+	eh.send("data_0");
 
 	async_batcher<eventhub>* batcher = new async_batcher<eventhub>(eh);
-	std::string str("async_batch data 1");
-	batcher->append(str);
-	str = "async_batch data 2";
-	batcher->append(str);
-	str = "async_batch data 3";
-	batcher->append(str);
+
+	batcher->append("data_1");
+	batcher->append("data_2");
+	batcher->append("data_3");
+
 	delete batcher;
 
 	configuration config;

@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
     //batch was not sent yet
     BOOST_CHECK_EQUAL(s.items.size(), 0);
 
-    //delete triggers a batch sending
+    //batch flush is triggered on delete
     delete batcher;
 
     std::string expected = "foo\nbar";
