@@ -19,7 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ds_config_collection.cc" />
+    <ClCompile Include="ds_model_mgmt.cc" />
     <ClCompile Include="ds_model_mgmt_test.cc" />
+    <ClCompile Include="ds_restapi_data_transport.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ds_config_collection.h" />
+    <ClInclude Include="ds_model_mgmt.h" />
+    <ClInclude Include="ds_object_factory.h" />
+    <ClInclude Include="ds_restapi_data_transport.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E7FCAB4B-4D6D-4E53-ACA8-8FAA96DC08E8}</ProjectGuid>
