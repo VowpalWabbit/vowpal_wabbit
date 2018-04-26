@@ -1,5 +1,13 @@
+#include <openssl/hmac.h>
+
 #include "ds_eventhub.h"
 
+#include <sstream>
+
+using namespace std::chrono;
+using namespace utility;     // Common utilities like string conversions
+using namespace web;         // Common features like URIs.
+using namespace web::http;   // Common HTTP functionality
 
 namespace decision_service {
 
@@ -9,10 +17,10 @@ namespace decision_service {
 		{
 			post(data).wait();
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			//TODO report error
-			//TODO add retry
+			//TODO retry
 			std::cout << "Exception: " << e.what() << std::endl;
 		}
 	}
@@ -21,21 +29,38 @@ namespace decision_service {
 	{
 		http_request request(methods::POST);
 		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
-		request.headers().add(_XPLATSTR("Host"), _config.eventhub_host().c_str());
+		request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
 		request.set_body(data);
 
 		return _client.request(request).then([](http_response response)
 		{
-			if (response.status_code() != status_codes::Created)
-				std::cout << "http code = " << response.status_code() << std::endl;
+			//TODO report error
 		});
 	}
 
-	eventhub::eventhub(configuration config, const std::string& url, const std::string& name)
-		: _config(config),
-		_client(conversions::to_string_t(url)),
-		_eh_name(name),
-		_authorization_valid_until(0)
+	//private helper
+	static string_t build_url(const std::string& host, const std::string& name)
+	{
+		//for tests
+		size_t pos = host.find("localhost");
+		if (pos != std::string::npos)
+			return conversions::to_string_t("http://" + host);
+
+		std::ostringstream url;
+		url << "https://" << host << "/" << name << "/messages?timeout=60&api-version=2014-01";
+		auto p = conversions::to_string_t(url.str());
+		return p;
+	}
+
+	eventhub::eventhub(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)
+		: _client(build_url(host, name)),
+		_eventhub_host(host), _shared_access_key_name(key_name), _shared_access_key(key), _eventhub_name(name)
+	{}
+
+	//for tests: typically url = "http://localhost:8080"
+	eventhub::eventhub(const std::string& url)
+		: _client(conversions::to_string_t(url)),
+		_eventhub_host(""), _shared_access_key_name(""), _shared_access_key(""), _eventhub_name("")
 	{}
 
 	std::string& eventhub::authorization()
@@ -45,11 +70,11 @@ namespace decision_service {
 		// re-create authorization token if needed
 		if (now > _authorization_valid_until - 60 * 15)
 		{
-			_authorization_valid_until = now + 60 * 60 * 24 * 7 /* week */;
+			_authorization_valid_until = now + 60 * 60 * 24 * 7;// 1 week
 
 			// construct "sr" 
 			std::ostringstream resource_stream;
-			resource_stream << "https://" << _config.eventhub_host() << "/" << _eh_name;
+			resource_stream << "https://" << _eventhub_host << "/" << _eventhub_name;
 
 			// encode(resource_stream)
 			std::string encoded_uri = conversions::to_utf8string(web::uri::encode_data_string(conversions::to_string_t(resource_stream.str())));
@@ -64,7 +89,7 @@ namespace decision_service {
 			unsigned int digest_len;
 
 			// https://www.openssl.org/docs/man1.0.2/crypto/hmac.html
-			if (!HMAC(EVP_sha256(), _config.eventhub_key_value().c_str(), (int)_config.eventhub_key_value().length(), (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len))
+			if (!HMAC(EVP_sha256(), _shared_access_key.c_str(), (int)_shared_access_key.length(), (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len))
 			{
 				// TODO: throw proper
 				throw "failed to generate SAS hash";
@@ -81,12 +106,11 @@ namespace decision_service {
 				<< "SharedAccessSignature sr=" << encoded_uri
 				<< "&sig=" << conversions::to_utf8string(encoded_digest)
 				<< "&se=" << _authorization_valid_until
-				<< "&skn=" << _config.eventhub_key_name();
+				<< "&skn=" << _shared_access_key_name;
 
 			_authorization = authorization_stream.str();
 		}
 
 		return _authorization;
 	}
-
 }

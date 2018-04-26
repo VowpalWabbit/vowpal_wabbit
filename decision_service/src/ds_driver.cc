@@ -1,7 +1,6 @@
 #include "ds_driver.h"
-#include "ds_async_batch.h"
 #include "ds_event.h"
-#include "ds_eventhub.h"
+#include "ds_logger.h"
 
 #include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators
@@ -13,8 +12,7 @@ namespace decision_service {
 	class driver_impl : public driver {
 
 		configuration _configuration;
-		eventhub _outcome_logger;
-		async_batch<eventhub> _ranking_logger;
+		logger _logger;
 
 	public:
 
@@ -37,7 +35,7 @@ namespace decision_service {
 
 			//send the serialized event to the backend
 			ranking_event evt(uuid, context, ranking, model_id);
-			_ranking_logger.append(evt.serialize());
+			_logger.append_ranking(evt.serialize());
 
 			return ranking_response(uuid, ranking);
 		}
@@ -58,7 +56,7 @@ namespace decision_service {
 
 			//send the serialized event to the backend
 			outcome_event evt(uuid, outcome_data);
-			_outcome_logger.send(evt.serialize());
+			_logger.append_outcome(evt.serialize());
 		}
 
 		void report_outcome(const char* uuid, float reward)
@@ -68,8 +66,7 @@ namespace decision_service {
 
 		driver_impl(configuration config)
 			: _configuration(config),
-			_outcome_logger(config, config.eventhub_observation_url(), config.eventhub_observation_name()),
-			_ranking_logger(config, config.eventhub_interaction_url(), config.eventhub_interaction_name())
+			_logger(config)
 		{}
 	};
 

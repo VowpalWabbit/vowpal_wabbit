@@ -15,6 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ds_async_batch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_concurrent_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_eventhub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClCompile Include="ds_configuration.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -22,6 +37,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_event.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_eventhub.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_logger.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ds_ranking_response.cc">
@@ -33,28 +57,8 @@
     <ClCompile Include="ds_eventhub.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ds_configuration.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_driver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_ranking_response.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_concurrent_queue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_eventhub.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_event.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ds_async_batch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClCompile Include="main_log.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
