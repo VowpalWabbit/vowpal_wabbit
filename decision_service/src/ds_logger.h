@@ -2,7 +2,7 @@
 
 #include "ds_configuration.h"
 #include "ds_eventhub.h"
-#include "ds_async_batch.h"
+#include "ds_async_batcher.h"
 
 
 namespace decision_service {
@@ -17,7 +17,7 @@ namespace decision_service {
 
 	private:
 		eventhub _ranking_eventhub, _outcome_eventhub;
-		async_batch<eventhub> _async_batcher;//layer between the caller and the eventhub that handle batching
+		async_batcher<eventhub> _async_batcher;//layer between the caller and the eventhub that handle batching
 	};
 
 }

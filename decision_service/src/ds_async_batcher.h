@@ -8,7 +8,7 @@
 namespace decision_service {
 
 	template <typename TSender>
-	class async_batch {
+	class async_batcher {
 
 	public:
 
@@ -19,17 +19,17 @@ namespace decision_service {
 			//TODO REPORT ERRORS
 		}
 
-		async_batch(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
+		async_batcher(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
 			: _sender(pipe),
 			_batch_max_size(batch_max_size),
 			_batch_timeout_ms(batch_timeout_ms),
 			_queue_max_size(queue_max_size)
 		{
 			_thread_is_running = true;
-			_background_thread = std::thread(&async_batch::timer, this);
+			_background_thread = std::thread(&async_batcher::timer, this);
 		}
 
-		~async_batch()
+		~async_batcher()
 		{
 			//stop the thread and flush the queue before exiting
 			_thread_is_running = false;

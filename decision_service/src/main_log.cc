@@ -1,4 +1,4 @@
-#include "ds_async_batch.h"
+#include "ds_async_batcher.h"
 #include "ds_concurrent_queue.h"
 #include "ds_eventhub.h"
 #include "ds_logger.h"
@@ -12,14 +12,14 @@ int main_log()
 	eventhub eh("http://localhost:8080");
 	eh.send("plop data 0");
 
-	async_batch<eventhub>* asb_eh = new async_batch<eventhub>(eh);
+	async_batcher<eventhub>* batcher = new async_batcher<eventhub>(eh);
 	std::string str("async_batch data 1");
-	asb_eh->append(str);
+	batcher->append(str);
 	str = "async_batch data 2";
-	asb_eh->append(str);
+	batcher->append(str);
 	str = "async_batch data 3";
-	asb_eh->append(str);
-	delete asb_eh;
+	batcher->append(str);
+	delete batcher;
 
 	configuration config;
 	logger logger(config);

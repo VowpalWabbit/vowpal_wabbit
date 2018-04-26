@@ -1,6 +1,6 @@
-#include "../src/ds_async_batch.h"
+#include "../src/ds_async_batcher.h"
 
-#define BOOST_TEST_MODULE ds_async_batch_test
+#define BOOST_TEST_MODULE ds_async_batcher_test
 #include <boost/test/unit_test.hpp>
 
 #include <string>
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
 {
     sender s;
     size_t timeout_ms = 10;//set a short timeout
-	async_batch<sender> batcher(s, 262143, timeout_ms, 8192);
+	async_batcher<sender> batcher(s, 262143, timeout_ms, 8192);
  
     //add 2 items in the current batch
     batcher.append("foo");
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 {
     sender s;
     size_t batch_max_size = 10;//bytes
-	async_batch<sender>* batcher = new async_batch<sender>(s, batch_max_size);
+	async_batcher<sender>* batcher = new async_batcher<sender>(s, batch_max_size);
 
     //add 2 items in the current batch
     batcher->append("foo");//3 bytes
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
     sender s;
-	async_batch<sender>* batcher = new async_batch<sender>(s);
+	async_batcher<sender>* batcher = new async_batcher<sender>(s);
 
     batcher->append("foo");
     batcher->append("bar");
