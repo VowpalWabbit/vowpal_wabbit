@@ -1,4 +1,4 @@
-TARGETS = ds_concurrent_queue_test ds_event_test
+TARGETS = ds_concurrent_queue_test ds_event_test ds_async_batch_test
 CXX = g++
 CXXFLAGS = -std=c++11
 

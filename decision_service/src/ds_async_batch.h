@@ -21,17 +21,20 @@ namespace decision_service {
 
 		async_batch(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = (1000 * 2), size_t queue_max_size = (8 * 1024))
 			: _sender(pipe),
-			_background_thread(&async_batch::timer, this),
 			_batch_max_size(batch_max_size),
 			_batch_timeout_ms(batch_timeout_ms),
 			_queue_max_size(queue_max_size)
-		{}
+		{
+			_thread_is_running = true;
+			_background_thread = std::thread(&async_batch::timer, this);
+		}
 
 		~async_batch()
 		{
 			//stop the thread and flush the queue before exiting
 			_thread_is_running = false;
-			_background_thread.join();
+			if (_background_thread.joinable())
+				_background_thread.join();
 			if (_queue.size() > 0)
 				flush();
 		}
@@ -40,7 +43,6 @@ namespace decision_service {
 	private:
 		void timer()//the timer triggers a queue flush (run in background)
 		{
-			_thread_is_running = true;
 			while (_thread_is_running)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(_batch_timeout_ms));
