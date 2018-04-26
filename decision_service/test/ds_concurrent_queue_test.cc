@@ -1,6 +1,6 @@
 #include "../src/ds_concurrent_queue.h"
 
-#define BOOST_TEST_MODULE ds_concurrent_queue
+#define BOOST_TEST_MODULE ds_concurrent_queue_test
 #include <boost/test/unit_test.hpp>
 
 
@@ -34,11 +34,10 @@ BOOST_AUTO_TEST_CASE(push_pop)
 BOOST_AUTO_TEST_CASE(pop_empty)
 {
 	decision_service::concurrent_queue<int> queue;
-	BOOST_REQUIRE(queue.size() == 0);
 
 	//the pop call on an empty queue should do nothing
-    int item = -1;
-	queue.pop(&item);
-	BOOST_CHECK_EQUAL(item, -1);
-	BOOST_CHECK_EQUAL(queue.size(), 0);
+    int* item;
+	queue.pop(item);
+    if (item)
+        BOOST_ERROR("item should be null");
 }

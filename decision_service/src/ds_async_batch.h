@@ -19,7 +19,7 @@ namespace decision_service {
 			//TODO REPORT ERRORS
 		}
 
-		async_batch(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = (1000 * 2), size_t queue_max_size = (8 * 1024))
+		async_batch(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
 			: _sender(pipe),
 			_batch_max_size(batch_max_size),
 			_batch_timeout_ms(batch_timeout_ms),
