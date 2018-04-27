@@ -21,7 +21,10 @@
   <ItemGroup>
     <ClInclude Include="ds_async_batch.h" />
     <ClInclude Include="ds_concurrent_queue.h" />
+    <ClInclude Include="ds_configuration.h" />
+    <ClInclude Include="ds_driver.h" />
     <ClInclude Include="ds_event.h" />
+    <ClInclude Include="ds_ranking_response.h" />
     <ClInclude Include="ds_eventhub.h" />
     <ClInclude Include="ds_logger.h" />
   </ItemGroup>
@@ -127,22 +130,5 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="ds_configuration.cc" />
-    <ClCompile Include="ds_driver.cc" />
-    <ClCompile Include="ds_event.cc" />
-    <ClCompile Include="ds_eventhub.cc" />
-    <ClCompile Include="ds_ranking_response.cc" />
-    <ClCompile Include="main.cc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ds_async_batch.h" />
-    <ClInclude Include="ds_concurrent_queue.h" />
-    <ClInclude Include="ds_configuration.h" />
-    <ClInclude Include="ds_driver.h" />
-    <ClInclude Include="ds_event.h" />
-    <ClInclude Include="ds_ranking_response.h" />
-    <ClInclude Include="ds_eventhub.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
