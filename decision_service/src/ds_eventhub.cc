@@ -11,36 +11,8 @@ using namespace web::http;   // Common HTTP functionality
 
 namespace decision_service {
 
-	void eventhub::send(const std::string& data) {
-		// Wait for all the outstanding I/O to complete and handle any exceptions
-		try
-		{
-			post(data).wait();
-		}
-		catch (const std::exception& e)
-		{
-			//TODO report error
-			//TODO retry
-			std::cout << "Exception: " << e.what() << std::endl;
-		}
-	}
-
-	pplx::task<void> eventhub::post(const std::string& data)
-	{
-		http_request request(methods::POST);
-		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
-		request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-
-		request.set_body(data);
-
-		return _client.request(request).then([](http_response response)
-		{
-			//TODO report error
-		});
-	}
-
 	//private helper
-	static string_t build_url(const std::string& host, const std::string& name)
+	string_t build_url(const std::string& host, const std::string& name)
 	{
 		//for tests
 		size_t pos = host.find("localhost");
@@ -53,19 +25,43 @@ namespace decision_service {
 		return p;
 	}
 
+	void eventhub::send(const std::string& post_data) {
+
+		http_request request(methods::POST);
+		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
+		request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
+
+		request.set_body(post_data);
+
+		//TODO fix linux issue if the client is not re-created
+		web::http::client::http_client client(build_url(_eventhub_host, _eventhub_name));
+		auto request_task = client.request(request).then([](http_response response)
+		{
+			if (response.status_code() != status_codes::Created)
+			{
+				//TODO report error
+				std::cout << "status code: "  << response.status_code() << std::endl;
+			}
+		});
+
+		try {
+			request_task.wait();
+		}
+		catch(const std::exception& e) {
+			//TODO report error
+			//TODO retry
+			std::cout << "Exception: " << e.what() << " where post data = " << post_data <<std::endl;
+		}
+	}
+
 	eventhub::eventhub(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)
 		: _client(build_url(host, name)),
-		_eventhub_host(host), _shared_access_key_name(key_name), _shared_access_key(key), _eventhub_name(name)
+		_eventhub_host(host), _shared_access_key_name(key_name), _shared_access_key(key), _eventhub_name(name),
+		_authorization_valid_until(0)
 	{
 		//init authorize token
 		authorization();
 	}
-
-	//for tests
-	eventhub::eventhub(const std::string& url)
-		: _client(conversions::to_string_t(url)),
-		_eventhub_host(""), _shared_access_key_name(""), _shared_access_key(""), _eventhub_name("")
-	{}
 
 	std::string& eventhub::authorization()
 	{

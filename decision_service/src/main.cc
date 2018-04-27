@@ -34,4 +34,12 @@ int main()
 
 
 	return 0;
-}	
+}
+
+	// //send to eventhub test
+	// eventhub eh("localhost:8080", "key-name", "key", "name");
+
+	// int n=5;
+	// while (n-->0) {
+	// 	eh.send(std::to_string(5-n));
+	// }
