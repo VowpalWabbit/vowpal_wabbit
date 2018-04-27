@@ -5,12 +5,15 @@
 
 namespace decision_service {
 
-	class eventhub {
+	//the eventhub_client send string data in POST request to an http endpoint
+	//it handles authorization headers specific for the azure event hubs
+	class eventhub_client {
 	public:
+
+		//send a POST request
 		void send(const std::string&);
 
-		eventhub(const std::string&, const std::string&, const std::string&, const std::string&);
-		eventhub(const std::string& url);//for tests
+		eventhub_client(const std::string&, const std::string&, const std::string&, const std::string&);
 
 	private:
 		pplx::task<void> post(const std::string&);

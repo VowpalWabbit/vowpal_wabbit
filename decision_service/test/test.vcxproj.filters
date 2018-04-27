@@ -24,7 +24,7 @@
     <ClCompile Include="ds_event_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ds_eventhub_test.cc">
+    <ClCompile Include="ds_eventhub_client_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

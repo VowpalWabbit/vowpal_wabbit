@@ -1,6 +1,6 @@
 #include <openssl/hmac.h>
 
-#include "ds_eventhub.h"
+#include "ds_eventhub_client.h"
 
 #include <sstream>
 
@@ -25,7 +25,7 @@ namespace decision_service {
 		return p;
 	}
 
-	void eventhub::send(const std::string& post_data) {
+	void eventhub_client::send(const std::string& post_data) {
 
 		http_request request(methods::POST);
 		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
@@ -54,7 +54,7 @@ namespace decision_service {
 		}
 	}
 
-	eventhub::eventhub(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)
+	eventhub_client::eventhub_client(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)
 		: _client(build_url(host, name)),
 		_eventhub_host(host), _shared_access_key_name(key_name), _shared_access_key(key), _eventhub_name(name),
 		_authorization_valid_until(0)
@@ -63,7 +63,7 @@ namespace decision_service {
 		authorization();
 	}
 
-	std::string& eventhub::authorization()
+	std::string& eventhub_client::authorization()
 	{
 		auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();
 

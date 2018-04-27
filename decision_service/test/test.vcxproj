@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="ds_async_batcher_test.cc" />
     <ClCompile Include="ds_concurrent_queue_test.cc" />
-    <ClCompile Include="ds_eventhub_test.cc" />
+    <ClCompile Include="ds_eventhub_client_test.cc" />
     <ClCompile Include="ds_event_test.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -95,7 +95,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-	  <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>main</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>

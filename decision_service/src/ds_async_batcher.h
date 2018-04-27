@@ -8,7 +8,7 @@
 namespace decision_service {
 
 	// This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
-	// A batch of data is shipped with the template TSender::send(data)
+	// A batch is shipped with TSender::send(data)
 	template <typename TSender>
 	class async_batcher {
 

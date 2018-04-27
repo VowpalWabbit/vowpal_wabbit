@@ -5,6 +5,7 @@
 
 namespace decision_service {
 
+	//serializable ranking event
 	class ranking_event {
 	public:
 		ranking_event(const char* uuid, const char* context, const std::vector<std::pair<int, float>>& ranking, const std::string& model_id);
@@ -17,6 +18,8 @@ namespace decision_service {
 		const std::string& _model_id;
 	};
 
+
+	//serializable outcome event
 	class outcome_event {
 	public:
 		outcome_event(const char* uuid, const char* outcome_data);

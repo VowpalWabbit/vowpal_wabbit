@@ -22,14 +22,14 @@
     <ClInclude Include="ds_async_batcher.h" />
     <ClInclude Include="ds_concurrent_queue.h" />
     <ClInclude Include="ds_event.h" />
-    <ClInclude Include="ds_eventhub.h" />
+    <ClInclude Include="ds_eventhub_client.h" />
     <ClInclude Include="ds_logger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ds_configuration.cc" />
     <ClCompile Include="ds_driver.cc" />
     <ClCompile Include="ds_event.cc" />
-    <ClCompile Include="ds_eventhub.cc" />
+    <ClCompile Include="ds_eventhub_client.cc" />
     <ClCompile Include="ds_logger.cc" />
     <ClCompile Include="ds_ranking_response.cc" />
     <ClCompile Include="main.cc" />

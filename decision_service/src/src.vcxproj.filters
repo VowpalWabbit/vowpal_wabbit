@@ -18,9 +18,6 @@
     <ClInclude Include="ds_concurrent_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_eventhub.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ds_logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -28,6 +25,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ds_async_batcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_eventhub_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,9 +41,6 @@
     <ClCompile Include="ds_event.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ds_eventhub.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ds_logger.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_eventhub_client.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
