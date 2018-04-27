@@ -83,6 +83,9 @@ struct cbify
 	COST_SENSITIVE::label* csl_empty;
 	CB::label* cbls;
 	CB::label* cbl_empty;
+	polyprediction pred;
+
+
 	bool warm_start;
 	float* old_weights;
 
@@ -465,123 +468,154 @@ size_t predict_cs(cbify& data, example& ec)
 	uint32_t argmin = find_min(data.cumulative_costs);
 
 	COST_SENSITIVE::label& csl = *data.csls;
+	//For vw's internal reason, we need to first have a cs label before
+	//using csoaa to predict
+	ec.l.cs = csl;
 
-	csl.costs.resize(data.num_actions);
-	csl.costs.end() = csl.costs.begin()+data.num_actions;
+	data.all->cost_sensitive->predict(ec, argmin);
 
+	cout<<ec.pred.multiclass<<endl;
+
+	return ec.pred.multiclass;
+
+}
+
+void learn_cs(cbify& data, example& ec)
+{
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	{
+		if (data.lambdas[i] >= 0.5)
+			ec.weight = (1 - data.lambdas[i]) / data.lambdas[i];
+		else
+			ec.weight = 1;
+
+		data.all->cost_sensitive->learn(ec, i);
+
+		ec.weight = 1;
+	}
+}
+
+//Requires the csl's cost array to have num_actions elements
+void multiclass_to_cs(cbify& data, COST_SENSITIVE::label& csl, size_t corrupted_label)
+{
 	for (uint32_t j = 0; j < data.num_actions; j++)
 	{
 		csl.costs[j].class_index = j+1;
 		csl.costs[j].x = loss(data, corrupted_label, j+1);
 	}
+}
+
+void generate_corrupted_cs(cbify& data, example& ec, MULTICLASS::label_t ld)
+{
+	size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
+
+	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
+	COST_SENSITIVE::label& csl = *data.csls;
+
+	multiclass_to_cs(data, csl, corrupted_label);
 
 	ec.l.cs = csl;
+}
 
-	data.all->cost_sensitive->predict(ec, argmin);
+void add_to_sup_validation(cbify& data, example& ec)
+{
+	// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
+	// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (for vw's internal reasons).
+	// Also: I did not deallocate the label and the copied example in finish()
+	example& ec_copy = data.supervised_validation[data.warm_start_iter];
+	//why doesn't the following two apporaches leak memory?
+	VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
+	//copy_array(ec_copy.l.cs.costs, ec.l.cs.costs);
+	//VW::copy_example_data(false, &ec_copy, &ec);
+	//for (uint32_t j = 0; j < data.num_actions; j++)
+	//{
+	//	ec_copy.l.cs.costs.push_back(ec.l.cs.costs[j]);
+	//}
+	//cout<<"after copying"<<endl;
+	//for (uint32_t j = 0; j < data.num_actions; j++)
+	//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
+}
 
-	return ec.pred.multiclass;
+size_t predict_bandit(cbify& data, base_learner& base, example& ec)
+{
+	data.cb_label.costs.erase();
+	ec.l.cb = data.cb_label;
+	ec.pred.a_s = data.a_s;
 
+	uint32_t argmin = find_min(data.cumulative_costs);
+	base.predict(ec, argmin);
+	data.pred = ec.pred;
+
+	uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+
+	return action;
+
+}
+
+void learn_bandit(cbify& data, base_learner& base, example& ec)
+{
+	float old_weight = ec.weight;
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+	{
+		float weight_multiplier;
+		if (data.lambdas[i] >= 0.5)
+			weight_multiplier = 1;
+		else
+			weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
+
+		if (data.weighting_scheme == INSTANCE_WT)
+			ec.weight = old_weight * weight_multiplier;
+		else
+			ec.weight = old_weight * weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
+
+		base.learn(ec, i);
+	}
+	ec.weight = old_weight;
 }
 
 
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
-	float old_weight;
-	uint32_t argmin;
-
-	argmin = find_min(data.cumulative_costs);
+	//float old_weight;
+	//uint32_t argmin;
+	//argmin = find_min(data.cumulative_costs);
 
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
 
 	//cout<<ld.label<<endl;
 
+	// Initialize the lambda vector
+	if (data.warm_start_iter == 0 && data.bandit_iter == 0)
+		setup_lambdas(data, ec);
+
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
 		//Note: v_array is different STL's array; elements' references are used in v_array
+		//predict
+		predict_cs(data, ec);
+
+		//learn
 		//first, corrupt fully supervised example ec's label here
-		size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
-
-		//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
-		COST_SENSITIVE::label& csl = *data.csls;
-		//COST_SENSITIVE::label* cslp = calloc_or_throw<COST_SENSITIVE::label>(1);
-		//COST_SENSITIVE::label csl = *cslp;
-
-		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
-		//This is crucial for 1. cost-sensitive learn 2. label copy
-    csl.costs.resize(data.num_actions);
-		csl.costs.end() = csl.costs.begin()+data.num_actions;
-
-		for (uint32_t j = 0; j < data.num_actions; j++)
-		{
-			csl.costs[j].class_index = j+1;
-			csl.costs[j].x = loss(data, corrupted_label, j+1);
-		}
-
-		ec.l.cs = csl;
-
-		//cout<<"in predict or learn:"<<endl;
-		//for (uint32_t j = 0; j < data.num_actions; j++)
-		//	cout<<ec.l.cs.costs[j].class_index<<" "<<ec.l.cs.costs[j].x<<endl;
-
-		//predict (for vw's internal reason, this step has to be put after ec's cs label is created)
-		data.all->cost_sensitive->predict(ec, argmin);
+		generate_corrupted_cs(data, ec, ld);
 
 		if (data.ind_supervised)
-		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
-				if (data.lambdas[i] >= 0.5)
-					ec.weight = (1 - data.lambdas[i]) / data.lambdas[i];
-				else
-					ec.weight = 1;
+			learn_cs(data, ec);
 
-				data.all->cost_sensitive->learn(ec, i);
-
-				ec.weight = 1;
-			}
-		}
-
-		// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
-		// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (not sure why).
-		// I also did not deallocate the label and the copied example in finish()
 		if (data.validation_method == SUPERVISED_VALI)
-		{
-			example& ec_copy = data.supervised_validation[data.warm_start_iter];
-			//why doesn't the following two apporaches leak memory?
-			VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
-			//copy_array(ec_copy.l.cs.costs, ec.l.cs.costs);
-			//VW::copy_example_data(false, &ec_copy, &ec);
-			//for (uint32_t j = 0; j < data.num_actions; j++)
-			//{
-			//	ec_copy.l.cs.costs.push_back(ec.l.cs.costs[j]);
-			//}
-			//cout<<"after copying"<<endl;
-			//for (uint32_t j = 0; j < data.num_actions; j++)
-			//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
-		}
+			add_to_sup_validation(data, ec);
 
 		//set the label of ec back to a multiclass label
 		ec.l.multi = ld;
 		ec.weight = 0;
-
 		data.warm_start_iter++;
 	}
 	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
-		// Need to initialize the lambda vector
-		if (data.bandit_iter == 0)
-			setup_lambdas(data, ec);
+		predict_cs(data, ec);
 
-		data.cb_label.costs.erase();
-		ec.l.cb = data.cb_label;
-		ec.pred.a_s = data.a_s;
-
-		base.predict(ec, argmin);
-		auto old_pred = ec.pred;
-
-		uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+		size_t action = predict_bandit(data, base, ec);
 
 		CB::cb_class cl;
 		cl.action = action;
@@ -600,36 +634,24 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		data.cb_label.costs.push_back(cl);
 		ec.l.cb = data.cb_label;
 
-		ec.pred = old_pred;
-		old_weight = ec.weight;
+		ec.pred = data.pred;
+
 
 		if (data.ind_bandit)
-		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
-				float weight_multiplier;
-				if (data.lambdas[i] >= 0.5)
-					weight_multiplier = 1;
-				else
-					weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
-
-				if (data.weighting_scheme == INSTANCE_WT)
-					ec.weight = old_weight * weight_multiplier;
-				else
-					ec.weight = old_weight * weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
-
-				base.learn(ec, i);
-			}
-		}
-
-		size_t pred_best_approx = predict_cs(data, ec);
-		data.cumulative_variance += 1.0 / ec.pred.a_s[pred_best_approx-1].score;
+			learn_bandit(data, base, ec);
 
 		data.a_s.erase();
 		data.a_s = ec.pred.a_s;
+
+		size_t pred_best_approx = predict_cs(data, ec);
+		data.cumulative_variance += 1.0 / data.a_s[pred_best_approx-1].score;
+
+		//cout<<"variance at bandit round "<< data.bandit_iter << " = " << 1.0 / data.a_s[pred_best_approx-1].score << endl;
+		//cout<<pred_best_approx<<endl;
+
 		ec.l.multi = ld;
 	  ec.pred.multiclass = action;
-		ec.weight = old_weight;
+		//ec.weight = old_weight;
 
 		data.bandit_iter++;
 
@@ -649,7 +671,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 }
 
-size_t predict_cs_adf(cbify& data, example& ec)
+size_t predict_cs_adf(cbify& data, base_learner& base, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
 
@@ -724,7 +746,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 				for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 				{
 					ecs[a].l.cb = cbls[a];
-					ecs[a].weights = data.old_weights[a];
+					ecs[a].weight = data.old_weights[a];
 				}
 
 				empty_example->l.cb = *cbl_empty;
@@ -811,7 +833,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 			}
 		}
 
-		size_t pred_best_approx = predict_cs(data, ec);
+		size_t pred_best_approx = predict_cs_adf(data, base, ec);
 		data.cumulative_variance += 1.0 / out_ec.pred.a_s[pred_best_approx-1].score;
 
 		ec.pred.multiclass = cl.action;
@@ -959,6 +981,13 @@ base_learner* cbify_setup(vw& all)
 	else
 	{
 		data.csls = calloc_or_throw<COST_SENSITIVE::label>(1);
+		auto& csl = data.csls[0];
+
+		csl.costs = v_init<COST_SENSITIVE::wclass>();
+		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
+		//This is crucial for 1. cost-sensitive learn 2. label copy
+		csl.costs.resize(data.num_actions);
+		csl.costs.end() = csl.costs.begin()+data.num_actions;
 	}
 
 
