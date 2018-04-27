@@ -22,7 +22,7 @@ class sender {
 BOOST_AUTO_TEST_CASE(flush_timeout)
 {
     sender s;
-    size_t timeout_ms = 10;//set a short timeout
+    size_t timeout_ms = 100;//set a short timeout
 	async_batcher<sender> batcher(s, 262143, timeout_ms, 8192);
  
     //add 2 items in the current batch
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
     batcher.append("bar");
 
     //wait until the timeout triggers
-	std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 5));
+	std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
     
     //check the batch was sent
     std::string expected = "foo\nbar";
