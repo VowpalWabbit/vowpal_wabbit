@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(pop_empty)
 	decision_service::concurrent_queue<int> queue;
 
 	//the pop call on an empty queue should do nothing
-    int* item;
+    int* item = NULL;
 	queue.pop(item);
     if (item)
         BOOST_ERROR("item should be null");
