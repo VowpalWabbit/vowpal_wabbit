@@ -1,19 +1,23 @@
 #pragma once
-#include <memory>
 #include "ds_object_factory.h"
 
+// Declare const pointer for internal linkage  
+namespace decision_service {
+  using str_const = const char * const;
+}
+
 namespace decision_service { namespace model_mangement { namespace name {
-      const char * MODEL_SRC          = "model.source";
-      const char * MODEL_BLOB_URI     = "model.blob.uri";
-      const char * MODEL_LOCAL_FILE   = "model.local.file";
-      const char * MODEL              = "MODEL";
-      const char * VW_CMDLINE         = "VW_CMDLINE";
+      str_const MODEL_SRC          = "model.source";
+      str_const MODEL_BLOB_URI     = "model.blob.uri";
+      str_const MODEL_LOCAL_FILE   = "model.local.file";
+      str_const MODEL              = "MODEL";
+      str_const VW_CMDLINE         = "VW_CMDLINE";
 }}}
 
 namespace decision_service { namespace model_mangement { namespace value {
-      const char * LOCAL_FILE         = "LOCAL_FILE";
-      const char * AZURE_STORAGE_BLOB = "AZURE_STORAGE_BLOB";
-      const char * VW                 = "VW";
+      str_const LOCAL_FILE         = "LOCAL_FILE";
+      str_const AZURE_STORAGE_BLOB = "AZURE_STORAGE_BLOB";
+      str_const VW                 = "VW";
 }}}
 
 namespace decision_service { namespace model_mangement {

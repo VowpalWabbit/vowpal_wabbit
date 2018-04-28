@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-#define BOOST_TEST_MODULE ds_serializer
-
-#include <boost/test/unit_test.hpp>
-
-int add(int i, int j)
-{
-    return i + j;
-}
-
-BOOST_AUTO_TEST_CASE(universeInOrder)
-{
-    BOOST_CHECK(add(2, 2) == 4);
-=======
 #include "../src/ds_concurrent_queue.h"
 
 #define BOOST_TEST_MODULE ds_concurrent_queue
@@ -55,5 +41,4 @@ BOOST_AUTO_TEST_CASE(pop_empty)
 	queue.pop(&item);
 	BOOST_CHECK_EQUAL(item, -1);
 	BOOST_CHECK_EQUAL(queue.size(), 0);
->>>>>>> 5d6bc498d8cb8c52bfb2dfebc2b1c0d6022f2380
 }

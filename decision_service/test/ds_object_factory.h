@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include "ds_config_collection.h"
+#include <memory>
 
 namespace decision_service { namespace utility
 {
@@ -14,7 +15,10 @@ namespace decision_service { namespace utility
       std::unique_ptr<I> create(const std::string& name, const config_collection& cc)
       {
         auto it = _creators.find(name);
-        if (it != _creators.end()) return (*it->second)(cc);
+
+        if (it != _creators.end()) 
+          return std::unique_ptr<I>((it->second)(cc));
+
         throw std::runtime_error("type not registered with class factory");
       }
 
