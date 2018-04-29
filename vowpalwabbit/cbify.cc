@@ -474,7 +474,7 @@ size_t predict_cs(cbify& data, example& ec)
 
 	data.all->cost_sensitive->predict(ec, argmin);
 
-	cout<<ec.pred.multiclass<<endl;
+	//cout<<ec.pred.multiclass<<endl;
 
 	return ec.pred.multiclass;
 
@@ -985,9 +985,11 @@ base_learner* cbify_setup(vw& all)
 
 		csl.costs = v_init<COST_SENSITIVE::wclass>();
 		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
-		//This is crucial for 1. cost-sensitive learn 2. label copy
-		csl.costs.resize(data.num_actions);
-		csl.costs.end() = csl.costs.begin()+data.num_actions;
+
+		for (size_t a = 0; a < num_actions; ++a)
+		{
+			csl.costs.push_back({0, a+1, 0, 0});
+		}
 	}
 
 
