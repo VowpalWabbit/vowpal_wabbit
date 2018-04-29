@@ -463,6 +463,25 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 
 }
 
+float compute_weight_multiplier(cbify& data, size_t i, size_t data_type)
+{
+	if (data_type == SUPERVISED)
+	{
+		if (data.lambdas[i] >= 0.5)
+		 	return (1 - data.lambdas[i]) / data.lambdas[i];
+		else
+			return 1;
+	}
+	else
+	{
+		if (data.lambdas[i] >= 0.5)
+			return 1;
+		else
+			return data.lambdas[i] / (1-data.lambdas[i]);
+	}
+}
+
+
 size_t predict_cs(cbify& data, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
@@ -482,17 +501,14 @@ size_t predict_cs(cbify& data, example& ec)
 
 void learn_cs(cbify& data, example& ec)
 {
+	float old_weight = ec.weight;
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
-		if (data.lambdas[i] >= 0.5)
-			ec.weight = (1 - data.lambdas[i]) / data.lambdas[i];
-		else
-			ec.weight = 1;
-
+		float weight_multiplier = compute_weight_multiplier(data, i, SUPERVISED);
+		ec.weight = old_weight * weight_multiplier;
 		data.all->cost_sensitive->learn(ec, i);
-
-		ec.weight = 1;
 	}
+	ec.weight = old_weight;
 }
 
 //Requires the csl's cost array to have num_actions elements
@@ -569,11 +585,7 @@ void learn_bandit(cbify& data, base_learner& base, example& ec)
 	float old_weight = ec.weight;
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
-		float weight_multiplier;
-		if (data.lambdas[i] >= 0.5)
-			weight_multiplier = 1;
-		else
-			weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
+		float weight_multiplier = compute_weight_multiplier(data, i, BANDIT);
 
 		if (data.weighting_scheme == INSTANCE_WT)
 			ec.weight = old_weight * weight_multiplier;
