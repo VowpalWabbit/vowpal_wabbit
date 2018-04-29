@@ -536,6 +536,18 @@ void add_to_sup_validation(cbify& data, example& ec)
 	//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
 }
 
+void generate_corrupt_cb(cbify& data, example& ec, CB::cb_class& cl, MULTICLASS::label_t& ld, size_t action)
+{
+	cl.action = action;
+	cl.probability = ec.pred.a_s[action-1].score;
+
+	if(!cl.action)
+		THROW("No action with non-zero probability found!");
+
+	size_t corrupted_label = corrupt_action(ld.label, data, BANDIT);
+	cl.cost = loss(data, corrupted_label, cl.action);
+}
+
 size_t predict_bandit(cbify& data, base_learner& base, example& ec)
 {
 	data.cb_label.costs.erase();
@@ -577,13 +589,8 @@ void learn_bandit(cbify& data, base_learner& base, example& ec)
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
 {
-	//float old_weight;
-	//uint32_t argmin;
-	//argmin = find_min(data.cumulative_costs);
-
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
-
 	//cout<<ld.label<<endl;
 
 	// Initialize the lambda vector
@@ -592,7 +599,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
-		//Note: v_array is different STL's array; elements' references are used in v_array
 		//predict
 		predict_cs(data, ec);
 
@@ -613,29 +619,19 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 	}
 	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
-		predict_cs(data, ec);
-
 		size_t action = predict_bandit(data, base, ec);
 
 		CB::cb_class cl;
-		cl.action = action;
-		cl.probability = ec.pred.a_s[action-1].score;
 
-		if(!cl.action)
-		  THROW("No action with non-zero probability found!");
-
-		size_t corrupted_label = corrupt_action(ld.label, data, BANDIT);
-		cl.cost = loss(data, corrupted_label, cl.action);
-
+		generate_corrupt_cb(data, ec, cl, ld, action);
 		// accumulate the cumulative costs of lambdas
 		accumulate_costs_ips(data, ec, cl);
 
 		//Create a new cb label
 		data.cb_label.costs.push_back(cl);
 		ec.l.cb = data.cb_label;
-
+		//make sure the prediction here is a cb prediction
 		ec.pred = data.pred;
-
 
 		if (data.ind_bandit)
 			learn_bandit(data, base, ec);
@@ -987,9 +983,7 @@ base_learner* cbify_setup(vw& all)
 		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
 
 		for (size_t a = 0; a < num_actions; ++a)
-		{
 			csl.costs.push_back({0, a+1, 0, 0});
-		}
 	}
 
 
