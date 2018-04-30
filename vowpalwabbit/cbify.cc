@@ -682,7 +682,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 size_t predict_cs_adf(cbify& data, base_learner& base, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
-
 	copy_example_to_adf(data, ec);
 
 	size_t best_action = predict_sublearner(data, base, argmin);
@@ -845,7 +844,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	if (data.warm_start_iter == 0 && data.bandit_iter == 0)
 		setup_lambdas(data, ec);
 
-  //copy_example_to_adf(data, ec);
+  copy_example_to_adf(data, ec);
 
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
