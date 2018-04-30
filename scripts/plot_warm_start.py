@@ -116,10 +116,12 @@ def plot_errors(mod):
 		avg_loss = avg_loss[len_avg_loss-1]
 		avg_loss = [avg_loss for i in range(len_avg_loss)]
 
-	line = plt.plot(wt, avg_loss, mod.plot_color, label=(mod.plot_label))
+	#line = plt.plot(wt, avg_loss, mod.plot_color, label=(mod.plot_label))
 	avg_error_value = avg_error(mod)
+	actual_var_value = actual_var(mod)
+	ideal_var_value = ideal_var(mod)
 
-	return avg_error_value
+	return avg_error_value, actual_var_value, ideal_var_value
 
 
 def gen_comparison_graph(mod):
@@ -132,23 +134,27 @@ def gen_comparison_graph(mod):
 
 	#config_name = str(mod.dataset) + '_' + str(mod.fprob1)+'_'+str(mod.fprob2)+'_'+str(mod.warm_start)+'_'+str(mod.bandit)+ '_' + str(mod.cb_type) + '_' + str(mod.choices_lambda)
 
-	config_name = str(mod.dataset) + '_'+str(mod.warm_start)+ '_' + str(mod.cb_type)
+	config_name = str(mod.dataset) + ' ' \
+	+ str(mod.corrupt_type_supervised) + ' ' +str(mod.corrupt_prob_supervised) \
+	+ ' ' + str(mod.corrupt_type_bandit) + ' ' + str(mod.corrupt_prob_bandit) \
+	+ ' ' + str(mod.warm_start) + ' ' + str(mod.bandit) + ' ' + str(mod.cb_type) \
+	+ ' ' + str(mod.validation_method) + ' ' + str(mod.weighting_scheme) \
+	+ ' ' + str(mod.lambda_scheme) + ' ' + str(mod.choices_lambda) \
+	+ ' ' + str(mod.no_supervised) + ' ' + str(mod.no_bandit)
 
 	# combined approach, epsilon
-	mod.choices_lambda = 2
-	mod.weighting_scheme = 1
-	mod.lambda_scheme = 3
-	mod.no_bandit = False
-	mod.no_supervised = False
-	mod.no_exploration = False
-	mod.cover_on = False
-	mod.epsilon_on = True
-	mod.plot_color = 'r'
-	mod.plot_flat = False
-	mod.vw_output_filename = mod.results_path+config_name+'zeroone'+'.txt'
-	mod.plot_label = 'zeroone only'
-	avg_error_comb_1 = plot_errors(mod)
+	mod.vw_output_filename = mod.results_path+config_name+'.txt'
+	avg_error_value, actual_var_value, ideal_var_value = plot_errors(mod)
 
+	result = str(avg_error_value) + ' ' + str(actual_var_value) + ' ' + str(ideal_var_value)
+
+	summary_file = open(mod.summary_file_name, 'a')
+	summary_file.write(config_name + ' ' + result + '\n')
+	summary_file.close()
+	print('')
+
+
+	'''
 	# combined approach, cover
 	# combined approach, per-dataset weighting
 	#mod.choices_lambda = 1
@@ -204,13 +210,6 @@ def gen_comparison_graph(mod):
 	mod.plot_label = 'Supervised only'
 	avg_error_sup_only = plot_errors(mod)
 
-
-	summary_file = open(mod.summary_file_name, 'a')
-	summary_file.write(config_name + ' ' + str(avg_error_comb_1) + ' ' + str(avg_error_comb_2) + ' ' + str(avg_error_band_only) + ' ' + str(avg_error_sup_only) + ' ' + str(mod.bandit) + '\n')
-	summary_file.close()
-	print('')
-
-
 	pylab.legend()
 	pylab.xlabel('#bandit examples')
 	pylab.ylabel('Progressive validation error')
@@ -220,7 +219,7 @@ def gen_comparison_graph(mod):
 	plt.gcf().clear()
 
 	#plt.show()
-
+	'''
 
 def ds_files(ds_path):
 	prevdir = os.getcwd()
@@ -239,7 +238,7 @@ def get_num_classes(ds):
 def ds_per_task(mod):
 	# put dataset name to the last coordinate so that the task workloads tend to be
 	# allocated equally
- 	config_all = [item for item in product(mod.choices_cb_types, mod.choices_warm_start_frac, mod.dss)]
+ 	config_all = [item for item in product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised, mod.choices_cb_types, mod.choices_warm_start_frac, mod.choices_no_supervised, mod.choices_no_bandit, mod.dss)]
 	config_task = []
 	print len(config_all)
 	for i in range(len(config_all)):
@@ -256,11 +255,20 @@ def get_num_lines(dataset_name):
 	return int(output)
 
 def avg_error(mod):
+	return vw_output_extract(mod, 'average loss')
+
+def actual_var(mod):
+	return vw_output_extract(mod, 'Measured average variance')
+
+def ideal_var(mod):
+	return vw_output_extract(mod, 'Ideal average variance')
+
+def vw_output_extract(mod, pattern):
 	#print mod.vw_output_filename
 	vw_output = open(mod.vw_output_filename, 'r')
 	vw_output_text = vw_output.read()
 	#print vw_output_text
-	rgx = re.compile('^average loss = (.*)$', flags=re.M)
+	rgx = re.compile('^'+pattern+' = (.*)$', flags=re.M)
 
 	errs = rgx.findall(vw_output_text)
 	if not errs:
@@ -275,10 +283,23 @@ def avg_error(mod):
 def main_loop(mod):
 	mod.summary_file_name = mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum'
 	summary_file = open(mod.summary_file_name, 'w')
-	summary_file.write('dataset' + ' ' + 'zeroone_only' + ' ' + 'central_minimax_zeroone' + ' ' + 'bandit_only' + ' ' + 'supervised_only' + ' ' + 'size' + '\n')
+
+	summary_header = 'str(mod.dataset)' + ' ' \
+	+ 'str(mod.corrupt_type_supervised)' + ' ' + 'str(mod.corrupt_prob_supervised)' \
+	+ ' ' + 'str(mod.corrupt_type_bandit)' + ' ' + 'str(mod.corrupt_prob_bandit)' \
+	+ ' ' + 'str(mod.warm_start)' + ' ' + 'str(mod.bandit)' + ' ' + 'str(mod.cb_type)' \
+	+ ' ' + 'str(mod.validation_method)' + ' ' + 'str(mod.weighting_scheme)' \
+	+ ' ' + 'str(mod.lambda_scheme)' + ' ' + 'str(mod.choices_lambda)' \
+	+ ' ' + 'str(mod.no_supervised)' + ' ' + 'str(mod.no_bandit)' \
+	+ ' ' + 'str(avg_error_value)' + ' ' + 'str(actual_var_value)' \
+	+ ' ' + 'str(ideal_var_value)'
+
+	summary_file.write(summary_header+'\n')
+
+	#summary_file.write('dataset' + ' ' + 'zeroone_only' + ' ' + 'central_minimax_zeroone' + ' ' + 'bandit_only' + ' ' + 'supervised_only' + ' ' + 'size' + '\n')
 	summary_file.close()
 
-	for mod.cb_type, mod.warm_start_frac, mod.dataset in mod.config_task:
+	for mod.corrupt_type_supervised, mod.corrupt_prob_supervised, mod.cb_type, mod.warm_start_frac, mod.no_supervised, mod.no_bandit, mod.dataset in mod.config_task:
 		gen_comparison_graph(mod)
 
 
@@ -326,7 +347,8 @@ if __name__ == '__main__':
 	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
 	#mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
 	#mod.choices_warm_start_frac = [0.03]
-	mod.choices_warm_start_frac = [args.warm_start_fraction]
+	mod.choices_warm_start_frac = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32]
+
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
 
@@ -337,6 +359,8 @@ if __name__ == '__main__':
 	#choices_cb_types = ['mtr', 'ips']
 	#mod.choices_cb_types = ['mtr', 'ips']
 	mod.choices_cb_types = ['mtr']
+	mod.choices_no_supervised = [False, True]
+	mod.choices_no_bandit = [False, True]
 	#choices_choices_lambda = [pow(2,i) for i in range(10,11)]
 	#mod.choices_choices_lambda = [i for i in range(1,3)]
 	#mod.choices_choices_lambda = [i for i in range(1,2)]
@@ -344,15 +368,28 @@ if __name__ == '__main__':
 	#[i for i in range(10,11)]
 	#mod.corrupt_type_supervised = 2
 	#mod.corrupt_prob_supervised = 0.3
-	mod.corrupt_type_supervised = 1
+	mod.choices_corrupt_type_supervised = [1,2]
+	#mod.choices_corrupt_type_supervised = [2]
 	#mod.corrupt_prob_supervised = 0.3
-	mod.corrupt_prob_supervised = args.corrupt_prob_supervised
+	mod.choices_corrupt_prob_supervised = [0,0.3]
+	#mod.choices_corrupt_prob_supervised = [0.3]
 
 	mod.corrupt_type_bandit = 1
-	mod.corrupt_prob_bandit = args.corrupt_prob_bandit
+	mod.corrupt_prob_bandit = 0
 
-	mod.validation_method = 2
+	mod.validation_method = 1
 	mod.epsilon = 0.05
+
+	mod.choices_lambda = 2
+	mod.weighting_scheme = 1
+	mod.lambda_scheme = 3
+	mod.no_bandit = False
+	mod.no_supervised = False
+	mod.no_exploration = False
+	mod.cover_on = False
+	mod.epsilon_on = True
+	mod.plot_color = 'r'
+	mod.plot_flat = False
 
 	#for correctness test
 	#mod.choices_warm_start = [20]

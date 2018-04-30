@@ -35,7 +35,7 @@ def parse_sum_file(sum_filename):
 def get_z_scores(errors_1, errors_2, sizes):
 	z_scores = []
 	for i in range(len(errors_1)):
-		print i
+		#print i
 		z_scores.append( z_score(errors_1[i], errors_2[i], sizes[i]) )
 	return z_scores
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 	all_results = None
 
 	for i in range(len(dss)):
-		print 'dataset name: ', dss[i]
+		print 'result file name: ', dss[i]
 		result = parse_sum_file(results_dir + dss[i])
 
 		if (i == 0):
@@ -112,13 +112,11 @@ if __name__ == '__main__':
 		else:
 			all_results = all_results.append(result)
 
-
-		#if i >= 331 and i <= 340:
-		#	print 'result:', result
-		#	print 'all_results:', all_results
-
 	print all_results
 
+	#if i >= 331 and i <= 340:
+	#	print 'result:', result
+	#	print 'all_results:', all_results
 
 
 	#result = parse_sum_file(results_dir + '400of600.sum')
@@ -142,12 +140,12 @@ if __name__ == '__main__':
 	results_supervised = all_results[supervised_only].tolist()
 	dataset_sizes = all_results[sizes].tolist()
 
-	print alg1
-	print results_alg1
+	#print alg1
+	#print results_alg1
 
 	# compare combined w/ bandit
 	plot_comparison(results_alg1, results_bandit, dataset_sizes, alg1 + ' vs ' + 'bandit only', results_dir + alg1 + ' vs ' + 'bandit only' + '.png')
-	plot_comparison(results_alg1, results_supervised, dataset_sizes, alg1 + ' vs ' + 'supervised only', results_dir + alg1 + ' vs ' + 'supervised only' + '.png')
-	plot_comparison(results_alg2, results_bandit, dataset_sizes, alg2 + ' vs ' + 'bandit only', results_dir + alg2 + ' vs ' + 'bandit only' + '.png')
-	plot_comparison(results_alg2, results_supervised, dataset_sizes, alg2 + ' vs ' + 'supervised only', results_dir + alg2 + ' vs ' + 'supervised only' + '.png')
-	plot_comparison(results_alg1, results_alg2, dataset_sizes, alg1 + ' vs ' + alg2, results_dir+alg1 + ' vs ' + alg2 + '.png')
+	#plot_comparison(results_alg1, results_supervised, dataset_sizes, alg1 + ' vs ' + 'supervised only', results_dir + alg1 + ' vs ' + 'supervised only' + '.png')
+	#plot_comparison(results_alg2, results_bandit, dataset_sizes, alg2 + ' vs ' + 'bandit only', results_dir + alg2 + ' vs ' + 'bandit only' + '.png')
+	#plot_comparison(results_alg2, results_supervised, dataset_sizes, alg2 + ' vs ' + 'supervised only', results_dir + alg2 + ' vs ' + 'supervised only' + '.png')
+	#plot_comparison(results_alg1, results_alg2, dataset_sizes, alg1 + ' vs ' + alg2, results_dir+alg1 + ' vs ' + alg2 + '.png')
