@@ -1,8 +1,10 @@
+#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
+
 #include "../src/ds_event.h"
-
-#define BOOST_TEST_MODULE ds_event
 #include <boost/test/unit_test.hpp>
-
 
 BOOST_AUTO_TEST_CASE(serialize_outcome)
 {

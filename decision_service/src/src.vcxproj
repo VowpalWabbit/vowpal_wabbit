@@ -19,9 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\ds_config_collection.h" />
+    <ClInclude Include="ds_config_collection.h" />
+    <ClInclude Include="ds_model_mgmt.h" />
+    <ClInclude Include="ds_object_factory.h" />
+    <ClInclude Include="ds_restapi_data_transport.h" />
     <ClInclude Include="ds_async_batch.h" />
     <ClInclude Include="ds_concurrent_queue.h" />
-    <ClInclude Include="ds_configuration.h" />
     <ClInclude Include="ds_driver.h" />
     <ClInclude Include="ds_event.h" />
     <ClInclude Include="ds_ranking_response.h" />
@@ -29,12 +33,15 @@
     <ClInclude Include="ds_logger.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ds_configuration.cc" />
-    <ClCompile Include="ds_driver.cc" />
+    <ClCompile Include="ds_config_collection.cc" />
     <ClCompile Include="ds_event.cc" />
+    <ClCompile Include="ds_model_mgmt.cc" />
+    <ClCompile Include="ds_restapi_data_transport.cc" />
+    <ClCompile Include="ds_driver.cc" />
     <ClCompile Include="ds_eventhub.cc" />
     <ClCompile Include="ds_logger.cc" />
     <ClCompile Include="ds_ranking_response.cc" />
+    <ClCompile Include="ds_utility.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="main_log.cc" />
   </ItemGroup>
@@ -45,26 +52,26 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>

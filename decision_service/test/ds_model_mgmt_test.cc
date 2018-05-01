@@ -1,9 +1,12 @@
-﻿#define BOOST_TEST_MODULE ds_model_management
+﻿#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
 
 #include <boost/test/unit_test.hpp>
 #include <unordered_map>
-#include "ds_model_mgmt.h"
-#include "ds_object_factory.h"
+#include "../src/ds_model_mgmt.h"
+#include "../src/ds_object_factory.h"
 
 using namespace decision_service::model_mangement;
 using namespace decision_service::utility;

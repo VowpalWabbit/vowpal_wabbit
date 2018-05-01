@@ -1,18 +1,16 @@
 #include "ds_async_batch.h"
-#include "ds_concurrent_queue.h"
 #include "ds_eventhub.h"
 #include "ds_logger.h"
-#include "ds_configuration.h"
 
-using namespace decision_service;
-
+namespace ds = decision_service;
+namespace dsutil = decision_service::utility;
 
 int main_log()
 {
-	eventhub eh("http://localhost:8080");
+	ds::eventhub eh("http://localhost:8080");
 	eh.send("plop data 0");
 
-	async_batch<eventhub>* asb_eh = new async_batch<eventhub>(eh);
+	ds::async_batch<ds::eventhub>* asb_eh = new ds::async_batch<ds::eventhub>(eh);
 	std::string str("async_batch data 1");
 	asb_eh->append(str);
 	str = "async_batch data 2";
@@ -21,8 +19,8 @@ int main_log()
 	asb_eh->append(str);
 	delete asb_eh;
 
-	configuration config;
-	logger logger(config);
+  	dsutil::config_collection config;
+	ds::logger logger(config);
 
 	logger.append_ranking("ranking_data");
 	logger.append_outcome("outcome_data");

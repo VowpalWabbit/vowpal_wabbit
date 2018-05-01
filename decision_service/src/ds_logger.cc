@@ -3,10 +3,22 @@
 
 namespace decision_service {
 
-	logger::logger(const configuration& c)
-		: _ranking_eventhub(c.eventhub_host(), c.shared_access_key_name(), c.shared_access_key(), c.eventhub_interaction_name()),
-		_outcome_eventhub(c.eventhub_host(), c.shared_access_key_name(), c.shared_access_key(), c.eventhub_observation_name()),
-		_async_batcher(_ranking_eventhub, c.batch_max_size(), c.batch_timeout_ms(), c.queue_max_size())
+	logger::logger(const utility::config_collection& c)
+		: _ranking_eventhub(
+      c.get("eventhub_host", "localhost:8080"),
+      c.get("shared_access_key_name",""), 
+      c.get("shared_access_key",""), 
+      c.get("eventhub_interaction_name","interaction")),
+		_outcome_eventhub(
+      c.get("eventhub_host", "localhost:8080"),
+      c.get("shared_access_key_name",""), 
+      c.get("shared_access_key",""), 
+      c.get("eventhub_observation_name","observation")),
+		_async_batcher(
+      _ranking_eventhub, 
+      c.get_int("batch_max_size",8*1024), 
+      c.get_int("batch_timeout_ms",10000), 
+      c.get_int("queue_max_size",1000*2))
 	{}
 
 	void logger::append_ranking(const std::string & item)

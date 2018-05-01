@@ -9,6 +9,9 @@ namespace decision_service { namespace utility {
   public:
     void set(const char* name, const char* value);
 
+    const char* get(const char* name, const char* defval) const;
+    int get_int(const char* name, int defval) const;
+
   private:
     std::unordered_map<std::string, std::string> _map;
   };

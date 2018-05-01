@@ -1,6 +1,9 @@
-#include "../src/ds_async_batch.h"
+#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
 
-#define BOOST_TEST_MODULE ds_async_batch_test
+#include "../src/ds_async_batch.h"
 #include <boost/test/unit_test.hpp>
 
 #include <string>
