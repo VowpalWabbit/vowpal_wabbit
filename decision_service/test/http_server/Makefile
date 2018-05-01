@@ -1,4 +1,4 @@
-TARGET = ds_driver
+TARGET = http_server
 LIBS = -lm
 CXX = g++
 CXXFLAGS = -g -Wall -std=c++11

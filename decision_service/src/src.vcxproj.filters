@@ -26,10 +26,10 @@
     <ClCompile Include="ds_event.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ds_async_batch.h">
+    <ClInclude Include="ds_concurrent_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_concurrent_queue.h">
+    <ClInclude Include="ds_logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ds_driver.h">
@@ -38,10 +38,10 @@
     <ClInclude Include="ds_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_eventhub.h">
+    <ClInclude Include="ds_eventhub_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_logger.h">
+    <ClInclude Include="ds_async_batcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ds_ranking_response.h">

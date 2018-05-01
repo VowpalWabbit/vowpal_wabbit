@@ -6,6 +6,7 @@
 
 namespace decision_service {
 
+	//a concurrent queue with locks and mutex
 	template <class T>
 	class concurrent_queue {
 
@@ -30,6 +31,7 @@ namespace decision_service {
 			_queue.push(item);
 		}
 
+		//approximate size
 		size_t size() const
 		{
 			return _queue.size();

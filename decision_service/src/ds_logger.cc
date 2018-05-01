@@ -23,14 +23,14 @@ namespace decision_service {
 
 	void logger::append_ranking(const std::string & item)
 	{
-		//add item to batch (will be sent later)
+		//add item to the batch (will be sent later)
 		_async_batcher.append(item);
 	}
 
 	void logger::append_outcome(const std::string & item)
 	{
-		//send now to the eventhub
-		_outcome_eventhub.send(item);
+		//send to the eventhub
+		_outcome_client.send(item);
 	}
 
 }

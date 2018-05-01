@@ -1,9 +1,11 @@
-#include "rapidjson/document.h"
-
 #include "ds_configuration.h"
+
+#include "cpprest/json.h"
 
 #include <string>
 
+using namespace utility;     // Common utilities like string conversions
+using namespace web;
 
 namespace decision_service {
 
@@ -69,46 +71,29 @@ namespace decision_service {
 	configuration::configuration(const std::string& json)
 		: configuration()//set default value
 	{
-		rapidjson::Document document;
-		document.Parse(json.c_str());
+		json::value obj = json::value::parse(conversions::to_string_t(json));
 
-		if (document.HasParseError()) {
-			throw std::exception();
-		}
-
-		//read fields
-		if (document.HasMember("app_id")) {
-			_app_id = document["app_id"].GetString();
-		}
-		if (document.HasMember("model_url")) {
-			_model_url = document["model_url"].GetString();
-		}
-		if (document.HasMember("model_refresh_period_ms")) {
-			_model_refresh_period_ms = document["model_refresh_period_ms"].GetInt();
-		}
-		if (document.HasMember("eventhub_interaction_name")) {
-			_eventhub_interaction_name = document["eventhub_interaction_name"].GetString();
-		}
-		if (document.HasMember("eventhub_observation_name")) {
-			_eventhub_observation_name = document["eventhub_observation_name"].GetString();
-		}
-		if (document.HasMember("eventhub_host")) {
-			_eventhub_host = document["eventhub_host"].GetString();
-		}
-		if (document.HasMember("shared_access_key_name")) {
-			_shared_access_key_name = document["shared_access_key_name"].GetString();
-		}
-		if (document.HasMember("shared_access_key")) {
-			_shared_access_key = document["shared_access_key"].GetString();
-		}
-		if (document.HasMember("batch_max_size")) {
-			_batch_max_size = document["batch_max_size"].GetInt();
-		}
-		if (document.HasMember("queue_max_size")) {
-			_queue_max_size = document["queue_max_size"].GetInt();
-		}
-		if (document.HasMember("batch_timeout_ms")) {
-			_batch_timeout_ms = document["batch_timeout_mss"].GetInt();
-		}
+		if (obj.has_field(U("app_id")))
+			_app_id = conversions::to_utf8string(obj.at(U("app_id")).as_string());
+		if (obj.has_field(U("model_url")))
+			_model_url = conversions::to_utf8string(obj.at(U("model_url")).as_string());
+		if (obj.has_field(U("model_refresh_period_ms")))
+			_model_refresh_period_ms = obj.at(U("appmodel_refresh_period_ms_id")).as_integer();
+		if (obj.has_field(U("eventhub_interaction_name")))
+			_eventhub_interaction_name = conversions::to_utf8string(obj.at(U("eventhub_interaction_name")).as_string());
+		if (obj.has_field(U("eventhub_observation_name")))
+			_eventhub_observation_name = conversions::to_utf8string(obj.at(U("eventhub_observation_name")).as_string());
+		if (obj.has_field(U("eventhub_host")))
+			_eventhub_host = conversions::to_utf8string(obj.at(U("eventhub_host")).as_string());
+		if (obj.has_field(U("shared_access_key_name")))
+			_shared_access_key_name = conversions::to_utf8string(obj.at(U("shared_access_key_name")).as_string());
+		if (obj.has_field(U("shared_access_key")))
+			_shared_access_key = conversions::to_utf8string(obj.at(U("shared_access_key")).as_string());
+		if (obj.has_field(U("batch_max_size")))
+			_batch_max_size = obj.at(U("batch_max_size")).as_integer();
+		if (obj.has_field(U("queue_max_size")))
+			_queue_max_size = obj.at(U("queue_max_size")).as_integer();
+		if (obj.has_field(U("batch_timeout_ms")))
+			_batch_timeout_ms = obj.at(U("batch_timeout_ms")).as_integer();
 	}
 };

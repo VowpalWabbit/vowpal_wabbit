@@ -24,12 +24,12 @@
     <ClInclude Include="ds_model_mgmt.h" />
     <ClInclude Include="ds_object_factory.h" />
     <ClInclude Include="ds_restapi_data_transport.h" />
-    <ClInclude Include="ds_async_batch.h" />
+    <ClInclude Include="ds_async_batcher.h" />
     <ClInclude Include="ds_concurrent_queue.h" />
     <ClInclude Include="ds_driver.h" />
     <ClInclude Include="ds_event.h" />
     <ClInclude Include="ds_ranking_response.h" />
-    <ClInclude Include="ds_eventhub.h" />
+    <ClInclude Include="ds_eventhub_client.h" />
     <ClInclude Include="ds_logger.h" />
   </ItemGroup>
   <ItemGroup>
@@ -38,12 +38,11 @@
     <ClCompile Include="ds_model_mgmt.cc" />
     <ClCompile Include="ds_restapi_data_transport.cc" />
     <ClCompile Include="ds_driver.cc" />
-    <ClCompile Include="ds_eventhub.cc" />
+    <ClCompile Include="ds_eventhub_client.cc" />
     <ClCompile Include="ds_logger.cc" />
     <ClCompile Include="ds_ranking_response.cc" />
     <ClCompile Include="ds_utility.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="main_log.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0F40A327-2F2D-4D37-90B5-2E1054180741}</ProjectGuid>
@@ -108,6 +107,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
