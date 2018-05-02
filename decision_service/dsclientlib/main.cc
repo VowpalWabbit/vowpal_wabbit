@@ -13,7 +13,7 @@ void display_response(const ranking_response&);
 
 int main()
 {
-	auto const config = load_config();
+	auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
 
 	// Create a ds driver, and initialize with configuration
 	driver ds(config);
