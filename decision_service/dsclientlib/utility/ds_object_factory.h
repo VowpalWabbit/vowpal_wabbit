@@ -1,6 +1,6 @@
 #pragma once
 #include <functional>
-#include "ds_config_collection.h"
+#include "../ds_config_collection.h"
 #include <memory>
 
 namespace decision_service { namespace utility

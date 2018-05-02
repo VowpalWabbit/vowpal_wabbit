@@ -1,5 +1,5 @@
 #pragma once
-#include "ds_object_factory.h"
+#include "../utility/ds_object_factory.h"
 
 // Declare const pointer for internal linkage  
 namespace decision_service {

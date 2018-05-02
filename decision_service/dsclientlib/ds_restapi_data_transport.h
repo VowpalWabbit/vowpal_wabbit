@@ -1,5 +1,5 @@
 #pragma once
-#include "ds_model_mgmt.h"
+#include "model_mgmt/ds_model_mgmt.h"
 
 namespace decision_service { namespace model_mangement {
   class restapi_data_tranport : public i_data_transport {
