@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ds_config_collection.h"
+#include "ds_config_collection.h"
 #include "ds_async_batcher.h"
 #include "ds_eventhub_client.h"
 

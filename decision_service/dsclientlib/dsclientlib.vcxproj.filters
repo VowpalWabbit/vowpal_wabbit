@@ -21,9 +21,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_config_collection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ds_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -55,6 +52,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="logger\ds_logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ds_config_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

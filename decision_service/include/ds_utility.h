@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "../dsclientlib/ds_config_collection.h"
+#include "ds_config_collection.h"
 
 namespace decision_service { namespace utility { namespace config {
   std::string load_config_json();
