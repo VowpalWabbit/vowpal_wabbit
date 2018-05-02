@@ -1,8 +1,10 @@
-#include "../src/ds_concurrent_queue.h"
+#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
 
-#define BOOST_TEST_MODULE ds_concurrent_queue_test
 #include <boost/test/unit_test.hpp>
-
+#include "ds_concurrent_queue.h"
 
 BOOST_AUTO_TEST_CASE(push_pop)
 {

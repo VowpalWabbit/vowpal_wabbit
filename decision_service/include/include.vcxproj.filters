@@ -24,5 +24,11 @@
     <ClInclude Include="ds_ranking_response.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ds_utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_config_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ds_configuration.h"
-#include "ds_eventhub_client.h"
+#include "ds_config_collection.h"
 #include "ds_async_batcher.h"
+#include "ds_eventhub_client.h"
 
 
 namespace decision_service {
@@ -11,7 +11,7 @@ namespace decision_service {
 	class logger {
 
 	public:
-		logger(const configuration&);
+		logger(const utility::config_collection&);
 
 		//log to the ranking eventhub, use a background queue to send batch
 		void append_ranking(const std::string&);

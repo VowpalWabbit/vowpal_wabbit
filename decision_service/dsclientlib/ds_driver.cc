@@ -2,16 +2,13 @@
 #include "ds_event.h"
 #include "ds_logger.h"
 
-#include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 
-
 namespace decision_service {
 
-	class driver_impl : public driver {
-
-		configuration _configuration;
+	class driver_impl {
+	  utility::config_collection _configuration;
 		logger _logger;
 
 	public:
@@ -64,38 +61,33 @@ namespace decision_service {
 			report_outcome(uuid, std::to_string(reward).c_str());
 		}
 
-		driver_impl(configuration config)
+		driver_impl(const utility::config_collection& config)
 			: _configuration(config),
 			_logger(config)
 		{}
 	};
 
-
 	//driver implementation
+  driver::~driver(){}
 
-	driver* driver::create(const char * json_config)
+	driver::driver(const utility::config_collection& config)
 	{
-		configuration conf(json_config);
-		return static_cast<driver*>(new driver_impl(conf));
-	}
-	void driver::destroy()
-	{
-		delete (driver_impl*)this;
+    _pimpl = std::unique_ptr<driver_impl>(new driver_impl(config));
 	}
 	ranking_response driver::choose_ranking(const char * uuid, const char * context)
 	{
-		return static_cast<driver_impl*>(this)->choose_ranking(uuid, context);
+		return _pimpl->choose_ranking(uuid, context);
 	}
 	ranking_response driver::choose_ranking(const char * context)
 	{
-		return static_cast<driver_impl*>(this)->choose_ranking(context);
+		return _pimpl->choose_ranking(context);
 	}
 	void driver::report_outcome(const char * uuid, const char * outcome_data)
 	{
-		return static_cast<driver_impl*>(this)->report_outcome(uuid, outcome_data);
+		return _pimpl->report_outcome(uuid, outcome_data);
 	}
 	void driver::report_outcome(const char * uuid, float reward)
 	{
-		return static_cast<driver_impl*>(this)->report_outcome(uuid, reward);
+		return _pimpl->report_outcome(uuid, reward);
 	}
 }

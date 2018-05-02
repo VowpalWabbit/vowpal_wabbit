@@ -111,8 +111,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ds_configuration.h" />
+    <ClInclude Include="ds_config_collection.h" />
     <ClInclude Include="ds_driver.h" />
     <ClInclude Include="ds_ranking_response.h" />
+    <ClInclude Include="ds_utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

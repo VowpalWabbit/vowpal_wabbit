@@ -15,6 +15,17 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="http_server\http_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="ds_async_batcher_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -25,6 +36,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ds_eventhub_client_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_model_mgmt_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="http_server\http_server.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
