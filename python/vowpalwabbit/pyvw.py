@@ -45,6 +45,20 @@ class SearchTask():
         return self._output
 
 
+def get_prediction(ec, prediction_type):
+    switch_prediction_type = {
+        pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
+        pylibvw.vw.pSCALARS: ec.get_scalars,
+        pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
+        pylibvw.vw.pACTION_PROBS: ec.get_action_scores,
+        pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
+        pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
+        pylibvw.vw.pPROB: ec.get_prob,
+        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
+    }
+    return switch_prediction_type[prediction_type]()
+
+
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
     object; you're probably best off using this directly and ignoring
@@ -109,6 +123,8 @@ class vw(pylibvw.vw):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+        elif isinstance(ec, list):
+            pylibvw.vw.learn(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
@@ -125,28 +141,21 @@ class vw(pylibvw.vw):
             ec.setup_done = True
             new_example = True
 
-        if not isinstance(ec, example):
-            raise TypeError('expecting string or example object as ec argument for predict, got %s' % type(ec))
+        if not isinstance(ec, example) and not isinstance(ec, list):
+            raise TypeError('expecting string, example object, or list of example objects as ec argument for predict, got %s' % type(ec))
 
-        if not getattr(ec, 'setup_done', True):
+        if isinstance(ec, example) and not getattr(ec, 'setup_done', True):
             ec.setup_example()
-        pylibvw.vw.predict(self, ec)
 
-        switch_prediction_type = {
-            pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
-            pylibvw.vw.pSCALARS: ec.get_scalars,
-            pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
-            pylibvw.vw.pACTION_PROBS: ec.get_action_scores,
-            pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
-            pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
-            pylibvw.vw.pPROB: ec.get_prob,
-            pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
-        }
+        pylibvw.vw.predict(self, ec)
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
 
-        prediction = switch_prediction_type[prediction_type]()
+        if isinstance(ec, example):
+            prediction = get_prediction(ec,prediction_type)
+        else:
+            prediction = get_prediction(ec[0],prediction_type)
 
         if new_example:
             ec.finish()

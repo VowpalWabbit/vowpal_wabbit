@@ -1,16 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-
 using VW;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using VW.Serializer.Attributes;
-using System.Globalization;
-using cs_unittest.cbadf;
-using System.Threading.Tasks;
 using cs_unittest;
 
 namespace cs_test
@@ -20,16 +12,71 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            NIPS2015Tutorial.AnnotationExample();
-            // AttributesSample.Attributes();
+            //NIPS2015Tutorial.AnnotationExample();
+            //AttributesSample.Attributes();
             //AttributesSample.RunFeaturesTest();
-            //LabDemo.Run();
-            RunFeaturesTest();
-            RunParserTest();
-            RunSpeedTest();
-            RunFlatExampleTestEx();
+            ////LabDemo.Run();
+            //RunFeaturesTest();
+            //RunParserTest();
+            //RunSpeedTest();
+            //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
+            RunVWTest();
+            //RunUnitTests();
+        }
+
+        private static void RunUnitTests()
+        {
+            TestCbAdfClass tw = new TestCbAdfClass();
+            tw.TestCbAdfExplore();
+        }
+
+        private static void RunVWTest()
+        {
+            TestJsonDictClass tst = new TestJsonDictClass();
+            tst.TestJsonDictThreading();
+
+            //TestCbAdfClass tst = new TestCbAdfClass();
+            //tst.TestCbAdfExplore();
+
+            //TestCbAdfClass tst = new TestCbAdfClass();
+            //tst.Test87();
+
+            //RunTestsHelper.ExecuteTest(
+            //    125,
+            //    "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 26 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --search_history_length 3 --root_label 8 --transition_system 2 --passes 8",
+            //    "train-sets/wsj_small.dparser.vw.gz",
+            //    "train-sets/ref/search_dep_parser_arceager.stderr",
+            //    "");
+
+            //string cwd = Directory.GetCurrentDirectory();
+            //RunTestsHelper.ExecuteTest(
+            //    65,
+            //    "-k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
+            //    "train-sets/er_small.vw",
+            //    "train-sets/ref/search_er.stderr",
+            //    "");
+            //RunTestsHelper.ExecuteTest(
+            //    46,
+            //    "-k -c -d train-sets/sequence_data --passes 20 --search_rollout ref --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.ldf.model --noconstant",
+            //    "train-sets/sequence_data",
+            //    "train-sets/ref/sequence_data.ldf.train.stderr",
+            //    "");
+            //ExecuteTest(
+            //    1,
+            //    "-k -l 20 --initial_t 128000 --power_t 1 -d /s/vw_rajan/test/train-sets/0001.dat -f /s/vw_rajan/test/models/0001_1.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off",
+            //    "/s/vw_rajan/test/train-sets/0001.dat",
+            //    "/s/vw_rajan/test/train-sets/ref/0001.stderr",
+            //    "");
+
+            //ExecuteTest(
+            //    130,
+            //    "--cb_explore_adf --bag 3 -d /s/vw_rajan/test/train-sets/cb_test.ldf --noconstant -p cbe_adf_bag.predict",
+            //    "/s/vw_rajan/test/train-sets/cb_test.ldf",
+            //    "/s/vw_rajan/test/train-sets/ref/cbe_adf_bag.stderr",
+            //    "/s/vw_rajan/test/pred-sets/ref/cbe_adf_bag.predict");
+
         }
 
         private static void RunFeaturesTest()

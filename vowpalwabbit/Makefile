@@ -27,7 +27,7 @@ allreduce_SOURCES = $(shell grep liballreduce_la_SOURCES Makefile.am | cut -d '=
 allreduce_OBJECTS = $(patsubst %.cc,%.o,$(allreduce_SOURCES))
 
 %.d:	%.cc config.h
-	$(CXX) -std=c++0x -I ../rapidjson/include -MM $< > $@
+	$(CXX) -std=c++0x -I ../rapidjson/include -I ../explore -MM $< > $@
 -include $(vw_DEPS)
 
 %.o:	 %.cc  %.h

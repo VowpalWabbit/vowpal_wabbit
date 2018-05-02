@@ -104,7 +104,7 @@ template<class T> float mf_predict(gdmf& d, example& ec, T& weights)
   }
 
   // clear stored predictions
-  d.scalars.erase();
+  d.scalars.clear();
 
   float linear_prediction = 0.;
   // linear terms
@@ -319,9 +319,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, base_learner&, example& ec) { mf_predict(d,ec); }
+void predict(gdmf& d, single_learner&, example& ec) { mf_predict(d,ec); }
 
-void learn(gdmf& d, base_learner&, example& ec)
+void learn(gdmf& d, single_learner&, example& ec)
 {
   vw& all = *d.all;
 
@@ -373,7 +373,7 @@ base_learner* gd_mf_setup(arguments& arg)
   }
   arg.all->eta *= powf((float)(arg.all->sd->t), arg.all->power_t);
 
-  learner<gdmf>& l = init_learner(data, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
+  learner<gdmf,example>& l = init_learner(data, learn, predict, (UINT64_ONE << arg.all->weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);

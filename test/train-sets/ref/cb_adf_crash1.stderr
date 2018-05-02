@@ -8,11 +8,11 @@ Reading datafile = train-sets/cb_adf_crash_1.data
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
--14.624999 -14.624999            1            1.0    known        0:0.975...        5
+-14.624999 -14.624999            1            1.0    known        0:0.975...        4
 
 finished run
 number of examples = 1
 weighted example sum = 1.000000
 weighted label sum = 0.000000
 average loss = -14.624999
-total feature number = 5
+total feature number = 4

@@ -11,6 +11,12 @@ license as described in the file LICENSE.
 #include <cstddef>
 #include "v_array.h"
 
+#ifndef _WIN32
+#include <sys/types.h>
+#else
+#define ssize_t int64_t
+#endif
+
 typedef float feature_value;
 typedef uint64_t feature_index;
 typedef std::pair<std::string, std::string> audit_strings;
@@ -245,7 +251,7 @@ struct features
   }
 
   // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  // ~features() { ... } 
+  // ~features() { ... }
 
   inline size_t size() const { return values.size(); }
 
@@ -265,11 +271,11 @@ struct features
 
   iterator end() { return iterator(values.end(), indicies.end()); }
 
-  void erase()
+  void clear()
   { sum_feat_sq = 0.f;
-    values.erase();
-    indicies.erase();
-    space_names.erase();
+    values.clear();
+    indicies.clear();
+    space_names.clear();
   }
 
   void truncate_to(const features_value_iterator& pos)
@@ -345,4 +351,3 @@ struct features
     sum_feat_sq = src.sum_feat_sq;
   }
 };
-
