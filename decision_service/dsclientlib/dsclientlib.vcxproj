@@ -145,7 +145,6 @@
     <ClInclude Include="logger\ds_logger.h" />
     <ClInclude Include="model_mgmt\ds_model_mgmt.h" />
     <ClInclude Include="utility\ds_object_factory.h" />
-    <ClInclude Include="ds_ranking_response.h" />
     <ClInclude Include="ds_restapi_data_transport.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

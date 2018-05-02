@@ -27,9 +27,6 @@
     <ClInclude Include="ds_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_ranking_response.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ds_restapi_data_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
