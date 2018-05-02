@@ -137,12 +137,12 @@
     <ClInclude Include="..\include\ds_driver.h" />
     <ClInclude Include="..\include\ds_ranking_response.h" />
     <ClInclude Include="..\include\ds_utility.h" />
-    <ClInclude Include="ds_async_batcher.h" />
-    <ClInclude Include="ds_concurrent_queue.h" />
     <ClInclude Include="ds_config_collection.h" />
     <ClInclude Include="ds_event.h" />
-    <ClInclude Include="ds_eventhub_client.h" />
-    <ClInclude Include="ds_logger.h" />
+    <ClInclude Include="logger\ds_async_batcher.h" />
+    <ClInclude Include="logger\ds_concurrent_queue.h" />
+    <ClInclude Include="logger\ds_eventhub_client.h" />
+    <ClInclude Include="logger\ds_logger.h" />
     <ClInclude Include="model_mgmt\ds_model_mgmt.h" />
     <ClInclude Include="utility\ds_object_factory.h" />
     <ClInclude Include="ds_ranking_response.h" />
@@ -153,8 +153,8 @@
     <ClCompile Include="ds_config_collection.cc" />
     <ClCompile Include="ds_driver.cc" />
     <ClCompile Include="ds_event.cc" />
-    <ClCompile Include="ds_eventhub_client.cc" />
-    <ClCompile Include="ds_logger.cc" />
+    <ClCompile Include="logger\ds_eventhub_client.cc" />
+    <ClCompile Include="logger\ds_logger.cc" />
     <ClCompile Include="model_mgmt\ds_model_mgmt.cc" />
     <ClCompile Include="ds_ranking_response.cc" />
     <ClCompile Include="ds_restapi_data_transport.cc" />

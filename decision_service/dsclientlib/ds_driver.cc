@@ -1,6 +1,6 @@
 #include "ds_driver.h"
 #include "ds_event.h"
-#include "ds_logger.h"
+#include "logger/ds_logger.h"
 
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.

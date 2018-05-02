@@ -4,7 +4,7 @@
 #endif
 
 #include "http_server/stdafx.h"
-#include "ds_eventhub_client.h"
+#include "logger/ds_eventhub_client.h"
 #include "http_server/http_server.h"
 
 #include <boost/test/unit_test.hpp>

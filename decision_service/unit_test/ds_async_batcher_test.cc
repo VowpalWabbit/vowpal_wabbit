@@ -6,7 +6,7 @@
 #include <boost/test/unit_test.hpp>
 #include <string>
 #include <vector>
-#include "ds_async_batcher.h"
+#include "logger/ds_async_batcher.h"
 
 using namespace decision_service;
 
