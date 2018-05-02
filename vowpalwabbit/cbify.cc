@@ -131,6 +131,25 @@ void setup_lambdas(cbify& data, example& ec)
 	// The lambdas are in fact arranged in ascending order (the middle lambda is 0.5)
 	v_array<float>& lambdas = data.lambdas;
 
+	//bandit only
+	if (!data.ind_supervised && data.ind_bandit)
+	{
+		for (uint32_t i = 0; i<data.choices_lambda; i++)
+			lambdas[i] = 1.0;
+		return;
+	}
+
+	//supervised only
+	if (!data.ind_bandit && data.ind_supervised)
+	{
+		for (uint32_t i = 0; i<data.choices_lambda; i++)
+			lambdas[i] = 0.0;
+		return;
+	}
+
+	//if no supervised and no bandit, then as there are no updates anyway,
+	//we are still fine
+
 	uint32_t mid = data.choices_lambda / 2;
 
 	if (data.lambda_scheme == ABS_CENTRAL)

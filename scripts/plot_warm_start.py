@@ -49,11 +49,11 @@ def collect_stats(mod):
 			wt.append(float(weight_str))
 
 			mod.avg_loss = float(avg_loss_str)
-			mod.bandit = float(weight_str)
+			mod.bandit_effective = int(float(weight_str))
 
 			for mod.ratio in mod.critical_size_ratios:
-				if mod.bandit >= 0.99 * mod.warm_start * mod.ratio and \
-				mod.bandit <= 1.01 * mod.warm_start * mod.ratio:
+				if mod.bandit_effective >= 0.99 * mod.warm_start * mod.ratio and \
+				mod.bandit_effective <= 1.01 * mod.warm_start * mod.ratio:
 					record_result(mod)
 
 
@@ -68,7 +68,7 @@ def collect_stats(mod):
 	#return avg_loss, last_loss, wt
 
 def record_result(mod):
-	problem_params_trailer = [mod.bandit, mod.ratio]
+	problem_params_trailer = [mod.bandit_effective, mod.ratio]
 	config_name = disperse(mod.problem_params + problem_params_trailer + mod.alg_params, ' ')
 
 	list_results = [mod.avg_loss, mod.actual_var, mod.ideal_var]
@@ -188,14 +188,22 @@ def get_num_classes(ds):
 def ds_per_task(mod):
 	# put dataset name to the last coordinate so that the task workloads tend to be
 	# allocated equally
-	config_baselines_raw = list(product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised, mod.choices_cb_types, mod.dss, mod.warm_start_multipliers, [1], [False, True], [False, True]))
 
-	config_baselines = filter(lambda (x1, x2, x3, x4, x5, x6, x7, x8): x7 == True or x8 == True, config_baselines_raw)
+	# put dataset name to the first coordinate so that the result production order is
+	# in accordance with dataset order
 
+	config_corrupt_sup_raw = product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised)
+	config_corrupt_sup = filter(lambda (type, prob): type == 1 or abs(prob) > 1e-4, config_corrupt_sup_raw)
 
-	config_algs = list(product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised, mod.choices_cb_types, mod.dss, mod.warm_start_multipliers, mod.choices_choices_lambda, [False], [False]))
+	config_common = product(mod.dss, config_corrupt_sup, mod.choices_cb_types, mod.warm_start_multipliers)
 
- 	config_all = config_baselines + config_algs
+	config_baselines_raw = list(product([1], [True, False], [True, False]))
+	config_baselines = filter(lambda (x1, x2, x3): x2 == True or x3 == True, config_baselines_raw)
+	config_algs = list(product(mod.choices_choices_lambda, [False], [False]))
+ 	config_all_spec = config_baselines + config_algs
+
+	config_all = list(product(config_common, config_all_spec))
+
 	config_task = []
 	print len(config_all)
 	for i in range(len(config_all)):
@@ -256,10 +264,10 @@ def main_loop(mod):
 	summary_file.write(summary_header+'\n')
 	summary_file.close()
 
-	for mod.corrupt_type_supervised, mod.corrupt_prob_supervised, \
-	mod.cb_type, mod.dataset, mod.warm_start_multiplier, \
-	mod.choices_lambda, \
-	mod.no_supervised, mod.no_bandit in mod.config_task:
+	for ((mod.dataset, (mod.corrupt_type_supervised, mod.corrupt_prob_supervised), \
+	mod.cb_type, mod.warm_start_multiplier), \
+	(mod.choices_lambda, \
+	mod.no_supervised, mod.no_bandit)) in mod.config_task:
 		gen_comparison_graph(mod)
 
 
@@ -303,7 +311,7 @@ if __name__ == '__main__':
 	mod.adf_on = True
 
 	# use fractions instead of absolute numbers
-	mod.warm_start_multipliers = [pow(2, i) for i in range(6)]
+	mod.warm_start_multipliers = [2*pow(4, i) for i in range(3)]
 	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
 	#mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
 	#mod.choices_warm_start_frac = [0.03]
@@ -319,9 +327,9 @@ if __name__ == '__main__':
 	#choices_cb_types = ['mtr', 'ips']
 	#mod.choices_cb_types = ['mtr', 'ips']
 	mod.choices_cb_types = ['mtr']
-	mod.choices_no_supervised = [False, True]
-	mod.choices_no_bandit = [False, True]
-	mod.choices_choices_lambda = [2*i for i in range(1,5)]
+	#mod.choices_no_supervised = [False, True]
+	#mod.choices_no_bandit = [False, True]
+	mod.choices_choices_lambda = [2, 4, 8]
 	#mod.choices_choices_lambda = [i for i in range(1,3)]
 	#mod.choices_choices_lambda = [i for i in range(1,2)]
 	#mod.choices_choices_lambda = [1, 3, 5, 7]
@@ -335,7 +343,7 @@ if __name__ == '__main__':
 	#mod.choices_corrupt_prob_supervised = [0.3]
 
 	mod.corrupt_type_bandit = 1
-	mod.corrupt_prob_bandit = 0
+	mod.corrupt_prob_bandit = 0.0
 
 	mod.validation_method = 1
 	mod.epsilon = 0.05
