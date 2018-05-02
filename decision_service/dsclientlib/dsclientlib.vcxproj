@@ -18,35 +18,10 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\include\ds_config_collection.h" />
-    <ClInclude Include="ds_config_collection.h" />
-    <ClInclude Include="ds_model_mgmt.h" />
-    <ClInclude Include="ds_object_factory.h" />
-    <ClInclude Include="ds_restapi_data_transport.h" />
-    <ClInclude Include="ds_async_batcher.h" />
-    <ClInclude Include="ds_concurrent_queue.h" />
-    <ClInclude Include="ds_driver.h" />
-    <ClInclude Include="ds_event.h" />
-    <ClInclude Include="ds_ranking_response.h" />
-    <ClInclude Include="ds_eventhub_client.h" />
-    <ClInclude Include="ds_logger.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="ds_config_collection.cc" />
-    <ClCompile Include="ds_event.cc" />
-    <ClCompile Include="ds_model_mgmt.cc" />
-    <ClCompile Include="ds_restapi_data_transport.cc" />
-    <ClCompile Include="ds_driver.cc" />
-    <ClCompile Include="ds_eventhub_client.cc" />
-    <ClCompile Include="ds_logger.cc" />
-    <ClCompile Include="ds_ranking_response.cc" />
-    <ClCompile Include="ds_utility.cc" />
-    <ClCompile Include="main.cc" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0F40A327-2F2D-4D37-90B5-2E1054180741}</ProjectGuid>
-    <RootNamespace>src</RootNamespace>
+    <ProjectGuid>{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>dsclientlib</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -54,27 +29,27 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -97,28 +72,43 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -126,15 +116,52 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\ds_driver.h" />
+    <ClInclude Include="..\include\ds_ranking_response.h" />
+    <ClInclude Include="..\include\ds_utility.h" />
+    <ClInclude Include="ds_async_batcher.h" />
+    <ClInclude Include="ds_concurrent_queue.h" />
+    <ClInclude Include="ds_config_collection.h" />
+    <ClInclude Include="ds_event.h" />
+    <ClInclude Include="ds_eventhub_client.h" />
+    <ClInclude Include="ds_logger.h" />
+    <ClInclude Include="model_mgmt\ds_model_mgmt.h" />
+    <ClInclude Include="utility\ds_object_factory.h" />
+    <ClInclude Include="ds_ranking_response.h" />
+    <ClInclude Include="ds_restapi_data_transport.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ds_config_collection.cc" />
+    <ClCompile Include="ds_driver.cc" />
+    <ClCompile Include="ds_event.cc" />
+    <ClCompile Include="ds_eventhub_client.cc" />
+    <ClCompile Include="ds_logger.cc" />
+    <ClCompile Include="model_mgmt\ds_model_mgmt.cc" />
+    <ClCompile Include="ds_ranking_response.cc" />
+    <ClCompile Include="ds_restapi_data_transport.cc" />
+    <ClCompile Include="utility\ds_utility.cc" />
+    <ClCompile Include="main.cc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
 </Project>

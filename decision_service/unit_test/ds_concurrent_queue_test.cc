@@ -4,6 +4,7 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
+#include "ds_concurrent_queue.h"
 
 BOOST_AUTO_TEST_CASE(push_pop)
 {

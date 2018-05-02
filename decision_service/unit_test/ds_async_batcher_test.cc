@@ -1,11 +1,12 @@
-#include "../src/ds_async_batcher.h"
+#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
 
-#define BOOST_TEST_MODULE ds_async_batcher_test
 #include <boost/test/unit_test.hpp>
-
 #include <string>
 #include <vector>
-#include <iostream>
+#include "ds_async_batcher.h"
 
 using namespace decision_service;
 

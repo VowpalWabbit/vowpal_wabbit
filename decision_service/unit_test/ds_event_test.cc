@@ -3,7 +3,7 @@
 #   define BOOST_TEST_MODULE Main
 #endif
 
-#include "../src/ds_event.h"
+#include "ds_event.h"
 #include <boost/test/unit_test.hpp>
 
 using namespace decision_service;
