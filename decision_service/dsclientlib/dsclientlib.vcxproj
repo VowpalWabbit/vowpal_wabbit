@@ -134,6 +134,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\ds_api_status.h" />
     <ClInclude Include="..\include\ds_config_collection.h" />
     <ClInclude Include="..\include\ds_driver.h" />
     <ClInclude Include="..\include\ds_ranking_response.h" />

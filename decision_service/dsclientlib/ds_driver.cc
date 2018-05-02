@@ -8,21 +8,18 @@
 namespace decision_service {
 
 	class driver_impl {
-	  utility::config_collection _configuration;
+		utility::config_collection _configuration;
 		logger _logger;
 
 	public:
 
-		ranking_response choose_ranking(const char* uuid, const char* context)
+		int driver_impl::ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
 		{
-			//check arguments
-			if (!uuid || strlen(uuid) == 0)
-				throw std::invalid_argument("uuid is null or empty");
-			if (!context || strlen(context) == 0)
-				throw std::invalid_argument("context is null or empty");
+			PRECONDITIONS(is_null_or_empty(uuid, status), return DS_INVALID_ARGUMENT);
+			PRECONDITIONS(is_null_or_empty(context, status), return DS_INVALID_ARGUMENT);
 
-			//get ranking
-			//FOR TEST
+			/* DO SOMETHING */
+			//GET SCORES FOR TEST
 			std::vector<std::pair<int, float>> ranking;
 			ranking.push_back(std::pair<int, float>(2, 0.4f));
 			ranking.push_back(std::pair<int, float>(1, 0.3f));
@@ -34,31 +31,34 @@ namespace decision_service {
 			ranking_event evt(uuid, context, ranking, model_id);
 			_logger.append_ranking(evt.serialize());
 
-			return ranking_response(uuid, ranking);
+			//set the response
+			response.set_uuid(uuid);
+			response.set_ranking(ranking);
+
+			return DS_SUCCESS;
 		}
 
-		//auto-generate uuid
-		ranking_response choose_ranking(const char* context)
+		//here the uuid is auto-generated
+		int driver_impl::ranking_request(const char * context, ranking_response & response, api_status * status)
 		{
-			return choose_ranking(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context);
+			return ranking_request(context, boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), response, status);
 		}
 
-		void report_outcome(const char* uuid, const char* outcome_data)
+		int report_outcome(const char* uuid, const char* outcome_data, api_status * status)
 		{
-			//check arguments
-			if (!uuid || strlen(uuid) == 0)
-				throw std::invalid_argument("uuid is empty");
-			if (!outcome_data || strlen(outcome_data) == 0)
-				throw std::invalid_argument("outcome_data is empty");
+			PRECONDITIONS(is_null_or_empty(uuid, status), return DS_INVALID_ARGUMENT);
+			PRECONDITIONS(is_null_or_empty(outcome_data, status), return DS_INVALID_ARGUMENT);
 
 			//send the serialized event to the backend
 			outcome_event evt(uuid, outcome_data);
 			_logger.append_outcome(evt.serialize());
+
+			return DS_SUCCESS;
 		}
 
-		void report_outcome(const char* uuid, float reward)
+		int report_outcome(const char* uuid, float reward, api_status * status)
 		{
-			report_outcome(uuid, std::to_string(reward).c_str());
+			return report_outcome(uuid, std::to_string(reward).c_str(), status);
 		}
 
 		driver_impl(const utility::config_collection& config)
@@ -68,26 +68,26 @@ namespace decision_service {
 	};
 
 	//driver implementation
-  driver::~driver(){}
+	driver::~driver() {}
 
 	driver::driver(const utility::config_collection& config)
 	{
-    _pimpl = std::unique_ptr<driver_impl>(new driver_impl(config));
+		_pimpl = std::unique_ptr<driver_impl>(new driver_impl(config));
 	}
-	ranking_response driver::choose_ranking(const char * uuid, const char * context)
+	int driver::ranking_request(const char * uuid, const char * context_json, ranking_response & response, api_status * status)
 	{
-		return _pimpl->choose_ranking(uuid, context);
+		return _pimpl->ranking_request(uuid, context_json, response, status);
 	}
-	ranking_response driver::choose_ranking(const char * context)
+	int driver::ranking_request(const char * context_json, ranking_response & response, api_status * status)
 	{
-		return _pimpl->choose_ranking(context);
+		return _pimpl->ranking_request(context_json, response, status);
 	}
-	void driver::report_outcome(const char * uuid, const char * outcome_data)
+	int driver::report_outcome(const char * uuid, const char * outcome_data, api_status * status)
 	{
-		return _pimpl->report_outcome(uuid, outcome_data);
+		return _pimpl->report_outcome(uuid, outcome_data, status);
 	}
-	void driver::report_outcome(const char * uuid, float reward)
+	int driver::report_outcome(const char * uuid, float reward, api_status * status)
 	{
-		return _pimpl->report_outcome(uuid, reward);
+		return _pimpl->report_outcome(uuid, reward, status);
 	}
 }

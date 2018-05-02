@@ -57,6 +57,9 @@
     <ClInclude Include="..\include\ds_config_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\ds_api_status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ds_config_collection.cc">

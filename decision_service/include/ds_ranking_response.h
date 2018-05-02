@@ -9,11 +9,15 @@ namespace decision_service {
 	class ranking_response {
 
 	public:
+		ranking_response();
 		ranking_response(const std::string& uuid, const std::vector<std::pair<int, float>>& ranking);
 
-		const std::string& uuid() const;                           //unique id
-		int top_action_id() const;                                 //id of the top action chosen by the ds
-		const std::vector<std::pair<int, float>>& ranking() const; //ranked pairs of action_id/probability
+		const std::string& get_uuid() const;                           //unique id
+		int get_top_action_id() const;                                 //id of the top action chosen by the ds
+		const std::vector<std::pair<int, float>>& get_ranking() const; //ranked pairs of action_id/probability
+
+		void set_uuid(const std::string& uuid);
+		void set_ranking(const std::vector<std::pair<int, float>>& ranking);
 
 	private:
 		std::string _uuid;
