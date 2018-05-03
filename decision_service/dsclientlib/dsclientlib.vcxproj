@@ -150,6 +150,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ds_api_status.cc" />
     <ClCompile Include="ds_config_collection.cc" />
     <ClCompile Include="ds_driver.cc" />
     <ClCompile Include="ds_event.cc" />

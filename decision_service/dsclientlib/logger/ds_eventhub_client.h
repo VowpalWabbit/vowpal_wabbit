@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ds_api_status.h"
 #include <cpprest/http_client.h>
 
 
@@ -11,12 +12,11 @@ namespace decision_service {
 	public:
 
 		//send a POST request
-		void send(const std::string&);
+		int send(const std::string&, api_status* status = nullptr);
 
 		eventhub_client(const std::string&, const std::string&, const std::string&, const std::string&);
 
 	private:
-		pplx::task<void> post(const std::string&);
 		std::string& authorization();
 
 	private:

@@ -92,5 +92,8 @@
     <ClCompile Include="logger\ds_logger.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ds_api_status.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

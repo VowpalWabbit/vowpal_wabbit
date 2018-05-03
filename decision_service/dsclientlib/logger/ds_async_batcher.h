@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ds_concurrent_queue.h"
+#include "ds_api_status.h"
 
 #include <memory>
 #include <string>
@@ -14,11 +15,16 @@ namespace decision_service {
 
 	public:
 
-		void append(const std::string& evt)
+		int append(const std::string& evt, api_status* status = nullptr)
 		{
-			if (_queue.size() < _queue_max_size)
+			if (_queue.size() < _queue_max_size) {
 				_queue.push(evt);
-			//TODO REPORT ERRORS
+				return error_code::success;
+			}
+
+			//report errors
+			api_status::try_update(status, error_code::background_queue_overflow, "dropped event: " + evt);
+			return error_code::background_queue_overflow;
 		}
 
 	private:
@@ -62,10 +68,10 @@ namespace decision_service {
 
 	public:
 		async_batcher(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
-		: _sender(pipe),
-		_batch_max_size(batch_max_size),
-		_batch_timeout_ms(batch_timeout_ms),
-		_queue_max_size(queue_max_size)
+			: _sender(pipe),
+			_batch_max_size(batch_max_size),
+			_batch_timeout_ms(batch_timeout_ms),
+			_queue_max_size(queue_max_size)
 		{
 			_thread_is_running = true;
 			_background_thread = std::thread(&async_batcher::timer, this);

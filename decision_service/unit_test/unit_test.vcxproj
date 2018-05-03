@@ -159,9 +159,9 @@
   <ItemGroup>
     <ClCompile Include="ds_async_batcher_test.cc" />
     <ClCompile Include="ds_concurrent_queue_test.cc" />
+    <ClCompile Include="ds_driver_test.cc" />
     <ClCompile Include="ds_eventhub_client_test.cc" />
     <ClCompile Include="ds_event_test.cc" />
-    <ClCompile Include="ds_model_mgmt_test.cc" />
     <ClCompile Include="http_server\http_server.cc" />
     <ClCompile Include="main.cc" />
   </ItemGroup>

@@ -1,37 +1,36 @@
 #pragma once
 
-//error codes
-#define DS_SUCCESS 0
-#define DS_INVALID_ARGUMENT 1
-
-
-//failure check macro
-#define PRECONDITIONS(x, y) do { \
-  int retval = (x); \
-  if (retval != DS_SUCCESS) { \
-    y; \
-  } \
-} while (0)
+#include <string>
 
 
 namespace decision_service {
 
-	struct api_status {
-		int error_code;
-		const char* error_msg;
-	};
+	namespace error_code {
+		//success code
+		const int success = 0;
 
-	//helper to check arguments
-	static bool is_null_or_empty(const char * arg, api_status* status)
-	{
-		if (!arg || strlen(arg) == 0) {
-			if (status) {
-				//update api status if needed
-				status->error_code = DS_INVALID_ARGUMENT;
-				status->error_msg = "null or empty argument";
-			}
-			return true;
-		}
-		return false;
+		//error code
+		const int invalid_argument = 1;
+		const int background_queue_overflow = 2;
+		const int eventhub_http_generic = 3;
+		const int eventhub_http_bad_status_code = 4;
 	}
+
+
+	class api_status {
+	public:
+		int get_error_code() const;
+		void set_error_code(int);
+		const std::string& get_error_msg() const;
+		void set_error_msg(const std::string&);
+
+		api_status();
+		void clear();
+		static void try_update(api_status* status, int new_code, const std::string& new_msg);
+
+	private:
+		int _error_code;
+		std::string _error_msg;
+	};
+	
 }

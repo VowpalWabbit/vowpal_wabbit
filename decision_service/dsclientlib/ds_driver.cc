@@ -5,7 +5,20 @@
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 
+
+//this macro assumes that success_code equals 0
+#define TRY_OR_RETURN(x) do { \
+  int retval = (x); \
+  if (retval != 0) { \
+    return retval; \
+  } \
+} while (0)
+
+
+
 namespace decision_service {
+
+	int check_null_or_empty(const char * arg1, const char * arg2, api_status* status);
 
 	class driver_impl {
 		utility::config_collection _configuration;
@@ -15,27 +28,27 @@ namespace decision_service {
 
 		int driver_impl::ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
 		{
-			PRECONDITIONS(is_null_or_empty(uuid, status), return DS_INVALID_ARGUMENT);
-			PRECONDITIONS(is_null_or_empty(context, status), return DS_INVALID_ARGUMENT);
+			//check arguments
+			TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
 
-			/* DO SOMETHING */
-			//GET SCORES FOR TEST
-			std::vector<std::pair<int, float>> ranking;
-			ranking.push_back(std::pair<int, float>(2, 0.4f));
-			ranking.push_back(std::pair<int, float>(1, 0.3f));
-			ranking.push_back(std::pair<int, float>(4, 0.2f));
-			ranking.push_back(std::pair<int, float>(3, 0.1f));
+			/* GET ACTIONS PROBABILITIES FROM VW */
+
+			//FOR TESTS
+			std::vector<std::pair<int, float>> action_proba;
 			std::string model_id = "model_id";
+			action_proba.push_back(std::pair<int, float>(2, 0.4f));
+			action_proba.push_back(std::pair<int, float>(1, 0.3f));
+			action_proba.push_back(std::pair<int, float>(4, 0.2f));
+			action_proba.push_back(std::pair<int, float>(3, 0.1f));
 
-			//send the serialized event to the backend
-			ranking_event evt(uuid, context, ranking, model_id);
-			_logger.append_ranking(evt.serialize());
+			//send the ranking event to the backend
+			ranking_event evt(uuid, context, action_proba, model_id);
+			TRY_OR_RETURN(_logger.append_ranking(evt.serialize(), status));
 
-			//set the response
 			response.set_uuid(uuid);
-			response.set_ranking(ranking);
+			response.set_ranking(action_proba);
 
-			return DS_SUCCESS;
+			return error_code::success;
 		}
 
 		//here the uuid is auto-generated
@@ -46,14 +59,14 @@ namespace decision_service {
 
 		int report_outcome(const char* uuid, const char* outcome_data, api_status * status)
 		{
-			PRECONDITIONS(is_null_or_empty(uuid, status), return DS_INVALID_ARGUMENT);
-			PRECONDITIONS(is_null_or_empty(outcome_data, status), return DS_INVALID_ARGUMENT);
+			//check arguments
+			TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));
 
-			//send the serialized event to the backend
+			//send the outcome event to the backend
 			outcome_event evt(uuid, outcome_data);
-			_logger.append_outcome(evt.serialize());
+			TRY_OR_RETURN(_logger.append_outcome(evt.serialize(), status));
 
-			return DS_SUCCESS;
+			return error_code::success;
 		}
 
 		int report_outcome(const char* uuid, float reward, api_status * status)
@@ -89,5 +102,16 @@ namespace decision_service {
 	int driver::report_outcome(const char * uuid, float reward, api_status * status)
 	{
 		return _pimpl->report_outcome(uuid, reward, status);
+	}
+
+	//helper: check if at least one of the arguments is null or empty
+	static int check_null_or_empty(const char * arg1, const char * arg2, api_status* status)
+	{
+		if (!arg1 || !arg2 || strlen(arg1) == 0 || strlen(arg2) == 0) {
+			api_status::try_update(status, error_code::invalid_argument, "one of the arguments passed to the ds is null or empty");
+			return error_code::invalid_argument;
+		}
+
+		return error_code::success;
 	}
 }

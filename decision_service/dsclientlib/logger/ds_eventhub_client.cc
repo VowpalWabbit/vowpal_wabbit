@@ -25,7 +25,7 @@ namespace decision_service {
 		return p;
 	}
 
-	void eventhub_client::send(const std::string& post_data) {
+	int eventhub_client::send(const std::string& post_data, api_status* status) {
 
 		http_request request(methods::POST);
 		request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
@@ -34,24 +34,50 @@ namespace decision_service {
 		request.set_body(post_data);
 
 		//TODO fix linux issue if the client is not re-created
-		web::http::client::http_client client(build_url(_eventhub_host, _eventhub_name));
-		auto request_task = client.request(request).then([](http_response response)
+		//web::http::client::http_client client(build_url(_eventhub_host, _eventhub_name));
+		auto request_task = _client.request(request).then([&](http_response response)
 		{
-			if (response.status_code() != status_codes::Created)
+			//expect http code 201
+			if (response.status_code() == status_codes::Created)
+				return error_code::success;
+
+			//report error
+			if (status)
 			{
-				//TODO report error
-				std::cout << "status code: "  << response.status_code() << std::endl;
+				std::ostringstream error_msg;
+				error_msg << "bad http code (expected 201): " << response.status_code() << std::endl;
+				error_msg << "post_data: " << post_data;
+
+				status->set_error_code(error_code::eventhub_http_bad_status_code);
+				status->set_error_msg(error_msg.str());
 			}
+
+			return error_code::eventhub_http_bad_status_code;
 		});
 
-		try {
+		int error_code = -1;
+		try
+		{
 			request_task.wait();
+			error_code = request_task.get();
 		}
-		catch(const std::exception& e) {
-			//TODO report error
-			//TODO retry
-			std::cout << "Exception: " << e.what() << " where post data = " << post_data <<std::endl;
+		catch (const std::exception& e)
+		{
+			error_code = error_code::eventhub_http_generic;
+
+			//report error
+			if (status)
+			{
+				std::ostringstream error_msg;
+				error_msg << e.what();
+				error_msg << "post_data: " << post_data;
+
+				status->set_error_code(error_code);
+				status->set_error_msg(error_msg.str());
+			}
 		}
+
+		return error_code;
 	}
 
 	eventhub_client::eventhub_client(const std::string& host, const std::string& key_name, const std::string& key, const std::string& name)

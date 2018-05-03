@@ -3,6 +3,7 @@
 #include "ds_config_collection.h"
 #include "ds_async_batcher.h"
 #include "ds_eventhub_client.h"
+#include "ds_api_status.h"
 
 
 namespace decision_service {
@@ -14,10 +15,10 @@ namespace decision_service {
 		logger(const utility::config_collection&);
 
 		//log to the ranking eventhub, use a background queue to send batch
-		void append_ranking(const std::string&);
+		int append_ranking(const std::string&, api_status* = nullptr);
 
 		//log to the outcome eventhub (direct sending, no batching)
-		void append_outcome(const std::string&);
+		int append_outcome(const std::string&, api_status* = nullptr);
 
 	private:
 		eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub

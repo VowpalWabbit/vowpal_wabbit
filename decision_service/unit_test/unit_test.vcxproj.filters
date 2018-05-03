@@ -38,13 +38,13 @@
     <ClCompile Include="ds_eventhub_client_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ds_model_mgmt_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="http_server\http_server.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_driver_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

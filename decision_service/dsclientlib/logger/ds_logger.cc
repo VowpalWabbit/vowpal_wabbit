@@ -17,20 +17,20 @@ namespace decision_service {
 		_async_batcher(
       _ranking_client, 
       c.get_int("batch_max_size",8*1024), 
-      c.get_int("batch_timeout_ms",10000), 
+      c.get_int("batch_timeout_ms",1000),
       c.get_int("queue_max_size",1000*2))
 	{}
 
-	void logger::append_ranking(const std::string & item)
+	int logger::append_ranking(const std::string & item, api_status* status)
 	{
 		//add item to the batch (will be sent later)
-		_async_batcher.append(item);
+		return _async_batcher.append(item, status);
 	}
 
-	void logger::append_outcome(const std::string & item)
+	int logger::append_outcome(const std::string & item, api_status* status)
 	{
 		//send to the eventhub
-		_outcome_client.send(item);
+		return _outcome_client.send(item, status);
 	}
 
 }
