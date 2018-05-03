@@ -451,10 +451,12 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       .keep(data->nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
       .keep("softmax", "softmax exploration")
       .keep(data->greedify, "greedify", "always update first policy once in bagging")
-      .keep("lambda", data->lambda, 1.0f, "parameter for softmax").missing())
+      .keep("lambda", data->lambda, -1.0f, "parameter for softmax").missing())
     return nullptr;
 
   data->all = arg.all;
+  if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
+    data->lambda = -data->lambda;
   if (count(arg.args.begin(), arg.args.end(), "--cb_adf") == 0)
     arg.args.push_back("--cb_adf");
 
