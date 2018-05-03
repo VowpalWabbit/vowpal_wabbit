@@ -52,7 +52,6 @@ class vw_lda(object):
         self.hashed_lda_model = ""
         self.hash_values = "hash_values.csv"
         self.max_file_count = 10000
-        pass
 
    
     def create_hash(self, doc):
