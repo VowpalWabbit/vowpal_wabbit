@@ -166,7 +166,10 @@ void output_example(vw& all, example& ec)
     while(preds_index < preds.label_v.size() && given_index < given.label_v.size())
     {
       if (preds.label_v[preds_index] < given.label_v[given_index])
-        preds_index++;
+        {
+          preds_index++;
+          loss++;
+        }
       else if (preds.label_v[preds_index] > given.label_v[given_index])
       {
         given_index++;

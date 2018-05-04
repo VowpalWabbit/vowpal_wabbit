@@ -280,6 +280,9 @@ class HyperOptimizer(object):
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = -auc(fpr, tpr)
 
+        else:
+            raise KeyError('Invalide outer loss function')
+
         self.logger.info('parameter suffix: %s' % self.param_suffix)
         self.logger.info('loss value: %.6f' % loss)
 
@@ -316,6 +319,8 @@ class HyperOptimizer(object):
             algo = tpe.suggest
         elif self.searcher == 'rand':
             algo = rand.suggest
+        else:
+            raise KeyError('Invalid searcher')
 
         logging.debug("starting hypersearch...")
         best_params = fmin(objective, space=self.space, trials=self.trials, algo=algo, max_evals=self.max_evals)
