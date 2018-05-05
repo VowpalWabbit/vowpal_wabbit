@@ -25,6 +25,10 @@ using namespace exploration;
 #define SOFTMAX 3
 //cover
 #define COVER 4
+//regcb
+#define REGCB 5
+
+#define B_SEARCH_MAX_ITER 20
 
 namespace CB_EXPLORE_ADF
 {
@@ -46,6 +50,8 @@ struct cb_explore_adf
   float lambda;
   uint64_t offset;
   bool greedify;
+  bool regcbopt; // use optimistic variant of RegCB
+  float c0; // mellowness parameter for RegCB
 
   size_t counter;
 
@@ -63,6 +69,12 @@ struct cb_explore_adf
   COST_SENSITIVE::label cs_labels_2;
 
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
+
+  std::vector<float> min_costs;
+  std::vector<float> max_costs;
+
+  std::vector<ACTION_SCORE::action_scores> ex_as;
+  std::vector<v_array<CB::cb_class>> ex_costs;
 };
 
 template<class T> void swap(T& ele1, T& ele2)
@@ -97,6 +109,106 @@ example* test_adf_sequence(multi_ex& ec_seq)
     return ret;
   else
     THROW("cb_adf: badly formatted example, only one line can have a cost");
+}
+
+// TODO: same as cs_active.cc, move to shared place
+float binary_search(float fhat, float delta, float sens, float tol=1e-6)
+{
+  const float maxw = min(fhat / sens, FLT_MAX);
+
+  if (maxw * fhat * fhat <= delta)
+    return maxw;
+
+  float l = 0;
+  float u = maxw;
+  float w, v;
+
+  for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
+  {
+    w = (u + l) / 2.f;
+    v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
+    if (v > 0)
+      u = w;
+    else
+      l = w;
+    if (fabs(v) <= tol || u - l <= tol)
+      break;
+  }
+
+  return l;
+}
+
+void get_cost_ranges(std::vector<float> &min_costs,
+                     std::vector<float> &max_costs, float delta,
+                     cb_explore_adf &data, multi_learner &base,
+                     multi_ex& examples, bool min_only)
+{
+  const bool shared = CB::ec_is_example_header(*examples[0]);
+  const size_t num_actions = examples[0]->pred.a_s.size();
+  min_costs.resize(num_actions);
+  max_costs.resize(num_actions);
+
+  auto& ex_as = data.ex_as;
+  auto& ex_costs = data.ex_costs;
+  ex_as.clear();
+  ex_costs.clear();
+
+  // backup cb example data
+  for (auto& ex : examples)
+  {
+    ex_as.push_back(ex->pred.a_s);
+    ex_costs.push_back(ex->l.cb.costs);
+  }
+
+  // set regressor predictions
+  for (auto as : ex_as[0])
+  {
+    examples[shared + as.action]->pred.scalar = as.score;
+  }
+
+  const float cmin = data.all->sd->min_cb_cost;
+  const float cmax = data.all->sd->max_cb_cost;
+
+  for (size_t a = 0; a < num_actions; ++a)
+  {
+    example* ec = examples[shared + a];
+    ec->l.simple.label = cmin - 1;
+    float sens = base.sensitivity(*ec);
+    float w = 0; // importance weight
+
+    if (ec->pred.scalar < cmin || nanpattern(sens) || infpattern(sens))
+      min_costs[a] = cmin;
+    else
+    {
+      w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
+      min_costs[a] = max(ec->pred.scalar - sens * w, cmin);
+      if (min_costs[a] > cmax)
+        min_costs[a] = cmax;
+    }
+
+    if (!min_only)
+    {
+      ec->l.simple.label = cmax + 1;
+      sens = base.sensitivity(*ec);
+      if (ec->pred.scalar > cmax || nanpattern(sens) || infpattern(sens))
+      {
+        max_costs[a] = cmax;
+      }
+      else
+      {
+        w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
+        max_costs[a] = min(ec->pred.scalar + sens * w, cmax);
+        if (max_costs[a] < cmin)
+          max_costs[a] = cmin;
+      }
+    }
+  }
+
+  // reset cb example data
+  for (size_t i = 0; i < examples.size(); ++i)
+  { examples[i]->pred.a_s = ex_as[i];
+    examples[i]->l.cb.costs = ex_costs[i];
+  }
 }
 
 template <bool is_learn>
@@ -141,6 +253,80 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
 
   // generate distribution over actions
   generate_epsilon_greedy(data.epsilon, 0, begin_scores(preds), end_scores(preds));
+}
+
+template <bool is_learn>
+void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
+{
+  if (is_learn && test_adf_sequence(examples) != nullptr)
+  {
+    uint32_t shared = static_cast<uint32_t>(CB::ec_is_example_header(*examples[0]));
+    for (size_t i = shared; i < examples.size() - 1; ++i)
+    {
+      CB::label& ld = examples[i]->l.cb;
+      if (ld.costs.size() == 1)
+      {
+        ld.costs[0].probability = 1.f; // no importance weighting
+      }
+    }
+
+    multiline_learn_or_predict<true>(base, examples, data.offset);
+  }
+  else
+    multiline_learn_or_predict<false>(base, examples, data.offset);
+
+  v_array<action_score>& preds = examples[0]->pred.a_s;
+  uint32_t num_actions = (uint32_t)preds.size();
+  ++data.counter;
+
+  const float max_range = data.all->sd->max_cb_cost - data.all->sd->min_cb_cost;
+  // threshold on empirical loss difference
+  const float delta =
+      data.c0 * log((float)(num_actions * data.counter)) * pow(max_range, 2);
+
+  if (!is_learn)
+  {
+    get_cost_ranges(data.min_costs, data.max_costs, delta, data, base, examples,
+                    /*min_only=*/data.regcbopt);
+
+    if (data.regcbopt) // optimistic variant
+    {
+      float min_cost = FLT_MAX;
+      size_t a_opt = 0;  // optimistic action
+      for (size_t a = 0; a < num_actions; ++a)
+      {
+        if (data.min_costs[a] < min_cost)
+        {
+          min_cost = data.min_costs[a];
+          a_opt = a;
+        }
+      }
+      for (size_t i = 0; i < preds.size(); ++i)
+      {
+        if (preds[i].action == a_opt)
+          preds[i].score = 1;
+        else
+          preds[i].score = 0;
+      }
+    }
+    else // elimination variant
+    {
+      float min_max_cost = FLT_MAX;
+      for (size_t a = 0; a < num_actions; ++a)
+        if (data.max_costs[a] < min_max_cost)
+          min_max_cost = data.max_costs[a];
+      for (size_t i = 0; i < preds.size(); ++i)
+      {
+        if (data.min_costs[preds[i].action] <= min_max_cost)
+          preds[i].score = 1;
+        else
+          preds[i].score = 0;
+        // explore uniformly on support
+        enforce_minimum_probability(1.0, /*update_zero_elements=*/false,
+            begin_scores(preds), end_scores(preds));
+      }
+    }
+  }
 }
 
 template <bool is_learn>
@@ -401,6 +587,9 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
     case COVER:
       predict_or_learn_cover<false>(data, base, ec_seq);
       break;
+    case REGCB:
+      predict_or_learn_regcb<false>(data, base, ec_seq);
+      break;
     default:
       THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
@@ -432,6 +621,9 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
     case COVER:
       predict_or_learn_cover<is_learn>(data, base, ec_seq);
       break;
+    case REGCB:
+      predict_or_learn_regcb<is_learn>(data, base, ec_seq);
+      break;
     default:
       THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
@@ -458,6 +650,9 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       .keep("psi", data->psi, 1.0f, "disagreement parameter for cover")
       .keep(data->nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
       .keep("softmax", "softmax exploration")
+      .keep("regcb", "RegCB-elim exploration")
+      .keep(data->regcbopt, "regcbopt", "RegCB optimistic exploration")
+      .keep("mellowness", data->c0, 0.1f, "RegCB mellowness parameter c_0. Default 0.1")
       .keep(data->greedify, "greedify", "always update first policy once in bagging")
       .keep("lambda", data->lambda, -1.0f, "parameter for softmax").missing())
     return nullptr;
@@ -487,11 +682,13 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     data->explore_type = EXPLORE_FIRST;
   else if (arg.vm["softmax"].as<bool>())
     data->explore_type = SOFTMAX;
+  else if (arg.vm["regcb"].as<bool>() || arg.vm["regcbopt"].as<bool>())
+    data->explore_type = REGCB;
   else
-    {
-      if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
-      data->explore_type = EPS_GREEDY;
-    }
+  {
+    if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
+    data->explore_type = EPS_GREEDY;
+  }
 
   multi_learner* base = as_multiline(setup_base(arg));
   arg.all->p->lp = CB::cb_label;
@@ -518,6 +715,9 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     }
     else
       arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
+
+    if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
+      arg.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
 
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
