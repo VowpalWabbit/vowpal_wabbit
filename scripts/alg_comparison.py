@@ -81,9 +81,9 @@ def plot_comparison(errors_1, errors_2, sizes):
 	plt.scatter(results_insigni_1, results_insigni_2, s=2, c='k')
 
 
-def normalized_score(lst):
+def normalized_score(lst, l):
 	#print lst
-	l = min(lst)
+	#l = min(lst)
 	u = max(lst)
 	return [ (item - l) / (u - l + 1e-4) for item in lst ]
 
@@ -120,7 +120,7 @@ def plot_all_cdfs(alg_results, mod):
 		plot_cdf(alg_name, errs)
 
 	plt.legend()
-	plt.xlim(0,1)
+	plt.xlim(-1,1)
 	plt.ylim(0,1)
 	plt.savefig(mod.fulldir+problem_str(mod.name_problem)+'.png')
 	plt.clf()
@@ -151,6 +151,20 @@ def init_results(result_table):
 		alg_results[alg_name] = []
 	return alg_results
 
+def get_best_error(best_error_table, name_dataset):
+	name = name_dataset[0]
+	best_error_oneline = best_error_table[best_error_table['dataset'] == name]
+	best_error = best_error_oneline.loc[best_error_oneline.index[0], 'avg_error']
+	#print name
+	#raw_input("...")
+	#print best_error_oneline
+	#raw_input("...")
+	#print best_error
+	#raw_input("...")
+	return best_error
+
+
+
 def plot_all(mod, all_results):
 	grouped_by_problem = all_results.groupby(['corrupt_type_supervised',
 						'corrupt_prob_supervised','bandit_supervised_size_ratio'])
@@ -180,10 +194,12 @@ def plot_all(mod, all_results):
 				#dummy = input('')
 
 			#in general (including the first time) - record the error rates of all algorithms
+
+			err_best = get_best_error(mod.best_error_table, name_dataset)
 			errs = []
 			for idx, row in result_table.iterrows():
 				errs.append(row['avg_error'])
-			normalized_errs = normalized_score(errs)
+			normalized_errs = normalized_score(errs, err_best)
 
 			i = 0
 			for idx, row in result_table.iterrows():
@@ -256,6 +272,9 @@ if __name__ == '__main__':
 	#then group by warm start - bandit ratio
 	#these constitutes all the problem settings we are looking at (corresponding
 	#to each cdf graph)
+
+	mod.best_error_table = all_results[all_results['choices_lambda'] == 0]
+	all_results = all_results[all_results['choices_lambda'] != 0]
 
 	if mod.filter == '1':
 		pass

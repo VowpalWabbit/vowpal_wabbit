@@ -24,29 +24,39 @@ def collect_stats(mod):
 	# num_rows = mod.bandit / mod.progress
 	#print vw_output_filename
 
-	#avg_error_value = avg_error(mod)
+	avg_error_value = avg_error(mod)
 	mod.actual_var = actual_var(mod)
 	mod.ideal_var = ideal_var(mod)
 
-	avg_loss = []
-	last_loss = []
-	wt = []
-	end_table = False
+	#avg_loss = []
+	#last_loss = []
+	#wt = []
+	#end_table = False
+
+	if mod.choices_lambda == 0:
+		mod.avg_loss = avg_error_value
+		mod.bandit_effective = 0
+		mod.ratio = 0
+		record_result(mod)
+		return
 
 	f = open(vw_output_filename, 'r')
 	#linenumber = 0
 	i = 0
 	for line in f:
-		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]+\s+\d+'
+		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]+\s+\d+.*'
 		matchobj = re.match(vw_progress_pattern, line)
 
 		if matchobj:
+			s = line.split()
+			if len(s) >= 8:
+				s = s[:7]
 			avg_loss_str, last_loss_str, counter_str, weight_str, curr_label_str, \
-			curr_pred_str, curr_feat_str = line.split()
+			curr_pred_str, curr_feat_str = s
 
-			avg_loss.append(float(avg_loss_str))
-			last_loss.append(float(last_loss_str))
-			wt.append(float(weight_str))
+			#avg_loss.append(float(avg_loss_str))
+			#last_loss.append(float(last_loss_str))
+			#wt.append(float(weight_str))
 
 			mod.avg_loss = float(avg_loss_str)
 			mod.bandit_effective = int(float(weight_str))
@@ -75,7 +85,7 @@ def record_result(mod):
 	result = disperse(list_results, ' ')
 
 	summary_file = open(mod.summary_file_name, 'a')
-	summary_file.write(config_name + ' ' + result + '\n')
+	summary_file.write(config_name + result + '\n')
 	summary_file.close()
 
 
@@ -101,15 +111,23 @@ def execute_vw(mod):
 	#if mod.cb_type == 'mtr':
 	#	mod.adf_on = True;
 
-	cmd_vw = mod.vw_path + ' --cbify ' + str(mod.num_classes) + ' --cb_type ' + str(mod.cb_type) + ' --warm_start ' + str(mod.warm_start) + ' --bandit ' + str(mod.bandit) + ' --choices_lambda ' + str(mod.choices_lambda) + alg_option + ' --progress ' + str(mod.progress) \
-	 + ' -d ' + mod.ds_path + mod.dataset \
-	 + ' --corrupt_type_supervised ' + str(mod.corrupt_type_supervised) \
-	 + ' --corrupt_prob_supervised ' + str(mod.corrupt_prob_supervised) \
-	 + ' --corrupt_type_bandit ' + str(mod.corrupt_type_bandit) \
-	 + ' --corrupt_prob_bandit ' + str(mod.corrupt_prob_bandit) \
-	 + ' --validation_method ' + str(mod.validation_method) \
-	 + ' --weighting_scheme ' + str(mod.weighting_scheme) \
-	 + ' --lambda_scheme ' + str(mod.lambda_scheme)
+	if mod.choices_lambda == 0:
+		cmd_vw = mod.vw_path + ' --oaa ' + str(mod.num_classes) + ' --passes 5 ' \
+		 + ' --progress ' + str(mod.progress) + ' -d ' \
+		+ mod.ds_path + mod.dataset \
+		+ ' --cache_file ' + mod.results_path + mod.dataset + '.cache'
+	else:
+		cmd_vw = mod.vw_path + ' --cbify ' + str(mod.num_classes) + ' --cb_type ' + str(mod.cb_type) + ' --warm_start ' + str(mod.warm_start) + ' --bandit ' + str(mod.bandit) + ' --choices_lambda ' + str(mod.choices_lambda) + alg_option + ' --progress ' + str(mod.progress) \
+		 + ' -d ' + mod.ds_path + mod.dataset \
+		 + ' --corrupt_type_supervised ' + str(mod.corrupt_type_supervised) \
+		 + ' --corrupt_prob_supervised ' + str(mod.corrupt_prob_supervised) \
+		 + ' --corrupt_type_bandit ' + str(mod.corrupt_type_bandit) \
+		 + ' --corrupt_prob_bandit ' + str(mod.corrupt_prob_bandit) \
+		 + ' --validation_method ' + str(mod.validation_method) \
+		 + ' --weighting_scheme ' + str(mod.weighting_scheme) \
+		 + ' --lambda_scheme ' + str(mod.lambda_scheme) \
+		 + ' --learning_rate ' + str(mod.learning_rate) \
+		 + ' --overwrite_label ' + str(mod.majority_class)
 
 	cmd = cmd_vw
 	print cmd
@@ -148,6 +166,7 @@ def disperse(l, ch):
 def gen_comparison_graph(mod):
 
 	mod.num_lines = get_num_lines(mod.ds_path+mod.dataset)
+	mod.majority_class = get_majority_class(mod.ds_path+mod.dataset)
 	mod.progress = int(math.ceil(float(mod.num_lines) / float(mod.num_checkpoints)))
 	mod.warm_start = mod.warm_start_multiplier * mod.progress
 	mod.bandit = mod.num_lines - mod.warm_start
@@ -195,14 +214,31 @@ def ds_per_task(mod):
 	config_corrupt_sup_raw = product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised)
 	config_corrupt_sup = filter(lambda (type, prob): type == 1 or abs(prob) > 1e-4, config_corrupt_sup_raw)
 
-	config_common = product(mod.dss, config_corrupt_sup, mod.choices_cb_types, mod.warm_start_multipliers)
+	config_problem = product(mod.dss, config_corrupt_sup, mod.choices_cb_types, mod.warm_start_multipliers, mod.learning_rates)
 
-	config_baselines_raw = list(product([1], [True, False], [True, False]))
-	config_baselines = filter(lambda (x1, x2, x3): x2 == True or x3 == True, config_baselines_raw)
-	config_algs = list(product(mod.choices_choices_lambda, [False], [False]))
- 	config_all_spec = config_baselines + config_algs
 
-	config_all = list(product(config_common, config_all_spec))
+
+	if mod.baselines_on:
+		config_baselines_raw = list(product([1], [True, False], [True, False]))
+		config_baselines_solution = filter(lambda (x1, x2, x3): x2 == True or x3 == True, config_baselines_raw)
+		config_baselines = list(product(config_problem, config_baselines_solution))
+	else:
+		config_baselines = []
+
+	if mod.algs_on:
+		config_algs_solution = list(product(mod.choices_choices_lambda, [False], [False]))
+		config_algs = list(product(config_problem, config_algs_solution))
+	else:
+		config_algs = []
+
+	if mod.optimal_on:
+		config_optimal_problem = product(mod.dss, [(1, 0)], [1], [1], [0.5])
+		config_optimal_solution = [(0, False, False)]
+		config_optimal = list(product(config_optimal_problem, config_optimal_solution))
+	else:
+		config_optimal = []
+
+	config_all = config_baselines + config_algs + config_optimal
 
 	config_task = []
 	print len(config_all)
@@ -219,6 +255,10 @@ def get_num_lines(dataset_name):
 	ps.wait()
 	return int(output)
 
+def get_majority_class(dataset_name):
+	maj_class = subprocess.check_output(('zcat '+ dataset_name +' | cut -d \' \' -f 1 | sort | uniq -c | sort -r | head -1 | xargs | cut -d \' \' -f 2  '), shell=True)
+	return int(maj_class)
+
 def avg_error(mod):
 	return vw_output_extract(mod, 'average loss')
 
@@ -233,13 +273,17 @@ def vw_output_extract(mod, pattern):
 	vw_output = open(mod.vw_output_filename, 'r')
 	vw_output_text = vw_output.read()
 	#print vw_output_text
-	rgx = re.compile('^'+pattern+' = (.*)$', flags=re.M)
+	#rgx_pattern = '^'+pattern+' = (.*)(|\sh)\n.*$'
+	#print rgx_pattern
+	rgx_pattern = '.*'+pattern+' = ([\d]*.[\d]*)( h|)\n.*'
+	rgx = re.compile(rgx_pattern, flags=re.M)
 
 	errs = rgx.findall(vw_output_text)
 	if not errs:
 		avge = 0
 	else:
-		avge = float(errs[0])
+		print errs
+		avge = float(errs[0][0])
 
 	vw_output.close()
 	return avge
@@ -265,7 +309,7 @@ def main_loop(mod):
 	summary_file.close()
 
 	for ((mod.dataset, (mod.corrupt_type_supervised, mod.corrupt_prob_supervised), \
-	mod.cb_type, mod.warm_start_multiplier), \
+	mod.cb_type, mod.warm_start_multiplier, mod.learning_rate), \
 	(mod.choices_lambda, \
 	mod.no_supervised, mod.no_bandit)) in mod.config_task:
 		gen_comparison_graph(mod)
@@ -292,6 +336,10 @@ if __name__ == '__main__':
 			time.sleep(1)
 
 	mod = model()
+	mod.baselines_on = False
+	mod.algs_on = False
+	mod.optimal_on = True
+
 	mod.num_tasks = args.num_tasks
 	mod.task_id = args.task_id
 
@@ -301,7 +349,7 @@ if __name__ == '__main__':
 
 	#DIR_PATTERN = '../results/cbresults_{}/'
 
-	mod.num_checkpoints = 100
+	mod.num_checkpoints = 200
 	#mod.warm_start = 50
 	#mod.bandit = 4096
 	#mod.num_classes = 10
@@ -311,11 +359,8 @@ if __name__ == '__main__':
 	mod.adf_on = True
 
 	# use fractions instead of absolute numbers
-	mod.warm_start_multipliers = [2*pow(4, i) for i in range(3)]
-	#mod.choices_warm_start_frac = [0.01 * pow(2, i) for i in range(1)]
-	#mod.choices_warm_start_frac = [0.01, 0.03, 0.1, 0.3]
-	#mod.choices_warm_start_frac = [0.03]
-	#mod.choices_warm_start_frac = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32]
+	mod.warm_start_multipliers = [pow(2,i) for i in range(5)]
+	#mod.warm_start_multipliers = [2*pow(4, i) for i in range(3)]]
 
 	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
 	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
@@ -329,17 +374,18 @@ if __name__ == '__main__':
 	mod.choices_cb_types = ['mtr']
 	#mod.choices_no_supervised = [False, True]
 	#mod.choices_no_bandit = [False, True]
-	mod.choices_choices_lambda = [2, 4, 8]
+	#mod.choices_choices_lambda = [2, 4, 8]
+	mod.choices_choices_lambda = []
 	#mod.choices_choices_lambda = [i for i in range(1,3)]
 	#mod.choices_choices_lambda = [i for i in range(1,2)]
 	#mod.choices_choices_lambda = [1, 3, 5, 7]
 	#[i for i in range(10,11)]
 	#mod.corrupt_type_supervised = 2
 	#mod.corrupt_prob_supervised = 0.3
-	mod.choices_corrupt_type_supervised = [1,2]
+	mod.choices_corrupt_type_supervised = [1,2,3]
 	#mod.choices_corrupt_type_supervised = [2]
 	#mod.corrupt_prob_supervised = 0.3
-	mod.choices_corrupt_prob_supervised = [0.0,0.3]
+	mod.choices_corrupt_prob_supervised = [0.0,0.3,0.6,0.9,1]
 	#mod.choices_corrupt_prob_supervised = [0.3]
 
 	mod.corrupt_type_bandit = 1
@@ -351,15 +397,16 @@ if __name__ == '__main__':
 	mod.choices_lambda = 2
 	mod.weighting_scheme = 1
 	mod.lambda_scheme = 3
-	mod.no_bandit = False
-	mod.no_supervised = False
+
 	mod.no_exploration = False
 	mod.cover_on = False
 	mod.epsilon_on = True
-	mod.plot_color = 'r'
-	mod.plot_flat = False
-	mod.critical_size_ratios = [pow(2,i) for i in range(-5, 7)]
+	#mod.plot_color = 'r'
+	#mod.plot_flat = False
+	mod.critical_size_ratios = [184 * pow(2, -i) for i in range(8) ]
+	mod.learning_rates = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0]
 
+	#pow(2,i) for i in range(-5, 7)
 	#for correctness test
 	#mod.choices_warm_start = [20]
 	#choices_fprob1 = [0.1]

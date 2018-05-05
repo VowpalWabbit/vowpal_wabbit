@@ -11,6 +11,7 @@
 
 #define UAR 1
 #define CIRCULAR 2
+#define OVERWRITE 3
 
 #define BANDIT_VALI 1
 #define SUPERVISED_VALI 2
@@ -101,6 +102,7 @@ struct cbify
 	size_t lambda_scheme;
 	float epsilon;
 	float cumulative_variance;
+	size_t overwrite_label;
 
 };
 
@@ -219,6 +221,8 @@ size_t corrupt_action(size_t action, cbify& data, size_t data_type)
 	{
 		if (corrupt_type == UAR)
 			return generate_uar_action(data);
+		else if (corrupt_type == OVERWRITE)
+			return data.overwrite_label;
 		else
 			return (action % data.num_actions) + 1;
 	}
@@ -1005,7 +1009,8 @@ base_learner* cbify_setup(vw& all)
 	("corrupt_type_bandit", po::value<size_t>(), "probability of label corruption in the bandit part (1 is uar, 2 is circular)")
 	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)")
 	("weighting_scheme", po::value<size_t>(), "weighting scheme (1 is per instance weighting, 2 is per dataset weighting (where we use a diminishing weighting scheme) )")
-	("lambda_scheme", po::value<size_t>(), "Lambda set scheme (1 is expanding based on center 0.5, 2 is expanding based on center=minimax lambda, 3 is expanding based on center=minimax lambda along with forcing 0,1 in Lambda )");
+	("lambda_scheme", po::value<size_t>(), "Lambda set scheme (1 is expanding based on center 0.5, 2 is expanding based on center=minimax lambda, 3 is expanding based on center=minimax lambda along with forcing 0,1 in Lambda )")
+	("overwrite_label", po::value<size_t>(), "the label type 3 corruptions (overwriting) turn to");
   add_options(all);
 
   po::variables_map& vm = all.vm;
@@ -1042,6 +1047,7 @@ base_learner* cbify_setup(vw& all)
 	data.weighting_scheme = vm.count("weighting_scheme") ? vm["weighting_scheme"].as<size_t>() : INSTANCE_WT; // 1 is the default value
 	data.lambda_scheme = vm.count("lambda_scheme") ? vm["lambda_scheme"].as<size_t>() : ABS_CENTRAL;
 	data.epsilon = vm.count("epsilon") ? vm["epsilon"].as<float>() : 0.05;
+	data.overwrite_label = vm.count("overwrite_label") ? vm["overwrite_label"].as<size_t>() : 1;
 
 	//cout<<"does epsilon exist?"<<vm.count("epsilon")<<endl;
 	//cout<<"epsilon = "<<data.epsilon<<endl;
