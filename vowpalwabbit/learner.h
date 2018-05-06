@@ -88,7 +88,8 @@ void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
-inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
+inline float noop_sensitivity(void*, base_learner&, example&) { std::cout << std::endl; return 0.; }
+float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 { ex.ft_offset += static_cast<uint32_t>(increment * i);
@@ -190,7 +191,8 @@ public:
 
   //used for active learning and confidence to determine how easily predictions are changed
   inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
-  { sensitivity_fd.data = learn_fd.data;
+  {
+    sensitivity_fd.data = learn_fd.data;
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
   }
   inline float sensitivity(example& ec, size_t i=0)
@@ -262,6 +264,7 @@ public:
         {//a reduction
           ret = *(learner<T, E>*)(base);
           ret.learn_fd.base = make_base(*base);
+          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)recur_sensitivity;
           ret.finisher_fd.data = dat;
           ret.finisher_fd.base = make_base(*base);
           ret.finisher_fd.func = (func_data::fn)noop;
