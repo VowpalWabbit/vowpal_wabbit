@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include "../error_callback_fn.h"
+#include <thread>
 
 namespace decision_service {
   class error_callback_fn;

@@ -21,32 +21,32 @@ namespace decision_service {
 
 	class driver_impl {
 	public:
-    using error_fn = void(*)(const api_status&,void* user_context);
+    	using error_fn = void(*)(const api_status&,void* user_context);
 
 	private:
-	  utility::config_collection _configuration;
-    error_callback_fn _error_cb;
-    logger _logger;
+	  	utility::config_collection _configuration;
+    	error_callback_fn _error_cb;
+    	logger _logger;
 
 	public:
-		int driver_impl::ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
+		int ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
 		{
-      //clear previous errors if any
-      if (status != nullptr) status->clear();
+	    	//clear previous errors if any
+      		if (status != nullptr) status->clear();
 
 			//check arguments
 			TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
 
 			/* GET ACTIONS PROBABILITIES FROM VW */
 
-      /**/ // TODO: replace with call to parse example and predict
-      /**/ // TODO: once that is complete
-		  /**/ std::vector<std::pair<int, float>> action_proba;
-      /**/ std::string model_id = "model_id";
-      /**/ action_proba.push_back(std::pair<int, float>(2, 0.4f));
-      /**/ action_proba.push_back(std::pair<int, float>(1, 0.3f));
-      /**/ action_proba.push_back(std::pair<int, float>(4, 0.2f));
-      /**/ action_proba.push_back(std::pair<int, float>(3, 0.1f));
+			/**/ // TODO: replace with call to parse example and predict
+			/**/ // TODO: once that is complete
+				/**/ std::vector<std::pair<int, float>> action_proba;
+			/**/ std::string model_id = "model_id";
+			/**/ action_proba.push_back(std::pair<int, float>(2, 0.4f));
+			/**/ action_proba.push_back(std::pair<int, float>(1, 0.3f));
+			/**/ action_proba.push_back(std::pair<int, float>(4, 0.2f));
+			/**/ action_proba.push_back(std::pair<int, float>(3, 0.1f));
 
 			//send the ranking event to the backend
 			ranking_event evt(uuid, context, action_proba, model_id);
@@ -59,13 +59,16 @@ namespace decision_service {
 		}
 
 		//here the uuid is auto-generated
-		int driver_impl::ranking_request(const char * context, ranking_response & response, api_status * status)
+		int ranking_request(const char * context, ranking_response & response, api_status * status)
 		{
 			return ranking_request(context, boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), response, status);
 		}
 
 		int report_outcome(const char* uuid, const char* outcome_data, api_status * status)
 		{
+	    	//clear previous errors if any
+      		if (status != nullptr) status->clear();
+
 			//check arguments
 			TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));
 
@@ -115,8 +118,8 @@ namespace decision_service {
 		return _pimpl->report_outcome(uuid, reward, status);
 	}
 
-  //helper: check if at least one of the arguments is null or empty
-	static int check_null_or_empty(const char * arg1, const char * arg2, api_status* status)
+	//helper: check if at least one of the arguments is null or empty
+	int check_null_or_empty(const char * arg1, const char * arg2, api_status* status)
 	{
 		if (!arg1 || !arg2 || strlen(arg1) == 0 || strlen(arg2) == 0) {
 			api_status::try_update(status, error_code::invalid_argument, "one of the arguments passed to the ds is null or empty");
