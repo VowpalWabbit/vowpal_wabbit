@@ -158,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ds_async_batcher_test.cc" />
+    <ClCompile Include="ds_callback_test.cc" />
     <ClCompile Include="ds_concurrent_queue_test.cc" />
     <ClCompile Include="ds_driver_test.cc" />
     <ClCompile Include="ds_eventhub_client_test.cc" />

@@ -139,6 +139,7 @@
     <ClInclude Include="..\include\ds_driver.h" />
     <ClInclude Include="..\include\ds_ranking_response.h" />
     <ClInclude Include="..\include\ds_utility.h" />
+    <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ds_event.h" />
     <ClInclude Include="logger\ds_async_batcher.h" />
     <ClInclude Include="logger\ds_concurrent_queue.h" />
@@ -150,6 +151,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="error_callback_fn.cc" />
     <ClCompile Include="ds_api_status.cc" />
     <ClCompile Include="ds_config_collection.cc" />
     <ClCompile Include="ds_driver.cc" />

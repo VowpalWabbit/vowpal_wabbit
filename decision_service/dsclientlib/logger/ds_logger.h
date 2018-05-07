@@ -4,6 +4,7 @@
 #include "ds_async_batcher.h"
 #include "ds_eventhub_client.h"
 #include "ds_api_status.h"
+#include "../error_callback_fn.h"
 
 
 namespace decision_service {
@@ -12,7 +13,7 @@ namespace decision_service {
 	class logger {
 
 	public:
-		logger(const utility::config_collection&);
+		logger(const utility::config_collection&, error_callback_fn* perror_cb);
 
 		//log to the ranking eventhub, use a background queue to send batch
 		int append_ranking(const std::string&, api_status* = nullptr);
@@ -21,7 +22,7 @@ namespace decision_service {
 		int append_outcome(const std::string&, api_status* = nullptr);
 
 	private:
-		eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub
+    eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub
 		async_batcher<eventhub_client> _async_batcher;    //handle batching for the data sent to the eventhub client
 	};
 

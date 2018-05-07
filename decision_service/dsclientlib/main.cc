@@ -11,52 +11,53 @@ using namespace decision_service::utility::config;
 config_collection load_config();
 void display_response(const ranking_response&);
 
+void error_handler(const api_status& error, void* user_context)
+{
+  std::cout << "An error happened in the background thread. Code:" << error.get_error_code() 
+    << " Details:" << error.get_error_msg() << std::endl;
+}
+
 int main()
 {
-	auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  const auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
 
-	// Create a ds driver, and initialize with configuration
-	driver ds(config);
+  auto error_cntxt = 1;
+  // Create a ds driver, and initialize with configuration
+	driver ds(config, error_handler, (void*)(&error_cntxt));
 
 	//create response and api_status object, that will be passed to the ds driver
 	ranking_response response;
-	api_status* status = new api_status();//optional, can be omitted
+	api_status status; //optional, can be omitted
 
 	// Use ds to choose the top action
-	const char*  uuid = R"(uuid_1)";
-	const char*  context = R"({"User":{"_age":22},"Geo":{"country":"United States","state":"California","city":"Anaheim"},"_multi":[{"_tag":"cmplx$http://www.complex.com/style/2017/06/kid-puts-together-hypebeast-pop-up-book-for-art-class"},{"_tag":"cmplx$http://www.complex.com/sports/2017/06/floyd-mayweather-will-beat-conor-mcgregor"}]})";
-
-	int success = ds.ranking_request(uuid, context, response, status);
-	if (success != 0)
-		std::cout << "an error happened with code: " << success << std::endl;
-	if (status) {
-		std::cout << "status error code: " << status->get_error_code() << std::endl;
-		std::cout << "status error msg : " << status->get_error_msg() << std::endl;
+  const auto uuid = R"(uuid_1)";
+  const auto context = R"({"User":{"_age":22},"Geo":{"country":"United States","state":"California","city":"Anaheim"},"_multi":[{"_tag":"cmplx$http://www.complex.com/style/2017/06/kid-puts-together-hypebeast-pop-up-book-for-art-class"},{"_tag":"cmplx$http://www.complex.com/sports/2017/06/floyd-mayweather-will-beat-conor-mcgregor"}]})";
+  auto success = ds.ranking_request(uuid, context, response, &status);
+	
+  if (success != 0)
+  {	
+    std::cout << "an error happened with code: " << success << std::endl;
+		std::cout << "status error code: " << status.get_error_code() << std::endl;
+		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
 	}
 
 	/* do something with the top_action */
 	display_response(response);
 
 	// Report the reward to ds
-	success = ds.report_outcome(response.get_uuid().c_str(), 1.0f, status);
+	success = ds.report_outcome(response.get_uuid().c_str(), 1.0f, &status);
 	if (success != 0)
 		std::cout << "an error happened with code: " << success << std::endl;
-	if (status) {
-		std::cout << "status error code: " << status->get_error_code() << std::endl;
-		std::cout << "status error msg : " << status->get_error_msg() << std::endl;
-	}
+		std::cout << "status error code: " << status.get_error_code() << std::endl;
+		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
 
 	// Send another reward with an invalid uuid
 	const char* invalid_uuid = "";
-	success = ds.report_outcome(invalid_uuid, "outcome_data", status);
+	success = ds.report_outcome(invalid_uuid, "outcome_data", &status);
 	if (success != 0)
 		std::cout << "an error happened with code: " << success << std::endl;
-	if (status) {
-		std::cout << "status error code: " << status->get_error_code() << std::endl;
-		std::cout << "status error msg : " << status->get_error_msg() << std::endl;
-	}
-
-	delete status;
+		std::cout << "status error code: " << status.get_error_code() << std::endl;
+		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
 
 	return 0;
 }

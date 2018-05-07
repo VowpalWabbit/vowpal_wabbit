@@ -13,17 +13,18 @@ namespace decision_service {
 	class driver {
 
 	public:
-		explicit driver(const utility::config_collection& config);
+    using error_fn = void(*)(const api_status&, void*);
+    explicit driver(const utility::config_collection& config, error_fn fn = nullptr, void* err_context = nullptr);
 		~driver();
 
-		//request the decision service, in order to rank the N actions provided in the context_json string
+		// request the decision service, in order to rank the N actions provided in the context_json string
 		int ranking_request(const char * uuid, const char * context_json, ranking_response&, api_status* = nullptr);
 		int ranking_request(const char * context_json, ranking_response&, api_status* = nullptr);//uuid is auto-generated
 
-		//report the reward for the top action
+		// report the reward for the top action
 		int report_outcome(const char* uuid, const char* outcome_data, api_status* = nullptr);
 		int report_outcome(const char* uuid, float reward, api_status* = nullptr);
-
+	  
 	private:
 		std::unique_ptr<driver_impl> _pimpl;
 	};

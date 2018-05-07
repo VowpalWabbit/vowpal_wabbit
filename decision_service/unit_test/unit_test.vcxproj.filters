@@ -47,5 +47,8 @@
     <ClCompile Include="ds_driver_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ds_callback_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
