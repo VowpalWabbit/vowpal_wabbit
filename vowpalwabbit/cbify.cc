@@ -494,20 +494,26 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 
 float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 {
+	float weight_multiplier;
+
 	if (ec_type == SUPERVISED)
 	{
 		if (data.lambdas[i] >= 0.5)
-		 	return (1 - data.lambdas[i]) / data.lambdas[i];
+		 	weight_multiplier = (1 - data.lambdas[i]) / data.lambdas[i];
 		else
-			return 1;
+			weight_multiplier = 1;
 	}
 	else
 	{
 		if (data.lambdas[i] >= 0.5)
-			return 1;
+			weight_multiplier = 1;
 		else
-			return data.lambdas[i] / (1-data.lambdas[i]);
+			weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
+
+		if (data.weighting_scheme == DATASET_WT)
+			weight_multiplier = weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
 	}
+	return weight_multiplier;
 }
 
 
@@ -612,12 +618,7 @@ void learn_bandit(cbify& data, base_learner& base, example& ec, size_t ec_type)
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
-
-		if (data.weighting_scheme == INSTANCE_WT)
-			ec.weight = old_weight * weight_multiplier;
-		else
-			ec.weight = old_weight * weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
-
+		ec.weight = old_weight * weight_multiplier;
 		base.learn(ec, i);
 	}
 	ec.weight = old_weight;
@@ -836,14 +837,9 @@ void learn_bandit_adf(cbify& data, base_learner& base, size_t ec_type)
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
-
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
-			if (data.weighting_scheme == INSTANCE_WT)
-				ecs[a].weight = data.old_weights[a] * weight_multiplier;
-			else
-				ecs[a].weight = data.old_weights[a] * weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
-
+			ecs[a].weight = data.old_weights[a] * weight_multiplier;
 			base.learn(ecs[a], i);
 		}
 		base.learn(*empty_example, i);
