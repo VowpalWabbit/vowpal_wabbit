@@ -26,7 +26,7 @@ namespace decision_service {
 
 	public:
 
-		int driver_impl::ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
+		int ranking_request(const char * uuid, const char * context, ranking_response & response, api_status * status)
 		{
 			//check arguments
 			TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
@@ -52,7 +52,7 @@ namespace decision_service {
 		}
 
 		//here the uuid is auto-generated
-		int driver_impl::ranking_request(const char * context, ranking_response & response, api_status * status)
+		int ranking_request(const char * context, ranking_response & response, api_status * status)
 		{
 			return ranking_request(context, boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), response, status);
 		}
@@ -105,7 +105,7 @@ namespace decision_service {
 	}
 
 	//helper: check if at least one of the arguments is null or empty
-	static int check_null_or_empty(const char * arg1, const char * arg2, api_status* status)
+	int check_null_or_empty(const char * arg1, const char * arg2, api_status* status)
 	{
 		if (!arg1 || !arg2 || strlen(arg1) == 0 || strlen(arg2) == 0) {
 			api_status::try_update(status, error_code::invalid_argument, "one of the arguments passed to the ds is null or empty");
