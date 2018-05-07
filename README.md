@@ -224,4 +224,5 @@ To browse the code more easily, do
 
 and then point your browser to `doc/html/index.html`.
 
-Note that documentation generates class diagrams -- among other things -- using [Graphviz](https://www.graphviz.org). For best results, ensure that it is installed beforehand.
+Note that documentation generates class diagrams using [Graphviz](https://www.graphviz.org). For best results, ensure that it is
+installed beforehand.
