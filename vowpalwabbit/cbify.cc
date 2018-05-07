@@ -6,6 +6,8 @@
 #include "../explore/cpp/MWTExplorer.h"
 #include "vw.h"
 
+//In the future, the above two's names should be changed to
+//WARM_START and INTERACTIVE
 #define SUPERVISED 1
 #define BANDIT 2
 
@@ -204,12 +206,12 @@ size_t generate_uar_action(cbify& data)
 
 }
 
-size_t corrupt_action(size_t action, cbify& data, size_t data_type)
+size_t corrupt_action(size_t action, cbify& data, size_t ec_type)
 {
 	float corrupt_prob;
 	size_t corrupt_type;
 
-	if (data_type == SUPERVISED)
+	if (ec_type == SUPERVISED)
 	{
 		corrupt_prob = data.corrupt_prob_supervised;
 		corrupt_type = data.corrupt_type_supervised;
@@ -490,7 +492,7 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_l
 
 }
 
-float compute_weight_multiplier(cbify& data, size_t i, size_t data_type)
+float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 {
 	float weight_multiplier;
 
@@ -532,12 +534,12 @@ size_t predict_cs(cbify& data, example& ec)
 
 }
 
-void learn_cs(cbify& data, example& ec)
+void learn_cs(cbify& data, example& ec, size_t ec_type)
 {
 	float old_weight = ec.weight;
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
-		float weight_multiplier = compute_weight_multiplier(data, i, SUPERVISED);
+		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
 		ec.weight = old_weight * weight_multiplier;
 		data.all->cost_sensitive->learn(ec, i);
 	}
@@ -610,7 +612,7 @@ size_t predict_bandit(cbify& data, base_learner& base, example& ec)
 
 }
 
-void learn_bandit(cbify& data, base_learner& base, example& ec)
+void learn_bandit(cbify& data, base_learner& base, example& ec, size_t ec_type)
 {
 	float old_weight = ec.weight;
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -632,7 +634,7 @@ void accumulate_variance(cbify& data, example& ec)
 
 }
 
-void predict_or_learn_cs(cbify& data, example& ec, bool is_update, size_t data_type)
+void predict_or_learn_cs(cbify& data, example& ec, bool is_update, size_t ec_type)
 {
 	MULTICLASS::label_t ld = ec.l.multi;
 	//predict
@@ -640,11 +642,11 @@ void predict_or_learn_cs(cbify& data, example& ec, bool is_update, size_t data_t
 
 	//learn
 	//first, corrupt fully supervised example ec's label here
-	size_t corrupted_label = corrupt_action(ld.label, data, data_type);
+	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cs(data, ec, ld, corrupted_label);
 
 	if (is_update)
-		learn_cs(data, ec);
+		learn_cs(data, ec, ec_type);
 
 	if (data.validation_method == SUPERVISED_VALI)
 		add_to_sup_validation(data, ec);
@@ -653,14 +655,14 @@ void predict_or_learn_cs(cbify& data, example& ec, bool is_update, size_t data_t
 	ec.l.multi = ld;
 }
 
-void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, bool is_update, size_t data_type)
+void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
 {
 	MULTICLASS::label_t ld = ec.l.multi;
 	size_t action = predict_bandit(data, base, ec);
 
 	CB::cb_class cl;
 
-	size_t corrupted_label = corrupt_action(ld.label, data, data_type);
+	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cb(data, ec, cl, ld, action, corrupted_label);
 	// accumulate the cumulative costs of lambdas
 	accumulate_costs_ips(data, ec, cl);
@@ -672,7 +674,7 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, bool 
 	ec.pred = data.pred;
 
 	if (is_update)
-		learn_bandit(data, base, ec);
+		learn_bandit(data, base, ec, ec_type);
 
 	data.a_s.erase();
 	data.a_s = ec.pred.a_s;
@@ -786,7 +788,7 @@ void generate_corrupted_cs_adf(cbify& data, MULTICLASS::label_t ld, size_t corru
 
 }
 
-void learn_cs_adf(cbify& data)
+void learn_cs_adf(cbify& data, size_t ec_type)
 {
 	example* ecs = data.adf_data.ecs;
 	example* empty_example = data.adf_data.empty_example;
@@ -796,7 +798,7 @@ void learn_cs_adf(cbify& data)
 
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
-		float weight_multiplier = compute_weight_multiplier(data, i, SUPERVISED);
+		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		{
 			ecs[a].weight = data.old_weights[a] * weight_multiplier;
@@ -824,7 +826,7 @@ void generate_corrupted_cb_adf(cbify& data, CB::cb_class& cl, MULTICLASS::label_
 
 }
 
-void learn_bandit_adf(cbify& data, base_learner& base)
+void learn_bandit_adf(cbify& data, base_learner& base, size_t ec_type)
 {
 	example* ecs = data.adf_data.ecs;
 	example* empty_example = data.adf_data.empty_example;
@@ -874,7 +876,7 @@ void add_to_sup_validation_adf(cbify& data, example& ec)
 	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
 }
 
-void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t data_type)
+void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
 {
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
@@ -893,11 +895,11 @@ void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool 
 	//generate cost-sensitive label
 	// ecs[a].weight *= 1;
 	//				cout << "size cbify = " << ecs[a].l.cs.costs.size() << endl;
-	size_t corrupted_label = corrupt_action(ld.label, data, SUPERVISED);
+	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cs_adf(data, ld, corrupted_label);
 
 	if (is_update)
-		learn_cs_adf(data);
+		learn_cs_adf(data, ec_type);
 
 	ec.pred.multiclass = best_action;
 	ec.l.multi = ld;
@@ -909,7 +911,7 @@ void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool 
 }
 
 
-void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t data_type)
+void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
 {
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
@@ -925,7 +927,7 @@ void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, b
 
 	CB::cb_class cl;
 
-	size_t corrupted_label = corrupt_action(ld.label, data, data_type);
+	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cb_adf(data, cl, ld, idx, corrupted_label);
 
 	// accumulate the cumulative costs of lambdas
@@ -937,7 +939,7 @@ void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, b
 
 
 	if (is_update)
-		learn_bandit_adf(data, base);
+		learn_bandit_adf(data, base, ec_type);
 
 	accumulate_variance_adf(data, base);
 
@@ -963,7 +965,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	{
 		predict_or_learn_bandit_adf(data, base, ec, data.ind_bandit, BANDIT);
 		data.bandit_iter++;
-
 		if (data.bandit_iter == data.bandit_period)
 		{
 			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
