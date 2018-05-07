@@ -14,25 +14,32 @@ using namespace decision_service;
 class sender {
     public:
         std::vector<std::string> items;
-        void send(const std::string& item, api_status* s = nullptr) {
+        int send(const std::string& item, api_status* s = nullptr) {
             items.push_back(item);
+            return error_code::success;
         };
 };
 
+void expect_no_error(const api_status& s, void* cntxt)
+{
+  BOOST_ASSERT(s.get_error_code() == error_code::success);
+  BOOST_FAIL("Should not get background error notifications");
+}
 
 //test the flush mecanism based on a timer
 BOOST_AUTO_TEST_CASE(flush_timeout)
 {
     sender s;
     size_t timeout_ms = 100;//set a short timeout
-	async_batcher<sender> batcher(s, 262143, timeout_ms, 8192);
+    error_callback_fn error_fn(expect_no_error, nullptr);
+	  async_batcher<sender> batcher(s, &error_fn,262143, timeout_ms, 8192);
  
     //add 2 items in the current batch
     batcher.append("foo");
     batcher.append("bar");
 
     //wait until the timeout triggers
-	std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
+	  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
     
     //check the batch was sent
     std::string expected = "foo\nbar";
@@ -45,7 +52,8 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 {
     sender s;
     size_t batch_max_size = 10;//bytes
-	async_batcher<sender>* batcher = new async_batcher<sender>(s, batch_max_size);
+    error_callback_fn error_fn(expect_no_error, nullptr);
+    async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, batch_max_size);
 
     //add 2 items in the current batch
     batcher->append("foo");//3 bytes
@@ -96,7 +104,8 @@ BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
 	sender s;
 	size_t timeout_ms = 100;
 	size_t queue_max_size = 2;
-	async_batcher<sender>* batcher = new async_batcher<sender>(s, 262143, timeout_ms, queue_max_size);
+  error_callback_fn error_fn(expect_no_error, nullptr);
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn,262143, timeout_ms, queue_max_size);
 
 	BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
 	BOOST_CHECK_EQUAL(batcher->append("2"), error_code::success);
@@ -116,7 +125,8 @@ BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
 {
 	sender s;
 	size_t queue_max_size = 2;
-	async_batcher<sender> batcher(s, 262143, 1000, queue_max_size);
+  error_callback_fn error_fn(expect_no_error, nullptr);
+  async_batcher<sender> batcher(s, &error_fn ,262143, 1000, queue_max_size);
 	
 	//pass the status to each call, then check its content
 	api_status status;

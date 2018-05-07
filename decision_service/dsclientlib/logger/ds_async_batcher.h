@@ -5,8 +5,10 @@
 
 #include <memory>
 #include <string>
+#include "../error_callback_fn.h"
 
 namespace decision_service {
+  class error_callback_fn;
 
 	// This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
 	// A batch is shipped with TSender::send(data)
@@ -39,12 +41,12 @@ namespace decision_service {
 
 		void flush()//flush all batches
 		{
-			size_t queue_size = _queue.size();
+		  const auto queue_size = _queue.size();
 			if (queue_size == 0) return;
 
 			//handle batching
 			std::string batch, next;
-			_queue.pop(&batch);//there is at least one element
+			_queue.pop(&batch); //there is at least one element
 
 			for (size_t i = 1; i < queue_size; ++i)
 			{
@@ -53,8 +55,13 @@ namespace decision_service {
 				size_t batch_size = batch.length() + next.length();
 				if (batch_size > _batch_max_size)
 				{
+          api_status status;
 					//the batch is about to reach the max size: send it
-					_sender.send(batch);
+					if(_sender.send(batch,&status) != error_code::success)
+					{
+            if (_perror_cb) _perror_cb->report_error(status);
+					}
+          
 					batch = next;
 				}
 				else
@@ -63,13 +70,22 @@ namespace decision_service {
 
 			//send remaining events
 			if (batch.size() > 0)
-				_sender.send(batch);
+			{
+        api_status status;
+        //the batch is about to reach the max size: send it
+        if (_sender.send(batch, &status) != error_code::success)
+        {
+          if (_perror_cb) _perror_cb->report_error(status);
+        }
+			}
 		}
 
 	public:
-		async_batcher(TSender& pipe, size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
+		async_batcher(TSender& pipe, error_callback_fn* perror_cb = nullptr,
+                  size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
 			: _sender(pipe),
-			_batch_max_size(batch_max_size),
+      _perror_cb(perror_cb),
+	    _batch_max_size(batch_max_size),
 			_batch_timeout_ms(batch_timeout_ms),
 			_queue_max_size(queue_max_size)
 		{
@@ -98,5 +114,6 @@ namespace decision_service {
 		size_t _batch_max_size;
 		size_t _batch_timeout_ms;
 		size_t _queue_max_size;
+    error_callback_fn* _perror_cb;
 	};
 }

@@ -24,7 +24,7 @@ namespace decision_service {
 		auto p = conversions::to_string_t(url.str());
 		return p;
 	}
-
+  
 	int eventhub_client::send(const std::string& post_data, api_status* status) {
 
 		http_request request(methods::POST);

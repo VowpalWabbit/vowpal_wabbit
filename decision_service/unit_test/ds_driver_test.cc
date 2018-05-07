@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(ranking)
 	//create the ds driver, and initialize it with the config
 	decision_service::driver ds(config);
 
-	const char*  uuid = "uuid";
+	const char*  uuid = "uuid"; 
 	const char*  context = "context";
 	const char*  invalid_uuid = "";
 	const char*  invalid_context = "";
