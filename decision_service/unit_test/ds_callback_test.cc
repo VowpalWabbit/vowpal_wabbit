@@ -4,7 +4,7 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
-#include "error_callback_fn.h"
+#include "ds_error_callback_fn.h"
 #include "ds_api_status.h"
 
 using namespace decision_service;

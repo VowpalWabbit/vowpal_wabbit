@@ -1,12 +1,11 @@
 #pragma once
 
+#include <string>
+#include <thread>
+
 #include "ds_concurrent_queue.h"
 #include "ds_api_status.h"
-
-#include <memory>
-#include <string>
-#include "../error_callback_fn.h"
-#include <thread>
+#include "../ds_error_callback_fn.h"
 
 namespace decision_service {
   class error_callback_fn;

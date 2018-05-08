@@ -60,7 +60,10 @@
     <ClInclude Include="..\include\ds_api_status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="error_callback_fn.h">
+    <ClInclude Include="ds_error_callback_fn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_driver_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -98,7 +101,10 @@
     <ClCompile Include="ds_api_status.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="error_callback_fn.cc">
+    <ClCompile Include="ds_error_callback_fn.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_driver_impl.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
