@@ -53,12 +53,12 @@ BOOST_AUTO_TEST_CASE(ranking)
 	ds.ranking_request(invalid_uuid, context, response, status);
 	BOOST_CHECK_EQUAL(status->get_error_code(), decision_service::error_code::invalid_argument);
 	
-	//valid request => status is not modified
+	//valid request => status is reset
 	status->set_error_code(-42);
 	status->set_error_msg("hello");
 	ds.ranking_request(uuid, context, response, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), -42);
-	BOOST_CHECK_EQUAL(status->get_error_msg().c_str(), "hello");
+	BOOST_CHECK_EQUAL(status->get_error_code(), 0);
+	BOOST_CHECK_EQUAL(status->get_error_msg().c_str(), "");
 
 	//stop the http server
 	http_server.on_shutdown();
@@ -105,8 +105,8 @@ BOOST_AUTO_TEST_CASE(reward)
 	status->set_error_code(-42);
 	status->set_error_msg("hello");
 	ds.report_outcome(uuid, reward, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), -42);
-	BOOST_CHECK_EQUAL(status->get_error_msg().c_str(), "hello");
+	BOOST_CHECK_EQUAL(status->get_error_code(), 0);
+	BOOST_CHECK_EQUAL(status->get_error_msg().c_str(), "");
 
 	//stop the http server
 	http_server.on_shutdown();
