@@ -88,14 +88,16 @@ def normalized_score(lst, l):
 	return [ (item - l) / (u - l + 1e-4) for item in lst ]
 
 def alg_str(alg_name):
-	if (alg_name[1] == True and alg_name[2] == True):
+	if (alg_name[0] == 2):
+		return 'supervised_underutil_as_bandit'
+	if (alg_name[2] == True and alg_name[3] == True):
 		return 'no_update'
-	if (alg_name[1] == True and alg_name[2] == False):
+	if (alg_name[2] == True and alg_name[3] == False):
 		return 'bandit_only'
-	if (alg_name[1] == False and alg_name[2] == True):
+	if (alg_name[2] == False and alg_name[3] == True):
 		return 'supervised_only'
-	if (alg_name[1] == False and alg_name[2] == False):
-		return 'combined_choices_lambda='+str(alg_name[0])
+	if (alg_name[2] == False and alg_name[3] == False):
+		return 'combined_choices_lambda='+str(alg_name[1])
 
 def problem_str(name_problem):
 	return 'supervised_corrupt_type='+str(name_problem[0]) \
@@ -117,12 +119,15 @@ def plot_all_cdfs(alg_results, mod):
 	#plot all cdfs:
 	i = 0
 	for alg_name, errs in alg_results.iteritems():
-		plot_cdf(alg_name, errs)
+		if (alg_name[2] == False and alg_name[3] == False and alg_name[1] != 8):
+			pass
+		else:
+			plot_cdf(alg_name, errs)
 
 	plt.legend()
-	plt.xlim(-1,1)
+	plt.xlim(-0.2,1)
 	plt.ylim(0,1)
-	plt.savefig(mod.fulldir+problem_str(mod.name_problem)+'.png')
+	plt.savefig(mod.problemdir+'/cdf.png')
 	plt.clf()
 
 
@@ -141,13 +146,13 @@ def plot_all_pair_comp(alg_results, sizes, mod):
 				plot_comparison(errs_1, errs_2, sizes)
 
 				plt.title(alg_str(alg_names[i])+' vs '+alg_str(alg_names[j]))
-				plt.savefig(mod.fulldir+problem_str(mod.name_problem)+'_'+alg_str(alg_names[i])+'_vs_'+alg_str(alg_names[j])+'.png')
+				plt.savefig(mod.problemdir+'/'+alg_str(alg_names[i])+'_vs_'+alg_str(alg_names[j])+'.png')
 				plt.clf()
 
 def init_results(result_table):
 	alg_results = {}
 	for idx, row in result_table.iterrows():
-		alg_name = (row['choices_lambda'], row['no_supervised'], row['no_bandit'])
+		alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_supervised'], row['no_bandit'])
 		alg_results[alg_name] = []
 	return alg_results
 
@@ -201,16 +206,30 @@ def plot_all(mod, all_results):
 				errs.append(row['avg_error'])
 			normalized_errs = normalized_score(errs, err_best)
 
+			#print result_table
+
 			i = 0
 			for idx, row in result_table.iterrows():
 				if i == 0:
-					sizes.append(row['total_size'])
-				alg_name = (row['choices_lambda'], row['no_supervised'], row['no_bandit'])
-				unnormalized_results[alg_name].append(errs[i])
-				normalized_results[alg_name].append(normalized_errs[i])
+					temp_size = row['bandit_size']
+					sizes.append(row['bandit_size'])
+
+				if row['bandit_size'] == temp_size:
+					alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_supervised'], row['no_bandit'])
+					unnormalized_results[alg_name].append(errs[i])
+					normalized_results[alg_name].append(normalized_errs[i])
 				i += 1
 
-		plot_all_pair_comp(unnormalized_results, sizes, mod)
+			#print 'sizes:'
+			#print len(sizes)
+			#for k, v in unnormalized_results.iteritems():
+			#	print len(v)
+
+		mod.problemdir = mod.fulldir+problem_str(mod.name_problem)+'/'
+		if not os.path.exists(mod.problemdir):
+			os.makedirs(mod.problemdir)
+
+		#plot_all_pair_comp(unnormalized_results, sizes, mod)
 		plot_all_cdfs(normalized_results, mod)
 
 
@@ -251,12 +270,15 @@ if __name__ == '__main__':
 	#results_dir = '../../../type2_0.65/'
 	#results_dir = '../../../type2_0.3/'
 
+	print 'reading directory..'
 	dss = sum_files(mod.results_dir)
+	print len(dss)
 
 	#print dss[168]
 
 	all_results = None
 
+	print 'reading sum tables..'
 	for i in range(len(dss)):
 		print 'result file name: ', dss[i]
 		result = parse_sum_file(mod.results_dir + dss[i])
