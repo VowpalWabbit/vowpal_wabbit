@@ -16,7 +16,7 @@ namespace decision_service { namespace utility {
   int config_collection::get_int(const char* name, int defval) const {
     const auto it = _map.find(name);
     if (it != _map.end())
-      return std::stoi(it->second);
+      return atoi(it->second.c_str());
     return defval;
   }
 }}
