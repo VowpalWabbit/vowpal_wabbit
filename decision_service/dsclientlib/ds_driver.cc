@@ -9,11 +9,12 @@ namespace decision_service
   //driver implementation
   driver::~driver()
   {
+    delete _pimpl;
   }
 
   driver::driver(const utility::config_collection& config, error_fn fn, void* err_context)
   {
-    _pimpl = std::unique_ptr<driver_impl>(new driver_impl(config, fn, err_context));
+    _pimpl = new driver_impl(config, fn, err_context);
   }
 
   int driver::ranking_request(const char* uuid, const char* context_json, ranking_response& response,

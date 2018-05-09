@@ -26,6 +26,6 @@ namespace decision_service {
 		int report_outcome(const char* uuid, float reward, api_status* = nullptr);
 	  
 	private:
-		std::unique_ptr<driver_impl> _pimpl;
+		driver_impl* _pimpl;
 	};
 }
