@@ -18,30 +18,33 @@ class model:
 		self.no_supervised = False
 
 def collect_stats(mod):
-
-	vw_output_filename = mod.vw_output_filename
-	# using progress parameter
-	# num_rows = mod.bandit / mod.progress
-	#print vw_output_filename
-
 	avg_error_value = avg_error(mod)
-	mod.actual_var = actual_var(mod)
-	mod.ideal_var = ideal_var(mod)
+	actual_var_value = actual_var(mod)
+	ideal_var_value = ideal_var(mod)
 
-	#avg_loss = []
-	#last_loss = []
-	#wt = []
-	#end_table = False
+	vw_run_results = []
+	vw_result_template = {
+	'bandit_size': 0,
+	'bandit_supervised_size_ratio': 0,
+	'avg_error': 0.0,
+	'actual_variance': 0.0,
+	'ideal_variance': 0.0
+	}
 
-	if mod.choices_lambda == 0:
-		mod.avg_loss = avg_error_value
-		mod.bandit_effective = 0
-		mod.ratio = 0
-		record_result(mod)
-		return
+	if mod.compute_optimal is True:
+		vw_result = vw_result_template.copy()
+		if 'optimal_approx' in mod.param:
+			# this condition is for computing the optimal error
+			vw_result['avg_error'] = avg_error_value
+		else:
+			# this condition is for computing the majority error
+			err =  1 - float(mod.result['majority_size']) / mod.result['total_size']
+			vw_result['avg_error'] = float('%0.5f' % err)
+		vw_run_results.append(vw_result)
+		return vw_run_results
 
-	f = open(vw_output_filename, 'r')
-	#linenumber = 0
+	f = open(mod.vw_output_filename, 'r')
+
 	i = 0
 	for line in f:
 		vw_progress_pattern = '\d+\.\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+[a-zA-Z0-9]+\s+[a-zA-Z0-9]+\s+\d+.*'
@@ -54,84 +57,81 @@ def collect_stats(mod):
 			avg_loss_str, last_loss_str, counter_str, weight_str, curr_label_str, \
 			curr_pred_str, curr_feat_str = s
 
-			#avg_loss.append(float(avg_loss_str))
-			#last_loss.append(float(last_loss_str))
-			#wt.append(float(weight_str))
+			avg_loss = float(avg_loss_str)
+			bandit_effective = int(float(weight_str))
 
-			mod.avg_loss = float(avg_loss_str)
-			mod.bandit_effective = int(float(weight_str))
-
-			for mod.ratio in mod.critical_size_ratios:
-				if mod.bandit_effective >= (1 - 1e-7) * mod.warm_start * mod.ratio and \
-				mod.bandit_effective <= (1 + 1e-7) * mod.warm_start * mod.ratio:
-					record_result(mod)
-
-
-		#linenumber += 1
-
+			for ratio in mod.critical_size_ratios:
+				if bandit_effective >= (1 - 1e-7) * mod.result['warm_start'] * ratio and \
+				bandit_effective <= (1 + 1e-7) * mod.result['warm_start'] * ratio:
+					vw_result = vw_result_template.copy()
+					vw_result['bandit_size'] = bandit_effective
+					vw_result['bandit_supervised_size_ratio'] = ratio
+					vw_result['avg_error'] = avg_loss
+					vw_result['actual_variance'] = actual_var_value
+					vw_result['ideal_variance'] = ideal_var_value
+					vw_run_results.append(vw_result)
 	f.close()
+	return vw_run_results
 
-	#if len(avg_loss) == 0:
-	#	avg_loss = [0]
-	#	last_loss = [0]
-	#	wt = [0]
-	#return avg_loss, last_loss, wt
 
-def record_result(mod):
-	problem_params_trailer = [mod.bandit_effective, mod.ratio]
-	config_name = mod.problem_params + problem_params_trailer + mod.alg_params
+def gen_vw_options_list(vw_options):
+	vw_options_list = []
+	for k, v in vw_options.iteritems():
+		vw_options_list.append('--'+str(k))
+		vw_options_list.append(str(v))
+	return vw_options_list
 
-	list_results = [mod.avg_loss, mod.actual_var, mod.ideal_var]
+def gen_vw_options(mod):
+	vw_options = {}
+	vw_options['data'] = mod.data_full_path
+	vw_options['progress'] = mod.result['progress']
 
-	row = config_name + list_results
+	if 'optimal_approx' in mod.param:
+		vw_options['passes'] = 5
+		vw_options['oaa'] = mod.result['num_classes']
+		vw_options['cache_file'] = mod.param['data'] + '.cache'
+	elif 'majority_approx' in mod.param:
+		pass
+	else:
+		vw_options['corrupt_type_bandit'] = mod.corrupt_type_bandit
+		vw_options['corrupt_prob_bandit'] = mod.corrupt_prob_bandit
+		vw_options['validation_method'] = mod.validation_method
+		vw_options['weighting_scheme'] = mod.weighting_scheme
+		vw_options['bandit'] = mod.bandit
 
-	summary_file = open(mod.summary_file_name, 'a')
-	summary_file.write( disperse(row, '\t') + '\n')
-	summary_file.close()
+		if mod.adf_on is True:
+			vw_options['cb_explore_adf'] = ' '
+		else:
+			vw_options['cb_explore'] = mod.num_classes
 
+		if mod.epsilon_on is True:
+			vw_options['epsilon'] = mod.epsilon
+
+		vw_options['cb_type'] = mod.param['cb_type']
+		vw_options['choices_lambda'] = mod.param['choices_lambda']
+		vw_options['corrupt_type_supervised'] = mod.param['corrupt_type_supervised']
+		vw_options['corrupt_prob_supervised'] = mod.param['corrupt_prob_supervised']
+		vw_options['lambda_scheme'] = mod.param['lambda_scheme']
+		if mod.param['no_supervised'] is True:
+			vw_options['no_supervised'] = ' '
+		if mod.param['no_bandit'] is True:
+			vw_options['no_bandit'] = ' '
+		vw_options['learning_rate'] = mod.param['learning_rate']
+		vw_options['warm_start_type'] = mod.param['warm_start_type']
+
+		vw_options['cbify'] = mod.result['num_classes']
+		vw_options['warm_start'] = mod.result['warm_start']
+		vw_options['overwrite_label'] = mod.result['majority_class']
+
+		#if mod.cover_on:
+		#	alg_option += ' --cover 5 --psi 0.01 --nounif '
+			#mod.cb_type = 'dr'
+	return vw_options
 
 def execute_vw(mod):
-
-	alg_option = ' '
-	if mod.adf_on:
-		alg_option += ' --cb_explore_adf '
-	else:
-		alg_option += ' --cb_explore ' + str(mod.num_classes) + ' '
-
-	if mod.cover_on:
-		alg_option += ' --cover 5 --psi 0.01 --nounif '
-		#mod.cb_type = 'dr'
-	if mod.epsilon_on:
-		alg_option += ' --epsilon ' + str(mod.epsilon) + ' '
-	if mod.no_bandit:
-		alg_option += ' --no_bandit '
-	if mod.no_supervised:
-		alg_option += ' --no_supervised '
-	#if mod.no_exploration:
-	#	alg_option += ' --epsilon 0.0 '
-	#if mod.cb_type == 'mtr':
-	#	mod.adf_on = True;
-
-	if mod.choices_lambda == 0:
-		cmd_vw = mod.vw_path + ' --oaa ' + str(mod.num_classes) + ' --passes 5 ' \
-		 + ' --progress ' + str(mod.progress) + ' -d ' \
-		+ mod.ds_path + mod.dataset \
-		+ ' --cache_file ' + mod.results_path + mod.dataset + '.cache'
-	else:
-		cmd_vw = mod.vw_path + ' --cbify ' + str(mod.num_classes) + ' --cb_type ' + str(mod.cb_type) + ' --warm_start ' + str(mod.warm_start) + ' --bandit ' + str(mod.bandit) + ' --choices_lambda ' + str(mod.choices_lambda) + alg_option + ' --progress ' + str(mod.progress) \
-		 + ' -d ' + mod.ds_path + mod.dataset \
-		 + ' --corrupt_type_supervised ' + str(mod.corrupt_type_supervised) \
-		 + ' --corrupt_prob_supervised ' + str(mod.corrupt_prob_supervised) \
-		 + ' --corrupt_type_bandit ' + str(mod.corrupt_type_bandit) \
-		 + ' --corrupt_prob_bandit ' + str(mod.corrupt_prob_bandit) \
-		 + ' --validation_method ' + str(mod.validation_method) \
-		 + ' --weighting_scheme ' + str(mod.weighting_scheme) \
-		 + ' --lambda_scheme ' + str(mod.lambda_scheme) \
-		 + ' --learning_rate ' + str(mod.learning_rate) \
-		 + ' --overwrite_label ' + str(mod.majority_class) \
-		 + ' --warm_start_type ' + str(mod.warm_start_type)
-
-	cmd = cmd_vw
+	vw_options = gen_vw_options(mod)
+	vw_options_list = gen_vw_options_list(vw_options)
+	cmd = disperse([mod.vw_path]+vw_options_list, ' ')
 	print cmd
 
 	f = open(mod.vw_output_filename, 'w')
@@ -140,23 +140,6 @@ def execute_vw(mod):
 	process.wait()
 	f.close()
 
-'''
-def plot_errors(mod):
-	#avg_loss, last_loss, wt =
-	if mod.plot_flat:
-		# for supervised only, we simply plot a horizontal line using the last point
-		len_avg_loss = len(avg_loss)
-		avg_loss = avg_loss[len_avg_loss-1]
-		avg_loss = [avg_loss for i in range(len_avg_loss)]
-
-	#line = plt.plot(wt, avg_loss, mod.plot_color, label=(mod.plot_label))
-	avg_error_value = avg_error(mod)
-	actual_var_value = actual_var(mod)
-	ideal_var_value = ideal_var(mod)
-
-	return avg_error_value, actual_var_value, ideal_var_value
-'''
-
 def disperse(l, ch):
 	s = ''
 	for item in l:
@@ -164,132 +147,169 @@ def disperse(l, ch):
 		s += ch
 	return s
 
+def param_to_str(param):
+	param_list = [str(k)+'='+str(v) for k,v in param.iteritems() ]
+	return disperse(param_list, '_')
+
+def param_to_result(param, result):
+	for k, v in param.iteritems():
+		if k in result:
+			result[k] = v
 
 def gen_comparison_graph(mod):
+	mod.result = mod.result_template.copy()
 
-	mod.num_lines = get_num_lines(mod.ds_path+mod.dataset)
-	mod.majority_class = get_majority_class(mod.ds_path+mod.dataset)
-	mod.progress = int(math.ceil(float(mod.num_lines) / float(mod.num_checkpoints)))
-	mod.warm_start = mod.warm_start_multiplier * mod.progress
-	mod.bandit = mod.num_lines - mod.warm_start
-	mod.num_classes = get_num_classes(mod.dataset)
+	if 'majority_approx' in mod.param or 'optimal_approx' in mod.param:
+		mod.compute_optimal = True
+	else:
+		mod.compute_optimal = False
 
-	mod.problem_params = [mod.dataset, mod.num_classes, mod.num_lines, \
-	mod.corrupt_type_supervised, mod.corrupt_prob_supervised, \
-	mod.corrupt_type_bandit, mod.corrupt_prob_bandit, \
-	mod.warm_start]
+	param_to_result(mod.param, mod.result)
+	mod.data_full_path = mod.ds_path + mod.param['data']
 
-	mod.alg_params = [ mod.cb_type, \
-	mod.validation_method, mod.weighting_scheme, \
-	mod.lambda_scheme, mod.choices_lambda, \
-	mod.no_supervised, mod.no_bandit, mod.warm_start_type, mod.learning_rate]
+	mod.result['total_size'] = get_num_lines(mod.data_full_path)
+	mod.result['num_classes'] = get_num_classes(mod.data_full_path)
+	mod.result['majority_size'], mod.result['majority_class'] = get_majority_class(mod.data_full_path)
+	mod.result['progress'] = int(math.ceil(float(mod.result['total_size']) / float(mod.num_checkpoints)))
+	mod.vw_output_filename = mod.results_path + param_to_str(mod.param) + '.txt'
 
-	mod.vw_output_filename = mod.results_path + disperse(mod.problem_params+mod.alg_params, '_') + '.txt'
+	if mod.compute_optimal is False:
+		mod.result['warm_start'] = mod.param['warm_start_multiplier'] * mod.result['progress']
+		mod.bandit = mod.result['total_size'] - mod.result['warm_start']
 
 	#plot_errors(mod)
 	execute_vw(mod)
-	collect_stats(mod)
+	vw_run_results = collect_stats(mod)
+	for vw_result in vw_run_results:
+		result_combined = merge_two_dicts(mod.result, vw_result)
+		result_formatted = format_result(mod.result_template, result_combined)
+		record_result(mod, result_formatted)
 
 	print('')
+
+def format_result(result_template, result):
+	result_formatted = result_template.copy()
+	for k, v in result.iteritems():
+		result_formatted[k] = v
+	return result_formatted
+
+def record_result(mod, result):
+	result_row = []
+	for k in mod.result_header_list:
+		result_row.append(result[k])
+
+	summary_file = open(mod.summary_file_name, 'a')
+	summary_file.write( disperse(result_row, '\t') + '\n')
+	summary_file.close()
 
 def ds_files(ds_path):
 	prevdir = os.getcwd()
 	os.chdir(ds_path)
 	dss = sorted(glob.glob('*.vw.gz'))
+	#dss = [ds_path+ds for ds in dss]
 	os.chdir(prevdir)
 	return dss
 
+def merge_two_dicts(x, y):
+	#print 'x = ', x
+	#print 'y = ', y
+	z = x.copy()   # start with x's keys and values
+	z.update(y)    # modifies z with y's keys and values & returns None
+	return z
+
+def param_cartesian(param_set_1, param_set_2):
+	prod = []
+	for param_1 in param_set_1:
+		for param_2 in param_set_2:
+			prod.append(merge_two_dicts(param_1, param_2))
+	return prod
+
+def param_cartesian_multi(param_sets):
+	#print param_sets
+	prod = [{}]
+	for param_set in param_sets:
+		prod = param_cartesian(prod, param_set)
+	return prod
+
+def dictify(param_name, param_choices):
+	result = []
+	for param in param_choices:
+		dic = {}
+		dic[param_name] = param
+		result.append(dic)
+	return result
+
+def params_per_task(mod):
+	# Problem parameters
+	params_corrupt_type_sup = dictify('corrupt_type_supervised', mod.choices_corrupt_type_supervised)
+	params_corrupt_prob_sup = dictify('corrupt_prob_supervised', mod.choices_corrupt_prob_supervised)
+	params_warm_start_multiplier = dictify('warm_start_multiplier', mod.warm_start_multipliers)
+	params_learning_rate = dictify('learning_rate', mod.learning_rates)
+
+	# Algorithm parameters
+	params_cb_type = dictify('cb_type', mod.choices_cb_type)
+
+	# Common parameters
+	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup, params_warm_start_multiplier, params_learning_rate, params_cb_type])
+	params_common = filter(lambda param: param['corrupt_type_supervised'] == 1 or abs(param['corrupt_prob_supervised']) > 1e-4, params_common)
+
+	# Baseline parameters construction
+	if mod.baselines_on:
+		params_baseline_basic = [
+		[{'choices_lambda': 1, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'no_supervised': True}, {'no_supervised': False}], [{'no_bandit': True}, {'no_bandit': False}]
+		]
+		params_baseline = param_cartesian_multi([params_common] + params_baseline_basic)
+		params_baseline = filter(lambda param: param['no_supervised'] == True or param['no_bandit'] == True, params_baseline)
+	else:
+		params_baseline = []
+
+
+	# Algorithm parameters construction
+	if mod.algs_on:
+		params_choices_lambd = dictify('choices_lambda', mod.choices_choices_lambda)
+		params_algs_1 = param_cartesian(params_choices_lambd, [{'no_supervised': False, 'no_bandit': False, 'warm_start_type': 1, 'lambda_scheme': 3}] )
+		params_algs_2 = [{'no_supervised': False, 'no_bandit': False, 'warm_start_type': 2, 'lambda_scheme': 1, 'choices_lambda':1}]
+		params_algs = param_cartesian( params_common, params_algs_1 + params_algs_2 )
+	else:
+		params_algs = []
+
+	# Optimal baselines parameter construction
+	if mod.optimal_on:
+		params_optimal = [{ 'optimal_approx': True }, { 'majority_approx': True }]
+	else:
+		params_optimal = []
+
+	# Common factor in all 3 groups: dataset
+	params_dataset = dictify('data', mod.dss)
+	params_all = param_cartesian( params_dataset, params_baseline + params_algs + params_optimal )
+	params_all = sorted(params_all)
+	print len(params_all)
+	for row in params_all:
+		print row
+	return get_params_task(params_all)
+
+
+def get_params_task(params_all):
+	params_task = []
+	for i in range(len(params_all)):
+		if (i % mod.num_tasks == mod.task_id):
+			params_task.append(params_all[i])
+	return params_task
+
+def get_num_lines(dataset_name):
+	num_lines = subprocess.check_output(('zcat ' + dataset_name + ' | wc -l'), shell=True)
+	return int(num_lines)
 
 def get_num_classes(ds):
+	# could be a bug for including the prefix..
 	did, n_actions = os.path.basename(ds).split('.')[0].split('_')[1:]
 	did, n_actions = int(did), int(n_actions)
 	return n_actions
 
-def flatten(l):
-	out = []
-	for item in l:
-		if isinstance(item, (list, tuple)):
-		  out.extend(flatten(item))
-		else:
-		  out.append(item)
-	return tuple(out)
-
-def flatten_all(l):
-	out = []
-	for item in l:
-		flattened = flatten(item)
-		if len(flattened) != 11:
-			print flattened
-		out.append(flattened)
-	return out
-
-
-def ds_per_task(mod):
-	# put dataset name to the last coordinate so that the task workloads tend to be
-	# allocated equally
-
-	# put dataset name to the first coordinate so that the result production order is
-	# in accordance with dataset order
-
-	config_corrupt_sup_raw = list(product(mod.choices_corrupt_type_supervised, mod.choices_corrupt_prob_supervised))
-	config_corrupt_sup = filter(lambda (type, prob): type == 1 or abs(prob) > 1e-4, config_corrupt_sup_raw)
-
-	config_problem = list(product(mod.dss, config_corrupt_sup, mod.choices_cb_types, mod.warm_start_multipliers))
-
-	if mod.baselines_on:
-		#config_baselines_raw = list(product([1], [True, False], [True, False], [1], [3]))
-		#config_baselines_solution = filter(lambda (x1, x2, x3, x4): x2 == True or x3 == True, config_baselines_raw)
-		config_baselines_solution = [(1, True, True, 1, 3), (1, True, False, 1, 3), (1, False, True, 1, 3)]
-		config_baselines = list(product(*[config_problem, config_baselines_solution, mod.learning_rates]))
-		config_baselines = flatten_all(config_baselines)
-	else:
-		config_baselines = []
-
-	if mod.algs_on:
-		config_algs_solution_1 = list(product(mod.choices_choices_lambda, [False], [False], [1], [3]))
-		config_algs_solution_2 = [(1, False, False, 2, 1)]
-		config_algs_solution = config_algs_solution_1 + config_algs_solution_2
-		config_algs = list(product(*[config_problem, config_algs_solution, mod.learning_rates]))
-		config_algs = flatten_all(config_algs)
-	else:
-		config_algs = []
-
-	if mod.optimal_on:
-		config_optimal_problem = product(mod.dss, [(1, 0)], ['mtr'], [1])
-		config_optimal_solution = [(0, False, False, 1, 1)]
-		config_optimal = list(product(*[config_optimal_problem, config_optimal_solution, [0.5]]))
-		config_optimal = flatten_all(config_optimal)
-	else:
-		config_optimal = []
-
-	#print len(config_problem)
-	#print len(config_baselines)
-	#print len(config_algs)
-	#print len(config_optimal)
-	#raw_input(' ')
-
-	config_all = config_baselines + config_algs + config_optimal
-	config_all = sorted(config_all)
-	#config_all = sorted(config_all, key=lambda a: str(a))
-
-	config_task = []
-	print len(config_all)
-	for i in range(len(config_all)):
-		if (i % mod.num_tasks == mod.task_id):
-			config_task.append(config_all[i])
-			#print config_all[i]
-
-	return config_task
-
-def get_num_lines(dataset_name):
-	ps = subprocess.Popen(('zcat', dataset_name), stdout=subprocess.PIPE)
-	output = subprocess.check_output(('wc', '-l'), stdin=ps.stdout)
-	ps.wait()
-	return int(output)
-
 def get_majority_class(dataset_name):
-	maj_class = subprocess.check_output(('zcat '+ dataset_name +' | cut -d \' \' -f 1 | sort | uniq -c | sort -r | head -1 | xargs | cut -d \' \' -f 2  '), shell=True)
-	return int(maj_class)
+	maj_class_str = subprocess.check_output(('zcat '+ dataset_name +' | cut -d \' \' -f 1 | sort | uniq -c | sort -r | head -1 | xargs '), shell=True)
+	maj_size, maj_class = maj_class_str.split()
+	return int(maj_size), int(maj_class)
 
 def avg_error(mod):
 	return vw_output_extract(mod, 'average loss')
@@ -320,33 +340,48 @@ def vw_output_extract(mod, pattern):
 	vw_output.close()
 	return avge
 
-
-def main_loop(mod):
-	mod.summary_file_name = mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum'
+def write_summary_header(mod):
 	summary_file = open(mod.summary_file_name, 'w')
-
-	list_header = ['dataset', 'num_classes', 'total_size', \
-	'corrupt_type_supervised', 'corrupt_prob_supervised', \
-	'corrupt_type_bandit', 'corrupt_prob_bandit', \
-	'warm_start_size', 'bandit_size', 'bandit_supervised_size_ratio', \
-	'cb_type', 'validation_method', 'weighting_scheme', \
-	'lambda_scheme', 'choices_lambda', \
-	'no_supervised', 'no_bandit', \
-	'warm_start_type', 'learning_rate', \
-	'avg_error', 'actual_variance', \
-	'ideal_variance']
-
-	summary_header = disperse(list_header, '\t')
-
+	summary_header = disperse(mod.result_header_list, '\t')
 	summary_file.write(summary_header+'\n')
 	summary_file.close()
 
-	for (mod.dataset, mod.corrupt_type_supervised, mod.corrupt_prob_supervised, \
-	mod.cb_type, mod.warm_start_multiplier, \
-	mod.choices_lambda, \
-	mod.no_supervised, mod.no_bandit, mod.warm_start_type, mod.lambda_scheme, mod.learning_rate) in mod.config_task:
-		gen_comparison_graph(mod)
+def main_loop(mod):
+	mod.summary_file_name = mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum'
+	mod.result_template_list = [
+	'data', 'ds',
+	'num_classes', 0,
+	'total_size' , 0,
+	'majority_size', 0,
+	'corrupt_type_supervised', 0,
+	'corrupt_prob_supervised', 0.0,
+	'corrupt_type_bandit', 0,
+	'corrupt_prob_bandit', 0.0,
+	'warm_start', 0,
+	'bandit_size', 0,
+	'bandit_supervised_size_ratio', 0,
+	'cb_type', 'mtr',
+	'validation_method', 0,
+	'weighting_scheme', 0,
+	'lambda_scheme', 0,
+	'choices_lambda', 0,
+	'no_supervised', False,
+	'no_bandit', False,
+	'warm_start_type', 0,
+	'learning_rate', 0.0,
+	'optimal_approx', False,
+	'majority_approx', False,
+	'avg_error', 0.0,
+	'actual_variance', 0.0,
+	'ideal_variance', 0.0 ]
 
+ 	num_cols = len(mod.result_template_list)/2
+	mod.result_header_list = [ mod.result_template_list[2*i] for i in range(num_cols) ]
+	mod.result_template = dict([ (mod.result_template_list[2*i], mod.result_template_list[2*i+1]) for i in range(num_cols) ])
+
+	write_summary_header(mod)
+	for mod.param in mod.config_task:
+		gen_comparison_graph(mod)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='vw job')
@@ -354,10 +389,7 @@ if __name__ == '__main__':
 	parser.add_argument('num_tasks', type=int)
 	parser.add_argument('--results_dir', default='../../../figs/')
 	parser.add_argument('--ds_dir', default='../../../vwshuffled/')
-	parser.add_argument('--num_learning_rates', type=int)
-	parser.add_argument('--warm_start_fraction', type=float)
-	parser.add_argument('--corrupt_prob_supervised', type=float)
-	parser.add_argument('--corrupt_prob_bandit',type=float)
+	parser.add_argument('--num_learning_rates', type=int, default=1)
 
 
 	args = parser.parse_args()
@@ -371,9 +403,9 @@ if __name__ == '__main__':
 			time.sleep(1)
 
 	mod = model()
-	mod.baselines_on = True
+	mod.baselines_on = False
 	mod.algs_on = True
-	mod.optimal_on = True
+	mod.optimal_on = False
 
 	mod.num_tasks = args.num_tasks
 	mod.task_id = args.task_id
@@ -382,47 +414,22 @@ if __name__ == '__main__':
 	mod.ds_path = args.ds_dir
 	mod.results_path = args.results_dir
 
-	#DIR_PATTERN = '../results/cbresults_{}/'
-
 	mod.num_checkpoints = 200
-	#mod.warm_start = 50
-	#mod.bandit = 4096
-	#mod.num_classes = 10
-	#mod.cb_type = 'mtr'  #'ips'
-    #mod.choices_lambda = 10
-	#mod.progress = 25
+
 	mod.adf_on = True
 
 	# use fractions instead of absolute numbers
-	mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
-	#mod.warm_start_multipliers = [2*pow(4, i) for i in range(3)]]
+	#mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
+	mod.warm_start_multipliers = [pow(2,i) for i in range(1)]
 
-	#mod.choices_warm_start = [0.01 * pow(2, i) for i in range(5)]
-	#mod.choices_bandit = [0.01 * pow(2, i) for i in range(5)]
+	mod.choices_cb_type = ['mtr']
+	#mod.choices_choices_lambda = [2,4,8]
+	mod.choices_choices_lambda = [2]
 
-	#mod.choices_warm_start = [pow(2,i) for i in range(11)] #put it here in order to plot 2d mesh
-	# we are implicitly iterating over the bandit sample sizes
-	#choices_fprob1 = [0.1, 0.2, 0.3]
-	#choices_fprob2 = [0.1, 0.2, 0.3]
-	#choices_cb_types = ['mtr', 'ips']
-	#mod.choices_cb_types = ['mtr', 'ips']
-	mod.choices_cb_types = ['mtr']
-	#mod.choices_no_supervised = [False, True]
-	#mod.choices_no_bandit = [False, True]
-	#mod.choices_choices_lambda = [2, 4, 8]
-	mod.choices_choices_lambda = [2,4,8]
-	#mod.choices_choices_lambda = [i for i in range(1,3)]
-	#mod.choices_choices_lambda = [i for i in range(1,2)]
-	#mod.choices_choices_lambda = [1, 3, 5, 7]
-	#[i for i in range(10,11)]
-	#mod.corrupt_type_supervised = 2
-	#mod.corrupt_prob_supervised = 0.3
-	mod.choices_corrupt_type_supervised = [1,2,3]
-	#mod.choices_corrupt_type_supervised = [2]
-	#mod.corrupt_prob_supervised = 0.3
-	mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
-	#mod.choices_corrupt_prob_supervised = [0.3]
-
+	#mod.choices_corrupt_type_supervised = [1,2,3]
+	#mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
+	mod.choices_corrupt_type_supervised = [1,2]
+	mod.choices_corrupt_prob_supervised = [0.0,0.5]
 
 	mod.corrupt_type_bandit = 1
 	mod.corrupt_prob_bandit = 0.0
@@ -432,14 +439,9 @@ if __name__ == '__main__':
 
 	mod.choices_lambda = 2
 	mod.weighting_scheme = 1
-	#mod.lambda_scheme = 3
-	#mod.warm_start_type = 1
 
-	mod.no_exploration = False
-	mod.cover_on = False
 	mod.epsilon_on = True
-	#mod.plot_color = 'r'
-	#mod.plot_flat = False
+
 	mod.critical_size_ratios = [184 * pow(2, -i) for i in range(7) ]
 
 	if args.num_learning_rates == 1:
@@ -448,12 +450,6 @@ if __name__ == '__main__':
 		mod.learning_rates = [0.1, 0.3, 1.0]
 	else:
 		mod.learning_rates = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0]
-
-	#pow(2,i) for i in range(-5, 7)
-	#for correctness test
-	#mod.choices_warm_start = [20]
-	#choices_fprob1 = [0.1]
-	#choices_fprob2 = [0.1]
 
 	print 'reading dataset files..'
 	mod.dss = ds_files(mod.ds_path)
@@ -464,7 +460,7 @@ if __name__ == '__main__':
 	print 'generating tasks..'
 	# here, we are generating the task specific parameter settings
 	# by first generate all parameter setting and pick every num_tasks of them
-	mod.config_task = ds_per_task(mod)
+	mod.config_task = params_per_task(mod)
 	print 'task ' + str(mod.task_id) + ' of ' + str(mod.num_tasks) + ':'
 	print len(mod.config_task)
 
