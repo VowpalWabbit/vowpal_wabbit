@@ -22,7 +22,7 @@ namespace decision_service
 
   int driver_impl::ranking_request(const char* uuid, const char* context, ranking_response& response, api_status* status) {
       //clear previous errors if any
-      if ( status != nullptr ) status->clear();
+      api_status::try_clear(status);
 
       //check arguments
       TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
@@ -56,7 +56,7 @@ namespace decision_service
 
   int driver_impl::report_outcome(const char* uuid, const char* outcome_data, api_status* status) {
     //clear previous errors if any
-    if ( status != nullptr ) status->clear();
+    api_status::try_clear(status);
 
     //check arguments
     TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));

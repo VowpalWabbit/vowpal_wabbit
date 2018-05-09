@@ -138,7 +138,7 @@
     <ClInclude Include="..\include\ds_config_collection.h" />
     <ClInclude Include="..\include\ds_driver.h" />
     <ClInclude Include="..\include\ds_ranking_response.h" />
-    <ClInclude Include="..\include\ds_utility.h" />
+    <ClInclude Include="..\include\ds_config_utility.h" />
     <ClInclude Include="ds_driver_impl.h" />
     <ClInclude Include="ds_error_callback_fn.h" />
     <ClInclude Include="ds_event.h" />
@@ -163,7 +163,7 @@
     <ClCompile Include="model_mgmt\ds_model_mgmt.cc" />
     <ClCompile Include="ds_ranking_response.cc" />
     <ClCompile Include="ds_restapi_data_transport.cc" />
-    <ClCompile Include="utility\ds_utility.cc" />
+    <ClCompile Include="utility\ds_config_utility.cc" />
     <ClCompile Include="main.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

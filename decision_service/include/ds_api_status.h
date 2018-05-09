@@ -17,18 +17,17 @@ namespace decision_service { namespace error_code {
 namespace decision_service {
   class api_status
   {
-  public:
-    int get_error_code() const;
-    void set_error_code(int);
-    const std::string& get_error_msg() const;
-    void set_error_msg(const std::string&);
+    public:
+      api_status();
 
-    api_status();
-    void clear();
-    static void try_update(api_status* status, int new_code, const std::string& new_msg);
+      int get_error_code() const;
+      const char* get_error_msg() const;
 
-  private:
-    int _error_code;
-    std::string _error_msg;
+      static void try_update(api_status* status, int new_code, const char* new_msg);
+      static void try_clear(api_status* status);
+
+    private:
+      int _error_code;
+      std::string _error_msg;
   };
 }

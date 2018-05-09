@@ -1,5 +1,6 @@
-#include "ds_utility.h"
+#include "ds_config_utility.h"
 #include "cpprest/json.h"
+#include "ds_config_collection.h"
 
 using namespace web;
 using namespace utility::conversions; // string conversions utilities

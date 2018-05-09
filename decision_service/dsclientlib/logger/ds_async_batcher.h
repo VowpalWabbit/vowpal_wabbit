@@ -2,6 +2,7 @@
 
 #include <string>
 #include <thread>
+#include <sstream>
 
 #include "ds_concurrent_queue.h"
 #include "ds_api_status.h"
@@ -25,8 +26,11 @@ namespace decision_service {
 			}
 
 			//report errors
-			api_status::try_update(status, error_code::background_queue_overflow, "dropped event: " + evt);
-			return error_code::background_queue_overflow;
+		  std::ostringstream os;
+		  os << "Dropped event: " << evt;
+			api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
+
+		  return error_code::background_queue_overflow;
 		}
 
 	private:

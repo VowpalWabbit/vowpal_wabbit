@@ -46,8 +46,7 @@ namespace decision_service
         error_msg << "bad http code (expected 201): " << response.status_code() << std::endl;
         error_msg << "post_data: " << post_data;
 
-        status->set_error_code(error_code::eventhub_http_bad_status_code);
-        status->set_error_msg(error_msg.str());
+        api_status::try_update(status, error_code::eventhub_http_bad_status_code, error_msg.str().c_str());
       }
 
       return error_code::eventhub_http_bad_status_code;
@@ -70,8 +69,7 @@ namespace decision_service
         error_msg << e.what();
         error_msg << "post_data: " << post_data;
 
-        status->set_error_code(error_code);
-        status->set_error_msg(error_msg.str());
+        api_status::try_update(status, error_code, error_msg.str().c_str());
       }
     }
 

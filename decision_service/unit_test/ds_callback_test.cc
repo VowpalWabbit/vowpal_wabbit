@@ -25,8 +25,7 @@ BOOST_AUTO_TEST_CASE(callback)
   auto i = 0;
   error_callback_fn fn(error_handler, &i);
   api_status s;
-  s.set_error_code(err);
-  s.set_error_msg(err_msg);
+  api_status::try_update(&s, err, err_msg.c_str());
   fn.report_error(s);
   BOOST_ASSERT(i == -1);
 }
@@ -36,8 +35,7 @@ BOOST_AUTO_TEST_CASE(null_callback)
   auto i = 0;
   error_callback_fn fn(nullptr, &i);
   api_status s;
-  s.set_error_code(err);
-  s.set_error_msg(err_msg);
+  api_status::try_update(&s, err, err_msg.c_str());
   fn.report_error(s);  // should not crash
   BOOST_ASSERT(i == 0);
 }
@@ -55,8 +53,7 @@ BOOST_AUTO_TEST_CASE(exception_in_callback)
   auto i = 0;
   error_callback_fn fn(ex_error_handler, &i);
   api_status s;
-  s.set_error_code(err);
-  s.set_error_msg(err_msg);
+  api_status::try_update(&s, err, err_msg.c_str());
   fn.report_error(s);  // should not crash
   BOOST_ASSERT(i == -2);  
 }
