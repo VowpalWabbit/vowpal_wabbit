@@ -19,10 +19,10 @@ void error_handler(const api_status& error, void* user_context)
 
 int main()
 {
-  const auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
+	const auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
 
-  auto error_cntxt = 1;
-  // Create a ds driver, and initialize with configuration
+	auto error_cntxt = 1;
+	// Create a ds driver, and initialize with configuration
 	driver ds(config, error_handler, (void*)(&error_cntxt));
 
 	//create response and api_status object, that will be passed to the ds driver
@@ -30,13 +30,13 @@ int main()
 	api_status status; //optional, can be omitted
 
 	// Use ds to choose the top action
-  const auto uuid = R"(uuid_1)";
-  const auto context = R"({"User":{"_age":22},"Geo":{"country":"United States","state":"California","city":"Anaheim"},"_multi":[{"_tag":"cmplx$http://www.complex.com/style/2017/06/kid-puts-together-hypebeast-pop-up-book-for-art-class"},{"_tag":"cmplx$http://www.complex.com/sports/2017/06/floyd-mayweather-will-beat-conor-mcgregor"}]})";
-  auto success = ds.ranking_request(uuid, context, response, &status);
+	const auto uuid = R"(uuid_1)";
+	const auto context = R"({"User":{"_age":22},"Geo":{"country":"United States","state":"California","city":"Anaheim"},"_multi":[{"_tag":"cmplx$http://www.complex.com/style/2017/06/kid-puts-together-hypebeast-pop-up-book-for-art-class"},{"_tag":"cmplx$http://www.complex.com/sports/2017/06/floyd-mayweather-will-beat-conor-mcgregor"}]})";
+	auto success = ds.ranking_request(uuid, context, response, &status);
 	
-  if (success != 0)
-  {	
-    std::cout << "an error happened with code: " << success << std::endl;
+	if (success != 0)
+	{	
+		std::cout << "an error happened with code: " << success << std::endl;
 		std::cout << "status error code: " << status.get_error_code() << std::endl;
 		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
 	}
@@ -46,19 +46,22 @@ int main()
 
 	// Report the reward to ds
 	success = ds.report_outcome(response.get_uuid().c_str(), 1.0f, &status);
-	if (success != 0)
+	if (success != 0) 
+	{
 		std::cout << "an error happened with code: " << success << std::endl;
 		std::cout << "status error code: " << status.get_error_code() << std::endl;
 		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
+	}
 
 	// Send another reward with an invalid uuid
 	const char* invalid_uuid = "";
 	success = ds.report_outcome(invalid_uuid, "outcome_data", &status);
 	if (success != 0)
+	{
 		std::cout << "an error happened with code: " << success << std::endl;
 		std::cout << "status error code: " << status.get_error_code() << std::endl;
 		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
-
+	}
 	return 0;
 }
 

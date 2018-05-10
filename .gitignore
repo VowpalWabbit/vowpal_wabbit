@@ -21,7 +21,6 @@ config.h
 *.la
 *.lo
 vowpalwabbit/stamp-*
-Makefile
 config.status
 test/*.predict
 test/*.cmp
@@ -123,3 +122,4 @@ vowpalwabbit/vw.VC.db
 /python/pylibvw.cp35-win_amd64.pyd
 decision_service/ds.VC.VC.opendb
 decision_service/ds.VC.db
+decision_service/unit_test/dsclient-test.out

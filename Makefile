@@ -89,12 +89,18 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree
+all:	vw library_example java spanning_tree ds_clientlib
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
 export
+
+ds_clientlib:
+	cd decision_service/dsclientlib; $(MAKE) -j $(NPROCS) things
+
+ds_clientlib_test:
+	cd decision_service/unit_test; $(MAKE) -j $(NPROCS) things
 
 spanning_tree:
 	cd cluster; $(MAKE)
@@ -128,10 +134,11 @@ java: vw
 
 .FORCE:
 
-test: .FORCE vw library_example
+test: .FORCE vw library_example ds_clientlib_test
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
+	(cd decision_service/unit_test && ./dsclient-test.out)
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."
@@ -152,5 +159,6 @@ clean:
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
 	cd java    && $(MAKE) clean
+	cd decision_service/dsclientlib    && $(MAKE) clean
 
 .PHONY: all clean install doc

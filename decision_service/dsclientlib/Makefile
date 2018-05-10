@@ -1,8 +1,5 @@
-TARGET = dsclientlib
-LIBS = -lm
-CXX = g++
-CXXFLAGS = -g -Wall -std=c++11
-LIBS += -pthread -lboost_system -lcrypto -lssl -lcpprest
+TARGET = libdsclient.a
+ARFLAGS = rcs 
 
 INCLUDE = -I ../include
 
@@ -11,7 +8,9 @@ INCLUDE = -I ../include
 default: $(TARGET)
 all: default
 
-SOURCES = $(wildcard *.cc) $(wildcard */*.cc)
+things: all
+
+SOURCES = $(filter-out mail.cc, $(wildcard *.cc)) $(wildcard */*.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 
@@ -21,7 +20,7 @@ HEADERS = $(wildcard *.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) $(LIBS) -Wall $(LIBS) -o $@
+	ar $(ARFLAGS) $@ $(OBJECTS) 
 
 clean:
 	-rm -f *.o

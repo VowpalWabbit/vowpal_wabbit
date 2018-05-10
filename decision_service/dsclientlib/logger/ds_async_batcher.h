@@ -88,10 +88,10 @@ namespace decision_service {
 		async_batcher(TSender& pipe, error_callback_fn* perror_cb = nullptr,
                   size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
 			: _sender(pipe),
-      _perror_cb(perror_cb),
 	    _batch_max_size(batch_max_size),
 			_batch_timeout_ms(batch_timeout_ms),
-			_queue_max_size(queue_max_size)
+			_queue_max_size(queue_max_size),
+      _perror_cb(perror_cb)
 		{
 			_thread_is_running = true;
 			_background_thread = std::thread(&async_batcher::timer, this);
