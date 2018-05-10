@@ -13,7 +13,7 @@ before_install:
   - cd build
   - cmake .. 
   - make
-  - make install
+  - sudo make install
   - cd ../../../
   #### end cpprest
   - sudo pip install cpp-coveralls wheel
