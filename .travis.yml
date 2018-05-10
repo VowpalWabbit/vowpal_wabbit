@@ -12,8 +12,9 @@ before_install:
   - mkdir build
   - cd build
   - cmake .. 
-  - make -j
+  - make
   - make install
+  - cd ../../../
   #### end cpprest
   - sudo pip install cpp-coveralls wheel
   # use miniconda for python package testing
