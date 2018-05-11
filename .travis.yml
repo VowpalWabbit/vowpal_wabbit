@@ -4,6 +4,7 @@ compiler:
 before_install:
   - printenv
   - env
+  - export PATH=$PATH:/usr/local/lib
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
