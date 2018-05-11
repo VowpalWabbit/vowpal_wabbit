@@ -3,7 +3,10 @@
 #include<stdio.h>
 #include<iostream>
 #include<memory>
+
+#ifndef VW_NOEXCEPT
 #include "vw_exception.h"
+#endif
 
 template<class T>
 T* calloc_or_throw(size_t nmemb)
@@ -15,7 +18,11 @@ T* calloc_or_throw(size_t nmemb)
   { const char* msg = "internal error: memory allocation failed!\n";
     // use low-level function since we're already out of memory.
     fputs(msg, stderr);
+#ifdef VW_NOEXCEPT
+    return nullptr;
+#else
     THROW(msg);
+#endif
   }
   return (T*)data;
 }

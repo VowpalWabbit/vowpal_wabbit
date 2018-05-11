@@ -251,7 +251,7 @@ struct features
   }
 
   // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
-  // ~features() { ... }
+  // ~features() { ... } 
 
   inline size_t size() const { return values.size(); }
 
@@ -284,7 +284,7 @@ struct features
     if (indicies.end() != indicies.begin())
       indicies.end() = indicies.begin() + i;
     if (space_names.begin() != space_names.end())
-    { free_space_names(i);
+    { free_space_names((size_t)i);
       space_names.end() = space_names.begin() + i;
     }
   }
@@ -351,3 +351,4 @@ struct features
     sum_feat_sq = src.sum_feat_sq;
   }
 };
+

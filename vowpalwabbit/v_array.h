@@ -17,7 +17,10 @@ license as described in the file LICENSE.
 #define __INLINE inline
 #endif
 
+#ifndef VW_NOEXCEPT
 #include "vw_exception.h"
+#endif
+
 #include "memory.h"
 
 const size_t erase_point = ~ ((1 << 10) -1);
@@ -54,13 +57,19 @@ public:
     _end++;
   }
   T& operator[](size_t i) const { return _begin[i]; }
+  T& get(size_t i) const { return _begin[i]; }
   inline size_t size() const {return _end-_begin;}
   void resize(size_t length)
   { if ((size_t)(end_array-_begin) != length)
     { size_t old_len = _end-_begin;
       T* temp = (T *)realloc(_begin, sizeof(T) * length);
       if ((temp == nullptr) && ((sizeof(T)*length) > 0))
-      { THROW("realloc of " << length << " failed in resize().  out of memory?");
+      { 
+#ifdef VW_NOEXCEPT
+	return;
+#else
+	THROW("realloc of " << length << " failed in resize().  out of memory?");
+#endif
       }
       else
         _begin = temp;

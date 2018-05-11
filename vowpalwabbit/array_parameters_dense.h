@@ -49,7 +49,7 @@ private:
 public:
   typedef dense_iterator<weight> iterator;
   typedef dense_iterator<const weight> const_iterator;
-  dense_parameters(size_t length, uint32_t stride_shift = 0)
+  dense_parameters(uint64_t length, uint32_t stride_shift = 0)
     : _begin(calloc_mergable_or_throw<weight>(length << stride_shift)),
     _weight_mask((length << stride_shift) - 1),
     _stride_shift(stride_shift),
@@ -75,7 +75,7 @@ public:
   const_iterator cbegin() { return const_iterator(_begin, _begin, stride()); }
   const_iterator cend() { return const_iterator(_begin + _weight_mask + 1, _begin, stride()); }
 
-  inline weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+  inline weight& operator[](uint64_t i) const { return _begin[i & _weight_mask]; }
   void shallow_copy(const dense_parameters& input)
   {
     if (!_seeded)
@@ -86,7 +86,7 @@ public:
     _seeded = true;
   }
 
-  inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
+  inline weight& strided_index(uint64_t index) { return operator[](index << _stride_shift); }
 
   template<class R, class T> void set_default(R& info)
   {

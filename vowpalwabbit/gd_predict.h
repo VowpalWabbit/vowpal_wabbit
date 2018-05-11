@@ -32,8 +32,8 @@ namespace GD
   {
     for (features::iterator& f : fs)
     {
-      const weight& w = weights[(f.index() + offset)];
-      T(dat, mult*f.value(), w);
+      const float& w = weights[(f.index() + offset)];
+	  T(dat, mult*f.value(), w);
     }
   }
 
