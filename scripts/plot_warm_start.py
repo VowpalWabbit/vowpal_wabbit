@@ -89,14 +89,15 @@ def gen_vw_options(mod):
 	if 'optimal_approx' in mod.param:
 		vw_options['passes'] = 5
 		vw_options['oaa'] = mod.result['num_classes']
-		vw_options['cache_file'] = mod.param['data'] + '.cache'
+		vw_options['cache_file'] = mod.data_full_path + '.cache'
 	elif 'majority_approx' in mod.param:
-		pass
+		# basically we would like to skip vw running as fast as possible
+		vw_options['cbify'] = mod.result['num_classes']
+		vw_options['warm_start'] = 0
+		vw_options['bandit'] = 0
 	else:
 		vw_options['corrupt_type_bandit'] = mod.corrupt_type_bandit
 		vw_options['corrupt_prob_bandit'] = mod.corrupt_prob_bandit
-		vw_options['validation_method'] = mod.validation_method
-		vw_options['weighting_scheme'] = mod.weighting_scheme
 		vw_options['bandit'] = mod.bandit
 
 		if mod.adf_on is True:
@@ -122,6 +123,8 @@ def gen_vw_options(mod):
 		vw_options['cbify'] = mod.result['num_classes']
 		vw_options['warm_start'] = mod.result['warm_start']
 		vw_options['overwrite_label'] = mod.result['majority_class']
+		vw_options['validation_method'] = mod.result['validation_method']
+		vw_options['weighting_scheme'] = mod.result['weighting_scheme']
 
 		#if mod.cover_on:
 		#	alg_option += ' --cover 5 --psi 0.01 --nounif '
@@ -148,7 +151,7 @@ def disperse(l, ch):
 	return s
 
 def param_to_str(param):
-	param_list = [str(k)+'='+str(v) for k,v in param.iteritems() ]
+	param_list = [ str(k)+'='+str(v) for k,v in param.iteritems() ]
 	return disperse(param_list, '_')
 
 def param_to_result(param, result):
@@ -165,17 +168,24 @@ def gen_comparison_graph(mod):
 		mod.compute_optimal = False
 
 	param_to_result(mod.param, mod.result)
-	mod.data_full_path = mod.ds_path + mod.param['data']
+	mod.data_full_path = mod.ds_path + str(mod.param['fold']) + '/' + mod.param['data']
 
+	mod.result['fold'] = mod.param['fold']
 	mod.result['total_size'] = get_num_lines(mod.data_full_path)
 	mod.result['num_classes'] = get_num_classes(mod.data_full_path)
 	mod.result['majority_size'], mod.result['majority_class'] = get_majority_class(mod.data_full_path)
 	mod.result['progress'] = int(math.ceil(float(mod.result['total_size']) / float(mod.num_checkpoints)))
-	mod.vw_output_filename = mod.results_path + param_to_str(mod.param) + '.txt'
+	mod.vw_output_dir = mod.results_path + remove_suffix(mod.param['data']) + '/'
+	mod.vw_output_filename = mod.vw_output_dir + param_to_str(mod.param) + '.txt'
 
 	if mod.compute_optimal is False:
 		mod.result['warm_start'] = mod.param['warm_start_multiplier'] * mod.result['progress']
 		mod.bandit = mod.result['total_size'] - mod.result['warm_start']
+		mod.result['validation_method'] = mod.validation_method
+		mod.result['weighting_scheme'] = mod.weighting_scheme
+		mod.result['corrupt_type_bandit'] = mod.corrupt_type_bandit
+		mod.result['corrupt_prob_bandit'] = mod.corrupt_prob_bandit
+		mod.result['fold'] = mod.param['fold']
 
 	#plot_errors(mod)
 	execute_vw(mod)
@@ -246,11 +256,14 @@ def params_per_task(mod):
 	params_warm_start_multiplier = dictify('warm_start_multiplier', mod.warm_start_multipliers)
 	params_learning_rate = dictify('learning_rate', mod.learning_rates)
 
+	# could potentially induce a bug if the maj and best does not have this parameter
+	params_fold = dictify('fold', mod.folds)
+
 	# Algorithm parameters
 	params_cb_type = dictify('cb_type', mod.choices_cb_type)
 
 	# Common parameters
-	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup, params_warm_start_multiplier, params_learning_rate, params_cb_type])
+	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup, params_warm_start_multiplier, params_learning_rate, params_cb_type, params_fold])
 	params_common = filter(lambda param: param['corrupt_type_supervised'] == 1 or abs(param['corrupt_prob_supervised']) > 1e-4, params_common)
 
 	# Baseline parameters construction
@@ -275,13 +288,19 @@ def params_per_task(mod):
 
 	# Optimal baselines parameter construction
 	if mod.optimal_on:
-		params_optimal = [{ 'optimal_approx': True }, { 'majority_approx': True }]
+		params_optimal = [{ 'optimal_approx': True }]
 	else:
 		params_optimal = []
 
+	if mod.majority_on:
+		params_majority = [{ 'majority_approx': True }]
+	else:
+		params_majority = []
+
+
 	# Common factor in all 3 groups: dataset
 	params_dataset = dictify('data', mod.dss)
-	params_all = param_cartesian( params_dataset, params_baseline + params_algs + params_optimal )
+	params_all = param_cartesian( params_dataset, params_baseline + params_algs + params_optimal + params_majority )
 	params_all = sorted(params_all)
 	print len(params_all)
 	for row in params_all:
@@ -307,7 +326,7 @@ def get_num_classes(ds):
 	return n_actions
 
 def get_majority_class(dataset_name):
-	maj_class_str = subprocess.check_output(('zcat '+ dataset_name +' | cut -d \' \' -f 1 | sort | uniq -c | sort -r | head -1 | xargs '), shell=True)
+	maj_class_str = subprocess.check_output(('zcat '+ dataset_name +' | cut -d \' \' -f 1 | sort | uniq -c | sort -r -n | head -1 | xargs '), shell=True)
 	maj_size, maj_class = maj_class_str.split()
 	return int(maj_size), int(maj_class)
 
@@ -349,6 +368,7 @@ def write_summary_header(mod):
 def main_loop(mod):
 	mod.summary_file_name = mod.results_path+str(mod.task_id)+'of'+str(mod.num_tasks)+'.sum'
 	mod.result_template_list = [
+	'fold', 0,
 	'data', 'ds',
 	'num_classes', 0,
 	'total_size' , 0,
@@ -383,6 +403,15 @@ def main_loop(mod):
 	for mod.param in mod.config_task:
 		gen_comparison_graph(mod)
 
+def create_dir(dir):
+	if not os.path.exists(dir):
+		os.makedirs(dir)
+		import stat
+		os.chmod(dir, os.stat(dir).st_mode | stat.S_IWOTH)
+
+def remove_suffix(filename):
+	return os.path.basename(filename).split('.')[0]
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='vw job')
 	parser.add_argument('task_id', type=int, help='task ID, between 0 and num_tasks - 1')
@@ -394,18 +423,27 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	if args.task_id == 0:
-		if not os.path.exists(args.results_dir):
-			os.makedirs(args.results_dir)
-			import stat
-			os.chmod(args.results_dir, os.stat(args.results_dir).st_mode | stat.S_IWOTH)
+		# To avoid race condition of writing to the same file at the same time
+		create_dir(args.results_dir)
+
+		# This is specifically designed for teamscratch, as accessing a folder
+		# with a huge number of files can be super slow. Hence, we create a subfolder
+		# for each dataset to alleviate this.
+		dss = ds_files(args.ds_dir + '1/')
+		for ds in dss:
+			ds_no_suffix = remove_suffix(ds)
+			create_dir(args.results_dir + ds_no_suffix + '/')
 	else:
+		# may still have the potential of race condition on those subfolders (if
+		# we have a lot of datasets to run and the datasets are small)
 		while not os.path.exists(args.results_dir):
 			time.sleep(1)
 
 	mod = model()
-	mod.baselines_on = False
+	mod.baselines_on = True
 	mod.algs_on = True
 	mod.optimal_on = False
+	mod.majority_on = False
 
 	mod.num_tasks = args.num_tasks
 	mod.task_id = args.task_id
@@ -416,33 +454,18 @@ if __name__ == '__main__':
 
 	mod.num_checkpoints = 200
 
-	mod.adf_on = True
-
 	# use fractions instead of absolute numbers
 	#mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
-	mod.warm_start_multipliers = [pow(2,i) for i in range(1)]
+	mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
 
 	mod.choices_cb_type = ['mtr']
 	#mod.choices_choices_lambda = [2,4,8]
-	mod.choices_choices_lambda = [2]
+	mod.choices_choices_lambda = [2, 4, 8]
 
 	#mod.choices_corrupt_type_supervised = [1,2,3]
 	#mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
-	mod.choices_corrupt_type_supervised = [1,2]
-	mod.choices_corrupt_prob_supervised = [0.0,0.5]
-
-	mod.corrupt_type_bandit = 1
-	mod.corrupt_prob_bandit = 0.0
-
-	mod.validation_method = 1
-	mod.epsilon = 0.05
-
-	mod.choices_lambda = 2
-	mod.weighting_scheme = 1
-
-	mod.epsilon_on = True
-
-	mod.critical_size_ratios = [184 * pow(2, -i) for i in range(7) ]
+	mod.choices_corrupt_type_supervised = [1,2,3]
+	mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
 
 	if args.num_learning_rates == 1:
 		mod.learning_rates = [0.5]
@@ -451,8 +474,26 @@ if __name__ == '__main__':
 	else:
 		mod.learning_rates = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0]
 
+	mod.adf_on = True
+
+	mod.corrupt_type_bandit = 1
+	mod.corrupt_prob_bandit = 0.0
+
+	mod.validation_method = 1
+	mod.weighting_scheme = 1
+
+	mod.epsilon = 0.05
+	mod.epsilon_on = True
+
+	mod.critical_size_ratios = [184 * pow(2, -i) for i in range(7) ]
+
+	#mod.folds = range(1,11)
+	mod.folds = range(1,6)
+
 	print 'reading dataset files..'
-	mod.dss = ds_files(mod.ds_path)
+	#TODO: this line specifically for multiple folds
+	#Need a systematic way to detect subfolder names 
+	mod.dss = ds_files(mod.ds_path + '1/')
 	print len(mod.dss)
 	#mod.dss = ["ds_223_63.vw.gz"]
 	#mod.dss = mod.dss[:5]
