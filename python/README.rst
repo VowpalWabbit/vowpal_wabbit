@@ -104,7 +104,9 @@ For Mac OSX
     $ brew install boost-python3
 
 Having `conda` on a Linux-based system requires a build with conda-provided packages to ensure consistency:
+
 .. code-block:: bash
+
     # create/activate a conda environment (depends on your choice, no example is given)
     # boost packages
     conda install boost libboost py-boost
