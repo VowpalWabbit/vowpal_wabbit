@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 #include <stdint.h>
 #include "v_array.h"
+#include "no_label.h"
 #include "simple_label.h"
 #include "multiclass.h"
 #include "multilabel.h"
@@ -33,7 +34,8 @@ const unsigned char node_id_namespace  = 136; // this is \x88
 const unsigned char message_namespace  = 137; // this is \x89
 
 typedef union
-{ label_data simple;
+{ no_label::no_label empty;
+  label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;

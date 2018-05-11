@@ -322,6 +322,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, mul
       // learn
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
+      float old_weight = ec1->weight;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
@@ -329,6 +330,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, mul
       ec1->ft_offset = data.ft_offset;
       base.learn(*ec1);
       ec1->ft_offset = old_offset;
+      ec1->weight = old_weight;
       unsubtract_example(ec1);
 
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
