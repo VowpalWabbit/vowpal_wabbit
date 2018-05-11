@@ -1,4 +1,4 @@
-libvwslim_la_SOURCES = example_predict.cc example_predict_builder.cc model_parser.cc opts.cc vw_slim_predict.cc
+libvwslim_la_SOURCES = ../vowpalwabbit/example_predict.cc example_predict_builder.cc model_parser.cc opts.cc vw_slim_predict.cc
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

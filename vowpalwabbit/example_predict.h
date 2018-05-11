@@ -52,4 +52,6 @@ class safe_example_predict : public example_predict
 public:
   safe_example_predict();
   ~safe_example_predict();
+
+  void clear();
 };
