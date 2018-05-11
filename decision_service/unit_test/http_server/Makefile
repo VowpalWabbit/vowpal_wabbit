@@ -1,7 +1,6 @@
-TARGET = libdsclient.a
-ARFLAGS = rcs 
+TARGET = http_server
 FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
-
+LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest
 INCLUDE = -I ../include
 
 .PHONY: default all clean
@@ -9,10 +8,7 @@ INCLUDE = -I ../include
 default: $(TARGET)
 all: default
 
-things: all
-
-SOURCES = $(filter-out mail.cc, $(wildcard *.cc)) $(wildcard */*.cc)
-OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
+OBJECTS = $(patsubst %.cc, %.o, $(wildcard *.cc))
 HEADERS = $(wildcard *.h)
 
 %.o: %.cc $(HEADERS)
@@ -21,7 +17,7 @@ HEADERS = $(wildcard *.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	ar $(ARFLAGS) $@ $(OBJECTS) 
+	$(CXX) $(OBJECTS) $(LIBS) -Wall $(LIBS) -o $@
 
 clean:
 	-rm -f *.o
