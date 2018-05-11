@@ -152,7 +152,7 @@ def disperse(l, ch):
 
 def param_to_str(param):
 	param_list = [ str(k)+'='+str(v) for k,v in param.iteritems() ]
-	return disperse(param_list, '_')
+	return disperse(param_list, ',')
 
 def param_to_result(param, result):
 	for k, v in param.iteritems():
@@ -297,6 +297,11 @@ def params_per_task(mod):
 	else:
 		params_majority = []
 
+	#print len(params_baseline)
+	#print len(params_algs)
+	#print len(params_common)
+	#raw_input('..')
+
 
 	# Common factor in all 3 groups: dataset
 	params_dataset = dictify('data', mod.dss)
@@ -419,9 +424,12 @@ if __name__ == '__main__':
 	parser.add_argument('--results_dir', default='../../../figs/')
 	parser.add_argument('--ds_dir', default='../../../vwshuffled/')
 	parser.add_argument('--num_learning_rates', type=int, default=1)
+	parser.add_argument('--num_datasets', type=int, default=-1)
 
 
 	args = parser.parse_args()
+	flag_dir = args.results_dir + 'flag/'
+
 	if args.task_id == 0:
 		# To avoid race condition of writing to the same file at the same time
 		create_dir(args.results_dir)
@@ -433,10 +441,12 @@ if __name__ == '__main__':
 		for ds in dss:
 			ds_no_suffix = remove_suffix(ds)
 			create_dir(args.results_dir + ds_no_suffix + '/')
+
+		create_dir(flag_dir)
 	else:
 		# may still have the potential of race condition on those subfolders (if
 		# we have a lot of datasets to run and the datasets are small)
-		while not os.path.exists(args.results_dir):
+		while not os.path.exists(flag_dir):
 			time.sleep(1)
 
 	mod = model()
@@ -492,9 +502,14 @@ if __name__ == '__main__':
 
 	print 'reading dataset files..'
 	#TODO: this line specifically for multiple folds
-	#Need a systematic way to detect subfolder names 
+	#Need a systematic way to detect subfolder names
 	mod.dss = ds_files(mod.ds_path + '1/')
 	print len(mod.dss)
+
+	if args.num_datasets == -1 or args.num_datasets > len(mod.dss):
+		pass
+	else:
+		mod.dss = mod.dss[:args.num_datasets]
 	#mod.dss = ["ds_223_63.vw.gz"]
 	#mod.dss = mod.dss[:5]
 

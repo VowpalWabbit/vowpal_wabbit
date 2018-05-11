@@ -87,6 +87,8 @@ def alg_str(alg_name):
 	if (alg_name[2] == False and alg_name[3] == False):
 		return 'combined_choices_lambda='+str(alg_name[1])
 
+	return 'unknown algorithm'
+
 def problem_str(name_problem):
 	return 'supervised_corrupt_type='+str(name_problem[0]) \
 			+'_supervised_corrupt_prob='+str(name_problem[1]) \
