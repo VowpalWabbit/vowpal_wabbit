@@ -14,6 +14,7 @@ namespace decision_service {
 
 	public:
     using error_fn = void(*)(const api_status&, void*);
+
     explicit driver(const utility::config_collection& config, error_fn fn = nullptr, void* err_context = nullptr);
 		~driver();
 
@@ -24,8 +25,15 @@ namespace decision_service {
 		// report the reward for the top action
 		int report_outcome(const char* uuid, const char* outcome_data, api_status* = nullptr);
 		int report_outcome(const char* uuid, float reward, api_status* = nullptr);
-	  
-	private:
+
+    driver(driver&&) = default;
+    driver& operator=(driver&&) = default;
+
+	  // prevent accidental copy, since destructor will deallocate the implementation
+    driver(const driver&) = delete;
+    driver& operator=(driver&) = delete;
+
+	  private:
 		driver_impl* _pimpl;
 	};
 }
