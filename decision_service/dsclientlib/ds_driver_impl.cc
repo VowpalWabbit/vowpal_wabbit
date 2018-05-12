@@ -10,9 +10,9 @@
 
 // this macro assumes that success_code equals 0
 #define TRY_OR_RETURN(x) do { \
-  int retval = (x); \
-  if (retval != 0) { \
-    return retval; \
+  int retval__LINE__ = (x); \
+  if (retval__LINE__ != 0) { \
+    return retval__LINE__; \
   } \
 } while (0)
 // Why while(0) ? It make the macro safe under various conditions. Check link below
