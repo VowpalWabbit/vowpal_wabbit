@@ -12,7 +12,7 @@ namespace decision_service
     delete _pimpl;
   }
 
-  driver::driver(const utility::config_collection& config, error_fn fn, void* err_context)
+  driver::driver(const utility::config_collection& config, error_fn fn, void* err_context) 
   {
     _pimpl = new driver_impl(config, fn, err_context);
   }

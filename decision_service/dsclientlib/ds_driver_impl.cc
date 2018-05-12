@@ -4,7 +4,7 @@
 #include "logger/ds_logger.h"
 #include "ds_ranking_response.h"
 #include "ds_driver_impl.h"
-#include "ds_event.h"
+#include "ds_ranking_event.h"
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 

@@ -21,9 +21,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ds_event.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ds_restapi_data_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -66,15 +63,15 @@
     <ClInclude Include="..\include\ds_config_utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ds_ranking_event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ds_config_collection.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ds_driver.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ds_event.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ds_ranking_response.cc">
@@ -105,6 +102,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utility\ds_config_utility.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_ranking_event.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
