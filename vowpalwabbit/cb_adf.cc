@@ -126,7 +126,6 @@ bool test_adf_sequence(multi_ex& ec_seq)
   for (size_t k=0; k<ec_seq.size(); k++)
   {
     example *ec = ec_seq[k];
-
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
@@ -217,21 +216,25 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   float loss = 0.;
 
-  bool is_test = false;
+  bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
     loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
   else
-    is_test = true;
+    labeled_example = false;
 
-  all.sd->update(ec.test_only, !is_test, loss, ec.weight, num_features);
-  return is_test;
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq->size(); i++)
+    holdout_example &= (*ec_seq)[i]->test_only;
+
+  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
+  return labeled_example;
 }
 
 void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec)) return;
+  if (example_is_newline(ec) || (CB::ec_is_example_header(ec) && ec_seq->size() == 1)) return;
 
-  bool is_test = update_statistics(all, c, ec, ec_seq);
+  bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
   for (int sink : all.final_prediction_sink)
@@ -251,7 +254,7 @@ void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true);
 }
 
 void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
@@ -261,7 +264,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
   if (example_is_newline_not_header(ec)) return;
 
-  bool is_test = update_statistics(all, c, ec, ec_seq);
+  bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
   for (int sink : all.final_prediction_sink)
     print_action_score(sink, ec.pred.a_s, ec.tag);
@@ -278,7 +281,7 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true);
 }
 
 void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
