@@ -8,13 +8,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 
-//this macro assumes that success_code equals 0
+// this macro assumes that success_code equals 0
 #define TRY_OR_RETURN(x) do { \
   int retval = (x); \
   if (retval != 0) { \
     return retval; \
   } \
 } while (0)
+// Why while(0) ? It make the macro safe under various conditions. Check link below
+// https://stackoverflow.com/questions/257418/do-while-0-what-is-it-good-for
 
 namespace decision_service
 {
