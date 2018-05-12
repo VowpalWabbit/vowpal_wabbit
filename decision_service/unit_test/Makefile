@@ -1,5 +1,4 @@
 TARGET = dsclient-test.out
-FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
 LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -ldsclient -lboost_unit_test_framework
 LIBDIR = -L ../dsclientlib
 INCLUDE = -I ../include -I ../dsclientlib
