@@ -17,13 +17,13 @@ namespace decision_service
     _pimpl = new driver_impl(config, fn, err_context);
   }
 
-  int driver::ranking_request(const char* uuid, const char* context_json, ranking_response& response,
+  int driver::choose_rank(const char* uuid, const char* context_json, ranking_response& response,
                               api_status* status)
   {
     return _pimpl->ranking_request(uuid, context_json, response, status);
   }
 
-  int driver::ranking_request(const char* context_json, ranking_response& response, api_status* status)
+  int driver::choose_rank(const char* context_json, ranking_response& response, api_status* status)
   {
     return _pimpl->ranking_request(context_json, response, status);
   }

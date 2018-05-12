@@ -31,26 +31,26 @@ BOOST_AUTO_TEST_CASE(ranking)
 	decision_service::ranking_response response;
 
 	// request ranking
-	BOOST_CHECK_EQUAL(ds.ranking_request(uuid, context, response), decision_service::error_code::success);
+	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), decision_service::error_code::success);
 
 	//check expected returned codes
-	BOOST_CHECK_EQUAL(ds.ranking_request(invalid_uuid, context, response), decision_service::error_code::invalid_argument);//invalid uuid
-	BOOST_CHECK_EQUAL(ds.ranking_request(uuid, invalid_context, response), decision_service::error_code::invalid_argument);//invalid context
+	BOOST_CHECK_EQUAL(ds.choose_rank(invalid_uuid, context, response), decision_service::error_code::invalid_argument);//invalid uuid
+	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, invalid_context, response), decision_service::error_code::invalid_argument);//invalid context
 
 	//same tests now but with the api_status
   auto status = new decision_service::api_status();
 
 	//invalid uuid
-	ds.ranking_request(uuid, invalid_context, response, status);
+	ds.choose_rank(uuid, invalid_context, response, status);
 	BOOST_CHECK_EQUAL(status->get_error_code(), decision_service::error_code::invalid_argument);
 
 	//invalid context
-	ds.ranking_request(invalid_uuid, context, response, status);
+	ds.choose_rank(invalid_uuid, context, response, status);
 	BOOST_CHECK_EQUAL(status->get_error_code(), decision_service::error_code::invalid_argument);
 	
 	//valid request => status is reset
   decision_service::api_status::try_update(status, -42, "hello");
-	ds.ranking_request(uuid, context, response, status);
+	ds.choose_rank(uuid, context, response, status);
 	BOOST_CHECK_EQUAL(status->get_error_code(), 0);
 	BOOST_CHECK_EQUAL(status->get_error_msg(), "");
 

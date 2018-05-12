@@ -32,7 +32,7 @@ int main()
 	// Use ds to choose the top action
 	const auto uuid = R"(uuid_1)";
 	const auto context = R"({"User":{"_age":22},"Geo":{"country":"United States","state":"California","city":"Anaheim"},"_multi":[{"_tag":"cmplx$http://www.complex.com/style/2017/06/kid-puts-together-hypebeast-pop-up-book-for-art-class"},{"_tag":"cmplx$http://www.complex.com/sports/2017/06/floyd-mayweather-will-beat-conor-mcgregor"}]})";
-	auto success = ds.ranking_request(uuid, context, response, &status);
+	auto success = ds.choose_rank(uuid, context, response, &status);
 	
 	if (success != 0)
 	{	
