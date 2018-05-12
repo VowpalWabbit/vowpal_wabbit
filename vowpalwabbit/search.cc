@@ -2761,6 +2761,7 @@ void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&))
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->p->lp = lp;
+  this->priv->all->p->lp.test_label = (bool (*)(void*))is_test;
   this->priv->label_is_test = is_test;
 }
 

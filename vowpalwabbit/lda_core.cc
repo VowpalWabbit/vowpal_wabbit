@@ -1191,6 +1191,7 @@ void compute_coherence_metrics(lda &l)
     compute_coherence_metrics(l, l.all->weights.dense_weights);
 
 }
+
 void end_pass(lda &l)
 {
   if (l.examples.size())

@@ -13,7 +13,7 @@ namespace no_label
 {
   char* bufread_no_label(shared_data* sd, label_data* ld, char* c) { return c; }
   
-  size_t read_cached_no_label(shared_data* sd, void* v, io_buf& cache) { return 0; }
+  size_t read_cached_no_label(shared_data* sd, void* v, io_buf& cache) { return 1; }
   
   float get_weight(void* v) { return 1.; }
   
