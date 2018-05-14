@@ -1,6 +1,16 @@
 language: cpp
 compiler:
   - gcc
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+      env: LEGACY=false
+    - os: linux
+      env: LEGACY=true
+	
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
@@ -17,11 +27,11 @@ before_install:
   - conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 script:
   - make all
-  - make vwslim
+  - if [[ "$LEGACY" == "false" ]]; then make vwslim ; fi
   - make python
   - mvn clean test -f java/pom.xml
   - make test
-  - make vwslimtests
+  - if [[ "$LEGACY" == "false" ]]; then make vwslimtests ; fi
   - cd test
   - ./test_race_condition.sh
   - cd ..
