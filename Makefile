@@ -19,12 +19,8 @@ endif
 UNAME := $(shell uname)
 ARCH_UNAME := $(shell uname -m)
 LIBS = -l boost_program_options -l pthread -l z
-ifeq ($(BOOST_INCLUDE),)
-  BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
-endif
-ifeq ($(BOOST_LIBRARY),)
-  BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
-endif
+BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
+BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
 NPROCS := 1
 
 ifeq ($(UNAME), Linux)
@@ -57,6 +53,14 @@ ifeq ($(UNAME), Darwin)
   endif
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
+
+ifneq ($(USER_BOOST_INCLUDE),)
+  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
+endif
+ifneq ($(USER_BOOST_LIBRARY),)
+  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
+endif
+
 
 JSON_INCLUDE = -I ../rapidjson/include
 
