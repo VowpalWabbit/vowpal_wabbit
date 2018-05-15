@@ -103,31 +103,16 @@ For Mac OSX
     # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
     $ brew install boost-python3
 
-Having `conda` on a Linux-based system requires a build with conda-provided packages to ensure consistency:
+Having `conda` on a Linux-based system requires a build with conda-provided packages to ensure consistency. There is a dedicated script that installs required packages directly into your conda environment:
 
 .. code-block:: bash
 
-    # create/activate a conda environment (depends on your choice, no example is given)
-    # boost packages
-    conda install boost libboost py-boost
-    # a consistent compiler (g++ 7.2.0)
-    conda install gxx_linux-64
-    # pick up the newly installed compiler
-    source activate YourEnvironmentName
-    # make a soft link to the compiler, since Makefiles internally use `which g++`
-    [ ! -z ${GXX} ] && ln -s ${GXX} `dirname ${GXX}`/g++
-    # set BOOST_XXX variables, that will be used to find boost libs in linking
-    export BOOST_INCLUDE='-I /your_conda_env_path/include/boost -I /your_conda_env_path/include'
-    export BOOST_LIBRARY='-L /your_conda_env_path/lib'
-    # get the package from github
     git clone https://github.com/JohnLangford/vowpal_wabbit.git
-    # build the C++ binaries and python package
     cd vowpal_wabbit
-    python python python/setup.py install
+    ./python/conda_install.sh
+    
 
 This procedure was tested with python3, but is expected to also work with python2.
-Typically, you can find `/your_conda_env_path` by either checking the `$CONDA_PREFIX` environmental variable
-or `conda info --base` if you do not have any environments (beware, environments make your life better).
 
  
 Development
