@@ -50,7 +50,7 @@ xxd -i regression_data_5.pred  >> $DATA_H
 
 # testing large models
 vw -d regression_data_3.txt -f regression_data_6.model -c -k --passes 2 --holdout_off -q ab -b 33 --sparse_weights
-vw -d regression_data_3.txt -i regression_data_6.model -t -p regression_data_6.pred
+vw -d regression_data_3.txt -i regression_data_6.model -t -p regression_data_6.pred --sparse_weights
 
 xxd -i regression_data_6.model >> $DATA_H
 xxd -i regression_data_6.pred  >> $DATA_H
