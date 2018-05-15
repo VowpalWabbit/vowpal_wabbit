@@ -108,10 +108,8 @@ Having `conda` on a Linux-based system requires a build with conda-provided pack
 .. code-block:: bash
 
     git clone https://github.com/JohnLangford/vowpal_wabbit.git
-    cd vowpal_wabbit
-    ./python/conda_install.sh
+    ./vowpal_wabbit/python/conda_install.sh
     
-
 This procedure was tested with python3, but is expected to also work with python2.
 
  
