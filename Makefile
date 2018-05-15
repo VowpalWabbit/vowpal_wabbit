@@ -100,10 +100,10 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
+	cd vowpalwabbit && $(MAKE) -j $(NPROCS) things
 
 vwslim: vw
-	cd vowpalwabbitslim; $(MAKE) -j $(NPROCS) things
+	cd vowpalwabbitslim && $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
 vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
@@ -144,7 +144,7 @@ bigtests:	.FORCE vw
 	(cd big_tests && $(MAKE) $(MAKEFLAGS))
 
 vwslimtests:	vw vwslim
-	cd vowpalwabbitslim; $(MAKE) test
+	cd vowpalwabbitslim && $(MAKE) test
 
 install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install; cd ../java; $(MAKE) install;
