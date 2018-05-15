@@ -10,7 +10,7 @@ matrix:
       env: LEGACY=false
     - os: linux
       env: LEGACY=true
-	
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
