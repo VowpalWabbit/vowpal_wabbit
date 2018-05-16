@@ -8,7 +8,7 @@ matrix:
       services: docker
       sudo: required
       env: LEGACY=false
-      env: sh=docker exec -ti travis-ci bash -c
+      env: sh="docker exec -ti travis-ci bash -c"
     - os: linux
       env: LEGACY=true
       env: sh=/bin/bash
@@ -18,10 +18,10 @@ before_install:
   - docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash
 
 install:
-  - $sh /vw/travis-install.sh
+  - $sh ./travis-install.sh
 
 script:
-  - $sh /vw/travis-script.sh
+  - $sh ./travis-script.sh
    
 after_success:
   - $sh "coveralls --exclude lib --exclude tests --gcov-options '\-lp'"
