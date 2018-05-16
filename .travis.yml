@@ -7,13 +7,15 @@ matrix:
     - os: linux
       services: docker
       sudo: required
-      env: LEGACY=false
-      env: rootdir=/vw 
-      env: sh="docker exec -ti travis-ci bash -c"
+      env: 
+        - LEGACY=false
+        - rootdir=/vw 
+        - sh="docker exec -ti travis-ci bash -c"
     - os: linux
-      env: LEGACY=true
-      env: rootdir=. 
-      env: sh=/bin/bash
+      env:
+        - LEGACY=true
+        - rootdir=. 
+        - sh=/bin/bash
 
 before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker pull ubuntu:16.04 ; fi
