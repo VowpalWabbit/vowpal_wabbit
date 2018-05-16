@@ -9,23 +9,23 @@ matrix:
       sudo: required
       env: 
         - LEGACY=false
-        - rootdir=/vw 
-        - sh="docker exec -ti travis-ci bash -c"
+        - DR="docker exec -ti travis-ci bash -c"
     - os: linux
       sudo: required
       env:
         - LEGACY=true
-        - rootdir=. 
 
 before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker pull ubuntu:16.04 ; fi
   - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash ; fi
 
 install:
-  - $sh "cd $rootdir && ./travis-install.sh"
+  - if [[ "$LEGACY" == "true" ]]; then ./travis-install.sh ; fi
+  - if [[ "$LEGACY" == "false" ]]; then $DR "cd /vw && ./travis-install.sh"  ; fi
 
 script:
-  - $sh "cd $rootdir && ./travis-script.sh"
+  - if [[ "$LEGACY" == "true" ]]; then ./travis-script.sh ; fi
+  - if [[ "$LEGACY" == "false" ]]; then $DR "cd /vw && ./travis-script.sh"  ; fi
    
 after_success:
   - $sh "coveralls --exclude lib --exclude tests --gcov-options '\-lp'"

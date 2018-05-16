@@ -1,8 +1,8 @@
 #!/bin/sh
 apt-get update -qq
-apt-get install -qq libboost-all-dev
-apt-get install maven
-apt-get install libgtest-dev google-mock
+apt-get install -y -qq libboost-all-dev
+apt-get install -y maven
+apt-get install -y libgtest-dev google-mock
 pip install cpp-coveralls wheel
 # use miniconda for python package testing
 wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
