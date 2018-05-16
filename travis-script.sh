@@ -1,4 +1,5 @@
 #!/bin/sh
+cd /vw
 make all
 if [[ "$LEGACY" == "false" ]]; then make vwslim ; fi
 make python

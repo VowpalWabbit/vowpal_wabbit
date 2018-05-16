@@ -18,10 +18,10 @@ before_install:
   - docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash
 
 install:
-  - $sh ./travis-install.sh
+  - $sh /vw/travis-install.sh
 
 script:
-  - $sh ./travis-script.sh
+  - $sh /vw/travis-script.sh
    
 after_success:
   - $sh "coveralls --exclude lib --exclude tests --gcov-options '\-lp'"
