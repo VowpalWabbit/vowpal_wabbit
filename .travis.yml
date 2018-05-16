@@ -5,10 +5,11 @@ compiler:
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       env: LEGACY=false
     - os: linux
+      dist: trusty
       env: LEGACY=true
 
 before_install:
