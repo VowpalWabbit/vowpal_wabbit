@@ -12,10 +12,10 @@ matrix:
         - rootdir=/vw 
         - sh="docker exec -ti travis-ci bash -c"
     - os: linux
+      sudo: required
       env:
         - LEGACY=true
         - rootdir=. 
-        - sh=/bin/bash
 
 before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker pull ubuntu:16.04 ; fi
