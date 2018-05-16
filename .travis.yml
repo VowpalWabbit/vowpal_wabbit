@@ -10,7 +10,6 @@ matrix:
       env: LEGACY=false
       env: sh=docker exec -ti travis-ci bash -c
     - os: linux
-      dist: trusty
       env: LEGACY=true
       env: sh=/bin/bash
 
