@@ -12,7 +12,7 @@ matrix:
       env: sh="docker exec -ti travis-ci bash -c"
     - os: linux
       env: LEGACY=true
-      env: rootdir=./ 
+      env: rootdir=. 
       env: sh=/bin/bash
 
 before_install:
@@ -20,10 +20,10 @@ before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash ; fi
 
 install:
-  - $sh $rootdir/travis-install.sh
+  - $sh "cd $rootdir && ./travis-install.sh"
 
 script:
-  - $sh $rootdir/travis-script.sh
+  - $sh "cd $rootdir && ./travis-script.sh"
    
 after_success:
   - $sh "coveralls --exclude lib --exclude tests --gcov-options '\-lp'"
