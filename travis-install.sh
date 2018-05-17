@@ -7,7 +7,7 @@ else
 apt-get update -qq
 apt-get install -y -qq libboost-all-dev
 apt-get install -y python-setuptools python-dev build-essential
-apt-get install -y maven libgtest-dev google-mock wget conda
+apt-get install -y maven libgtest-dev google-mock wget
 fi
 pip install cpp-coveralls wheel
 # use miniconda for python package testing
