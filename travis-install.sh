@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [[ "$LEGACY" == "true" ]]; then 
 sudo apt-get update -qq
 sudo apt-get install -y -qq libboost-all-dev
@@ -6,7 +6,8 @@ sudo apt-get install -y maven
 else
 apt-get update -qq
 apt-get install -y -qq libboost-all-dev
-apt-get install -y maven libgtest-dev google-mock wget pip conda
+apt-get install python-setuptools python-dev build-essential
+apt-get install -y maven libgtest-dev google-mock wget conda
 fi
 pip install cpp-coveralls wheel
 # use miniconda for python package testing
