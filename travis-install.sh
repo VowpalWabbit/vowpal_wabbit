@@ -5,10 +5,12 @@ sudo apt-get install -y -qq libboost-all-dev
 sudo apt-get install -y maven
 sudo pip install cpp-coveralls wheel
 else
+add-apt-repository ppa:webupd8team/java
 apt-get update -qq
 apt-get install -y -qq libboost-all-dev
 apt-get install -y python-setuptools python-dev build-essential
 apt-get install -y maven libgtest-dev google-mock wget zlib1g-dev
+apt-get install -y oracle-java8-installer
 pip install cpp-coveralls wheel
 fi
 # use miniconda for python package testing
