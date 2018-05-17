@@ -1088,6 +1088,20 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
   return labels.label_v.begin();
 }
 
+float get_action_score(example* ec, size_t i)
+{
+  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+
+  if(i < scores.size()) {
+    return scores[i].score;
+  } else {
+    return 0.0;
+  }
+}
+
+size_t get_action_score_length(example* ec)
+{ return ec->pred.a_s.size(); }
+
 size_t get_tag_length(example* ec)
 {
   return ec->tag.size();
