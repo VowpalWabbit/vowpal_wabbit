@@ -3,13 +3,14 @@ if [[ "$LEGACY" == "true" ]]; then
 sudo apt-get update -qq
 sudo apt-get install -y -qq libboost-all-dev
 sudo apt-get install -y maven
+sudo pip install cpp-coveralls wheel
 else
 apt-get update -qq
 apt-get install -y -qq libboost-all-dev
 apt-get install -y python-setuptools python-dev build-essential
-apt-get install -y maven libgtest-dev google-mock wget
-fi
+apt-get install -y maven libgtest-dev google-mock wget zlib1g-dev
 pip install cpp-coveralls wheel
+fi
 # use miniconda for python package testing
 wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
 bash miniconda.sh -b -p $HOME/miniconda
