@@ -33,5 +33,4 @@ export USER_BOOST_INCLUDE="-I $BASE_BOOST/include/boost -I $BASE_BOOST/include"
 export USER_BOOST_LIBRARY="-L $BASE_BOOST/lib"
 
 # build the C++ binaries and python package
-python vowpal_wabbit/python/setup.py install
-pip install -U vowpal_wabbit/python/
+pip install -e vowpal_wabbit/python/
