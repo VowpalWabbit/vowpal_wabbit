@@ -1,7 +1,7 @@
-TARGET = dsclient-test.out
-LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -ldsclient -lboost_unit_test_framework
-LIBDIR = -L ../dsclientlib
-INCLUDE = -I ../include -I ../dsclientlib
+TARGET = rlclient-test.out
+LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -lrlclient -lboost_unit_test_framework
+LIBDIR = -L ../rlclientlib
+INCLUDE = -I ../include -I ../rlclientlib
 
 .PHONY: default all clean
 
