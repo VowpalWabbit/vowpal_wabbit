@@ -22,7 +22,7 @@ namespace reinforcement_learning
 {
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
 
-  int live_model_impl::ranking_request(const char* uuid, const char* context, ranking_response& response, api_status* status) {
+  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) {
       //clear previous errors if any
       api_status::try_clear(status);
 
@@ -51,8 +51,8 @@ namespace reinforcement_learning
   }
 
   //here the uuid is auto-generated
-  int live_model_impl::ranking_request(const char* context, ranking_response& response, api_status* status) {
-    return ranking_request(context, boost::uuids::to_string(boost::uuids::random_generator()( )).c_str(), response,
+  int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
+    return choose_rank(context, boost::uuids::to_string(boost::uuids::random_generator()( )).c_str(), response,
       status);
   }
 

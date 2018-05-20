@@ -17,9 +17,9 @@ namespace reinforcement_learning
 
   public:
     
-    int ranking_request(const char* uuid, const char* context, ranking_response& response, api_status* status);
+    int choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status);
     //here the uuid is auto-generated
-    int ranking_request(const char* context, ranking_response& response, api_status* status);
+    int choose_rank(const char* context, ranking_response& response, api_status* status);
     
     int report_outcome(const char* uuid, const char* outcome_data, api_status* status);
     int report_outcome(const char* uuid, float reward, api_status* status);

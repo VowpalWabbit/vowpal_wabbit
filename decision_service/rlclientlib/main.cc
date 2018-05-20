@@ -1,12 +1,11 @@
-#include "live_model.h"
-#include "config_utility.h"
+#include "personalization.h"
 
 #include <vector>
 #include <iostream>
 
-using namespace reinforcement_learning;
-using namespace reinforcement_learning::utility;
-using namespace reinforcement_learning::utility::config;
+using namespace personalization;
+using namespace personalization::utility;
+using namespace personalization::utility::config;
 
 config_collection load_config();
 void display_response(const ranking_response&);

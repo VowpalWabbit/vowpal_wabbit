@@ -10,7 +10,7 @@ namespace reinforcement_learning {
 
 	public:
 		ranking_response();
-		ranking_response(const std::string& uuid, const std::vector<std::pair<int, float>>& ranking);
+		ranking_response(const std::string & uuid, const std::vector<std::pair<int, float>>& ranking);
 
 		const std::string& get_uuid() const;                           //unique id
 		int get_top_action_id() const;                                 //id of the top action chosen by the ds

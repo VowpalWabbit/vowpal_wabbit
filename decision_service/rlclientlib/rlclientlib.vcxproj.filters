@@ -63,6 +63,9 @@
     <ClInclude Include="error_callback_fn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\personalization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">

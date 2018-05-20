@@ -20,12 +20,12 @@ namespace reinforcement_learning
   int live_model::choose_rank(const char* uuid, const char* context_json, ranking_response& response,
                               api_status* status)
   {
-    return _pimpl->ranking_request(uuid, context_json, response, status);
+    return _pimpl->choose_rank(uuid, context_json, response, status);
   }
 
   int live_model::choose_rank(const char* context_json, ranking_response& response, api_status* status)
   {
-    return _pimpl->ranking_request(context_json, response, status);
+    return _pimpl->choose_rank(context_json, response, status);
   }
 
   int live_model::report_outcome(const char* uuid, const char* outcome_data, api_status* status)

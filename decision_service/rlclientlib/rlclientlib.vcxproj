@@ -138,6 +138,7 @@
     <ClInclude Include="..\include\api_status.h" />
     <ClInclude Include="..\include\config_collection.h" />
     <ClInclude Include="..\include\live_model.h" />
+    <ClInclude Include="..\include\personalization.h" />
     <ClInclude Include="..\include\ranking_response.h" />
     <ClInclude Include="..\include\config_utility.h" />
     <ClInclude Include="live_model_impl.h" />
