@@ -10,6 +10,9 @@ from itertools import compress
 from math import sqrt
 import argparse
 import numpy as np
+import seaborn as sns
+from matplotlib.colors import ListedColormap
+from matplotlib.font_manager import FontProperties
 
 
 class model:
@@ -72,28 +75,97 @@ def plot_comparison(errors_1, errors_2, sizes):
 
 	plt.scatter(results_insigni_1, results_insigni_2, s=2, c='k')
 
+	len_errors = len(errors_1)
+	wins_1 = [z_scores[i] < 0 and significance[i] for i in range(len_errors) ]
+	wins_2 = [z_scores[i] > 0 and significance[i] for i in range(len_errors) ]
+	num_wins_1 = wins_1.count(True)
+	num_wins_2 = wins_2.count(True)
+
+	return num_wins_1, num_wins_2
+
+def alg_info(alg_name, result_lst):
+	if (alg_name[0] == 0):
+		return result_lst[0]
+	if (alg_name[0] == 2):
+		return result_lst[1]
+	if (alg_name[2] == True and alg_name[3] == True):
+		return result_lst[2]
+	if (alg_name[2] == True and alg_name[3] == False):
+		return result_lst[3]
+	if (alg_name[2] == False and alg_name[3] == True):
+		return result_lst[4]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 2):
+		return result_lst[5]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 4):
+		return result_lst[6]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 8):
+		return result_lst[7]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 16):
+		return result_lst[8]
+
+	return result_lst[9]
 
 def alg_str(alg_name):
-	if (alg_name[0] == 0):
-		return 'majority_class'
-	if (alg_name[0] == 2):
-		return 'supervised_underutil_as_bandit'
-	if (alg_name[2] == True and alg_name[3] == True):
-		return 'no_update'
-	if (alg_name[2] == True and alg_name[3] == False):
-		return 'bandit_only'
-	if (alg_name[2] == False and alg_name[3] == True):
-		return 'supervised_only'
-	if (alg_name[2] == False and alg_name[3] == False):
-		return 'combined_choices_lambda='+str(alg_name[1])
+	return alg_info(alg_name, ['Most-Freq', 'Sim-Bandit', 'Class-1', 'Bandit-Only', 'Sup-Only', 'MinimaxBandits', 'AwesomeBandits with $|\Lambda|$=4', 'AwesomeBandits with $|\Lambda|$=8', 'AwesomeBandits with $|\Lambda|$=16', 'unknown'])
 
-	return 'unknown algorithm'
+def alg_str_compatible(alg_name):
+	return alg_info(alg_name, ['Most-Freq', 'Sim-Bandit', 'Class-1', 'Bandit-Only', 'Sup-Only', 'Choices_lambda=2', 'Choices_lambda=4', 'Choices_lambda=8', 'Choices_lambda=16', 'unknown'])
+
+def alg_color_style(alg_name):
+	palette = sns.color_palette('colorblind')
+	colors = palette.as_hex()
+	#colors = [colors[5], colors[4], 'black', colors[2], colors[1], colors[3], 'black', colors[0], 'black', 'black']
+	colors = [colors[5], colors[3], 'black', colors[0], colors[1], colors[2], colors[2], colors[2], colors[2], 'black' ]
+
+	styles = ['solid', 'solid', 'solid', 'solid', 'dashed', 'dotted', 'dashdot', 'solid', 'dashed', 'solid']
+
+	return alg_info(alg_name, zip(colors, styles))
+	#['black', 'magenta', 'lime', 'green', 'blue', 'darkorange','darksalmon', 'red', 'cyan']
+
+def alg_index(alg_name):
+	return alg_info(alg_name, [7.0, 6.0, 8.0, 5.0, 4.0, 2.0, 1.0, 1.2, 1.5, 9.0])
+
+
+def order_legends(indices):
+	ax = plt.gca()
+	handles, labels = ax.get_legend_handles_labels()
+	# sort both labels and handles by labels
+	labels, handles, indices = zip(*sorted(zip(labels, handles, indices), key=lambda t: t[2]))
+	ax.legend(handles, labels)
+
+def save_legend(mod, indices):
+	ax = plt.gca()
+	handles, labels = ax.get_legend_handles_labels()
+	labels, handles, indices = zip(*sorted(zip(labels, handles, indices), key=lambda t: t[2]))
+	#figlegend = pylab.figure(figsize=(26,1))
+	#figlegend.legend(handles, labels, 'center', fontsize=26, ncol=8)
+	figlegend = pylab.figure(figsize=(17,1.5))
+	figlegend.legend(handles, labels, 'center', fontsize=26, ncol=3)
+	figlegend.tight_layout(pad=0)
+	figlegend.savefig(mod.problemdir+'legend.pdf')
 
 def problem_str(name_problem):
 	return 'supervised_corrupt_type='+str(name_problem[0]) \
 			+'_supervised_corrupt_prob='+str(name_problem[1]) \
 			+'_bandit_supervised_size_ratio='+str(name_problem[2])
 
+def noise_type_str(noise_type):
+	if noise_type == 1:
+		return 'UAR'
+	elif noise_type == 2:
+		return 'CYC'
+	elif noise_type == 3:
+		return 'MAJ'
+
+def problem_text(name_problem):
+	s=''
+	s += 'Ratio = ' + str(name_problem[2]) + ', '
+	if abs(name_problem[1]) < 1e-6:
+		s += 'noiseless'
+	else:
+		s += noise_type_str(name_problem[0]) + ', '
+		s += 'p = ' + str(name_problem[1])
+	return s
 
 
 def plot_cdf(alg_name, errs):
@@ -102,25 +174,52 @@ def plot_cdf(alg_name, errs):
 	print errs
 	print len(errs)
 
-	plt.step(np.sort(errs), np.linspace(0, 1, len(errs), endpoint=False), label=alg_str(alg_name))
+	col, sty = alg_color_style(alg_name)
 
+	plt.step(np.sort(errs), np.linspace(0, 1, len(errs), endpoint=False), label=alg_str(alg_name), color=col, linestyle=sty, linewidth=2.0)
+
+	#
 
 	#raw_input("Press Enter to continue...")
 
 def plot_all_cdfs(alg_results, mod):
 	#plot all cdfs:
 	print 'printing cdfs..'
-	i = 0
+
+	indices = []
+
+	pylab.figure(figsize=(8,6))
+
 	for alg_name, errs in alg_results.iteritems():
+		indices.append(alg_index(alg_name))
 		plot_cdf(alg_name, errs)
 
-	plt.legend()
 	if mod.normalize_type == 1:
-		plt.xlim(-0.2,1)
+		plt.xlim(0,1)
 	elif mod.normalize_type == 2:
 		plt.xlim(-1,1)
+	elif mod.normalize_type == 3:
+		plt.xlim(0, 1)
+
 	plt.ylim(0,1)
-	plt.savefig(mod.problemdir+'/cdf.png')
+	#params={'legend.fontsize':26,
+	#'axes.labelsize': 24, 'axes.titlesize':26, 'xtick.labelsize':20,
+	#'ytick.labelsize':20 }
+	#plt.rcParams.update(params)
+	#plt.xlabel('Normalized error',fontsize=34)
+	#plt.ylabel('Cumulative frequency', fontsize=34)
+	#plt.title(problem_text(mod.name_problem), fontsize=36)
+	plt.xticks(fontsize=30)
+	plt.yticks(fontsize=30)
+	plt.tight_layout(pad=0)
+
+	ax = plt.gca()
+	order_legends(indices)
+	ax.legend_.set_zorder(-1)
+	plt.savefig(mod.problemdir+'cdf.pdf')
+	ax.legend_.remove()
+	plt.savefig(mod.problemdir+'cdf_nolegend.pdf')
+	save_legend(mod, indices)
 	plt.clf()
 
 
@@ -136,10 +235,11 @@ def plot_all_pair_comp(alg_results, sizes, mod):
 				print len(errs_1), len(errs_2), len(sizes)
 				#raw_input('Press any key to continue..')
 
-				plot_comparison(errs_1, errs_2, sizes)
+				num_wins_1, num_wins_2 = plot_comparison(errs_1, errs_2, sizes)
 
-				plt.title(alg_str(alg_names[i])+' vs '+alg_str(alg_names[j]))
-				plt.savefig(mod.problemdir+'/'+alg_str(alg_names[i])+'_vs_'+alg_str(alg_names[j])+'.png')
+				plt.title( 'total number of comparisons = ' + str(len(errs_1)) + '\n'+
+				alg_str(alg_names[i]) + ' wins ' + str(num_wins_1) + ' times, \n' + alg_str(alg_names[j]) + ' wins ' + str(num_wins_2) + ' times')
+				plt.savefig(mod.problemdir+alg_str_compatible(alg_names[i])+'_vs_'+alg_str_compatible(alg_names[j])+'.pdf')
 				plt.clf()
 
 def init_results(result_table):
@@ -159,6 +259,8 @@ def normalize_score(unnormalized_result, mod):
 	elif mod.normalize_type == 2:
 		l = unnormalized_result[(1, 1, True, False)]
 		return { k : ((v - l) / (l + 1e-4)) for k, v in unnormalized_result.iteritems() }
+	elif mod.normalize_type == 3:
+		return unnormalized_result
 
 def get_best_error(best_error_table, name_dataset):
 	name = name_dataset[0]
@@ -205,6 +307,9 @@ def update_result_dict(results_dict, new_result):
 
 
 def plot_all(mod, all_results):
+
+	#all_results = all_results[all_results['corrupt_prob_supervised']!=0.0]
+
 	grouped_by_problem = all_results.groupby(['corrupt_type_supervised',
 						'corrupt_prob_supervised','bandit_supervised_size_ratio'])
 
@@ -226,8 +331,12 @@ def plot_all(mod, all_results):
 			grouped_by_algorithm = group_dataset.groupby(['warm_start_type', 'choices_lambda', 'no_supervised', 'no_bandit'])
 
 			mod.name_dataset = name_dataset
+
 			#The 'learning_rate' would be the only free degree here now. Taking the
 			#min aggregation will give us the 7 algorithms we are evaluating.
+
+			#In the future this should be changed now if we run multiple folds: we
+			#should average among folds before choosing the min
 			result_table = grouped_by_algorithm.min()
 			result_table = result_table.reset_index()
 
@@ -322,7 +431,7 @@ if __name__ == '__main__':
 	parser.add_argument('--filter', default='1')
 	parser.add_argument('--plot_subdir', default='expt1/')
 	parser.add_argument('--from_hdf', action='store_true')
-	parser.add_argument('--normalize_type', type=int)
+	parser.add_argument('--normalize_type', type=int, default=1)
 	args = parser.parse_args()
 
 	mod = model()
@@ -330,10 +439,10 @@ if __name__ == '__main__':
 	mod.results_dir = args.results_dir
 	mod.filter = args.filter
 	mod.plot_subdir = args.plot_subdir
-	mod.normalize_type = args.normalize_type
+	mod.normalize_type = args.normalize_type #1: normalized score; 2: bandit only centered score; 3: raw score
 	mod.pair_comp_on = False
 	mod.cdf_on = True
-	mod.maj_error_dir = '../../../figs_maj_errors/0of1.sum'
+	mod.maj_error_dir = '../../../figs_all/expt_0509/figs_maj_errors/0of1.sum'
 
 	mod.fulldir = mod.results_dir + mod.plot_subdir
 	if not os.path.exists(mod.fulldir):
@@ -354,10 +463,18 @@ if __name__ == '__main__':
 	all_results = mod.all_results
 
 	mod.best_error_table = all_results[all_results['choices_lambda'] == 0]
+
+	#print mod.best_error_table[mod.best_error_table['dataset'] == 'ds_160_5.vw.gz']
+	#raw_input(' ')
+
 	all_results = all_results[all_results['choices_lambda'] != 0]
 
 	#ignore the no update row:
 	all_results = all_results[(all_results['no_supervised'] == False) | (all_results['no_bandit'] == False)]
+	#ignore the choice_lambda = 4 row
+	all_results = all_results[(all_results['choices_lambda'] != 4)]
+
+
 
 	#filter choices_lambdas = 2,4,8?
 	#if (alg_name[2] == False and alg_name[3] == False and alg_name[1] != 8):
@@ -376,6 +493,15 @@ if __name__ == '__main__':
 		all_results = all_results[all_results['num_classes'] >= 3]
 	elif mod.filter == '4':
 		all_results = all_results[all_results['num_classes'] <= 2]
+	elif mod.filter == '5':
+		all_results = all_results[all_results['total_size'] >= 10000]
+		all_results = all_results[all_results['num_classes'] >= 3]
+	elif mod.filter == '6':
+		all_results = all_results[all_results['warm_start_size'] >= 100]
+		all_results = all_results[all_results['learning_rate'] == 0.3]
+	elif mod.filter == '7':
+		all_results = all_results[all_results['warm_start_size'] >= 100]
+		all_results = all_results[all_results['num_classes'] >= 3]
 
 	plot_all(mod, all_results)
 

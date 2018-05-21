@@ -264,7 +264,7 @@ def params_per_task(mod):
 
 	# Common parameters
 	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup, params_warm_start_multiplier, params_learning_rate, params_cb_type, params_fold])
-	params_common = filter(lambda param: param['corrupt_type_supervised'] == 1 or abs(param['corrupt_prob_supervised']) > 1e-4, params_common)
+	params_common = filter(lambda param: param['corrupt_type_supervised'] == 3 or abs(param['corrupt_prob_supervised']) > 1e-4, params_common)
 
 	# Baseline parameters construction
 	if mod.baselines_on:
@@ -358,7 +358,7 @@ def vw_output_extract(mod, pattern):
 	if not errs:
 		avge = 0
 	else:
-		print errs
+		#print errs
 		avge = float(errs[0][0])
 
 	vw_output.close()
@@ -425,7 +425,7 @@ if __name__ == '__main__':
 	parser.add_argument('--ds_dir', default='../../../vwshuffled/')
 	parser.add_argument('--num_learning_rates', type=int, default=1)
 	parser.add_argument('--num_datasets', type=int, default=-1)
-
+	parser.add_argument('--num_folds', type=int, default=1)
 
 	args = parser.parse_args()
 	flag_dir = args.results_dir + 'flag/'
@@ -438,6 +438,7 @@ if __name__ == '__main__':
 		# with a huge number of files can be super slow. Hence, we create a subfolder
 		# for each dataset to alleviate this.
 		dss = ds_files(args.ds_dir + '1/')
+		dss = dss[:args.num_datasets]
 		for ds in dss:
 			ds_no_suffix = remove_suffix(ds)
 			create_dir(args.results_dir + ds_no_suffix + '/')
@@ -466,23 +467,24 @@ if __name__ == '__main__':
 
 	# use fractions instead of absolute numbers
 	#mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
-	mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
+	mod.warm_start_multipliers = [pow(2,i) for i in range(1)]
 
 	mod.choices_cb_type = ['mtr']
 	#mod.choices_choices_lambda = [2,4,8]
-	mod.choices_choices_lambda = [2, 4, 8]
+	mod.choices_choices_lambda = [2,8,16]
 
 	#mod.choices_corrupt_type_supervised = [1,2,3]
 	#mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
-	mod.choices_corrupt_type_supervised = [1,2,3]
-	mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
+	mod.choices_corrupt_type_supervised = [3]
+	mod.choices_corrupt_prob_supervised = [0,0.25,0.5]
 
-	if args.num_learning_rates == 1:
-		mod.learning_rates = [0.5]
-	elif args.num_learning_rates == 3:
-		mod.learning_rates = [0.1, 0.3, 1.0]
+	mod.learning_rates_template = [0.1, 0.03, 0.3, 0.01, 1.0, 0.003, 3.0, 0.001, 10.0]
+
+	if args.num_learning_rates <= 0 or args.num_learning_rates >= 10:
+		mod.learning_rates = mod.learning_rates_template
 	else:
-		mod.learning_rates = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0]
+		mod.learning_rates = mod.learning_rates_template[:args.num_learning_rates]
+
 
 	mod.adf_on = True
 
@@ -498,7 +500,7 @@ if __name__ == '__main__':
 	mod.critical_size_ratios = [184 * pow(2, -i) for i in range(7) ]
 
 	#mod.folds = range(1,11)
-	mod.folds = range(1,6)
+	mod.folds = range(1, args.num_folds+1)
 
 	print 'reading dataset files..'
 	#TODO: this line specifically for multiple folds
