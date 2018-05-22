@@ -380,7 +380,7 @@ class VW(BaseEstimator):
 
     def __del__(self):
         if hasattr(self, 'vw_') and self.vw_ is not None:
-            self.vw_.__del__()
+            del self.vw_
 
     def get_params(self, deep=True):
         """This returns the set of vw and estimator parameters currently in use"""
@@ -506,6 +506,22 @@ class VWClassifier(SparseCoefMixin, ThresholdingLinearClassifierMixin, VW):
             params['loss_function'] = 'logistic'
 
         super(VWClassifier, self).__init__(**params)
+
+    def predict(self, X):
+        """Predict class labels for samples in X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Samples.
+
+        Returns
+        -------
+        C : array, shape = [n_samples]
+            Predicted class label per sample.
+        """
+
+        return ThresholdingLinearClassifierMixin.predict(self, X=X)
 
     def decision_function(self, X):
         """Predict confidence scores for samples.

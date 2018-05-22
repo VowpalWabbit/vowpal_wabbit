@@ -190,7 +190,7 @@ public:
         if (spell_fs.size() == 0)
           ae->indices.push_back(spelling_namespace);
         //v_array<char> spelling;
-        spelling.erase();
+        spelling.clear();
         for (char*c = feature_name.begin; c!=feature_name.end; ++c)
         {
           char d = 0;
@@ -413,7 +413,7 @@ void substring_to_example(vw* all, example* ae, substring example)
 
   if (*example.begin == '|')
   {
-    all->p->words.erase();
+    all->p->words.clear();
   }
   else
   {

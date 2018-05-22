@@ -1102,11 +1102,6 @@ __DATA__
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
 
-# Test 59: library test, run ezexample_predict
-../library/ezexample_predict models/library_train.w
-    train-sets/ref/ezexample_predict.stdout
-    train-sets/ref/ezexample_predict.stderr
-
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 echo "" | {VW}
@@ -1613,3 +1608,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 168: test cb with dm
 {VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm_test.stderr
+
+# Test 169: test cbify large
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
+    train-sets/ref/rcv1_multiclass.stderr

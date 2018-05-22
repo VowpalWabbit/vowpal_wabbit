@@ -40,6 +40,15 @@ private:
   template<typename T>
   cli::array<cli::array<float>^>^ FillTopicAllocation(T& weights);
 
+  /// <summary>
+  /// Write and empty line example to vw cache file.
+  /// </summary>
+  /// <remarks>
+  /// This is used to emit empty lines to cache while handling multiline examples.
+  /// Used internally by Learn(IEnumerable<String> lines)
+  /// </remarks>
+  void CacheEmptyLine();
+
 public:
   /// <summary>
   /// Initializes a new <see cref="VowpalWabbit"/> instance.
@@ -161,10 +170,22 @@ public:
   void Learn(VowpalWabbitExample^ example);
 
   /// <summary>
+  /// Learns from the given multiline example.
+  /// </summary>
+  /// <param name="examples">Example to learn from.</param>
+  void Learn(List<VowpalWabbitExample^>^ examples);
+    
+  /// <summary>
   /// Predicts for the given example.
   /// </summary>
   /// <param name="example">Example to predict for.</param>
   void Predict(VowpalWabbitExample^ example);
+
+  /// <summary>
+  /// Predicts for the given multiline example.
+  /// </summary>
+  /// <param name="examples">Example to predict for.</param>
+  void Predict(List<VowpalWabbitExample^>^ examples);
 
   /// <summary>
   /// Learns from string data.

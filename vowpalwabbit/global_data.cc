@@ -138,12 +138,58 @@ void set_mm(shared_data* sd, float label)
 
 void noop_mm(shared_data*, float) {}
 
-void vw::learn(example* ec)
+void vw::learn(example& ec)
 {
-  if (ec->test_only || !training)
-    l->predict(*ec);
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  if (ec.test_only || !training)
+    LEARNER::as_singleline(l)->predict(ec);
   else
-    l->learn(*ec);
+    LEARNER::as_singleline(l)->learn(ec);
+}
+
+void vw::learn(multi_ex& ec)
+{
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  if (!training) 
+    LEARNER::as_multiline(l)->predict(ec);
+  else 
+    LEARNER::as_multiline(l)->learn(ec);
+}
+
+void vw::predict(example& ec)
+{
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  LEARNER::as_singleline(l)->predict(ec);
+}
+
+void vw::predict(multi_ex& ec)
+{
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  LEARNER::as_multiline(l)->predict(ec);
+}
+
+void vw::finish_example(example& ec)
+{
+  if (l->is_multiline)
+    THROW("This reduction does not support single-line examples.");
+
+  LEARNER::as_singleline(l)->finish_example(*this,ec);
+}
+
+void vw::finish_example(multi_ex& ec)
+{
+  if (!l->is_multiline)
+    THROW("This reduction does not support multi-line example.");
+
+  LEARNER::as_multiline(l)->finish_example(*this,ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
@@ -307,8 +353,6 @@ vw::vw()
     affix_features[i] = 0;
     spelling_features[i] = 0;
   }
-
-  interactions = v_init<v_string>();
 
   //by default use invariant normalized adaptive updates
   adaptive = true;
