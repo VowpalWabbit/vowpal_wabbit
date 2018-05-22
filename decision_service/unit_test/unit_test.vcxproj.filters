@@ -47,5 +47,8 @@
     <ClCompile Include="eventhub_client_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ranking_response_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

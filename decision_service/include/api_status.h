@@ -12,6 +12,7 @@ namespace reinforcement_learning { namespace error_code {
     const int background_queue_overflow = 2;
     const int eventhub_http_generic = 3;
     const int eventhub_http_bad_status_code = 4;
+    const int action_not_found = 5;
 }}
 
 namespace reinforcement_learning {

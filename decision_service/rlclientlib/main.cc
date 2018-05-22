@@ -1,6 +1,5 @@
 #include "personalization.h"
 
-#include <vector>
 #include <iostream>
 
 using namespace personalization;
@@ -26,7 +25,7 @@ int main()
 
 	//create response and api_status object, that will be passed to the ds live_model
 	ranking_response response;
-	api_status status; //optional, can be omitted
+	api_status status;  //optional, can be omitted
 
 	// Use ds to choose the top action
 	const auto uuid = R"(uuid_1)";
@@ -44,7 +43,7 @@ int main()
 	display_response(response);
 
 	// Report the reward to ds
-	success = model.report_outcome(response.get_uuid().c_str(), 1.0f, &status);
+	success = model.report_outcome(response.get_uuid(), 1.0f, &status);
 	if (success != 0) 
 	{
 		std::cout << "an error happened with code: " << success << std::endl;
@@ -77,10 +76,10 @@ config_collection load_config()
 
 void display_response(const ranking_response& response)
 {
-	fprintf(stdout, "uuid    : %s\n", response.get_uuid().c_str());
+	fprintf(stdout, "uuid    : %s\n", response.get_uuid());
 	fprintf(stdout, "ranking :  ");
-	for (auto i : response.get_ranking())
-		std::cout << "(" << i.first << "," << i.second << ") ";
+	for (auto i : response)
+		std::cout << "(" << i.action_id << "," << i.probability << ") ";
 	fprintf(stdout, "\n");
 	fprintf(stdout, "top action id = %d\n", response.get_top_action_id());
 }

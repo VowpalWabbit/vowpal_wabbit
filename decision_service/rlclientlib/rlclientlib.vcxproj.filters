@@ -66,6 +66,9 @@
     <ClInclude Include="..\include\personalization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ranking_response_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -105,6 +108,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="live_model_impl.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ranking_response_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

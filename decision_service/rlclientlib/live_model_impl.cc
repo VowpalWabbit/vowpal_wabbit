@@ -32,20 +32,19 @@ namespace reinforcement_learning
       /* GET ACTIONS PROBABILITIES FROM VW */
 
       /**/ // TODO: replace with call to parse example and predict
-           /**/ // TODO: once that is complete
-      std::vector<std::pair<int, float>> action_proba;
+      /**/ // TODO: once that is complete
+      response.push_back(2, 0.4f);
+      response.push_back(1, 0.3f);
+      response.push_back(4, 0.2f);
+      response.push_back(3, 0.1f);
+
       std::string model_id = "model_id";
-      action_proba.push_back(std::pair<int, float>(2, 0.4f));
-      action_proba.push_back(std::pair<int, float>(1, 0.3f));
-      action_proba.push_back(std::pair<int, float>(4, 0.2f));
-      action_proba.push_back(std::pair<int, float>(3, 0.1f));
 
       //send the ranking event to the backend
-      ranking_event evt(uuid, context, action_proba, model_id);
-      TRY_OR_RETURN(_logger.append_ranking(evt.serialize(), status));
+//      ranking_event evt(uuid, context, action_proba, model_id);
+//      TRY_OR_RETURN(_logger.append_ranking(evt.serialize(), status));
 
       response.set_uuid(uuid);
-      response.set_ranking(action_proba);
 
       return error_code::success;
   }

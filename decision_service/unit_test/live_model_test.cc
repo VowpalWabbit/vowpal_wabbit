@@ -7,11 +7,12 @@
 #include "http_server/http_server.h"
 #include "live_model.h"
 #include "config_utility.h"
+#include "api_status.h"
+#include "ranking_response.h"
 
 #include <boost/test/unit_test.hpp>
 
-
-BOOST_AUTO_TEST_CASE(ranking)
+BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;
@@ -60,7 +61,7 @@ BOOST_AUTO_TEST_CASE(ranking)
 	delete status;
 }
 
-BOOST_AUTO_TEST_CASE(reward)
+BOOST_AUTO_TEST_CASE(live_model_reward)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;

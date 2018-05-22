@@ -149,6 +149,7 @@
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="logger\logger.h" />
     <ClInclude Include="model_mgmt\model_mgmt.h" />
+    <ClInclude Include="ranking_response_impl.h" />
     <ClInclude Include="utility\object_factory.h" />
     <ClInclude Include="restapi_data_transport.h" />
   </ItemGroup>
@@ -163,6 +164,7 @@
     <ClCompile Include="logger\logger.cc" />
     <ClCompile Include="model_mgmt\model_mgmt.cc" />
     <ClCompile Include="ranking_response.cc" />
+    <ClCompile Include="ranking_response_impl.cpp" />
     <ClCompile Include="restapi_data_transport.cc" />
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />

@@ -1,12 +1,12 @@
 #pragma once
-
-#include "ranking_response.h"
-#include "config_collection.h"
-#include "api_status.h"
-
 namespace reinforcement_learning {
 
-	class live_model_impl;
+  // Forward declarations
+  class live_model_impl;
+  class ranking_response;
+  class api_status;
+  namespace utility { class config_collection; }
+  ////
 
 	//decision service client
 	class live_model {
