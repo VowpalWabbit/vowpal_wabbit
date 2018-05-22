@@ -14,6 +14,7 @@ namespace reinforcement_learning
     utility::config_collection _configuration;
     error_callback_fn _error_cb;
     logger _logger;
+    std::ostringstream _buff;
 
   public:
     

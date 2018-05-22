@@ -6,9 +6,9 @@
 
 namespace reinforcement_learning {
 
-	//a concurrent queue with locks and mutex
+	//a moving concurrent queue with locks and mutex
 	template <class T>
-	class concurrent_queue {
+	class moving_queue {
 
 		std::queue<T> _queue;
 		std::mutex _mutex;
@@ -20,21 +20,26 @@ namespace reinforcement_learning {
 			std::unique_lock<std::mutex> mlock(_mutex);
 			if (!_queue.empty())
 			{
-				*item = _queue.front();
+				*item = std::move(_queue.front());
 				_queue.pop();
 			}
 		}
 
-		void push(const T& item)
+    void push(T& item) {
+      push(std::move(item));
+		}
+
+		void push(T&& item)
 		{
 			std::unique_lock<std::mutex> mlock(_mutex);
-			_queue.push(item);
+			_queue.push(std::move(item));
 		}
 
 		//approximate size
-		size_t size() const
+		size_t size()
 		{
-			return _queue.size();
+      std::unique_lock<std::mutex> mlock(_mutex);
+      return _queue.size();
 		}
 	};
 }

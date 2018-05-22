@@ -145,7 +145,7 @@
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
     <ClInclude Include="logger\async_batcher.h" />
-    <ClInclude Include="logger\concurrent_queue.h" />
+    <ClInclude Include="logger\moving_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="logger\logger.h" />
     <ClInclude Include="model_mgmt\model_mgmt.h" />

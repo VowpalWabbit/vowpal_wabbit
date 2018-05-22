@@ -16,10 +16,10 @@ namespace reinforcement_learning {
 		logger(const utility::config_collection&, error_callback_fn* perror_cb);
 
 		//log to the ranking eventhub, use a background queue to send batch
-		int append_ranking(const std::string&, api_status* = nullptr);
+		int append_ranking(std::string&, api_status* = nullptr);
 
 		//log to the outcome eventhub (direct sending, no batching)
-		int append_outcome(const std::string&, api_status* = nullptr);
+		int append_outcome(std::string&, api_status* = nullptr);
 
 	private:
     eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub

@@ -23,13 +23,13 @@ namespace reinforcement_learning
   {
   }
 
-  int logger::append_ranking(const std::string& item, api_status* status)
+  int logger::append_ranking(std::string& item, api_status* status)
   {
     //add item to the batch (will be sent later)
     return _async_batcher.append(item, status);
   }
 
-  int logger::append_outcome(const std::string& item, api_status* status)
+  int logger::append_outcome(std::string& item, api_status* status)
   {
     //send to the eventhub
     return _outcome_client.send(item, status);

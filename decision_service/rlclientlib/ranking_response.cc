@@ -33,6 +33,8 @@ namespace reinforcement_learning {
     _pimpl->push_back(action_id, prob);
   }
 
+  int ranking_response::size() const { return _pimpl->size(); }
+
   ranking_response::ranking_iterator::ranking_iterator(ranking_response_impl* p_resp_impl) 
     :_p_resp_impl(p_resp_impl), _idx(0) { }
 

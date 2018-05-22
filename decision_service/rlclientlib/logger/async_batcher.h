@@ -4,7 +4,7 @@
 #include <thread>
 #include <sstream>
 
-#include "concurrent_queue.h"
+#include "moving_queue.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
 
@@ -18,19 +18,23 @@ namespace reinforcement_learning {
 
 	public:
 
-		int append(const std::string& evt, api_status* status = nullptr)
+    int append(std::string&& evt, api_status* status = nullptr) {
+      if ( _queue.size() < _queue_max_size ) {
+        _queue.push(std::move(evt));
+        return error_code::success;
+      }
+
+      //report errors
+      std::ostringstream os;
+      os << "Dropped event: " << evt;
+      api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
+
+      return error_code::background_queue_overflow;
+    }
+
+		int append(std::string& evt, api_status* status = nullptr)
 		{
-			if (_queue.size() < _queue_max_size) {
-				_queue.push(evt);
-				return error_code::success;
-			}
-
-			//report errors
-		  std::ostringstream os;
-		  os << "Dropped event: " << evt;
-			api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
-
-		  return error_code::background_queue_overflow;
+      return append(std::move(evt), status);
 		}
 
 	private:
@@ -111,7 +115,7 @@ namespace reinforcement_learning {
 	private:
 		TSender& _sender;                     //somewhere to send the batch of data
 
-		concurrent_queue<std::string> _queue; //a queue to accumulate batch of events
+		moving_queue<std::string> _queue;     //a queue to accumulate batch of events
 		std::thread _background_thread;       //a background thread runs a timer that flushes the queue
 		bool _thread_is_running;
 
