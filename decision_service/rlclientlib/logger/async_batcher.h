@@ -14,103 +14,26 @@ namespace reinforcement_learning {
 	// This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
 	// A batch is shipped with TSender::send(data)
 	template <typename TSender>
-	class async_batcher {
-
+	class async_batcher 
+  {
 	public:
 
-    int append(std::string&& evt, api_status* status = nullptr) {
-      if ( _queue.size() < _queue_max_size ) {
-        _queue.push(std::move(evt));
-        return error_code::success;
-      }
-
-      //report errors
-      std::ostringstream os;
-      os << "Dropped event: " << evt;
-      api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
-
-      return error_code::background_queue_overflow;
-    }
-
-		int append(std::string& evt, api_status* status = nullptr)
-		{
-      return append(std::move(evt), status);
-		}
+    int append(std::string&& evt, api_status* status = nullptr);
+    int append(std::string& evt, api_status* status = nullptr);
 
 	private:
-		void timer()//the timer triggers a queue flush (run in background)
-		{
-			while (_thread_is_running)
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(_batch_timeout_ms));
-				flush();
-			}
-		}
-
-		void flush()//flush all batches
-		{
-		  const auto queue_size = _queue.size();
-			if (queue_size == 0) return;
-
-			//handle batching
-			std::string batch, next;
-			_queue.pop(&batch); //there is at least one element
-
-			for (size_t i = 1; i < queue_size; ++i)
-			{
-				_queue.pop(&next);
-
-				size_t batch_size = batch.length() + next.length();
-				if (batch_size > _batch_max_size)
-				{
-          api_status status;
-					//the batch is about to reach the max size: send it
-					if(_sender.send(batch,&status) != error_code::success)
-					{
-            if (_perror_cb) _perror_cb->report_error(status);
-					}
-          
-					batch = next;
-				}
-				else
-					batch += "\n" + next;
-			}
-
-			//send remaining events
-			if (batch.size() > 0)
-			{
-        api_status status;
-        //the batch is about to reach the max size: send it
-        if (_sender.send(batch, &status) != error_code::success)
-        {
-          if (_perror_cb) _perror_cb->report_error(status);
-        }
-			}
-		}
+    void timer(); //the timer triggers a queue flush (run in background)
+	  size_t fill_buffer(size_t remaining, std::string& buf_to_send);
+    void flush(); //flush all batches
 
 	public:
-		async_batcher(TSender& pipe, error_callback_fn* perror_cb = nullptr,
-                  size_t batch_max_size = (256 * 1024 - 1), size_t batch_timeout_ms = 1000, size_t queue_max_size = (8 * 1024))
-			: _sender(pipe),
-	    _batch_max_size(batch_max_size),
-			_batch_timeout_ms(batch_timeout_ms),
-			_queue_max_size(queue_max_size),
-      _perror_cb(perror_cb)
-		{
-			_thread_is_running = true;
-			_background_thread = std::thread(&async_batcher::timer, this);
-		}
+	  async_batcher(TSender& pipe, 
+                  error_callback_fn* perror_cb = nullptr,
+	                size_t batch_max_size = (256 * 1024 - 1), 
+                  size_t batch_timeout_ms = 1000,
+	                size_t queue_max_size = (8 * 1024));
 
-		~async_batcher()
-		{
-			//stop the thread and flush the queue before exiting
-			_thread_is_running = false;
-			if (_background_thread.joinable())
-				_background_thread.join();
-			if (_queue.size() > 0)
-				flush();
-		}
-
+	  ~async_batcher();
 
 	private:
 		TSender& _sender;                     //somewhere to send the batch of data
@@ -118,10 +41,106 @@ namespace reinforcement_learning {
 		moving_queue<std::string> _queue;     //a queue to accumulate batch of events
 		std::thread _background_thread;       //a background thread runs a timer that flushes the queue
 		bool _thread_is_running;
-
+    std::ostringstream _buffer;           //re-used buffer to prevent re-allocation during sends
 		size_t _batch_max_size;
 		size_t _batch_timeout_ms;
 		size_t _queue_max_size;
     error_callback_fn* _perror_cb;
 	};
+
+  template <typename TSender>
+  int async_batcher<TSender>::append(std::string&& evt, api_status* status = nullptr) {
+    if ( _queue.size() < _queue_max_size ) {
+      _queue.push(std::move(evt));
+      return error_code::success;
+    }
+
+    //report errors
+    std::ostringstream os;
+    os << "Dropped event: " << evt;
+    api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
+
+    return error_code::background_queue_overflow;
+  }
+
+  template <typename TSender>
+  int async_batcher<TSender>::append(std::string& evt, api_status* status = nullptr) {
+    return append(std::move(evt), status);
+  }
+
+  template <typename TSender>
+  void async_batcher<TSender>::timer() 
+  {
+    while ( _thread_is_running ) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(_batch_timeout_ms));
+      flush();
+    }
+  }
+
+  template <typename TSender>
+  size_t async_batcher<TSender>::fill_buffer(size_t remaining, std::string& buf_to_send) 
+  {
+    // There is at least one element.  Pop uses move assignment
+    // Copy can be avoided if send size is satisfied
+    _queue.pop(&buf_to_send);
+    auto filled_size = buf_to_send.size();
+    --remaining;
+    if ( remaining <= 0 || filled_size >= _batch_max_size ) {
+      return remaining;
+    }
+
+    // Send size not satisfied.  Shift to larger buffer to satisfy send.
+    // Copy is needed but reuse existing tmp buffer to avoid allocation
+    _buffer.seekp(std::ios_base::beg, 0);
+    _buffer << buf_to_send;
+
+    while( remaining > 0 && filled_size < _batch_max_size) {
+      _queue.pop(&buf_to_send);
+      _buffer << "\n" << buf_to_send;
+      --remaining;
+      filled_size += buf_to_send.size();
+    }
+
+    buf_to_send = std::move(_buffer.str());
+    return remaining;
+  }
+
+  template <typename TSender>
+  void async_batcher<TSender>::flush() {
+    const auto queue_size = _queue.size();
+    if (queue_size == 0) return;
+    auto remaining = queue_size;
+    std::string buf_to_send;
+    //handle batching
+    while (remaining > 0) {
+      remaining = fill_buffer(remaining, buf_to_send);
+      api_status status;
+      if (_sender.send(buf_to_send, &status) != error_code::success) {
+        if (_perror_cb) _perror_cb->report_error(status);
+      }
+    }
+  }
+
+  template <typename TSender>
+  async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t batch_max_size,
+                                        const size_t batch_timeout_ms, const size_t queue_max_size)
+              : _sender(pipe),
+              _batch_max_size(batch_max_size),
+              _batch_timeout_ms(batch_timeout_ms),
+              _queue_max_size(queue_max_size),
+              _perror_cb(perror_cb) 
+  {
+    _thread_is_running = true;
+    _background_thread = std::thread(&async_batcher::timer, this);
+  }
+
+  template <typename TSender>
+  async_batcher<TSender>::~async_batcher() {
+    //stop the thread and flush the queue before exiting
+    _thread_is_running = false;
+    if (_background_thread.joinable())
+      _background_thread.join();
+    if (_queue.size() > 0)
+      flush();
+  }
 }

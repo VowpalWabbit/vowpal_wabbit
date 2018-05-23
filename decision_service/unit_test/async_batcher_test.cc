@@ -11,13 +11,14 @@
 using namespace reinforcement_learning;
 
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
-class sender {
-    public:
-        std::vector<std::string> items;
-        int send(const std::string& item, api_status* s = nullptr) {
-            items.push_back(item);
-            return error_code::success;
-        };
+class sender 
+{
+public:
+  std::vector<std::string> items;
+  int send(const std::string& item, api_status* s = nullptr) {
+    items.push_back(item);
+    return error_code::success;
+  };
 };
 
 void expect_no_error(const api_status& s, void* cntxt)
@@ -29,72 +30,72 @@ void expect_no_error(const api_status& s, void* cntxt)
 //test the flush mecanism based on a timer
 BOOST_AUTO_TEST_CASE(flush_timeout)
 {
-    sender s;
-    size_t timeout_ms = 100;//set a short timeout
-    error_callback_fn error_fn(expect_no_error, nullptr);
-	  async_batcher<sender> batcher(s, &error_fn,262143, timeout_ms, 8192);
+  sender s;
+  size_t timeout_ms = 100;//set a short timeout
+  error_callback_fn error_fn(expect_no_error, nullptr);
+  async_batcher<sender> batcher(s, &error_fn,262143, timeout_ms, 8192);
  
-    //add 2 items in the current batch
-    batcher.append("foo");
-    batcher.append("bar");
+  //add 2 items in the current batch
+  batcher.append("foo");
+  batcher.append("bar");
 
-    //wait until the timeout triggers
-	  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
+  //wait until the timeout triggers
+  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
     
-    //check the batch was sent
-    std::string expected = "foo\nbar";
-    BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-    BOOST_CHECK_EQUAL(s.items.front(), expected);
+  //check the batch was sent
+  std::string expected = "foo\nbar";
+  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
+  BOOST_CHECK_EQUAL(s.items.front(), expected);
 }
 
 //test that the batcher split batches as expected
 BOOST_AUTO_TEST_CASE(flush_batches)
 {
-    sender s;
-    size_t batch_max_size = 10;//bytes
-    error_callback_fn error_fn(expect_no_error, nullptr);
-    async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, batch_max_size);
+  sender s;
+  size_t batch_max_size = 10;//bytes
+  error_callback_fn error_fn(expect_no_error, nullptr);
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, batch_max_size);
 
-    //add 2 items in the current batch
-    batcher->append("foo");//3 bytes
-    batcher->append("bar");//3 bytes
+  //add 2 items in the current batch
+  batcher->append("foo");    //3 bytes
+  batcher->append("bar-yyy");//7 bytes
 
-    //the next item cannot be added in the current batch. Otherwise the batch size would exceed 'batch_max_size'.
-	//so it will be added in a new batch
-    batcher->append("hello");
+  //the next item cannot be added in the current batch. Otherwise the batch size would exceed 'batch_max_size'.
+  //so it will be added in a new batch
+  batcher->append("hello");
 
-	std::string expected_batch_0 = "foo\nbar";
-	std::string expected_batch_1 = "hello";
+  std::string expected_batch_0 = "foo\nbar-yyy";
+  std::string expected_batch_1 = "hello";
 
-	delete batcher;//flush force
+  delete batcher;//flush force
 
-    BOOST_REQUIRE_EQUAL(s.items.size(), 2);
-    auto batch_0 = s.items[0];
-    auto batch_1 = s.items[1];
+  BOOST_REQUIRE_EQUAL(s.items.size(), 2);
+  auto batch_0 = s.items[0];
+  auto batch_1 = s.items[1];
 
-	BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
-    BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
+  BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
+  BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
 }
 
 //test that the batcher flushes everything before deletion
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
-    sender s;
-	async_batcher<sender>* batcher = new async_batcher<sender>(s);
+  sender s;
+  async_batcher<sender>* batcher = new async_batcher<sender>(s);
 
-    batcher->append("foo");
-    batcher->append("bar");
+  batcher->append("foo");
+  batcher->append("bar");
 
-    //batch was not sent yet
-    BOOST_CHECK_EQUAL(s.items.size(), 0);
+  //batch was not sent yet
+  BOOST_CHECK_EQUAL(s.items.size(), 0);
 
-    //batch flush is triggered on delete
-    delete batcher;
+  //batch flush is triggered on delete
+  delete batcher;
 
-    std::string expected = "foo\nbar";
+  std::string expected = "foo\nbar";
 
-    BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-    BOOST_CHECK_EQUAL(s.items.front(), expected);
+  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
+  BOOST_CHECK_EQUAL(s.items.front(), expected);
 }
 
 
