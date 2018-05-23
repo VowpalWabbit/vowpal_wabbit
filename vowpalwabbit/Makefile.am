@@ -48,7 +48,7 @@ if CLANG_LIBCXX
 AM_CXXFLAGS += -stdlib=libc++
 endif
 
-AM_CXXFLAGS += -I ../rapidjson/include
+AM_CXXFLAGS += -I ../rapidjson/include -I ../explore
 
 AM_CXXFLAGS += $(CXXOPTIMIZE)
 
