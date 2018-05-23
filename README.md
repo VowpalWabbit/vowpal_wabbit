@@ -223,3 +223,5 @@ To browse the code more easily, do
 `make doc`
 
 and then point your browser to `doc/html/index.html`.
+
+Note that documentation generates class diagrams using [Graphviz](https://www.graphviz.org). For best results, ensure that it is installed beforehand.
