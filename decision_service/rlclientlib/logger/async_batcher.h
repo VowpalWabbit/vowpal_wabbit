@@ -16,11 +16,12 @@ namespace reinforcement_learning {
 	class async_batcher 
   {
 	public:
+    int init(api_status* status);
 
     int append(std::string&& evt, api_status* status = nullptr);
     int append(std::string& evt, api_status* status = nullptr);
 
-	private:
+	  private:
     void timer(); //the timer triggers a queue flush (run in background)
 	  size_t fill_buffer(size_t remaining, std::string& buf_to_send);
     void flush(); //flush all batches
@@ -46,6 +47,25 @@ namespace reinforcement_learning {
 		size_t _queue_max_size;
     error_callback_fn* _perror_cb;
 	};
+
+  template <typename TSender>
+  int async_batcher<TSender>::init(api_status* status) {
+    if ( !_thread_is_running ) {
+      try {
+        _thread_is_running = true;
+        _background_thread = std::thread(&async_batcher::timer, this);
+      }
+      catch(const std::exception& e) {
+        _thread_is_running = false;
+        std::ostringstream os;
+        os  << "Unable to start background thread to log events. "
+            << e.what();
+        api_status::try_update(status, error_code::background_thread_start, os.str().c_str());
+        return error_code::background_thread_start;
+      }
+    }
+    return error_code::success;
+  }
 
   template <typename TSender>
   int async_batcher<TSender>::append(std::string&& evt, api_status* status = nullptr) {
@@ -126,10 +146,9 @@ namespace reinforcement_learning {
               _batch_max_size(batch_max_size),
               _batch_timeout_ms(batch_timeout_ms),
               _queue_max_size(queue_max_size),
-              _perror_cb(perror_cb) 
+              _perror_cb(perror_cb) ,
+              _thread_is_running(false)
   {
-    _thread_is_running = true;
-    _background_thread = std::thread(&async_batcher::timer, this);
   }
 
   template <typename TSender>

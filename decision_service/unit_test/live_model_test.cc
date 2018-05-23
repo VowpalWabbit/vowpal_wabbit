@@ -23,6 +23,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 
 	//create the ds live_model, and initialize it with the config
 	reinforcement_learning::live_model ds(config);
+  ds.init(nullptr);
 
   auto uuid = "uuid";
   auto context = "context";
@@ -72,6 +73,7 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 
 	//create a ds live_model, and initialize with configuration
   reinforcement_learning::live_model ds(config);
+  ds.init(nullptr);
 
 	const char*  uuid = "uuid";
 	const char*  reward = "reward";

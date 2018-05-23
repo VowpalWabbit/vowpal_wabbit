@@ -19,7 +19,7 @@ namespace reinforcement_learning {
 		int get_top_action_id(api_status* status = nullptr) const;  // id of the top action chosen by the ds
 		void set_uuid(const char* uuid);
 	  void push_back(const int action_id, const float prob);
-	  int size() const;
+	  size_t size() const;
 
 	  private:
     ranking_response_impl* _pimpl;

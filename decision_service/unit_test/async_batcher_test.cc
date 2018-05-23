@@ -34,6 +34,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
   async_batcher<sender> batcher(s, &error_fn,262143, timeout_ms, 8192);
+  batcher.init(nullptr);
  
   //add 2 items in the current batch
   batcher.append("foo");
@@ -55,6 +56,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t batch_max_size = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
   async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, batch_max_size);
+  batcher->init(nullptr);
 
   //add 2 items in the current batch
   batcher->append("foo");    //3 bytes
@@ -82,6 +84,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
   sender s;
   async_batcher<sender>* batcher = new async_batcher<sender>(s);
+  batcher->init(nullptr);
 
   batcher->append("foo");
   batcher->append("bar");

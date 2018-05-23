@@ -3,7 +3,7 @@
 
 namespace reinforcement_learning
 {
-  logger::logger(const utility::config_collection& c, error_callback_fn* perror_cb = nullptr)
+  logger::logger(const utility::config_collection& c, error_callback_fn* perror_cb)
     : _ranking_client(
         c.get("eventhub_host", "localhost:8080"),
         c.get("shared_access_key_name", ""),
@@ -21,6 +21,10 @@ namespace reinforcement_learning
         c.get_int("batch_timeout_ms", 1000),
         c.get_int("queue_max_size", 1000 * 2))
   {
+  }
+
+  int logger::init(api_status* status) {
+    return _async_batcher.init(status);
   }
 
   int logger::append_ranking(std::string& item, api_status* status)

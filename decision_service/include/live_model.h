@@ -17,6 +17,8 @@ namespace reinforcement_learning {
     explicit live_model(const utility::config_collection& config, error_fn fn = nullptr, void* err_context = nullptr);
 		~live_model();
 
+    int init(api_status* status=nullptr);
+
 		// request the decision service, in order to rank the N actions provided in the context_json string
 		int choose_rank(const char * uuid, const char * context_json, ranking_response&, api_status* = nullptr);
 		int choose_rank(const char * context_json, ranking_response&, api_status* = nullptr);//uuid is auto-generated
@@ -34,5 +36,6 @@ namespace reinforcement_learning {
 
 	  private:
 		live_model_impl* _pimpl;
+    bool _initialized;
 	};
 }
