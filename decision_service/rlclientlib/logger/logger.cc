@@ -19,7 +19,7 @@ namespace reinforcement_learning
       _async_batcher(
         _ranking_client,
         perror_cb,
-        c.get_int("batch_max_size", 8 * 1024),
+        c.get_int("send_high_water_mark", 4 * 1024 * 1024),
         c.get_int("batch_timeout_ms", 1000),
         c.get_int("queue_max_size", 1000 * 2))
   {

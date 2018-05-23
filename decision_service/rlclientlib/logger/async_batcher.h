@@ -29,7 +29,7 @@ namespace reinforcement_learning {
 	public:
 	  async_batcher(TSender& pipe, 
                   error_callback_fn* perror_cb = nullptr,
-	                size_t batch_max_size = (256 * 1024 - 1), 
+	                size_t send_high_water_mark = (1024 * 1024 * 4), 
                   size_t batch_timeout_ms = 1000,
 	                size_t queue_max_size = (8 * 1024));
 
@@ -42,7 +42,7 @@ namespace reinforcement_learning {
 		std::thread _background_thread;       //a background thread runs a timer that flushes the queue
 		bool _thread_is_running;
     std::ostringstream _buffer;           //re-used buffer to prevent re-allocation during sends
-		size_t _batch_max_size;
+		size_t _send_high_water_mark;
 		size_t _batch_timeout_ms;
 		size_t _queue_max_size;
     error_callback_fn* _perror_cb;
@@ -104,7 +104,7 @@ namespace reinforcement_learning {
     _queue.pop(&buf_to_send);
     auto filled_size = buf_to_send.size();
     --remaining;
-    if ( remaining <= 0 || filled_size >= _batch_max_size ) {
+    if ( remaining <= 0 || filled_size >= _send_high_water_mark ) {
       return remaining;
     }
 
@@ -113,7 +113,7 @@ namespace reinforcement_learning {
     _buffer.seekp(std::ios_base::beg, 0);
     _buffer << buf_to_send;
 
-    while( remaining > 0 && filled_size < _batch_max_size) {
+    while( remaining > 0 && filled_size < _send_high_water_mark) {
       _queue.pop(&buf_to_send);
       _buffer << "\n" << buf_to_send;
       --remaining;
@@ -140,10 +140,10 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t batch_max_size,
+  async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t send_high_water_mark,
                                         const size_t batch_timeout_ms, const size_t queue_max_size)
               : _sender(pipe),
-              _batch_max_size(batch_max_size),
+              _send_high_water_mark(send_high_water_mark),
               _batch_timeout_ms(batch_timeout_ms),
               _queue_max_size(queue_max_size),
               _perror_cb(perror_cb) ,

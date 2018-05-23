@@ -53,17 +53,17 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
 BOOST_AUTO_TEST_CASE(flush_batches)
 {
   sender s;
-  size_t batch_max_size = 10;//bytes
+  size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, batch_max_size);
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
   //add 2 items in the current batch
   batcher->append("foo");    //3 bytes
   batcher->append("bar-yyy");//7 bytes
 
-  //the next item cannot be added in the current batch. Otherwise the batch size would exceed 'batch_max_size'.
-  //so it will be added in a new batch
+  //'send_high_water_mark' will be triggered by previous 2 items.
+  //next item will be added in a new batch
   batcher->append("hello");
 
   std::string expected_batch_0 = "foo\nbar-yyy";
