@@ -298,7 +298,6 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
 {
   if (ec_seq.size() <= 0) return;
 
-
   size_t num_features = 0;
 
   float loss = 0.;
@@ -310,7 +309,7 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
     if (!CB::ec_is_example_header(*ec_seq[i]))
       num_features += ec_seq[i]->num_features;
 
-  bool is_test = false;
+  bool labeled_example= true;
   if (c.gen_cs.known_cost.probability > 0)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
@@ -320,8 +319,13 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
     }
   }
   else
-    is_test = true;
-  all.sd->update(ec.test_only, c.gen_cs.known_cost.probability > 0, loss, ec.weight, num_features);
+    labeled_example = false;
+
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq.size(); i++)
+    holdout_example &= ec_seq[i]->test_only;
+
+  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
   for (int sink : all.final_prediction_sink)
     print_action_score(sink, ec.pred.a_s, ec.tag);
@@ -340,7 +344,7 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, &ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, &ec_seq, true);
 }
 
 void output_example_seq(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
