@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 
 	//create a simple ds configuration
 	auto config = reinforcement_learning::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  config.set("local_eventhub_test", "true");  
 
 	//create a ds live_model, and initialize with configuration
   reinforcement_learning::live_model ds(config);

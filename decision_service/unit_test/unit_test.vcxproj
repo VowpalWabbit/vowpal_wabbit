@@ -167,6 +167,7 @@
     <ClCompile Include="http_server\http_server.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="ranking_response_test.cc" />
+    <ClCompile Include="str_util_test.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\rlclientlib\rlclientlib.vcxproj">

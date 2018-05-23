@@ -14,7 +14,8 @@ namespace reinforcement_learning {
 		//send a POST request
 		int send(const std::string&, api_status* status = nullptr);
 
-		eventhub_client(const std::string&, const std::string&, const std::string&, const std::string&);
+		eventhub_client(const std::string&, const std::string&, 
+                    const std::string&, const std::string&, bool local_test = false);
 
 	private:
 		std::string& authorization();
@@ -28,6 +29,6 @@ namespace reinforcement_learning {
 		const std::string _eventhub_name;          //e.g. "interaction"
 
 		std::string _authorization;
-		long long _authorization_valid_until;//in seconds
+		long long _authorization_valid_until;      //in seconds
 	};
 }

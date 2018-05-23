@@ -10,17 +10,20 @@ using namespace web::http; // Common HTTP functionality
 namespace reinforcement_learning
 {
   //private helper
-  string_t build_url(const std::string& host, const std::string& name)
+  string_t build_url(const std::string& host, const std::string& name, const bool local_test)
   {
-    //for tests
-    size_t pos = host.find("localhost");
-    if (pos != std::string::npos)
-      return conversions::to_string_t("http://" + host);
+    const std::string proto = local_test ? "http://" : "https://";
 
-    std::ostringstream url;
-    url << "https://" << host << "/" << name << "/messages?timeout=60&api-version=2014-01";
-    auto p = conversions::to_string_t(url.str());
-    return p;
+    std::string url;
+    if ( local_test ) {
+      url.append(proto).append(host);
+    }
+    else {
+      url.append(proto).append(host).append("/").append(name)
+      .append("/messages?timeout=60&api-version=2014-01");
+    }
+
+    return conversions::to_string_t(url);
   }
 
   int eventhub_client::send(const std::string& post_data, api_status* status)
@@ -76,9 +79,9 @@ namespace reinforcement_learning
     return error_code;
   }
 
-  eventhub_client::eventhub_client(const std::string& host, const std::string& key_name, const std::string& key,
-                                   const std::string& name)
-    : _client(build_url(host, name)),
+  eventhub_client::eventhub_client( const std::string& host, const std::string& key_name, 
+                                    const std::string& key, const std::string& name, const bool local_test)
+    : _client(build_url(host, name, local_test)),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
       _authorization_valid_until(0)

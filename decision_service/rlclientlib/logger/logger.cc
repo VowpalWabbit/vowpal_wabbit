@@ -8,12 +8,14 @@ namespace reinforcement_learning
         c.get("eventhub_host", "localhost:8080"),
         c.get("shared_access_key_name", ""),
         c.get("shared_access_key", ""),
-        c.get("eventhub_interaction_name", "interaction")),
+        c.get("eventhub_interaction_name", "interaction"),
+        c.get_bool("local_eventhub_test",false)),
       _outcome_client(
         c.get("eventhub_host", "localhost:8080"),
         c.get("shared_access_key_name", ""),
         c.get("shared_access_key", ""),
-        c.get("eventhub_observation_name", "observation")),
+        c.get("eventhub_observation_name", "observation"),
+        c.get_bool("local_eventhub_test", false)),
       _async_batcher(
         _ranking_client,
         perror_cb,

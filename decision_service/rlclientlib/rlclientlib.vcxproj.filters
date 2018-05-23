@@ -69,6 +69,9 @@
     <ClInclude Include="logger\moving_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="str_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -111,6 +114,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ranking_response_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="str_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

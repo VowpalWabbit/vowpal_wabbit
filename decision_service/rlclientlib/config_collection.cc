@@ -1,4 +1,5 @@
 #include "config_collection.h"
+#include "str_util.h"
 
 namespace reinforcement_learning { namespace utility {
 
@@ -42,11 +43,24 @@ namespace reinforcement_learning { namespace utility {
     return defval;
   }
 
-  int config_collection::get_int(const char* name, int defval) const {
+  int config_collection::get_int(const char* name, const int defval) const {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if (it != map.end())
       return atoi(it->second.c_str());
+    return defval;
+  }
+
+  bool config_collection::get_bool(const char* name, const bool defval) const {
+    auto& map = *_pmap;
+    const auto it = map.find(name);
+    if ( it != map.end() ) {
+      auto sval = it->second;
+      str_util::trim(str_util::to_lower(sval));
+      if ( sval == "true" ) return true;
+      else if ( sval == "false" ) return false;
+      else return defval; // value string is neither true nor false.  return default 
+    }
     return defval;
   }
 
