@@ -27,7 +27,7 @@ namespace reinforcement_learning {
 		
 		const std::string _eventhub_host;          //e.g. "ingest-x2bw4dlnkv63q.servicebus.windows.net"
 		const std::string _shared_access_key_name; //e.g. "RootManageSharedAccessKey"
-		const std::string _shared_access_key;      //e.g. "2MNeQafvOsmV9jgbUOtx4I1KBAtQEWXqU2e6Om8M/n4="
+		const std::string _shared_access_key;      //e.g. Check https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-authentication-and-security-model-overview
 		const std::string _eventhub_name;          //e.g. "interaction"
 
 		std::string _authorization;
