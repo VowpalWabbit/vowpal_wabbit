@@ -11,6 +11,8 @@ namespace reinforcement_learning {
 	class eventhub_client {
 	public:
 
+    int init(api_status* status = nullptr);
+
 		//send a POST request
 		int send(const std::string&, api_status* status = nullptr);
 
@@ -18,7 +20,7 @@ namespace reinforcement_learning {
                     const std::string&, const std::string&, bool local_test = false);
 
 	private:
-		std::string& authorization();
+    int authorization(api_status* status);
 
 	private:
 		web::http::client::http_client _client;

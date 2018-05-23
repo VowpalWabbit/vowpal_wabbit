@@ -26,7 +26,17 @@ namespace reinforcement_learning
   }
 
   int logger::init(api_status* status) {
-    return _async_batcher.init(status);
+    auto err_code = error_code::success;
+    err_code = _async_batcher.init(status);
+    if ( err_code != error_code::success )
+      return err_code;
+    err_code = _ranking_client.init(status);
+    if ( err_code != error_code::success )
+      return err_code;
+    err_code = _outcome_client.init(status);
+    if ( err_code != error_code::success )
+      return err_code;
+    return err_code;
   }
 
   int logger::append_ranking(std::string& item, api_status* status)

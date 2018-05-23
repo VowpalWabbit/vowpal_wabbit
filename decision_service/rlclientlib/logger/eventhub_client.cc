@@ -26,10 +26,18 @@ namespace reinforcement_learning
     return conversions::to_string_t(url);
   }
 
+  int eventhub_client::init(api_status* status) {
+    return authorization(status);
+  }
+
   int eventhub_client::send(const std::string& post_data, api_status* status)
   {
     http_request request(methods::POST);
-    request.headers().add(_XPLATSTR("Authorization"), authorization().c_str());
+
+    if ( authorization(status) != error_code::success )
+      return status->get_error_code();
+
+    request.headers().add(_XPLATSTR("Authorization"), _authorization.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
 
     request.set_body(post_data);
@@ -55,7 +63,7 @@ namespace reinforcement_learning
       return error_code::eventhub_http_bad_status_code;
     });
 
-    int error_code = -1;
+    auto error_code = -1;
     try
     {
       request_task.wait();
@@ -86,13 +94,11 @@ namespace reinforcement_learning
       _shared_access_key(key), _eventhub_name(name),
       _authorization_valid_until(0)
   {
-    //init authorize token
-    authorization();
   }
 
-  std::string& eventhub_client::authorization()
+  int eventhub_client::authorization(api_status* status)
   {
-    auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();
+    const auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();
 
     // re-create authorization token if needed
     if (now > _authorization_valid_until - 60 * 15)
@@ -104,7 +110,7 @@ namespace reinforcement_learning
       resource_stream << "https://" << _eventhub_host << "/" << _eventhub_name;
 
       // encode(resource_stream)
-      std::string encoded_uri = conversions::to_utf8string(
+      const auto encoded_uri = conversions::to_utf8string(
         web::uri::encode_data_string(conversions::to_string_t(resource_stream.str())));
 
       // construct data to be signed
@@ -120,8 +126,9 @@ namespace reinforcement_learning
       if (!HMAC(EVP_sha256(), _shared_access_key.c_str(), (int)_shared_access_key.length(),
                 (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len))
       {
-        // TODO: throw proper
-        throw "failed to generate SAS hash";
+        api_status::try_update(status, error_code::eventhub_generate_SAS_hash,
+          "Failed to generate SAS hash");
+        return error_code::eventhub_generate_SAS_hash;
       }
 
       digest.resize(digest_len);
@@ -139,7 +146,6 @@ namespace reinforcement_learning
 
       _authorization = authorization_stream.str();
     }
-
-    return _authorization;
+    return error_code::success;
   }
 }
