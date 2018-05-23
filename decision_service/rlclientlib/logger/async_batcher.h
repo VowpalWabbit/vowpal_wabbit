@@ -3,7 +3,6 @@
 #include <string>
 #include <thread>
 #include <sstream>
-
 #include "moving_queue.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
@@ -115,9 +114,8 @@ namespace reinforcement_learning {
     while (remaining > 0) {
       remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
-      if (_sender.send(buf_to_send, &status) != error_code::success) {
-        if (_perror_cb) _perror_cb->report_error(status);
-      }
+      if ( _sender.send(buf_to_send, &status) != error_code::success )
+        REPORT_ERR(_perror_cb, status);
     }
   }
 
