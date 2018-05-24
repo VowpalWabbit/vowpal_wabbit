@@ -28,6 +28,7 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "no_label.h"
 #include "gd.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -794,16 +795,12 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
 void return_example(vw& all, example& ec)
 {
-  label_data ld = ec.l.simple;
-
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
   for (int f: all.final_prediction_sink)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
+    all.sd->print_update(all.holdout_set_off, all.current_pass, "none", 0.f,
                          ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all,ec);
 }
@@ -1194,6 +1191,7 @@ void compute_coherence_metrics(lda &l)
     compute_coherence_metrics(l, l.all->weights.dense_weights);
 
 }
+
 void end_pass(lda &l)
 {
   if (l.examples.size())
@@ -1305,6 +1303,8 @@ LEARNER::base_learner *lda_setup(arguments& arg)
   ld->v.resize(arg.all->lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
+
+  arg.all->p->lp = no_label::no_label_parser;
 
   LEARNER::learner<lda,example> &l = init_learner(
                     ld,
