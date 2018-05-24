@@ -165,9 +165,9 @@
     <ClCompile Include="logger\logger.cc" />
     <ClCompile Include="model_mgmt\model_mgmt.cc" />
     <ClCompile Include="ranking_response.cc" />
-    <ClCompile Include="ranking_response_impl.cpp" />
+    <ClCompile Include="ranking_response_impl.cc" />
     <ClCompile Include="restapi_data_transport.cc" />
-    <ClCompile Include="str_util.cpp" />
+    <ClCompile Include="str_util.cc" />
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />
   </ItemGroup>

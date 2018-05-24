@@ -110,7 +110,7 @@ namespace reinforcement_learning {
 
     // Send size not satisfied.  Shift to larger buffer to satisfy send.
     // Copy is needed but reuse existing tmp buffer to avoid allocation
-    _buffer.seekp(0);
+    _buffer.seekp(0, _buffer.beg);
     _buffer << buf_to_send;
 
     while( remaining > 0 && filled_size < _send_high_water_mark) {
