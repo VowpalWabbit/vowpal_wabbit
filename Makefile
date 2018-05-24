@@ -109,11 +109,7 @@ vw:
 	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-<<<<<<< HEAD
-vw_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
-=======
-vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
->>>>>>> john/master
+vw_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 vw_gcov: CXX = g++
 vw_gcov:
 	cd vowpalwabbit && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) -j $(NPROCS) things
