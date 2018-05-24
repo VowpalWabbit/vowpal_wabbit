@@ -1,5 +1,5 @@
 TARGET = rlclient-test.out
-LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -lrlclient -lboost_unit_test_framework
+LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -lrlclient -lboost_unit_test_framework -ldl
 LIBDIR = -L ../rlclientlib
 INCLUDE = -I ../include -I ../rlclientlib
 
@@ -10,7 +10,7 @@ all: default
 
 things: all
 
-SOURCES = $(filter-out ds_model_mgmt_test.cc, $(wildcard *.cc)) http_server/http_server.cc #$(wildcard */*.cc)
+SOURCES = $(filter-out model_mgmt_test.cc, $(wildcard *.cc)) http_server/http_server.cc #$(wildcard */*.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 

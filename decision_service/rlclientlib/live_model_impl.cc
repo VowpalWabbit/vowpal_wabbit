@@ -48,7 +48,7 @@ namespace reinforcement_learning
     const string model_id = "model_id";
       
     //send the ranking event to the backend
-    _buff.seekp(ios_base::beg, 0);
+    _buff.seekp(0);
     ranking_event::serialize(_buff, uuid, context, response, model_id);
     auto sbuf = _buff.str();
     TRY_OR_RETURN(_logger.append_ranking(sbuf, status));
@@ -71,7 +71,7 @@ namespace reinforcement_learning
     TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));
 
     //send the outcome event to the backend
-    _buff.seekp(ios_base::beg, 0);
+    _buff.seekp(0);
     outcome_event::serialize(_buff,uuid, outcome_data);
     auto sbuf = _buff.str();
     TRY_OR_RETURN(_logger.append_outcome(sbuf, status));

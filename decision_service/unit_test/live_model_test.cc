@@ -9,6 +9,7 @@
 #include "config_utility.h"
 #include "api_status.h"
 #include "ranking_response.h"
+#include <thread>
 
 #include <boost/test/unit_test.hpp>
 

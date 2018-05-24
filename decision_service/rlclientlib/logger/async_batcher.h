@@ -68,7 +68,7 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  int async_batcher<TSender>::append(std::string&& evt, api_status* status = nullptr) {
+  int async_batcher<TSender>::append(std::string&& evt, api_status* status) {
     if ( _queue.size() < _queue_max_size ) {
       _queue.push(std::move(evt));
       return error_code::success;
@@ -83,7 +83,7 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  int async_batcher<TSender>::append(std::string& evt, api_status* status = nullptr) {
+  int async_batcher<TSender>::append(std::string& evt, api_status* status) {
     return append(std::move(evt), status);
   }
 
@@ -110,7 +110,7 @@ namespace reinforcement_learning {
 
     // Send size not satisfied.  Shift to larger buffer to satisfy send.
     // Copy is needed but reuse existing tmp buffer to avoid allocation
-    _buffer.seekp(std::ios_base::beg, 0);
+    _buffer.seekp(0);
     _buffer << buf_to_send;
 
     while( remaining > 0 && filled_size < _send_high_water_mark) {

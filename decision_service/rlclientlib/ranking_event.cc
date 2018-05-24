@@ -14,7 +14,7 @@ namespace reinforcement_learning {
     //add action ids
     oss << R"(","a":[)";
     if ( resp.size() > 0 ) {
-      for ( auto &r : resp )
+      for ( auto const &r : resp )
         oss << r.action_id << ",";
       oss.seekp(-1, oss.cur);//remove last
     }
@@ -22,7 +22,7 @@ namespace reinforcement_learning {
     //add probabilities
     oss << R"(],"c":)" << context << R"(,"p":[)";
     if ( resp.size() > 0 ) {
-      for ( auto &r : resp )
+      for ( auto const &r : resp )
         oss << r.probability << ",";
       oss.seekp(-1, oss.cur);//remove last
     }
