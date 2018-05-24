@@ -37,7 +37,13 @@ namespace reinforcement_learning
     if ( authorization(status) != error_code::success )
       return status->get_error_code();
 
-    request.headers().add(_XPLATSTR("Authorization"), _authorization.c_str());
+    std::string auth_str;
+    { // protected access for _authorization
+      std::lock_guard<std::mutex> lock(_mutex);
+      auth_str = _authorization;
+    }
+
+    request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
 
     request.set_body(post_data);
@@ -100,6 +106,7 @@ namespace reinforcement_learning
   {
     const auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();
 
+    std::lock_guard<std::mutex> lock(_mutex);
     // re-create authorization token if needed
     if (now > _authorization_valid_until - 60 * 15)
     {
@@ -134,7 +141,7 @@ namespace reinforcement_learning
       digest.resize(digest_len);
 
       // encode digest (base64 + url encoding)
-      auto encoded_digest = web::uri::encode_data_string(conversions::to_base64(digest));
+      const auto encoded_digest = web::uri::encode_data_string(conversions::to_base64(digest));
 
       // construct SAS
       std::ostringstream authorization_stream;
