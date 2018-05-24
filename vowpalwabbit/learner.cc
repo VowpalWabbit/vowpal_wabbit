@@ -79,11 +79,6 @@ void process_multi_ex(vw& all, multi_ex& ec_seq)
   as_multiline(all.l)->finish_example(all, ec_seq);
 }
 
-bool example_is_test(example& ec, vw& all)
-{
-  return all.l->is_test_example(ec);
-}
-
 /* example headers have the word "shared" */
 bool ec_is_example_header(example& ec)
 {
@@ -101,7 +96,7 @@ inline bool example_is_newline_not_header(example& ec)
   * Returns: true if complete and false if incomplete example */
 bool complete_multi_ex(example* ec, multi_ex& ec_seq, vw& all)
 {
-  const bool is_test_ec = example_is_test(*ec,all);
+  const bool is_test_ec = all.p->lp.test_label(&ec->l);
   const bool need_to_break = VW::is_ring_example(all, ec) && (ec_seq.size() >= all.p->ring_size - 2);
 
   if ((example_is_newline_not_header(*ec) && is_test_ec)

@@ -2199,7 +2199,7 @@ void end_examples(search& sch)
 
 bool mc_label_is_test(polylabel& lab)
 {
-  return MC::label_is_test(&lab.multi);
+  return MC::mc_label.test_label(&lab.multi);
 }
 
 void search_initialize(vw* all, search& sch)
@@ -2647,7 +2647,6 @@ base_learner* setup(arguments& arg)
   l.set_end_examples(end_examples);
   l.set_finish(search_finish);
   l.set_end_pass(end_pass);
-  l.set_test_example([](example&) {return true; }); // noop
   return make_base(l);
 }
 
@@ -2762,6 +2761,7 @@ void search::set_label_parser(label_parser&lp, bool (*is_test)(polylabel&))
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
     std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->p->lp = lp;
+  this->priv->all->p->lp.test_label = (bool (*)(void*))is_test;
   this->priv->label_is_test = is_test;
 }
 
