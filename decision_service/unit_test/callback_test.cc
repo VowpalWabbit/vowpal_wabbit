@@ -20,7 +20,7 @@ void error_handler(const api_status& s, void* user_context)
   *static_cast<int*>(user_context) = -1;
 }
 
-BOOST_AUTO_TEST_CASE(callback)
+BOOST_AUTO_TEST_CASE(error_callback)
 {
   auto i = 0;
   error_callback_fn fn(error_handler, &i);
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(callback)
   BOOST_ASSERT(i == -1);
 }
 
-BOOST_AUTO_TEST_CASE(null_callback)
+BOOST_AUTO_TEST_CASE(null_error_callback)
 {
   auto i = 0;
   error_callback_fn fn(nullptr, &i);
@@ -48,7 +48,7 @@ void ex_error_handler(const api_status& s, void* user_context)
   throw 5;
 }
 
-BOOST_AUTO_TEST_CASE(exception_in_callback)
+BOOST_AUTO_TEST_CASE(exception_in_error_callback)
 {
   auto i = 0;
   error_callback_fn fn(ex_error_handler, &i);

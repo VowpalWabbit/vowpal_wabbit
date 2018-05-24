@@ -110,3 +110,57 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 
 	delete status;
 }
+
+namespace rl = reinforcement_learning;
+
+class wrong_class {};
+
+class algo_server {
+  public:
+    algo_server() : _err_count{0} {}
+    void ml_error_handler(void) { shutdown(); }
+    int _err_count;
+  private:
+    void shutdown() { ++_err_count; }
+};
+
+void algo_error_func(const rl::api_status&, algo_server* ph) {
+  ph->ml_error_handler();
+}
+
+BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
+  //start a http server that will receive events sent from the eventhub_client
+  bool post_error = true;
+  http_helper http_server;
+  http_server.on_initialize(U("http://localhost:8080"),post_error);
+
+  //create a simple ds configuration
+  auto config = rl::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  config.set("local_eventhub_test", "true");
+
+  ////////////////////////////////////////////////////////////////////
+  //// Following mismatched object type is prevented by the compiler
+  //   wrong_class mismatch;
+  //   live_model ds2(config, algo_error_func, &mismatch);
+  ////////////////////////////////////////////////////////////////////
+
+  algo_server the_server;
+  //create a ds live_model, and initialize with configuration
+  rl::live_model ds(config,algo_error_func,&the_server);
+  
+  ds.init(nullptr);
+
+  const char*  uuid = "uuid";
+  const char*  context = "abcdefghijklmnopqrstuvwxyz;;abcdefghijklmnopqrstuvwxyz";
+
+  rl::ranking_response response;
+  BOOST_CHECK_EQUAL(the_server._err_count, 0);
+  // request ranking
+  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), rl::error_code::success);
+  //wait until the timeout triggers and error callback is fired
+  std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+  BOOST_CHECK_EQUAL(the_server._err_count, 1);
+
+  //stop the http server
+  http_server.on_shutdown();
+}

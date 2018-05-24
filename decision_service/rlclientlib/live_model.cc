@@ -32,7 +32,7 @@ namespace reinforcement_learning
     return err_code;
   }
 
-  live_model::live_model(const utility::config_collection& config, error_fn fn, void* err_context) 
+  live_model::live_model(const utility::config_collection& config, const error_fn fn, void* err_context) 
     : _pimpl(new live_model_impl(config, fn, err_context)),
     _initialized(false)
   {
