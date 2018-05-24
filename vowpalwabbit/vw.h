@@ -95,7 +95,8 @@ void add_constant_feature(vw& all, example*ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 //notify VW that you are done with the example.
-void finish_example(vw& all, example* ec);
+void finish_example(vw& all, example& ec);
+void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
 void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));

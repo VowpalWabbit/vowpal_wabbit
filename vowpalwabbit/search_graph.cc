@@ -135,7 +135,7 @@ void finish(Search::search& sch)
 
 inline bool example_is_edge(example*e) { return e->l.cs.costs.size() > 1; }
 
-void run_bfs(task_data &D, vector<example*>& ec)
+void run_bfs(task_data &D, multi_ex& ec)
 {
   D.bfs.clear();
   vector<bool> touched;
@@ -175,7 +175,7 @@ void run_bfs(task_data &D, vector<example*>& ec)
   }
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.multiplier = D.wpp << D.ss;
@@ -227,7 +227,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     D.pred.push_back( D.K+1 );
 }
 
-void takedown(Search::search& sch, vector<example*>& /*ec*/)
+void takedown(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.bfs.clear();
@@ -256,7 +256,7 @@ void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
   fs.push_back(fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
 }
 
-void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example*>&ec)
+void add_edge_features(Search::search&sch, task_data&D, size_t n, multi_ex&ec)
 {
   D.cur_node = ec[n];
 
@@ -329,13 +329,13 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
 
 }
 
-void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec)
+void del_edge_features(task_data&/*D*/, uint32_t n, multi_ex&ec)
 {
   ec[n]->indices.pop();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();
-  fs.erase();
+  fs.clear();
 }
 
 #define IDX(i,j) ( (i) * (D.K+1) + j )
@@ -366,7 +366,7 @@ float macro_f(task_data& D)
   return total_f1 / count_f1;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   float loss_val = 0.5f / (float)D.num_loops;

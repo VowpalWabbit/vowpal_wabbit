@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 #include <stdint.h>
 #include "v_array.h"
+#include "no_label.h"
 #include "simple_label.h"
 #include "multiclass.h"
 #include "multilabel.h"
@@ -17,6 +18,7 @@ license as described in the file LICENSE.
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
+#include <vector>
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
@@ -32,7 +34,8 @@ const unsigned char node_id_namespace  = 136; // this is \x88
 const unsigned char message_namespace  = 137; // this is \x89
 
 typedef union
-{ label_data simple;
+{ no_label::no_label empty;
+  label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
@@ -120,3 +123,9 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 }
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
+
+typedef std::vector<example*> multi_ex;
+
+namespace VW {
+void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
+}

@@ -39,7 +39,7 @@ bool know_all_cost_example(CB::label& ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb& data, base_learner& base, example& ec)
+void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
   cb_to_cs& c = data.cbcs;
@@ -65,12 +65,12 @@ void predict_or_learn(cb& data, base_learner& base, example& ec)
   }
 }
 
-void predict_eval(cb&, base_learner&, example&)
+void predict_eval(cb&, single_learner&, example&)
 {
   THROW("can not use a test label for evaluation");
 }
 
-void learn_eval(cb& data, base_learner&, example& ec)
+void learn_eval(cb& data, single_learner&, example& ec)
 {
   CB_EVAL::label ld = ec.l.cb_eval;
 
@@ -89,10 +89,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if(!is_test_label(ld))
+  if(!CB::cb_label.test_label(&ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
@@ -109,7 +109,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, is_test_label(ld), ec, nullptr, false);
+  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
 void finish(cb& data)
@@ -122,13 +122,13 @@ void finish(cb& data)
 void finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void eval_finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }
 using namespace CB_ALGS;
@@ -175,7 +175,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.args.push_back(ss.str());
   }
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   if (eval)
   {
     arg.all->p->lp = CB_EVAL::cb_eval;
@@ -187,7 +187,7 @@ base_learner* cb_algs_setup(arguments& arg)
     arg.all->label_type = label_type::cb;
   }
 
-  learner<cb>* l;
+  learner<cb,example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);

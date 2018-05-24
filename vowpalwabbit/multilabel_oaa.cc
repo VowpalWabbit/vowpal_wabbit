@@ -16,11 +16,11 @@ struct multi_oaa
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(multi_oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTILABEL::labels multilabels = ec.l.multilabels;
   MULTILABEL::labels preds = ec.pred.multilabels;
-  preds.label_v.erase();
+  preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX, 1.f, 0.f};
   uint32_t multilabel_index = 0;
@@ -52,7 +52,7 @@ void predict_or_learn(multi_oaa& o, LEARNER::base_learner& base, example& ec)
 void finish_example(vw& all, multi_oaa&, example& ec)
 {
   MULTILABEL::output_example(all, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 LEARNER::base_learner* multilabel_oaa_setup(arguments& arg)
@@ -63,7 +63,7 @@ LEARNER::base_learner* multilabel_oaa_setup(arguments& arg)
       .missing())
     return nullptr;
 
-  LEARNER::learner<multi_oaa>& l = LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true>,
+  LEARNER::learner<multi_oaa,example>& l = LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                                                          predict_or_learn<false>, data->k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
   arg.all->p->lp = MULTILABEL::multilabel;

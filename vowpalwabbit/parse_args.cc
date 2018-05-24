@@ -183,7 +183,8 @@ void parse_dictionary_argument(vw&all, string str)
     THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
   }
 
-  feature_dict* map = new feature_dict(1023, nullptr, substring_equal);
+  feature_dict* map = &calloc_or_throw<feature_dict>();
+  map->init(1023, nullptr, substring_equal);
   example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
@@ -249,8 +250,8 @@ void parse_dictionary_argument(vw&all, string str)
     map->put(ss, hash, arr);
 
     // clear up ec
-    ec->tag.erase(); ec->indices.erase();
-    for (size_t i=0; i<256; i++) { ec->feature_space[i].erase();}
+    ec->tag.clear(); ec->indices.clear();
+    for (size_t i=0; i<256; i++) { ec->feature_space[i].clear();}
   }
   while ((rc != EOF) && (nread > 0));
   free(buffer);
@@ -401,6 +402,7 @@ void parse_source(arguments& arg)
   po::parsed_options pos = po::command_line_parser(arg.args).
                            style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                            options(arg.opts).positional(p).run();
+
   arg.vm = po::variables_map();
   po::store(pos, arg.vm);
   if (arg.vm.count("data") > 0)
@@ -491,8 +493,8 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (v_string *i = vw1.interactions.begin(), *j = vw2.interactions.begin(); i != vw1.interactions.end(); i++, j++)
-    if (v_string2string(*i) != v_string2string(*j))
+  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions); ++i, ++j)
+    if (*i != *j)
       return "interaction mismatch";
 
   return nullptr;
@@ -620,7 +622,7 @@ void parse_feature_tweaks(arguments& arg)
   }
 
   // prepare namespace interactions
-  v_array<v_string> expanded_interactions = v_init<v_string>();
+  std::vector<std::string> expanded_interactions;
 
   if ( ( ((!arg.all->pairs.empty() || !arg.all->triples.empty() || !arg.all->interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (arg.vm.count("quadratic") || arg.vm.count("cubic") || arg.vm.count("interactions")) ) )
@@ -632,11 +634,7 @@ void parse_feature_tweaks(arguments& arg)
     // in case arrays were already filled in with values from old model file - reset them
     if (!arg.all->pairs.empty()) arg.all->pairs.clear();
     if (!arg.all->triples.empty()) arg.all->triples.clear();
-    if (arg.all->interactions.size() > 0)
-    {
-      for (v_string* i = arg.all->interactions.begin(); i != arg.all->interactions.end(); ++i) i->delete_v();
-      arg.all->interactions.delete_v();
-    }
+    if (!arg.all->interactions.empty()) arg.all->interactions.clear();
   }
 
   if (arg.vm.count("quadratic"))
@@ -665,9 +663,8 @@ void parse_feature_tweaks(arguments& arg)
       if (!arg.all->quiet) arg.trace_message << *i << " ";
     }
 
-    v_array<v_string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
-    push_many(expanded_interactions, exp_cubic.begin(), exp_cubic.size());
-    exp_cubic.delete_v();
+    std::vector<std::string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!arg.all->quiet) arg.trace_message << endl;
   }
@@ -682,9 +679,8 @@ void parse_feature_tweaks(arguments& arg)
       if (!arg.all->quiet) arg.trace_message << *i << " ";
     }
 
-    v_array<v_string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
-    push_many(expanded_interactions, exp_inter.begin(), exp_inter.size());
-    exp_inter.delete_v();
+    std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
+    expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
     if (!arg.all->quiet) arg.trace_message << endl;
   }
@@ -705,23 +701,21 @@ void parse_feature_tweaks(arguments& arg)
     if (arg.all->interactions.size() > 0)
     {
       // should be empty, but just in case...
-      for (v_string& i : arg.all->interactions) i.delete_v();
-      arg.all->interactions.delete_v();
+      arg.all->interactions.clear();
     }
 
     arg.all->interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
-    for (v_string& i : expanded_interactions)
+    for (auto& i : expanded_interactions)
     {
       const size_t len = i.size();
       if (len == 2)
-        arg.all->pairs.push_back(v_string2string(i));
+        arg.all->pairs.push_back(i);
       else if (len == 3)
-        arg.all->triples.push_back(v_string2string(i));
+        arg.all->triples.push_back(i);
     }
   }
-
 
   for (size_t i = 0; i < 256; i++)
     {
@@ -949,7 +943,8 @@ void parse_example_tweaks(arguments& arg)
 
   if (arg.vm.count("named_labels"))
   {
-    arg.all->sd->ldict = new namedlabels(named_labels);
+    arg.all->sd->ldict = &calloc_or_throw<namedlabels>();
+    new (arg.all->sd->ldict) namedlabels(named_labels);
     if (!arg.all->quiet)
       arg.trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
   }
@@ -1582,7 +1577,7 @@ void finish(vw& all, bool delete_all)
 
   free_parser(all);
   finalize_source(all.p);
-  all.p->parse_name.erase();
+  all.p->parse_name.clear();
   all.p->parse_name.delete_v();
   free(all.p);
   bool seeded;
@@ -1592,7 +1587,11 @@ void finish(vw& all, bool delete_all)
     seeded = false;
   if (!seeded)
   {
-    delete(all.sd->ldict);
+    if (all.sd->ldict)
+      {
+        all.sd->ldict->~namedlabels();
+        free(all.sd->ldict);
+      }
     free(all.sd);
   }
   all.reduction_stack.delete_v();
@@ -1614,15 +1613,11 @@ void finish(vw& all, bool delete_all)
 
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
-    delete all.loaded_dictionaries[i].dict;
+    free(all.loaded_dictionaries[i].dict);
   }
   delete all.loss;
 
   delete all.all_reduce;
-
-  // destroy all interactions and array of them
-  for (v_string& i : all.interactions) i.delete_v();
-  all.interactions.delete_v();
 
   if (delete_all) delete &all;
 
