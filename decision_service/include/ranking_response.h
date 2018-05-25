@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace reinforcement_learning {
   class api_status;
   class ranking_response_impl;

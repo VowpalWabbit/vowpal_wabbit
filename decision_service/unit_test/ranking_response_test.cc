@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(ranking_response_write_read_iterator) {
   }
 
   int i = 0;
-  for( auto& d: resp) {
+  for( auto&& d: resp) {
     auto& td = test_data[i++];
     BOOST_CHECK_EQUAL(d.action_id,td.first);
     BOOST_CHECK_EQUAL(d.probability, td.second);
