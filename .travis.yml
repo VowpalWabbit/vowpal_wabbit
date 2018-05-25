@@ -5,6 +5,18 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
+  #### begin cpprest
+  - sudo apt-get install g++ git make zlib1g-dev libboost-all-dev libssl-dev cmake
+  - git clone https://github.com/Microsoft/cpprestsdk.git casablanca
+  - cd casablanca/Release
+  - mkdir build
+  - cd build
+  - cmake .. 
+  - make
+  - sudo make install
+  - cd ../../../
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+  #### end cpprest
   - sudo pip install cpp-coveralls wheel
   # use miniconda for python package testing
   - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
