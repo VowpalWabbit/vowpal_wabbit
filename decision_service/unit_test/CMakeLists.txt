@@ -13,7 +13,8 @@ include_directories(${vw_INCLUDE_DIRS})
 include_directories("${PROJECT_SOURCE_DIR}/../rlclientlib")
 
 find_package(Boost COMPONENTS unit_test_framework system REQUIRED)
-add_executable(${PROJECT_NAME} main.cc async_batcher_test.cc callback_test.cc concurrent_queue_test.cc event_test.cc eventhub_client_test.cc live_model_test.cc object_pool_test.cc ranking_response_test.cc
+add_executable(${PROJECT_NAME} main.cc async_batcher_test.cc callback_test.cc concurrent_queue_test.cc event_test.cc eventhub_client_test.cc 
+	live_model_test.cc object_pool_test.cc ranking_response_test.cc str_util_test.cc
 	safe_vw_test.cc
 	http_server/http_server.cc)
 
