@@ -1,4 +1,4 @@
-CXX = $(shell which g++)
+CXX ?= $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which g++) -m32
