@@ -23,9 +23,11 @@ int main()
 	// Create a ds live_model, and initialize with configuration
 	live_model model(config, error_handler, (void*)(&error_cntxt));
 
+  api_status status;  //optional, can be omitted
+  model.init(&status);
+
 	//create response and api_status object, that will be passed to the ds live_model
 	ranking_response response;
-	api_status status;  //optional, can be omitted
 
 	// Use ds to choose the top action
 	const auto uuid = R"(uuid_1)";

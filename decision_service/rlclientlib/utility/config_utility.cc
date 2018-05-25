@@ -29,7 +29,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
 		"eventhub_host",
 		"shared_access_key_name",
 		"shared_access_key",
-		"batch_max_size",
+		"send_high_water_mark",
 		"queue_max_size",
 		"batch_timeout_ms"
 	};

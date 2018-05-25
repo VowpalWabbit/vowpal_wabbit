@@ -50,5 +50,8 @@
     <ClCompile Include="ranking_response_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="str_util_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

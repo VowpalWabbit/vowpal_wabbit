@@ -14,9 +14,11 @@ namespace reinforcement_learning
     utility::config_collection _configuration;
     error_callback_fn _error_cb;
     logger _logger;
+    std::ostringstream _buff;
 
   public:
-    
+    int init(api_status* status);
+
     int choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status);
     //here the uuid is auto-generated
     int choose_rank(const char* context, ranking_response& response, api_status* status);

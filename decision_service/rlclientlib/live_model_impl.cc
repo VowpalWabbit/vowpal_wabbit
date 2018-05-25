@@ -8,6 +8,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 
+using namespace std;
+
 // this macro assumes that success_code equals 0
 #define TRY_OR_RETURN(x) do { \
   int retval__LINE__ = (x); \
@@ -22,31 +24,37 @@ namespace reinforcement_learning
 {
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
 
-  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) {
-      //clear previous errors if any
-      api_status::try_clear(status);
+  int live_model_impl::init(api_status* status) {
+    return _logger.init(status);
+  }
 
-      //check arguments
-      TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
+  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) 
+  {
+    //clear previous errors if any
+    api_status::try_clear(status);
 
-      /* GET ACTIONS PROBABILITIES FROM VW */
+    //check arguments
+    TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
 
-      /**/ // TODO: replace with call to parse example and predict
-      /**/ // TODO: once that is complete
-      response.push_back(2, 0.4f);
-      response.push_back(1, 0.3f);
-      response.push_back(4, 0.2f);
-      response.push_back(3, 0.1f);
+    /* GET ACTIONS PROBABILITIES FROM VW */
 
-      std::string model_id = "model_id";
+    /**/ // TODO: replace with call to parse example and predict
+    /**/ // TODO: once that is complete
+    response.push_back(2, 0.4f);
+    response.push_back(1, 0.3f);
+    response.push_back(4, 0.2f);
+    response.push_back(3, 0.1f);
+      
+    const string model_id = "model_id";
+      
+    //send the ranking event to the backend
+    _buff.seekp(0, _buff.beg);
+    ranking_event::serialize(_buff, uuid, context, response, model_id);
+    auto sbuf = _buff.str();
+    TRY_OR_RETURN(_logger.append_ranking(sbuf, status));
 
-      //send the ranking event to the backend
-//      ranking_event evt(uuid, context, action_proba, model_id);
-//      TRY_OR_RETURN(_logger.append_ranking(evt.serialize(), status));
-
-      response.set_uuid(uuid);
-
-      return error_code::success;
+    response.set_uuid(uuid);
+    return error_code::success;
   }
 
   //here the uuid is auto-generated
@@ -63,14 +71,16 @@ namespace reinforcement_learning
     TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));
 
     //send the outcome event to the backend
-    outcome_event evt(uuid, outcome_data);
-    TRY_OR_RETURN(_logger.append_outcome(evt.serialize(), status));
+    _buff.seekp(0, _buff.beg);
+    outcome_event::serialize(_buff,uuid, outcome_data);
+    auto sbuf = _buff.str();
+    TRY_OR_RETURN(_logger.append_outcome(sbuf, status));
 
     return error_code::success;
   }
 
   int live_model_impl::report_outcome(const char* uuid, float reward, api_status* status) {
-    return report_outcome(uuid, std::to_string(reward).c_str(), status);
+    return report_outcome(uuid, to_string(reward).c_str(), status);
   }
 
   live_model_impl::live_model_impl(const utility::config_collection& config, error_fn fn, void* err_context)

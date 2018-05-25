@@ -8,11 +8,14 @@ namespace reinforcement_learning { namespace error_code {
     const int success = 0;
 
     //error code
-    const int invalid_argument = 1;
-    const int background_queue_overflow = 2;
-    const int eventhub_http_generic = 3;
+    const int invalid_argument            = 1;
+    const int background_queue_overflow   = 2;
+    const int eventhub_http_generic       = 3;
     const int eventhub_http_bad_status_code = 4;
-    const int action_not_found = 5;
+    const int action_not_found            = 5;
+    const int background_thread_start     = 6;
+    const int not_initialized             = 7;
+    const int eventhub_generate_SAS_hash  = 8;
 }}
 
 namespace reinforcement_learning {

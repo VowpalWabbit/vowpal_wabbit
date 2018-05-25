@@ -8,16 +8,16 @@ Reading datafile = train-sets/lda-2pass-hang.dat
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-12.813775 12.813775            1            1.0  unknown   0.0000      201
-12.946867 13.079960            2            2.0  unknown   0.0000      220
-13.718190 14.489512            4            4.0  unknown   0.0000      136
-14.787531 15.856872            8            8.0  unknown   0.0000      371
-15.934851 17.082171           16           16.0  unknown   0.0000      138
-17.209260 18.483669           32           32.0  unknown   0.0000      276
-17.163311 17.117362           64           64.0  unknown   0.0000       55
-16.494666 15.826021          128          128.0  unknown   0.0000      131
-15.918044 15.341422          256          256.0  unknown   0.0000      433
-15.281656 14.645268          512          512.0  unknown   0.0000       61
+12.813775 12.813775            1            1.0     none        0      201
+12.946867 13.079960            2            2.0     none        0      220
+13.718190 14.489512            4            4.0     none        0      136
+14.787531 15.856872            8            8.0     none        0      371
+15.934851 17.082171           16           16.0     none        0      138
+17.209260 18.483669           32           32.0     none        0      276
+17.163311 17.117362           64           64.0     none        0       55
+16.494666 15.826021          128          128.0     none        0      131
+15.918044 15.341422          256          256.0     none        0      433
+15.281656 14.645268          512          512.0     none        0       61
 
 finished run
 number of examples per pass = 500

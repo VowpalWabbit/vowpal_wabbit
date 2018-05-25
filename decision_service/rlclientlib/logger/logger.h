@@ -13,15 +13,17 @@ namespace reinforcement_learning {
 	class logger {
 
 	public:
-		logger(const utility::config_collection&, error_callback_fn* perror_cb);
+		logger(const utility::config_collection&, error_callback_fn* perror_cb = nullptr);
+    
+	  int init(api_status* status);
 
 		//log to the ranking eventhub, use a background queue to send batch
-		int append_ranking(const std::string&, api_status* = nullptr);
+		int append_ranking(std::string&, api_status* = nullptr);
 
 		//log to the outcome eventhub (direct sending, no batching)
-		int append_outcome(const std::string&, api_status* = nullptr);
+		int append_outcome(std::string&, api_status* = nullptr);
 
-	private:
+	  private:
     eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub
 		async_batcher<eventhub_client> _async_batcher;    //handle batching for the data sent to the eventhub client
 	};

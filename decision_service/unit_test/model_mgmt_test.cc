@@ -5,8 +5,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include <unordered_map>
-#include "model_mgmt/ds_model_mgmt.h"
-#include "utility/ds_object_factory.h"
+#include "model_mgmt/model_mgmt.h"
+#include "utility/object_factory.h"
 
 using namespace decision_service::model_mangement;
 using namespace decision_service::utility;

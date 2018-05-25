@@ -17,8 +17,9 @@ namespace reinforcement_learning { namespace utility {
     void set(const char* name, const char* value);
     const char* get(const char* name, const char* defval) const;
     int get_int(const char* name, int defval) const;
+    bool get_bool(const char* str, bool defval) const;
 
-  private:
+    private:
     using map_type = std::unordered_map<std::string, std::string>;
     map_type* _pmap;
   };
