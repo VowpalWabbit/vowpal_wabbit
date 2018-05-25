@@ -54,6 +54,14 @@ ifeq ($(UNAME), Darwin)
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
 
+ifneq ($(USER_BOOST_INCLUDE),)
+  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
+endif
+ifneq ($(USER_BOOST_LIBRARY),)
+  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
+endif
+
+
 JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
