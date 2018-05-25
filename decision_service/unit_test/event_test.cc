@@ -1,0 +1,71 @@
+#define BOOST_TEST_DYN_LINK
+#ifdef STAND_ALONE
+#   define BOOST_TEST_MODULE Main
+#endif
+
+#include "ranking_event.h"
+#include <boost/test/unit_test.hpp>
+#include "ranking_response.h"
+
+using namespace reinforcement_learning;
+using namespace std;
+
+BOOST_AUTO_TEST_CASE(serialize_outcome)
+{
+  const auto uuid = "uuid";
+	const auto outcome_data = "1.0";
+  
+  ostringstream oss;
+	outcome_event::serialize(oss, uuid, outcome_data);
+  auto serialized = oss.str();
+	const auto expected = R"({"EventId":"uuid","v":"1.0"})";
+
+	BOOST_CHECK_EQUAL(serialized, expected);
+}
+
+BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
+{
+	const auto uuid = "";
+	const auto outcome_data = "";
+
+  ostringstream oss;
+	outcome_event::serialize(oss, uuid, outcome_data);
+  auto serialized = oss.str();
+	const auto expected = R"({"EventId":"","v":""})";
+
+	BOOST_CHECK_EQUAL(serialized, expected);
+}
+
+BOOST_AUTO_TEST_CASE(serialize_ranking)
+{
+	const auto uuid = "uuid";
+	const auto context = "{context}";
+	ranking_response resp;
+	resp.push_back(2, 0.8f);
+	resp.push_back(1, 0.2f);
+	const auto model_id = "model_id";
+
+  ostringstream oss;
+	ranking_event::serialize(oss, uuid, context, resp, model_id);
+
+	auto serialized = oss.str();
+	const auto expected = R"({"Version":"1","EventId":"uuid","a":[2,1],"c":{context},"p":[0.8,0.2],"VWState":{"m":"model_id"}})";
+
+	BOOST_CHECK_EQUAL(serialized, expected);
+}
+
+BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
+{
+	const auto uuid = "uuid";
+	const auto context = "{context}";
+	ranking_response ranking;
+	const auto model_id = "model_id";
+
+  ostringstream oss;
+	ranking_event::serialize(oss, uuid, context, ranking, model_id);
+
+	auto serialized = oss.str();
+	const auto expected = R"({"Version":"1","EventId":"uuid","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
+
+	BOOST_CHECK_EQUAL(serialized, expected);
+}
