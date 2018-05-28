@@ -383,7 +383,6 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 
 }
 
-
 void convert_mc_to_cs(cbify& data, example& ec)
 {
 	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
@@ -410,59 +409,10 @@ size_t predict_sublearner_noadf(cbify& data, example& ec, uint32_t i)
 	return ec.pred.multiclass;
 }
 
-size_t predict_cs(cbify& data, example& ec)
-{
-	uint32_t argmin = find_min(data.cumulative_costs);
-	//cout<<argmin<<endl;
-	return predict_sublearner_noadf(data, ec, argmin);
-}
-
-void accumulate_costs_ips(cbify& data, example& ec)
-{
-	CB::cb_class& cl = data.cb_label.costs[0];
-	// validation using bandit data
-	if (data.validation_method == 1)
-	{
-		//IPS for approximating the cumulative costs for all lambdas
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-		{
-			uint32_t action = predict_sublearner_noadf(data, ec, i);
-
-			if (action == cl.action)
-				data.cumulative_costs[i] += cl.cost / cl.probability;
-			//cout<<data.cumulative_costs[i]<<endl;
-		}
-		//cout<<endl;
-	}
-	else //validation using supervised data (their labels are already set to cost-sensitive labels)
-	{
-		//only update cumulative costs every warm_start_period iterations
-		if (abs(log2(data.bandit_iter) - floor(log2(data.bandit_iter))) < 1e-4)
-		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-				data.cumulative_costs[i] = 0;
-
-			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
-				//go over the supervised validation set
-				for (uint32_t j = 0; j < data.warm_start_period; j++)
-				{
-					example& ec_valid = data.supervised_validation[j];
-					uint32_t action = predict_sublearner_noadf(data, ec_valid, i);
-					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, action);
-				}
-				//cout<<data.cumulative_costs[i]<<endl;
-			}
-			//cout<<endl;
-		}
-	}
-}
-
 void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
 {
 
-	if (data.validation_method == 1)
+	if (data.validation_method == BANDIT_VALI)
 	{
 		uint32_t best_action;
 
@@ -530,6 +480,12 @@ float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 	return weight_multiplier;
 }
 
+size_t predict_cs(cbify& data, example& ec)
+{
+	uint32_t argmin = find_min(data.cumulative_costs);
+	//cout<<argmin<<endl;
+	return predict_sublearner_noadf(data, ec, argmin);
+}
 
 void learn_cs(cbify& data, example& ec, size_t ec_type)
 {
@@ -543,18 +499,30 @@ void learn_cs(cbify& data, example& ec, size_t ec_type)
 	ec.weight = old_weight;
 }
 
-void add_to_sup_validation(cbify& data, example& ec)
+void predict_or_learn_cs(cbify& data, example& ec, size_t ec_type)
 {
-	// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
-	// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (for vw's internal reasons).
-
 	MULTICLASS::label_t ld = ec.l.multi;
+	//predict
+	predict_cs(data, ec);
+	//learn
+	//first, corrupt fully supervised example ec's label here
 	ec.l.multi.label = data.corrupted_label;
-	example& ec_copy = data.supervised_validation[data.warm_start_iter];
-	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
-	ec.l.multi = ld;
+	convert_mc_to_cs(data, ec);
 
+	bool is_update;
+	if (ec_type == SUPERVISED)
+		is_update = data.ind_supervised;
+	else
+		is_update = data.ind_bandit;
+
+	if (is_update)
+		learn_cs(data, ec, ec_type);
+
+	//set the label of ec back to a multiclass label
+	ec.l.multi = ld;
+	data.mc_pred = ec.pred.multiclass;
 }
+
 
 void generate_corrupted_cb(cbify& data, example& ec, CB::cb_class& cl, MULTICLASS::label_t& ld, size_t action, size_t corrupted_label)
 {
@@ -567,7 +535,7 @@ void generate_corrupted_cb(cbify& data, example& ec, CB::cb_class& cl, MULTICLAS
 	cl.cost = loss(data, corrupted_label, cl.action);
 }
 
-size_t predict_bandit(cbify& data, base_learner& base, example& ec)
+uint32_t predict_bandit(cbify& data, base_learner& base, example& ec)
 {
 	data.cb_label.costs.erase();
 	ec.l.cb = data.cb_label;
@@ -595,47 +563,14 @@ void learn_bandit(cbify& data, base_learner& base, example& ec, size_t ec_type)
 	ec.weight = old_weight;
 }
 
-void accumulate_variance(cbify& data, example& ec)
-{
-	size_t pred_best_approx = predict_cs(data, ec);
-	data.cumulative_variance += 1.0 / data.a_s[pred_best_approx-1].score;
-
-	//cout<<"variance at bandit round "<< data.bandit_iter << " = " << 1.0 / data.a_s[pred_best_approx-1].score << endl;
-	//cout<<pred_best_approx<<endl;
-
-}
-
-void predict_or_learn_cs(cbify& data, example& ec, size_t ec_type)
-{
-	MULTICLASS::label_t ld = ec.l.multi;
-	//predict
-	predict_cs(data, ec);
-	//learn
-	//first, corrupt fully supervised example ec's label here
-	ec.l.multi.label = data.corrupted_label;
-	convert_mc_to_cs(data, ec);
-
-	bool is_update;
-	if (ec_type == SUPERVISED)
-		is_update = data.ind_supervised;
-	else
-		is_update = data.ind_bandit;
-
-	if (is_update)
-		learn_cs(data, ec, ec_type);
-
-	//set the label of ec back to a multiclass label
-	ec.l.multi = ld;
-	data.mc_pred = ec.pred.multiclass;
-}
-
 void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_t ec_type)
 {
 	MULTICLASS::label_t ld = ec.l.multi;
-	size_t action = predict_bandit(data, base, ec);
+	uint32_t action = predict_bandit(data, base, ec);
 
-	CB::cb_class cl;
+	//CB::cb_class cl;
 	generate_corrupted_cb(data, ec, cl, ld, action, data.corrupted_label);
+	//convert_mc_to_cb(data, ec, action);
 
 	//Create a new cb label
 	data.cb_label.costs.push_back(cl);
@@ -658,9 +593,72 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_
 	ec.l.multi = ld;
 	ec.pred.multiclass = action;
 	data.mc_pred = ec.pred.multiclass;
-	//ec.weight = old_weight;
 }
 
+void add_to_sup_validation(cbify& data, example& ec)
+{
+	// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
+	// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (for vw's internal reasons).
+
+	MULTICLASS::label_t ld = ec.l.multi;
+	ec.l.multi.label = data.corrupted_label;
+	example& ec_copy = data.supervised_validation[data.warm_start_iter];
+	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
+	ec.l.multi = ld;
+
+}
+
+void accumulate_costs_ips(cbify& data, example& ec)
+{
+	CB::cb_class& cl = data.cb_label.costs[0];
+	// validation using bandit data
+	if (data.validation_method == 1)
+	{
+		//IPS for approximating the cumulative costs for all lambdas
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			uint32_t action = predict_sublearner_noadf(data, ec, i);
+
+			if (action == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+			//cout<<data.cumulative_costs[i]<<endl;
+		}
+		//cout<<endl;
+	}
+	else //validation using supervised data (their labels are already set to cost-sensitive labels)
+	{
+		//only update cumulative costs every warm_start_period iterations
+		if (abs(log2(data.bandit_iter) - floor(log2(data.bandit_iter))) < 1e-4)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+				data.cumulative_costs[i] = 0;
+
+			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				//go over the supervised validation set
+				for (uint32_t j = 0; j < data.warm_start_period; j++)
+				{
+					example& ec_valid = data.supervised_validation[j];
+					uint32_t action = predict_sublearner_noadf(data, ec_valid, i);
+					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, action);
+				}
+				//cout<<data.cumulative_costs[i]<<endl;
+			}
+			//cout<<endl;
+		}
+	}
+}
+
+void accumulate_variance(cbify& data, example& ec)
+{
+	size_t pred_best_approx = predict_cs(data, ec);
+	data.cumulative_variance += 1.0 / data.a_s[pred_best_approx-1].score;
+
+	//cout<<"variance at bandit round "<< data.bandit_iter << " = " << 1.0 / data.a_s[pred_best_approx-1].score << endl;
+	//cout<<pred_best_approx<<endl;
+
+}
 
 template <bool is_learn>
 void predict_or_learn(cbify& data, base_learner& base, example& ec)
