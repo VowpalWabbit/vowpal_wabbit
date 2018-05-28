@@ -62,6 +62,7 @@ struct cbify_adf_data
 struct cbify
 {
   CB::label cb_label;
+	COST_SENSITIVE::label cs_label;
   GenericExplorer<example>* generic_explorer;
   //v_array<float> probs;
   vw_scorer* scorer;
@@ -105,7 +106,7 @@ struct cbify
 	size_t bandit_iter;
 	size_t warm_start_iter;
 	size_t weighting_scheme;
-	example* supervised_validation;
+	v_array<example> supervised_validation;
 	size_t lambda_scheme;
 	float epsilon;
 	float cumulative_variance;
@@ -258,9 +259,18 @@ float loss(cbify& data, uint32_t label, uint32_t final_prediction)
 
 template<class T> inline void delete_it(T* p) { if (p != nullptr) delete p; }
 
+bool ind_update(cbify& data, size_t ec_type)
+{
+	if (ec_type == SUPERVISED)
+		return data.ind_supervised;
+	else
+		return data.ind_bandit;
+}
+
+
 void finish(cbify& data)
 {
-  CB::cb_label.delete_label(&data.cb_label);
+  //CB::cb_label.delete_label(&data.cb_label);
   //data.probs.delete_v();
   delete_it(data.scorer);
   delete_it(data.generic_explorer);
@@ -274,7 +284,7 @@ void finish(cbify& data)
 	{
 		for (size_t i = 0; i < data.warm_start_period; ++i)
 			VW::dealloc_example(MULTICLASS::mc_label.delete_label, data.supervised_validation[i]);
-		free(data.supervised_validation);
+		data.supervised_validation.delete_v();
 	}
 
   if (data.use_adf)
@@ -303,8 +313,8 @@ void finish(cbify& data)
   }
 	else
 	{
-		data.csls->costs.delete_v();
-    free(data.csls);
+		COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
+		CB::cb_label.delete_label(&data.cb_label);
 	}
 
 }
@@ -386,7 +396,7 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 void convert_mc_to_cs(cbify& data, example& ec)
 {
 	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
-	COST_SENSITIVE::label& csl = *data.csls;
+	COST_SENSITIVE::label& csl = data.cs_label;
 	size_t label = ec.l.multi.label;
 
 	for (uint32_t j = 0; j < data.num_actions; j++)
@@ -504,48 +514,46 @@ void predict_or_learn_cs(cbify& data, example& ec, size_t ec_type)
 	MULTICLASS::label_t ld = ec.l.multi;
 	//predict
 	predict_cs(data, ec);
+	data.mc_pred = ec.pred.multiclass;
 	//learn
 	//first, corrupt fully supervised example ec's label here
 	ec.l.multi.label = data.corrupted_label;
 	convert_mc_to_cs(data, ec);
 
-	bool is_update;
-	if (ec_type == SUPERVISED)
-		is_update = data.ind_supervised;
-	else
-		is_update = data.ind_bandit;
-
-	if (is_update)
+	if (ind_update(data, ec_type))
 		learn_cs(data, ec, ec_type);
 
 	//set the label of ec back to a multiclass label
 	ec.l.multi = ld;
-	data.mc_pred = ec.pred.multiclass;
+	ec.pred.multiclass = data.mc_pred;
 }
 
-
-void generate_corrupted_cb(cbify& data, example& ec, CB::cb_class& cl, MULTICLASS::label_t& ld, size_t action, size_t corrupted_label)
+void convert_mc_to_cb(cbify& data, example& ec, uint32_t action)
 {
+	auto& cl = data.cb_label.costs[0];
 	cl.action = action;
 	cl.probability = ec.pred.a_s[action-1].score;
 
 	if(!cl.action)
 		THROW("No action with non-zero probability found!");
 
-	cl.cost = loss(data, corrupted_label, cl.action);
+	cl.cost = loss(data, data.corrupted_label, action);
+	ec.l.cb = data.cb_label;
 }
+
 
 uint32_t predict_bandit(cbify& data, base_learner& base, example& ec)
 {
-	data.cb_label.costs.erase();
-	ec.l.cb = data.cb_label;
+	// we need the cb cost array to be an empty array to make cb prediction
+	ec.l.cb.costs = v_init<CB::cb_class>();
 	ec.pred.a_s = data.a_s;
 
 	uint32_t argmin = find_min(data.cumulative_costs);
 	base.predict(ec, argmin);
-	data.pred = ec.pred;
+	//data.pred = ec.pred;
 
 	uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
+	ec.l.cb.costs.delete_v();
 
 	return action;
 
@@ -567,45 +575,34 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_
 {
 	MULTICLASS::label_t ld = ec.l.multi;
 	uint32_t action = predict_bandit(data, base, ec);
+	data.mc_pred = action;
 
-	//CB::cb_class cl;
-	generate_corrupted_cb(data, ec, cl, ld, action, data.corrupted_label);
-	//convert_mc_to_cb(data, ec, action);
+	convert_mc_to_cb(data, ec, action);
 
-	//Create a new cb label
-	data.cb_label.costs.push_back(cl);
-	ec.l.cb = data.cb_label;
 	//make sure the prediction here is a cb prediction
-	ec.pred = data.pred;
+	//ec.pred = data.pred;
 
-	bool is_update;
-	if (ec_type == SUPERVISED)
-		is_update = data.ind_supervised;
-	else
-		is_update = data.ind_bandit;
-
-	if (is_update)
+	if (ind_update(data, ec_type))
 		learn_bandit(data, base, ec, ec_type);
 
-	data.a_s.erase();
+	//data.a_s.erase();
 	data.a_s = ec.pred.a_s;
 
 	ec.l.multi = ld;
 	ec.pred.multiclass = action;
-	data.mc_pred = ec.pred.multiclass;
 }
 
 void add_to_sup_validation(cbify& data, example& ec)
 {
-	// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
-	// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (for vw's internal reasons).
-
 	MULTICLASS::label_t ld = ec.l.multi;
 	ec.l.multi.label = data.corrupted_label;
-	example& ec_copy = data.supervised_validation[data.warm_start_iter];
-	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
+	example* ec_copy = calloc_or_throw<example>(1);
+	VW::copy_example_data(false, ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
 	ec.l.multi = ld;
-
+	// I believe we cannot directly do push_back(ec), as the label won't be deeply copied and that space will be
+	// reallocated when the example fall out of the predict_or_learn scope
+	data.supervised_validation.push_back(*ec_copy);
+	free(ec_copy);
 }
 
 void accumulate_costs_ips(cbify& data, example& ec)
@@ -1079,7 +1076,8 @@ base_learner* cbify_setup(vw& all)
 
 	if (data.validation_method == SUPERVISED_VALI)
 	{
-		data.supervised_validation = calloc_or_throw<example>(data.warm_start_period);
+		data.supervised_validation = v_init<example>();
+		//calloc_or_throw<example>(data.warm_start_period);
 	}
 
 
@@ -1107,14 +1105,16 @@ base_learner* cbify_setup(vw& all)
   }
 	else
 	{
-		data.csls = calloc_or_throw<COST_SENSITIVE::label>(1);
-		auto& csl = data.csls[0];
+		//data.csls = calloc_or_throw<COST_SENSITIVE::label>(1);
+		//auto& csl = data.csls[0];
 
-		csl.costs = v_init<COST_SENSITIVE::wclass>();
+		data.cs_label.costs = v_init<COST_SENSITIVE::wclass>();
 		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
 
 		for (size_t a = 0; a < num_actions; ++a)
-			csl.costs.push_back({0, a+1, 0, 0});
+			data.cs_label.costs.push_back({0, a+1, 0, 0});
+
+		data.cb_label.costs.push_back({0, 1, 0, 0});
 	}
 
 
