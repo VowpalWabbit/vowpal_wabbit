@@ -1,6 +1,7 @@
 #include <openssl/hmac.h>
 #include <sstream>
 #include "eventhub_client.h"
+#include "err_constants.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions

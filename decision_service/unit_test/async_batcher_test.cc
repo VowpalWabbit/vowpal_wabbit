@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "logger/async_batcher.h"
+#include "err_constants.h"
 
 using namespace reinforcement_learning;
 

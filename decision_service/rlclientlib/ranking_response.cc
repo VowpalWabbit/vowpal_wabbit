@@ -1,6 +1,7 @@
 #include "ranking_response.h"
 #include "ranking_response_impl.h"
 #include "api_status.h"
+#include "err_constants.h"
 
 namespace reinforcement_learning {
 

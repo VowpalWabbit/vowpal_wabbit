@@ -3,20 +3,6 @@
 #include <string>
 
 
-namespace reinforcement_learning { namespace error_code {
-    //success code
-    const int success = 0;
-
-    //error code
-    const int invalid_argument            = 1;
-    const int background_queue_overflow   = 2;
-    const int eventhub_http_generic       = 3;
-    const int eventhub_http_bad_status_code = 4;
-    const int action_not_found            = 5;
-    const int background_thread_start     = 6;
-    const int not_initialized             = 7;
-    const int eventhub_generate_SAS_hash  = 8;
-}}
 
 namespace reinforcement_learning {
   class api_status
@@ -35,3 +21,12 @@ namespace reinforcement_learning {
       std::string _error_msg;
   };
 }
+
+// this macro assumes that success_code equals 0
+#define TRY_OR_RETURN(x) do { \
+  int retval__LINE__ = (x); \
+  if (retval__LINE__ != 0) { \
+    return retval__LINE__; \
+  } \
+} while (0)
+

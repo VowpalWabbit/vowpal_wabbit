@@ -141,6 +141,10 @@
     <ClInclude Include="..\include\personalization.h" />
     <ClInclude Include="..\include\ranking_response.h" />
     <ClInclude Include="..\include\config_utility.h" />
+    <ClInclude Include="..\include\constants.h" />
+    <ClInclude Include="..\include\err_constants.h" />
+    <ClInclude Include="..\include\factory_resolver.h" />
+    <ClInclude Include="..\include\\model_mgmt.h" />
     <ClInclude Include="live_model_impl.h" />
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
@@ -148,13 +152,14 @@
     <ClInclude Include="logger\moving_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="logger\logger.h" />
-    <ClInclude Include="model_mgmt\model_mgmt.h" />
     <ClInclude Include="ranking_response_impl.h" />
     <ClInclude Include="str_util.h" />
     <ClInclude Include="utility\object_factory.h" />
     <ClInclude Include="restapi_data_transport.h" />
+    <ClInclude Include="vw_model.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="factory_resolver.cc" />
     <ClCompile Include="live_model_impl.cc" />
     <ClCompile Include="error_callback_fn.cc" />
     <ClCompile Include="api_status.cc" />
@@ -170,6 +175,7 @@
     <ClCompile Include="str_util.cc" />
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="vw_model.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

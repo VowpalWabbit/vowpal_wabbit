@@ -7,16 +7,10 @@
 #include "ranking_event.h"
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include "err_constants.h"
 
 using namespace std;
 
-// this macro assumes that success_code equals 0
-#define TRY_OR_RETURN(x) do { \
-  int retval__LINE__ = (x); \
-  if (retval__LINE__ != 0) { \
-    return retval__LINE__; \
-  } \
-} while (0)
 // Why while(0) ? It make the macro safe under various conditions. Check link below
 // https://stackoverflow.com/questions/257418/do-while-0-what-is-it-good-for
 

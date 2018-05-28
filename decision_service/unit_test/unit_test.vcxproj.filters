@@ -53,5 +53,8 @@
     <ClCompile Include="str_util_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="model_mgmt_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
