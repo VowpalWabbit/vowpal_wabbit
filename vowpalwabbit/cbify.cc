@@ -7,7 +7,7 @@
 #include "vw.h"
 
 //In the future, the above two's names should be changed to
-//WARM_START and INTERACTIVE
+//WARM_START and INTERACTION
 #define SUPERVISED 1
 #define BANDIT 2
 
@@ -99,6 +99,8 @@ struct cbify
 	float corrupt_prob_bandit;
 	size_t corrupt_type_supervised;
 	size_t corrupt_type_bandit;
+	size_t corrupted_label;
+
 	size_t validation_method;
 	size_t bandit_iter;
 	size_t warm_start_iter;
@@ -109,6 +111,7 @@ struct cbify
 	float cumulative_variance;
 	size_t overwrite_label;
 	size_t warm_start_type;
+	size_t mc_pred;
 
 };
 
@@ -267,26 +270,24 @@ void finish(cbify& data)
 	data.lambdas.delete_v();
 	data.cumulative_costs.delete_v();
 
-	for (size_t i = 0; i < data.warm_start_period; ++i)
+	if (data.validation_method == SUPERVISED_VALI)
 	{
-		VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data.supervised_validation[i]);
+		for (size_t i = 0; i < data.warm_start_period; ++i)
+			VW::dealloc_example(MULTICLASS::mc_label.delete_label, data.supervised_validation[i]);
+		free(data.supervised_validation);
 	}
-	free(data.supervised_validation);
-
 
   if (data.use_adf)
   {
 	  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	  {
 			VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
-			//data.adf_data.ecs[a].pred.a_s.delete_v();
-	  }
+
 	  VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
-		//data.adf_data.empty_example->pred.a_s.delete_v();
 
     free(data.adf_data.ecs);
     free(data.adf_data.empty_example);
 
+		//TODO: Use CB::cb_label.delete_label / CS here
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 			data.csls[a].costs.delete_v();
 
@@ -355,7 +356,6 @@ uint32_t find_min(v_array<float> arr)
 			argmin = i;
 		}
 	}
-	//cout<<"argmin = "<<argmin<<endl;
 
 	return argmin;
 }
@@ -374,18 +374,6 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 	base.predict(*empty, i);
 	//data.all->cost_sensitive->predict(*empty, argmin);
 
-
-	//float best_score;
-	//for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	//{
-	//	if ( (a == 0) || (ecs[a].partial_prediction < best_score) )
-	//	{
-	//		best_action = a + 1;
-	//		best_score = ecs[a].partial_prediction;
-	//	}
-	//}
-	//best_action_dir = ecs[0].pred.a_s[0].action+1;
-	//assert(best_action == best_action_dir);
   uint32_t pred_action = ecs[0].pred.a_s[0].action+1;
 
   //Need to clear the prediction, otherwise there will be a memory leak
@@ -396,17 +384,51 @@ uint32_t predict_sublearner(cbify& data, base_learner& base, uint32_t i)
 }
 
 
-
-void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
+void convert_mc_to_cs(cbify& data, example& ec)
 {
+	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
+	COST_SENSITIVE::label& csl = *data.csls;
+	size_t label = ec.l.multi.label;
+
+	for (uint32_t j = 0; j < data.num_actions; j++)
+	{
+		csl.costs[j].class_index = j+1;
+		csl.costs[j].x = loss(data, label, j+1);
+	}
+	ec.l.cs = csl;
+}
+
+size_t predict_sublearner_noadf(cbify& data, example& ec, uint32_t i)
+{
+	//For vw's internal reason, we need to first have a cs label before
+	//using csoaa to predict
+	MULTICLASS::label_t ld = ec.l.multi;
+	convert_mc_to_cs(data, ec);
+	data.all->cost_sensitive->predict(ec, i);
+	ec.l.multi = ld;
+
+	return ec.pred.multiclass;
+}
+
+size_t predict_cs(cbify& data, example& ec)
+{
+	uint32_t argmin = find_min(data.cumulative_costs);
+	//cout<<argmin<<endl;
+	return predict_sublearner_noadf(data, ec, argmin);
+}
+
+void accumulate_costs_ips(cbify& data, example& ec)
+{
+	CB::cb_class& cl = data.cb_label.costs[0];
 	// validation using bandit data
 	if (data.validation_method == 1)
 	{
 		//IPS for approximating the cumulative costs for all lambdas
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
-			data.all->cost_sensitive->predict(ec, i);
-			if (ec.pred.multiclass == cl.action)
+			uint32_t action = predict_sublearner_noadf(data, ec, i);
+
+			if (action == cl.action)
 				data.cumulative_costs[i] += cl.cost / cl.probability;
 			//cout<<data.cumulative_costs[i]<<endl;
 		}
@@ -427,23 +449,12 @@ void accumulate_costs_ips(cbify& data, example& ec, CB::cb_class& cl)
 				for (uint32_t j = 0; j < data.warm_start_period; j++)
 				{
 					example& ec_valid = data.supervised_validation[j];
-					data.all->cost_sensitive->predict(ec_valid, i);
-
-					//cout<<ec_valid.pred.multiclass<<endl;
-					//for (uint32_t a = 0; a < data.num_actions; a++)
-					//	cout<<ec_valid.l.cs.costs[a].class_index<<" "<<ec_valid.l.cs.costs[a].x<<endl;
-					//cout<<endl;
-
-					for (uint32_t a = 0; a < data.num_actions; a++)
-					{
-						//cout<<ec_valid.pred.multiclass<<" "<<ec_valid.l.cs.costs[a].class_index<<endl;
-
-						if (ec_valid.pred.multiclass == ec_valid.l.cs.costs[a].class_index)
-							data.cumulative_costs[i] += ec_valid.l.cs.costs[a].x;
-					}
+					uint32_t action = predict_sublearner_noadf(data, ec_valid, i);
+					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, action);
 				}
 				//cout<<data.cumulative_costs[i]<<endl;
 			}
+			//cout<<endl;
 		}
 	}
 }
@@ -520,23 +531,6 @@ float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 }
 
 
-size_t predict_cs(cbify& data, example& ec)
-{
-	uint32_t argmin = find_min(data.cumulative_costs);
-
-	COST_SENSITIVE::label& csl = *data.csls;
-	//For vw's internal reason, we need to first have a cs label before
-	//using csoaa to predict
-	ec.l.cs = csl;
-
-	data.all->cost_sensitive->predict(ec, argmin);
-
-	//cout<<ec.pred.multiclass<<endl;
-
-	return ec.pred.multiclass;
-
-}
-
 void learn_cs(cbify& data, example& ec, size_t ec_type)
 {
 	float old_weight = ec.weight;
@@ -549,43 +543,17 @@ void learn_cs(cbify& data, example& ec, size_t ec_type)
 	ec.weight = old_weight;
 }
 
-//Requires the csl's cost array to have num_actions elements
-void multiclass_to_cs(cbify& data, COST_SENSITIVE::label& csl, size_t corrupted_label)
-{
-	for (uint32_t j = 0; j < data.num_actions; j++)
-	{
-		csl.costs[j].class_index = j+1;
-		csl.costs[j].x = loss(data, corrupted_label, j+1);
-	}
-}
-
-void generate_corrupted_cs(cbify& data, example& ec, MULTICLASS::label_t ld, size_t corrupted_label)
-{
-	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
-	COST_SENSITIVE::label& csl = *data.csls;
-
-	multiclass_to_cs(data, csl, corrupted_label);
-
-	ec.l.cs = csl;
-}
-
 void add_to_sup_validation(cbify& data, example& ec)
 {
 	// NOTE WELL: for convenience in supervised validation, we intentionally use a cost-sensitive label as opposed to
 	// a multiclass label. This is because the csoaa learner needs a cost-sensitive label to predict (for vw's internal reasons).
-	// Also: I did not deallocate the label and the copied example in finish()
+
+	MULTICLASS::label_t ld = ec.l.multi;
+	ec.l.multi.label = data.corrupted_label;
 	example& ec_copy = data.supervised_validation[data.warm_start_iter];
-	//why doesn't the following two apporaches leak memory?
-	VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
-	//copy_array(ec_copy.l.cs.costs, ec.l.cs.costs);
-	//VW::copy_example_data(false, &ec_copy, &ec);
-	//for (uint32_t j = 0; j < data.num_actions; j++)
-	//{
-	//	ec_copy.l.cs.costs.push_back(ec.l.cs.costs[j]);
-	//}
-	//cout<<"after copying"<<endl;
-	//for (uint32_t j = 0; j < data.num_actions; j++)
-	//	cout<<ec_copy.l.cs.costs[j].class_index<<" "<<ec_copy.l.cs.costs[j].x<<endl;
+	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
+	ec.l.multi = ld;
+
 }
 
 void generate_corrupted_cb(cbify& data, example& ec, CB::cb_class& cl, MULTICLASS::label_t& ld, size_t action, size_t corrupted_label)
@@ -637,38 +605,37 @@ void accumulate_variance(cbify& data, example& ec)
 
 }
 
-void predict_or_learn_cs(cbify& data, example& ec, bool is_update, size_t ec_type)
+void predict_or_learn_cs(cbify& data, example& ec, size_t ec_type)
 {
 	MULTICLASS::label_t ld = ec.l.multi;
 	//predict
 	predict_cs(data, ec);
-
 	//learn
 	//first, corrupt fully supervised example ec's label here
-	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
-	generate_corrupted_cs(data, ec, ld, corrupted_label);
+	ec.l.multi.label = data.corrupted_label;
+	convert_mc_to_cs(data, ec);
+
+	bool is_update;
+	if (ec_type == SUPERVISED)
+		is_update = data.ind_supervised;
+	else
+		is_update = data.ind_bandit;
 
 	if (is_update)
 		learn_cs(data, ec, ec_type);
 
-	if (data.validation_method == SUPERVISED_VALI)
-		add_to_sup_validation(data, ec);
-
 	//set the label of ec back to a multiclass label
 	ec.l.multi = ld;
+	data.mc_pred = ec.pred.multiclass;
 }
 
-void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
+void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_t ec_type)
 {
 	MULTICLASS::label_t ld = ec.l.multi;
 	size_t action = predict_bandit(data, base, ec);
 
 	CB::cb_class cl;
-
-	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
-	generate_corrupted_cb(data, ec, cl, ld, action, corrupted_label);
-	// accumulate the cumulative costs of lambdas
-	accumulate_costs_ips(data, ec, cl);
+	generate_corrupted_cb(data, ec, cl, ld, action, data.corrupted_label);
 
 	//Create a new cb label
 	data.cb_label.costs.push_back(cl);
@@ -676,16 +643,21 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, bool 
 	//make sure the prediction here is a cb prediction
 	ec.pred = data.pred;
 
+	bool is_update;
+	if (ec_type == SUPERVISED)
+		is_update = data.ind_supervised;
+	else
+		is_update = data.ind_bandit;
+
 	if (is_update)
 		learn_bandit(data, base, ec, ec_type);
 
 	data.a_s.erase();
 	data.a_s = ec.pred.a_s;
 
-	accumulate_variance(data, ec);
-
 	ec.l.multi = ld;
 	ec.pred.multiclass = action;
+	data.mc_pred = ec.pred.multiclass;
 	//ec.weight = old_weight;
 }
 
@@ -703,22 +675,36 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
+		data.corrupted_label = corrupt_action(ec.l.multi.label, data, SUPERVISED);
+
 		if (data.warm_start_type == SUPERVISED_WS)
-			predict_or_learn_cs(data, ec, data.ind_supervised, SUPERVISED);
+			predict_or_learn_cs(data, ec, SUPERVISED);
 		else
-			predict_or_learn_bandit(data, base, ec, data.ind_supervised, SUPERVISED);
+			predict_or_learn_bandit(data, base, ec, SUPERVISED);
+
+		if (data.validation_method == SUPERVISED_VALI)
+			add_to_sup_validation(data, ec);
+
 		ec.weight = 0;
+		ec.pred.multiclass = data.mc_pred;
 		data.warm_start_iter++;
 	}
 	else if (data.bandit_iter < data.bandit_period) //Call the cb_explore learner. It returns a vector of probabilities for each action
 	{
-		predict_or_learn_bandit(data, base, ec, data.ind_bandit, BANDIT);
+		data.corrupted_label = corrupt_action(ec.l.multi.label, data, BANDIT);
+		predict_or_learn_bandit(data, base, ec, BANDIT);
 		data.bandit_iter++;
 		if (data.bandit_iter == data.bandit_period)
 		{
 			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
 			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
 		}
+
+		// accumulate the cumulative costs of lambdas, given data.cb_label has the ips info
+		accumulate_costs_ips(data, ec);
+		// accumulate the cumulative variances, given we have data.a_s has the score info
+		accumulate_variance(data, ec);
+		ec.pred.multiclass = data.mc_pred;
 	}
 	else
 	{
@@ -785,8 +771,10 @@ void generate_corrupted_cs_adf(cbify& data, MULTICLASS::label_t ld, size_t corru
 	multiclass_to_cs_adf(data, csls, corrupted_label);
 
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+	{
 		ecs[a].l.cs = csls[a];
-
+		cout<<ecs[a].l.cs.costs.size()<<endl;
+	}
 	empty_example->l.cs = *csl_empty;
 
 }
@@ -875,6 +863,7 @@ void accumulate_variance_adf(cbify& data, base_learner& base)
 
 void add_to_sup_validation_adf(cbify& data, example& ec)
 {
+	//cout<<ec.l.cs.costs.size()<<endl;
 	example& ec_copy = data.supervised_validation[data.warm_start_iter];
 	VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
 }
@@ -1021,6 +1010,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
 	{
 		data.csls[a].costs = v_init<COST_SENSITIVE::wclass>();
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
+		cout<<data.csls[a].costs.size()<<endl;
 	}
 
 }
@@ -1043,7 +1033,7 @@ base_learner* cbify_setup(vw& all)
 	("corrupt_prob_bandit", po::value<float>(), "probability of label corruption in the bandit part")
 	("corrupt_type_supervised", po::value<size_t>(), "type of label corruption in the supervised part (1 is uar, 2 is circular)")
 	("corrupt_type_bandit", po::value<size_t>(), "probability of label corruption in the bandit part (1 is uar, 2 is circular)")
-	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised and amortizing)")
+	("validation_method", po::value<size_t>(), "lambda selection criterion (1 is using bandit with progressive validation, 2 is using supervised)")
 	("weighting_scheme", po::value<size_t>(), "weighting scheme (1 is per instance weighting, 2 is per dataset weighting (where we use a diminishing weighting scheme) )")
 	("lambda_scheme", po::value<size_t>(), "Lambda set scheme (1 is expanding based on center 0.5, 2 is expanding based on center=minimax lambda, 3 is expanding based on center=minimax lambda along with forcing 0,1 in Lambda )")
 	("overwrite_label", po::value<size_t>(), "the label type 3 corruptions (overwriting) turn to")
