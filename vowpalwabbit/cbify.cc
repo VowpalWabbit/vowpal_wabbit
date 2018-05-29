@@ -312,7 +312,7 @@ uint32_t find_min(v_array<float> arr)
 
 void finish(cbify& data)
 {
-  //CB::cb_label.delete_label(&data.cb_label);
+  CB::cb_label.delete_label(&data.cb_label);
   //data.probs.delete_v();
   delete_it(data.scorer);
   delete_it(data.generic_explorer);
@@ -356,7 +356,6 @@ void finish(cbify& data)
 	else
 	{
 		COST_SENSITIVE::cs_label.delete_label(&data.cs_label);
-		CB::cb_label.delete_label(&data.cb_label);
 	}
 
 }
@@ -420,6 +419,47 @@ size_t predict_sublearner_noadf(cbify& data, example& ec, uint32_t i)
 	return ec.pred.multiclass;
 }
 
+void accumulate_costs_ips(cbify& data, example& ec)
+{
+	CB::cb_class& cl = data.cb_label.costs[0];
+	// validation using bandit data
+	if (data.validation_method == 1)
+	{
+		//IPS for approximating the cumulative costs for all lambdas
+		for (uint32_t i = 0; i < data.choices_lambda; i++)
+		{
+			uint32_t action = predict_sublearner_noadf(data, ec, i);
+
+			if (action == cl.action)
+				data.cumulative_costs[i] += cl.cost / cl.probability;
+			//cout<<data.cumulative_costs[i]<<endl;
+		}
+		//cout<<endl;
+	}
+	else //validation using supervised data (their labels are already set to cost-sensitive labels)
+	{
+		//only update cumulative costs every warm_start_period iterations
+		if (abs(log2(data.bandit_iter) - floor(log2(data.bandit_iter))) < 1e-4)
+		{
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+				data.cumulative_costs[i] = 0;
+
+			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
+			for (uint32_t i = 0; i < data.choices_lambda; i++)
+			{
+				//go over the supervised validation set
+				for (uint32_t j = 0; j < data.warm_start_period; j++)
+				{
+					example& ec_valid = data.supervised_validation[j];
+					uint32_t action = predict_sublearner_noadf(data, ec_valid, i);
+					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, action);
+				}
+				//cout<<data.cumulative_costs[i]<<endl;
+			}
+			//cout<<endl;
+		}
+	}
+}
 
 size_t predict_cs(cbify& data, example& ec)
 {
@@ -514,6 +554,10 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_
 	//make sure the prediction here is a cb prediction
 	//ec.pred = data.pred;
 
+	// accumulate the cumulative costs of lambdas, given data.cb_label has the ips info
+	if (ec_type == BANDIT)
+		accumulate_costs_ips(data, ec);
+
 	if (ind_update(data, ec_type))
 		learn_bandit(data, base, ec, ec_type);
 
@@ -535,48 +579,6 @@ void add_to_sup_validation(cbify& data, example& ec)
 	// reallocated when the example fall out of the predict_or_learn scope
 	data.supervised_validation.push_back(*ec_copy);
 	free(ec_copy);
-}
-
-void accumulate_costs_ips(cbify& data, example& ec)
-{
-	CB::cb_class& cl = data.cb_label.costs[0];
-	// validation using bandit data
-	if (data.validation_method == 1)
-	{
-		//IPS for approximating the cumulative costs for all lambdas
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-		{
-			uint32_t action = predict_sublearner_noadf(data, ec, i);
-
-			if (action == cl.action)
-				data.cumulative_costs[i] += cl.cost / cl.probability;
-			//cout<<data.cumulative_costs[i]<<endl;
-		}
-		//cout<<endl;
-	}
-	else //validation using supervised data (their labels are already set to cost-sensitive labels)
-	{
-		//only update cumulative costs every warm_start_period iterations
-		if (abs(log2(data.bandit_iter) - floor(log2(data.bandit_iter))) < 1e-4)
-		{
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-				data.cumulative_costs[i] = 0;
-
-			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
-			for (uint32_t i = 0; i < data.choices_lambda; i++)
-			{
-				//go over the supervised validation set
-				for (uint32_t j = 0; j < data.warm_start_period; j++)
-				{
-					example& ec_valid = data.supervised_validation[j];
-					uint32_t action = predict_sublearner_noadf(data, ec_valid, i);
-					data.cumulative_costs[i] += loss(data, ec_valid.l.multi.label, action);
-				}
-				//cout<<data.cumulative_costs[i]<<endl;
-			}
-			//cout<<endl;
-		}
-	}
 }
 
 void accumulate_variance(cbify& data, example& ec)
@@ -627,8 +629,6 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
 		}
 
-		// accumulate the cumulative costs of lambdas, given data.cb_label has the ips info
-		accumulate_costs_ips(data, ec);
 		// accumulate the cumulative variances, given we have data.a_s has the score info
 		accumulate_variance(data, ec);
 		ec.pred.multiclass = data.mc_pred;
@@ -683,8 +683,9 @@ void add_to_sup_validation_adf(cbify& data, example& ec)
 }
 
 
-void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
+void accumulate_costs_ips_adf(cbify& data, example& ec, base_learner& base)
 {
+	CB::cb_class& cl = data.cb_label.costs[0];
 	if (data.validation_method == BANDIT_VALI)
 	{
 		//IPS for approximating the cumulative costs for all lambdas
@@ -906,8 +907,11 @@ void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, b
 	generate_corrupted_cb_adf(data, cl, ld, idx, corrupted_label);
 
 	// accumulate the cumulative costs of lambdas
-	accumulate_costs_ips_adf(data, ec, cl, base);
-
+	if (ec_type == BANDIT)
+	{
+		data.cb_label.costs[0] = cl;
+		accumulate_costs_ips_adf(data, ec, base);
+	}
 	// add cb label to chosen action
 	auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
 	lab.costs.push_back(cl);
@@ -1002,6 +1006,8 @@ void init_adf_data(cbify& data, const size_t num_actions)
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
 		//cout<<data.csls[a].costs.size()<<endl;
 	}
+	data.cb_label.costs = v_init<CB::cb_class>();
+	data.cb_label.costs.push_back({0, 1, 0, 0});
 
 }
 
@@ -1109,6 +1115,7 @@ base_learner* cbify_setup(vw& all)
 		for (size_t a = 0; a < num_actions; ++a)
 			data.cs_label.costs.push_back({0, a+1, 0, 0});
 
+		data.cb_label.costs = v_init<CB::cb_class>();
 		data.cb_label.costs.push_back({0, 1, 0, 0});
 	}
 
