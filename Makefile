@@ -97,18 +97,12 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree rl_clientlib
+all:	vw library_example java spanning_tree
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
 export
-
-rl_clientlib:
-	cd decision_service/rlclientlib; $(MAKE) -j $(NPROCS) things
-
-rl_clientlib_test:
-	cd decision_service/unit_test; $(MAKE) -j $(NPROCS) things
 
 spanning_tree:
 	cd cluster; $(MAKE)
@@ -142,11 +136,10 @@ java: vw
 
 .FORCE:
 
-test: .FORCE vw library_example rl_clientlib_test
+test: .FORCE vw library_example
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
-	(cd decision_service/unit_test && ./rlclient-test.out)
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."

@@ -9,11 +9,17 @@ matrix:
       sudo: required
       env: 
         - LEGACY=false
-        - DR="docker exec -ti travis-ci bash -c"
+    - os: linux
+      sudo: required
+      env:
+        - LEGACY=true
 
 before_install:
-  - if [[ "$LEGACY" == "false" ]]; then docker pull eisber/vw ; fi
+  - if [[ "$LEGACY" == "false" ]]; then docker pull eisber/vw ; else ./legacy-build-before_install.sh ; fi
 
 
 script:
-  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && ./build-linux.sh" ; fi
+  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && ./build-linux.sh" ; else ./legacy-build-script.sh ; fi
+
+after_success:
+  - if [[ "$LEGACY" == "true" ]]; then ./legacy-build-after_success.sh ; fi
