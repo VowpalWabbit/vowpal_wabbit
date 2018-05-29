@@ -13,9 +13,7 @@ matrix:
 
 before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker pull eisber/vw ; fi
-  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td eisber/vw /bin/bash ; fi
 
 
 script:
-  - if [[ "$LEGACY" == "false" ]]; then cmake . ; fi
-  - if [[ "$LEGACY" == "false" ]]; then cmake --build . --target RunTests --target check -- -j 4 ; fi
+  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cmake . && cmake --build . --target RunTests -- -j 4" ; fi
