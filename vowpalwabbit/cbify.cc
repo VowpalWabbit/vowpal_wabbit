@@ -116,14 +116,6 @@ struct cbify
 
 };
 
-template<class T>
-void deep_copy_array(v_array<T>& dst, v_array<T>& src)
-{
-	dst.erase();
-	for (size_t i = 0; i < src.size(); ++i)
-		dst.push_back(src[i]);
-}
-
 float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t bandit_period, size_t dim)
 {
 	/*
@@ -360,8 +352,6 @@ void finish(cbify& data)
     free(data.cbl_empty);
 
     free(data.old_weights);
-
-		CB::cb_label.delete_label(&data.cb_label);
   }
 	else
 	{
@@ -654,7 +644,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 
 uint32_t predict_sublearner_adf(cbify& data, base_learner& base, example& ec, uint32_t i)
 {
-	//copy_example_to_adf(data, ec);
+	copy_example_to_adf(data, ec);
 
 	example* ecs = data.adf_data.ecs;
 	example* empty = data.adf_data.empty_example;
@@ -693,9 +683,8 @@ void add_to_sup_validation_adf(cbify& data, example& ec)
 }
 
 
-void accumulate_costs_ips_adf(cbify& data, base_learner& base, example& ec)
+void accumulate_costs_ips_adf(cbify& data, example& ec, CB::cb_class& cl, base_learner& base)
 {
-	CB::cb_class& cl = data.cb_label.costs[0];
 	if (data.validation_method == BANDIT_VALI)
 	{
 		//IPS for approximating the cumulative costs for all lambdas
@@ -735,10 +724,11 @@ void accumulate_costs_ips_adf(cbify& data, base_learner& base, example& ec)
 
 void accumulate_variance_adf(cbify& data, base_learner& base, example& ec)
 {
-	//auto& out_ec = data.adf_data.ecs[0];
-	//data.a_s.erase();
-	//for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	//	data.a_s.push_back({out_ec.pred.a_s[a].action, out_ec.pred.a_s[a].score});
+	auto& out_ec = data.adf_data.ecs[0];
+
+	data.a_s.erase();
+	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		data.a_s.push_back({out_ec.pred.a_s[a].action, out_ec.pred.a_s[a].score});
 
 	size_t pred_best_approx = predict_cs_adf(data, base, ec);
 	float temp_variance;
@@ -810,13 +800,12 @@ void learn_cs_adf(cbify& data, size_t ec_type)
 		ecs[a].weight = data.old_weights[a];
 }
 
-void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, size_t ec_type)
+void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
 {
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
 
 	uint32_t best_action = predict_cs_adf(data, base, ec);
-	data.mc_pred = best_action;
 
 	//data.all->cost_sensitive->predict(ec,argmin);
 
@@ -826,7 +815,7 @@ void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, size_
 	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cs_adf(data, ld, corrupted_label);
 
-	if (ind_update(data, ec_type))
+	if (is_update)
 		learn_cs_adf(data, ec_type);
 
 	ec.pred.multiclass = best_action;
@@ -834,14 +823,12 @@ void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, size_
 
 	//a hack here - allocated memories not deleted
 	//to be corrected
-	//if (data.validation_method == SUPERVISED_VALI)
-	//	add_to_sup_validation_adf(data, ec);
+	if (data.validation_method == SUPERVISED_VALI)
+		add_to_sup_validation_adf(data, ec);
 }
 
-size_t predict_bandit_adf(cbify& data, base_learner& base, example& ec)
+size_t predict_bandit_adf(cbify& data, base_learner& base)
 {
-	//copy_example_to_adf(data, ec);
-
 	example* ecs = data.adf_data.ecs;
 	example* empty_example = data.adf_data.empty_example;
 
@@ -858,8 +845,6 @@ size_t predict_bandit_adf(cbify& data, base_learner& base, example& ec)
 	uint32_t idx = data.mwt_explorer->Choose_Action(
 									 *data.generic_explorer,
 									 StringUtils::to_string(data.example_counter++), out_ec) - 1;
-
-	deep_copy_array<action_score>(data.a_s, out_ec.pred.a_s);
 
 	return idx;
 
@@ -901,7 +886,7 @@ void learn_bandit_adf(cbify& data, base_learner& base, size_t ec_type)
 		ecs[a].weight = data.old_weights[a];
 }
 
-void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, size_t ec_type)
+void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, bool is_update, size_t ec_type)
 {
 	//Store the multiclass input label
 	MULTICLASS::label_t ld = ec.l.multi;
@@ -913,25 +898,24 @@ void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, s
 	//data.cbl_empty->costs = data.adf_data.empty_example->l.cb.costs;
 
 	//size_t pred_pi = predict_cs_adf(data, base, ec);
-	uint32_t idx = predict_bandit_adf(data, base, ec);
-	data.mc_pred = idx;
+	uint32_t idx = predict_bandit_adf(data, base);
 
-	CB::cb_class& cl = data.cb_label.costs[0];
+	CB::cb_class cl;
 
 	size_t corrupted_label = corrupt_action(ld.label, data, ec_type);
 	generate_corrupted_cb_adf(data, cl, ld, idx, corrupted_label);
 
 	// accumulate the cumulative costs of lambdas
-	//accumulate_costs_ips_adf(data, ec, cl, base);
+	accumulate_costs_ips_adf(data, ec, cl, base);
 
 	// add cb label to chosen action
 	auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
 	lab.costs.push_back(cl);
 
-	if (ind_update(data, ec_type))
+	if (is_update)
 		learn_bandit_adf(data, base, ec_type);
 
-	//accumulate_variance_adf(data, base, ec);
+	accumulate_variance_adf(data, base, ec);
 
   lab.costs.delete_v();
 	ec.pred.multiclass = cl.action;
@@ -955,33 +939,22 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 
 	if (data.warm_start_iter < data.warm_start_period) // Call the cost-sensitive learner directly
 	{
-		data.corrupted_label = corrupt_action(ec.l.multi.label, data, SUPERVISED);
-
 		if (data.warm_start_type == SUPERVISED_WS)
-			predict_or_learn_cs_adf(data, base, ec, SUPERVISED);
+			predict_or_learn_cs_adf(data, base, ec, data.ind_supervised, SUPERVISED);
 		else
-			predict_or_learn_bandit_adf(data, base, ec, SUPERVISED);
-
-		if (data.validation_method == SUPERVISED_VALI)
-			add_to_sup_validation_adf(data, ec);
-
+			predict_or_learn_bandit_adf(data, base, ec, data.ind_supervised, SUPERVISED);
 		ec.weight = 0;
-		ec.pred.multiclass = data.mc_pred;
 		data.warm_start_iter++;
 	}
 	else if (data.bandit_iter < data.bandit_period) // call the bandit learner
 	{
-		data.corrupted_label = corrupt_action(ec.l.multi.label, data, BANDIT);
-		predict_or_learn_bandit_adf(data, base, ec, BANDIT);
+		predict_or_learn_bandit_adf(data, base, ec, data.ind_bandit, BANDIT);
 		data.bandit_iter++;
 		if (data.bandit_iter == data.bandit_period)
 		{
 			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
 			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
 		}
-		accumulate_costs_ips_adf(data, base, ec);
-		accumulate_variance_adf(data, base, ec);
-		ec.pred.multiclass = data.mc_pred;
 	}
 	else
 	{
@@ -989,7 +962,6 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.weight = 0;
 	}
 
-	//ensure they are equipped with cb label at the end of the iteration
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		data.adf_data.ecs[a].l.cb.costs = data.cbls[a].costs;
 	data.adf_data.empty_example->l.cb.costs = data.cbl_empty->costs;
@@ -1030,9 +1002,6 @@ void init_adf_data(cbify& data, const size_t num_actions)
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
 		//cout<<data.csls[a].costs.size()<<endl;
 	}
-
-	data.cb_label.costs = v_init<CB::cb_class>();
-	data.cb_label.costs.push_back({0, 1, 0, 0});
 
 }
 
@@ -1140,7 +1109,6 @@ base_learner* cbify_setup(vw& all)
 		for (size_t a = 0; a < num_actions; ++a)
 			data.cs_label.costs.push_back({0, a+1, 0, 0});
 
-		data.cb_label.costs = v_init<CB::cb_class>();
 		data.cb_label.costs.push_back({0, 1, 0, 0});
 	}
 
