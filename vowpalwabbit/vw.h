@@ -84,6 +84,8 @@ float get_prediction(example*ec);
 float get_cost_sensitive_prediction(example*ec);
 v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec);
 uint32_t* get_multilabel_predictions(example* ec, size_t& len);
+float get_action_score(example* ec, size_t i);
+size_t get_action_score_length(example* ec);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
