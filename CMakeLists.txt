@@ -42,6 +42,8 @@ else()
 add_subdirectory(test)
 endif()
 
+add_subdirectory(java)
+
 # add_subdirectory(decision_service) 
 # static/dynamic linking conflict for boost
 # add_subdirectory(python) 
