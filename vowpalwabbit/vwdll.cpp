@@ -239,6 +239,16 @@ VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)
   return VW::get_prediction(ex);
 }
 
+VW_DLL_MEMBER float VW_CALLING_CONV VW_GetActionScore(VW_EXAMPLE e, size_t i)
+{ example * ex = static_cast<example*>(e);
+  return VW::get_action_score(ex, i);
+}
+
+VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetActionScoreLength(VW_EXAMPLE e)
+{ example * ex = static_cast<example*>(e);
+  return VW::get_action_score_length(ex);
+}
+
 VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e)
 { vw * pointer = static_cast<vw*>(handle);
   example * ex = static_cast<example*>(e);
