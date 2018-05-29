@@ -14,6 +14,10 @@ matrix:
       env:
         - LEGACY=true
 
+addons:
+  apt:
+    update: true
+
 before_install:
   - if [[ "$LEGACY" == "false" ]]; then docker pull eisber/vw ; else ./legacy-build-before_install.sh ; fi
 
