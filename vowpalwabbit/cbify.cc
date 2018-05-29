@@ -522,7 +522,7 @@ uint32_t predict_bandit(cbify& data, base_learner& base, example& ec)
 
 	uint32_t argmin = find_min(data.cumulative_costs);
 	base.predict(ec, argmin);
-	//data.pred = ec.pred;
+	data.pred = ec.pred;
 
 	uint32_t action = data.mwt_explorer->Choose_Action(*data.generic_explorer, StringUtils::to_string(data.example_counter++), ec);
 	ec.l.cb.costs.delete_v();
@@ -551,13 +551,14 @@ void predict_or_learn_bandit(cbify& data, base_learner& base, example& ec, size_
 
 	convert_mc_to_cb(data, ec, action);
 
-	//make sure the prediction here is a cb prediction
-	//ec.pred = data.pred;
-
 	// accumulate the cumulative costs of lambdas, given data.cb_label has the ips info
 	if (ec_type == BANDIT)
+	{
 		accumulate_costs_ips(data, ec);
-
+		ec.l.cb = data.cb_label;
+		//make sure the prediction here is a cb prediction
+		ec.pred = data.pred;
+	}
 	if (ind_update(data, ec_type))
 		learn_bandit(data, base, ec, ec_type);
 
