@@ -16,4 +16,4 @@ before_install:
 
 
 script:
-  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && cmake . && cmake --build . --target RunTests -- -j 4" ; fi
+  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && ./build-linux.sh" ; fi
