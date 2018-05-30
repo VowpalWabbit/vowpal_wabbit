@@ -57,8 +57,10 @@ namespace reinforcement_learning {
   };
 
 
-  safe_vw::safe_vw(vw* vw) : _vw(vw)
-  { }
+  safe_vw::safe_vw(std::shared_ptr<safe_vw> master) : _master(master)
+  { 
+    _vw = VW::seed_vw_model(_master->_vw, "", nullptr, nullptr);
+  }
 
   safe_vw::safe_vw(const char* model_data, size_t len)
   {
@@ -137,11 +139,11 @@ namespace reinforcement_learning {
     return ranking;
   }
 
-  safe_vw_factory::safe_vw_factory(safe_vw* master) : _master(master)
+  safe_vw_factory::safe_vw_factory(std::shared_ptr<safe_vw> master) : _master(master)
   { }
 
   safe_vw* safe_vw_factory::operator()()
   {
-    return new safe_vw(VW::seed_vw_model(_master->_vw, "", nullptr, nullptr));
+    return new safe_vw(_master);
   }
 }
