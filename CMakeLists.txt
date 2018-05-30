@@ -43,6 +43,7 @@ else()
 add_subdirectory(test)
 endif()
 
+add_subdirectory(python)
 add_subdirectory(java)
 
 # static/dynamic linking conflict for boost
