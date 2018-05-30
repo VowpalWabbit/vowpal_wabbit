@@ -16,6 +16,3 @@ add_library(${PROJECT_NAME} api_status.cc error_callback_fn.cc live_model_impl.c
 	model_mgmt/model_mgmt.cc model_mgmt/safe_vw.cc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE vw ${Boost_LIBRARIES} ${cpprest_LIBRARY} OpenSSL::SSL OpenSSL::Crypto)
-
-# try to make it work
-#set(${PROJECT_NAME}_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../include")

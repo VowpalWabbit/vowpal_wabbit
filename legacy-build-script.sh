@@ -1,4 +1,7 @@
 #!/bin/sh
+export PATH="$HOME/miniconda/bin:$PATH"
+hash -r
+
 make all
 make python
 make test
@@ -8,7 +11,7 @@ cd ..
 make test_gcov --always-make
 cd python
 source activate test-python27
-pip install pytest readme_renderer
+sudo pip install pytest readme_renderer
 python setup.py check -mrs
 python setup.py install
 py.test tests
