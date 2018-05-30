@@ -85,7 +85,7 @@ void init_global(baseline& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline& data, base_learner& base, example& ec)
+void predict_or_learn(baseline& data, single_learner& base, example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
@@ -181,7 +181,7 @@ base_learner* baseline_setup(arguments& arg)
   if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
     data->lr_scaling = true;
 
-  learner<baseline>& l = init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish(finish);
 
   return make_base(l);

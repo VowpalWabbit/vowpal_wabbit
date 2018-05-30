@@ -13,10 +13,10 @@ license as described in the file LICENSE.
 using namespace std;
 namespace DebugMT
 {
-void run(Search::search& sch, vector<example*>& ec);
+void run(Search::search& sch, multi_ex& ec);
 Search::search_metatask metatask = { "debug", run, nullptr, nullptr, nullptr, nullptr };
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   sch.base_task(ec)
   .foreach_action(
@@ -46,7 +46,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
 namespace SelectiveBranchingMT
 {
-void run(Search::search& sch, vector<example*>& ec);
+void run(Search::search& sch, multi_ex& ec);
 void initialize(Search::search& sch, size_t& num_actions, arguments& vm);
 void finish(Search::search& sch);
 Search::search_metatask metatask = { "selective_branching", run, initialize, finish, nullptr, nullptr };
@@ -100,14 +100,14 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 
 void finish(Search::search& sch) { delete sch.get_metatask_data<task_data>(); }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& d = *sch.get_metatask_data<task_data>();
 
   // generate an initial trajectory, but record possible branches
-  d.branches.erase();
-  d.final.erase();
-  d.trajectory.erase();
+  d.branches.clear();
+  d.final.clear();
+  d.trajectory.clear();
   d.total_cost = 0.;
   d.output_string = nullptr;
 
@@ -159,7 +159,7 @@ void run(Search::search& sch, vector<example*>& ec)
   for (size_t i=0; i<min(d.max_branches, d.branches.size()); i++)
   {
     d.cur_branch = i;
-    d.trajectory.erase();
+    d.trajectory.clear();
     d.total_cost = 0.;
     d.output_string = nullptr;
 
@@ -241,9 +241,9 @@ void run(Search::search& sch, vector<example*>& ec)
 
   // clean up memory
   for (size_t i=0; i<d.branches.size(); i++) d.branches[i].second.delete_v();
-  d.branches.erase();
+  d.branches.clear();
   for (size_t i=0; i<d.final.size(); i++) { d.final[i].first.second.delete_v(); delete d.final[i].second; }
-  d.final.erase();
+  d.final.clear();
   if (d.kbest_out) delete d.kbest_out; d.kbest_out = nullptr;
 }
 }

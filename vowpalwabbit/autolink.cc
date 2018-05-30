@@ -9,7 +9,7 @@ struct autolink
 };
 
 template <bool is_learn>
-void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(autolink& b, LEARNER::single_learner& base, example& ec)
 {
   base.predict(ec);
   float base_pred = ec.pred.scalar;
@@ -30,7 +30,7 @@ void predict_or_learn(autolink& b, LEARNER::base_learner& base, example& ec)
     base.predict(ec);
 
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
-  fs.erase();
+  fs.clear();
   ec.indices.pop();
 }
 
@@ -43,8 +43,8 @@ LEARNER::base_learner* autolink_setup(arguments& arg)
 
   data->stride_shift = arg.all->weights.stride_shift();
 
-  LEARNER::learner<autolink>& ret =
-    init_learner(data, setup_base(arg), predict_or_learn<true>, predict_or_learn<false>);
+  LEARNER::learner<autolink,example>& ret =
+    init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }

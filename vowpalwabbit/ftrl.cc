@@ -66,7 +66,7 @@ float sensitivity(ftrl& b, base_learner& base, example& ec)
   return uncetain.score;
 }
 template<bool audit>
-void predict(ftrl& b, base_learner&, example& ec)
+void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
@@ -154,7 +154,7 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
   w[W_G2] += fabs(gradient);
 }
 
-void update_state_and_predict_pistol(ftrl& b, base_learner&, example& ec)
+void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
 
@@ -180,7 +180,7 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
 }
 
 template<bool audit>
-void learn_proximal(ftrl& a, base_learner& base, example& ec)
+void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -191,7 +191,7 @@ void learn_proximal(ftrl& a, base_learner& base, example& ec)
   update_after_prediction_proximal(a,ec);
 }
 
-void learn_pistol(ftrl& a, base_learner& base, example& ec)
+void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -252,7 +252,7 @@ base_learner* ftrl_setup(arguments& arg)
   b->all = arg.all;
   b->no_win_counter = 0;
 
-  void (*learn_ptr)(ftrl&, base_learner&, example&) = nullptr;
+  void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
   string algorithm_name;
   if (arg.vm["ftrl"].as<bool>())
@@ -289,7 +289,7 @@ base_learner* ftrl_setup(arguments& arg)
     b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  learner<ftrl>* l;
+  learner<ftrl,example>* l;
   if (arg.all->audit || arg.all->hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << arg.all->weights.stride_shift());
   else

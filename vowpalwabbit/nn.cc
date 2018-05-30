@@ -133,7 +133,7 @@ void end_pass(nn& n)
 }
 
 template<bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
+void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction > 0;
   if (! n.finished_setup)
@@ -374,7 +374,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   n.all->set_minmax (n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
 {
   for (size_t c=0; c<count; c++)
   {
@@ -458,10 +458,10 @@ base_learner* nn_setup(arguments& arg)
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
   n->increment = base->increment;//Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn>&l = init_learner(n, base,
+  learner<nn,example>&l = init_learner(n, base,
                                predict_or_learn_multi<true,true>,
                                predict_or_learn_multi<false,true>,
                                n->k+1);

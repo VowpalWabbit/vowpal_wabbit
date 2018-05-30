@@ -89,7 +89,7 @@ void copy_example_to_adf(cbify& data, example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::example_is_test(eca))
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(&eca.l))
     {
       eca.tag.push_back('n');
     }
@@ -97,11 +97,11 @@ void copy_example_to_adf(cbify& data, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(cbify& data, base_learner& base, example& ec)
+void predict_or_learn(cbify& data, single_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
-  data.cb_label.costs.erase();
+  data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = data.a_s;
 
@@ -125,14 +125,14 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
   base.learn(ec);
-  data.a_s.erase();
+  data.a_s.clear();
   data.a_s = ec.pred.a_s;
   ec.l.multi = ld;
   ec.pred.multiclass = chosen_action + 1;
 }
 
 template <bool is_learn>
-void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
+void predict_or_learn_adf(cbify& data, single_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
@@ -219,10 +219,10 @@ base_learner* cbify_setup(arguments& arg)
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
     arg.args.push_back(ss.str());
   }
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   arg.all->delete_prediction = nullptr;
-  learner<cbify>* l;
+  learner<cbify,example>* l;
   if (data->use_adf)
     l = &init_multiclass_learner(data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
   else

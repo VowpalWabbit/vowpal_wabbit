@@ -7,7 +7,7 @@ using namespace std;
 struct scorer { vw* all; }; // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   if (is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0)
@@ -22,14 +22,14 @@ void predict_or_learn(scorer& s, LEARNER::base_learner& base, example& ec)
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer&, LEARNER::base_learner& base, example& ec, size_t count, size_t, polyprediction*pred, bool finalize_predictions)
+inline void multipredict(scorer&, LEARNER::single_learner& base, example& ec, size_t count, size_t, polyprediction*pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions); // TODO: need to thread step through???
   for (size_t c=0; c<count; c++)
     pred[c].scalar = link(pred[c].scalar);
 }
 
-void update(scorer& s, LEARNER::base_learner& base, example& ec)
+void update(scorer& s, LEARNER::single_learner& base, example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
@@ -56,9 +56,9 @@ LEARNER::base_learner* scorer_setup(arguments& arg)
 
   s->all = arg.all;
 
-  LEARNER::base_learner* base = setup_base(arg);
-  LEARNER::learner<scorer>* l;
-  void (*multipredict_f)(scorer&, LEARNER::base_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
+  auto base = as_singleline(setup_base(arg));
+  LEARNER::learner<scorer,example>* l;
+  void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
 
   if ( link.compare("identity") == 0)
     l = &init_learner(s, base, predict_or_learn<true, id>, predict_or_learn<false, id>);
@@ -84,7 +84,7 @@ LEARNER::base_learner* scorer_setup(arguments& arg)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
-  arg.all->scorer = make_base(*l);
+  arg.all->scorer = LEARNER::as_singleline(l);
 
-  return arg.all->scorer;
+  return make_base(*arg.all->scorer);
 }

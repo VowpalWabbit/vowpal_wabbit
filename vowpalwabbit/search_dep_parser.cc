@@ -129,7 +129,7 @@ void inline reset_ex(example *ex)
   ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
   for (features& fs : *ex)
-    fs.erase();
+    fs.clear();
 }
 
 // arc-hybrid System.
@@ -221,7 +221,7 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
   THROW("transition_eager failed");
 }
 
-void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
+void extract_features(Search::search& sch, uint32_t idx,  multi_ex &ec)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
@@ -305,7 +305,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;
   v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
-  valid_action.erase();
+  valid_action.clear();
   if(sys == arc_hybrid)
   {
     if(idx<=n) // SHIFT
@@ -317,7 +317,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
   }
   else if(sys == arc_eager) // assume root is in N+1
   {
-    temp.erase();
+    temp.clear();
     for(size_t i=0; i<=4; i++)
       temp.push_back(1);
     if (idx>n)
@@ -435,7 +435,7 @@ void get_cost_to_go_losses(Search::search &sch, v_array<pair<action, float>>& go
   uint32_t &sys = data->transition_system;
   v_array<uint32_t> &action_loss = data->action_loss, &valid_actions=data->valid_actions;
   uint32_t &num_label = data->num_label;
-  gold_action_losses.erase();
+  gold_action_losses.clear();
 
   if(one_learner)
   {
@@ -465,7 +465,7 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
-  gold_actions.erase();
+  gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size==0) ? 0 : stack.last();
   uint32_t &sys = data->transition_system;
@@ -491,7 +491,7 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
     {
       best_action= i;
       count = 1;
-      gold_actions.erase();
+      gold_actions.clear();
       gold_actions.push_back(i);
     }
     else if (action_loss[i] == action_loss[best_action] && is_valid(i,valid_actions))
@@ -507,7 +507,7 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;
   uint32_t &num_label = data->num_label;
-  actions_onelearner.erase();
+  actions_onelearner.clear();
   if(is_valid(SHIFT, actions)) actions_onelearner.push_back(SHIFT);
   if(sys==arc_eager && is_valid(REDUCE, actions)) actions_onelearner.push_back(2+2*num_label);
   if(left_label!=my_null && is_valid(REDUCE_RIGHT, actions)) actions_onelearner.push_back(1+right_label);
@@ -522,16 +522,16 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
         actions_onelearner.push_back((uint32_t)(i+2+num_label));
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
   size_t n = ec.size();
   heads.resize(n+1);
   tags.resize(n+1);
-  gold_heads.erase();
+  gold_heads.clear();
   gold_heads.push_back(0);
-  gold_tags.erase();
+  gold_tags.clear();
   gold_tags.push_back(0);
   for (size_t i=0; i<n; i++)
   {
@@ -560,7 +560,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     data->children[i].resize(n+(size_t)1);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_action_temp = data->valid_action_temp;
@@ -572,7 +572,7 @@ void run(Search::search& sch, vector<example*>& ec)
   uint32_t &sys = data->transition_system;
   uint32_t n = (uint32_t) ec.size();
   uint32_t left_label, right_label;
-  stack.erase();
+  stack.clear();
   stack.push_back((data->root_label==0&&sys==arc_hybrid)?0:1);
   for(size_t i=0; i<6; i++)
     for(size_t j=0; j<n+1; j++)
@@ -686,7 +686,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
         if(cost_to_go)
         {
-          gold_action_losses.erase();
+          gold_action_losses.clear();
           for(size_t i=1; i<= data->num_label; i++)
             gold_action_losses.push_back(make_pair((action)i, i != (a_id==REDUCE_LEFT?left_label:right_label)));
           t_id = P.set_tag((ptag) count)

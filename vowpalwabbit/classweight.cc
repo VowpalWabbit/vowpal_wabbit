@@ -43,7 +43,7 @@ struct classweights
 };
 
 template <bool is_learn, int pred_type>
-static void predict_or_learn(classweights& cweights, LEARNER::base_learner& base, example& ec)
+static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
 {
   switch (pred_type)
   {
@@ -83,9 +83,9 @@ LEARNER::base_learner* classweight_setup(arguments& arg)
   if (!arg.all->quiet)
     arg.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
-  LEARNER::base_learner* base = setup_base(arg);
+  LEARNER::single_learner* base = as_singleline(setup_base(arg));
 
-  LEARNER::learner<classweights>* ret;
+  LEARNER::learner<classweights,example>* ret;
   if (base->pred_type == prediction_type::scalar)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true,prediction_type::scalar>, predict_or_learn<false,prediction_type::scalar>);
   else if (base->pred_type == prediction_type::multiclass)

@@ -398,7 +398,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.sorted = ec.sorted;
   poly.synth_ec.in_use = ec.in_use;
 
-  poly.synth_ec.feature_space[tree_atomics].erase();
+  poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
 
@@ -500,7 +500,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   }
 }
 
-void predict(stagewise_poly &poly, base_learner &base, example &ec)
+void predict(stagewise_poly &poly, single_learner &base, example &ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -510,7 +510,7 @@ void predict(stagewise_poly &poly, base_learner &base, example &ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly &poly, base_learner &base, example &ec)
+void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
   bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
@@ -642,7 +642,7 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
   ec.num_features = poly.synth_ec.num_features;
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(stagewise_poly &poly)
@@ -706,7 +706,7 @@ base_learner *stagewise_poly_setup(arguments& arg)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly>& l = init_learner(poly, setup_base(arg), learn, predict);
+  learner<stagewise_poly,example>& l = init_learner(poly, as_singleline(setup_base(arg)), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

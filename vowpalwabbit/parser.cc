@@ -182,7 +182,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
     if (v_length == 0)
       THROW("cache version too short, cache file is probably invalid");
 
-    t.erase();
+    t.clear();
     if (t.size() < v_length)
       t.resize(v_length);
 
@@ -264,8 +264,8 @@ void reset_source(vw& all, size_t numbits)
 
       // close socket, erase final prediction sink and socket
       io_buf::close_file_or_socket(all.p->input->files[0]);
-      all.final_prediction_sink.erase();
-      all.p->input->files.erase();
+      all.final_prediction_sink.clear();
+      all.p->input->files.clear();
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
@@ -740,7 +740,7 @@ void generateGrams(vw& all, example* &ex)
     size_t length = ex->feature_space[index].size();
     for (size_t n = 1; n < all.ngram[index]; n++)
     {
-      all.p->gram_mask.erase();
+      all.p->gram_mask.clear();
       all.p->gram_mask.push_back((size_t)0);
       addgrams(all, n, all.skips[index], ex->feature_space[index],
                length, all.p->gram_mask, 0);
@@ -814,6 +814,7 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off, all.p->emptylines_separate_examples ? (all.holdout_period-1) : 0);
+  ae->test_only |= all.p->lp.test_label(&ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
@@ -825,7 +826,7 @@ void setup_example(vw& all, example* ae)
       if (all.ignore[*i])
       {
         //delete namespace
-        ae->feature_space[*i].erase();
+        ae->feature_space[*i].clear();
         memmove(i, i + 1, (ae->indices.end() - (i + 1))*sizeof(*i));
         ae->indices.end()--;
         i--;
@@ -964,25 +965,32 @@ void parse_example_label(vw& all, example&ec, string label)
   substring str = { cstr, cstr+label.length() };
   tokenize(' ', str, words);
   all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
-  words.erase();
+  words.clear();
   words.delete_v();
 }
 
 void empty_example(vw& all, example& ec)
 {
   for (features& fs : ec)
-    fs.erase();
+    fs.clear();
 
-  ec.indices.erase();
-  ec.tag.erase();
+  ec.indices.clear();
+  ec.tag.clear();
   ec.sorted = false;
   ec.end_pass = false;
 }
 
-void finish_example(vw& all, example* ec)
+void finish_example(vw& all, multi_ex& ec_seq)
+{
+  for(auto ec : ec_seq)
+    finish_example(all, *ec);
+  ec_seq.clear();
+}
+
+void finish_example(vw& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if (!is_ring_example(all, ec))
+  if (!is_ring_example(all, &ec))
     return;
 
   mutex_lock(&all.p->output_lock);
@@ -990,11 +998,11 @@ void finish_example(vw& all, example* ec)
   condition_variable_signal(&all.p->output_done);
   mutex_unlock(&all.p->output_lock);
 
-  empty_example(all, *ec);
+  empty_example(all, ec);
 
   mutex_lock(&all.p->examples_lock);
-  assert(ec->in_use);
-  ec->in_use = false;
+  assert(ec.in_use);
+  ec.in_use = false;
   condition_variable_signal(&all.p->example_unused);
   if (all.p->done)
     condition_variable_signal_all(&all.p->example_available);
@@ -1017,7 +1025,7 @@ void *main_parse_loop(void *in)
 #endif
 {
   vw* all = (vw*)in;
-  parse_dispatch<thread_dispatch>(*all);
+  parse_dispatch(*all, thread_dispatch);
   return 0L;
 }
 
@@ -1080,6 +1088,20 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
+
+float get_action_score(example* ec, size_t i)
+{
+  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+
+  if(i < scores.size()) {
+    return scores[i].score;
+  } else {
+    return 0.0;
+  }
+}
+
+size_t get_action_score_length(example* ec)
+{ return ec->pred.a_s.size(); }
 
 size_t get_tag_length(example* ec)
 {

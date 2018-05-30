@@ -22,7 +22,7 @@ struct oaa
   size_t subsample_id; // for randomized subsampling, where do we live in the list
 };
 
-void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
+void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
@@ -60,7 +60,7 @@ void learn_randomized(oaa& o, LEARNER::base_learner& base, example& ec)
 }
 
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
-void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -101,7 +101,7 @@ void predict_or_learn(oaa& o, LEARNER::base_learner& base, example& ec)
 
   if (scores)
   {
-    scores_array.erase();
+    scores_array.clear();
     for (uint32_t i=0; i<o.k; i++)
       scores_array.push_back(o.pred[i].scalar);
     ec.pred.scalars = scores_array;
@@ -199,7 +199,7 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
     MULTICLASS::print_update_with_probability(all, ec, prediction);
   else
     MULTICLASS::print_update_with_score(all, ec, prediction);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 LEARNER::base_learner* oaa_setup(arguments& arg)
@@ -243,7 +243,8 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
   }
 
   oaa* data_ptr = data.get();
-  LEARNER::learner<oaa>* l;
+  LEARNER::learner<oaa,example>* l;
+  auto base = as_singleline(setup_base(arg));
   if( probabilities || scores)
   {
     arg.all->delete_prediction = delete_scalars;
@@ -252,23 +253,23 @@ LEARNER::base_learner* oaa_setup(arguments& arg)
       if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
         arg.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
       // the three boolean template parameters are: is_learn, print_all and scores
-      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, true>,
+      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
                                             predict_or_learn<false, false, true, true>, arg.all->p, data->k, prediction_type::scalars);
       arg.all->sd->report_multiclass_log_loss = true;
       l->set_finish_example(finish_example_scores<true>);
     }
     else
     {
-      l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, false, true, false>,
+      l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, false>,
                                             predict_or_learn<false, false, true, false>, arg.all->p, data->k, prediction_type::scalars);
       l->set_finish_example(finish_example_scores<false>);
     }
   }
   else if (arg.all->raw_prediction > 0)
-    l = &LEARNER::init_multiclass_learner(data, setup_base(arg), predict_or_learn<true, true, false, false>,
+    l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, true, false, false>,
                                           predict_or_learn<false, true, false, false>, arg.all->p, data->k, prediction_type::multiclass);
   else
-    l = &LEARNER::init_multiclass_learner(data, setup_base(arg),predict_or_learn<true, false, false, false>,
+    l = &LEARNER::init_multiclass_learner(data, base,predict_or_learn<true, false, false, false>,
                                           predict_or_learn<false, false, false, false>, arg.all->p, data->k, prediction_type::multiclass);
 
   if (data_ptr->num_subsample > 0)
