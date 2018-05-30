@@ -35,7 +35,10 @@ add_subdirectory(vowpalwabbit)
 add_subdirectory(decision_service) 
 add_subdirectory(cluster) 
 add_subdirectory(library) 
-add_subdirectory(doc) 
+
+# TODO: rapidjson source generates too many warnings
+# add_subdirectory(doc) 
+
 if(WIN32)
 add_subdirectory(c_test) 
 add_subdirectory(cs) 
