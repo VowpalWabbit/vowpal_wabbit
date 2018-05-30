@@ -1,7 +1,6 @@
 #!/bin/sh
 make all
 make python
-mvn clean test -f java/pom.xml
 make test
 cd test
 ./test_race_condition.sh

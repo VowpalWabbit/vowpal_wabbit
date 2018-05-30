@@ -10,5 +10,4 @@ add_library(${PROJECT_NAME} SHARED jni_base_learner.cc vowpalWabbit_learner_VWMu
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/java/target)
 
-
 target_link_libraries(${PROJECT_NAME} PRIVATE vw)

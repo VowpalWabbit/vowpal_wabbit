@@ -17,7 +17,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # include(DiscoverPythonUnittest)
 include(InstallDependencies)
 
-find_package(Doxygen)
 
 # DSVM only has Boost 1.58.0 installed
 # set(Boost_VW_VERSION 1.58.0)
@@ -34,7 +33,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 add_subdirectory(vowpalwabbit) 
 add_subdirectory(decision_service) 
+add_subdirectory(cluster) 
 add_subdirectory(library) 
+add_subdirectory(doc) 
 if(WIN32)
 add_subdirectory(c_test) 
 add_subdirectory(cs) 
@@ -44,7 +45,6 @@ endif()
 
 add_subdirectory(java)
 
-# add_subdirectory(decision_service) 
 # static/dynamic linking conflict for boost
 # add_subdirectory(python) 
 
