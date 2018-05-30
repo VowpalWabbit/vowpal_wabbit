@@ -16,10 +16,10 @@ cd test
 cd ..
 make test_gcov --always-make
 cd python
-miniconda/bin/source activate test-python27
+/home/travis/miniconda/bin/source activate test-python27
 pip install pytest readme_renderer
 python setup.py check -mrs
 python setup.py install
 py.test tests
-miniconda/bin/source deactivate
+/home/travis/miniconda/bin/source deactivate
 cd ..
