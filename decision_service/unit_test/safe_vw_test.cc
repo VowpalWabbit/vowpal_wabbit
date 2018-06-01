@@ -32,14 +32,14 @@ BOOST_AUTO_TEST_CASE(safe_vw_factory_1)
   const char* json = R"({"a":{"0":1,"5":2},"_multi":[{"b":{"0":1}},{"b":{"0":2}},{"b":{"0":3}}]})";
   std::vector<float> ranking_expected = { .1f, .1f, .8f };
 
-  safe_vw_factory* factory = new safe_vw_factory(std::shared_ptr<safe_vw>(new safe_vw((const char*)cb_data_5_model, cb_data_5_model_len)));
+  safe_vw_factory* factory = new safe_vw_factory(std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len));
   object_pool<safe_vw, safe_vw_factory> pool(factory);
 
   {
     pooled_object_guard<safe_vw, safe_vw_factory> guard(pool, pool.get_or_create());
 
     // update factory while an object is floating around
-    pool.update_factory(new safe_vw_factory(std::shared_ptr<safe_vw>(new safe_vw((const char*)cb_data_5_model, cb_data_5_model_len))));
+    pool.update_factory(new safe_vw_factory(std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len)));
 
     std::vector<float> ranking = guard->rank(json);
     BOOST_CHECK_EQUAL_COLLECTIONS(ranking.begin(), ranking.end(), ranking_expected.begin(), ranking_expected.end());
