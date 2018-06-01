@@ -2,7 +2,7 @@ project (pylibvw)
 
 set(CMAKE_CXX_STANDARD 11)
 
-find_package(PythonLibs REQUIRED)
+find_package(PythonLibs)
 find_package(Boost COMPONENTS python)
 
 if (PYTHON_INCLUDE_DIRS AND Boost_PYTHON_FOUND)
