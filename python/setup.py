@@ -40,7 +40,8 @@ def find_boost():
         if not find_library(boost_lib) or skip_find_library:
             boost_lib = "boost_python"
     elif system == 'Darwin':
-        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
+	# For "brew"-installation of PythonBoost it's the lib /usr/local/lib/libboost_python27-mt resp. libboost_python36-mt
+        boost_lib = 'boost_python' + str(sys.version_info[0]) + str(sys.version_info[1]) + '-mt' 
     elif system == 'Cygwin':
         boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
     else:
