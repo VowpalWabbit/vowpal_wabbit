@@ -20,7 +20,7 @@
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
 
-#if _MSC_VER == 1900
+#if _MSC_VER >= 1900
 // VS 2015 Bug: https://social.msdn.microsoft.com/Forums/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error?forum=vcgeneral
 std::string utf16_to_utf8(std::u16string utf16_string)
 {
