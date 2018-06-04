@@ -15,7 +15,7 @@ namespace reinforcement_learning {
     static example& get_or_create_example_f(void* vw);
 
   public:
-    safe_vw(std::shared_ptr<safe_vw> master);
+    safe_vw(const std::shared_ptr<safe_vw>& master);
     safe_vw(const char* model_data, size_t len);
 
     ~safe_vw();
@@ -29,7 +29,7 @@ namespace reinforcement_learning {
     std::shared_ptr<safe_vw> _master;
 
   public:
-    safe_vw_factory(std::shared_ptr<safe_vw> master);
+    safe_vw_factory(const std::shared_ptr<safe_vw>& master);
 
     safe_vw* operator()();
   };

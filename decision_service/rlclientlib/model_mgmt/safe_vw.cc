@@ -17,6 +17,10 @@ namespace reinforcement_learning {
     {
       files.push_back(0);
     }
+    
+    in_memory_buf(const in_memory_buf&) = delete;
+    in_memory_buf& operator=(const in_memory_buf& other) = delete;
+    in_memory_buf(in_memory_buf&& other) = delete;
 
     virtual int open_file(const char* name, bool stdin_off, int flag = READ)
     {
@@ -57,7 +61,7 @@ namespace reinforcement_learning {
   };
 
 
-  safe_vw::safe_vw(std::shared_ptr<safe_vw> master) : _master(master)
+  safe_vw::safe_vw(const std::shared_ptr<safe_vw>& master) : _master(master)
   { 
     _vw = VW::seed_vw_model(_master->_vw, "", nullptr, nullptr);
   }
@@ -139,7 +143,7 @@ namespace reinforcement_learning {
     return ranking;
   }
 
-  safe_vw_factory::safe_vw_factory(std::shared_ptr<safe_vw> master) : _master(master)
+  safe_vw_factory::safe_vw_factory(const std::shared_ptr<safe_vw>& master) : _master(master)
   { }
 
   safe_vw* safe_vw_factory::operator()()

@@ -4,9 +4,10 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
-#include "object_pool.h"
+#include "utility/object_pool.h"
 
 using namespace reinforcement_learning;
+using namespace reinforcement_learning::utility;
 using namespace std;
 
 class my_object

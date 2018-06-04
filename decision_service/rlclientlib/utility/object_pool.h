@@ -2,7 +2,7 @@
 #include <mutex>
 #include <vector>
 
-namespace reinforcement_learning {
+namespace reinforcement_learning { namespace utility {
   template<typename TObject>
   class pooled_object {
   private:
@@ -13,12 +13,14 @@ namespace reinforcement_learning {
       : _val(obj), version(pversion)
     { }
 
+    pooled_object(const pooled_object&) = delete;
+    pooled_object& operator=(const pooled_object& other) = delete;
+    pooled_object(pooled_object&& other) = delete;
+
     ~pooled_object()
     {
-      if (_val) {
-        delete _val;
-        _val = nullptr;
-      }
+      delete _val;
+      _val = nullptr;
     }
 
     inline TObject* val() { return _val; }
@@ -40,6 +42,10 @@ namespace reinforcement_learning {
       : _pool(&pool), _obj(obj)
     { }
 
+    pooled_object_guard(const pooled_object_guard&) = delete;
+    pooled_object_guard& operator=(const pooled_object_guard& other) = delete;
+    pooled_object_guard(pooled_object_guard&& other) = delete;
+
     ~pooled_object_guard() {
       _pool->return_to_pool(_obj);
     }
@@ -60,14 +66,16 @@ namespace reinforcement_learning {
       : _version(0), _factory(factory), _used_objects(0)
     { }
 
+    object_pool(const object_pool&) = delete;
+    object_pool& operator=(const object_pool& other) = delete;
+    object_pool(object_pool&& other) = delete;
+
     ~object_pool() {
       std::lock_guard<std::mutex> lock(_mutex);
 
       // delete factory
-      if (_factory) {
-        delete _factory;
-        _factory = nullptr;
-      }
+      delete _factory;
+      _factory = nullptr;
 
       // delete each pool object
       for (auto&& obj : _pool)
@@ -118,4 +126,5 @@ namespace reinforcement_learning {
       _pool.clear();
     }
   };
+}
 }

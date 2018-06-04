@@ -6,12 +6,13 @@
 #include <boost/test/unit_test.hpp>
 // #include <boost/test/test_tools.hpp>
 #include "safe_vw.h"
-#include "object_pool.h"
+#include "utility/object_pool.h"
 #include "data.h"
 
 #include <iostream>
 
 using namespace reinforcement_learning;
+using namespace reinforcement_learning::utility;
 
 BOOST_AUTO_TEST_CASE(safe_vw_1)
 {
