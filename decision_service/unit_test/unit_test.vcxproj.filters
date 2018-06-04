@@ -32,9 +32,6 @@
     <ClCompile Include="async_batcher_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="callback_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="concurrent_queue_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,6 +51,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="model_mgmt_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="factory_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="err_callback_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="data_callback_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sleeper_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

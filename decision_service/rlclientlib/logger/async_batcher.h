@@ -6,6 +6,7 @@
 #include "moving_queue.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
+#include "err_constants.h"
 
 namespace reinforcement_learning {
   class error_callback_fn;
@@ -57,11 +58,9 @@ namespace reinforcement_learning {
       }
       catch(const std::exception& e) {
         _thread_is_running = false;
-        std::ostringstream os;
-        os  << "Unable to start background thread to log events. "
-            << e.what();
-        api_status::try_update(status, error_code::background_thread_start, os.str().c_str());
-        return error_code::background_thread_start;
+        return report_error(status, error_code::background_thread_start,
+                            "Unable to start background thread to log events. ",
+                            e.what());
       }
     }
     return error_code::success;
@@ -74,12 +73,8 @@ namespace reinforcement_learning {
       return error_code::success;
     }
 
-    //report errors
-    std::ostringstream os;
-    os << "Dropped event: " << evt;
-    api_status::try_update(status, error_code::background_queue_overflow, os.str().c_str());
-
-    return error_code::background_queue_overflow;
+    return report_error(status, error_code::background_queue_overflow,
+                        "Dropped event: " , evt);
   }
 
   template <typename TSender>
@@ -135,7 +130,7 @@ namespace reinforcement_learning {
       remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
       if ( _sender.send(buf_to_send, &status) != error_code::success )
-        REPORT_ERR(_perror_cb, status);
+        ERROR_CALLBACK(_perror_cb, status);
     }
   }
 
@@ -143,11 +138,11 @@ namespace reinforcement_learning {
   async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t send_high_water_mark,
                                         const size_t batch_timeout_ms, const size_t queue_max_size)
               : _sender(pipe),
+              _thread_is_running(false),
               _send_high_water_mark(send_high_water_mark),
               _batch_timeout_ms(batch_timeout_ms),
-              _queue_max_size(queue_max_size),
-              _perror_cb(perror_cb) ,
-              _thread_is_running(false)
+              _queue_max_size(queue_max_size) ,
+              _perror_cb(perror_cb)
   {
   }
 

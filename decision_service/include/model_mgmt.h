@@ -1,15 +1,19 @@
 #pragma once
+#include <cstdint>
 
 // Declare const pointer for internal linkage  
 namespace reinforcement_learning {
   class api_status;
 }
 
-namespace reinforcement_learning { namespace model_mangement {
+namespace reinforcement_learning { namespace model_management {
 
     struct model_data{
-      char* data;
-      int data_sz;
+      model_data();
+
+      const char * data;
+      uint64_t data_sz;
+      int data_refresh_count;
     };
 
     class i_data_transport{

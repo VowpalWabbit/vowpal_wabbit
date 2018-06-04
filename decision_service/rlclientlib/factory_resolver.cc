@@ -6,7 +6,7 @@
 #include "err_constants.h"
 
 namespace reinforcement_learning { 
-  namespace m = model_mangement;
+  namespace m = model_management;
   namespace u = utility;
   // For proper static intialization 
   // Check https://en.wikibooks.org/wiki/More_C++_Idioms/Nifty_Counter for explanation
@@ -48,12 +48,18 @@ namespace reinforcement_learning {
   }
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::config_collection& cfg, api_status* status) {
-    char const * uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
+    const auto uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
     if ( uri == nullptr ) {
-      api_status::try_update(status, error_code::uri_not_provided, error_code::uri_not_provided_s);
-      return error_code::uri_not_provided;
+      api_status::try_update(status, error_code::http_uri_not_provided, error_code::http_uri_not_provided_s);
+      return error_code::http_uri_not_provided;
     }
-    *retval = new m::restapi_data_tranport(uri);
+    auto pret = new m::restapi_data_tranport(uri);
+    const auto scode = pret->check(status);
+    if(scode != error_code::success) {
+      delete pret;
+      return scode;
+    }
+    *retval = pret;
     return error_code::success;
   }
 

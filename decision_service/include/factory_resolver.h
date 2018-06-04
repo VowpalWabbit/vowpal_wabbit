@@ -3,8 +3,8 @@
 #include "object_factory.h"
 
 namespace reinforcement_learning  {
-  using dtfactory = utility::object_factory<model_mangement::i_data_transport>;
-  using modelfactory = utility::object_factory<model_mangement::i_model>;
+  using dtfactory = utility::object_factory<model_management::i_data_transport>;
+  using modelfactory = utility::object_factory<model_management::i_model>;
 
   extern dtfactory& data_transport_factory;
   extern modelfactory& model_factory;

@@ -19,7 +19,10 @@ namespace reinforcement_learning
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
 
   int live_model_impl::init(api_status* status) {
-    return _logger.init(status);
+    int scode = _logger.init(status);
+    TRY_OR_RETURN(scode);
+    //scode = init_model_mgmt(status);
+    return scode;
   }
 
   int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) 
@@ -81,5 +84,9 @@ namespace reinforcement_learning
       : _configuration(config),
       _error_cb(fn, err_context),
       _logger(config, &_error_cb) {
+  }
+
+  int live_model_impl::init_model_mgmt(api_status* status) {
+    throw "not yet implemented";
   }
 }

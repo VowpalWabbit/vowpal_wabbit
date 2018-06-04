@@ -159,8 +159,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="async_batcher_test.cc" />
-    <ClCompile Include="callback_test.cc" />
+    <ClCompile Include="data_callback_test.cc" />
+    <ClCompile Include="err_callback_test.cc" />
     <ClCompile Include="concurrent_queue_test.cc" />
+    <ClCompile Include="factory_test.cc" />
     <ClCompile Include="live_model_test.cc" />
     <ClCompile Include="eventhub_client_test.cc" />
     <ClCompile Include="event_test.cc" />
@@ -168,6 +170,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="model_mgmt_test.cc" />
     <ClCompile Include="ranking_response_test.cc" />
+    <ClCompile Include="sleeper_test.cc" />
     <ClCompile Include="str_util_test.cc" />
   </ItemGroup>
   <ItemGroup>

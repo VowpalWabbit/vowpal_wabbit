@@ -27,5 +27,7 @@ namespace reinforcement_learning
     int report_outcome(const char* uuid, float reward, api_status* status);
     
     explicit live_model_impl(const utility::config_collection& config, error_fn fn = nullptr, void* err_context = nullptr);
+  private:
+    int init_model_mgmt(api_status* status);
   };
 }

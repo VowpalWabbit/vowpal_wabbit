@@ -145,8 +145,12 @@
     <ClInclude Include="..\include\err_constants.h" />
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\\model_mgmt.h" />
+    <ClInclude Include="bg_model_download.h" />
+    <ClInclude Include="data_callback_fn.h" />
+    <ClInclude Include="interruptable_sleeper.h" />
     <ClInclude Include="live_model_impl.h" />
     <ClInclude Include="error_callback_fn.h" />
+    <ClInclude Include="periodic_bg_proc.h" />
     <ClInclude Include="ranking_event.h" />
     <ClInclude Include="logger\async_batcher.h" />
     <ClInclude Include="logger\moving_queue.h" />
@@ -159,6 +163,8 @@
     <ClInclude Include="vw_model.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bg_model_download.cc" />
+    <ClCompile Include="data_callback_fn.cc" />
     <ClCompile Include="factory_resolver.cc" />
     <ClCompile Include="live_model_impl.cc" />
     <ClCompile Include="error_callback_fn.cc" />

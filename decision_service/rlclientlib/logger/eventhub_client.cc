@@ -43,30 +43,20 @@ namespace reinforcement_learning {
       if (response.status_code() == status_codes::Created)
         return error_code::success;
       //report error
-      if (status) {
-        std::ostringstream error_msg;
-        error_msg << "bad http code (expected 201): " << response.status_code() << std::endl;
-        error_msg << "post_data: " << post_data;
-        api_status::try_update(status, error_code::eventhub_http_bad_status_code, error_msg.str().c_str());
-      }
-      return error_code::eventhub_http_bad_status_code;
+      return report_error(status, error_code::http_bad_status_code,
+                          "bad http code (expected 201): ",
+                          response.status_code(), "\n",
+                          "post_data: ", post_data);
     });
-    auto error_code = -1;
     try {
       request_task.wait();
-      error_code = request_task.get();
+      return request_task.get();
     }
     catch (const std::exception& e) {
-      error_code = error_code::eventhub_http_generic;
-      //report error
-      if (status) {
-        std::ostringstream error_msg;
-        error_msg << e.what();
-        error_msg << "post_data: " << post_data;
-        api_status::try_update(status, error_code, error_msg.str().c_str());
-      }
+      return report_error(status, error_code::eventhub_http_generic,
+                          e.what(),
+                          "post_data: " , post_data);
     }
-    return error_code;
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
@@ -81,7 +71,7 @@ namespace reinforcement_learning {
     std::lock_guard<std::mutex> lock(_mutex);
     // re-create authorization token if needed
     if (now > _authorization_valid_until - 60 * 15) {
-      _authorization_valid_until = now + 60 * 60 * 24 * 7;// 1 week
+      _authorization_valid_until = now + 60 * 60 * 24 * 7; // 1 week
       // construct "sr" 
       std::ostringstream resource_stream;
       resource_stream << "https://" << _eventhub_host << "/" << _eventhub_name;
