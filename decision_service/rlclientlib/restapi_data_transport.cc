@@ -13,7 +13,7 @@ using namespace std::chrono;
 namespace reinforcement_learning { namespace model_management {
 
   restapi_data_tranport::restapi_data_tranport(const std::string& url)
-    : _url(url), _httpcli(::utility::conversions::to_utf16string(_url)), _datasz{0} { }
+    : _url(url), _httpcli(::utility::conversions::to_string_t(_url)), _datasz{0} { }
 
   /*
    * Example successful response
@@ -83,7 +83,7 @@ namespace reinforcement_learning { namespace model_management {
     // Build request URI and start the request.
     pplx::task<int> requestTask = _httpcli.request(methods::GET)
       // Handle response headers arriving.
-      .then([&](Concurrency::task<http_response> respTask) {
+      .then([&](pplx::task<http_response> respTask) {
       auto response = respTask.get();
       if ( response.status_code() != 200 )
         RETURN_ERROR(status, error_code::http_bad_status_code, error_code::http_bad_status_code_s);
@@ -108,9 +108,9 @@ namespace reinforcement_learning { namespace model_management {
       auto readval = response.body().read_to_end(rb).get();  // need to use task.get to throw exceptions properly
 
       _last_modified = curr_last_modified;
-      _datasz = curr_datasz;
+      _datasz = readval;
 
-      ret.data_sz = curr_datasz;
+      ret.data_sz = readval;
       ret.data_refresh_count = ++_data_refresh_count;
 
       return error_code::success;
