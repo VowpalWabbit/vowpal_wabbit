@@ -19,7 +19,8 @@
 #define OVERWRITE 3
 
 #define BANDIT_VALI 1
-#define SUPERVISED_VALI 2
+#define SUPERVISED_VALI_SPLIT 2
+#define SUPERVISED_VALI_NOSPLIT 3
 
 #define INSTANCE_WT 1
 #define DATASET_WT 2
@@ -286,7 +287,9 @@ float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 			weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
 
 		if (data.weighting_scheme == DATASET_WT)
-			weight_multiplier = weight_multiplier * data.warm_start_period / ( (data.bandit_iter+1) * (data.bandit_iter+2) );
+			weight_multiplier = weight_multiplier * data.warm_start_period / data.bandit_period;
+
+		//(data.bandit_iter+1) * (data.bandit_iter+2)
 	}
 	return weight_multiplier;
 }
@@ -322,7 +325,7 @@ void finish(cbify& data)
 	data.lambdas.delete_v();
 	data.cumulative_costs.delete_v();
 
-	if (data.validation_method == SUPERVISED_VALI)
+	if (data.validation_method != BANDIT_VALI )
 	{
 		for (size_t i = 0; i < data.warm_start_period; ++i)
 			VW::dealloc_example(MULTICLASS::mc_label.delete_label, data.supervised_validation[i]);
@@ -423,7 +426,7 @@ void accumulate_costs_ips(cbify& data, example& ec)
 {
 	CB::cb_class& cl = data.cb_label.costs[0];
 	// validation using bandit data
-	if (data.validation_method == 1)
+	if (data.validation_method == BANDIT_VALI)
 	{
 		//IPS for approximating the cumulative costs for all lambdas
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -612,7 +615,7 @@ void predict_or_learn(cbify& data, base_learner& base, example& ec)
 		else
 			predict_or_learn_bandit(data, base, ec, SUPERVISED);
 
-		if (data.validation_method == SUPERVISED_VALI)
+		if (data.validation_method != BANDIT_VALI)
 			add_to_sup_validation(data, ec);
 
 		ec.weight = 0;
@@ -650,7 +653,6 @@ uint32_t predict_sublearner_adf(cbify& data, base_learner& base, example& ec, ui
 	example* ecs = data.adf_data.ecs;
 	example* empty = data.adf_data.empty_example;
 
-
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 	{
 	  base.predict(ecs[a], i);
@@ -660,9 +662,6 @@ uint32_t predict_sublearner_adf(cbify& data, base_learner& base, example& ec, ui
 	//data.all->cost_sensitive->predict(*empty, argmin);
 
   uint32_t pred_action = ecs[0].pred.a_s[0].action+1;
-
-  //Need to clear the prediction, otherwise there will be a memory leak
-  ecs[0].pred.a_s.delete_v();
 
 	return pred_action;
 }
@@ -703,15 +702,34 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, base_learner& base)
 	else
 	{
 		//only update cumulative costs every warm_start_period iterations
-		if ( abs(log2(data.bandit_iter) - floor(log2(data.bandit_iter))) < 1e-4 )
+		if ( data.bandit_iter >= 1 && abs( log2(data.bandit_iter+1) - floor(log2(data.bandit_iter+1)) ) < 1e-4 )
 		{
+			uint32_t total_epoch_num = ceil(log2(data.bandit_period));
+			uint32_t epoch_num = log2(data.bandit_iter+1) - 1;
+			uint32_t sup_train_size = data.warm_start_period / 2;
+			uint32_t sup_vali_size = data.warm_start_period - sup_train_size;
+			float batch_vali_size = ((float) sup_vali_size) / total_epoch_num;
+			uint32_t lb, ub;
+
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 				data.cumulative_costs[i] = 0;
+
+			if (data.validation_method == SUPERVISED_VALI_SPLIT)
+			{
+				lb = sup_train_size + ceil(batch_vali_size * epoch_num);
+				ub = sup_train_size + ceil(batch_vali_size * (epoch_num + 1));
+			}
+			else
+			{
+				lb = sup_train_size;
+				ub = sup_train_size + sup_vali_size;
+			}
+
 
 			//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 			{
-				for (uint32_t j = 0; j < data.warm_start_period; j++)
+				for (uint32_t j = lb; j < ub; j++)
 				{
 					example& ec_valid = data.supervised_validation[j];
 					uint32_t pred_label = predict_sublearner_adf(data, base, ec_valid, i);
@@ -726,12 +744,6 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, base_learner& base)
 
 void accumulate_variance_adf(cbify& data, base_learner& base, example& ec)
 {
-	auto& out_ec = data.adf_data.ecs[0];
-
-	data.a_s.erase();
-	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		data.a_s.push_back({out_ec.pred.a_s[a].action, out_ec.pred.a_s[a].score});
-
 	size_t pred_best_approx = predict_cs_adf(data, base, ec);
 	float temp_variance;
 
@@ -825,28 +837,24 @@ void predict_or_learn_cs_adf(cbify& data, base_learner& base, example& ec, bool 
 
 	//a hack here - allocated memories not deleted
 	//to be corrected
-	if (data.validation_method == SUPERVISED_VALI)
+	if (data.validation_method != BANDIT_VALI)
 		add_to_sup_validation_adf(data, ec);
 }
 
-size_t predict_bandit_adf(cbify& data, base_learner& base)
+size_t predict_bandit_adf(cbify& data, base_learner& base, example& ec)
 {
-	example* ecs = data.adf_data.ecs;
-	example* empty_example = data.adf_data.empty_example;
-
 	uint32_t argmin = find_min(data.cumulative_costs);
-
-	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-	{
-		base.predict(ecs[a], argmin);
-	}
-	base.predict(*empty_example, argmin);
+	predict_sublearner_adf(data, base, ec, argmin);
 
 	// get output scores
 	auto& out_ec = data.adf_data.ecs[0];
 	uint32_t idx = data.mwt_explorer->Choose_Action(
 									 *data.generic_explorer,
 									 StringUtils::to_string(data.example_counter++), out_ec) - 1;
+
+	data.a_s.erase();
+	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
+		data.a_s.push_back({out_ec.pred.a_s[a].action, out_ec.pred.a_s[a].score});
 
 	return idx;
 
@@ -900,7 +908,7 @@ void predict_or_learn_bandit_adf(cbify& data, base_learner& base, example& ec, b
 	//data.cbl_empty->costs = data.adf_data.empty_example->l.cb.costs;
 
 	//size_t pred_pi = predict_cs_adf(data, base, ec);
-	uint32_t idx = predict_bandit_adf(data, base);
+	uint32_t idx = predict_bandit_adf(data, base, ec);
 
 	CB::cb_class cl;
 
@@ -966,7 +974,7 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 		ec.pred.multiclass = 0;
 		ec.weight = 0;
 	}
-
+	//data.adf_data.ecs[0].pred.a_s.erase();
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 		data.adf_data.ecs[a].l.cb.costs = data.cbls[a].costs;
 	data.adf_data.empty_example->l.cb.costs = data.cbl_empty->costs;
@@ -1076,7 +1084,7 @@ base_learner* cbify_setup(vw& all)
 	//cout<<"does epsilon exist?"<<vm.count("epsilon")<<endl;
 	//cout<<"epsilon = "<<data.epsilon<<endl;
 
-	if (data.validation_method == SUPERVISED_VALI)
+	if (data.validation_method != BANDIT_VALI)
 	{
 		data.supervised_validation = v_init<example>();
 		//calloc_or_throw<example>(data.warm_start_period);

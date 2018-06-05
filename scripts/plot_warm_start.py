@@ -17,8 +17,8 @@ class model:
 		# Setting up argument-independent learning parameters in the constructor
 		self.baselines_on = True
 		self.algs_on = True
-		self.optimal_on = True
-		self.majority_on = True
+		self.optimal_on = False
+		self.majority_on = False
 
 		self.num_checkpoints = 200
 
@@ -32,18 +32,18 @@ class model:
 
 		#mod.choices_corrupt_type_supervised = [1,2,3]
 		#mod.choices_corrupt_prob_supervised = [0.0,0.5,1.0]
-		self.choices_corrupt_type_supervised = [3]
-		self.choices_corrupt_prob_supervised = [0,0.25,0.5]
+		self.choices_corrupt_type_supervised = [1]
+		self.choices_corrupt_prob_supervised = [0.0]
 
 		self.learning_rates_template = [0.1, 0.03, 0.3, 0.01, 1.0, 0.003, 3.0, 0.001, 10.0]
 
 		self.adf_on = True
 
-		self.corrupt_type_bandit = 1
-		self.corrupt_prob_bandit = 0.0
+		self.choices_corrupt_type_bandit = [1,2,3]
+		self.choices_corrupt_prob_bandit = [0.0,0.5]
 
 		self.validation_method = 1
-		self.weighting_scheme = 1
+		self.weighting_scheme = 2
 
 		#self.epsilon = 0.05
 		#self.epsilon_on = True
@@ -131,7 +131,7 @@ def gen_vw_options(mod):
 		mod.param['bandit'] = 0
 	else:
 		# General CB
-		mod.vw_template = {'data':'', 'corrupt_type_bandit':0, 'corrupt_prob_bandit':0.0, 'bandit':0, 'cb_type':'mtr',
+		mod.vw_template = {'data':'', 'progress':2.0, 'corrupt_type_bandit':0, 'corrupt_prob_bandit':0.0, 'bandit':0, 'cb_type':'mtr',
 		'choices_lambda':0, 'corrupt_type_supervised':0, 'corrupt_prob_supervised':0.0, 'lambda_scheme':1, 'learning_rate':0.5, 'warm_start_type':1, 'cbify':0, 'warm_start':0, 'overwrite_label':1, 'validation_method':1, 'weighting_scheme':1}
 
 		mod.param['warm_start'] = mod.param['warm_start_multiplier'] * mod.param['progress']
@@ -219,10 +219,16 @@ def gen_comparison_graph(mod):
 	mod.vw_output_filename = mod.vw_output_dir + param_to_str_simplified(mod) + '.txt'
 
 	#plot_errors(mod)
+	#print mod.param['validation_method']
+
 	execute_vw(mod)
 	vw_run_results = collect_stats(mod)
 	for vw_result in vw_run_results:
 		result_combined = merge_two_dicts(mod.param, vw_result)
+
+		print mod.result_template['no_interaction_update']
+		print result_combined['no_interaction_update']
+
 		result_formatted = format_setting(mod.result_template, result_combined)
 		record_result(mod, result_formatted)
 
@@ -241,6 +247,9 @@ def record_result(mod, result):
 	result_row = []
 	for k in mod.result_header_list:
 		result_row.append(result[k])
+
+	#print result['validation_method']
+	#print result_row
 
 	summary_file = open(mod.summary_file_name, 'a')
 	summary_file.write( intersperse(result_row, '\t') + '\n')
@@ -281,12 +290,15 @@ def dictify(param_name, param_choices):
 		dic = {}
 		dic[param_name] = param
 		result.append(dic)
+	print param_name, len(result)
 	return result
 
 def params_per_task(mod):
 	# Problem parameters
 	params_corrupt_type_sup = dictify('corrupt_type_supervised', mod.choices_corrupt_type_supervised)
 	params_corrupt_prob_sup = dictify('corrupt_prob_supervised', mod.choices_corrupt_prob_supervised)
+	params_corrupt_type_band = dictify('corrupt_type_bandit', mod.choices_corrupt_type_bandit)
+	params_corrupt_prob_band = dictify('corrupt_prob_bandit', mod.choices_corrupt_prob_bandit)
 	params_warm_start_multiplier = dictify('warm_start_multiplier', mod.warm_start_multipliers)
 	params_learning_rate = dictify('learning_rate', mod.learning_rates)
 
@@ -297,16 +309,18 @@ def params_per_task(mod):
 	params_cb_type = dictify('cb_type', mod.choices_cb_type)
 
 	# Common parameters
-	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup, params_warm_start_multiplier, params_learning_rate, params_cb_type, params_fold])
-	params_common = filter(lambda param: param['corrupt_type_supervised'] == 3 or abs(param['corrupt_prob_supervised']) > 1e-4, params_common)
+	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup,
+	params_corrupt_type_band, params_corrupt_prob_band,
+	params_warm_start_multiplier, params_learning_rate, params_cb_type, params_fold])
+	params_common = filter(lambda param: param['corrupt_type_bandit'] == 3 or abs(param['corrupt_prob_bandit']) > 1e-4, params_common)
 
 	# Baseline parameters construction
 	if mod.baselines_on:
 		params_baseline_basic = [
-		[{'choices_lambda': 1, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'no_warm_start_update': True}, {'no_warm_start_update': False}], [{'no_interaction_update': True}, {'no_interaction_update': False}]
+		[{'choices_lambda': 1, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'no_warm_start_update': True, 'no_interaction_update': False}, {'no_warm_start_update': False, 'no_interaction_update': True}]
 		]
 		params_baseline = param_cartesian_multi([params_common] + params_baseline_basic)
-		params_baseline = filter(lambda param: param['no_warm_start_update'] == True or param['no_interaction_update'] == True, params_baseline)
+		#params_baseline = filter(lambda param: param['no_warm_start_update'] == True or param['no_interaction_update'] == True, params_baseline)
 	else:
 		params_baseline = []
 
@@ -314,21 +328,28 @@ def params_per_task(mod):
 	# Algorithm parameters construction
 	if mod.algs_on:
 		params_choices_lambd = dictify('choices_lambda', mod.choices_choices_lambda)
-		params_algs_1 = param_cartesian(params_choices_lambd, [{'no_warm_start_update': False, 'no_interaction_update': False, 'warm_start_type': 1, 'lambda_scheme': 3}] )
+		params_algs_1 = param_cartesian_multi([params_choices_lambd, [{'no_warm_start_update': False, 'no_interaction_update': False, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'validation_method':2}, {'validation_method':3}]] )
 		params_algs_2 = [{'no_warm_start_update': False, 'no_interaction_update': False, 'warm_start_type': 2, 'lambda_scheme': 1, 'choices_lambda':1}]
 		params_algs = param_cartesian( params_common, params_algs_1 + params_algs_2 )
 	else:
 		params_algs = []
 
 
-	params_constant = [{'validation_method':mod.validation_method,
-	'weighting_scheme':mod.weighting_scheme,
-	'corrupt_type_bandit':mod.corrupt_type_bandit,
-	'corrupt_prob_bandit':mod.corrupt_prob_bandit,
+	params_constant = [{'weighting_scheme':mod.weighting_scheme,
 	'adf_on':True}]
 
 	params_baseline_and_algs = param_cartesian_multi([params_constant, params_baseline + params_algs])
 
+	#for p in params_common:
+	#	print p
+
+	#for p in params_baseline:
+	#	print p
+
+	print len(params_common)
+	print len(params_baseline)
+	print len(params_algs)
+	print len(params_baseline_and_algs)
 
 	# Optimal baselines parameter construction
 	if mod.optimal_on:
@@ -351,10 +372,10 @@ def params_per_task(mod):
 	params_dataset = dictify('dataset', mod.dss)
 	params_all = param_cartesian_multi( [params_dataset, params_baseline_and_algs + params_optimal + params_majority] )
 
-	params_all = sorted(params_all)
+	params_all = sorted(params_all, key=lambda d: (d['dataset'], d['corrupt_type_supervised'], d['corrupt_prob_supervised'], d['corrupt_type_bandit'], d['corrupt_prob_bandit']))
 	print 'The total number of VW commands to run is: ', len(params_all)
-	for row in params_all:
-		print row
+	#for row in params_all:
+	#	print row
 	return get_params_task(params_all)
 
 
@@ -458,6 +479,8 @@ def main_loop(mod):
 
 	write_summary_header(mod)
 	for mod.param in mod.config_task:
+		if (mod.param['no_interaction_update'] is True):
+			raw_input(' ')
 		gen_comparison_graph(mod)
 
 def create_dir(dir):
@@ -482,16 +505,34 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	flag_dir = args.results_dir + 'flag/'
 
+	mod = model()
+	mod.num_tasks = args.num_tasks
+	mod.task_id = args.task_id
+	mod.vw_path = '../vowpalwabbit/vw'
+	mod.ds_path = args.ds_dir
+	mod.results_path = args.results_dir
+	print 'reading dataset files..'
+	#TODO: this line specifically for multiple folds
+	#Need a systematic way to detect subfolder names
+	mod.dss = ds_files(mod.ds_path + '1/')
+
+	print len(mod.dss)
+
+	if args.num_datasets == -1 or args.num_datasets > len(mod.dss):
+		pass
+	else:
+		mod.dss = mod.dss[:args.num_datasets]
+
+	#print mod.dss
+
 	if args.task_id == 0:
 		# To avoid race condition of writing to the same file at the same time
 		create_dir(args.results_dir)
 
 		# This is specifically designed for teamscratch, as accessing a folder
-		# with a huge number of files can be super slow. Hence, we create a subfolder
-		# for each dataset to alleviate this.
-		dss = ds_files(args.ds_dir + '1/')
-		dss = dss[:args.num_datasets]
-		for ds in dss:
+		# with a huge number of result files can be super slow. Hence, we create a
+		# subfolder for each dataset to alleviate this.
+		for ds in mod.dss:
 			ds_no_suffix = remove_suffix(ds)
 			create_dir(args.results_dir + ds_no_suffix + '/')
 
@@ -502,14 +543,6 @@ if __name__ == '__main__':
 		while not os.path.exists(flag_dir):
 			time.sleep(1)
 
-	mod = model()
-
-	mod.num_tasks = args.num_tasks
-	mod.task_id = args.task_id
-	mod.vw_path = '../vowpalwabbit/vw'
-	mod.ds_path = args.ds_dir
-	mod.results_path = args.results_dir
-
 	if args.num_learning_rates <= 0 or args.num_learning_rates >= 10:
 		mod.learning_rates = mod.learning_rates_template
 	else:
@@ -517,16 +550,6 @@ if __name__ == '__main__':
 	#mod.folds = range(1,11)
 	mod.folds = range(1, args.num_folds+1)
 
-	print 'reading dataset files..'
-	#TODO: this line specifically for multiple folds
-	#Need a systematic way to detect subfolder names
-	mod.dss = ds_files(mod.ds_path + '1/')
-	print len(mod.dss)
-
-	if args.num_datasets == -1 or args.num_datasets > len(mod.dss):
-		pass
-	else:
-		mod.dss = mod.dss[:args.num_datasets]
 	#mod.dss = ["ds_223_63.vw.gz"]
 	#mod.dss = mod.dss[:5]
 
