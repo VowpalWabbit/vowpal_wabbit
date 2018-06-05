@@ -4,6 +4,7 @@
 #endif
 #include <boost/test/unit_test.hpp>
 #include "interruptable_sleeper.h"
+#include <thread>
 
 namespace u = reinforcement_learning::utility;
 

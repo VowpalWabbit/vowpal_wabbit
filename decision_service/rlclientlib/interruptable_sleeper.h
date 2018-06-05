@@ -1,6 +1,7 @@
 #pragma once
 #include <mutex>
 #include <chrono>
+#include <condition_variable>
 
 namespace reinforcement_learning { namespace utility {
   // one use wakable sleeping class

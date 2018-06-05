@@ -2,6 +2,7 @@
 #include "config_collection.h"
 #include "api_status.h"
 #include <functional>
+#include "err_constants.h"
 
 namespace reinforcement_learning { namespace utility
 {

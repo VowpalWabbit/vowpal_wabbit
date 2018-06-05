@@ -20,6 +20,17 @@ namespace reinforcement_learning {
       std::string _error_msg;
   };
 
+  template <typename Last>
+  void report_error(std::ostringstream& os, const Last& last) {
+    os << last;
+  }
+
+  template <typename First, typename ... Rest>
+  void report_error(std::ostringstream& os, const First& first, const Rest& ... rest) {
+    os << first;
+    report_error(os, rest...);
+  }
+
   template <typename ... All>
   int report_error(api_status* status, int scode, const All& ... all) {
     if ( status != nullptr ) {
@@ -29,18 +40,6 @@ namespace reinforcement_learning {
     }
     return scode;
   }
-
-  template <typename First, typename ... Rest>
-  void report_error(std::ostream& os, const First& first, const Rest& ... rest) {
-    os << first;
-    report_error(os, rest...);
-  }
-
-  template <typename Last>
-  void report_error(std::ostream& os, const Last& last) {
-    os << last;
-  }
-
 }
 
 // this macro assumes that success_code equals 0
