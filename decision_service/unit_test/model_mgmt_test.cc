@@ -12,8 +12,8 @@
 #include "api_status.h"
 #include "err_constants.h"
 #include <regex>
-#include "periodic_bg_proc.h"
-#include "bg_model_download.h"
+#include "periodic_background_proc.h"
+#include "model_downloader.h"
 #include "data_callback_fn.h"
 
 namespace r = reinforcement_learning;
@@ -75,8 +75,8 @@ BOOST_AUTO_TEST_CASE(background_azure_get) {
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
   m::data_callback_fn dfn(dummy_data_fn, &data_ctxt);
 
-  m::bg_model_download bg(data_transport,&dfn);
-  u::periodic_bg_proc<m::bg_model_download> bgproc(repeatms,bg,&efn);
+  m::model_downloader bg(data_transport,&dfn);
+  u::periodic_background_proc<m::model_downloader> bgproc(repeatms,bg,&efn);
 
   const auto start = std::chrono::system_clock::now();
   scode = bgproc.init();
@@ -141,8 +141,7 @@ BOOST_AUTO_TEST_CASE(vw_model_factory)
 
   char* features = "1 2 3";
   int actions[] = { 1,2,3 };
-  int action;
-  scode = vw->choose_rank(action, features, actions);
+  scode = vw->choose_rank(features, actions);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   delete vw;
 }

@@ -6,12 +6,12 @@ namespace reinforcement_learning {
 }
 
 namespace reinforcement_learning { namespace model_management {
-  class bg_model_download {
+  class model_downloader {
   public:
-    bg_model_download(i_data_transport* ptrans, data_callback_fn* pdata_cb);
-    ~bg_model_download();
-    bg_model_download(bg_model_download&& temp) noexcept;
-    bg_model_download& operator=(bg_model_download&& temp) noexcept;
+    model_downloader(i_data_transport* ptrans, data_callback_fn* pdata_cb);
+    ~model_downloader();
+    model_downloader(model_downloader&& temp) noexcept;
+    model_downloader& operator=(model_downloader&& temp) noexcept;
 
     int run_once(api_status* status) const;
   private:
