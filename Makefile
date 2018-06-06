@@ -1,4 +1,4 @@
-CXX = $(shell which g++)
+CXX ?= $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which g++) -m32
@@ -53,6 +53,14 @@ ifeq ($(UNAME), Darwin)
   endif
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
+
+ifneq ($(USER_BOOST_INCLUDE),)
+  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
+endif
+ifneq ($(USER_BOOST_LIBRARY),)
+  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
+endif
+
 
 JSON_INCLUDE = -I ../rapidjson/include
 

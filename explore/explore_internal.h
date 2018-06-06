@@ -83,7 +83,7 @@ namespace exploration
       for (OutputIt d = pdf_new_last; d != pdf_last; ++d)
         *d = 0;
 
-        pdf_last = pdf_new_last;
+      pdf_last = pdf_new_last;
     }
 
     if (pdf_last - pdf_first == 0)
