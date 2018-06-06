@@ -94,36 +94,114 @@ def alg_info(alg_name, result_lst):
 		return result_lst[3]
 	if (alg_name[2] == False and alg_name[3] == True):
 		return result_lst[4]
-	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 2):
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 2 and alg_name[4] == 2):
 		return result_lst[5]
-	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 4):
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 4 and alg_name[4] == 2):
 		return result_lst[6]
-	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 8):
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 8 and alg_name[4] == 2):
 		return result_lst[7]
-	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 16):
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 16 and alg_name[4] == 2):
 		return result_lst[8]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 2 and alg_name[4] == 3):
+		return result_lst[9]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 4 and alg_name[4] == 3):
+		return result_lst[10]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 8 and alg_name[4] == 3):
+		return result_lst[11]
+	if (alg_name[2] == False and alg_name[3] == False and alg_name[1] == 16 and alg_name[4] == 3):
+		return result_lst[12]
 
-	return result_lst[9]
+	return result_lst[13]
 
 def alg_str(alg_name):
-	return alg_info(alg_name, ['Most-Freq', 'Sim-Bandit', 'Class-1', 'Bandit-Only', 'Sup-Only', 'MinimaxBandits', 'AwesomeBandits with $|\Lambda|$=4', 'AwesomeBandits with $|\Lambda|$=8', 'AwesomeBandits with $|\Lambda|$=16', 'unknown'])
+	return alg_info(alg_name,
+	['Most-Freq',
+	'Sim-Bandit',
+	'Class-1',
+	'Bandit-Only',
+	'Sup-Only',
+	'MinimaxBandits, one validation',
+	'AwesomeBandits with $|\Lambda|$=4, one validation',
+	'AwesomeBandits with $|\Lambda|$=8, one validation',
+	'AwesomeBandits with $|\Lambda|$=16, one validation',
+	'MinimaxBandits, multiple validation',
+	'AwesomeBandits with $|\Lambda|$=4, multiple validation',
+	'AwesomeBandits with $|\Lambda|$=8, multiple validation',
+	'AwesomeBandits with $|\Lambda|$=16, multiple validation',
+	'unknown'])
 
 def alg_str_compatible(alg_name):
-	return alg_info(alg_name, ['Most-Freq', 'Sim-Bandit', 'Class-1', 'Bandit-Only', 'Sup-Only', 'Choices_lambda=2', 'Choices_lambda=4', 'Choices_lambda=8', 'Choices_lambda=16', 'unknown'])
+	return alg_info(alg_name,
+	['Most-Freq',
+	'Sim-Bandit',
+	'Class-1',
+	'Bandit-Only',
+	'Sup-Only',
+	'Choices_lambda=2, validation_method=2',
+	'Choices_lambda=4, validation_method=2',
+	'Choices_lambda=8, validation_method=2',
+	'Choices_lambda=16, validation_method=2',
+	'Choices_lambda=2, validation_method=3',
+	'Choices_lambda=4, validation_method=3',
+	'Choices_lambda=8, validation_method=3',
+	'Choices_lambda=16, validation_method=3',
+	'unknown'])
 
 def alg_color_style(alg_name):
 	palette = sns.color_palette('colorblind')
 	colors = palette.as_hex()
 	#colors = [colors[5], colors[4], 'black', colors[2], colors[1], colors[3], 'black', colors[0], 'black', 'black']
-	colors = [colors[5], colors[3], 'black', colors[0], colors[1], colors[2], colors[2], colors[2], colors[2], 'black' ]
+	colors = [
+	colors[5],
+	colors[3],
+	'black',
+	colors[0],
+	colors[1],
+	colors[2],
+	colors[2],
+	colors[2],
+	colors[2],
+	colors[4],
+	colors[4],
+	colors[4],
+	colors[4],
+	'black' ]
 
-	styles = ['solid', 'solid', 'solid', 'solid', 'dashed', 'dotted', 'dashdot', 'solid', 'dashed', 'solid']
+	styles = [
+	'solid',
+	'solid',
+	'solid',
+	'solid',
+	'dashed',
+	'dotted',
+	'dashdot',
+	'solid',
+	'dashed',
+	'dotted',
+	'dashdot',
+	'solid',
+	'dashed',
+	'solid']
 
 	return alg_info(alg_name, zip(colors, styles))
 	#['black', 'magenta', 'lime', 'green', 'blue', 'darkorange','darksalmon', 'red', 'cyan']
 
 def alg_index(alg_name):
-	return alg_info(alg_name, [7.0, 6.0, 8.0, 5.0, 4.0, 2.0, 1.0, 1.2, 1.5, 9.0])
+	return alg_info(alg_name,
+	[7.0,
+	6.0,
+	8.0,
+	5.0,
+	4.0,
+	2.0,
+	1.0,
+	1.2,
+	1.5,
+	3.0,
+	2.0,
+	2.2,
+	2.5,
+	9.0])
 
 
 def order_legends(indices):
@@ -145,9 +223,11 @@ def save_legend(mod, indices):
 	figlegend.savefig(mod.problemdir+'legend.pdf')
 
 def problem_str(name_problem):
-	return 'supervised_corrupt_type='+str(name_problem[0]) \
-			+'_supervised_corrupt_prob='+str(name_problem[1]) \
-			+'_bandit_supervised_size_ratio='+str(name_problem[2])
+	return 'sct='+str(name_problem[0]) \
+			+'_scp='+str(name_problem[1]) \
+			+'_bct='+str(name_problem[2]) \
+			+'_bcp='+str(name_problem[3]) \
+			+'_ratio='+str(name_problem[4])
 
 def noise_type_str(noise_type):
 	if noise_type == 1:
@@ -242,14 +322,13 @@ def plot_all_pair_comp(alg_results, sizes, mod):
 				plt.savefig(mod.problemdir+alg_str_compatible(alg_names[i])+'_vs_'+alg_str_compatible(alg_names[j])+'.pdf')
 				plt.clf()
 
-def init_results(result_table):
-	alg_results = {}
-	for idx, row in result_table.iterrows():
-		alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_supervised'], row['no_bandit'])
-		alg_results[alg_name] = []
-
-	alg_results[(0, 0, False, False)] = []
-	return alg_results
+#def init_results(result_table):
+#	alg_results = {}
+#	for idx, row in result_table.iterrows():
+#		alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_warm_start_update'], row['no_interaction_update'])
+#		alg_results[alg_name] = []
+#	alg_results[(0, 0, False, False)] = []
+#	return alg_results
 
 def normalize_score(unnormalized_result, mod):
 	if mod.normalize_type == 1:
@@ -295,7 +374,7 @@ def get_unnormalized_results(result_table):
 			new_size = row['bandit_size']
 
 		if row['bandit_size'] == new_size:
-			alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_supervised'], row['no_bandit'])
+			alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_warm_start_update'], row['no_interaction_update'], row['validation_method'])
 			new_unnormalized_results[alg_name] = row['avg_error']
 		i += 1
 
@@ -311,7 +390,10 @@ def plot_all(mod, all_results):
 	#all_results = all_results[all_results['corrupt_prob_supervised']!=0.0]
 
 	grouped_by_problem = all_results.groupby(['corrupt_type_supervised',
-						'corrupt_prob_supervised','bandit_supervised_size_ratio'])
+						'corrupt_prob_supervised',
+						'corrupt_type_bandit',
+						'corrupt_prob_bandit',
+						'bandit_supervised_size_ratio'])
 
 	#then group by dataset and warm_start size (corresponding to each point in cdf)
 	for name_problem, group_problem in grouped_by_problem:
@@ -320,7 +402,7 @@ def plot_all(mod, all_results):
 		sizes = None
 		mod.name_problem = name_problem
 
-		grouped_by_dataset = group_problem.groupby(['dataset','warm_start_size'])
+		grouped_by_dataset = group_problem.groupby(['dataset','warm_start'])
 		#then select unique combinations of (no_supervised, no_bandit, choices_lambda)
 		#e.g. (True, True, 1), (True, False, 1), (False, True, 1), (False, False, 2)
 		#(False, False, 8), and compute a normalized score
@@ -328,14 +410,15 @@ def plot_all(mod, all_results):
 		for name_dataset, group_dataset in grouped_by_dataset:
 			result_table = group_dataset
 
-			grouped_by_algorithm = group_dataset.groupby(['warm_start_type', 'choices_lambda', 'no_supervised', 'no_bandit'])
+			grouped_by_algorithm = group_dataset.groupby(['warm_start_type', 'choices_lambda', 'no_warm_start_update', 'no_interaction_update',
+			'validation_method'])
 
 			mod.name_dataset = name_dataset
 
 			#The 'learning_rate' would be the only free degree here now. Taking the
-			#min aggregation will give us the 7 algorithms we are evaluating.
+			#min aggregation will give us the algorithms we are evaluating.
 
-			#In the future this should be changed now if we run multiple folds: we
+			#In the future this should be changed if we run multiple folds: we
 			#should average among folds before choosing the min
 			result_table = grouped_by_algorithm.min()
 			result_table = result_table.reset_index()
@@ -344,13 +427,6 @@ def plot_all(mod, all_results):
 
 
 			#group_dataset.groupby(['choices_lambda','no_supervised',														'no_bandit'])
-
-			#first time - generate names of algorithms considered
-			if normalized_results is None:
-				sizes = []
-				normalized_results = init_results(result_table)
-				unnormalized_results = init_results(result_table)
-
 				#print alg_results
 				#dummy = input('')
 
@@ -358,9 +434,14 @@ def plot_all(mod, all_results):
 			#print result_table
 
 			new_size, new_unnormalized_result = get_unnormalized_results(result_table)
-			new_unnormalized_result[(0, 0, False, False)] = get_maj_error(mod.maj_error_table, mod.name_dataset)
-
+			new_unnormalized_result[(0, 0, False, False, 1)] = get_maj_error(mod.maj_error_table, mod.name_dataset)
 			new_normalized_result = normalize_score(new_unnormalized_result, mod)
+
+			#first time - generate names of algorithms considered
+			if normalized_results is None:
+				sizes = []
+				unnormalized_results = dict([(k,[]) for k in new_unnormalized_result.keys()])
+				normalized_results = dict([(k,[]) for k in new_unnormalized_result.keys()])
 
 			update_result_dict(unnormalized_results, new_unnormalized_result)
 			update_result_dict(normalized_results, new_normalized_result)
@@ -420,9 +501,8 @@ def load_from_sum(mod):
 
 
 # This is a hack - need to do this systematically in the future
-def load_maj_error(mod):
-	maj_error_table = parse_sum_file(mod.maj_error_dir)
-	return maj_error_table
+#def load_maj_error(mod):
+#	return parse_sum_file(mod.maj_error_dir)
 
 
 if __name__ == '__main__':
@@ -443,6 +523,7 @@ if __name__ == '__main__':
 	mod.pair_comp_on = False
 	mod.cdf_on = True
 	mod.maj_error_dir = '../../../figs_all/expt_0509/figs_maj_errors/0of1.sum'
+	mod.best_error_dir = '../../../figs_all/expt_0606/best_errors/0of1.sum'
 
 	mod.fulldir = mod.results_dir + mod.plot_subdir
 	if not os.path.exists(mod.fulldir):
@@ -462,15 +543,13 @@ if __name__ == '__main__':
 	#to each cdf graph)
 	all_results = mod.all_results
 
-	mod.best_error_table = all_results[all_results['choices_lambda'] == 0]
-
 	#print mod.best_error_table[mod.best_error_table['dataset'] == 'ds_160_5.vw.gz']
 	#raw_input(' ')
 
 	all_results = all_results[all_results['choices_lambda'] != 0]
 
 	#ignore the no update row:
-	all_results = all_results[(all_results['no_supervised'] == False) | (all_results['no_bandit'] == False)]
+	all_results = all_results[(all_results['no_warm_start_update'] == False) | (all_results['no_interaction_update'] == False)]
 	#ignore the choice_lambda = 4 row
 	all_results = all_results[(all_results['choices_lambda'] != 4)]
 
@@ -481,7 +560,10 @@ if __name__ == '__main__':
 	#	pass
 	#else:
 
-	mod.maj_error_table = load_maj_error(mod)
+	mod.maj_error_table = parse_sum_file(mod.maj_error_dir)
+	mod.maj_error_table = mod.maj_error_table[mod.maj_error_table['majority_approx']]
+	mod.best_error_table = parse_sum_file(mod.best_error_dir)
+	mod.best_error_table = mod.best_error_table[mod.best_error_table['optimal_approx']]
 
 	if mod.filter == '1':
 		pass

@@ -24,7 +24,7 @@ class model:
 
 		# use fractions instead of absolute numbers
 		#mod.warm_start_multipliers = [pow(2,i) for i in range(4)]
-		self.warm_start_multipliers = [pow(2,i) for i in range(1)]
+		self.warm_start_multipliers = [pow(2,i) for i in range(4)]
 
 		self.choices_cb_type = ['mtr']
 		#mod.choices_choices_lambda = [2,4,8]
@@ -40,7 +40,7 @@ class model:
 		self.adf_on = True
 
 		self.choices_corrupt_type_bandit = [1,2,3]
-		self.choices_corrupt_prob_bandit = [0.0,0.5]
+		self.choices_corrupt_prob_bandit = [0.0,0.5,1.0]
 
 		self.validation_method = 1
 		self.weighting_scheme = 2
@@ -226,8 +226,8 @@ def gen_comparison_graph(mod):
 	for vw_result in vw_run_results:
 		result_combined = merge_two_dicts(mod.param, vw_result)
 
-		print mod.result_template['no_interaction_update']
-		print result_combined['no_interaction_update']
+		#print mod.result_template['no_interaction_update']
+		#print result_combined['no_interaction_update']
 
 		result_formatted = format_setting(mod.result_template, result_combined)
 		record_result(mod, result_formatted)
@@ -353,12 +353,13 @@ def params_per_task(mod):
 
 	# Optimal baselines parameter construction
 	if mod.optimal_on:
-		params_optimal = [{ 'optimal_approx': True, 'fold': 1 }]
+		params_optimal = [{ 'optimal_approx': True, 'fold': 1, 'corrupt_type_supervised':1, 'corrupt_prob_supervised':0.0, 'corrupt_type_bandit':1, 'corrupt_prob_bandit':0.0} ]
 	else:
 		params_optimal = []
 
 	if mod.majority_on:
-		params_majority = [{ 'majority_approx': True, 'fold': 1 }]
+		params_majority = [{ 'majority_approx': True, 'fold': 1,
+		'corrupt_type_supervised':1, 'corrupt_prob_supervised':0.0, 'corrupt_type_bandit':1, 'corrupt_prob_bandit':0.0} ]
 	else:
 		params_majority = []
 
@@ -479,8 +480,8 @@ def main_loop(mod):
 
 	write_summary_header(mod)
 	for mod.param in mod.config_task:
-		if (mod.param['no_interaction_update'] is True):
-			raw_input(' ')
+		#if (mod.param['no_interaction_update'] is True):
+		#	raw_input(' ')
 		gen_comparison_graph(mod)
 
 def create_dir(dir):
