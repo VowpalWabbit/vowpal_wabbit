@@ -2,7 +2,7 @@
 #matplotlib.use('Agg')
 #import matplotlib.pyplot as plt
 import subprocess
-import pylab
+#import pylab
 from itertools import product
 import os
 import math
