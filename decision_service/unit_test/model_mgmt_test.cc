@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(background_azure_get) {
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
-  BOOST_CHECK(diff <= std::chrono::milliseconds(100));
+  BOOST_CHECK_LE(diff.count(), 100);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
 }
 

@@ -7,6 +7,10 @@ namespace e = reinforcement_learning::error_code;
 
 namespace reinforcement_learning { namespace model_management {
   int model_management::data_callback_fn::report_data(const model_data& data, api_status* status) {
+    if(_fn == nullptr) {
+      return report_error(status, e::data_callback_not_set, e::data_callback_not_set_s);
+    }
+
     // need not be thread safe since this is only called from one thread
     try {
       _fn(data, _context);

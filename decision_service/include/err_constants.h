@@ -23,6 +23,7 @@ namespace reinforcement_learning { namespace error_code {
   const int model_export_frequency_not_provided = 16;
   const int bad_time_interval           = 17;
   const int data_callback_exception     = 18;
+  const int data_callback_not_set       = 19;
 }}
 
 namespace reinforcement_learning { namespace error_code {
@@ -39,4 +40,5 @@ namespace reinforcement_learning { namespace error_code {
   errstr_t model_export_frequency_not_provided_s = "Export frequency of model not specified in configuration.";
   errstr_t bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
   errstr_t data_callback_exception_s  = "Background data callback threw an exception. ";
+  errstr_t data_callback_not_set_s    = "Data callback handler not set";
 }}
