@@ -814,6 +814,7 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off, all.p->emptylines_separate_examples ? (all.holdout_period-1) : 0);
+  ae->test_only |= all.p->lp.test_label(&ae->l);
 
   if (all.p->emptylines_separate_examples && example_is_newline(*ae))
     all.p->in_pass_counter++;
@@ -1087,6 +1088,20 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
+
+float get_action_score(example* ec, size_t i)
+{
+  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+
+  if(i < scores.size()) {
+    return scores[i].score;
+  } else {
+    return 0.0;
+  }
+}
+
+size_t get_action_score_length(example* ec)
+{ return ec->pred.a_s.size(); }
 
 size_t get_tag_length(example* ec)
 {

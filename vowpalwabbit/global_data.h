@@ -259,7 +259,7 @@ struct shared_data
 
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
   { t += weight;
-    if(test_example)
+    if(test_example && labeled_example)
     { weighted_holdout_examples += weight;//test weight seen
       weighted_holdout_examples_since_last_dump += weight;
       weighted_holdout_examples_since_last_pass += weight;

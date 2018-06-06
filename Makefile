@@ -1,4 +1,4 @@
-CXX = $(shell which g++)
+CXX ?= $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which g++) -m32
@@ -54,6 +54,14 @@ ifeq ($(UNAME), Darwin)
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
 
+ifneq ($(USER_BOOST_INCLUDE),)
+  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
+endif
+ifneq ($(USER_BOOST_LIBRARY),)
+  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
+endif
+
+
 JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -71,17 +79,17 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
+FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC
 #CXX = g++
 
 # for valgrind / gdb debugging
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -g -O0  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -g -O0  -fPIC
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
 
 FLAGS += -I ../rapidjson/include -I ../explore
 BINARIES = vw active_interactor
@@ -89,7 +97,7 @@ MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree
+all:	vw library_example spanning_tree
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -106,7 +114,7 @@ vwslim: vw
 	cd vowpalwabbitslim && $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
+vw_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 vw_gcov: CXX = g++
 vw_gcov:
 	cd vowpalwabbit && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) -j $(NPROCS) things
@@ -118,7 +126,7 @@ library_example: vw
 	cd library; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-library_example_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
+library_example_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 library_example_gcov: CXX = g++
 library_example_gcov: vw_gcov
 	cd library && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) things

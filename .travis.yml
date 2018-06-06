@@ -9,23 +9,21 @@ matrix:
       sudo: required
       env: 
         - LEGACY=false
-        - DR="docker exec -ti travis-ci bash -c"
     - os: linux
       sudo: required
       env:
         - LEGACY=true
 
-before_install:
-  - if [[ "$LEGACY" == "false" ]]; then docker pull ubuntu:16.04 ; fi
-  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -td ubuntu:16.04 /bin/bash ; fi
+addons:
+  apt:
+    update: true
 
-install:
-  - if [[ "$LEGACY" == "true" ]]; then ./travis-install.sh ; fi
-  - if [[ "$LEGACY" == "false" ]]; then $DR "cd /vw && ./travis-install.sh"  ; fi
+before_install:
+  - if [[ "$LEGACY" == "false" ]]; then docker pull eisber/vw ; else ./legacy-build-before_install.sh ; fi
+
 
 script:
-  - if [[ "$LEGACY" == "true" ]]; then ./travis-script.sh ; fi
-  - if [[ "$LEGACY" == "false" ]]; then $DR "cd /vw && ./travis-script.sh"  ; fi
-   
+  - if [[ "$LEGACY" == "false" ]]; then docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && ./build-linux.sh" ; else ./legacy-build-script.sh ; fi
+
 after_success:
-  - $sh "coveralls --exclude lib --exclude tests --gcov-options '\-lp'"
+  - if [[ "$LEGACY" == "true" ]]; then ./legacy-build-after_success.sh ; fi

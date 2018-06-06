@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugLeakCheck|Win32">
@@ -401,6 +401,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
+    <ClInclude Include="no_label.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="OjaNewton.h" />
@@ -494,6 +495,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="no_label.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />

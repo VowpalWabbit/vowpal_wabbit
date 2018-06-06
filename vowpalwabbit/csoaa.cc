@@ -267,14 +267,14 @@ bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
   if (start_K == ec_seq.size())
     isTest = true;
   else
-    isTest = COST_SENSITIVE::example_is_test(*ec_seq[start_K]);
+    isTest = COST_SENSITIVE::cs_label.test_label(&ec_seq[start_K]->l);
   for (size_t k=start_K; k<ec_seq.size(); k++)
   {
     example *ec = ec_seq[k];
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size()==1);
 
-    if (COST_SENSITIVE::example_is_test(*ec) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
       isTest = true;
       data.all->opts_n_args.trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
@@ -322,6 +322,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, mul
       // learn
       simple_label.initial = 0.;
       simple_label.label = (costs1[0].x < costs2[0].x) ? -1.0f : 1.0f;
+      float old_weight = ec1->weight;
       ec1->weight = value_diff;
       ec1->partial_prediction = 0.;
       subtract_example(*data.all, ec1, ec2);
@@ -329,6 +330,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, size_t start_K, mul
       ec1->ft_offset = data.ft_offset;
       base.learn(*ec1);
       ec1->ft_offset = old_offset;
+      ec1->weight = old_weight;
       unsubtract_example(ec1);
 
       LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
@@ -588,7 +590,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
   else
     predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::example_is_test(ec))
+  if (!COST_SENSITIVE::cs_label.test_label(&ec.l))
   {
     for (size_t j=0; j<costs.size(); j++)
     {
@@ -620,7 +622,7 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec, ec_seq, false, predicted_class);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec_seq)
@@ -636,7 +638,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
   float loss = 0.;
   v_array<action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::example_is_test(head_ec))
+  if (!COST_SENSITIVE::cs_label.test_label(&head_ec.l))
   {
     size_t idx = 0;
     for (example* ex : *ec_seq)
@@ -671,7 +673,7 @@ void output_rank_example(vw& all, example& head_ec, bool& hit_loss, multi_ex* ec
     all.print_text(all.raw_prediction, outputStringStream.str(), head_ec.tag);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(head_ec), head_ec, ec_seq, true, 0);
+  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(&head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
@@ -683,9 +685,9 @@ void output_example_seq(vw& all, ldf& data, multi_ex& ec_seq)
     if (ec_is_example_header(*(ec_seq[0])))
       start_K = 1;
     if (test_ldf_sequence(data, start_K, ec_seq))
-      all.sd->weighted_unlabeled_examples += 1;
+      all.sd->weighted_unlabeled_examples += ec_seq[0]->weight;
     else
-      all.sd->weighted_labeled_examples += 1;
+      all.sd->weighted_labeled_examples += ec_seq[0]->weight;
     all.sd->example_number++;
 
     bool hit_loss = false;
@@ -880,7 +882,6 @@ base_learner* csldf_setup(arguments& arg)
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
   l.set_end_pass(end_pass);
-  l.set_test_example(COST_SENSITIVE::example_is_test);
   arg.all->cost_sensitive = make_base(l);
   return arg.all->cost_sensitive;
 }

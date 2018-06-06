@@ -82,11 +82,6 @@ struct finish_example_data
   fn finish_example_f;
 };
 
-struct test_example_data
-{
-  bool(*test_example_f)(example&);
-};
-
 void generic_driver(vw& all);
 void generic_driver(std::vector<vw*> alls);
 void generic_driver_onethread(vw& all);
@@ -128,7 +123,6 @@ private:
   func_data end_pass_fd;
   func_data end_examples_fd;
   func_data finisher_fd;
-  test_example_data test_example_fd;
   learner(){};  // Should only be able to construct a learner through init_learner function
 
 public:
@@ -254,14 +248,6 @@ public:
   void set_finish_example(void (*f)(vw& all, T&, E&))
   { finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = (end_fptr_type)(f);
-  }
-
-  //called to check if an example is a test example.  Used in creating multiline example
-  inline bool is_test_example(example& ec)
-  { return test_example_fd.test_example_f(ec);
-  }
-  void set_test_example(bool(*f)(example&))
-  { test_example_fd.test_example_f = f;
   }
 
   template <class L>

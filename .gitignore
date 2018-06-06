@@ -21,7 +21,6 @@ config.h
 *.la
 *.lo
 vowpalwabbit/stamp-*
-Makefile
 config.status
 test/*.predict
 test/*.cmp
@@ -121,5 +120,11 @@ vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /python/pylibvw.pyd
 /python/pylibvw.cp35-win_amd64.pyd
-vowpalwabbitslim/data.h
-vowpalwabbitslim/ut_main
+decision_service/ds.VC.VC.opendb
+decision_service/ds.VC.db
+decision_service/unit_test/dsclient-test.out
+decision_service/rl.VC.VC.opendb
+decision_service/rl.VC.db
+index.html
+packages-microsoft-prod.deb
+decision_service/unit_test/rlclient-test.out
