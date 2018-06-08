@@ -1,8 +1,4 @@
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
 import subprocess
-#import pylab
 from itertools import product
 import os
 import math
@@ -334,11 +330,12 @@ def params_per_task(mod):
 	else:
 		params_algs = []
 
-
-	params_constant = [{'weighting_scheme':mod.weighting_scheme,
+	params_constant_baseline = [{'weighting_scheme':1,
+	'adf_on':True}]
+	params_constant_algs = [{'weighting_scheme':mod.weighting_scheme,
 	'adf_on':True}]
 
-	params_baseline_and_algs = param_cartesian_multi([params_constant, params_baseline + params_algs])
+	params_baseline_and_algs = param_cartesian_multi([params_constant_baseline, params_baseline]) + param_cartesian_multi([params_constant_algs, params_algs])
 
 	#for p in params_common:
 	#	print p

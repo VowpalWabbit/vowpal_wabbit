@@ -28,6 +28,7 @@
 #define ABS_CENTRAL 1
 #define MINIMAX_CENTRAL 2
 #define MINIMAX_CENTRAL_ZEROONE 3
+#define ABS_CENTRAL_ZEROONE 4
 
 
 using namespace LEARNER;
@@ -114,6 +115,7 @@ struct cbify
 	size_t overwrite_label;
 	size_t warm_start_type;
 	size_t mc_pred;
+	uint32_t warm_start_train_size;
 
 };
 
@@ -165,7 +167,7 @@ void setup_lambdas(cbify& data, example& ec)
 
 	uint32_t mid = data.choices_lambda / 2;
 
-	if (data.lambda_scheme == ABS_CENTRAL)
+	if (data.lambda_scheme == ABS_CENTRAL || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 		lambdas[mid] = 0.5;
 	else
 		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions, data.warm_start_period, data.bandit_period, ec.num_features);
@@ -176,7 +178,7 @@ void setup_lambdas(cbify& data, example& ec)
 	for (uint32_t i = mid+1; i < data.choices_lambda; i++)
 		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
 
-	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE)
+	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 	{
 		lambdas[0] = 0.0;
 		lambdas[data.choices_lambda-1] = 1.0;
@@ -271,13 +273,42 @@ bool ind_update(cbify& data, size_t ec_type)
 float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 {
 	float weight_multiplier;
+	float ws_train_size = data.warm_start_train_size;
+	float intr_train_size = data.bandit_period;
 
-	if (ec_type == SUPERVISED)
+	if (data.validation_method != BANDIT_VALI)
+	{
+		if (ec_type == SUPERVISED && data.warm_start_iter >= ws_train_size)
+			return 0.0;
+	}
+
+	float total_size = ws_train_size + intr_train_size;
+	if (data.weighting_scheme == INSTANCE_WT)
+	{
+		if (ec_type == SUPERVISED)
+			weight_multiplier = (1-data.lambdas[i]) * total_size / ws_train_size;
+		else
+			weight_multiplier = data.lambdas[i] * total_size / intr_train_size;
+	}
+	else
+	{
+		float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * intr_train_size;
+
+		if (ec_type == SUPERVISED)
+			weight_multiplier = (1-data.lambdas[i]) * total_size / total_weight;
+		else
+			weight_multiplier = data.lambdas[i] * total_size / total_weight;
+	}
+
+	/*if (ec_type == SUPERVISED)
 	{
 		if (data.lambdas[i] >= 0.5)
 		 	weight_multiplier = (1 - data.lambdas[i]) / data.lambdas[i];
 		else
 			weight_multiplier = 1;
+
+		if (data.validation_method != BANDIT_VALI && data.warm_start_iter >= data.warm_start_train_size)
+			weight_multiplier = 0.0;
 	}
 	else
 	{
@@ -287,10 +318,10 @@ float compute_weight_multiplier(cbify& data, size_t i, size_t ec_type)
 			weight_multiplier = data.lambdas[i] / (1-data.lambdas[i]);
 
 		if (data.weighting_scheme == DATASET_WT)
-			weight_multiplier = weight_multiplier * data.warm_start_period / data.bandit_period;
+			weight_multiplier = weight_multiplier * data.warm_start_train_size / data.bandit_period;
 
 		//(data.bandit_iter+1) * (data.bandit_iter+2)
-	}
+	}*/
 	return weight_multiplier;
 }
 
@@ -315,6 +346,9 @@ uint32_t find_min(v_array<float> arr)
 
 void finish(cbify& data)
 {
+	cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
+	cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
+
   CB::cb_label.delete_label(&data.cb_label);
   //data.probs.delete_v();
   delete_it(data.scorer);
@@ -704,25 +738,25 @@ void accumulate_costs_ips_adf(cbify& data, example& ec, base_learner& base)
 		//only update cumulative costs every warm_start_period iterations
 		if ( data.bandit_iter >= 1 && abs( log2(data.bandit_iter+1) - floor(log2(data.bandit_iter+1)) ) < 1e-4 )
 		{
-			uint32_t total_epoch_num = ceil(log2(data.bandit_period));
-			uint32_t epoch_num = log2(data.bandit_iter+1) - 1;
-			uint32_t sup_train_size = data.warm_start_period / 2;
-			uint32_t sup_vali_size = data.warm_start_period - sup_train_size;
-			float batch_vali_size = ((float) sup_vali_size) / total_epoch_num;
-			uint32_t lb, ub;
-
 			for (uint32_t i = 0; i < data.choices_lambda; i++)
 				data.cumulative_costs[i] = 0;
 
+			uint32_t num_epochs = ceil(log2(data.bandit_period));
+			uint32_t epoch = log2(data.bandit_iter+1) - 1;
+			uint32_t ws_train_size = data.warm_start_train_size;
+			uint32_t ws_vali_size = data.warm_start_period - data.warm_start_train_size;
+			float batch_vali_size = ((float) ws_vali_size) / num_epochs;
+			uint32_t lb, ub;
+
 			if (data.validation_method == SUPERVISED_VALI_SPLIT)
 			{
-				lb = sup_train_size + ceil(batch_vali_size * epoch_num);
-				ub = sup_train_size + ceil(batch_vali_size * (epoch_num + 1));
+				lb = ws_train_size + ceil(batch_vali_size * epoch);
+				ub = ws_train_size + ceil(batch_vali_size * (epoch + 1));
 			}
 			else
 			{
-				lb = sup_train_size;
-				ub = sup_train_size + sup_vali_size;
+				lb = ws_train_size;
+				ub = ws_train_size + ws_vali_size;
 			}
 
 
@@ -963,11 +997,8 @@ void predict_or_learn_adf(cbify& data, base_learner& base, example& ec)
 	{
 		predict_or_learn_bandit_adf(data, base, ec, data.ind_bandit, BANDIT);
 		data.bandit_iter++;
-		if (data.bandit_iter == data.bandit_period)
-		{
-			cout<<"Ideal average variance = "<<data.num_actions / data.epsilon<<endl;
-			cout<<"Measured average variance = "<<data.cumulative_variance / data.bandit_period<<endl;
-		}
+		//if (data.bandit_iter == data.bandit_period)
+		//{}
 	}
 	else
 	{
@@ -1009,7 +1040,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
 	data.csl_empty->costs[0].class_index = 0;
 	data.csl_empty->costs[0].x = FLT_MAX;
 
-	for (size_t a = 0; a < num_actions; ++a)
+	for (uint32_t a = 0; a < num_actions; ++a)
 	{
 		data.csls[a].costs = v_init<COST_SENSITIVE::wclass>();
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
@@ -1088,7 +1119,10 @@ base_learner* cbify_setup(vw& all)
 	{
 		data.supervised_validation = v_init<example>();
 		//calloc_or_throw<example>(data.warm_start_period);
+		data.warm_start_train_size = data.warm_start_period / 2;
 	}
+	else
+		data.warm_start_train_size = data.warm_start_period;
 
 
 	data.bandit_iter = 0;
@@ -1121,7 +1155,7 @@ base_learner* cbify_setup(vw& all)
 		data.cs_label.costs = v_init<COST_SENSITIVE::wclass>();
 		//Note: these two lines are important, otherwise the cost sensitive vector seems to be unbounded.
 
-		for (size_t a = 0; a < num_actions; ++a)
+		for (uint32_t a = 0; a < num_actions; ++a)
 			data.cs_label.costs.push_back({0, a+1, 0, 0});
 
 		data.cb_label.costs = v_init<CB::cb_class>();
