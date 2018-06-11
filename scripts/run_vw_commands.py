@@ -524,9 +524,9 @@ if __name__ == '__main__':
 	#print mod.dss
 
 	if args.task_id == 0:
-		process = subprocess.Popen('make -C .. clean; make -C ..', shell=True, stdout=f, stderr=f)
+		#process = subprocess.Popen('make -C .. clean; make -C ..', shell=True, stdout=f, stderr=f)
 		#subprocess.check_call(cmd, shell=True)
-		process.wait()
+		#process.wait()
 
 		# To avoid race condition of writing to the same file at the same time
 		create_dir(args.results_dir)
