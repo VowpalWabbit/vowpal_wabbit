@@ -1,4 +1,7 @@
 #pragma once
+#include "ranking_response.h"
+#include "err_constants.h"
+
 namespace reinforcement_learning {
 
   // Forward declarations

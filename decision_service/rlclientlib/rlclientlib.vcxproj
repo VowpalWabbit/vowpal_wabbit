@@ -78,7 +78,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +146,7 @@
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\\model_mgmt.h" />
     <ClInclude Include="bg_model_download.h" />
+    <ClInclude Include="context_helper.h" />
     <ClInclude Include="data_callback_fn.h" />
     <ClInclude Include="interruptable_sleeper.h" />
     <ClInclude Include="live_model_impl.h" />
@@ -160,10 +161,13 @@
     <ClInclude Include="str_util.h" />
     <ClInclude Include="utility\object_factory.h" />
     <ClInclude Include="restapi_data_transport.h" />
+    <ClInclude Include="utility\object_pool.h" />
     <ClInclude Include="vw_model.h" />
+    <ClInclude Include="vw_model\safe_vw.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bg_model_download.cc" />
+    <ClCompile Include="context_helper.cc" />
     <ClCompile Include="data_callback_fn.cc" />
     <ClCompile Include="factory_resolver.cc" />
     <ClCompile Include="live_model_impl.cc" />
@@ -182,8 +186,26 @@
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="vw_model.cc" />
+    <ClCompile Include="vw_model\safe_vw.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\vowpalwabbit\vw_dynamic.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
+  </Target>
 </Project>

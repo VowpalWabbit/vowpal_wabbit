@@ -83,5 +83,9 @@ void display_response(const ranking_response& response)
 	for (auto i : response)
 		std::cout << "(" << i.action_id << "," << i.probability << ") ";
 	fprintf(stdout, "\n");
-	fprintf(stdout, "top action id = %d\n", response.get_top_action_id());
+  size_t action_id=0;
+  if(error_code::success == response.get_choosen_action_id(action_id))
+  	fprintf(stdout, "top action id = %d\n", (int)action_id);
+  else
+    fprintf(stdout, "error choosing action\n");
 }

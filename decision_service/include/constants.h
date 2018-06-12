@@ -9,6 +9,7 @@ namespace reinforcement_learning {  namespace name {
       str_const MODEL_BLOB_URI     = "model.blob.uri";
       str_const MODEL              = "MODEL";
       str_const VW_CMDLINE         = "VW_CMDLINE";
+      str_const INITIAL_EPSILON    = "initial_exploration.epsilon";
 }}
 
 namespace reinforcement_learning {  namespace value {

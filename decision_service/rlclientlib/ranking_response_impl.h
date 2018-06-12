@@ -9,10 +9,10 @@ namespace reinforcement_learning {
   class ranking_response_impl {
   public:
     ranking_response_impl() = default;
-    ranking_response_impl(const std::string & uuid);
-    ~ranking_response_impl();
+    explicit ranking_response_impl(const std::string & uuid);
 
-    bool get_top_action_id(int* action_id) const;
+    bool get_choosen_action_id(size_t& action_id) const;
+    int set_choosen_action_id(size_t action_id, api_status* status);
     bool get_action(const size_t idx, int* action_id, float* prob) const;
     void push_back(const int action_id, const float prob);
     size_t size() const;
@@ -24,6 +24,7 @@ namespace reinforcement_learning {
 
     private:
     std::string _uuid;
+    size_t _chosen_action_id;
     using coll_type = std::vector<std::pair<int, float>>;
     coll_type _ranking;
     friend class ranking_response;

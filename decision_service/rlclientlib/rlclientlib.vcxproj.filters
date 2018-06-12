@@ -96,6 +96,15 @@
     <ClInclude Include="interruptable_sleeper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="context_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_model\safe_vw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\object_pool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -155,5 +164,14 @@
     <ClCompile Include="bg_model_download.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="context_helper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_model\safe_vw.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -26,7 +26,8 @@ namespace reinforcement_learning { namespace model_management {
     public:
       virtual int init(model_data& data, api_status* status = nullptr) = 0;
       virtual int choose_rank(int& action, char* features, int actions[], api_status* status = nullptr) = 0;
-      virtual ~i_model() {}
+      virtual ~i_model() {};
+      virtual void update(const model_data& data) = 0;
     };
 }
 }

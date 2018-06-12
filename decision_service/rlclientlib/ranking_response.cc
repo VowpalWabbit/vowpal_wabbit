@@ -15,18 +15,19 @@ namespace reinforcement_learning {
     return _pimpl->_uuid.c_str();
 	}
 
-	int ranking_response::get_top_action_id(api_status* status) const {
-    int action_id;
-    if ( _pimpl->get_top_action_id(&action_id) )
-      return action_id;
+	int ranking_response::get_choosen_action_id(size_t& action_id, api_status* status) const {
+    if ( _pimpl->get_choosen_action_id(action_id) )
+      return error_code::success;
 
-    api_status::try_update(status, error_code::action_not_found, 
+    return report_error(status, error_code::action_not_found, 
       "No actions found in action collection");
-    
-    return -1;
 	}
 
-	void ranking_response::set_uuid(char const * uuid) {
+  int ranking_response::set_choosen_action_id(size_t id, api_status* status) {
+    return _pimpl->set_choosen_action_id(id, status);
+  }
+
+void ranking_response::set_uuid(char const * uuid) {
     _pimpl->_uuid = uuid;
 	}
 

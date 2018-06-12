@@ -52,8 +52,8 @@ void dummy_error_fn(const r::api_status& err, void* ctxt) {
   *( (int*)ctxt ) = 10;
 }
 
-void dummy_data_fn(const m::model_data& data, void* ctxt) {
-  *( (int*)ctxt ) = 20;
+void dummy_data_fn(const m::model_data& data, int* ctxt) {
+  *ctxt = 20;
 }
 
 BOOST_AUTO_TEST_CASE(background_azure_get) {
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(background_azure_get) {
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
-  BOOST_CHECK_LE(diff.count(), 100);
+  BOOST_CHECK_LE(diff.count(), 200);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
 }
 

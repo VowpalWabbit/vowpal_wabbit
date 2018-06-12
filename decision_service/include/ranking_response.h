@@ -17,7 +17,8 @@ namespace reinforcement_learning {
     ranking_response(char const* uuid);
 
     const char* get_uuid() const; // unique id
-    int get_top_action_id(api_status* status = nullptr) const; // id of the top action chosen by the ds
+    int get_choosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
+    int set_choosen_action_id(size_t id, api_status* status = nullptr); // id of the top action chosen by the ds
     void set_uuid(const char* uuid);
     void push_back(const int action_id, const float prob);
     size_t size() const;

@@ -24,6 +24,10 @@ namespace reinforcement_learning { namespace error_code {
   const int bad_time_interval           = 17;
   const int data_callback_exception     = 18;
   const int data_callback_not_set       = 19;
+  const int json_no_actions_found       = 20;
+  const int json_parse_error            = 21;
+  const int exploration_error           = 22;
+  const int action_out_of_bounds        = 23;
 }}
 
 namespace reinforcement_learning { namespace error_code {
@@ -41,4 +45,5 @@ namespace reinforcement_learning { namespace error_code {
   errstr_t bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
   errstr_t data_callback_exception_s  = "Background data callback threw an exception. ";
   errstr_t data_callback_not_set_s    = "Data callback handler not set";
+  errstr_t json_no_actions_found_s    = "Context json did not have actions (_multi array empty or not found)";
 }}

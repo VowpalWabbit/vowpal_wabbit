@@ -6,5 +6,6 @@ namespace reinforcement_learning { namespace model_management {
   public:
     int init(model_data& data, api_status* status = nullptr) override;
     int choose_rank(int& action, char* features, int actions[], api_status* status = nullptr) override;
+    void update(const model_data& data) override;
   };
 }}

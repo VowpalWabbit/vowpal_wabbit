@@ -12,7 +12,7 @@ using namespace std;
 
 char const * const err_msg = "This is an error message";
 
-void data_handler(const model_data& md, void* user_context) {
+void data_handler(const model_data& md, int* user_context) {
   BOOST_ASSERT(md.data != nullptr);
   BOOST_ASSERT(md.data_sz != 0);
   BOOST_ASSERT(md.data_refresh_count > 0);
@@ -35,7 +35,8 @@ BOOST_AUTO_TEST_CASE(data_callback) {
 
 BOOST_AUTO_TEST_CASE(null_data_callback) {
   auto i = -1;
-  data_callback_fn fn(nullptr, &i);
+  using int_cb = data_callback_fn::data_fn_t<int>;
+  data_callback_fn fn((int_cb) nullptr, &i);
   const auto data = "model data";
 
   model_data md;
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(null_data_callback) {
   BOOST_ASSERT(i == -1);
 }
 
-void ex_data_handler(const model_data& md, void* user_context) {
+void ex_data_handler(const model_data& md, int* user_context) {
   throw 5;
 }
 
