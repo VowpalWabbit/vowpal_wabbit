@@ -79,7 +79,7 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
         output = [-1 for i in range(N)]
         for n in range(N):
             # make LDF examples
-            examples = [ lambda: self.makeExample(sentence,n,m) for m in range(-1,N) if n != m ]
+            examples = [ lambda: self.makeExample(sentence,n=n,m=m) for m in range(-1,N) if n != m ]
 
             # truth
             parN = sentence[n][1]

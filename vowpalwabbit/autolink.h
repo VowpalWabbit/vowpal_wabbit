@@ -1,1 +1,1 @@
-LEARNER::base_learner* autolink_setup(vw& all);
+LEARNER::base_learner* autolink_setup(arguments& arg);

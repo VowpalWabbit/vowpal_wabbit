@@ -1,1 +1,1 @@
-LEARNER::base_learner* binary_setup(vw& all);
+LEARNER::base_learner* binary_setup(arguments& arg);

@@ -32,8 +32,10 @@ struct direction
 
 struct ect
 {
-  uint32_t k;
-  uint32_t errors;
+  uint64_t k;
+  uint64_t errors;
+  float class_boundary;
+
   v_array<direction> directions;//The nodes of the tournament datastructure
 
   v_array<v_array<v_array<uint32_t > > > all_levels;
@@ -179,9 +181,7 @@ size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
   return e.last_pair + (eliminations-1);
 }
 
-float class_boundary = 0.;
-
-uint32_t ect_predict(ect& e, base_learner& base, example& ec)
+uint32_t ect_predict(ect& e, single_learner& base, example& ec)
 {
   if (e.k == (size_t)1)
     return 1;
@@ -200,7 +200,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
 
       base.learn(ec, problem_number);
 
-      if (ec.pred.scalar > class_boundary)
+      if (ec.pred.scalar > e.class_boundary)
         finals_winner = finals_winner | (((size_t)1) << i);
     }
   }
@@ -210,7 +210,7 @@ uint32_t ect_predict(ect& e, base_learner& base, example& ec)
   {
     base.learn(ec, id - e.k);
 
-    if (ec.pred.scalar > class_boundary)
+    if (ec.pred.scalar > e.class_boundary)
       id = e.directions[id].right;
     else
       id = e.directions[id].left;
@@ -226,7 +226,7 @@ bool member(size_t t, v_array<size_t> ar)
   return false;
 }
 
-void ect_train(ect& e, base_learner& base, example& ec)
+void ect_train(ect& e, single_learner& base, example& ec)
 {
   if (e.k == 1)//nothing to do
     return;
@@ -236,7 +236,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
 
   simple_temp.initial = 0.;
 
-  e.tournaments_won.erase();
+  e.tournaments_won.clear();
 
   uint32_t id = e.directions[mc.label - 1].winner;
   bool left = e.directions[id].left == mc.label - 1;
@@ -254,7 +254,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
     base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
     ec.weight = old_weight;
 
-    bool won = (ec.pred.scalar-class_boundary) * simple_temp.label > 0;
+    bool won = (ec.pred.scalar-e.class_boundary) * simple_temp.label > 0;
 
     if (won)
     {
@@ -304,7 +304,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
 
         base.learn(ec, problem_number);
 
-        if (ec.pred.scalar > class_boundary)
+        if (ec.pred.scalar > e.class_boundary)
           e.tournaments_won[j] = right;
         else
           e.tournaments_won[j] = left;
@@ -316,7 +316,7 @@ void ect_train(ect& e, base_learner& base, example& ec)
   }
 }
 
-void predict(ect& e, base_learner& base, example& ec)
+void predict(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != (uint32_t)-1))
@@ -325,7 +325,7 @@ void predict(ect& e, base_learner& base, example& ec)
   ec.l.multi = mc;
 }
 
-void learn(ect& e, base_learner& base, example& ec)
+void learn(ect& e, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
   predict(e, base, ec);
@@ -346,39 +346,29 @@ void finish(ect& e)
     e.all_levels[l].delete_v();
   }
   e.all_levels.delete_v();
-
   e.final_nodes.delete_v();
-
   e.up_directions.delete_v();
-
   e.directions.delete_v();
-
   e.down_directions.delete_v();
-
   e.tournaments_won.delete_v();
 }
 
-base_learner* ect_setup(vw& all)
+base_learner* ect_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "ect", "Error correcting tournament with <k> labels"))
+  auto data = scoped_calloc_or_throw<ect>();
+  if (arg.new_options("Error Correcting Tournament Options").
+      critical("ect", data->k, "Error correcting tournament with <k> labels")
+      .keep("error", data->errors, (uint64_t)0, "errors allowed by ECT").missing())
     return nullptr;
-  new_options(all, "Error Correcting Tournament options")
-  ("error", po::value<size_t>()->default_value(0), "error in ECT");
-  add_options(all);
 
-  ect& data = calloc_or_throw<ect>();
-  data.k = (int)all.vm["ect"].as<size_t>();
-  data.errors = (uint32_t)all.vm["error"].as<size_t>();
-  //append error flag to options_from_file so it is saved in regressor file later
-  *all.file_options << " --error " << data.errors;
+  size_t wpp = create_circuit(*data.get(), data->k, data->errors+1);
 
-  size_t wpp = create_circuit(data, data.k, data.errors+1);
+  base_learner* base = setup_base(arg);
+  if (arg.vm["link"].as<string>().compare("logistic") == 0)
+    data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
-  learner<ect>& l = init_multiclass_learner(&data, setup_base(all), learn, predict, all.p, wpp);
+  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, arg.all->p, wpp);
   l.set_finish(finish);
-
-  if (all.vm["link"].as<string>().compare("logistic") == 0)
-    class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
   return make_base(l);
 }

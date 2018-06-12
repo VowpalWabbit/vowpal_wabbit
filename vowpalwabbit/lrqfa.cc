@@ -26,7 +26,7 @@ cheesyrand (uint64_t x)
 inline bool example_is_test (example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
+void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
   vw& all = *lrq.all;
 
@@ -134,27 +134,26 @@ void predict_or_learn(LRQFAstate& lrq, base_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* lrqfa_setup(vw& all)
+LEARNER::base_learner* lrqfa_setup(arguments& arg)
 {
-  if (missing_option<string>(all, "lrqfa", "use low rank quadratic features with field aware weights"))
+  if (arg.new_options("Low Rank Quadratics FA")
+      .critical<string>("lrqfa", "use low rank quadratic features with field aware weights").missing())
     return nullptr;
 
-  LRQFAstate& lrq = calloc_or_throw<LRQFAstate>();
-  lrq.all = &all;
+  auto lrq = scoped_calloc_or_throw<LRQFAstate>();
+  lrq->all = arg.all;
 
-  string lrqopt = spoof_hex_encoded_namespaces( all.vm["lrqfa"].as<string>() );
+  string lrqopt = spoof_hex_encoded_namespaces( arg.vm["lrqfa"].as<string>() );
   size_t last_index = lrqopt.find_last_not_of("0123456789");
-  new(&lrq.field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
-  lrq.k = atoi(lrqopt.substr(last_index+1).c_str());
-
-  *all.file_options << " --lrqfa " << lrq.field_name << lrq.k;
+  new(&lrq->field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
+  lrq->k = atoi(lrqopt.substr(last_index+1).c_str());
 
   int fd_id = 0;
-  for (char i : lrq.field_name)
-    lrq.field_id[(int)i] = fd_id++;
+  for (char i : lrq->field_name)
+    lrq->field_id[(int)i] = fd_id++;
 
-  all.wpp = all.wpp * (uint64_t)(1 + lrq.k);
-  learner<LRQFAstate>& l = init_learner(&lrq, setup_base(all), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq.field_name.size() * lrq.k);
+  arg.all->wpp = arg.all->wpp * (uint64_t)(1 + lrq->k);
+  learner<LRQFAstate,example>& l = init_learner(lrq, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
 
   return make_base(l);
 }

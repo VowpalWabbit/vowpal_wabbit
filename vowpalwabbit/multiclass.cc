@@ -64,6 +64,12 @@ void default_label(void* v)
   ld->weight = 1.;
 }
 
+bool test_label(void* v)
+{
+  label_t* ld = (label_t*)v;
+  return ld->label == (uint32_t)-1;
+}
+
 void delete_label(void*) {}
 
 void parse_label(parser*, shared_data*sd, void* v, v_array<substring>& words)
@@ -94,6 +100,7 @@ label_parser mc_label = {default_label, parse_label,
                          cache_label, read_cached_label,
                          delete_label, weight,
                          nullptr,
+                         test_label,
                          sizeof(label_t)
                         };
 
@@ -170,6 +177,6 @@ void finish_example(vw& all, example& ec)
     }
 
   MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }

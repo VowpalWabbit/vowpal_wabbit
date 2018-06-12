@@ -26,9 +26,9 @@ size_t read_features(vw* all, char*& line, size_t& num_chars)
     line += 3;
     num_chars -= 3;
   }
-  if (line[num_chars-1] == '\n')
+  if (num_chars>0 && line[num_chars-1] == '\n')
     num_chars--;
-  if (line[num_chars-1] == '\r')
+  if (num_chars>0 && line[num_chars-1] == '\r')
     num_chars--;
   return num_chars_initial;
 }
@@ -91,7 +91,7 @@ public:
       // featureValue --> ':' 'Float'
       ++reading_head;
       char *end_read = nullptr;
-      v = parseFloat(reading_head,&end_read);
+      v = parseFloat(reading_head, &end_read, endLine);
       if(end_read == reading_head)
       {
         parserWarning("malformed example! Float expected after : \"", beginLine, reading_head, "\"");
@@ -190,7 +190,7 @@ public:
         if (spell_fs.size() == 0)
           ae->indices.push_back(spelling_namespace);
         //v_array<char> spelling;
-        spelling.erase();
+        spelling.clear();
         for (char*c = feature_name.begin; c!=feature_name.end; ++c)
         {
           char d = 0;
@@ -306,7 +306,7 @@ public:
 
   inline void listFeatures()
   {
-    while(*reading_head == ' ' || *reading_head == '\t')
+    while((*reading_head == ' ' || *reading_head == '\t') && (reading_head < endLine))
     {
       //listFeatures --> ' ' MaybeFeature ListFeatures
       ++reading_head;
@@ -359,7 +359,7 @@ public:
 
   inline void listNameSpace()
   {
-    while(*reading_head == '|')   // ListNameSpace --> '|' NameSpace ListNameSpace
+    while((*reading_head == '|') && (reading_head < endLine))   // ListNameSpace --> '|' NameSpace ListNameSpace
     {
       ++reading_head;
       nameSpace();
@@ -413,7 +413,7 @@ void substring_to_example(vw* all, example* ae, substring example)
 
   if (*example.begin == '|')
   {
-    all->p->words.erase();
+    all->p->words.clear();
   }
   else
   {

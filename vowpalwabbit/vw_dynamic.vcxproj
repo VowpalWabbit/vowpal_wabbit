@@ -286,7 +286,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\explore\static;./win32;%(AdditionalIncludeDirectories);$(ProjectDir)\..\rapidjson\include;$(ProjectDir)\..\explore</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -375,6 +375,7 @@
     <ClInclude Include="interactions.h" />
     <ClInclude Include="audit_regressor.h" />
     <ClInclude Include="ftrl.h" />
+    <ClInclude Include="interactions_predict.h" />
     <ClInclude Include="label_dictionary.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="multiclass.h" />
@@ -389,7 +390,6 @@
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
-    <ClInclude Include="hash.h" />
     <ClInclude Include="interact.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
@@ -401,6 +401,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
+    <ClInclude Include="no_label.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="OjaNewton.h" />
@@ -479,11 +480,11 @@
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
+    <ClCompile Include="parser_helper.cc" />
     <ClCompile Include="parse_example_json.cc" />
     <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />
-    <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="learner.cc" />
@@ -494,6 +495,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="no_label.cc" />
     <ClCompile Include="primitives.cc" />
     <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
@@ -575,7 +577,6 @@
     <Import Project="$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_wserialization-vc140.1.63.0.0\build\native\boost_wserialization-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" />
     <Import Project="$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets" Condition="Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" />
-    
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -622,7 +623,6 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_zlib-vc140.1.63.0.0\build\native\boost_zlib-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost.1.63.0.0\build\native\boost.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost-vc140.1.63.0.0\build\native\boost-vc140.targets'))" />
-    
   </Target>
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>

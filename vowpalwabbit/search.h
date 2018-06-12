@@ -26,7 +26,7 @@ struct search;
 class BaseTask
 {
 public:
-  BaseTask(search* _sch, std::vector<example*>& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
+  BaseTask(search* _sch, multi_ex& _ec) : sch(_sch), ec(_ec) { _foreach_action = nullptr; _post_prediction = nullptr; _maybe_override_prediction = nullptr; _with_output_string = nullptr; _final_run = false; }
   inline BaseTask& foreach_action(void (*f)(search&,size_t,float,action,bool,float)) { _foreach_action = f; return *this; }
   inline BaseTask& post_prediction(void (*f)(search&,size_t,action,float)) { _post_prediction = f; return *this; }
   inline BaseTask& maybe_override_prediction(bool (*f)(search&,size_t,action&,float&)) { _maybe_override_prediction = f; return *this; }
@@ -37,7 +37,7 @@ public:
 
   // data
   search* sch;
-  std::vector<example*>& ec;
+  multi_ex& ec;
   bool _final_run;
   void (*_foreach_action)(search&,size_t,float,action,bool,float);
   void (*_post_prediction)(search&,size_t,action,float);
@@ -62,9 +62,6 @@ struct search
   // change the default label parser, but you _must_ tell me how
   // to detect test examples!
   void set_label_parser(label_parser&lp, bool (*is_test)(polylabel&));
-
-  // for adding command-line options
-  void add_program_options(po::variables_map& vw, po::options_description& opts);
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);
@@ -178,7 +175,7 @@ struct search
   std::string pretty_label(action a);
 
   // for meta-tasks:
-  BaseTask base_task(std::vector<example*>& ec) { return BaseTask(this, ec); }
+  BaseTask base_task(multi_ex& ec) { return BaseTask(this, ec); }
 
   // internal data that you don't get to see!
   search_private* priv;
@@ -189,31 +186,33 @@ struct search
 
   vw& get_vw_pointer_unsafe();   // although you should rarely need this, some times you need a poiter to the vw data structure :(
   void set_force_oracle(bool force);  // if the library wants to force search to use the oracle, set this to true
+  search();
+  ~search();
 };
 
 // for defining new tasks, you must fill out a search_task
 struct search_task
 { // required
   const char* task_name;
-  void (*run)(search&, std::vector<example*>&);
+  void (*run)(search&, multi_ex&);
 
   // optional
-  void (*initialize)(search&,size_t&, po::variables_map&);
+  void (*initialize)(search&, size_t&, arguments&);
   void (*finish)(search&);
-  void (*run_setup)(search&, std::vector<example*>&);
-  void (*run_takedown)(search&, std::vector<example*>&);
+  void (*run_setup)(search&, multi_ex&);
+  void (*run_takedown)(search&, multi_ex&);
 };
 
 struct search_metatask
 { // required
   const char* metatask_name;
-  void (*run)(search&,std::vector<example*>&);
+  void (*run)(search&,multi_ex&);
 
   // optional
-  void (*initialize)(search&,size_t&,po::variables_map&);
+  void (*initialize)(search&,size_t&,arguments&);
   void (*finish)(search&);
-  void (*run_setup)(search&,std::vector<example*>&);
-  void (*run_takedown)(search&,std::vector<example*>&);
+  void (*run_setup)(search&,multi_ex&);
+  void (*run_takedown)(search&,multi_ex&);
 };
 
 // to make calls to "predict" (and "predictLDF") cleaner when you
@@ -318,17 +317,17 @@ private:
 };
 
 // some helper functions you might find helpful
-template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string)
+/*template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string)
 { if (vm.count(opt_name))
   { ret = vm[opt_name].as<T>();
-    *all.file_options << " --" << opt_name << " " << ret;
+    *all.args_n_opts.file_options << " --" << opt_name << " " << ret;
   }
   else if (strlen(required_error_string)>0)
   { std::cerr << required_error_string << std::endl;
     if (! vm.count("help"))
       THROW(required_error_string);
   }
-}
+  }*/
 
 void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
 bool string_equal(std::string a, std::string b);
@@ -337,5 +336,5 @@ bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(vw&);
+LEARNER::base_learner* setup(arguments& arg);
 }

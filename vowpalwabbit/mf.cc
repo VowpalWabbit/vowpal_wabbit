@@ -40,7 +40,7 @@ struct mf
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, base_learner& base, example& ec)
+void predict(mf& data, single_learner& base, example& ec)
 {
   float prediction = 0;
   if (cache_sub_predictions)
@@ -58,7 +58,7 @@ void predict(mf& data, base_learner& base, example& ec)
   copy_array(data.predict_indices, ec.indices);
 
   // erase indices
-  ec.indices.erase();
+  ec.indices.clear();
   ec.indices.push_back(0);
 
   // add interaction terms to prediction
@@ -101,7 +101,7 @@ void predict(mf& data, base_learner& base, example& ec)
   ec.pred.scalar = GD::finalize_prediction(data.all->sd, ec.partial_prediction);
 }
 
-void learn(mf& data, base_learner& base, example& ec)
+void learn(mf& data, single_learner& base, example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
@@ -115,7 +115,7 @@ void learn(mf& data, base_learner& base, example& ec)
   copy_array(data.indices, ec.indices);
 
   // erase indices
-  ec.indices.erase();
+  ec.indices.clear();
   ec.indices.push_back(0);
 
   // update interaction terms
@@ -193,23 +193,22 @@ void finish(mf& o)
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(vw& all)
+base_learner* mf_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "new_mf", "rank for reduction-based matrix factorization"))
+  auto data = scoped_calloc_or_throw<mf>();
+  if (arg.new_options("Matrix Factorization Reduction")
+      .critical("new_mf", data->rank, "rank for reduction-based matrix factorization").missing())
     return nullptr;
 
-  mf& data = calloc_or_throw<mf>();
-  data.all = &all;
-  data.rank = (uint32_t)all.vm["new_mf"].as<size_t>();
-
+  data->all = arg.all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data.pairs = all.pairs;
-  all.pairs.clear();
+  data->pairs = arg.all->pairs;
+  arg.all->pairs.clear();
 
-  all.random_positive_weights = true;
+  arg.all->random_positive_weights = true;
 
-  learner<mf>& l = init_learner(&data, setup_base(all), learn, predict<false>, 2*data.rank+1);
+  learner<mf,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn, predict<false>, 2*data->rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

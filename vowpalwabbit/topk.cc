@@ -71,7 +71,7 @@ void output_example(vw& all, topk& d, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(topk& d, LEARNER::single_learner& base, example& ec)
 {
   if (example_is_newline(ec)) return;//do not predict newline
 
@@ -93,24 +93,21 @@ void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
 void finish_example(vw& all, topk& d, example& ec)
 {
   output_example(all, d, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
-
 
 void finish(topk& d)
 {
   d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
-LEARNER::base_learner* topk_setup(vw& all)
+LEARNER::base_learner* topk_setup(arguments& arg)
 {
-  if (missing_option<size_t, false>(all, "top", "top k recommendation"))
+  auto data = scoped_calloc_or_throw<topk>();
+  if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())
     return nullptr;
 
-  topk& data = calloc_or_throw<topk>();
-  data.B = (uint32_t)all.vm["top"].as<size_t>();
-
-  LEARNER::learner<topk>& l = init_learner(&data, setup_base(all), predict_or_learn<true>,
+  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

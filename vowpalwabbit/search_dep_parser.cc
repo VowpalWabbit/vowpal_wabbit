@@ -44,7 +44,7 @@ const action REDUCE_LEFT  = 3;
 const action REDUCE       = 4;
 const uint32_t my_null = 9999999; /*representing_defalut*/
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
@@ -52,27 +52,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   data->ex = NULL;
   sch.set_task_data<task_data>(data);
 
-  new_options(all, "Dependency Parser Options")
-  ("root_label", po::value<size_t>(&(data->root_label))->default_value(8), "Ensure that there is only one root in each sentence")
-  ("num_label", po::value<uint32_t>(&(data->num_label))->default_value(12), "Number of arc labels")
-  ("transition_system", po::value<uint32_t>(&(data->transition_system))->default_value(1), "1: arc-hybrid 2: arc-eager")
-  ("one_learner", "Using one learner instead of three learners for labeled parser")
-  ("cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
-  ("old_style_labels", "Use old hack of label information");
-  add_options(all);
-
-  check_option<size_t>(data->root_label, all, vm, "root_label", false, size_equal,
-                       "warning: you specified a different value for --root_label than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option<uint32_t>(data->num_label, all, vm, "num_label", false, uint32_equal,
-                         "warning: you specified a different value for --num_label than the one loaded from regressor. proceeding with loaded value: ", "");
-  check_option(data->old_style_labels, all, vm, "old_style_labels", false,
-               "warning: you specified a different value for --old_style_labels than the one loaded from regressor. proceeding with loaded value: ");
-  check_option(data->cost_to_go, all, vm, "cost_to_go", false,
-               "warning: you specified a different value for --cost_to_go than the one loaded from regressor. proceeding with loaded value: ");
-  check_option(data->one_learner, all, vm, "one_learner", false,
-               "warning: you specified a different value for --one_learner than the one loaded from regressor. proceeding with loaded value: ");
-  check_option<uint32_t>(data->transition_system, all, vm, "transition_system", false, uint32_equal,
-                         "warning: you specified a different value for --transition_system than the one loaded from regressor. proceeding with loaded value: ", "");
+  arg.new_options("Dependency Parser Options")
+    .keep("root_label", data->root_label, (size_t)8, "Ensure that there is only one root in each sentence")
+    .keep("num_label", data->num_label, (uint32_t)12, "Number of arc labels")
+    .keep("transition_system", data->transition_system, (uint32_t)1, "1: arc-hybrid 2: arc-eager")
+    .keep(data->one_learner, "one_learner", "Using one learner instead of three learners for labeled parser")
+    .keep(data->cost_to_go, "cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
+    .keep(data->old_style_labels, "old_style_labels", "Use old hack of label information").missing();
 
   data->ex = VW::alloc_examples(sizeof(polylabel), 1);
   data->ex->indices.push_back(val_namespace);
@@ -80,7 +66,6 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
     data->ex->indices.push_back((unsigned char)i+'A');
   data->ex->indices.push_back(constant_namespace);
 
-  data->old_style_labels = vm.count("old_style_labels") > 0;
   if(data->one_learner)
     sch.set_num_learners(1);
   else
@@ -93,13 +78,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
   all.pairs.swap(newpairs);
   all.triples.swap(newtriples);
 
-  for (v_string& i : all.interactions)
-    i.delete_v();
-  all.interactions.erase();
-  for (string& i : all.pairs)
-    all.interactions.push_back(string2v_string(i));
-  for (string& i : all.triples)
-    all.interactions.push_back(string2v_string(i));
+  all.interactions.clear();
+  all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+  all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
   if(data->cost_to_go)
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
   else
@@ -148,7 +129,7 @@ void inline reset_ex(example *ex)
   ex->num_features = 0;
   ex->total_sum_feat_sq = 0;
   for (features& fs : *ex)
-    fs.erase();
+    fs.clear();
 }
 
 // arc-hybrid System.
@@ -240,7 +221,7 @@ size_t transition_eager(Search::search& sch, uint64_t a_id, uint32_t idx, uint32
   THROW("transition_eager failed");
 }
 
-void extract_features(Search::search& sch, uint32_t idx,  vector<example*> &ec)
+void extract_features(Search::search& sch, uint32_t idx,  multi_ex &ec)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = sch.get_task_data<task_data>();
@@ -324,7 +305,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;
   v_array<uint32_t> &stack = data->stack, &heads = data->heads, &temp = data->temp;
-  valid_action.erase();
+  valid_action.clear();
   if(sys == arc_hybrid)
   {
     if(idx<=n) // SHIFT
@@ -336,7 +317,7 @@ void get_valid_actions(Search::search &sch, v_array<uint32_t> & valid_action, ui
   }
   else if(sys == arc_eager) // assume root is in N+1
   {
-    temp.erase();
+    temp.clear();
     for(size_t i=0; i<=4; i++)
       temp.push_back(1);
     if (idx>n)
@@ -454,7 +435,7 @@ void get_cost_to_go_losses(Search::search &sch, v_array<pair<action, float>>& go
   uint32_t &sys = data->transition_system;
   v_array<uint32_t> &action_loss = data->action_loss, &valid_actions=data->valid_actions;
   uint32_t &num_label = data->num_label;
-  gold_action_losses.erase();
+  gold_action_losses.clear();
 
   if(one_learner)
   {
@@ -484,7 +465,7 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;
-  gold_actions.erase();
+  gold_actions.clear();
   size_t size = stack.size();
   size_t last = (size==0) ? 0 : stack.last();
   uint32_t &sys = data->transition_system;
@@ -510,7 +491,7 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<act
     {
       best_action= i;
       count = 1;
-      gold_actions.erase();
+      gold_actions.clear();
       gold_actions.push_back(i);
     }
     else if (action_loss[i] == action_loss[best_action] && is_valid(i,valid_actions))
@@ -526,7 +507,7 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;
   uint32_t &num_label = data->num_label;
-  actions_onelearner.erase();
+  actions_onelearner.clear();
   if(is_valid(SHIFT, actions)) actions_onelearner.push_back(SHIFT);
   if(sys==arc_eager && is_valid(REDUCE, actions)) actions_onelearner.push_back(2+2*num_label);
   if(left_label!=my_null && is_valid(REDUCE_RIGHT, actions)) actions_onelearner.push_back(1+right_label);
@@ -541,16 +522,16 @@ void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions
         actions_onelearner.push_back((uint32_t)(i+2+num_label));
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &gold_heads=data->gold_heads, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags;
   size_t n = ec.size();
   heads.resize(n+1);
   tags.resize(n+1);
-  gold_heads.erase();
+  gold_heads.clear();
   gold_heads.push_back(0);
-  gold_tags.erase();
+  gold_tags.clear();
   gold_tags.push_back(0);
   for (size_t i=0; i<n; i++)
   {
@@ -579,7 +560,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     data->children[i].resize(n+(size_t)1);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &stack=data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads, &gold_tags=data->gold_tags, &tags=data->tags, &valid_action_temp = data->valid_action_temp;
@@ -591,7 +572,7 @@ void run(Search::search& sch, vector<example*>& ec)
   uint32_t &sys = data->transition_system;
   uint32_t n = (uint32_t) ec.size();
   uint32_t left_label, right_label;
-  stack.erase();
+  stack.clear();
   stack.push_back((data->root_label==0&&sys==arc_hybrid)?0:1);
   for(size_t i=0; i<6; i++)
     for(size_t j=0; j<n+1; j++)
@@ -705,7 +686,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
         if(cost_to_go)
         {
-          gold_action_losses.erase();
+          gold_action_losses.clear();
           for(size_t i=1; i<= data->num_label; i++)
             gold_action_losses.push_back(make_pair((action)i, i != (a_id==REDUCE_LEFT?left_label:right_label)));
           t_id = P.set_tag((ptag) count)

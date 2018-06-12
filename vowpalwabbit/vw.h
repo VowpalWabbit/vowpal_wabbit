@@ -84,6 +84,8 @@ float get_prediction(example*ec);
 float get_cost_sensitive_prediction(example*ec);
 v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec);
 uint32_t* get_multilabel_predictions(example* ec, size_t& len);
+float get_action_score(example* ec, size_t i);
+size_t get_action_score_length(example* ec);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
@@ -95,7 +97,8 @@ void add_constant_feature(vw& all, example*ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 //notify VW that you are done with the example.
-void finish_example(vw& all, example* ec);
+void finish_example(vw& all, example& ec);
+void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
 void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));
@@ -114,38 +117,38 @@ void save_predictor(vw& all, io_buf& buf);
 // inlines
 
 //First create the hash of a namespace.
-inline uint32_t hash_space(vw& all, std::string s)
+inline uint64_t hash_space(vw& all, std::string s)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return (uint32_t)all.p->hasher(ss, all.hash_seed);
+  return all.p->hasher(ss, all.hash_seed);
 }
-inline uint32_t hash_space_static(std::string s, std::string hash)
+inline uint64_t hash_space_static(std::string s, std::string hash)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return (uint32_t)getHasher(hash)(ss, 0);
+  return getHasher(hash)(ss, 0);
 }
 //Then use it as the seed for hashing features.
-inline uint32_t hash_feature(vw& all, std::string s, uint64_t u)
+inline uint64_t hash_feature(vw& all, std::string s, uint64_t u)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
-  return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
+  return all.p->hasher(ss,u) & all.parse_mask;
 }
-inline uint32_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
+inline uint64_t hash_feature_static(std::string s, unsigned long u, std::string h, uint32_t num_bits)
 { substring ss;
   ss.begin = (char*)s.c_str();
   ss.end = ss.begin + s.length();
   size_t parse_mark = (1 << num_bits) - 1;
-  return (uint32_t)(getHasher(h)(ss, u) & parse_mark);
+  return getHasher(h)(ss, u) & parse_mark;
 }
 
-inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
+inline uint64_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
 { substring ss;
   ss.begin = fstr;
   ss.end = ss.begin + strlen(fstr);
-  return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
+  return all.p->hasher(ss,u) & all.parse_mask;
 }
 
 inline float get_weight(vw& all, uint32_t index, uint32_t offset)

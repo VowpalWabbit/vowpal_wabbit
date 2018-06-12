@@ -12,7 +12,7 @@ namespace HookTask
 {
 Search::search_task task = { "hook", run, initialize, finish, run_setup, run_takedown  };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   task_data *td = new task_data;
   td->run_f = nullptr;
@@ -23,7 +23,7 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
   td->takedown_object = nullptr;
   td->delete_run_object = nullptr;
   td->delete_extra_data = nullptr;
-  td->var_map = new po::variables_map(vm);
+  td->arg = &arg;
   td->num_actions = num_actions;
   sch.set_task_data<task_data>(td);
 }
@@ -38,11 +38,10 @@ void finish(Search::search& sch)
     if (td->takedown_object) td->delete_run_object(td->takedown_object);
   }
   if (td->delete_extra_data) td->delete_extra_data(*td);
-  delete td->var_map;
   delete td;
 }
 
-void run(Search::search& sch, vector<example*>& /*ec*/)
+void run(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data *td = sch.get_task_data<task_data>();
   if (td->run_f)
@@ -51,16 +50,15 @@ void run(Search::search& sch, vector<example*>& /*ec*/)
     cerr << "warning: HookTask::structured_predict called before hook is set" << endl;
 }
 
-void run_setup(Search::search& sch, vector<example*>& /*ec*/)
+void run_setup(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data *td = sch.get_task_data<task_data>();
   if (td->run_setup_f) td->run_setup_f(sch);
 }
 
-void run_takedown(Search::search& sch, vector<example*>& /*ec*/)
+void run_takedown(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data *td = sch.get_task_data<task_data>();
   if (td->run_takedown_f) td->run_takedown_f(sch);
 }
 }
-

@@ -343,9 +343,10 @@ def normalize_score(unnormalized_result, mod):
 
 def get_best_error(best_error_table, name_dataset):
 	name = name_dataset[0]
+	print name
+	print best_error_table
 	best_error_oneline = best_error_table[best_error_table['dataset'] == name]
 	best_error = best_error_oneline.loc[best_error_oneline.index[0], 'avg_error']
-	#print name
 	#raw_input("...")
 	#print best_error_oneline
 	#raw_input("...")

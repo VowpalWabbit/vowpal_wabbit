@@ -26,13 +26,13 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
   if (f_src1.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
+    all.opts_n_args.trace_message << "Namespace '" << (char)in.n1 << "' misses anchor feature with value 1";
     return false;
   }
 
   if (f_src2.values[0] != 1)
   {
-    all.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
+    all.opts_n_args.trace_message << "Namespace '" << (char)in.n2 << "' misses anchor feature with value 1";
     return false;
   }
 
@@ -41,7 +41,7 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
 void multiply(features& f_dest, features& f_src2, interact& in)
 {
-  f_dest.erase();
+  f_dest.clear();
   features& f_src1 = in.feat_store;
   vw* all = in.all;
   uint64_t weight_mask = all->weights.mask();
@@ -86,7 +86,7 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
@@ -147,27 +147,29 @@ void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
 
 void finish(interact& in) { in.feat_store.delete_v(); }
 
-LEARNER::base_learner* interact_setup(vw& all)
+LEARNER::base_learner* interact_setup(arguments& arg)
 {
-  if(missing_option<string, true>(all, "interact", "Put weights on feature products from namespaces <n1> and <n2>"))
+  string s;
+  if(arg.new_options("Interact via elementwise multiplication")
+     .critical("interact", s, "Put weights on feature products from namespaces <n1> and <n2>").missing())
     return nullptr;
-  string s = all.vm["interact"].as<string>();
+
   if(s.length() != 2)
   {
     cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
   }
 
-  interact& data = calloc_or_throw<interact>();
+  auto data = scoped_calloc_or_throw<interact>();
 
-  data.n1 = (unsigned char) s[0];
-  data.n2 = (unsigned char) s[1];
-  if (!all.quiet)
-    cerr <<"Interacting namespaces "<<data.n1<<" and "<<data.n2<<endl;
-  data.all = &all;
+  data->n1 = (unsigned char) s[0];
+  data->n2 = (unsigned char) s[1];
+  if (!arg.all->quiet)
+    cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
+  data->all = arg.all;
 
-  LEARNER::learner<interact>* l;
-  l = &LEARNER::init_learner(&data, setup_base(all), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  LEARNER::learner<interact,example>* l;
+  l = &LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

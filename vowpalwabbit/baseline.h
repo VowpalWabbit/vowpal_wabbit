@@ -5,7 +5,7 @@ license as described in the file LICENSE.
  */
 #pragma once
 
-LEARNER::base_learner* baseline_setup(vw& all);
+LEARNER::base_learner* baseline_setup(arguments& arg);
 
 namespace BASELINE
 {

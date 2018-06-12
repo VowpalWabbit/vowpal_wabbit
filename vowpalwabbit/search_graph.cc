@@ -87,28 +87,23 @@ struct task_data
   uint32_t* confusion_matrix;
   float* true_counts;
   float true_counts_total;
-
 };
 
 inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   task_data * D = new task_data();
-  po::options_description sspan_opts("search graphtask options");
-  sspan_opts.add_options()("search_graph_num_loops", po::value<size_t>(), "how many loops to run [def: 2]");
-  sspan_opts.add_options()("search_graph_no_structure", "turn off edge features");
-  sspan_opts.add_options()("search_graph_separate_learners", "use a different learner for each pass");
-  sspan_opts.add_options()("search_graph_directed", "construct features based on directed graph semantics");
-  sch.add_program_options(vm, sspan_opts);
+  if (arg.new_options("search graphtask options")
+      ("search_graph_num_loops", D->num_loops, (size_t)2, "how many loops to run [def: 2]")
+      (D->use_structure, "search_graph_no_structure", "turn off edge features")
+      (D->separate_learners, "search_graph_separate_learners", "use a different learner for each pass")
+      (D->directed, "search_graph_directed", "construct features based on directed graph semantics").missing())
+    { delete D;
+      return;
+    }
 
-  D->num_loops = 2;
-  D->use_structure = true;
-  D->directed = false;
-  if (vm.count("search_graph_num_loops"))      D->num_loops = vm["search_graph_num_loops"].as<size_t>();
-  if (vm.count("search_graph_no_structure"))   D->use_structure = false;
-  if (vm.count("search_graph_separate_learners")) D->separate_learners = true;
-  if (vm.count("search_graph_directed"))       D->directed = true;
+  D->use_structure = !D->use_structure;
 
   if (D->num_loops <= 1) { D->num_loops = 1; D->separate_learners = false; }
 
@@ -140,7 +135,7 @@ void finish(Search::search& sch)
 
 inline bool example_is_edge(example*e) { return e->l.cs.costs.size() > 1; }
 
-void run_bfs(task_data &D, vector<example*>& ec)
+void run_bfs(task_data &D, multi_ex& ec)
 {
   D.bfs.clear();
   vector<bool> touched;
@@ -180,7 +175,7 @@ void run_bfs(task_data &D, vector<example*>& ec)
   }
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.multiplier = D.wpp << D.ss;
@@ -232,7 +227,7 @@ void setup(Search::search& sch, vector<example*>& ec)
     D.pred.push_back( D.K+1 );
 }
 
-void takedown(Search::search& sch, vector<example*>& /*ec*/)
+void takedown(Search::search& sch, multi_ex& /*ec*/)
 {
   task_data& D = *sch.get_task_data<task_data>();
   D.bfs.clear();
@@ -261,7 +256,7 @@ void add_edge_features_single_fn(task_data&D, float fv, uint64_t fx)
   fs.push_back(fv, (uint32_t)(( fx2 + 348919043 * k ) * D.multiplier) & (uint64_t)D.mask);
 }
 
-void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example*>&ec)
+void add_edge_features(Search::search&sch, task_data&D, size_t n, multi_ex&ec)
 {
   D.cur_node = ec[n];
 
@@ -334,13 +329,13 @@ void add_edge_features(Search::search&sch, task_data&D, size_t n, vector<example
 
 }
 
-void del_edge_features(task_data&/*D*/, uint32_t n, vector<example*>&ec)
+void del_edge_features(task_data&/*D*/, uint32_t n, multi_ex&ec)
 {
   ec[n]->indices.pop();
   features& fs = ec[n]->feature_space[neighbor_namespace];
   ec[n]->total_sum_feat_sq -= fs.sum_feat_sq;
   ec[n]->num_features -= fs.size();
-  fs.erase();
+  fs.clear();
 }
 
 #define IDX(i,j) ( (i) * (D.K+1) + j )
@@ -371,7 +366,7 @@ float macro_f(task_data& D)
   return total_f1 / count_f1;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   float loss_val = 0.5f / (float)D.num_loops;

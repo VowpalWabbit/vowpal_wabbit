@@ -103,7 +103,6 @@ if args.seed is not None:
         seed=open(args.seed,'r')
     except:
         print 'Warning: could not read from %s'%args.seed
-        pass
 
 try:
     unlabeled=open(args.unlabeled_dataset,'r')
@@ -117,7 +116,6 @@ if args.human is not None:
         human = open(args.human, 'r')
     except:
         print 'Warning: could not read human examples from %s' % args.human
-        pass
     
 output=None
 if args.output is not None:
@@ -125,7 +123,6 @@ if args.output is not None:
         output=open(args.output,'w')
     except:
         print 'Warning: could not write to %s'%args.output
-        pass
 
 
 # Create a socket

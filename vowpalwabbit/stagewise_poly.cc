@@ -398,7 +398,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
   poly.synth_ec.sorted = ec.sorted;
   poly.synth_ec.in_use = ec.in_use;
 
-  poly.synth_ec.feature_space[tree_atomics].erase();
+  poly.synth_ec.feature_space[tree_atomics].clear();
   poly.synth_ec.num_features = 0;
   poly.synth_ec.total_sum_feat_sq = 0;
 
@@ -500,7 +500,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   }
 }
 
-void predict(stagewise_poly &poly, base_learner &base, example &ec)
+void predict(stagewise_poly &poly, single_learner &base, example &ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -510,7 +510,7 @@ void predict(stagewise_poly &poly, base_learner &base, example &ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly &poly, base_learner &base, example &ec)
+void learn(stagewise_poly &poly, single_learner &base, example &ec)
 {
   bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
@@ -642,7 +642,7 @@ void finish_example(vw &all, stagewise_poly &poly, example &ec)
   ec.num_features = poly.synth_ec.num_features;
   output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(stagewise_poly &poly)
@@ -674,47 +674,39 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(vw &all)
+base_learner *stagewise_poly_setup(arguments& arg)
 {
-  if (missing_option(all, true, "stage_poly", "use stagewise polynomial feature learning"))
+  auto poly = scoped_calloc_or_throw<stagewise_poly>();
+  if (arg.new_options("Stagewise polynomial options")
+      .critical("stage_poly", "use stagewise polynomial feature learning")
+      ("sched_exponent", poly->sched_exponent, 1.f, "exponent controlling quantity of included features")
+      ("batch_sz", poly->batch_sz, (uint32_t)1000, "multiplier on batch size before including more features")
+      (poly->batch_sz_double, "batch_sz_no_doubling", "batch_sz does not double")
+#ifdef MAGIC_ARGUMENT
+      ("magic_argument", poly->magic_argument, 0., "magical feature flag")
+#endif //MAGIC_ARGUMENT
+      .missing())
     return nullptr;
 
-  new_options(all, "Stagewise poly options")
-  ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-  ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
-  ("batch_sz_no_doubling", "batch_sz does not double")
-#ifdef MAGIC_ARGUMENT
-  ("magic_argument", po::value<float>(), "magical feature flag")
-#endif //MAGIC_ARGUMENT
-  ;
-  add_options(all);
+  poly->all = arg.all;
+  depthsbits_create(*poly.get());
+  sort_data_create(*poly.get());
 
-  po::variables_map &vm = all.vm;
-  stagewise_poly& poly = calloc_or_throw<stagewise_poly>();
-  poly.all = &all;
-  depthsbits_create(poly);
-  sort_data_create(poly);
+  poly->batch_sz_double = !poly->batch_sz_double;
 
-  poly.sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
-  poly.batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
-  poly.batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
-#ifdef MAGIC_ARGUMENT
-  poly.magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
-#endif //MAGIC_ARGUMENT
+  poly->sum_sparsity = 0;
+  poly->sum_input_sparsity = 0;
+  poly->num_examples = 0;
+  poly->sum_sparsity_sync = 0;
+  poly->sum_input_sparsity_sync = 0;
+  poly->num_examples_sync = 0;
+  poly->last_example_counter = -1;
+  poly->numpasses = 1;
+  poly->update_support = false;
+  poly->original_ec = nullptr;
+  poly->next_batch_sz = poly->batch_sz;
 
-  poly.sum_sparsity = 0;
-  poly.sum_input_sparsity = 0;
-  poly.num_examples = 0;
-  poly.sum_sparsity_sync = 0;
-  poly.sum_input_sparsity_sync = 0;
-  poly.num_examples_sync = 0;
-  poly.last_example_counter = -1;
-  poly.numpasses = 1;
-  poly.update_support = false;
-  poly.original_ec = nullptr;
-  poly.next_batch_sz = poly.batch_sz;
-
-  learner<stagewise_poly>& l = init_learner(&poly, setup_base(all), learn, predict);
+  learner<stagewise_poly,example>& l = init_learner(poly, as_singleline(setup_base(arg)), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

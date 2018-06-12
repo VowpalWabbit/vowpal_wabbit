@@ -215,10 +215,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                                                 "", read, msg, text);
         all.id = buff2;
 
-        if (read && find(all.args.begin(), all.args.end(), "--id") == all.args.end() && !all.id.empty())
+        if (read && find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--id") == all.opts_n_args.args.end() && !all.id.empty())
         {
-          all.args.push_back("--id");
-          all.args.push_back(all.id);
+          all.opts_n_args.args.push_back("--id");
+          all.opts_n_args.args.push_back(all.id);
         }
       }
 
@@ -242,10 +242,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
                           "", read, msg, text);
 
-      if (read && find(all.args.begin(), all.args.end(), "--bit_precision") == all.args.end())
+      if (read && find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--bit_precision") == all.opts_n_args.args.end())
       {
-        all.args.push_back("--bit_precision");
-        all.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
+        all.opts_n_args.args.push_back("--bit_precision");
+        all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
       }
 
       VW::validate_default_bits(all, local_num_bits);
@@ -339,22 +339,22 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
             }
             bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&inter_len, sizeof(inter_len),
                                 "", read, msg, text);
-            if (read)
+            if (!read)
             {
-              v_string s = v_init<unsigned char>();
-              s.resize(inter_len);
-              s.end() += inter_len;
-              all.interactions.push_back(s);
-            }
-            else
-            {
+              memcpy(buff2, all.interactions[i].c_str(), inter_len);
+
               msg << "interaction: ";
-              msg.write((char*)all.interactions[i].begin(), inter_len);
+              msg.write(all.interactions[i].c_str(), inter_len);
             }
 
-            bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char*)all.interactions[i].begin(), inter_len,
+            bytes_read_write += bin_text_read_write_fixed_validated(model_file, buff2, inter_len,
                                 "", read, msg, text);
 
+            if (read)
+            {
+              string temp(buff2, inter_len);
+              all.interactions.push_back(temp);
+            }
           }
 
           msg << "\n";
@@ -364,10 +364,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
         else // < VERSION_FILE_WITH_INTERACTIONS
         {
           //pairs and triples may be restored but not reflected in interactions
-          for (size_t i = 0; i < all.pairs.size(); i++)
-            all.interactions.push_back(string2v_string(all.pairs[i]));
-          for (size_t i = 0; i < all.triples.size(); i++)
-            all.interactions.push_back(string2v_string(all.triples[i]));
+          all.interactions.insert(std::end(all.interactions), std::begin(all.pairs), std::end(all.pairs));
+          all.interactions.insert(std::end(all.interactions), std::begin(all.triples), std::end(all.triples));
         }
       }
 
@@ -380,17 +378,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                             "", read, msg, text);
         if (rank != 0)
         {
-          if (std::find(all.args.begin(), all.args.end(), "--rank") == all.args.end())
+          if (std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--rank") == all.opts_n_args.args.end())
           {
-            all.args.push_back("--rank");
+            all.opts_n_args.args.push_back("--rank");
             stringstream temp;
             temp << rank;
-            all.args.push_back(temp.str());
+            all.opts_n_args.args.push_back(temp.str());
           }
           else
-            all.trace_message << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
+            all.opts_n_args.trace_message << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
         }
-
       }
 
       msg << "lda:" << all.lda <<"\n";
@@ -418,8 +415,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           string temp(ngram);
           all.ngram_strings.push_back(temp);
 
-          all.args.push_back("--ngram");
-          all.args.push_back(boost::lexical_cast<std::string>(temp));
+          all.opts_n_args.args.push_back("--ngram");
+          all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(temp));
         }
       }
 
@@ -449,8 +446,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           string temp(skip);
           all.skip_strings.push_back(temp);
 
-          all.args.push_back("--skips");
-          all.args.push_back(boost::lexical_cast<std::string>(temp));
+          all.opts_n_args.args.push_back("--skips");
+          all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(temp));
         }
       }
       msg << "\n";
@@ -465,15 +462,15 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
         bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
-        all.file_options->str(buff2);
+        all.opts_n_args.file_options->str(buff2);
       }
       else
       {
-        msg << "options:"<< all.file_options->str() << "\n";
+        msg << "options:"<< all.opts_n_args.file_options->str() << "\n";
 
-        uint32_t len = (uint32_t)all.file_options->str().length();
+        uint32_t len = (uint32_t)all.opts_n_args.file_options->str().length();
         if (len > 0)
-          safe_memcpy(buff2, buf2_size, all.file_options->str().c_str(), len + 1);
+          safe_memcpy(buff2, buf2_size, all.opts_n_args.file_options->str().c_str(), len + 1);
         *(buff2 + len) = 0;
         bytes_read_write += bin_text_read_write(model_file, buff2, len + 1, //len+1 to write a \0
                                                 "", read, msg, text);
@@ -574,7 +571,7 @@ void finalize_regressor(vw& all, string reg_name)
 
 void parse_regressor_args(vw& all, io_buf& io_temp)
 {
-  po::variables_map& vm = all.vm;
+  po::variables_map& vm = all.opts_n_args.vm;
   vector<string> regs;
   if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
@@ -590,7 +587,7 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
       //all.trace_message << "initial_regressor = " << regs[0] << endl;
       if (regs.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
+        all.opts_n_args.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
       }
     }
   }
@@ -598,7 +595,7 @@ void parse_regressor_args(vw& all, io_buf& io_temp)
 
 void parse_mask_regressor_args(vw& all)
 {
-  po::variables_map& vm = all.vm;
+  po::variables_map& vm = all.opts_n_args.vm;
   if (vm.count("feature_mask"))
   {
     string mask_filename = vm["feature_mask"].as<string>();
@@ -635,7 +632,7 @@ void parse_mask_regressor_args(vw& all)
     else
     {
       // If no initial regressor, just clear out the options loaded from the header.
-      all.file_options->str("");
+      all.opts_n_args.file_options->str("");
     }
   }
 }

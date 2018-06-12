@@ -40,7 +40,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
+void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 {
   base.predict(ec);
 
@@ -69,7 +69,7 @@ void predict_or_learn_simulation(active& a, base_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, base_learner& base, example& ec)
+void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -132,42 +132,33 @@ void output_and_account_example(vw& all, active& a, example& ec)
 void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
-base_learner* active_setup(vw& all)
+base_learner* active_setup(arguments& arg)
 {
-  //parse and set arguments
-  if(missing_option(all, false, "active", "enable active learning")) return nullptr;
-  new_options(all, "Active Learning options")
-  ("simulation", "active learning simulation mode")
-  ("mellowness", po::value<float>(), "active learning mellowness parameter c_0. Default 8");
-  add_options(all);
+  auto data = scoped_calloc_or_throw<active>();
+  if(arg.new_options("Active Learning").critical("active", "enable active learning")
+     ("simulation", "active learning simulation mode")
+     ("mellowness", data->active_c0, 8.f, "active learning mellowness parameter c_0. Default 8").missing())
+    return nullptr;
 
-  active& data = calloc_or_throw<active>();
-  data.active_c0 = 8;
-  data.all=&all;
+  data->all=arg.all;
 
-  if (all.vm.count("mellowness"))
-    data.active_c0 = all.vm["mellowness"].as<float>();
-
-  if (count(all.args.begin(), all.args.end(), "--lda") != 0)
-  {
-    free(&data);
+  if (count(arg.args.begin(), arg.args.end(), "--lda") != 0)
     THROW("error: you can't combine lda and active learning");
-  }
 
-  base_learner* base = setup_base(all);
+  auto base = as_singleline(setup_base(arg));
 
   //Create new learner
-  learner<active>* l;
-  if (all.vm.count("simulation"))
-    l = &init_learner(&data, base, predict_or_learn_simulation<true>,
+  learner<active,example>* l;
+  if (arg.vm.count("simulation"))
+    l = &init_learner(data, base, predict_or_learn_simulation<true>,
                       predict_or_learn_simulation<false>);
   else
   {
-    all.active = true;
-    l = &init_learner(&data, base, predict_or_learn_active<true>,
+    arg.all->active = true;
+    l = &init_learner(data, base, predict_or_learn_active<true>,
                       predict_or_learn_active<false>);
     l->set_finish_example(return_active_example);
   }

@@ -13,11 +13,11 @@ struct expreplay
   example* buf;  //the deep copies of examples (N of them)
   bool* filled;  //which of buf[] is filled
   size_t replay_count; //each time er.learn() is called, how many times do we call base.learn()? default=1 (in which case we're just permuting)
-  LEARNER::base_learner* base;
+  LEARNER::single_learner* base;
 };
 
 template<bool is_learn, label_parser& lp>
-void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
 { // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
@@ -41,7 +41,7 @@ void predict_or_learn(expreplay& er, LEARNER::base_learner& base, example& ec)
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay&, LEARNER::base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+void multipredict(expreplay&, LEARNER::single_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
 { base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
@@ -67,48 +67,36 @@ void finish(expreplay& er)
 }
 
 template<char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(vw& all)
-{ std::string replay_string = "replay_"; replay_string += er_level;
-  if (missing_option<size_t, true>(all, replay_string.c_str(), "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
-    return nullptr;
-
-  po::variables_map& vm = all.vm;
-
-  size_t N  = vm[replay_string].as<size_t>();
-
+LEARNER::base_learner* expreplay_setup(arguments& arg)
+{
+  std::string replay_string = "replay_";
+  replay_string += er_level;
   std::string replay_count_string = replay_string;
   replay_count_string += "_count";
 
-  size_t rc = 1;
-  new_options(all, "Experience Replay options")
-  (replay_count_string.c_str(), po::value<size_t>(&rc)->default_value(1), "how many times (in expectation) should each example be played (default: 1 = permuting)");
-  add_options(all);
+  auto er = scoped_calloc_or_throw<expreplay>();
+  if (arg.new_options("Experience Replay")
+      .critical(replay_string.c_str(), er->N, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
+      (replay_count_string.c_str(), er->replay_count, (size_t)1, "how many times (in expectation) should each example be played (default: 1 = permuting)").missing() || er->N==0)
+    return nullptr;
 
-  if (N == 0) return nullptr;
-
-  expreplay& er = calloc_or_throw<expreplay>();
-  er.all = &all;
-  er.N   = N;
-  er.buf = VW::alloc_examples(1, er.N);
+  er->all = arg.all;
+  er->buf = VW::alloc_examples(1, er->N);
 
   if (er_level == 'c')
-    for (size_t n=0; n<er.N; n++)
-      er.buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
+    for (size_t n=0; n<er->N; n++)
+      er->buf[n].l.cs.costs = v_init<COST_SENSITIVE::wclass>();
 
-  er.filled = calloc_or_throw<bool>(er.N);
-  er.replay_count = rc;
+  er->filled = calloc_or_throw<bool>(er->N);
 
-  if (! all.quiet)
-    std::cerr << "experience replay level=" << er_level << ", buffer=" << er.N << ", replay count=" << er.replay_count << std::endl;
+  if (! arg.all->quiet)
+    std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
-  LEARNER::base_learner* base = setup_base(all);
-  LEARNER::learner<expreplay>* l = &init_learner(&er, base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
+  er->base = LEARNER::as_singleline(setup_base(arg));
+  LEARNER::learner<expreplay,example>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);
-  er.base = base;
 
   return make_base(*l);
 }
-
-
 }

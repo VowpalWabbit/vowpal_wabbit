@@ -80,7 +80,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template<bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float cost,
+inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float cost,
                        uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i-1);
@@ -133,7 +133,7 @@ inline void inner_loop(cs_active& cs_a, base_learner& base, example& ec, uint32_
   add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
+inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6;//1e-20;
 
@@ -160,7 +160,7 @@ inline void find_cost_range(cs_active& cs_a, base_learner& base, example& ec, ui
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
+void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
 {
   //cerr << "------------- passthrough" << endl;
   COST_SENSITIVE::label ld = ec.l.cs;
@@ -202,7 +202,7 @@ void predict_or_learn(cs_active& cs_a, base_learner& base, example& ec)
 
   float min_max_cost = FLT_MAX;
   float t = (float)cs_a.t; // ec.example_t;  // current round
-  float t_prev = t-1.; // ec.weight; // last round
+  float t_prev = t-1.f; // ec.weight; // last round
 
   float eta = cs_a.c1*(cs_a.cost_max - cs_a.cost_min)/sqrt(t); // threshold on cost range
   float delta = cs_a.c0*log((float)(cs_a.num_classes*max(t_prev,1.f)))*pow(cs_a.cost_max-cs_a.cost_min,2);  // threshold on empirical loss difference
@@ -293,126 +293,63 @@ void finish(cs_active& data)
   data.examples_by_queries.delete_v();
 }
 
-base_learner* cs_active_setup(vw& all)
+base_learner* cs_active_setup(arguments& arg)
 {
-  //parse and set arguments
-  if(missing_option<size_t, true>(all, "cs_active", "Cost-sensitive active learning with <k> costs"))
+  auto data = scoped_calloc_or_throw<cs_active>();
+  if (arg.new_options("Cost-sensitive Active Learning")
+      .critical("cs_active", data->num_classes, "Cost-sensitive active learning with <k> costs")
+      ("simulation", "cost-sensitive active learning simulation mode")
+      (data->is_baseline, "baseline", "cost-sensitive active learning baseline")
+      ("domination", "cost-sensitive active learning use domination. Default 1")
+      ("mellowness",data->c0, 0.1f,"mellowness parameter c_0. Default 0.1.")
+      ("range_c", data->c1, 0.5f,"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
+      ("max_labels", data->max_labels, (size_t)-1, "maximum number of label queries.")
+      ("min_labels", data->min_labels, (size_t)-1, "minimum number of label queries.")
+      ("cost_max",data->cost_max, 1.f,"cost upper bound. Default 1.")
+      ("cost_min",data->cost_min, 0.f,"cost lower bound. Default 0.")
+      (data->print_debug_stuff, "csa_debug", "print debug stuff for cs_active").missing())
     return nullptr;
 
-  new_options(all, "cost-sensitive active Learning options")
-  ("simulation", "cost-sensitive active learning simulation mode")
-  ("baseline", "cost-sensitive active learning baseline")
-  ("domination", "cost-sensitive active learning use domination. Default 1")
-  ("mellowness",po::value<float>(),"mellowness parameter c_0. Default 0.1.")
-  ("range_c", po::value<float>(),"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
-  ("max_labels", po::value<float>(), "maximum number of label queries.")
-  ("min_labels", po::value<float>(), "minimum number of label queries.")
-  ("cost_max",po::value<float>(),"cost upper bound. Default 1.")
-  ("cost_min",po::value<float>(),"cost lower bound. Default 0.")
-  ("csa_debug", "print debug stuff for cs_active");
-  ;
-  add_options(all);
+  data->all = arg.all;
+  data->t = 1;
+  data->use_domination = true;
 
-  cs_active& data = calloc_or_throw<cs_active>();
+  if(arg.vm.count("domination") && !arg.vm["domination"].as<int>())
+    data->use_domination = false;
 
-  data.num_classes = (uint32_t)all.vm["cs_active"].as<size_t>();
-  data.c0 = 0.1;
-  data.c1 = 0.5;
-  data.all = &all;
-  data.cost_max = 1.f;
-  data.cost_min = 0.f;
-  data.t = 1;
-  data.max_labels = (size_t)-1;
-  data.min_labels = (size_t)-1;
-  data.is_baseline = false;
-  data.use_domination = true;
-  data.print_debug_stuff = all.vm.count("csa_debug") > 0;
-  data.num_any_queries = 0;
-  data.overlapped_and_range_small = 0;
-  data.labels_outside_range = 0;
-  data.distance_to_range = 0;
-  data.range = 0.0;
-
-  if(all.vm.count("baseline"))
-    data.is_baseline = true;
-
-  if(all.vm.count("domination") && !all.vm["domination"].as<int>())
-    data.use_domination = false;
-
-  if(all.vm.count("mellowness"))
-    data.c0 = all.vm["mellowness"].as<float>();
-
-  if(all.vm.count("range_c"))
-    data.c1 = all.vm["range_c"].as<float>();
-
-  if(all.vm.count("cost_max"))
-    data.cost_max = all.vm["cost_max"].as<float>();
-
-  if(all.vm.count("cost_min"))
-    data.cost_min = all.vm["cost_min"].as<float>();
-
-  string loss_function = all.vm["loss_function"].as<string>();
+  string loss_function = arg.vm["loss_function"].as<string>();
   if (loss_function.compare("squared") != 0)
-  {
-    free(&data);
     THROW("error: you can't use non-squared loss with cs_active");
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--lda") != 0)
-  {
-    free(&data);
+  if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
     THROW("error: you can't combine lda and active learning");
-  }
 
-  if(all.vm.count("max_labels"))
-    data.max_labels = (size_t)all.vm["max_labels"].as<float>();
-
-  if(all.vm.count("min_labels"))
-    data.min_labels = (size_t)all.vm["min_labels"].as<float>();
-
-  if (count(all.args.begin(), all.args.end(),"--active") != 0)
-  {
-    free(&data);
+  if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
     THROW("error: you can't use --cs_active and --active at the same time");
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--active_cover") != 0)
-  {
-    free(&data);
+  if (count(arg.args.begin(), arg.args.end(),"--active_cover") != 0)
     THROW("error: you can't use --cs_active and --active_cover at the same time");
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--csoaa") != 0)
-  {
-    free(&data);
+  if (count(arg.args.begin(), arg.args.end(),"--csoaa") != 0)
     THROW("error: you can't use --cs_active and --csoaa at the same time");
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--adax") == 0)
-    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (count(arg.args.begin(), arg.args.end(),"--adax") == 0)
+    arg.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
-  //learner<cs_active>* l;
-  //if (all.vm.count("simulation"))
-  //  l = &init_learner(&data, setup_base(all), predict_or_learn<true,true>, predict_or_learn<false,true>, data.num_classes);
-  //else
-  //  l = &init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes);
+  arg.all->p->lp = cs_label; // assigning the label parser
+  arg.all->set_minmax(arg.all->sd,data->cost_max);
+  arg.all->set_minmax(arg.all->sd,data->cost_min);
+  for (uint32_t i=0; i<data->num_classes+1; i++)
+    data->examples_by_queries.push_back(0);
 
-  learner<cs_active>& l =
-    (all.vm.count("simulation") > 0)
-    ? init_learner(&data, setup_base(all), predict_or_learn<true,true> , predict_or_learn<false,true >, data.num_classes, prediction_type::multilabels)
-    : init_learner(&data, setup_base(all), predict_or_learn<true,false>, predict_or_learn<false,false>, data.num_classes,prediction_type::multilabels);
-
-  all.set_minmax(all.sd,data.cost_max);
-  all.set_minmax(all.sd,data.cost_min);
-  //cerr << "cs_active data = " << & data << endl;
-
-  all.p->lp = cs_label; // assigning the label parser
-  for (uint32_t i=0; i<data.num_classes+1; i++)
-    data.examples_by_queries.push_back(0);
+  learner<cs_active,example>& l =
+    (arg.vm.count("simulation") > 0)
+    ? init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
+    : init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
 
   l.set_finish_example(finish_example);
   l.set_finish(finish);
   base_learner* b = make_base(l);
-  all.cost_sensitive = b;
+  arg.all->cost_sensitive = b;
   return b;
 }

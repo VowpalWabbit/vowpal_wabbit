@@ -150,7 +150,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -168,7 +168,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -186,7 +186,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
@@ -211,7 +211,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <EnablePREfast>false</EnablePREfast>
@@ -234,7 +234,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -251,7 +251,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)win32;$(ProjectDir)\..\..\vowpalwabbit;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\rapidjson\include;$(ProjectDir)\..\..\explore</AdditionalIncludeDirectories>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

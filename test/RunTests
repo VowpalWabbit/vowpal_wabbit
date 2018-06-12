@@ -1012,7 +1012,7 @@ __DATA__
     train-sets/ref/rcv1_raw_cb_ips.stderr
 
 # Test 41: cb with dm
-{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125
+{VW} -d train-sets/rcv1_raw_cb_small.vw --cb 2 --cb_type dm --ngram 2 --skips 4 -b 24 -l 0.125 -f cb_dm.reg
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
@@ -1101,11 +1101,6 @@ __DATA__
 {VW} -c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
-
-# Test 59: library test, run ezexample_predict
-../library/ezexample_predict models/library_train.w
-    train-sets/ref/ezexample_predict.stdout
-    train-sets/ref/ezexample_predict.stderr
 
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
@@ -1310,7 +1305,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/active_cover.stderr
 
 # Test 102: active cover (predict)
-{VW} -i models/active_cover.model --binary -t -d test-sets/rcv1_small_test.data -p active_cover.predict
+{VW} -i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict
     test-sets/ref/active_cover.stderr
     pred-sets/ref/active_cover.predict
 
@@ -1587,11 +1582,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/classweight.stderr
 
 # Test 162: --classweight with multiclass
-{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+{VW} --oaa 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10 --classweight 10:3
     train-sets/ref/classweight_multiclass.stderr
 
 # Test 163: --classweight with multiclass
-{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1,2:10,10:3
+{VW} --recall_tree 10 -d train-sets/multiclass --classweight 4:0,7:0.1 --classweight 2:10,10:3
     train-sets/ref/classweight_recall_tree.stderr
 
 # Test 164: cs_active low mellowness
@@ -1609,3 +1604,11 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 167: hash_seed test
 {VW} -d train-sets/rcv1_mini.dat -i hash_seed5.model -t
     train-sets/ref/hash_seed_test.stderr
+
+# Test 168: test cb with dm
+{VW} -d train-sets/rcv1_raw_cb_small.vw -t -i cb_dm.reg
+    train-sets/ref/rcv1_raw_cb_dm_test.stderr
+
+# Test 169: test cbify large
+{VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
+    train-sets/ref/rcv1_multiclass.stderr

@@ -3,9 +3,12 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
+
 #pragma once
+
 #include <stdint.h>
 #include "v_array.h"
+#include "no_label.h"
 #include "simple_label.h"
 #include "multiclass.h"
 #include "multilabel.h"
@@ -14,6 +17,8 @@ license as described in the file LICENSE.
 #include "constant.h"
 #include "feature_group.h"
 #include "action_score.h"
+#include "example_predict.h"
+#include <vector>
 
 const unsigned char wap_ldf_namespace  = 126;
 const unsigned char history_namespace  = 127;
@@ -29,7 +34,8 @@ const unsigned char node_id_namespace  = 136; // this is \x88
 const unsigned char message_namespace  = 137; // this is \x89
 
 typedef union
-{ label_data simple;
+{ no_label::no_label empty;
+  label_data simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
@@ -51,44 +57,17 @@ typedef union
   float prob; // for --probabilities --csoaa_ldf=mc
 } polyprediction;
 
-typedef unsigned char namespace_index;
-
-struct example // core example datatype.
-{ class iterator
-  { features* _feature_space;
-    namespace_index* _index;
-  public:
-    iterator(features* feature_space, namespace_index* index)
-      : _feature_space(feature_space), _index(index)
-    { }
-
-    features& operator*()
-    { return _feature_space[*_index];
-    }
-
-    iterator& operator++()
-    { _index++;
-      return *this;
-    }
-
-    namespace_index index() { return *_index; }
-
-    bool operator==(const iterator& rhs) { return _index == rhs._index; }
-    bool operator!=(const iterator& rhs) { return _index != rhs._index; }
-  };
+struct example : public example_predict  // core example datatype.
+{
+  // input fields
+  polylabel l;
 
   //output prediction
   polyprediction pred;
 
-  // input fields
-  polylabel l;
-
   float weight;//a relative importance weight for the example, default = 1
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
-  v_array<namespace_index> indices;
-  features feature_space[256]; //Groups of feature values.
-  uint64_t ft_offset;//An offset for all feature values.
 
   //helpers
   size_t num_features;//precomputed, cause it's fast&easy.
@@ -103,9 +82,6 @@ struct example // core example datatype.
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
-
-  iterator begin() { return iterator(feature_space, indices.begin()); }
-  iterator end() { return iterator(feature_space, indices.end()); }
 };
 
 struct vw;
@@ -148,3 +124,9 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 }
 
 #define add_passthrough_feature(ec, i, x) add_passthrough_feature_magic(ec, __FILE__[0]*483901+__FILE__[1]*3417+__FILE__[2]*8490177, i, x);
+
+typedef std::vector<example*> multi_ex;
+
+namespace VW {
+void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
+}

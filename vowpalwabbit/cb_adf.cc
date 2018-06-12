@@ -26,8 +26,6 @@ namespace CB_ADF
 {
 struct cb_adf
 {
-  v_array<example*> ec_seq;
-  bool need_to_clear;
   vw* all;
 
   cb_to_cs_adf gen_cs;
@@ -38,26 +36,28 @@ struct cb_adf
   action_scores a_s;//temporary storage for mtr
 
   uint64_t offset;
-  bool predict;
+  bool no_predict;
   bool rank_all;
 };
 
-CB::cb_class get_observed_cost(v_array<example*>& examples)
+CB::cb_class get_observed_cost(multi_ex& examples)
 {
   CB::label ld;
   ld.costs = v_init<cb_class>();
   int index = -1;
   CB::cb_class known_cost;
 
+  size_t i=0;
   for (example*& ec : examples)
   {
     if (ec->l.cb.costs.size() == 1 &&
         ec->l.cb.costs[0].cost != FLT_MAX &&
         ec->l.cb.costs[0].probability > 0)
-    {
-      ld = ec->l.cb;
-      index = (int)(&ec - examples.begin());
-    }
+      {
+        ld = ec->l.cb;
+        index = i;
+      }
+    ++i;
   }
 
 
@@ -79,26 +79,26 @@ CB::cb_class get_observed_cost(v_array<example*>& examples)
   return known_cost;
 }
 
-void learn_IPS(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_IPS(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_ips(examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-void learn_DR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_DR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dr<true>(mydata.gen_cs, examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
-void learn_DM(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_DM(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   gen_cs_example_dm(examples, mydata.cs_labels);
   call_cs_ldf<true>(base, examples, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
 }
 
 template<bool predict>
-void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
+void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
 {
   //uint32_t action = 0;
   if (predict) //first get the prediction to return
@@ -122,13 +122,12 @@ void learn_MTR(cb_adf& mydata, base_learner& base, v_array<example*>& examples)
   swap(examples[0]->pred.a_s, mydata.a_s);
 }
 
-bool test_adf_sequence(cb_adf& data)
+bool test_adf_sequence(multi_ex& ec_seq)
 {
   uint32_t count = 0;
-  for (size_t k=0; k<data.ec_seq.size(); k++)
+  for (size_t k=0; k<ec_seq.size(); k++)
   {
-    example *ec = data.ec_seq[k];
-
+    example *ec = ec_seq[k];
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
@@ -148,10 +147,11 @@ bool test_adf_sequence(cb_adf& data)
 }
 
 template <bool is_learn>
-void do_actual_learning(cb_adf& data, base_learner& base)
+void do_actual_learning(cb_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
-  data.gen_cs.known_cost = get_observed_cost(data.ec_seq);//need to set for test case
-  if (is_learn && !test_adf_sequence(data))
+  data.offset = ec_seq[0]->ft_offset;
+  data.gen_cs.known_cost = get_observed_cost(ec_seq);//need to set for test case
+  if (is_learn && !test_adf_sequence(ec_seq))
   {
     /*	v_array<float> temp_scores;
     temp_scores = v_init<float>();
@@ -161,19 +161,19 @@ void do_actual_learning(cb_adf& data, base_learner& base)
     switch (data.gen_cs.cb_type)
     {
     case CB_TYPE_IPS:
-      learn_IPS(data, base, data.ec_seq);
+      learn_IPS(data, base, ec_seq);
       break;
     case CB_TYPE_DR:
-      learn_DR(data, base, data.ec_seq);
+      learn_DR(data, base, ec_seq);
       break;
     case CB_TYPE_DM:
-      learn_DM(data, base, data.ec_seq);
+      learn_DM(data, base, ec_seq);
       break;
     case CB_TYPE_MTR:
-      if (data.predict)
-        learn_MTR<true>(data, base, data.ec_seq);
+      if (data.no_predict)
+        learn_MTR<false>(data, base, ec_seq);
       else
-        learn_MTR<false>(data, base, data.ec_seq);
+        learn_MTR<true>(data, base, ec_seq);
       break;
     default:
       THROW("Unknown cb_type specified for contextual bandit learning: " << data.gen_cs.cb_type);
@@ -186,8 +186,8 @@ void do_actual_learning(cb_adf& data, base_learner& base)
   }
   else
   {
-    gen_cs_test_example(data.ec_seq, data.cs_labels);//create test labels.
-    call_cs_ldf<false>(base, data.ec_seq, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset);
+    gen_cs_test_example(ec_seq, data.cs_labels);//create test labels.
+    call_cs_ldf<false>(base, ec_seq, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset);
   }
 }
 
@@ -207,7 +207,7 @@ void global_print_newline(vw& all)
 
 // how to
 
-bool update_statistics(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   size_t num_features = 0;
 
@@ -218,21 +218,25 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_se
 
   float loss = 0.;
 
-  bool is_test = false;
+  bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
     loss = get_unbiased_cost(&(c.gen_cs.known_cost), c.gen_cs.pred_scores, action);
   else
-    is_test = true;
+    labeled_example = false;
 
-  all.sd->update(ec.test_only, !is_test, loss, ec.weight, num_features);
-  return is_test;
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq->size(); i++)
+    holdout_example &= (*ec_seq)[i]->test_only;
+
+  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
+  return labeled_example;
 }
 
-void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec)) return;
+  if (example_is_newline(ec) || (CB::ec_is_example_header(ec) && ec_seq->size() == 1)) return;
 
-  bool is_test = update_statistics(all, c, ec, ec_seq);
+  bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
   uint32_t action = ec.pred.a_s[0].action;
   for (int sink : all.final_prediction_sink)
@@ -252,17 +256,17 @@ void output_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true);
 }
 
-void output_rank_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_seq)
+void output_rank_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
   label& ld = ec.l.cb;
   v_array<CB::cb_class> costs = ld.costs;
 
   if (example_is_newline_not_header(ec)) return;
 
-  bool is_test = update_statistics(all, c, ec, ec_seq);
+  bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
   for (int sink : all.final_prediction_sink)
     print_action_score(sink, ec.pred.a_s, ec.tag);
@@ -279,58 +283,38 @@ void output_rank_example(vw& all, cb_adf& c, example& ec, v_array<example*>* ec_
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  CB::print_update(all, is_test, ec, ec_seq, true);
+  CB::print_update(all, !labeled_example, ec, ec_seq, true);
 }
 
-void output_example_seq(vw& all, cb_adf& data)
+void output_example_seq(vw& all, cb_adf& data, multi_ex& ec_seq)
 {
-  if (data.ec_seq.size() > 0)
+  if (ec_seq.size() > 0)
   {
     if (data.rank_all)
-      output_rank_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+      output_rank_example(all, data, **(ec_seq.begin()), &(ec_seq));
     else
     {
-      output_example(all, data, **(data.ec_seq.begin()), &(data.ec_seq));
+      output_example(all, data, **(ec_seq.begin()), &(ec_seq));
 
       if (all.raw_prediction > 0)
-        all.print_text(all.raw_prediction, "", data.ec_seq[0]->tag);
+        all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
     }
   }
 }
 
-void clear_seq_and_finish_examples(vw& all, cb_adf& data)
+void finish_multiline_example(vw& all, cb_adf& data, multi_ex& ec_seq)
 {
-  if (data.ec_seq.size() > 0)
-    for (example* ecc : data.ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, ecc);
-  data.ec_seq.erase();
-}
-
-void finish_multiline_example(vw& all, cb_adf& data, example& ec)
-{
-  if (data.need_to_clear)
+  if (ec_seq.size() > 0)
   {
-    if (data.ec_seq.size() > 0)
-    {
-      output_example_seq(all, data);
-      global_print_newline(all);
-    }
-    clear_seq_and_finish_examples(all, data);
-    data.need_to_clear = false;
+    output_example_seq(all, data, ec_seq);
+    global_print_newline(all);
   }
-}
-
-void end_examples(cb_adf& data)
-{
-  if (data.need_to_clear)
-    data.ec_seq.erase();
+  VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
 void finish(cb_adf& data)
 {
-  data.ec_seq.delete_v();
-  data.gen_cs.mtr_ec_seq.delete_v();
+  data.gen_cs.mtr_ec_seq.~multi_ex();
   data.cb_labels.delete_v();
   for(size_t i = 0; i < data.prepped_cs_labels.size(); i++)
     data.prepped_cs_labels[i].costs.delete_v();
@@ -339,32 +323,6 @@ void finish(cb_adf& data)
 
   data.a_s.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
-}
-
-template <bool is_learn>
-void predict_or_learn(cb_adf& data, base_learner& base, example &ec)
-{
-  vw* all = data.all;
-  bool is_test_ec = CB::example_is_test(ec);
-  bool need_to_break = VW::is_ring_example(*all, &ec) && (data.ec_seq.size() >= all->p->ring_size - 2);
-  data.offset = ec.ft_offset;
-
-  if ((example_is_newline_not_header(ec) && is_test_ec) || need_to_break)
-  {
-    data.ec_seq.push_back(&ec);
-    do_actual_learning<is_learn>(data, base);
-    // using flag to clear, because ec_seq is used in finish_example
-    data.need_to_clear = true;
-  }
-  else
-  {
-    if (data.need_to_clear)    // should only happen if we're NOT driving
-    {
-      data.ec_seq.erase();
-      data.need_to_clear = false;
-    }
-    data.ec_seq.push_back(&ec);
-  }
 }
 
 void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
@@ -383,19 +341,19 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 
 }
 using namespace CB_ADF;
-base_learner* cb_adf_setup(vw& all)
+base_learner* cb_adf_setup(arguments& arg)
 {
-  if (missing_option(all, true, "cb_adf", "Do Contextual Bandit learning with multiline action dependent features."))
+  auto ld = scoped_calloc_or_throw<cb_adf>();
+  std::string type_string;
+
+  if (arg.new_options("Contextual Bandit with Action Dependent Features")
+      .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
+      .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
+      (ld->no_predict, "no_predict", "Do not do a prediction when training")
+      .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
     return nullptr;
-  new_options(all, "ADF Options")
-  ("rank_all", "Return actions sorted by score order")
-  ("no_predict", "Do not do a prediction when training")
-  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
-  add_options(all);
 
-  cb_adf& ld = calloc_or_throw<cb_adf>();
-
-  ld.all = &all;
+  ld->all = arg.all;
 
 	cb_to_cs_adf& c = ld.gen_cs;
 	c.num_actions = (uint32_t)(all.vm["cbify"].as<size_t>());
@@ -403,88 +361,55 @@ base_learner* cb_adf_setup(vw& all)
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
   bool check_baseline_enabled = false;
-  if (all.vm.count("cb_type"))
-  {
-    std::string type_string;
 
-    type_string = all.vm["cb_type"].as<std::string>();
-    *all.file_options << " --cb_type " << type_string;
-
-    if (type_string.compare("dr") == 0)
+  if (type_string.compare("dr") == 0)
     {
-      ld.gen_cs.cb_type = CB_TYPE_DR;
+      ld->gen_cs.cb_type = CB_TYPE_DR;
       problem_multiplier = 2;
       // only use baseline when manually enabled for loss estimation
       check_baseline_enabled = true;
     }
-    else if (type_string.compare("ips") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
-      problem_multiplier = 1;
-    }
-    else if (type_string.compare("mtr") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_MTR;
-      problem_multiplier = 1;
-    }
-    else if (type_string.compare("dm") == 0)
-    {
-      ld.gen_cs.cb_type = CB_TYPE_DM;
-      problem_multiplier = 1;
-    }
-    else
-    {
-      std::cerr << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
-      ld.gen_cs.cb_type = CB_TYPE_IPS;
-    }
-  }
+  else if (type_string.compare("ips") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_IPS;
+  else if (type_string.compare("mtr") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_MTR;
+  else if (type_string.compare("dm") == 0)
+    ld->gen_cs.cb_type = CB_TYPE_DM;
   else
-  {
-    //by default use ips
-    ld.gen_cs.cb_type = CB_TYPE_IPS;
-    *all.file_options << " --cb_type ips";
-  }
+    {
+      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
+      ld->gen_cs.cb_type = CB_TYPE_IPS;
+    }
 
-  if (all.vm.count("rank_all"))
-  {
-    ld.rank_all = true;
-    *all.file_options << " --rank_all";
-  }
-  all.delete_prediction = ACTION_SCORE::delete_action_scores;
-
-  if (all.vm.count("no_predict"))
-    ld.predict = false;
-  else
-    ld.predict = true;
+  arg.all->delete_prediction = ACTION_SCORE::delete_action_scores;
 
   // Push necessary flags.
-  if ( (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0 && count(all.args.begin(), all.args.end(), "--wap_ldf") == 0)
-       || all.vm.count("rank_all") || all.vm.count("csoaa_rank") == 0)
+  if ( (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0 && count(arg.args.begin(), arg.args.end(), "--wap_ldf") == 0)
+       || ld->rank_all || arg.vm.count("csoaa_rank") == 0)
   {
-    if (count(all.args.begin(), all.args.end(), "--csoaa_ldf") == 0)
-      all.args.push_back("--csoaa_ldf");
-    if (count(all.args.begin(), all.args.end(), "multiline") == 0)
-      all.args.push_back("multiline");
-    if (count(all.args.begin(), all.args.end(), "--csoaa_rank") == 0)
-      all.args.push_back("--csoaa_rank");
+    if (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0)
+      arg.args.push_back("--csoaa_ldf");
+    if (count(arg.args.begin(), arg.args.end(), "multiline") == 0)
+      arg.args.push_back("multiline");
+    if (count(arg.args.begin(), arg.args.end(), "--csoaa_rank") == 0)
+      arg.args.push_back("--csoaa_rank");
   }
-  if (count(all.args.begin(), all.args.end(), "--baseline") && check_baseline_enabled)
-  {
-    all.args.push_back("--check_enabled");
-  }
+  if (count(arg.args.begin(), arg.args.end(), "--baseline") && check_baseline_enabled)
+    arg.args.push_back("--check_enabled");
 
-  base_learner* base = setup_base(all);
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  auto base = as_multiline(setup_base(arg));
+  arg.all->p->lp = CB::cb_label;
+  arg.all->label_type = label_type::cb;
 
-  learner<cb_adf>& l = init_learner(&ld, base, CB_ADF::predict_or_learn<true>, CB_ADF::predict_or_learn<false>, problem_multiplier,
-                                    prediction_type::action_scores);
+  cb_adf* bare = ld.get();
+  learner<cb_adf,multi_ex>& l = init_learner(ld, base,
+    CB_ADF::do_actual_learning<true>, CB_ADF::do_actual_learning<false>,
+    problem_multiplier, prediction_type::action_scores);
   l.set_finish_example(CB_ADF::finish_multiline_example);
 
-  ld.gen_cs.scorer = all.scorer;
+  bare->gen_cs.scorer = arg.all->scorer;
 
   l.set_finish(CB_ADF::finish);
-  l.set_end_examples(CB_ADF::end_examples);
   l.set_save_load(CB_ADF::save_load);
   return make_base(l);
 }
