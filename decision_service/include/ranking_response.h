@@ -22,6 +22,8 @@ namespace reinforcement_learning {
     void set_uuid(const char* uuid);
     void push_back(const int action_id, const float prob);
     size_t size() const;
+    void set_model_id(const char* model_id);
+    const char * get_model_id() const;
 
   private:
     ranking_response_impl* _pimpl;

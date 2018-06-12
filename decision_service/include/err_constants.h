@@ -28,6 +28,9 @@ namespace reinforcement_learning { namespace error_code {
   const int json_parse_error            = 21;
   const int exploration_error           = 22;
   const int action_out_of_bounds        = 23;
+  const int model_update_error          = 24;
+  const int model_rank_error            = 25;
+  const int pdf_sampling_error          = 26;
 }}
 
 namespace reinforcement_learning { namespace error_code {

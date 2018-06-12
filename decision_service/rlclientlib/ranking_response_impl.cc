@@ -21,8 +21,16 @@ namespace reinforcement_learning {
   }
 
   size_t ranking_response_impl::size() const { return _ranking.size(); }
+  
+  void ranking_response_impl::set_model_id(const char* model_id) {
+    _model_id = model_id;
+  }
 
-  bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
+  const char* ranking_response_impl::get_model_id() const {
+    return _model_id.c_str();
+  }
+
+bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
     if ( !_ranking.empty() ) {
       action_id =_chosen_action_id;
       return true;

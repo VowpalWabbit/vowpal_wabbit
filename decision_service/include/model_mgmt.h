@@ -3,7 +3,8 @@
 
 // Declare const pointer for internal linkage  
 namespace reinforcement_learning {
-  class api_status;
+class ranking_response;
+class api_status;
 }
 
 namespace reinforcement_learning { namespace model_management {
@@ -19,15 +20,14 @@ namespace reinforcement_learning { namespace model_management {
     class i_data_transport{
     public:
       virtual int get_data(model_data& data, api_status* status = nullptr) = 0;
-      virtual ~i_data_transport() {}
+      virtual ~i_data_transport() = default;
     };
 
     class i_model {
     public:
-      virtual int init(model_data& data, api_status* status = nullptr) = 0;
-      virtual int choose_rank(int& action, char* features, int actions[], api_status* status = nullptr) = 0;
-      virtual ~i_model() {};
-      virtual void update(const model_data& data) = 0;
+      virtual int update(const model_data& data, api_status* status = nullptr) = 0;
+      virtual int choose_rank(const char* rnd_seed, const char* features, ranking_response& response, api_status* status = nullptr) = 0;
+      virtual ~i_model() = default;
     };
 }
 }

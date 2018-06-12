@@ -6,7 +6,7 @@
 namespace reinforcement_learning {
 
   ranking_response::ranking_response()
-    : _pimpl { new ranking_response_impl() } {}
+  : _pimpl { new ranking_response_impl() } {}
 
   ranking_response::ranking_response(char const* uuid) 
   : _pimpl{ new ranking_response_impl(uuid) } {}
@@ -27,7 +27,7 @@ namespace reinforcement_learning {
     return _pimpl->set_choosen_action_id(id, status);
   }
 
-void ranking_response::set_uuid(char const * uuid) {
+  void ranking_response::set_uuid(char const * uuid) {
     _pimpl->_uuid = uuid;
 	}
 
@@ -36,6 +36,14 @@ void ranking_response::set_uuid(char const * uuid) {
   }
 
   size_t ranking_response::size() const { return _pimpl->size(); }
+
+  void ranking_response::set_model_id(const char* model_id) {
+    _pimpl->set_model_id(model_id);
+  }
+
+  const char* ranking_response::get_model_id() const {
+    return _pimpl->get_model_id();
+  }
 
   ranking_response::ranking_iterator::ranking_iterator(ranking_response_impl* p_resp_impl) 
     :_p_resp_impl(p_resp_impl), _idx(0) { }

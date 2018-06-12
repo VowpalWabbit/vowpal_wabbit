@@ -143,7 +143,11 @@ namespace reinforcement_learning {
     return ranking;
   }
 
-  safe_vw_factory::safe_vw_factory(const std::shared_ptr<safe_vw>& master) : _master(master)
+const char* safe_vw::id() const {
+  return _vw->id.c_str();
+}
+
+safe_vw_factory::safe_vw_factory(const std::shared_ptr<safe_vw>& master) : _master(master)
   { }
 
   safe_vw* safe_vw_factory::operator()()

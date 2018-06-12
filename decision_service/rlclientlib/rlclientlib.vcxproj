@@ -162,7 +162,7 @@
     <ClInclude Include="utility\object_factory.h" />
     <ClInclude Include="restapi_data_transport.h" />
     <ClInclude Include="utility\object_pool.h" />
-    <ClInclude Include="vw_model.h" />
+    <ClInclude Include="vw_model\vw_model.h" />
     <ClInclude Include="vw_model\safe_vw.h" />
   </ItemGroup>
   <ItemGroup>
@@ -185,7 +185,7 @@
     <ClCompile Include="str_util.cc" />
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="vw_model.cc" />
+    <ClCompile Include="vw_model\vw_model.cc" />
     <ClCompile Include="vw_model\safe_vw.cc" />
   </ItemGroup>
   <ItemGroup>

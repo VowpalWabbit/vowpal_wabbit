@@ -1,3 +1,6 @@
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/random_generator.hpp>
+
 #include "api_status.h"
 #include "config_collection.h"
 #include "error_callback_fn.h"
@@ -10,16 +13,21 @@
 #include "constants.h"
 #include "bg_model_download.h"
 #include "context_helper.h"
+#include "vw_model/safe_vw.h"
 #include "../../explore/explore_internal.h"
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/random_generator.hpp>
 
-using namespace std;
+// Some namespace changes for more concise code
 namespace e = exploration;
+using namespace std;
 
 namespace reinforcement_learning
 {
+  // Some namespace changes for more concise code
   namespace m = model_management;
+
+  // Some typdefs for more concise code
+  using vw_ptr = std::shared_ptr<safe_vw>;
+  using pooled_vw = utility::pooled_object_guard<safe_vw, safe_vw_factory>;
 
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
 
@@ -43,15 +51,13 @@ namespace reinforcement_learning
     TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
 
     int scode;
-    const string model_id = "N/A";
     if(!_model_data_received) {
       scode = explore_only(uuid, context, response, status);
       TRY_OR_RETURN(scode);
+      response.set_model_id("N/A");
     }
     else {
       scode = explore_exploit(uuid, context, response, status);
-      // TODO: POPULATE MODEL ID FROM VW
-      // model_id = vw.model_id();
       TRY_OR_RETURN(scode);
     }
 
@@ -59,7 +65,7 @@ namespace reinforcement_learning
 
     // Serialize the event
     _buff.seekp(0, std::ostringstream::beg);
-    ranking_event::serialize(_buff, uuid, context, response, model_id);
+    ranking_event::serialize(_buff, uuid, context, response);
     auto sbuf = _buff.str();
 
     // Send the ranking event to the backend
@@ -98,8 +104,8 @@ namespace reinforcement_learning
 
   live_model_impl::live_model_impl(const utility::config_collection& config, error_fn fn, void* err_context)
   : _model_data_received(false), _configuration(config),
-    _error_cb(fn, err_context),
-    _logger(config, &_error_cb) { }
+    _error_cb(fn, err_context), _logger(config, &_error_cb), _initial_epsilon{0.2f}
+  { }
 
 int live_model_impl::init_model(api_status* status) {
   const auto model_impl = _configuration.get(name::MODEL, value::VW);
@@ -114,7 +120,11 @@ void inline live_model_impl::_handle_model_update(const m::model_data& data, liv
 }
 
 void live_model_impl::handle_model_update(const model_management::model_data& data) {
-  _model->update(data);
+  api_status status;
+  if(_model->update(data,&status) != error_code::success) {
+    _error_cb.report_error(status);
+    return;
+  }
   _model_data_received = true;
 }
 
@@ -125,14 +135,14 @@ int live_model_impl::explore_only(const char* uuid, const char* context,  rankin
   TRY_OR_RETURN(utility::get_action_count(action_count, context, status));
   vector<float> pdf(action_count);
 
-  // assume that the user's top choice for action is at index 0
+  // Assume that the user's top choice for action is at index 0
   const auto top_action_id = 0;
   auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
   if( S_EXPLORATION_OK != scode) {
     return report_error(status, error_code::exploration_error, "Exploration error code: ", scode);
   }
 
-  // pick usig the pdf
+  // Pick using the pdf
   uint32_t choosen_action_id;
   scode = e::sample_after_normalizing(uuid, begin(pdf), end(pdf), choosen_action_id);
   if ( S_EXPLORATION_OK != scode ) {
@@ -149,8 +159,8 @@ int live_model_impl::explore_only(const char* uuid, const char* context,  rankin
 }
 
 int live_model_impl::explore_exploit(const char* uuid, const char* context, ranking_response& response,
-  api_status* status) {
-  throw "not implemented";
+  api_status* status) const {
+  return _model->choose_rank(uuid, context, response, status);
 }
 
 int live_model_impl::init_model_mgmt(api_status* status) {

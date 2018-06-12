@@ -15,6 +15,7 @@
 #include "periodic_bg_proc.h"
 #include "bg_model_download.h"
 #include "data_callback_fn.h"
+#include "ranking_response.h"
 
 namespace r = reinforcement_learning;
 namespace m = reinforcement_learning::model_management;
@@ -130,19 +131,19 @@ BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 BOOST_AUTO_TEST_CASE(vw_model_factory)
 {
   register_local_file_factory();
-  auto model = get_model_data();
+  const auto model = get_model_data();
 
   u::config_collection model_cc;
   model_cc.set(r::name::VW_CMDLINE, "--lda 5");
   m::i_model* vw;
   auto scode = r::model_factory.create(&vw, r::value::VW, model_cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
-  vw->init(model);
+  vw->update(model);
 
-  char* features = "1 2 3";
-  int actions[] = { 1,2,3 };
-  int action;
-  scode = vw->choose_rank(action, features, actions);
+  const auto rnd_seed = "{abcd:e123:0094:2219}";
+  const auto features = R"({"_multi":[{},{}]})";
+  reinforcement_learning::ranking_response resp;
+  scode = vw->choose_rank(rnd_seed,features, resp);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   delete vw;
 }
@@ -156,13 +157,13 @@ m::model_data get_model_data()
   r::data_transport_factory.create(&data_transport, DUMMY_DATA_TRANSPORT, cc);
   std::unique_ptr<m::i_data_transport> pdt(data_transport);
   m::model_data md;
-  auto scode = pdt->get_data(md);
+  const auto scode = pdt->get_data(md);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   return md;
 }
 
 class dummy_data_transport : public m::i_data_transport {
-  virtual int get_data(m::model_data& data, r::api_status* status = nullptr) {
+  int get_data(m::model_data& data, r::api_status* status) override {
     data.data = nullptr;
     data.data_sz = 0;
     return r::error_code::success;

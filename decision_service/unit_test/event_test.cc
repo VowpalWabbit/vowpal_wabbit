@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(serialize_outcome)
   
   ostringstream oss;
 	outcome_event::serialize(oss, uuid, outcome_data);
-  auto serialized = oss.str();
+  const auto serialized = oss.str();
 	const auto expected = R"({"EventId":"uuid","v":"1.0"})";
 
 	BOOST_CHECK_EQUAL(serialized, expected);
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
 
   ostringstream oss;
 	outcome_event::serialize(oss, uuid, outcome_data);
-  auto serialized = oss.str();
+  const auto serialized = oss.str();
 	const auto expected = R"({"EventId":"","v":""})";
 
 	BOOST_CHECK_EQUAL(serialized, expected);
@@ -43,12 +43,11 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
 	ranking_response resp;
 	resp.push_back(2, 0.8f);
 	resp.push_back(1, 0.2f);
-	const auto model_id = "model_id";
+	resp.set_model_id("model_id");
 
   ostringstream oss;
-	ranking_event::serialize(oss, uuid, context, resp, model_id);
-
-	auto serialized = oss.str();
+	ranking_event::serialize(oss, uuid, context, resp);
+  const auto serialized = oss.str();
 	const auto expected = R"({"Version":"1","EventId":"uuid","a":[2,1],"c":{context},"p":[0.8,0.2],"VWState":{"m":"model_id"}})";
 
 	BOOST_CHECK_EQUAL(serialized, expected);
@@ -59,12 +58,11 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
 	const auto uuid = "uuid";
 	const auto context = "{context}";
 	ranking_response ranking;
-	const auto model_id = "model_id";
+	ranking.set_model_id("model_id");
 
   ostringstream oss;
-	ranking_event::serialize(oss, uuid, context, ranking, model_id);
-
-	auto serialized = oss.str();
+	ranking_event::serialize(oss, uuid, context, ranking);
+  const auto serialized = oss.str();
 	const auto expected = R"({"Version":"1","EventId":"uuid","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
 
 	BOOST_CHECK_EQUAL(serialized, expected);

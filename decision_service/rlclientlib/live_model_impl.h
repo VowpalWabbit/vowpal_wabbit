@@ -1,14 +1,16 @@
 #pragma once
+#include <memory>
 #include "logger/logger.h"
 #include "model_mgmt.h"
 #include "data_callback_fn.h"
 #include "bg_model_download.h"
-#include <memory>
-#include <boost/uuid/string_generator.hpp>
+#include "utility/object_pool.h"
 
 namespace reinforcement_learning
 {
-  class ranking_response;
+class safe_vw_factory;
+class safe_vw;
+class ranking_response;
   class api_status;
 
   class live_model_impl {
@@ -38,7 +40,7 @@ namespace reinforcement_learning
     static void _handle_model_update(const model_management::model_data& data, live_model_impl* ctxt);
     void handle_model_update(const model_management::model_data& data);
     int explore_only(const char* uuid, const char* context, ranking_response& response, api_status* status) const;
-    int explore_exploit(const char* uuid, const char* context, ranking_response& response, api_status* status);
+    int explore_exploit(const char* uuid, const char* context, ranking_response& response, api_status* status) const;
 
   private:
     bool _model_data_received;
@@ -51,6 +53,5 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::data_callback_fn> _data_cb;
     std::unique_ptr<model_management::bg_model_download> _bg_model_download;
     float _initial_epsilon;
-    boost::uuids::string_generator _uuid;
   };
 }

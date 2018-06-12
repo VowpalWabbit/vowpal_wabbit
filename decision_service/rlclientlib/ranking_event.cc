@@ -6,7 +6,7 @@ using namespace std;
 
 namespace reinforcement_learning {
   void ranking_event::serialize(ostream& oss, const char* uuid, const char* context,
-    ranking_response& resp, const std::string& model_id) {
+    ranking_response& resp) {
 
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << uuid;
@@ -28,7 +28,7 @@ namespace reinforcement_learning {
     }
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << model_id << R"("}})";
+    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})";
 	}
 
   void outcome_event::serialize(ostream& oss, const char* uuid, const char* outcome_data)
