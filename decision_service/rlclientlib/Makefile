@@ -1,7 +1,7 @@
 TARGET = librlclient.a
 ARFLAGS = rcs 
 
-INCLUDE = -I ../include
+INCLUDE = -I ../include -I ../../explore -I ../explore
 
 .PHONY: default all clean
 
@@ -10,7 +10,7 @@ all: default
 
 things: all
 
-SOURCES = $(filter-out mail.cc, $(wildcard *.cc)) $(wildcard */*.cc)
+SOURCES = $(filter-out main.cc, $(wildcard *.cc)) $(wildcard */*.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 

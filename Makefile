@@ -107,7 +107,7 @@ export
 rl_clientlib:
 	cd decision_service/rlclientlib; $(MAKE) -j $(NPROCS) things
 
-rl_clientlib_test:
+rl_clientlib_test: vw rl_clientlib
 	cd decision_service/unit_test; $(MAKE) -j $(NPROCS) things
 
 spanning_tree:
