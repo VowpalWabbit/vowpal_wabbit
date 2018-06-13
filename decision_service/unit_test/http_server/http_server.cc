@@ -19,7 +19,7 @@ http_server::http_server(const utility::string_t& url, const bool post_err)
 void http_server::handle_get(http_request message)
 {
     message.reply(status_codes::OK);
-};
+}
 
 void http_server::handle_post(http_request message)
 {
@@ -27,7 +27,7 @@ void http_server::handle_post(http_request message)
     message.reply(status_codes::InternalError);
   else
   	message.reply(status_codes::Created);
-};
+}
 
 void http_server::handle_delete(http_request message)
 {
@@ -37,4 +37,4 @@ void http_server::handle_delete(http_request message)
 void http_server::handle_put(http_request message)
 {
 	message.reply(status_codes::OK);
-};
+}
