@@ -18,8 +18,7 @@ struct cbify;
 
 struct cbify_adf_data
 {
-  example* ecs;
-  example* empty_example;
+  multi_ex ecs;
   size_t num_actions;
 };
 
@@ -55,11 +54,8 @@ void finish(cbify& data)
   {
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
     {
-      VW::dealloc_example(CB::cb_label.delete_label, data.adf_data.ecs[a]);
+      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
     }
-    VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.empty_example);
-    free(data.adf_data.ecs);
-    free(data.adf_data.empty_example);
   }
 }
 
@@ -71,7 +67,7 @@ void copy_example_to_adf(cbify& data, example& ec)
 
   for (size_t a = 0; a < adf_data.num_actions; ++a)
   {
-    auto& eca = adf_data.ecs[a];
+    auto& eca = *adf_data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
     CB::cb_label.default_label(&lab);
@@ -132,19 +128,15 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_adf(cbify& data, single_learner& base, example& ec)
+void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
   //Store the multiclass input label
   MULTICLASS::label_t ld = ec.l.multi;
 
   copy_example_to_adf(data, ec);
-  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-  {
-    base.predict(data.adf_data.ecs[a]);
-  }
-  base.predict(*data.adf_data.empty_example);
+  base.predict(data.adf_data.ecs);
 
-  auto& out_ec = data.adf_data.ecs[0];
+  auto& out_ec = *data.adf_data.ecs[0];
 
   uint32_t chosen_action;
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s), chosen_action))
@@ -159,14 +151,10 @@ void predict_or_learn_adf(cbify& data, single_learner& base, example& ec)
   cl.cost = loss(data, ld.label, cl.action);
 
   // add cb label to chosen action
-  auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
+  auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.push_back(cl);
 
-  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-  {
-    base.learn(data.adf_data.ecs[a]);
-  }
-  base.learn(*data.adf_data.empty_example);
+  base.learn(data.adf_data.ecs);
   ec.pred.multiclass = cl.action;
 }
 
@@ -175,15 +163,13 @@ void init_adf_data(cbify& data, const size_t num_actions)
   auto& adf_data = data.adf_data;
   adf_data.num_actions = num_actions;
 
-  adf_data.ecs = VW::alloc_examples(CB::cb_label.label_size, num_actions);
-  adf_data.empty_example = VW::alloc_examples(CB::cb_label.label_size, 1);
+  adf_data.ecs.resize(num_actions);
   for (size_t a=0; a < num_actions; ++a)
   {
-    auto& lab = adf_data.ecs[a].l.cb;
+    adf_data.ecs[a] = VW::alloc_examples(CB::cb_label.label_size, 1);
+    auto& lab = adf_data.ecs[a]->l.cb;
     CB::cb_label.default_label(&lab);
   }
-  CB::cb_label.default_label(&adf_data.empty_example->l.cb);
-  adf_data.empty_example->in_use = true;
 }
 
 base_learner* cbify_setup(arguments& arg)
@@ -219,15 +205,21 @@ base_learner* cbify_setup(arguments& arg)
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
     arg.args.push_back(ss.str());
   }
-  auto base = as_singleline(setup_base(arg));
 
-  arg.all->delete_prediction = nullptr;
   learner<cbify,example>* l;
+
   if (data->use_adf)
+  {
+    multi_learner* base = as_multiline(setup_base(arg));
     l = &init_multiclass_learner(data, base, predict_or_learn_adf<true>, predict_or_learn_adf<false>, arg.all->p, 1);
+  }
   else
+  {
+    single_learner* base = as_singleline(setup_base(arg));
     l = &init_multiclass_learner(data, base, predict_or_learn<true>, predict_or_learn<false>, arg.all->p, 1);
+  }
   l->set_finish(finish);
+  arg.all->delete_prediction = nullptr;
 
   return make_base(*l);
 }
