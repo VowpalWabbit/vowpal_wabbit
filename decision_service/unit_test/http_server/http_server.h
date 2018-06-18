@@ -39,7 +39,7 @@ public:
       uri_builder uri(address);
       const auto addr = uri.to_uri().to_string();
       g_http = std::unique_ptr<http_server>(new http_server(addr, post_error));
-      return ( g_http->open().wait() == Concurrency::completed );
+      return ( g_http->open().wait() == pplx::completed );
     }
     catch ( const std::exception& ) {
       return false;
