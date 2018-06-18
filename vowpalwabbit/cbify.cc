@@ -233,6 +233,11 @@ base_learner* cbify_setup(arguments& arg)
     ss << num_actions;
     arg.args.push_back(ss.str());
   }
+  arg.args.push_back("--cb_min_cost");
+  arg.args.push_back(to_string(data->loss0));
+  arg.args.push_back("--cb_max_cost");
+  arg.args.push_back(to_string(data->loss1));
+
   if (count(arg.args.begin(), arg.args.end(), "--baseline"))
   {
     arg.args.push_back("--lr_multiplier");
