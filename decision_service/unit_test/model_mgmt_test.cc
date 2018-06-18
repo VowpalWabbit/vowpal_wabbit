@@ -149,8 +149,7 @@ BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 BOOST_AUTO_TEST_CASE(vw_model_factory)
 {
   register_local_file_factory();
-  const auto model = get_model_data();
-
+  
   u::config_collection model_cc;
   model_cc.set(r::name::VW_CMDLINE, "--lda 5");
   m::i_model* vw;

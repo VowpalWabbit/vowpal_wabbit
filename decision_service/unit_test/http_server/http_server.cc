@@ -24,7 +24,7 @@ void http_server::handle_get(http_request message)
   resp.headers().add(U("Last-Modified"), datetime::utc_now().to_string());
   resp.set_body(U("Http HEAD response"));
   message.reply(resp).get();
-};
+}
 
 void http_server::handle_post(http_request message) {
   if ( _post_err )
@@ -32,7 +32,7 @@ void http_server::handle_post(http_request message) {
   else {
     message.reply(status_codes::Created);
   }
-};
+}
 
 void http_server::handle_head(http_request message) {
   http_response resp;
@@ -40,7 +40,7 @@ void http_server::handle_head(http_request message) {
   resp.headers().add(U("Last-Modified"), datetime::utc_now().to_string() );
   resp.set_body(U("Http HEAD response"));
   message.reply(resp).get();
-};
+}
 
 void http_server::handle_delete(http_request message)
 {

@@ -17,10 +17,9 @@ namespace reinforcement_learning { namespace utility { namespace config {
   }
 
   void parse_eventhub_conn_str(const std::string& conn_str, std::string& host, std::string& name, std::string& access_key_name, std::string& access_key) {
-    // "Endpoint=sb://ingest-yers.se.ws.net/;SharedAccessKeyName=oMSK;SharedAccessKey=sB1xoL4CtpA4=;EntityPath=ition",
     const std::regex regex_eh_connstr("Endpoint=sb://([^/]+)[^;]+;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=([^;^\\s]+)");
     std::smatch match;
-    if(!std::regex_match(conn_str,match,regex_eh_connstr) && !match.size() == 5) {
+    if(!std::regex_match(conn_str,match,regex_eh_connstr) && !(match.size() == 5)) {
       throw std::runtime_error(concat("Cannot parse eventhub connection string: ", conn_str));
     }
     host = match[1].str();

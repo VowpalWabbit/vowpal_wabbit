@@ -174,7 +174,7 @@ int live_model_impl::init_model_mgmt(api_status* status) {
   this->_transport.reset(ptransport);
 
   // Initialize background process and start downloading models
-  this->_model_download = std::make_unique<m::model_download>(ptransport, &_data_cb);
+  this->_model_download.reset(new m::model_download(ptransport, &_data_cb));
   return _bg_model_proc.init(_model_download.get(),status);
 }
 }
