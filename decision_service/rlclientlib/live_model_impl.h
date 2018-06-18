@@ -53,8 +53,8 @@ class ranking_response;
     std::ostringstream _buff;
     logger _logger;
     std::unique_ptr<model_management::i_data_transport> _transport;
+    std::unique_ptr<model_management::i_model> _model;
     std::unique_ptr<model_management::model_download> _model_download;
     utility::periodic_bg_proc<model_management::model_download> _bg_model_proc;
-    std::unique_ptr<model_management::i_model> _model;
   };
 }

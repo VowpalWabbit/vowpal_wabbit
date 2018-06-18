@@ -102,13 +102,15 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
   BOOST_CHECK_LE(diff.count(), 200);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
+
+  http_server.on_shutdown();
 }
 
 BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
-{
+{ 
   //start a http server that will receive events sent from the eventhub_client
   http_helper http_server;
-  http_server.on_initialize(U("http://localhost:8080"));
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   //create a simple ds configuration
   auto cc = cfg::create_from_json(JSON_CFG);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
@@ -126,6 +128,8 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   BOOST_CHECK_EQUAL(md.data_refresh_count, 1);
 
   delete data_transport;
+
+  http_server.on_shutdown();
 }
 
 void register_local_file_factory();

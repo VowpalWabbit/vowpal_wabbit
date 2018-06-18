@@ -107,7 +107,11 @@ namespace reinforcement_learning
     _error_cb(fn, err_context), 
     _data_cb(_handle_model_update,this),
     _logger(config, &_error_cb),
-    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL, 60 * 5), &_error_cb) { }
+    _transport(nullptr),
+    _model(nullptr),
+    _model_download(nullptr),
+    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL, 60 * 5), &_error_cb)
+  { }
 
 int live_model_impl::init_model(api_status* status) {
   const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
