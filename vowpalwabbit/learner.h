@@ -63,7 +63,7 @@ struct learn_data
 };
 
 struct sensitivity_data
-{ using fn = float(*)(void* data, base_learner& base, void* ex);
+{ using fn = float(*)(void* data, base_learner& base, example& ex);
   void* data;
   fn sensitivity_f;
 };
@@ -88,8 +88,7 @@ void generic_driver_onethread(vw& all);
 
 inline void noop_sl(void*, io_buf&, bool, bool) {}
 inline void noop(void*) {}
-template<class E>
-inline float noop_sensitivity(void*, base_learner&, E&) { return 0.; }
+inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
 { ex.ft_offset += static_cast<uint32_t>(increment * i);
@@ -190,13 +189,13 @@ public:
   inline void set_update(void (*u)(T& data, L& base, E&)) { learn_fd.update_f = (learn_data::fn)u; }
 
   //used for active learning and confidence to determine how easily predictions are changed
-  inline void set_sensitivity(float (*u)(T& data, base_learner& base, E&))
+  inline void set_sensitivity(float (*u)(T& data, base_learner& base, example&))
   { sensitivity_fd.data = learn_fd.data;
     sensitivity_fd.sensitivity_f = (sensitivity_data::fn)u;
   }
-  inline float sensitivity(E& ec, size_t i=0)
+  inline float sensitivity(example& ec, size_t i=0)
   { increment_offset(ec, increment, i);
-    const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, (void*)&ec);
+    const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
     decrement_offset(ec, increment, i);
     return ret;
   }
@@ -279,7 +278,7 @@ public:
           ret.save_load_fd.save_load_f = (save_load_data::fn)noop_sl;
           ret.finisher_fd.data = dat;
           ret.finisher_fd.func = (func_data::fn)noop;
-          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity<E>;
+          ret.sensitivity_fd.sensitivity_f = (sensitivity_data::fn)noop_sensitivity;
           ret.finish_example_fd.data = dat;
           ret.finish_example_fd.finish_example_f = (finish_example_data::fn)return_simple_example;
         }
