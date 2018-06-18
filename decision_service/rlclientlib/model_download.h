@@ -6,15 +6,15 @@ namespace reinforcement_learning {
 }
 
 namespace reinforcement_learning { namespace model_management {
-  class bg_model_download {
+  class model_download {
   public:
-    bg_model_download(i_data_transport* ptrans, data_callback_fn* pdata_cb);
-    ~bg_model_download();
-    bg_model_download(bg_model_download&& temp) noexcept;
-    bg_model_download& operator=(bg_model_download&& temp) noexcept;
+    model_download(i_data_transport* ptrans, data_callback_fn* pdata_cb);
+    model_download(model_download&& temp) noexcept;
+    model_download& operator=(model_download&& temp) noexcept;
 
     int run_once(api_status* status) const;
   private:
+    // Lifetime of pointers managed by user of this class
     i_data_transport* _ptrans;
     data_callback_fn* _pdata_cb;
   };

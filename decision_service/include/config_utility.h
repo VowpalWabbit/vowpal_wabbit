@@ -4,5 +4,5 @@
 
 namespace reinforcement_learning { namespace utility { namespace config {
   std::string load_config_json();
-  config_collection init_from_json(const std::string& config_json);
+  config_collection create_from_json(const std::string& config_json);
 }}}

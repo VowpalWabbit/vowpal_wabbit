@@ -1,5 +1,4 @@
 #pragma once
-#include <algorithm>
 #include <thread>
 #include "err_constants.h"
 #include "error_callback_fn.h"
@@ -12,37 +11,51 @@ namespace reinforcement_learning {
 
 namespace reinforcement_learning { namespace utility {
 
-  template<typename BGProc>
+  template<typename BgProc>
   class periodic_bg_proc {
   public:
-    periodic_bg_proc(const int interval_ms, BGProc& bgproc, error_callback_fn* perror_cb = nullptr);
-    int init(api_status* status = nullptr);
-    void stop();
-    ~periodic_bg_proc();
+    // Construction and init
+    explicit periodic_bg_proc(const int interval_ms, error_callback_fn* perror_cb = nullptr);
+    int init(BgProc* bgproc, api_status* status = nullptr);
 
+    // Shutdown and Destructor
+    ~periodic_bg_proc();
+    void stop();
+
+    // Cannot copy, assign
     periodic_bg_proc(const periodic_bg_proc&) = delete;
     periodic_bg_proc(periodic_bg_proc&&) = delete;
     periodic_bg_proc& operator=(const periodic_bg_proc&) = delete;
     periodic_bg_proc& operator=(periodic_bg_proc&&) = delete;
+
   private:
+    // Implementation methods
     void time_loop();
 
   private:
+    // Internal state
     bool _thread_is_running;
-    BGProc _proc;
-    std::thread _background_thread;    
     int _interval_ms;
-    error_callback_fn* _perror_cb;
+    std::thread _background_thread;
     interruptable_sleeper _sleeper;
+
+    // Pointers not owned by this class.  Lifetime is managed externally
+    BgProc* _proc;
+    error_callback_fn* _perror_cb;
   };
 
-  template <typename BGProc>
-  periodic_bg_proc<BGProc>::periodic_bg_proc(const int interval_ms, BGProc& bgproc, error_callback_fn* perror_cb)
-    : _thread_is_running { false }, _proc(std::move(bgproc)), _interval_ms { interval_ms }, _perror_cb(perror_cb) 
+  template <typename BgProc>
+  periodic_bg_proc<BgProc>::periodic_bg_proc(const int interval_ms, error_callback_fn* perror_cb)
+    : _thread_is_running { false }, _interval_ms { interval_ms }, 
+      _proc(nullptr), _perror_cb(perror_cb) 
   {}
 
-  template <typename BGProc>
-  int periodic_bg_proc<BGProc>::init(api_status* status) {
+  template <typename BgProc>
+  int periodic_bg_proc<BgProc>::init(BgProc* bgproc, api_status* status) {
+    if( bgproc == nullptr )
+      return report_error(status, error_code::invalid_argument, "Invalid BGProc");
+
+    _proc = bgproc;
 
     if ( !_thread_is_running ) {
       try {
@@ -59,8 +72,8 @@ namespace reinforcement_learning { namespace utility {
     return error_code::success;
   }
 
-  template <typename BGProc>
-  void periodic_bg_proc<BGProc>::stop() {
+  template <typename BgProc>
+  void periodic_bg_proc<BgProc>::stop() {
     if ( _thread_is_running ) {
       _thread_is_running = false;
       _sleeper.interrupt();
@@ -68,17 +81,17 @@ namespace reinforcement_learning { namespace utility {
     }
   }
 
-  template <typename BGProc>
-  periodic_bg_proc<BGProc>::~periodic_bg_proc() {
+  template <typename BgProc>
+  periodic_bg_proc<BgProc>::~periodic_bg_proc() {
     stop();
   }
 
-  template <typename BGProc>
-  void periodic_bg_proc<BGProc>::time_loop() {
+  template <typename BgProc>
+  void periodic_bg_proc<BgProc>::time_loop() {
     while ( _thread_is_running ) {
       api_status status;
       // Run the background task once
-      if ( _proc.run_once(&status) != error_code::success ) {
+      if ( _proc->run_once(&status) != error_code::success ) {
         ERROR_CALLBACK(_perror_cb, status);
       }
       // Cancelable sleep for interval

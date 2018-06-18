@@ -145,7 +145,7 @@
     <ClInclude Include="..\include\err_constants.h" />
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\\model_mgmt.h" />
-    <ClInclude Include="bg_model_download.h" />
+    <ClInclude Include="model_download.h" />
     <ClInclude Include="context_helper.h" />
     <ClInclude Include="data_callback_fn.h" />
     <ClInclude Include="interruptable_sleeper.h" />
@@ -166,7 +166,7 @@
     <ClInclude Include="vw_model\safe_vw.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bg_model_download.cc" />
+    <ClCompile Include="model_download.cc" />
     <ClCompile Include="context_helper.cc" />
     <ClCompile Include="data_callback_fn.cc" />
     <ClCompile Include="factory_resolver.cc" />

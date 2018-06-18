@@ -7,7 +7,7 @@
 namespace e = exploration;
 namespace reinforcement_learning { namespace model_management {
   
-  vw_model::vw_model() :_vw_pool(new safe_vw_factory(std::make_shared<safe_vw>(nullptr))) 
+  vw_model::vw_model() :_vw_pool(nullptr) 
   {}
 
   int vw_model::update(const model_data& data, api_status* status) {

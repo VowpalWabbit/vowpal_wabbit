@@ -3,8 +3,9 @@
 #include "logger/logger.h"
 #include "model_mgmt.h"
 #include "data_callback_fn.h"
-#include "bg_model_download.h"
+#include "model_download.h"
 #include "utility/object_pool.h"
+#include "periodic_bg_proc.h"
 
 namespace reinforcement_learning
 {
@@ -34,7 +35,7 @@ class ranking_response;
     live_model_impl& operator=(live_model_impl&&) = delete;
 
   private:
-    // Implementation details
+    // Internal implementation methods
     int init_model(api_status* status);
     int init_model_mgmt(api_status* status);
     static void _handle_model_update(const model_management::model_data& data, live_model_impl* ctxt);
@@ -43,15 +44,17 @@ class ranking_response;
     int explore_exploit(const char* uuid, const char* context, ranking_response& response, api_status* status) const;
 
   private:
-    bool _model_data_received;
+    // Internal implementation state
+    bool _model_data_received = false;
+    float _initial_epsilon = 0.2f;
     utility::config_collection _configuration;
     error_callback_fn _error_cb;
-    logger _logger;
+    model_management::data_callback_fn _data_cb;
     std::ostringstream _buff;
+    logger _logger;
+    std::unique_ptr<model_management::i_data_transport> _transport;
+    std::unique_ptr<model_management::model_download> _model_download;
+    utility::periodic_bg_proc<model_management::model_download> _bg_model_proc;
     std::unique_ptr<model_management::i_model> _model;
-    std::unique_ptr<model_management::i_data_transport> _model_transport;
-    std::unique_ptr<model_management::data_callback_fn> _data_cb;
-    std::unique_ptr<model_management::bg_model_download> _bg_model_download;
-    float _initial_epsilon;
   };
 }

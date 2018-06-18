@@ -3,12 +3,12 @@
 #include <object_factory.h>
 #include "err_constants.h"
 
-namespace e = reinforcement_learning::error_code;
+namespace err = reinforcement_learning::error_code;
 
 namespace reinforcement_learning { namespace model_management {
   int model_management::data_callback_fn::report_data(const model_data& data, api_status* status) {
     if(_fn == nullptr) {
-      return report_error(status, e::data_callback_not_set, e::data_callback_not_set_s);
+      return report_error(status, err::data_callback_not_set, err::data_callback_not_set_s);
     }
 
     // need not be thread safe since this is only called from one thread
@@ -18,14 +18,14 @@ namespace reinforcement_learning { namespace model_management {
     }
     catch ( const std::exception& ex ) {
       return report_error(status, 
-        e::data_callback_exception, 
-        e::data_callback_exception_s, 
+        err::data_callback_exception, 
+        err::data_callback_exception_s, 
         ex.what());
     }
     catch ( ... ) {
       return report_error(status,
-        e::data_callback_exception,
-        e::data_callback_exception_s,
+        err::data_callback_exception,
+        err::data_callback_exception_s,
         "Unknown exception");
     }
   }

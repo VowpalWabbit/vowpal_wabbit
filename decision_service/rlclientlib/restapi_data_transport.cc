@@ -38,7 +38,7 @@ namespace reinforcement_learning { namespace model_management {
   int restapi_data_tranport::get_data_info(::utility::datetime& last_modified, ::utility::size64_t& sz, api_status* status) {
 
     // Build request URI and start the request.
-    pplx::task<int> requestTask = _httpcli.request(methods::HEAD)
+    auto request_task = _httpcli.request(methods::HEAD)
       // Handle response headers arriving.
       .then([&](http_response response) {
       if ( response.status_code() != 200 )
@@ -61,34 +61,32 @@ namespace reinforcement_learning { namespace model_management {
 
     // Wait for all the outstanding I/O to complete and handle any exceptions
     try {
-      requestTask.wait();
+      return request_task.get();
     }
     catch ( const std::exception &e ) {
       RETURN_ERROR(status,error_code::exception_during_http_req,e.what());
     }
-
-    return error_code::success;
   }
 
   int restapi_data_tranport::get_data(model_data& ret, api_status* status) {
 
     ::utility::datetime curr_last_modified;
     ::utility::size64_t curr_datasz;
-    auto err = get_data_info(curr_last_modified, curr_datasz, status);
+    const auto err = get_data_info(curr_last_modified, curr_datasz, status);
     TRY_OR_RETURN(err);
 
     if ( curr_last_modified == _last_modified && curr_datasz == _datasz )
       return error_code::success;
 
     // Build request URI and start the request.
-    pplx::task<int> requestTask = _httpcli.request(methods::GET)
+    auto request_task = _httpcli.request(methods::GET)
       // Handle response headers arriving.
       .then([&](pplx::task<http_response> respTask) {
       auto response = respTask.get();
       if ( response.status_code() != 200 )
         RETURN_ERROR(status, error_code::http_bad_status_code, error_code::http_bad_status_code_s);
 
-      auto iter = response.headers().find(U("Last-Modified"));
+      const auto iter = response.headers().find(U("Last-Modified"));
       if ( iter == response.headers().end() )
         RETURN_ERROR(status, error_code::last_modified_not_found, error_code::last_modified_not_found_s);
 
@@ -102,10 +100,10 @@ namespace reinforcement_learning { namespace model_management {
 
       const auto buff = new char[curr_datasz];
       ret.data = buff;
-      Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
+      const Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
 
       // Write response body into the file.
-      auto readval = response.body().read_to_end(rb).get();  // need to use task.get to throw exceptions properly
+      const auto readval = response.body().read_to_end(rb).get();  // need to use task.get to throw exceptions properly
 
       _last_modified = curr_last_modified;
       _datasz = readval;
@@ -118,7 +116,7 @@ namespace reinforcement_learning { namespace model_management {
 
     // Wait for all the outstanding I/O to complete and handle any exceptions
     try {
-      requestTask.wait();
+      request_task.wait();
     }
     catch ( const std::exception &e ) {
       RETURN_ERROR(status, error_code::exception_during_http_req, e.what());

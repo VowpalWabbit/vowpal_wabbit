@@ -87,9 +87,6 @@
     <ClInclude Include="periodic_bg_proc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bg_model_download.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="interruptable_sleeper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -103,6 +100,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vw_model\vw_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_download.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -158,9 +158,6 @@
     <ClCompile Include="data_callback_fn.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bg_model_download.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="context_helper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -168,6 +165,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vw_model\vw_model.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_download.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

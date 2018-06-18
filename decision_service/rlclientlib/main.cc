@@ -17,7 +17,7 @@ void error_handler(const api_status& error, void* user_context)
 
 int main()
 {
-	const auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
+	const auto config = create_from_json(R"({"eventhub_host":"localhost:8080"})");
 
 	auto error_cntxt = 1;
 	// Create a ds live_model, and initialize with configuration
@@ -69,7 +69,7 @@ config_collection load_config()
 {
 	// Option 1: load configuration from decision service config json
 	auto const config_json = load_config_json();
-	auto config = init_from_json(config_json);
+	auto config = create_from_json(config_json);
 
 	// Option 2: set different config values used to initialize ds client library
 	config.set("name", "value");

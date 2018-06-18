@@ -1,4 +1,5 @@
 #pragma once
+#include <cpprest/http_listener.h>
 
 using namespace web;
 using namespace http;
@@ -20,6 +21,7 @@ private:
 	void handle_put(http_request message);
 	void handle_post(http_request message);
 	void handle_delete(http_request message);
+  void handle_head(http_request message);
 
 	http_listener m_listener;
   bool _post_err;
