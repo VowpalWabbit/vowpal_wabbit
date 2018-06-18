@@ -1,7 +1,12 @@
 TARGET = rlclient-test.out
-LIBS = -lm -pthread -lboost_system -lcrypto -lssl -lcpprest -lrlclient -lboost_unit_test_framework -ldl
-LIBDIR = -L ../rlclientlib
-INCLUDE = -I ../include -I ../rlclientlib
+
+RL_LIB = -L ../rlclientlib -lrlclient 
+VW_LIB = -L../../vowpalwabbit -lvw -lallreduce
+BOOST_LIBS = -lboost_unit_test_framework -lboost_system 
+CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl 
+ALL_LIBS = $(RL_LIB) $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
+
+INCLUDE = -I ../include -I ../rlclientlib -I ../explore -I ../../explore
 
 .PHONY: default all clean
 
@@ -10,7 +15,7 @@ all: default
 
 things: all
 
-SOURCES = $(filter-out model_mgmt_test.cc, $(wildcard *.cc)) http_server/http_server.cc #$(wildcard */*.cc)
+SOURCES = $(wildcard *.cc) http_server/http_server.cc #$(wildcard */*.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 
@@ -20,7 +25,7 @@ HEADERS = $(wildcard *.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) $(LIBDIR) $(LIBS) -Wall $(LIBS) -o $@
+	$(CXX) $(FLAGS) $(OBJECTS) $(LIBDIR) $(ALL_LIBS) -Wall -o $@
 
 clean:
 	-rm -f *.o

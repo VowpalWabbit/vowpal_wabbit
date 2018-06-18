@@ -50,4 +50,4 @@ void http_server::handle_delete(http_request message)
 void http_server::handle_put(http_request message)
 {
 	message.reply(status_codes::OK);
-};
+}
