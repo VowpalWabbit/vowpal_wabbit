@@ -12,8 +12,8 @@
 #include "api_status.h"
 #include "err_constants.h"
 #include <regex>
-#include "periodic_bg_proc.h"
-#include "model_download.h"
+#include "periodic_background_proc.h"
+#include "model_downloader.h"
 #include "data_callback_fn.h"
 #include "http_server/http_server.h"
 #include "config_utility.h"
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
   m::data_callback_fn dfn(dummy_data_fn, &data_ctxt);
 
-  u::periodic_bg_proc<m::model_download> bgproc(repeatms,&efn);
+  u::periodic_background_proc<m::model_downloader> bgproc(repeatms,&efn);
 
   const auto start = std::chrono::system_clock::now();
   m::model_download md(transport.get(), &dfn);

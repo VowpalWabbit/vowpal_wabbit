@@ -84,7 +84,7 @@
     <ClInclude Include="data_callback_fn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="periodic_bg_proc.h">
+    <ClInclude Include="interruptable_sleeper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="interruptable_sleeper.h">
@@ -102,7 +102,10 @@
     <ClInclude Include="vw_model\vw_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model_download.h">
+    <ClInclude Include="periodic_background_proc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_downloader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -167,7 +170,7 @@
     <ClCompile Include="vw_model\vw_model.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="model_download.cc">
+    <ClCompile Include="model_downloader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

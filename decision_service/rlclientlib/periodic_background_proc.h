@@ -12,21 +12,21 @@ namespace reinforcement_learning {
 namespace reinforcement_learning { namespace utility {
 
   template<typename BgProc>
-  class periodic_bg_proc {
+  class periodic_background_proc {
   public:
     // Construction and init
-    explicit periodic_bg_proc(const int interval_ms, error_callback_fn* perror_cb = nullptr);
+    explicit periodic_background_proc(const int interval_ms, error_callback_fn* perror_cb = nullptr);
     int init(BgProc* bgproc, api_status* status = nullptr);
 
     // Shutdown and Destructor
-    ~periodic_bg_proc();
+    ~periodic_background_proc();
     void stop();
 
     // Cannot copy, assign
-    periodic_bg_proc(const periodic_bg_proc&) = delete;
-    periodic_bg_proc(periodic_bg_proc&&) = delete;
-    periodic_bg_proc& operator=(const periodic_bg_proc&) = delete;
-    periodic_bg_proc& operator=(periodic_bg_proc&&) = delete;
+    periodic_background_proc(const periodic_background_proc&) = delete;
+    periodic_background_proc(periodic_background_proc&&) = delete;
+    periodic_background_proc& operator=(const periodic_background_proc&) = delete;
+    periodic_background_proc& operator=(periodic_background_proc&&) = delete;
 
   private:
     // Implementation methods
@@ -45,13 +45,13 @@ namespace reinforcement_learning { namespace utility {
   };
 
   template <typename BgProc>
-  periodic_bg_proc<BgProc>::periodic_bg_proc(const int interval_ms, error_callback_fn* perror_cb)
+  periodic_background_proc<BgProc>::periodic_background_proc(const int interval_ms, error_callback_fn* perror_cb)
     : _thread_is_running { false }, _interval_ms { interval_ms }, 
       _proc(nullptr), _perror_cb(perror_cb) 
   {}
 
   template <typename BgProc>
-  int periodic_bg_proc<BgProc>::init(BgProc* bgproc, api_status* status) {
+  int periodic_background_proc<BgProc>::init(BgProc* bgproc, api_status* status) {
     if( bgproc == nullptr )
       return report_error(status, error_code::invalid_argument, "Invalid BGProc");
 
@@ -60,7 +60,7 @@ namespace reinforcement_learning { namespace utility {
     if ( !_thread_is_running ) {
       try {
         _thread_is_running = true;
-        _background_thread = std::thread(&periodic_bg_proc::time_loop, this);
+        _background_thread = std::thread(&periodic_background_proc::time_loop, this);
       }
       catch ( const std::exception& e ) {
         _thread_is_running = false;
@@ -73,7 +73,7 @@ namespace reinforcement_learning { namespace utility {
   }
 
   template <typename BgProc>
-  void periodic_bg_proc<BgProc>::stop() {
+  void periodic_background_proc<BgProc>::stop() {
     if ( _thread_is_running ) {
       _thread_is_running = false;
       _sleeper.interrupt();
@@ -81,13 +81,13 @@ namespace reinforcement_learning { namespace utility {
     }
   }
 
-  template <typename BgProc>
-  periodic_bg_proc<BgProc>::~periodic_bg_proc() {
+  template <typename BGProc>
+  periodic_background_proc<BGProc>::~periodic_background_proc() {
     stop();
   }
 
-  template <typename BgProc>
-  void periodic_bg_proc<BgProc>::time_loop() {
+  template <typename BGProc>
+  void periodic_background_proc<BGProc>::time_loop() {
     while ( _thread_is_running ) {
       api_status status;
       // Run the background task once
