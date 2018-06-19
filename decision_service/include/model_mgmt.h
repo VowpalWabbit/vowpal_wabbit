@@ -9,12 +9,25 @@ class api_status;
 
 namespace reinforcement_learning { namespace model_management {
 
-    struct model_data{
-      model_data();
+    class model_data{
+      public:
+        // Get data
+        char* data() const;
+        size_t data_sz() const;
+        uint32_t refresh_count() const;
 
-      const char * data;
-      uint64_t data_sz;
-      int data_refresh_count;
+        void data_sz(size_t fillsz);;
+        void increment_refresh_count();;
+
+        // Allocate
+        char* alloc(size_t desired);
+        void free();
+
+        model_data();
+      private:
+        char * _data = nullptr;
+        size_t _data_sz = 0;
+        uint32_t _refresh_count = 0;
     };
 
     class i_data_transport{

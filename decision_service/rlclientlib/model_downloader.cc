@@ -23,8 +23,11 @@ namespace reinforcement_learning { namespace model_management {
 
   int model_downloader::run_once(api_status* status) const {
     model_data md;
-    const auto scode = _ptrans->get_data(md, status);
-    TRY_OR_RETURN(scode);
-    return _pdata_cb->report_data(md, status);
+    TRY_OR_RETURN(_ptrans->get_data(md, status));
+    const auto scode = _pdata_cb->report_data(md, status);
+
+    // Release the data.
+    md.free();
+    return scode;
   }
 }}

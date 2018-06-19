@@ -121,12 +121,12 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   auto scode = r::data_transport_factory.create(&data_transport, r::value::AZURE_STORAGE_BLOB, cc, &status);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   m::model_data md;
-  BOOST_CHECK_EQUAL(md.data_refresh_count, 0);
+  BOOST_CHECK_EQUAL(md.refresh_count(), 0);
   scode = data_transport->get_data(md, &status);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
-  BOOST_CHECK_EQUAL(md.data_refresh_count, 1);
+  BOOST_CHECK_EQUAL(md.refresh_count(), 1);
   scode = data_transport->get_data(md, &status);
-  BOOST_CHECK_EQUAL(md.data_refresh_count, 2);
+  BOOST_CHECK_EQUAL(md.refresh_count(), 2);
 
   delete data_transport;
 
@@ -178,8 +178,7 @@ m::model_data get_model_data()
 
 class dummy_data_transport : public m::i_data_transport {
   int get_data(m::model_data& data, r::api_status* status) override {
-    data.data = nullptr;
-    data.data_sz = 0;
+    data.alloc(10);
     return r::error_code::success;
   }
 };

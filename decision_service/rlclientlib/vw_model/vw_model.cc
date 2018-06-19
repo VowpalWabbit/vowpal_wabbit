@@ -12,7 +12,7 @@ namespace reinforcement_learning { namespace model_management {
 
   int vw_model::update(const model_data& data, api_status* status) {
     try {
-      const auto new_model = std::make_shared<safe_vw>(data.data, data.data_sz);
+      const auto new_model = std::make_shared<safe_vw>(data.data(), data.data_sz());
       _vw_pool.update_factory(new safe_vw_factory(new_model));
     }
     catch(const std::exception& e) {

@@ -98,8 +98,7 @@ namespace reinforcement_learning { namespace model_management {
       if ( curr_datasz <= 0 )
         RETURN_ERROR(status, error_code::bad_content_length, error_code::bad_content_length_s);
 
-      const auto buff = new char[curr_datasz];
-      ret.data = buff;
+      const auto buff = ret.alloc(curr_datasz);
       const Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
 
       // Write response body into the file.
@@ -108,8 +107,8 @@ namespace reinforcement_learning { namespace model_management {
       _last_modified = curr_last_modified;
       _datasz = readval;
 
-      ret.data_sz = readval;
-      ret.data_refresh_count = ++_data_refresh_count;
+      ret.data_sz(readval);
+      ret.increment_refresh_count();
 
       return error_code::success;
     });
