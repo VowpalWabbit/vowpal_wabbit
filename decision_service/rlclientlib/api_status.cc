@@ -28,4 +28,15 @@ namespace reinforcement_learning {
       status->_error_msg.clear();
     }
   }
+
+status_builder::status_builder(api_status* status, const int code): _code {code}, _status {status} {
+  if (status != nullptr)
+    _os << "(ERR:" << _code << ")";
+}
+
+status_builder::~status_builder() {
+  if (_status != nullptr) { api_status::try_update(_status, _code, _os.str().c_str()); }
+}
+
+status_builder::operator int() const { return _code; }
 }
