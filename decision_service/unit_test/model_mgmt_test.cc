@@ -68,6 +68,7 @@ void dummy_data_fn(const m::model_data& data, int* ctxt) {
   *ctxt = 20;
 }
 
+#ifdef _WIN32 //_WIN32 (http_server http protocol issues in linux)
 BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   //start a http server that will receive events sent from the eventhub_client
   http_helper http_server;
@@ -131,6 +132,7 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
 
   http_server.on_shutdown();
 }
+#endif //_WIN32 (http_server http protocol issues in linux)
 
 void register_local_file_factory();
 r::str_const DUMMY_DATA_TRANSPORT = "DUMMY_DATA_TRANSPORT";
