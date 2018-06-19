@@ -11,7 +11,7 @@ const int NUM_ACTIONS = 10;
 namespace e = exploration;
 
 BOOST_AUTO_TEST_CASE(basic_explore_test) {
-  const float epsilon = 0.2;
+  const float epsilon = 0.2f;
   const auto top_action_id = 0;
   float pdf[NUM_ACTIONS];
   auto scode = e::generate_epsilon_greedy(epsilon, top_action_id, pdf, pdf + NUM_ACTIONS);

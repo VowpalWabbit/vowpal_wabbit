@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   u::periodic_background_proc<m::model_downloader> bgproc(repeatms,&efn);
 
   const auto start = std::chrono::system_clock::now();
-  m::model_download md(transport.get(), &dfn);
+  m::model_downloader md(transport.get(), &dfn);
   scode = bgproc.init(&md);
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   BOOST_CHECK_EQUAL(md.data_refresh_count, 1);
   scode = data_transport->get_data(md, &status);
-  BOOST_CHECK_EQUAL(md.data_refresh_count, 1);
+  BOOST_CHECK_EQUAL(md.data_refresh_count, 2);
 
   delete data_transport;
 

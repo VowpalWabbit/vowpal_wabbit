@@ -11,7 +11,7 @@
 #include "err_constants.h"
 #include "factory_resolver.h"
 #include "constants.h"
-#include "model_download.h"
+#include "model_downloader.h"
 #include "context_helper.h"
 #include "vw_model/safe_vw.h"
 #include "../../explore/explore_internal.h"
@@ -178,7 +178,7 @@ int live_model_impl::init_model_mgmt(api_status* status) {
   this->_transport.reset(ptransport);
 
   // Initialize background process and start downloading models
-  this->_model_download.reset(new m::model_download(ptransport, &_data_cb));
+  this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb));
   return _bg_model_proc.init(_model_download.get(),status);
 }
 }

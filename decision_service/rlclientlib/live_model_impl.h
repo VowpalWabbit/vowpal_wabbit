@@ -3,9 +3,9 @@
 #include "logger/logger.h"
 #include "model_mgmt.h"
 #include "data_callback_fn.h"
-#include "model_download.h"
+#include "model_downloader.h"
 #include "utility/object_pool.h"
-#include "periodic_bg_proc.h"
+#include "periodic_background_proc.h"
 
 namespace reinforcement_learning
 {
@@ -54,7 +54,7 @@ class ranking_response;
     logger _logger;
     std::unique_ptr<model_management::i_data_transport> _transport;
     std::unique_ptr<model_management::i_model> _model;
-    std::unique_ptr<model_management::model_download> _model_download;
-    utility::periodic_bg_proc<model_management::model_download> _bg_model_proc;
+    std::unique_ptr<model_management::model_downloader> _model_download;
+    utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
   };
 }
