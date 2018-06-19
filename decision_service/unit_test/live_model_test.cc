@@ -102,8 +102,9 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 	const auto  invalid_reward = "";
 
 	// report reward
-  const auto scode = ds.report_outcome(uuid, reward);
+  const auto scode = ds.report_outcome(uuid, reward, &status);
   BOOST_CHECK_EQUAL(scode, err::success);
+  BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	// check expected returned codes
 	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_uuid, reward), err::invalid_argument);//invalid uuid
