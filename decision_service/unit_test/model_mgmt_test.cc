@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(background_azure_get) {
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
-  BOOST_CHECK_LE(diff.count(), 100);
+  BOOST_CHECK_LE(diff.count(), 500);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
 }
 
@@ -108,8 +108,8 @@ BOOST_AUTO_TEST_CASE(azure_storage_model_data)
 }
 
 void register_local_file_factory();
-r::str_const DUMMY_DATA_TRANSPORT = "DUMMY_DATA_TRANSPORT";
-r::str_const CFG_PARAM = "model.local.file";
+const char * const DUMMY_DATA_TRANSPORT = "DUMMY_DATA_TRANSPORT";
+const char * const CFG_PARAM = "model.local.file";
 
 BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 {

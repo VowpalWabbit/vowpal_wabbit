@@ -27,18 +27,17 @@ namespace reinforcement_learning { namespace error_code {
 }}
 
 namespace reinforcement_learning { namespace error_code {
-  using errstr_t = char const * const;
   //error message
-  errstr_t unkown_s                   = "Unexpected error.";
-  errstr_t create_fn_exception_s      = "Create function failed.";
-  errstr_t type_not_registered_s      = "Type not registered with class factory";
-  errstr_t http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
-  errstr_t http_bad_status_code_s     = "http request returned a bad status code";
-  errstr_t last_modified_not_found_s  = "Last-Modified http header not found in response";
-  errstr_t last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";
-  errstr_t bad_content_length_s       = "Content-Length header not set or set to zero";
-  errstr_t model_export_frequency_not_provided_s = "Export frequency of model not specified in configuration.";
-  errstr_t bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
-  errstr_t data_callback_exception_s  = "Background data callback threw an exception. ";
-  errstr_t data_callback_not_set_s    = "Data callback handler not set";
+  const char * const unkown_s                   = "Unexpected error.";
+  const char * const create_fn_exception_s      = "Create function failed.";
+  const char * const type_not_registered_s      = "Type not registered with class factory";
+  const char * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
+  const char * const http_bad_status_code_s     = "http request returned a bad status code";
+  const char * const last_modified_not_found_s  = "Last-Modified http header not found in response";
+  const char * const last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";
+  const char * const bad_content_length_s       = "Content-Length header not set or set to zero";
+  const char * const model_export_frequency_not_provided_s = "Export frequency of model not specified in configuration.";
+  const char * const bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
+  const char * const data_callback_exception_s  = "Background data callback threw an exception. ";
+  const char * const data_callback_not_set_s    = "Data callback handler not set";
 }}

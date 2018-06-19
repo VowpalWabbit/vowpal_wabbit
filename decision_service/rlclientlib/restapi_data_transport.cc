@@ -121,9 +121,15 @@ namespace reinforcement_learning { namespace model_management {
       requestTask.wait();
     }
     catch ( const std::exception &e ) {
+      delete [] ret.data;
+      ret.data = nullptr;
+      ret.data_sz = 0;
       RETURN_ERROR(status, error_code::exception_during_http_req, e.what());
     }
     catch ( ... ) {
+      delete[] ret.data;
+      ret.data = nullptr;
+      ret.data_sz = 0;
       RETURN_ERROR(status, error_code::exception_during_http_req, error_code::unkown_s);
     }
 
