@@ -40,7 +40,7 @@ bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
 
   int ranking_response_impl::set_choosen_action_id(size_t action_id, api_status* status) {
     if ( action_id >= _ranking.size() ) {
-      RETURN_STATUS(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
+      RETURN_ERROR(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
     }
 
     _chosen_action_id = action_id;

@@ -4,7 +4,6 @@
 #include <cpprest/rawptrstream.h>
 #include "api_status.h"
 #include "factory_resolver.h"
-#include "err_constants.h"
 
 using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
@@ -41,20 +40,20 @@ namespace reinforcement_learning { namespace model_management {
     auto request_task = _httpcli.request(methods::HEAD)
       // Handle response headers arriving.
       .then([&](http_response response) {
-      if ( response.status_code() != 200 )
-        RETURN_ERROR(status, error_code::http_bad_status_code, error_code::http_bad_status_code_s);
+      if ( response.status_code() != 200 ) 
+        RETURN_ERROR_SIMPLE(status, http_bad_status_code);
 
-      auto iter = response.headers().find(U("Last-Modified"));
-      if(iter == response.headers().end())
-        RETURN_ERROR(status, error_code::last_modified_not_found, error_code::last_modified_not_found_s);
+      const auto iter = response.headers().find(U("Last-Modified"));
+      if ( iter == response.headers().end() )
+        RETURN_ERROR_SIMPLE(status, last_modified_not_found);
 
       last_modified = ::utility::datetime::from_string(iter->second);
       if( last_modified.to_interval() == 0)
-        RETURN_ERROR(status, error_code::last_modified_invalid, error_code::last_modified_invalid_s);
+        RETURN_ERROR_SIMPLE(status, last_modified_invalid);
 
       sz = response.headers().content_length();
       if( sz <= 0 )
-        RETURN_ERROR(status, error_code::bad_content_length, error_code::bad_content_length_s);
+        RETURN_ERROR_SIMPLE(status, bad_content_length);
 
       return error_code::success;
     });
@@ -64,7 +63,7 @@ namespace reinforcement_learning { namespace model_management {
       return request_task.get();
     }
     catch ( const std::exception &e ) {
-      RETURN_ERROR(status,error_code::exception_during_http_req,e.what());
+      RETURN_ERROR(status,exception_during_http_req) << e.what();
     }
   }
 
@@ -84,19 +83,19 @@ namespace reinforcement_learning { namespace model_management {
       .then([&](pplx::task<http_response> respTask) {
       auto response = respTask.get();
       if ( response.status_code() != 200 )
-        RETURN_ERROR(status, error_code::http_bad_status_code, error_code::http_bad_status_code_s);
+        RETURN_ERROR_SIMPLE(status, http_bad_status_code);
 
       const auto iter = response.headers().find(U("Last-Modified"));
       if ( iter == response.headers().end() )
-        RETURN_ERROR(status, error_code::last_modified_not_found, error_code::last_modified_not_found_s);
+        RETURN_ERROR_SIMPLE(status, last_modified_not_found);
 
       curr_last_modified = ::utility::datetime::from_string(iter->second);
       if ( curr_last_modified.to_interval() == 0 )
-        RETURN_ERROR(status, error_code::last_modified_invalid, error_code::last_modified_invalid_s);
+        RETURN_ERROR_SIMPLE(status, last_modified_invalid);
 
       curr_datasz = response.headers().content_length();
       if ( curr_datasz <= 0 )
-        RETURN_ERROR(status, error_code::bad_content_length, error_code::bad_content_length_s);
+        RETURN_ERROR_SIMPLE(status, bad_content_length);
 
       const auto buff = ret.alloc(curr_datasz);
       const Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
@@ -119,11 +118,11 @@ namespace reinforcement_learning { namespace model_management {
     }
     catch ( const std::exception &e ) {
       ret.free();
-      RETURN_ERROR(status, error_code::exception_during_http_req, e.what());
+      RETURN_ERROR(status, exception_during_http_req) <<  e.what();
     }
     catch ( ... ) {
       ret.free();
-      RETURN_ERROR(status, error_code::exception_during_http_req, error_code::unkown_s);
+      RETURN_ERROR(status, exception_during_http_req) << error_code::unkown_s;
     }
 
     return error_code::success;

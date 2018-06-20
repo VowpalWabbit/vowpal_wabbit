@@ -45,9 +45,15 @@ reinforcement_learning::status_builder& operator <<(reinforcement_learning::stat
   return sb;
 }
 
-#define RETURN_STATUS(status, code)                         \
+#define RETURN_ERROR_SIMPLE(status, code) do {                                                 \
 reinforcement_learning::status_builder sb(status, reinforcement_learning::error_code::code);    \
-return sb << reinforcement_learning::error_code::code ## _s \
+sb << reinforcement_learning::error_code::code ## _s;                                           \
+return (int) sb;                                                                                \
+} while(0);                                                                                     \
+
+#define RETURN_ERROR(status, code)                                                             \
+reinforcement_learning::status_builder sb(status, reinforcement_learning::error_code::code);    \
+return sb << reinforcement_learning::error_code::code ## _s                                     \
 
 // this macro assumes that success_code equals 0
 #define TRY_OR_RETURN(x) do {   \
@@ -56,9 +62,4 @@ return sb << reinforcement_learning::error_code::code ## _s \
     return retval__LINE__;      \
   }                             \
 } while (0)                     \
-
-#define RETURN_ERROR(status, errcode, errstr) do {       \
-  reinforcement_learning::api_status::try_update(status, errcode, errstr);  \
-  return errcode;                                   \
-}while(0);                                          \
 

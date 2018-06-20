@@ -41,7 +41,7 @@ m::model_data get_model_data();
 int get_export_frequency(const u::config_collection& cc, int& interval_ms, r::api_status* status) {
   const auto export_freq_s = cc.get("ModelExportFrequency", nullptr);
   if ( export_freq_s == nullptr ) {
-    RETURN_ERROR(status, e::model_export_frequency_not_provided, e::model_export_frequency_not_provided_s);
+    RETURN_ERROR(status, model_export_frequency_not_provided);
   }
   // hh:mm:ss
   const std::regex re("\\s*([0-9]+):([0-9]+):([0-9]+)\\s*");
@@ -51,12 +51,13 @@ int get_export_frequency(const u::config_collection& cc, int& interval_ms, r::ap
     const auto mins = atoi(m[2].str().c_str());
     const auto secs = atoi(m[3].str().c_str());
     interval_ms = hrs * 60 * 60 * 1000 + mins * 60 * 1000 + secs * 1000;
-    if ( interval_ms == 0 )
-      RETURN_ERROR(status, e::bad_time_interval, e::bad_time_interval_s);
+    if ( interval_ms == 0 ) {
+      RETURN_ERROR(status, bad_time_interval);
+    }
     return e::success;
   }
   else {
-    RETURN_ERROR(status, e::bad_time_interval, e::bad_time_interval_s);
+    RETURN_ERROR(status, bad_time_interval);
   }
 }
 

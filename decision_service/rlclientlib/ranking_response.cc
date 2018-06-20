@@ -19,7 +19,7 @@ namespace reinforcement_learning {
     if ( _pimpl->get_choosen_action_id(action_id) )
       return error_code::success;
 
-    RETURN_STATUS(status, action_not_found);
+    RETURN_ERROR(status, action_not_found);
 	}
 
   int ranking_response::set_choosen_action_id(size_t id, api_status* status) {

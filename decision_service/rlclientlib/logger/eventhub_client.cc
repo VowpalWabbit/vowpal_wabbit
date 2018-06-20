@@ -51,7 +51,7 @@ namespace reinforcement_learning {
       return request_task.get();
     }
     catch (const std::exception& e) {
-      RETURN_STATUS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
+      RETURN_ERROR(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
   }
 

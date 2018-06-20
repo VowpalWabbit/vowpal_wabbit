@@ -10,7 +10,7 @@ namespace err = reinforcement_learning::error_code;
 
 int testfn() {
   reinforcement_learning::api_status s;
-  RETURN_STATUS(&s, create_fn_exception) << "Error msg: " << 5;
+  RETURN_ERROR(&s, create_fn_exception) << "Error msg: " << 5;
 }
 
 BOOST_AUTO_TEST_CASE(status_builder_usage) {

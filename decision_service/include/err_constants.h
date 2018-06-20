@@ -58,4 +58,5 @@ namespace reinforcement_learning { namespace error_code {
   char const * const eventhub_http_generic_s    = "http error while connecting to event hub. ";
   char const * const json_parse_error_s         = "Unable to parse JSON. ";
   char const * const invalid_argument_s         = "Invalid Argument: ";
+  char const * const exception_during_http_req_s = "http request excepton. ";
 }}

@@ -6,7 +6,7 @@
 namespace reinforcement_learning { namespace model_management {
   int model_management::data_callback_fn::report_data(const model_data& data, api_status* status) {
     if(_fn == nullptr) {
-      RETURN_STATUS(status, data_callback_not_set);
+      RETURN_ERROR(status, data_callback_not_set);
     }
 
     // need not be thread safe since this is only called from one thread
@@ -15,10 +15,10 @@ namespace reinforcement_learning { namespace model_management {
       return error_code::success;
     }
     catch ( const std::exception& ex ) {
-      RETURN_STATUS(status, data_callback_exception) << ex.what();
+      RETURN_ERROR(status, data_callback_exception) << ex.what();
     }
     catch ( ... ) {
-      RETURN_STATUS(status, data_callback_exception) << "Unknown exception";
+      RETURN_ERROR(status, data_callback_exception) << "Unknown exception";
     }
   }
 

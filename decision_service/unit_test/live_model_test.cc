@@ -39,7 +39,8 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
   r::api_status status;
 
 	//create a simple ds configuration
-	const auto config = cfg::create_from_json(JSON_CFG);
+	auto config = cfg::create_from_json(JSON_CFG);
+  config.set(r::name::EH_TEST, "true");
 
 	//create the ds live_model, and initialize it with the config
 	r::live_model ds(config);
@@ -79,8 +80,10 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 BOOST_AUTO_TEST_CASE(live_model_reward)
 {
 	//start a http server that will receive events sent from the eventhub_client
-	http_helper http_server;
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  http_helper http_server;
 	http_server.on_initialize(U("http://localhost:8080"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//create a simple ds configuration
 	auto config = cfg::create_from_json(JSON_CFG);
