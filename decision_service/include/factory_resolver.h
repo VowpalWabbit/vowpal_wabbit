@@ -1,8 +1,14 @@
 #pragma once
-#include "model_mgmt.h"
 #include "object_factory.h"
 
 namespace reinforcement_learning  {
+
+  // Forward declarations
+  namespace model_management {
+    class i_data_transport;
+    class i_model;
+  }
+
   using dtfactory = utility::object_factory<model_management::i_data_transport>;
   using modelfactory = utility::object_factory<model_management::i_model>;
 

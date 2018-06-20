@@ -9,7 +9,6 @@
 #include "live_model_impl.h"
 #include "ranking_event.h"
 #include "err_constants.h"
-#include "factory_resolver.h"
 #include "constants.h"
 #include "model_downloader.h"
 #include "context_helper.h"
@@ -102,21 +101,28 @@ namespace reinforcement_learning
     return report_outcome(uuid, to_string(reward).c_str(), status);
   }
 
-  live_model_impl::live_model_impl(const utility::config_collection& config, const error_fn fn, void* err_context)
+  live_model_impl::live_model_impl(
+    const utility::config_collection& config, 
+    const error_fn fn,
+    void* err_context,
+    transport_factory_t* t_factory,
+    model_factory_t* m_factory
+  )
   : _configuration(config),
-    _error_cb(fn, err_context), 
-    _data_cb(_handle_model_update,this),
-    _logger(config, &_error_cb),
+    _error_cb(fn, err_context),
+    _data_cb(_handle_model_update, this),
+    _logger(config, &_error_cb), 
+    _t_factory{t_factory},
+    _m_factory{m_factory},
     _transport(nullptr),
     _model(nullptr),
     _model_download(nullptr),
-    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL, 60 * 5), &_error_cb)
-  { }
+    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL, 60 * 5), &_error_cb) { }
 
 int live_model_impl::init_model(api_status* status) {
   const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
   m::i_model* pmodel;
-  TRY_OR_RETURN(model_factory.create(&pmodel, model_impl, _configuration,status));
+  TRY_OR_RETURN(_m_factory->create(&pmodel, model_impl, _configuration,status));
   _model.reset(pmodel);
   return error_code::success;
 }
@@ -145,14 +151,14 @@ int live_model_impl::explore_only(const char* uuid, const char* context,  rankin
   const auto top_action_id = 0;
   auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
   if( S_EXPLORATION_OK != scode) {
-    RETURN_STATUS(status, exploration_error) << "Exploration error code: " << scode;
+    RETURN_ERROR(status, exploration_error) << "Exploration error code: " << scode;
   }
 
   // Pick using the pdf
   uint32_t choosen_action_id;
   scode = e::sample_after_normalizing(uuid, begin(pdf), end(pdf), choosen_action_id);
   if ( S_EXPLORATION_OK != scode ) {
-    RETURN_STATUS(status, exploration_error) << "Exploration error code: " << scode;
+    RETURN_ERROR(status, exploration_error) << "Exploration error code: " << scode;
   }
 
   // setup response
@@ -173,7 +179,7 @@ int live_model_impl::init_model_mgmt(api_status* status) {
   // Initialize transport for the model using transport factory
   const auto tranport_impl = _configuration.get(name::MODEL_SRC, value::AZURE_STORAGE_BLOB);
   m::i_data_transport* ptransport;
-  TRY_OR_RETURN(data_transport_factory.create(&ptransport, tranport_impl, _configuration, status));
+  TRY_OR_RETURN(_t_factory->create(&ptransport, tranport_impl, _configuration, status));
   // This class manages lifetime of transport
   this->_transport.reset(ptransport);
 

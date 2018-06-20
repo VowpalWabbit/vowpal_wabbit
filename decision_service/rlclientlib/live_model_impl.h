@@ -6,6 +6,7 @@
 #include "model_downloader.h"
 #include "utility/object_pool.h"
 #include "periodic_background_proc.h"
+#include "object_factory.h"
 
 namespace reinforcement_learning
 {
@@ -17,6 +18,8 @@ class ranking_response;
   class live_model_impl {
   public:
     using error_fn = void(*)( const api_status&, void* user_context );
+    using transport_factory_t = utility::object_factory<model_management::i_data_transport>;
+    using model_factory_t = utility::object_factory<model_management::i_model>;
 
     int init(api_status* status);
 
@@ -27,7 +30,13 @@ class ranking_response;
     int report_outcome(const char* uuid, const char* outcome_data, api_status* status);
     int report_outcome(const char* uuid, float reward, api_status* status);
     
-    explicit live_model_impl(const utility::config_collection& config, error_fn fn = nullptr, void* err_context = nullptr);
+    explicit live_model_impl(
+      const utility::config_collection& config, 
+      error_fn fn,
+      void* err_context, 
+      transport_factory_t* t_factory,
+      model_factory_t* m_factory
+      );
 
     live_model_impl(const live_model_impl&) = delete;
     live_model_impl(live_model_impl&&) = delete;
@@ -52,6 +61,8 @@ class ranking_response;
     model_management::data_callback_fn _data_cb;
     std::ostringstream _buff;
     logger _logger;
+    transport_factory_t* _t_factory;
+    model_factory_t* _m_factory;
     std::unique_ptr<model_management::i_data_transport> _transport;
     std::unique_ptr<model_management::i_model> _model;
     std::unique_ptr<model_management::model_downloader> _model_download;
