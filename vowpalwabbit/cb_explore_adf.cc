@@ -445,6 +445,7 @@ using namespace CB_EXPLORE_ADF;
 base_learner* cb_explore_adf_setup(arguments& arg)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
+  cout << "calling cea options" << endl;
   if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
       .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
       .keep("first", data->tau, "tau-first exploration")
@@ -457,6 +458,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       .keep(data->greedify, "greedify", "always update first policy once in bagging")
       .keep("lambda", data->lambda, -1.0f, "parameter for softmax").missing())
     return nullptr;
+  cout << "called cea options" << endl;
 
   data->all = arg.all;
   if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
