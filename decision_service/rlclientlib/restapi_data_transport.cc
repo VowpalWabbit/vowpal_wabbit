@@ -72,7 +72,7 @@ namespace reinforcement_learning { namespace model_management {
     ::utility::datetime curr_last_modified;
     ::utility::size64_t curr_datasz;
     const auto err = get_data_info(curr_last_modified, curr_datasz, status);
-    TRY_OR_RETURN(err);
+    RETURN_IF_FAIL(err);
 
     if ( curr_last_modified == _last_modified && curr_datasz == _datasz )
       return error_code::success;

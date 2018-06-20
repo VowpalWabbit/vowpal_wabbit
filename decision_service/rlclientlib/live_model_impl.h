@@ -10,9 +10,9 @@
 
 namespace reinforcement_learning
 {
-class safe_vw_factory;
-class safe_vw;
-class ranking_response;
+  class safe_vw_factory;
+  class safe_vw;
+  class ranking_response;
   class api_status;
 
   class live_model_impl {

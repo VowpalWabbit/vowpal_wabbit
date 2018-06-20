@@ -56,7 +56,7 @@ reinforcement_learning::status_builder sb(status, reinforcement_learning::error_
 return sb << reinforcement_learning::error_code::code ## _s                                     \
 
 // this macro assumes that success_code equals 0
-#define TRY_OR_RETURN(x) do {   \
+#define RETURN_IF_FAIL(x) do {   \
   int retval__LINE__ = (x);     \
   if (retval__LINE__ != 0) {    \
     return retval__LINE__;      \

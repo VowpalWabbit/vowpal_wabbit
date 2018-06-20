@@ -13,7 +13,7 @@
 #include "model_downloader.h"
 #include "context_helper.h"
 #include "vw_model/safe_vw.h"
-#include "../../explore/explore_internal.h"
+#include "explore_internal.h"
 
 // Some namespace changes for more concise code
 namespace e = exploration;
@@ -32,11 +32,11 @@ namespace reinforcement_learning
 
   int live_model_impl::init(api_status* status) {
     int scode = _logger.init(status);
-    TRY_OR_RETURN(scode);
+    RETURN_IF_FAIL(scode);
     scode = init_model(status);
-    TRY_OR_RETURN(scode);
+    RETURN_IF_FAIL(scode);
     scode = init_model_mgmt(status);
-    TRY_OR_RETURN(scode);
+    RETURN_IF_FAIL(scode);
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
     return scode;
   }
@@ -47,17 +47,17 @@ namespace reinforcement_learning
     api_status::try_clear(status);
 
     //check arguments
-    TRY_OR_RETURN(check_null_or_empty(uuid, context, status));
+    RETURN_IF_FAIL(check_null_or_empty(uuid, context, status));
 
     int scode;
     if(!_model_data_received) {
       scode = explore_only(uuid, context, response, status);
-      TRY_OR_RETURN(scode);
+      RETURN_IF_FAIL(scode);
       response.set_model_id("N/A");
     }
     else {
       scode = explore_exploit(uuid, context, response, status);
-      TRY_OR_RETURN(scode);
+      RETURN_IF_FAIL(scode);
     }
 
     response.set_uuid(uuid);
@@ -68,7 +68,7 @@ namespace reinforcement_learning
     auto sbuf = _buff.str();
 
     // Send the ranking event to the backend
-    TRY_OR_RETURN(_logger.append_ranking(sbuf, status));
+    RETURN_IF_FAIL(_logger.append_ranking(sbuf, status));
 
     return error_code::success;
   }
@@ -84,7 +84,7 @@ namespace reinforcement_learning
     api_status::try_clear(status);
 
     // Check arguments
-    TRY_OR_RETURN(check_null_or_empty(uuid, outcome_data, status));
+    RETURN_IF_FAIL(check_null_or_empty(uuid, outcome_data, status));
 
     // Serialize outcome
     _buff.seekp(0, _buff.beg);
@@ -92,7 +92,7 @@ namespace reinforcement_learning
     auto sbuf = _buff.str();
 
     // Send the outcome event to the backend
-    TRY_OR_RETURN(_logger.append_outcome(sbuf, status));
+    RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));
 
     return error_code::success;
   }
@@ -122,7 +122,7 @@ namespace reinforcement_learning
 int live_model_impl::init_model(api_status* status) {
   const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
   m::i_model* pmodel;
-  TRY_OR_RETURN(_m_factory->create(&pmodel, model_impl, _configuration,status));
+  RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration,status));
   _model.reset(pmodel);
   return error_code::success;
 }
@@ -144,7 +144,7 @@ int live_model_impl::explore_only(const char* uuid, const char* context,  rankin
   
   // Generate egreedy pdf
   size_t action_count = 0;
-  TRY_OR_RETURN(utility::get_action_count(action_count, context, status));
+  RETURN_IF_FAIL(utility::get_action_count(action_count, context, status));
   vector<float> pdf(action_count);
 
   // Assume that the user's top choice for action is at index 0
@@ -179,7 +179,7 @@ int live_model_impl::init_model_mgmt(api_status* status) {
   // Initialize transport for the model using transport factory
   const auto tranport_impl = _configuration.get(name::MODEL_SRC, value::AZURE_STORAGE_BLOB);
   m::i_data_transport* ptransport;
-  TRY_OR_RETURN(_t_factory->create(&ptransport, tranport_impl, _configuration, status));
+  RETURN_IF_FAIL(_t_factory->create(&ptransport, tranport_impl, _configuration, status));
   // This class manages lifetime of transport
   this->_transport.reset(ptransport);
 
