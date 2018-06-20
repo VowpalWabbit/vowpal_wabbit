@@ -12,7 +12,7 @@ namespace reinforcement_learning { namespace model_management {
     model_downloader(model_downloader&& temp) noexcept;
     model_downloader& operator=(model_downloader&& temp) noexcept;
 
-    int run_once(api_status* status) const;
+    int run_iteration(api_status* status) const;
   private:
     // Lifetime of pointers managed by user of this class
     i_data_transport* _ptrans;

@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
-  BOOST_CHECK_LE(diff.count(), 200);
+  BOOST_CHECK_LE(diff.count(), 500);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
 
   http_server.on_shutdown();
@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
 #endif //_WIN32 (http_server http protocol issues in linux)
 
 void register_local_file_factory();
-r::str_const DUMMY_DATA_TRANSPORT = "DUMMY_DATA_TRANSPORT";
-r::str_const CFG_PARAM = "model.local.file";
+const char * const DUMMY_DATA_TRANSPORT = "DUMMY_DATA_TRANSPORT";
+const char * const CFG_PARAM = "model.local.file";
 
 BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 {

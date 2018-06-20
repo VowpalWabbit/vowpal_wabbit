@@ -90,8 +90,9 @@ namespace reinforcement_learning { namespace utility {
   void periodic_background_proc<BGProc>::time_loop() {
     while ( _thread_is_running ) {
       api_status status;
+      
       // Run the background task once
-      if ( _proc->run_once(&status) != error_code::success ) {
+      if ( _proc.run_iteration(&status) != error_code::success ) {
         ERROR_CALLBACK(_perror_cb, status);
       }
       // Cancelable sleep for interval
