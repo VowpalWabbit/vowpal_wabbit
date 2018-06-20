@@ -145,5 +145,5 @@ BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
 	
 	//verify that the error status is correct
 	BOOST_CHECK_EQUAL(status.get_error_code(), error_code::background_queue_overflow);
-	BOOST_CHECK_EQUAL(status.get_error_msg(), "Dropped event: 3");
+	BOOST_CHECK_EQUAL(status.get_error_msg(), "(ERR:2)Background queue overflow. Dropped event: 3");
 }

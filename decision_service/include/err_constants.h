@@ -48,4 +48,14 @@ namespace reinforcement_learning { namespace error_code {
   char const * const data_callback_exception_s  = "Background data callback threw an exception. ";
   char const * const data_callback_not_set_s    = "Data callback handler not set";
   char const * const json_no_actions_found_s    = "Context json did not have actions (_multi array empty or not found)";
+  char const * const exploration_error_s        = "Exploration error code: ";
+  char const * const model_rank_error_s         = "Error while ranking actions using model: ";
+  char const * const model_update_error_s       = "Error updating model: ";
+  char const * const action_not_found_s         = "No actions found in action collection";
+  char const * const action_out_of_bounds_s     = "Action id out of bounds.";
+  char const * const background_thread_start_s  = "Unable to start background thread. ";
+  char const * const background_queue_overflow_s = "Background queue overflow. ";
+  char const * const eventhub_http_generic_s    = "http error while connecting to event hub. ";
+  char const * const json_parse_error_s         = "Unable to parse JSON. ";
+  char const * const invalid_argument_s         = "Invalid Argument: ";
 }}

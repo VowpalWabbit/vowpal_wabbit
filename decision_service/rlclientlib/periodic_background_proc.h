@@ -52,8 +52,9 @@ namespace reinforcement_learning { namespace utility {
 
   template <typename BgProc>
   int periodic_background_proc<BgProc>::init(BgProc* bgproc, api_status* status) {
-    if( bgproc == nullptr )
-      return report_error(status, error_code::invalid_argument, "Invalid BGProc");
+    if ( bgproc == nullptr ) {
+      RETURN_STATUS(status, invalid_argument) << " (BGProc)";
+    }
 
     _proc = bgproc;
 
@@ -64,9 +65,7 @@ namespace reinforcement_learning { namespace utility {
       }
       catch ( const std::exception& e ) {
         _thread_is_running = false;
-        return report_error(status, error_code::background_thread_start,
-          "Unable to start background thread to retrieve models.",
-          e.what());
+        RETURN_STATUS(status, background_thread_start) <<  " (retrieve models)" << e.what();
       }
     }
     return error_code::success;

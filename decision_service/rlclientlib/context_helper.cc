@@ -27,15 +27,15 @@ namespace reinforcement_learning { namespace utility {
         count = arr.size();
         if ( count > 0 )
           return reinforcement_learning::error_code::success;
-        return report_error(status, error_code::json_no_actions_found, error_code::json_no_actions_found_s);
+        RETURN_STATUS(status, json_no_actions_found);
       }
-      return report_error(status, error_code::json_no_actions_found, error_code::json_no_actions_found_s);
+      RETURN_STATUS(status, json_no_actions_found);
     }
     catch ( const std::exception& e ) {
-      return report_error(status, error_code::json_parse_error, e.what());
+      RETURN_STATUS(status, json_parse_error) << e.what();
     }
     catch ( ... ) {
-      return report_error(status, error_code::json_parse_error, error_code::unkown_s);
+      RETURN_STATUS(status, json_parse_error) << error_code::unkown_s;
     }
   }
 }}

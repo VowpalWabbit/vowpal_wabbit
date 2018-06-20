@@ -19,8 +19,7 @@ namespace reinforcement_learning {
     if ( _pimpl->get_choosen_action_id(action_id) )
       return error_code::success;
 
-    return report_error(status, error_code::action_not_found, 
-      "No actions found in action collection");
+    RETURN_STATUS(status, action_not_found);
 	}
 
   int ranking_response::set_choosen_action_id(size_t id, api_status* status) {
