@@ -90,9 +90,6 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                 options(opts).allow_unregistered().run();
               po::store(parsed, new_vm);
 
-              if (do_notify)
-                  po::notify(new_vm);
-
               previous_option_needs_argument = false;
             }
           catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
