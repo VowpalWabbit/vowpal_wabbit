@@ -190,6 +190,12 @@ namespace vw_slim {
 			if (check_sum_computed != check_sum)
 				return E_VW_PREDICT_ERR_INVALID_MODEL_CHECK_SUM;
 
+            if (_command_line_arguments.find("--cb_adf") != std::string::npos)
+            {
+				RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: event_sum
+				RETURN_ON_FAIL(mp.skip(sizeof(uint64_t))); // cb_adf.cc: action_sum
+            }
+
 			// gd.cc: save_load
 			bool gd_resume;
 			RETURN_ON_FAIL(mp.read("resume", gd_resume));
