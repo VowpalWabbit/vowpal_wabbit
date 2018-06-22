@@ -58,6 +58,7 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
               if (it.second.value().type() == typeid(vector<string>))
                 {
                   auto& values = it.second.as<vector<string>>();
+                  sort(values.begin(), values.end());
                   auto end = unique(values.begin(), values.end());
                   values.erase(end, values.end());
                 }
