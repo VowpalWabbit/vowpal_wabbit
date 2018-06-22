@@ -40,8 +40,13 @@ def find_boost():
         if not find_library(boost_lib) or skip_find_library:
             boost_lib = "boost_python"
     elif system == 'Darwin':
-	# For "brew"-installation of PythonBoost it's the lib /usr/local/lib/libboost_python27-mt resp. libboost_python36-mt
-        boost_lib = 'boost_python' + str(sys.version_info[0]) + str(sys.version_info[1]) + '-mt' 
+        # "brew" installations of PythonBoost put lib /usr/local/lib/libboost_python27-mt resp. libboost_python36-mt
+        for candidate in ['{v[0]}{v[1]}'.format(v=sys.version_info), '{}-mt'.format(sys.version_info.major)]:
+            boost_lib = 'boost_python{}'.format(candidate)
+            if find_library(boost_lib):
+                break
+        if sys.version_info.major == 2:
+            boost_lib = 'boost_python-mt'
     elif system == 'Cygwin':
         boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
     else:
@@ -78,6 +83,7 @@ def prep():
             copytree(path.join(here, '..', folder), path.join(here, 'src', folder))
             subprocess.check_call(['make', 'clean'], cwd=path.join(here, 'src', folder))
 
+
 class Clean(_clean):
     """Clean up after building python package directories """
     def run(self):
@@ -104,6 +110,7 @@ class Sdist(_sdist):
             pass
         _sdist.run(self)
 
+
 class VWBuildExt(_build_ext):
     """Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
@@ -113,13 +120,13 @@ class VWBuildExt(_build_ext):
             makedirs(target_dir)
         if system == 'Windows':
             if sys.version_info[0] == 2 and sys.version_info[1] == 7:
-               copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
+                copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
             elif sys.version_info[0] == 3 and sys.version_info[1] == 5:
-               copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
+                copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
             elif sys.version_info[0] == 3 and sys.version_info[1] == 6:
-               copy(path.join(here, 'bin', 'pyvw36.dll'), self.get_ext_fullpath(ext.name))
+                copy(path.join(here, 'bin', 'pyvw36.dll'), self.get_ext_fullpath(ext.name))
             else:
-               raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
+                raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:
             env = environ
             env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
@@ -129,11 +136,13 @@ class VWBuildExt(_build_ext):
             copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
                  self.get_ext_fullpath(ext.name))
 
+
 class InstallLib(_install_lib):
     def build(self):
-       _install_lib.build(self)
-       if system == 'Windows':
-           copy(path.join(here, 'bin', 'zlib.dll'), path.join(self.build_dir, 'zlib.dll'))
+        _install_lib.build(self)
+        if system == 'Windows':
+            copy(path.join(here, 'bin', 'zlib.dll'), path.join(self.build_dir, 'zlib.dll'))
+
 
 class Tox(_test):
     """ Run tox tests with 'python setup.py test' """
@@ -198,6 +207,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     keywords='fast machine learning online classification regression',
     packages=find_packages(exclude=['examples', 'src', 'tests']),
