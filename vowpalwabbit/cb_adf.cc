@@ -350,13 +350,15 @@ base_learner* cb_adf_setup(arguments& arg)
       .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
       .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
       (ld->no_predict, "no_predict", "Do not do a prediction when training")
-      .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
+      .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}")
+			("cbify", ld->gen_cs.num_actions, 1U, "number of actions")
+			.missing())
     return nullptr;
 
   ld->all = arg.all;
 
-	cb_to_cs_adf& c = ld.gen_cs;
-	c.num_actions = (uint32_t)(all.vm["cbify"].as<size_t>());
+	//cb_to_cs_adf& c = ld.gen_cs;
+	//c.num_actions = (uint32_t)(all.vm["cbify"].as<size_t>());
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS

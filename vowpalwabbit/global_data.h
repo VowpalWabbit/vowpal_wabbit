@@ -26,7 +26,7 @@ namespace po = boost::program_options;
 #include "learner.h"
 #include "v_hashmap.h"
 #include <time.h>
-#include "hash.h"
+#include "../explore/hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
 #include "parser_helper.h"

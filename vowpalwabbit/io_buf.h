@@ -16,7 +16,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <errno.h>
 #include <stdexcept>
-#include "hash.h"
+#include "../explore/hash.h"
 #include "vw_exception.h"
 #include "vw_validate.h"
 

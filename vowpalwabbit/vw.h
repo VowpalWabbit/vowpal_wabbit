@@ -14,7 +14,7 @@ license as described in the file LICENSE.
 
 #include "global_data.h"
 #include "example.h"
-#include "hash.h"
+#include "../explore/hash.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "parse_example.h"
