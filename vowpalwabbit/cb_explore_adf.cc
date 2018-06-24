@@ -201,9 +201,13 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
 {
   //Randomize over predictions from a base set of predictors
   //Use cost sensitive oracle to cover actions to form distribution.
+  const bool is_mtr = data.gen_cs.cb_type == CB_TYPE_MTR;
   if (is_learn)
   {
-    GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
+    if (is_mtr) // use DR estimates for non-ERM policies in MTR
+      GEN_CS::gen_cs_example_dr<true>(data.gen_cs, examples, data.cs_labels);
+    else
+      GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
     multiline_learn_or_predict<true>(base, examples, data.offset);
   }
   else
@@ -213,10 +217,10 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   }
 
   v_array<action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = (uint32_t)preds.size();
+  const uint32_t num_actions = (uint32_t)preds.size();
 
   float additive_probability = 1.f / (float)data.cover_size;
-  float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
+  const float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
   probs.clear();
   for(uint32_t i = 0; i < num_actions; i++)
@@ -224,7 +228,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
 
   probs[preds[0].action].score += additive_probability;
 
-  uint32_t shared = CB::ec_is_example_header(*examples[0]) ? 1 : 0;
+  const uint32_t shared = CB::ec_is_example_header(*examples[0]) ? 1 : 0;
 
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < data.cover_size; i++)
@@ -507,15 +511,13 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     else if (type_string.compare("ips") == 0)
       data->gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
+    {
       if (arg.vm.count("cover"))
-      {
-        arg.trace_message << "warning: cover and mtr are not simultaneously supported yet, defaulting to ips" << endl;
-        data->gen_cs.cb_type = CB_TYPE_IPS;
-      }
-      else
-        data->gen_cs.cb_type = CB_TYPE_MTR;
+        arg.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
+      data->gen_cs.cb_type = CB_TYPE_MTR;
+    }
     else
-      arg.trace_message << "warning: cb_type must be in {'ips','dr'}; resetting to ips." << std::endl;
+      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
   }
 
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
