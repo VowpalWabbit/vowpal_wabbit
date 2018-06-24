@@ -407,6 +407,19 @@ public:
     return l;
   }
 
+  template<class T, class E, class L> learner<T, E>&
+  init_cost_sensitive_learner(free_ptr<T>& dat, L* base,
+                              void (*learn)(T&, L&, E&),
+                              void (*predict)(T&, L&, E&), parser* p, size_t ws,
+                              prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
+  { learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn,
+                                                   predict, ws, pred_type);
+    dat.release();
+    l.set_finish_example(COST_SENSITIVE::finish_example);
+    p->lp = COST_SENSITIVE::cs_label;
+    return l;
+  }
+
   template<class T, class E> base_learner* make_base(learner<T,E>& base) { return (base_learner*)(&base); }
 
   template<class T, class E>
