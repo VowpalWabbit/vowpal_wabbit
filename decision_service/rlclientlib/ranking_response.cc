@@ -67,11 +67,11 @@ namespace reinforcement_learning {
   }
 
   ranking_response::ranking_iterator ranking_response::begin() const {
-    return ranking_iterator(_pimpl);
+    return ranking_iterator(_pimpl.get());
   }
 
   ranking_response::ranking_iterator ranking_response::end() const {
-    return ranking_iterator(_pimpl, _pimpl->size());
+    return ranking_iterator(_pimpl.get(), _pimpl->size());
   }
 }
 

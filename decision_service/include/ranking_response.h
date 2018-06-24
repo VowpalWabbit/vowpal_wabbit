@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <memory>
 
 namespace reinforcement_learning {
   class api_status;
@@ -26,7 +27,7 @@ namespace reinforcement_learning {
     const char * get_model_id() const;
 
   private:
-    ranking_response_impl* _pimpl;
+    std::unique_ptr<ranking_response_impl> _pimpl;
 
   public:
     class ranking_iterator {
