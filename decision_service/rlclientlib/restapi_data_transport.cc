@@ -41,19 +41,17 @@ namespace reinforcement_learning { namespace model_management {
       // Handle response headers arriving.
       .then([&](http_response response) {
       if ( response.status_code() != 200 ) 
-        RETURN_ERROR_SIMPLE(status, http_bad_status_code);
+        RETURN_ERROR_ARG(status, http_bad_status_code, _url);
 
       const auto iter = response.headers().find(U("Last-Modified"));
       if ( iter == response.headers().end() )
-        RETURN_ERROR_SIMPLE(status, last_modified_not_found);
+        RETURN_ERROR_ARG(status, last_modified_not_found, _url);
 
       last_modified = ::utility::datetime::from_string(iter->second);
       if( last_modified.to_interval() == 0)
-        RETURN_ERROR_SIMPLE(status, last_modified_invalid);
+        RETURN_ERROR_ARG(status, last_modified_invalid, _url);
 
       sz = response.headers().content_length();
-      if( sz <= 0 )
-        RETURN_ERROR_SIMPLE(status, bad_content_length);
 
       return error_code::success;
     });
@@ -63,7 +61,7 @@ namespace reinforcement_learning { namespace model_management {
       return request_task.get();
     }
     catch ( const std::exception &e ) {
-      RETURN_ERROR(status,exception_during_http_req) << e.what();
+      RETURN_ERROR_LS(status,exception_during_http_req) << e.what() << "\n URL: " << _url;
     }
   }
 
@@ -83,32 +81,34 @@ namespace reinforcement_learning { namespace model_management {
       .then([&](pplx::task<http_response> respTask) {
       auto response = respTask.get();
       if ( response.status_code() != 200 )
-        RETURN_ERROR_SIMPLE(status, http_bad_status_code);
+        RETURN_ERROR_ARG(status, http_bad_status_code, "Found: ", response.status_code(), _url);
 
       const auto iter = response.headers().find(U("Last-Modified"));
       if ( iter == response.headers().end() )
-        RETURN_ERROR_SIMPLE(status, last_modified_not_found);
+        RETURN_ERROR_ARG(status, last_modified_not_found, _url);
 
       curr_last_modified = ::utility::datetime::from_string(iter->second);
       if ( curr_last_modified.to_interval() == 0 )
-        RETURN_ERROR_SIMPLE(status, last_modified_invalid);
+        RETURN_ERROR_ARG(status, last_modified_invalid, "Found: ", 
+          ::utility::conversions::to_utf8string(curr_last_modified.to_string()), _url);
 
       curr_datasz = response.headers().content_length();
-      if ( curr_datasz <= 0 )
-        RETURN_ERROR_SIMPLE(status, bad_content_length);
+      if ( curr_datasz > 0 ) {
+        const auto buff = ret.alloc(curr_datasz);
+        const Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
 
-      const auto buff = ret.alloc(curr_datasz);
-      const Concurrency::streams::rawptr_buffer<char> rb(buff, curr_datasz, std::ios::out);
+        // Write response body into the file.
+        const auto readval = response.body().read_to_end(rb).get();  // need to use task.get to throw exceptions properly
 
-      // Write response body into the file.
-      const auto readval = response.body().read_to_end(rb).get();  // need to use task.get to throw exceptions properly
-
+        ret.data_sz(readval);
+        ret.increment_refresh_count();
+        _datasz = readval;
+      }
+      else {
+        ret.data_sz(0);
+      }
+      
       _last_modified = curr_last_modified;
-      _datasz = readval;
-
-      ret.data_sz(readval);
-      ret.increment_refresh_count();
-
       return error_code::success;
     });
 
@@ -118,11 +118,11 @@ namespace reinforcement_learning { namespace model_management {
     }
     catch ( const std::exception &e ) {
       ret.free();
-      RETURN_ERROR(status, exception_during_http_req) <<  e.what();
+      RETURN_ERROR_LS(status, exception_during_http_req) <<  e.what();
     }
     catch ( ... ) {
       ret.free();
-      RETURN_ERROR(status, exception_during_http_req) << error_code::unkown_s;
+      RETURN_ERROR_LS(status, exception_during_http_req) << error_code::unkown_s;
     }
 
     return error_code::success;

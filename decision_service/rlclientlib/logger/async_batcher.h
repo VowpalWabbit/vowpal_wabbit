@@ -58,7 +58,7 @@ namespace reinforcement_learning {
       }
       catch(const std::exception& e) {
         _thread_is_running = false;
-        RETURN_ERROR(status, background_thread_start) << " (logger)" << e.what();
+        RETURN_ERROR_LS(status, background_thread_start) << " (logger)" << e.what();
       }
     }
     return error_code::success;
@@ -70,7 +70,7 @@ namespace reinforcement_learning {
       _queue.push(std::move(evt));
       return error_code::success;
     }
-    RETURN_ERROR(status, background_queue_overflow) << "Dropped event: " << evt;
+    RETURN_ERROR_LS(status, background_queue_overflow) << "Dropped event: " << evt;
   }
 
   template <typename TSender>

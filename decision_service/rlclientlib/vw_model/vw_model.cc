@@ -16,10 +16,10 @@ namespace reinforcement_learning { namespace model_management {
       _vw_pool.update_factory(new safe_vw_factory(new_model));
     }
     catch(const std::exception& e) {
-      RETURN_ERROR(status, model_update_error) << e.what();
+      RETURN_ERROR_LS(status, model_update_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR(status, model_update_error) << "Unkown error";
+      RETURN_ERROR_LS(status, model_update_error) << "Unkown error";
     }
 
     return error_code::success;
@@ -37,7 +37,7 @@ namespace reinforcement_learning { namespace model_management {
       auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(ranking), std::end(ranking), action);
 
       if ( S_EXPLORATION_OK != scode ) {
-        RETURN_ERROR(status, exploration_error) << scode;
+        RETURN_ERROR_LS(status, exploration_error) << scode;
       }
 
       // Setup response with pdf from prediction and choosen action
@@ -49,10 +49,10 @@ namespace reinforcement_learning { namespace model_management {
       return error_code::success;
     }
     catch ( const std::exception& e) {
-      RETURN_ERROR(status, model_rank_error) << e.what();
+      RETURN_ERROR_LS(status, model_rank_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR(status, model_rank_error) << "Unkown error";
+      RETURN_ERROR_LS(status, model_rank_error) << "Unkown error";
     }
   }
 }}
