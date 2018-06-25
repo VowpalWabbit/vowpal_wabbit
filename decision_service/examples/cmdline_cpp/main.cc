@@ -17,7 +17,7 @@
 // Namespace manipulation for brevity
 using namespace web::http::experimental::listener;
 namespace r = reinforcement_learning;
-namespace cfg_util = reinforcement_learning::utility::config;
+namespace cfg = reinforcement_learning::utility::config;
 namespace po = boost::program_options;
 namespace u = reinforcement_learning::utility;
 
@@ -60,7 +60,7 @@ po::variables_map process_cmd_line(const int argc, char** argv) {
   return vm;
 }
 
-std::string load_config_file(const std::string& file_name) {
+std::string load_file(const std::string& file_name) {
   std::ifstream fs;
   fs.open(file_name);
   if ( !fs.good() )
@@ -73,9 +73,8 @@ std::string load_config_file(const std::string& file_name) {
 std::unique_ptr<r::live_model> init(const po::variables_map& vm) {
   //create a configuration object from json data
   const auto json_config = vm["json_config"].as<std::string>();
-  auto const config_str = load_config_file(json_config);
-  auto config = cfg_util::create_from_json(config_str);
-  config.set(r::name::MODEL_BLOB_URI,"http://localhost:8951");
+  auto const config_str = load_file(json_config);
+  auto config = cfg::create_from_json(config_str);
   //create the rl live_model, and initialize it with the config
   auto rl = std::make_unique<r::live_model>(config);
   r::api_status status;
@@ -136,6 +135,10 @@ void basic_usage(const po::variables_map& vm) {
   use_this_action(choosen_action);
 
   // Report reward recieved
-  scode = rl->report_outcome(uuid, reward);
+  r::api_status status;
+  scode = rl->report_outcome(uuid, reward, &status);
+  if ( scode != r::error_code::success )
+    std::cout << "Error: " << status.get_error_msg() << std::endl;
+
   assert(scode == r::error_code::success);
 }

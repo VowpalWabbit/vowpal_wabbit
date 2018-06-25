@@ -22,15 +22,15 @@ namespace reinforcement_learning { namespace utility
           }
           catch ( const std::exception& e ) {
             // Create functions should not throw. However registered function might be a user defined function
-            RETURN_ERROR(status, create_fn_exception) << e.what();
+            RETURN_ERROR_LS(status, create_fn_exception) << e.what();
           }
           catch(...) {
             // Create functions should not throw. However registered function might be a user defined function
-            RETURN_ERROR(status, create_fn_exception) << " Unknown error.";
+            RETURN_ERROR_LS(status, create_fn_exception) << " Unknown error.";
           }
         }
         // No matching create function
-        RETURN_ERROR(status, type_not_registered);
+        RETURN_ERROR_LS(status, type_not_registered);
       }
 
     private:

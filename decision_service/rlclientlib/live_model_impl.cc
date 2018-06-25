@@ -87,6 +87,7 @@ namespace reinforcement_learning
     RETURN_IF_FAIL(check_null_or_empty(uuid, outcome_data, status));
 
     // Serialize outcome
+    _buff.clear();
     _buff.seekp(0, _buff.beg);
     outcome_event::serialize(_buff,uuid, outcome_data);
     auto sbuf = _buff.str();
@@ -151,14 +152,14 @@ int live_model_impl::explore_only(const char* uuid, const char* context,  rankin
   const auto top_action_id = 0;
   auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
   if( S_EXPLORATION_OK != scode) {
-    RETURN_ERROR(status, exploration_error) << "Exploration error code: " << scode;
+    RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
   }
 
   // Pick using the pdf
   uint32_t choosen_action_id;
   scode = e::sample_after_normalizing(uuid, begin(pdf), end(pdf), choosen_action_id);
   if ( S_EXPLORATION_OK != scode ) {
-    RETURN_ERROR(status, exploration_error) << "Exploration error code: " << scode;
+    RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
   }
 
   // setup response

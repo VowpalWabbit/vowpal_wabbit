@@ -5,10 +5,11 @@
 #include "factory_resolver.h"
 #include "live_model.h"
 #include "config_utility.h"
+#include "model_mgmt.h"
 
 // namespace manipulation for brevity
 using namespace reinforcement_learning;
-namespace cfg_util = reinforcement_learning::utility::config;
+namespace cfg = reinforcement_learning::utility::config;
 namespace m = model_management;
 namespace u = utility;
 namespace po = boost::program_options;
@@ -47,7 +48,7 @@ void override_transport_usage(const po::variables_map& vm) {
   assert(scode == error_code::success);
 }
 
-std::string load_config_file(const std::string& file_name);
+std::string load_file(const std::string& file_name);
 
 std::unique_ptr<live_model> init_override(const po::variables_map& vm) {
   // Register local file transport in data_transport factory
@@ -55,8 +56,8 @@ std::unique_ptr<live_model> init_override(const po::variables_map& vm) {
 
   //create a configuration object from json data
   const auto json_config = vm["json_config"].as<std::string>();
-  auto const config_str = load_config_file(json_config);
-  const auto config = cfg_util::create_from_json(config_str);
+  auto const config_str = load_file(json_config);
+  const auto config = cfg::create_from_json(config_str);
 
   //create the rl live_model, and initialize it with the config
   auto rl = std::make_unique<live_model>(config);
@@ -77,11 +78,10 @@ class local_model_file : public m::i_data_transport {
     }
 
   private:
-    m::model_data read_new_data_file() {
+  static m::model_data read_new_data_file() {
       m::model_data md;
       // read this data from a local file if the data did not change
-      md.data = new char[1000];
-      md.data_sz = 1000;
+      md.alloc(1000);
       return md;
     }
 };

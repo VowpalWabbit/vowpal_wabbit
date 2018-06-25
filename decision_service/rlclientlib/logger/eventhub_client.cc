@@ -35,23 +35,23 @@ namespace reinforcement_learning {
     }
     request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data);
+    request.set_body(post_data.c_str());
     auto request_task = _client.request(request).then([&](http_response response) {
       //expect http code 201
       if (response.status_code() == status_codes::Created)
         return error_code::success;
 
       //report error (cannot use the macro here since return type is auto deduced)
-      status_builder sb(status, error_code::http_bad_status_code);
-      sb << error_code::http_bad_status_code_s << "(expected 201): Found " << response.status_code() << "\npost_data: " << post_data;
-      return (int)sb;
+      RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
+        response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
+        "\npost_data: ", post_data);
     });
     try {
       request_task.wait();
       return request_task.get();
     }
     catch (const std::exception& e) {
-      RETURN_ERROR(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
+      RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
   }
 
