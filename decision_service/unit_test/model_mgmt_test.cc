@@ -150,6 +150,7 @@ BOOST_AUTO_TEST_CASE(data_transport_user_extention)
   m::model_data md;
   scode = data_transport->get_data(md);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
+  md.free();
   delete data_transport;
 }
 

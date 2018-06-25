@@ -1,5 +1,6 @@
 #pragma once
-#include <cstdint>
+#include <cstddef>
+#include <stdint.h>
 
 // Declare const pointer for internal linkage  
 namespace reinforcement_learning {
@@ -16,8 +17,8 @@ namespace reinforcement_learning { namespace model_management {
         size_t data_sz() const;
         uint32_t refresh_count() const;
 
-        void data_sz(size_t fillsz);;
-        void increment_refresh_count();;
+        void data_sz(size_t fillsz);
+        void increment_refresh_count();
 
         // Allocate
         char* alloc(size_t desired);

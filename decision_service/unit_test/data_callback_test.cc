@@ -1,6 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 #ifdef STAND_ALONE
-#   define BOOST_TEST_MODULE Main
+#define BOOST_TEST_MODULE Main
 #endif
 
 #include <boost/test/unit_test.hpp>
@@ -27,9 +27,10 @@ BOOST_AUTO_TEST_CASE(data_callback) {
   model_data md;
   md.alloc(strlen(str)+1);
   md.increment_refresh_count();
-  strncpy_s(md.data(), md.data_sz(), str, strlen(str));
+  memcpy(md.data(), str, strlen(str)+1);
   
   fn.report_data(md);
+  md.free();
   BOOST_ASSERT(i == -1);
 }
 
@@ -42,9 +43,10 @@ BOOST_AUTO_TEST_CASE(null_data_callback) {
   model_data md;
   md.alloc(strlen(str)+1);
   md.increment_refresh_count();
-  strncpy_s(md.data(), md.data_sz(), str, strlen(str));
+  memcpy(md.data(), str, strlen(str)+1);
 
   fn.report_data(md); // should not crash
+  md.free();
   BOOST_ASSERT(i == -1);
 }
 
@@ -60,9 +62,10 @@ BOOST_AUTO_TEST_CASE(exception_in_data_callback) {
   model_data md;
   md.alloc(strlen(str)+1);
   md.increment_refresh_count();
-  strncpy_s(md.data(), md.data_sz(), str, strlen(str));
+  memcpy(md.data(), str, strlen(str)+1);
 
   fn.report_data(md); // should not crash
+  md.free();
   BOOST_ASSERT(i == -2);
 }
 
