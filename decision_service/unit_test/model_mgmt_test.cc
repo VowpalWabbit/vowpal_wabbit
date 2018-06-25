@@ -17,6 +17,7 @@
 #include "data_callback_fn.h"
 #include "http_server/http_server.h"
 #include "config_utility.h"
+#include "config_collection.h"
 
 namespace r = reinforcement_learning;
 namespace m = reinforcement_learning::model_management;
@@ -75,12 +76,14 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   http_helper http_server;
   http_server.on_initialize(U("http://localhost:8080"));
   //create a simple ds configuration
-  auto cc = cfg::create_from_json(JSON_CFG);
+  u::config_collection cc;
+  auto scode = cfg::create_from_json(JSON_CFG,cc);
+  BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
   cc.set("ModelExportFrequency", "00:01:00");
 
   m::i_data_transport* temp_transport = nullptr;
-  auto scode = r::data_transport_factory.create(&temp_transport, r::value::AZURE_STORAGE_BLOB, cc);
+  scode = r::data_transport_factory.create(&temp_transport, r::value::AZURE_STORAGE_BLOB, cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   std::unique_ptr<m::i_data_transport> transport(temp_transport);
 
@@ -114,12 +117,14 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   http_helper http_server;
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   //create a simple ds configuration
-  auto cc = cfg::create_from_json(JSON_CFG);
+  u::config_collection cc;
+  auto scode = cfg::create_from_json(JSON_CFG,cc);
+  BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
 
   m::i_data_transport* data_transport;
   r::api_status status;
-  auto scode = r::data_transport_factory.create(&data_transport, r::value::AZURE_STORAGE_BLOB, cc, &status);
+  scode = r::data_transport_factory.create(&data_transport, r::value::AZURE_STORAGE_BLOB, cc, &status);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   m::model_data md;
   BOOST_CHECK_EQUAL(md.refresh_count(), 0);

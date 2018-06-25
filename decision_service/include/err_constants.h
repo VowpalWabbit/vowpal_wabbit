@@ -31,6 +31,7 @@ namespace reinforcement_learning { namespace error_code {
   const int model_update_error          = 24;
   const int model_rank_error            = 25;
   const int pdf_sampling_error          = 26;
+  const int eh_connstr_parse_error      = 27;
 }}
 
 namespace reinforcement_learning { namespace error_code {
@@ -59,4 +60,5 @@ namespace reinforcement_learning { namespace error_code {
   char const * const json_parse_error_s         = "Unable to parse JSON. ";
   char const * const invalid_argument_s         = "Invalid Argument: ";
   char const * const exception_during_http_req_s = "http request excepton. ";
+  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection connection string.";
 }}

@@ -16,6 +16,7 @@
 #include "constants.h"
 
 namespace r = reinforcement_learning;
+namespace u = reinforcement_learning::utility;
 namespace err = reinforcement_learning::error_code;
 namespace cfg = reinforcement_learning::utility::config;
 
@@ -39,7 +40,8 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
   r::api_status status;
 
 	//create a simple ds configuration
-	auto config = cfg::create_from_json(JSON_CFG);
+  u::config_collection config;
+	cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
 	//create the ds live_model, and initialize it with the config
@@ -86,7 +88,8 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//create a simple ds configuration
-	auto config = cfg::create_from_json(JSON_CFG);
+  u::config_collection config;
+	cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");  
 
 	//create a ds live_model, and initialize with configuration
@@ -155,7 +158,9 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   http_server.on_initialize(U("http://localhost:8080"),post_error);
 
   //create a simple ds configuration
-  auto config = cfg::create_from_json(JSON_CFG);
+  u::config_collection config;
+  auto const status = cfg::create_from_json(JSON_CFG,config);
+  BOOST_CHECK_EQUAL(status, r::error_code::success);
   config.set(r::name::EH_TEST, "true");
 
   ////////////////////////////////////////////////////////////////////
