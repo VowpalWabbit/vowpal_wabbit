@@ -24,6 +24,11 @@ namespace reinforcement_learning { namespace model_management {
   int model_downloader::run_iteration(api_status* status) const {
     model_data md;
     RETURN_IF_FAIL(_ptrans->get_data(md, status));
+
+    // If the data size is zero, its not a valid model
+    if ( md.data_sz() <= 0 )
+      return error_code::success;
+
     const auto scode = _pdata_cb->report_data(md, status);
 
     // Release the data.
