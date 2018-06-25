@@ -11,7 +11,11 @@ namespace reinforcement_learning {
   ranking_response::ranking_response(char const* uuid) 
   : _pimpl{ new ranking_response_impl(uuid) } {}
 
-  char const * ranking_response::get_uuid() const {
+ranking_response::~ranking_response() {
+  delete _pimpl;
+  }
+
+char const * ranking_response::get_uuid() const {
     return _pimpl->_uuid.c_str();
 	}
 
@@ -44,6 +48,18 @@ namespace reinforcement_learning {
     return _pimpl->get_model_id();
   }
 
+  ranking_response::ranking_response(ranking_response&& tmp) noexcept {
+    _pimpl = tmp._pimpl;
+    tmp._pimpl = nullptr;
+  }
+
+  ranking_response& ranking_response::operator=(ranking_response&& tmp) noexcept {
+    const auto swap = _pimpl;
+    _pimpl = tmp._pimpl;
+    tmp._pimpl = _pimpl;
+    return *this;
+  }
+
   ranking_response::ranking_iterator::ranking_iterator(ranking_response_impl* p_resp_impl) 
     :_p_resp_impl(p_resp_impl), _idx(0) { }
 
@@ -62,16 +78,16 @@ namespace reinforcement_learning {
   action_prob ranking_response::ranking_iterator::operator*() const {
     int action_id;
     float prob;
-    this->_p_resp_impl->get_action(_idx, &action_id, &prob);
+    _p_resp_impl->get_action(_idx, &action_id, &prob);
     return action_prob { action_id, prob };
   }
 
   ranking_response::ranking_iterator ranking_response::begin() const {
-    return ranking_iterator(_pimpl.get());
+    return {_pimpl};
   }
 
   ranking_response::ranking_iterator ranking_response::end() const {
-    return ranking_iterator(_pimpl.get(), _pimpl->size());
+    return {_pimpl, _pimpl->size()};
   }
 }
 

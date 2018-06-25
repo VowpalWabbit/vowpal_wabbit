@@ -126,24 +126,23 @@ BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
 }
 
 //test that status_api is correctly set when the queue_overflow error happens
-BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
+BOOST_AUTO_TEST_CASE(queue_overflow_return_error) 
 {
-	sender s;
-	size_t queue_max_size = 2;
+  sender s;
+  size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
   async_batcher<sender> batcher(s, &error_fn ,262143, 1000, queue_max_size);
-	
-	//pass the status to each call, then check its content
-	api_status status;
 
-	//adding 2 elements of ok
-	BOOST_CHECK_EQUAL(batcher.append("1", &status), error_code::success);
-	BOOST_CHECK_EQUAL(batcher.append("2", &status), error_code::success);
-	
-	//the batcher will try to exceed its queue capacity
-	BOOST_CHECK_EQUAL(batcher.append("3", &status), error_code::background_queue_overflow);
-	
-	//verify that the error status is correct
-	BOOST_CHECK_EQUAL(status.get_error_code(), error_code::background_queue_overflow);
-	BOOST_CHECK_EQUAL(status.get_error_msg(), "(ERR:2)Background queue overflow. Dropped event: 3");
+  //pass the status to each call, then check its content
+  api_status status;
+
+  //adding 2 elements of ok
+  BOOST_CHECK_EQUAL(batcher.append("1", &status), error_code::success);
+  BOOST_CHECK_EQUAL(batcher.append("2", &status), error_code::success);
+
+  //the batcher will try to exceed its queue capacity
+  BOOST_CHECK_EQUAL(batcher.append("3", &status), error_code::background_queue_overflow);
+
+  //verify that the error status is correct
+  BOOST_CHECK_EQUAL(status.get_error_code(), error_code::background_queue_overflow);
 }

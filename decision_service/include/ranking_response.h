@@ -1,6 +1,5 @@
 #pragma once
 #include <cstddef>
-#include <memory>
 
 namespace reinforcement_learning {
   class api_status;
@@ -16,6 +15,7 @@ namespace reinforcement_learning {
   public:
     ranking_response();
     ranking_response(char const* uuid);
+    ~ranking_response();
 
     const char* get_uuid() const; // unique id
     int get_choosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
@@ -26,8 +26,12 @@ namespace reinforcement_learning {
     void set_model_id(const char* model_id);
     const char * get_model_id() const;
 
+    ranking_response(ranking_response&&) noexcept;
+    ranking_response& operator = (ranking_response&&) noexcept;
+    ranking_response(const ranking_response&) = delete;
+    ranking_response& operator =(const ranking_response&) = delete;
   private:
-    std::unique_ptr<ranking_response_impl> _pimpl;
+    ranking_response_impl* _pimpl;
 
   public:
     class ranking_iterator {

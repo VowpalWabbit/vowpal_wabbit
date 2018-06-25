@@ -67,6 +67,7 @@ namespace reinforcement_learning {
     sb << reinforcement_learning::error_code::code ## _s;                                         \
     return report_error(sb, __VA_ARGS__ );                                                        \
   }                                                                                               \
+  return reinforcement_learning::error_code::code;                                                                                    \
 } while(0);                                                                                       \
 
 #define RETURN_ERROR_LS(status, code)                                                             \

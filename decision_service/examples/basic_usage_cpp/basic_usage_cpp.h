@@ -9,7 +9,6 @@
 #include "factory_resolver.h"
 #include "config_utility.h"
 #include "live_model.h"
-#include "../../rlclientlib/str_util.h"
 
 // Namespace manipulation for brevity
 using namespace web::http::experimental::listener;
