@@ -15,7 +15,7 @@ namespace reinforcement_learning {
     oss << R"(","a":[)";
     if ( resp.size() > 0 ) {
       for ( auto const &r : resp )
-        oss << r.action_id << ",";
+        oss << r.action_id + 1 << ",";
       oss.seekp(-1, oss.cur);//remove last
     }
 
@@ -28,11 +28,11 @@ namespace reinforcement_learning {
     }
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})";
+    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})" << std::ends;
 	}
 
   void outcome_event::serialize(ostream& oss, const char* uuid, const char* outcome_data)
 	{
-    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})";
+    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})" << std::ends;
 	}
 }

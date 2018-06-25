@@ -37,7 +37,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     const auto topic = ".eventhub.";
     cc.set(concat(cfg_root, topic, "host").c_str(),     host.c_str());
     cc.set(concat(cfg_root, topic, "name").c_str(),     name.c_str());
-    cc.set(concat(cfg_root, topic, "key_name").c_str(), access_key_name.c_str());
+    cc.set(concat(cfg_root, topic, "keyname").c_str(), access_key_name.c_str());
     cc.set(concat(cfg_root, topic, "key").c_str(),      access_key.c_str());
   }
 
