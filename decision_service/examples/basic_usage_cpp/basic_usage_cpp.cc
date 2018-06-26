@@ -49,16 +49,17 @@ int load_config_from_json(const std::string& file_name, u::config_collection& cf
   const auto scode = load_file(file_name, config_str);
   if ( scode != 0 ) return scode;
   // Use library supplied convinence method to parse json and build config object
-  return cfg::create_from_json(config_str);
+  return cfg::create_from_json(config_str, cfgcoll);
 }
 
 // Load contents of file into a string
-std::string load_file(const std::string& file_name) {
+int load_file(const std::string& file_name, std::string& config_str) {
   std::ifstream fs;
   fs.open(file_name);
   if ( !fs.good() )
-    throw std::runtime_error(u::concat("Unable to open file. ", file_name));
+    return reinforcement_learning::error_code::invalid_argument;
   std::stringstream buffer;
   buffer << fs.rdbuf();
-  return buffer.str();
+  config_str = buffer.str();
+  return reinforcement_learning::error_code::success;
 }

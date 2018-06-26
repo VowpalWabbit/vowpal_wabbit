@@ -6,7 +6,7 @@
 #include "constants.h"
 #include "err_constants.h"
 #include "api_status.h"
-#include "../str_util.h"
+#include "str_util.h"
 #include "../restapi_data_transport.h"
 
 using namespace web;

@@ -57,7 +57,8 @@ std::unique_ptr<live_model> init_override(const po::variables_map& vm) {
   //create a configuration object from json data
   const auto json_config = vm["json_config"].as<std::string>();
   auto const config_str = load_file(json_config);
-  const auto config = cfg::create_from_json(config_str);
+  utility::config_collection config;
+  cfg::create_from_json(config_str, config);
 
   //create the rl live_model, and initialize it with the config
   auto rl = std::make_unique<live_model>(config);
