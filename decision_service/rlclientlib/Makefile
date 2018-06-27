@@ -10,7 +10,7 @@ all: default
 
 things: all
 
-SOURCES = $(filter-out mail.cc, $(wildcard *.cc)) $(filter-out model_mgmt.cc, $(wildcard */*.cc))
+SOURCES = $(filter-out mail.cc, $(wildcard *.cc)) $(wildcard */*.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 
