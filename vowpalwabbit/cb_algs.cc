@@ -141,6 +141,8 @@ base_learner* cb_algs_setup(arguments& arg)
   if (arg.new_options("Contextual Bandit Options")
       .critical("cb", data->cbcs.num_actions, "Use contextual bandit learning with <k> costs")
       .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
+      .keep("cb_min_cost", arg.all->sd->min_cb_cost, 0.f, "lower bound on cost")
+      .keep("cb_max_cost", arg.all->sd->max_cb_cost, 1.f, "upper bound on cost")
       (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
     return nullptr;
 

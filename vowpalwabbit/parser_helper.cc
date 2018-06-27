@@ -101,7 +101,7 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
 
               previous_option_needs_argument = false;
             }
-          catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
+          catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>& multi_occ)
             {
               auto ignored = arg;
 
@@ -135,8 +135,9 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
 
                   // we need to compare the parsed actions to overcome different representation of the same value
                   // e.g. --epsilon 0.1 vs --epsilon 0.10000
-                  auto duplicate_option = sub_vm.begin();
-                  auto first_option_occurrence = new_vm.find(duplicate_option->first);
+                  string opt_name = multi_occ.get_option_name().substr(2);
+                  auto duplicate_option = sub_vm.find(opt_name);
+                  auto first_option_occurrence = new_vm.find(opt_name);
 
                   if (first_option_occurrence == new_vm.end() || duplicate_option == sub_vm.end())
                     THROW("unable to find duplicate option");

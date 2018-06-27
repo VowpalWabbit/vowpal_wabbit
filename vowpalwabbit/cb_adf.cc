@@ -347,6 +347,8 @@ base_learner* cb_adf_setup(arguments& arg)
   if (arg.new_options("Contextual Bandit with Action Dependent Features")
       .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
       .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
+      .keep("cb_min_cost", arg.all->sd->min_cb_cost, 0.f, "lower bound on cost")
+      .keep("cb_max_cost", arg.all->sd->max_cb_cost, 1.f, "upper bound on cost")
       (ld->no_predict, "no_predict", "Do not do a prediction when training")
       .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
     return nullptr;

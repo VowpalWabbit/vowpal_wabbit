@@ -235,4 +235,9 @@ void generic_driver_onethread(vw& all)
   all.l->end_examples();
 }
 
+float recur_sensitivity(void*, base_learner& base, example& ec)
+{
+  return base.sensitivity(ec);
+}
+
 }
