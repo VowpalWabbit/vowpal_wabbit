@@ -1,5 +1,6 @@
 import os
 
+from vowpalwabbit import pyvw
 from vowpalwabbit.pyvw import vw
 
 
@@ -116,6 +117,18 @@ def test_multilabel_prediction_type():
     assert model.get_prediction_type() == model.pMULTILABELS
     prediction = model.predict(' | a b c')
     assert isinstance(prediction, list)
+    del model
+
+
+def test_cbandits_label():
+    model = vw(cb=4, quiet=True)
+    assert pyvw.cbandits_label(model.example('1 |')).costs[0].label == 1
+    del model
+
+
+def test_cost_sensitive_label():
+    model = vw(csoaa=4, quiet=True)
+    assert pyvw.cost_sensitive_label(model.example('1 |')).costs[0].label == 1
     del model
 
 

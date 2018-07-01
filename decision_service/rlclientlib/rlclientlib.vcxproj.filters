@@ -39,9 +39,6 @@
     <ClInclude Include="restapi_data_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model_mgmt\model_mgmt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility\object_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -70,6 +67,33 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="str_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\err_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\factory_resolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\\model_mgmt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data_callback_fn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interruptable_sleeper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="periodic_background_proc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_downloader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -113,10 +137,22 @@
     <ClCompile Include="live_model_impl.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ranking_response_impl.cpp">
+    <ClCompile Include="ranking_response_impl.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="str_util.cpp">
+    <ClCompile Include="str_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="factory_resolver.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_model.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="data_callback_fn.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_downloader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

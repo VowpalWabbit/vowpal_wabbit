@@ -6,8 +6,8 @@
 #include "http_server/stdafx.h"
 #include "logger/eventhub_client.h"
 #include "http_server/http_server.h"
-
 #include <boost/test/unit_test.hpp>
+#include "err_constants.h"
 
 using namespace web;
 using namespace http;
@@ -25,11 +25,12 @@ BOOST_AUTO_TEST_CASE(send_something)
 	http_server.on_initialize(U("http://localhost:8080"));
 
 	//create a client
-	eventhub_client eh("localhost:8080", "", "", "");
+	eventhub_client eh("localhost:8080", "", "", "", true);
 
-	//sedn events
-	eh.send("message 1");
-	eh.send("message 2");
+  api_status ret;
+  //send events
+	BOOST_CHECK_EQUAL(eh.send("message 1", &ret),error_code::success);
+  BOOST_CHECK_EQUAL(eh.send("message 2", &ret), error_code::success);
 
 	//stop the http server
 	http_server.on_shutdown();

@@ -1,22 +1,7 @@
 #pragma once
 
 #include <string>
-
-
-namespace reinforcement_learning { namespace error_code {
-    //success code
-    const int success = 0;
-
-    //error code
-    const int invalid_argument            = 1;
-    const int background_queue_overflow   = 2;
-    const int eventhub_http_generic       = 3;
-    const int eventhub_http_bad_status_code = 4;
-    const int action_not_found            = 5;
-    const int background_thread_start     = 6;
-    const int not_initialized             = 7;
-    const int eventhub_generate_SAS_hash  = 8;
-}}
+#include <sstream>
 
 namespace reinforcement_learning {
   class api_status
@@ -34,4 +19,39 @@ namespace reinforcement_learning {
       int _error_code;
       std::string _error_msg;
   };
+
+  template <typename Last>
+  void report_error(std::ostringstream& os, const Last& last) {
+    os << last;
+  }
+
+  template <typename First, typename ... Rest>
+  void report_error(std::ostringstream& os, const First& first, const Rest& ... rest) {
+    os << first;
+    report_error(os, rest...);
+  }
+
+  template <typename ... All>
+  int report_error(api_status* status, int scode, const All& ... all) {
+    if ( status != nullptr ) {
+      std::ostringstream os;
+      report_error(os, all...);
+      api_status::try_update(status, scode, os.str().c_str());
+    }
+    return scode;
+  }
 }
+
+// this macro assumes that success_code equals 0
+#define TRY_OR_RETURN(x) do {   \
+  int retval__LINE__ = (x);     \
+  if (retval__LINE__ != 0) {    \
+    return retval__LINE__;      \
+  }                             \
+} while (0)                     \
+
+#define RETURN_ERROR(status, errcode, errstr) do {       \
+  reinforcement_learning::api_status::try_update(status, errcode, errstr);  \
+  return errcode;                                   \
+}while(0);                                          \
+

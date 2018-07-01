@@ -7,16 +7,10 @@
 #include "ranking_event.h"
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include "err_constants.h"
 
 using namespace std;
 
-// this macro assumes that success_code equals 0
-#define TRY_OR_RETURN(x) do { \
-  int retval__LINE__ = (x); \
-  if (retval__LINE__ != 0) { \
-    return retval__LINE__; \
-  } \
-} while (0)
 // Why while(0) ? It make the macro safe under various conditions. Check link below
 // https://stackoverflow.com/questions/257418/do-while-0-what-is-it-good-for
 
@@ -25,7 +19,10 @@ namespace reinforcement_learning
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
 
   int live_model_impl::init(api_status* status) {
-    return _logger.init(status);
+    int scode = _logger.init(status);
+    TRY_OR_RETURN(scode);
+    //scode = init_model_mgmt(status);
+    return scode;
   }
 
   int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) 
@@ -87,5 +84,9 @@ namespace reinforcement_learning
       : _configuration(config),
       _error_cb(fn, err_context),
       _logger(config, &_error_cb) {
+  }
+
+  int live_model_impl::init_model_mgmt(api_status* status) {
+    throw "not yet implemented";
   }
 }

@@ -1,6 +1,7 @@
 #include <boost/foreach.hpp>
 #include "parser_helper.h"
 #include <iostream>
+#include <set>
 
 using namespace std;
 
@@ -58,8 +59,16 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
               if (it.second.value().type() == typeid(vector<string>))
                 {
                   auto& values = it.second.as<vector<string>>();
-                  auto end = unique(values.begin(), values.end());
-                  values.erase(end, values.end());
+                  set<string> unique_set;
+                  auto current_head = values.begin();
+                  for (auto current_check = values.begin(); current_check != values.end(); current_check++)
+                    if (unique_set.find(*current_check) == unique_set.end())
+                      {
+                        unique_set.insert(*current_check);
+                        *current_head = *current_check;
+                        current_head++;
+                      }
+                  values.erase(current_head, values.end());
                 }
             }
 
@@ -89,9 +98,6 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                 style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
                 options(opts).allow_unregistered().run();
               po::store(parsed, new_vm);
-
-              if (do_notify)
-                  po::notify(new_vm);
 
               previous_option_needs_argument = false;
             }

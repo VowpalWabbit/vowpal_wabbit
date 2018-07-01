@@ -116,7 +116,7 @@ class vw(pylibvw.vw):
     def learn(self, ec):
         """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
-        learned on)."""
+        learned on) or list which is iterated over."""
         if isinstance(ec, str):
             self.learn_string(ec)
         elif isinstance(ec, example):
@@ -124,7 +124,7 @@ class vw(pylibvw.vw):
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
         elif isinstance(ec, list):
-            pylibvw.vw.learn(self,ec)
+            pylibvw.vw.learn_multi(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
@@ -147,15 +147,18 @@ class vw(pylibvw.vw):
         if isinstance(ec, example) and not getattr(ec, 'setup_done', True):
             ec.setup_example()
 
-        pylibvw.vw.predict(self, ec)
+        if isinstance(ec, example):
+            pylibvw.vw.predict(self, ec)
+        else:
+            pylibvw.vw.predict_multi(self, ec)
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
 
         if isinstance(ec, example):
-            prediction = get_prediction(ec,prediction_type)
+            prediction = get_prediction(ec, prediction_type)
         else:
-            prediction = get_prediction(ec[0],prediction_type)
+            prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
             ec.finish()
@@ -462,7 +465,7 @@ class cost_sensitive_label(abstract_label):
 
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
-        for i in range(ex.get_costsensitive_num_costs):
+        for i in range(ex.get_costsensitive_num_costs()):
             wc = wclass(ex.get_costsensitive_class(i),
                         ex.get_costsensitive_cost(i),
                         ex.get_costsensitive_partial_prediction(i),
@@ -492,7 +495,7 @@ class cbandits_label(abstract_label):
 
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
-        for i in range(ex.get_cbandits_num_costs):
+        for i in range(ex.get_cbandits_num_costs()):
             wc = wclass(ex.get_cbandits_class(i),
                         ex.get_cbandits_cost(i),
                         ex.get_cbandits_partial_prediction(i),
@@ -631,7 +634,6 @@ class example(pylibvw.example):
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
-
     def push_hashed_feature(self, ns, f, v=1.):
         """Add a hashed feature to a given namespace."""
         if self.setup_done: self.unsetup_example();
@@ -697,7 +699,6 @@ class example(pylibvw.example):
         #     else:
         #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
-
 
     def finish(self):
         """Tell VW that you're done with this example and it can

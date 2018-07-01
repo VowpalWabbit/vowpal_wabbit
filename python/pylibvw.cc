@@ -713,8 +713,8 @@ BOOST_PYTHON_MODULE(pylibvw)
   .def("get_id", &get_model_id, "return the model id")
   .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
 
-  .def("learn", &my_learn_multi_ex, "given a pyvw example, learn (and predict) on that example")
-  .def("predict", &my_predict_multi_ex, "given a pyvw example, predict on that example")
+  .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
+  .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
 
   .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
   .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")

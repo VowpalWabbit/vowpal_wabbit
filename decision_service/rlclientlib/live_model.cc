@@ -3,6 +3,7 @@
 #include "live_model.h"
 #include "logger/logger.h"
 #include "live_model_impl.h"
+#include "err_constants.h"
 
 #define INIT_CHECK() do {                                       \
   if(!_initialized) {                                           \

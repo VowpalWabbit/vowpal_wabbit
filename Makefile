@@ -109,6 +109,7 @@ rl_clientlib:
 
 rl_clientlib_test:
 	cd decision_service/unit_test; $(MAKE) -j $(NPROCS) things
+	(cd decision_service/unit_test && ./rlclient-test.out)
 
 spanning_tree:
 	cd cluster; $(MAKE)
@@ -142,11 +143,10 @@ java: vw
 
 .FORCE:
 
-test: .FORCE vw library_example rl_clientlib_test
+test: .FORCE vw library_example
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
-	(cd decision_service/unit_test && ./rlclient-test.out)
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."
