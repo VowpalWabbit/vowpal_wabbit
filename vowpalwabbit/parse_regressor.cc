@@ -100,7 +100,7 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     weights.~T();//dealloc so that we can realloc, now with a known size
     new(&weights) T(length, ss);
   }
-  catch (const VW::vw_exception& anExc)
+  catch (const VW::vw_exception&)
   {
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }

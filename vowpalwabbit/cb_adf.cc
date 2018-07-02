@@ -55,7 +55,7 @@ CB::cb_class get_observed_cost(multi_ex& examples)
         ec->l.cb.costs[0].probability > 0)
       {
         ld = ec->l.cb;
-        index = i;
+        index = (int)i;
       }
     ++i;
   }

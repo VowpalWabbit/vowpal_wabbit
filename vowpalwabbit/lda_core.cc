@@ -800,7 +800,7 @@ void return_example(vw& all, example& ec)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
-    all.sd->print_update(all.holdout_set_off, all.current_pass, "none", 0.f,
+    all.sd->print_update(all.holdout_set_off, all.current_pass, "none", 0,
                          ec.num_features, all.progress_add, all.progress_arg);
   VW::finish_example(all,ec);
 }
@@ -1273,7 +1273,7 @@ LEARNER::base_learner *lda_setup(arguments& arg)
       ("metrics", ld->compute_coherence_metrics, false, "Compute metrics").missing())
     return nullptr;
 
-  arg.all->lda = ld->topics;
+  arg.all->lda = (uint32_t)ld->topics;
   arg.all->delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = 0;
