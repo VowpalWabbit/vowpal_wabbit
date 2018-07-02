@@ -347,7 +347,7 @@ base_learner* cb_adf_setup(arguments& arg)
   if (arg.new_options("Contextual Bandit with Action Dependent Features")
       .critical("cb_adf", "Do Contextual Bandit learning with multiline action dependent features.")
       .keep(ld->rank_all, "rank_all", "Return actions sorted by score order")
-      (ld->no_predict, "no_predict", "Do not do a prediction when training")
+       (ld->no_predict, "no_predict", "Do not do a prediction when training")
       .keep("cb_type", type_string, (string)"ips", "contextual bandit method to use in {ips,dm,dr, mtr}").missing())
     return nullptr;
 
