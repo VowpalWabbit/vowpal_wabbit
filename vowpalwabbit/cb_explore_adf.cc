@@ -50,7 +50,7 @@ struct cb_explore_adf
   float lambda;
   uint64_t offset;
   bool greedify;
-  bool randomtie;
+  bool first_only;
   bool regcbopt; // use optimistic variant of RegCB
   float c0; // mellowness parameter for RegCB
 
@@ -222,7 +222,7 @@ void get_cost_ranges(std::vector<float> &min_costs,
 
 void fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
 {
-  if (!data.randomtie)
+  if (data.first_only)
     return;
 
   data.tied_actions.clear();
@@ -272,13 +272,13 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
   action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
-  if (data.randomtie)
+  if (!data.first_only)
     fill_tied(data, preds);
 
   const float prob = data.epsilon / num_actions;
   for (size_t i = 0; i < num_actions; i++)
     preds[i].score = prob;
-  if (data.randomtie)
+  if (!data.first_only)
   {
     for (size_t i = 0; i < num_actions; ++i)
       if (data.tied_actions.count(preds[i].action) > 0)
@@ -337,7 +337,7 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
       for (size_t i = 0; i < preds.size(); ++i)
       {
         if (preds[i].action == a_opt ||
-            (data.randomtie && data.min_costs[preds[i].action] == min_cost))
+            (!data.first_only && data.min_costs[preds[i].action] == min_cost))
           preds[i].score = 1;
         else
           preds[i].score = 0;
@@ -423,7 +423,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
     for (auto e : preds)
       data.scores[e.action] += e.score;
 
-    if (data.randomtie)
+    if (!data.first_only)
     {
       fill_tied(data, preds);
       for (uint32_t a : data.tied_actions)
@@ -484,7 +484,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   for (uint32_t i = 0; i < num_actions; i++)
     data.scores.push_back(preds[i].score);
 
-  if (data.randomtie)
+  if (!data.first_only)
   {
     fill_tied(data, preds);
     for (uint32_t a : data.tied_actions)
@@ -516,7 +516,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
 
     for (uint32_t i = 0; i < num_actions; i++)
       data.scores[i] += preds[i].score;
-    if (data.randomtie)
+    if (!data.first_only)
     {
       fill_tied(data, preds);
       const float add_prob = additive_probability / data.tied_actions.size();
@@ -754,7 +754,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
       .keep(data->greedify, "greedify", "always update first policy once in bagging")
       .keep("cb_min_cost", data->min_cb_cost, 0.f, "lower bound on cost")
       .keep("cb_max_cost", data->max_cb_cost, 1.f, "upper bound on cost")
-      .keep(data->randomtie, "randomtie", "explore uniformly over random ties")
+      .keep(data->first_only, "first_only", "Only explore the first action in a tie-breaking event")
       .keep("lambda", data->lambda, -1.0f, "parameter for softmax").missing())
     return nullptr;
 

@@ -1615,7 +1615,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 
 # Test 170 cbify adf, epsilon-greedy
 {VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
-    train-sets/ref/cbify_epsilon.stderr
+    train-sets/ref/cbify_epsilon_adf.stderr
 
 # Test 171 cbify cs, epsilon-greedy
 {VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
@@ -1623,7 +1623,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 
 # Test 172 cbify adf cs, epsilon-greedy
 {VW} --cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb
-    train-sets/ref/cbify_epsilon_cs.stderr
+    train-sets/ref/cbify_epsilon_cs_adf.stderr
 
 # Test 173 cbify adf, regcb
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass
