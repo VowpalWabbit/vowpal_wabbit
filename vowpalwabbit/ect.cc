@@ -91,7 +91,7 @@ void print_level(v_array<v_array<uint32_t> > level)
   cout << endl;
 }
 
-size_t create_circuit(ect& e, uint32_t max_label, uint32_t eliminations)
+size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
 {
   if (max_label == 1)
     return 0;
