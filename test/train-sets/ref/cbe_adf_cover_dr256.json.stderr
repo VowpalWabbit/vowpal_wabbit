@@ -8,8 +8,8 @@ Reading datafile = train-sets/cb_test256.json
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-0.666667 0.666667            1            1.0    known        2:0.333333...        9
-0.333333 0.000000            2            2.0    known        1:0.5...        6
+0.666667 0.666667            1            1.0    known        0:0.333333...        9
+0.333333 0.000000            2            2.0    known        0:0.5...        6
 0.333333 0.333333            4            4.0    known        1:0.591752...        6
 0.297761 0.262189            8            8.0    known        1:0.732739...        6
 0.237339 0.176917           16           16.0    known        1:0.666667...        6
