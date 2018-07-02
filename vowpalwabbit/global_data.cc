@@ -154,9 +154,9 @@ void vw::learn(multi_ex& ec)
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
 
-  if (!training) 
+  if (!training)
     LEARNER::as_multiline(l)->predict(ec);
-  else 
+  else
     LEARNER::as_multiline(l)->learn(ec);
 }
 

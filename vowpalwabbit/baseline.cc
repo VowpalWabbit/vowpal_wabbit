@@ -159,6 +159,31 @@ void predict_or_learn(baseline& data, single_learner& base, example& ec)
   }
 }
 
+float sensitivity(baseline& data, base_learner& base, example& ec)
+{
+  // no baseline if check_enabled is true and example contains flag
+  if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
+    return base.sensitivity(ec);
+
+  if (!data.global_only)
+    THROW("sensitivity for baseline without --global_only not implemented");
+
+  // sensitivity of baseline term
+  VW::copy_example_metadata(/*audit=*/false, data.ec, &ec);
+  data.ec->l.simple.label = ec.l.simple.label;
+  data.ec->pred.scalar = ec.pred.scalar;
+  // cout << "before base" << endl;
+  const float baseline_sens = base.sensitivity(*data.ec);
+  // cout << "base sens: " << baseline_sens << endl;
+
+  // sensitivity of residual
+  as_singleline(&base)->predict(*data.ec);
+  ec.l.simple.initial = data.ec->pred.scalar;
+  const float sens = base.sensitivity(ec);
+  // cout << " residual sens: " << sens << endl;
+  return baseline_sens + sens;
+}
+
 void finish(baseline& data)
 {
   VW::dealloc_example(simple_label.delete_label, *data.ec);
@@ -181,7 +206,11 @@ base_learner* baseline_setup(arguments& arg)
   if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
     data->lr_scaling = true;
 
-  learner<baseline,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
+  auto base = as_singleline(setup_base(arg));
+
+  learner<baseline,example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
+
+  l.set_sensitivity(sensitivity);
   l.set_finish(finish);
 
   return make_base(l);
