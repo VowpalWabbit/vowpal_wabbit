@@ -413,7 +413,6 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
                      ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
                      : 0;
 
-
     if (is_learn && count > 0 && !test_sequence)
       multiline_learn_or_predict<true>(base, examples, data.offset, i);
     else
