@@ -154,12 +154,12 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
              return true;
            else if (as1.score < as2.score)
              return false;
-           //as1.score == as2.score
-           if (data.scores[as1.action] > data.scores[as2.action])
+           //equal probabilities
+           if (data.scores[as1.action] < data.scores[as2.action])
              return true;
-           else if (data.scores[as1.action] < data.scores[as2.action])
+           else if (data.scores[as1.action] > data.scores[as2.action])
              return false;
-           //as1.score == as2.score && scores are the same
+           //equal probabilities and equal cost estimates
            return as1.action < as2.action;
          }
          );
