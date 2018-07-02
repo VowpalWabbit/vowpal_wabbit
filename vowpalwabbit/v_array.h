@@ -35,8 +35,8 @@ public:
   inline T*& begin() { return _begin; }
   inline T*& end() { return _end; }
 
-  inline T* const cbegin() const { return _begin; }
-  inline T* const cend() const { return _end; }
+  inline T* cbegin() const { return _begin; }
+  inline T* cend() const { return _end; }
 
   // v_array cannot have a user-defined constructor, because it participates in various unions.
   // union members cannot have user-defined constructors.

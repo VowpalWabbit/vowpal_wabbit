@@ -1,3 +1,4 @@
+#pragma once
 namespace LabelDict
 {
 typedef v_hashmap< size_t, features > label_feature_map;

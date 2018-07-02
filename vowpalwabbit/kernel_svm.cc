@@ -434,7 +434,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   double max_val = 0;
   for(size_t i = 0; i < model->num_support; i++)
   {
-    double tmp = model->alpha[i]*model->support_vec[i]->ex.l.simple.label;
+    float tmp = model->alpha[i]*model->support_vec[i]->ex.l.simple.label;
 
     if((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);

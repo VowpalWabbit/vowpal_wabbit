@@ -184,7 +184,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
   else
   {
     for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-      ret += b.regularizers[2 * (iter.index() >> weights.stride_shift())] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+      ret += ((double)b.regularizers[2 * (iter.index() >> weights.stride_shift())]) * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
   }
   return ret;
 }
@@ -236,8 +236,8 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
     if (b.m>0)
       mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
     mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
-    g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
-    g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
+    g1_g1 += ((double)((&(*w))[W_GT])) * ((&(*w))[W_GT]);
     (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
     ((&(*w))[W_GT]) = 0;
   }
@@ -333,7 +333,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       (&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
-      s_q += mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
+      s_q += ((double)mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -409,9 +409,9 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
     g0_d += mem1[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
-    g1_d += (&(*w))[W_GT] * (&(*w))[W_DIR];
-    g1_Hg1 += (&(*w))[W_GT] * (&(*w))[W_GT] * ((&(*w))[W_COND]);
-    g1_g1 += (&(*w))[W_GT] * (&(*w))[W_GT];
+    g1_d += ((double)(&(*w))[W_GT]) * (&(*w))[W_DIR];
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT] * ((&(*w))[W_COND]);
+    g1_g1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT];
   }
 
   wolfe1 = (loss_sum - previous_loss_sum) / (step_size*g0_d);
@@ -757,7 +757,7 @@ int process_pass(vw& all, bfgs& b)
         {
           bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
         }
-        catch (curv_exception e)
+        catch (const curv_exception& e)
         {
           fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
           b.step_size=0.0;

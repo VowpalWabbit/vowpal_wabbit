@@ -482,7 +482,6 @@ using namespace CB_EXPLORE_ADF;
 base_learner* cb_explore_adf_setup(arguments& arg)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
-  cout << "calling cea options" << endl;
   if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
       .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
       .keep("first", data->tau, "tau-first exploration")

@@ -35,6 +35,7 @@ class arguments {
   //initialization
  arguments(vw& all_in, std::string name_in=""):new_od(name_in), missing_critical(false), all(&all_in) {file_options = new std::stringstream;};
  arguments():missing_critical(false){};//this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
+  ~arguments(){ delete file_options;};
 
   //reinitialization
   arguments& new_options(std::string name_in="")
