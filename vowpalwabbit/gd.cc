@@ -329,9 +329,7 @@ float finalize_prediction(shared_data* sd, float ret)
 {
   if ( nanpattern(ret))
   {
-    float ret = 0.;
-    if (ret > sd->max_label) ret = (float)sd->max_label;
-    if (ret < sd->min_label) ret = (float)sd->min_label;
+    ret = 0.;
     cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << endl;
     return ret;
   }
@@ -544,15 +542,15 @@ float get_pred_per_update(gd& g, example& ec)
   {
     if(!stateless)
     {
-      g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
+      g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
       g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
     else
     {
-      double nsnx = g.all->normalized_sum_norm_x + ec.weight * nd.norm_x;
-      double tw = g.total_weight + ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)tw, (float)nsnx, g.neg_norm_power);
+      float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
+      float tw = g.total_weight + ec.weight;
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
   }

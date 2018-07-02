@@ -672,7 +672,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
     {
       if (i + n >= I) break; // no more ngrams
       // we're going to add features for the ngram condition_on_actions[i .. i+N]
-      char name = condition_on_names[i+n];
+      uint64_t name = condition_on_names[i+n];
       fid = fid * 328901 + 71933 * ((condition_on_actions[i+n].a + 349101) * (name + 38490137));
 
       priv.dat_new_feature_ec  = &ec;

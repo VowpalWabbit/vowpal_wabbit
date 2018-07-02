@@ -48,7 +48,13 @@ struct version_struct
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str)
+    version_struct(const version_struct& v)
+  {
+    major = v.major;
+    minor = v.minor;
+    rev = v.rev;
+  }
+    void operator=(const char* v_str)
   { from_string(v_str);
   }
   bool operator==(version_struct v)

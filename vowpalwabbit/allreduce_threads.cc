@@ -22,7 +22,7 @@ AllReduceSync::~AllReduceSync()
 {
   delete m_mutex;
   delete m_cv;
-  delete buffers;
+  delete[] buffers;
 }
 
 void AllReduceSync::waitForSynchronization()
