@@ -147,6 +147,7 @@ test: .FORCE vw library_example
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
+	cd test && python save_resume_test.py --verbose_on_fail
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."
