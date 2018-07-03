@@ -119,7 +119,7 @@ void init_tree(log_multi& d)
   d.nbofswaps = 0;
 }
 
-inline uint32_t min_left_right(log_multi& b, node& n)
+inline uint32_t min_left_right(log_multi& b, const node& n)
 {
   return min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
 }
@@ -151,7 +151,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
   }
 }
 
-void display_tree_dfs(log_multi& b, node node, uint32_t depth)
+void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
   for (uint32_t i = 0; i < depth; i++)
     cout << "\t";
@@ -266,7 +266,7 @@ void train_node(log_multi& b, single_learner& base, example& ec, uint32_t& curre
   b.nodes[current].preds[class_index].norm_Ehk = (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
 }
 
-void verify_min_dfs(log_multi& b, node node)
+void verify_min_dfs(log_multi& b, const node& node)
 {
   if (node.internal)
   {
@@ -280,7 +280,7 @@ void verify_min_dfs(log_multi& b, node node)
   }
 }
 
-size_t sum_count_dfs(log_multi& b, node node)
+size_t sum_count_dfs(log_multi& b, const node& node)
 {
   if (node.internal)
     return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);

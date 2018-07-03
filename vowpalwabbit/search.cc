@@ -1239,7 +1239,7 @@ int choose_policy(search_private& priv, bool advance_prng=true)
   }
 }
 
-bool cached_item_equivalent(unsigned char*& A, unsigned char*& B)
+bool cached_item_equivalent(unsigned char* const & A, unsigned char* const& B)
 {
   size_t sz_A = *A;
   size_t sz_B = *B;
@@ -2345,7 +2345,7 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   if (f == nullptr)
     THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid");
 
-  bool* bg = calloc_or_throw<bool>((A+1)*(A+1));
+  bool* bg = calloc_or_throw<bool>(((size_t)(A+1))*(A+1));
   int rd,from,to,count=0;
   while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
   {
