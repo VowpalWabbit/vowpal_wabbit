@@ -172,7 +172,11 @@ namespace vw_slim {
 				else if (find_opt_float(_command_line_arguments, "--epsilon", _epsilon))
 					_exploration = vw_predict_exploration::epsilon_greedy;
 				else
-					return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
+				{
+					// use epsilon greedy by default
+					_exploration = vw_predict_exploration::epsilon_greedy;
+					_epsilon = 0.05f;
+				}
 			}
 
 			// VW style check_sum validation
