@@ -142,6 +142,6 @@ void accumulate_weighted_avg(vw& all, parameters& weights)
   if (weights.sparse)
     cout << "sparse parameters not supported with parallel computation!" << endl;
   else
-    all_reduce<float, add_float>(all, weights.dense_weights.first(), length*weights.stride_shift());
+    all_reduce<float, add_float>(all, weights.dense_weights.first(), ((size_t)length)*weights.stride_shift());
   delete[] local_weights;
 }
