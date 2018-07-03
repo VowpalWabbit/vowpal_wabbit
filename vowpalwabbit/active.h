@@ -6,4 +6,4 @@ struct active
 };
 
 float query_decision(active& a, example& ec, float k);
-LEARNER::base_learner* active_setup(vw& all);
+LEARNER::base_learner* active_setup(arguments& arg);

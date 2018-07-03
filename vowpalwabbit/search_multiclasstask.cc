@@ -18,7 +18,7 @@ struct task_data
   v_array<uint32_t> y_allowed;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, arguments& /*vm*/)
 {
   task_data * my_task_data = new task_data();
   sch.set_options( 0 );
@@ -37,7 +37,7 @@ void finish(Search::search& sch)
   delete my_task_data;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data * my_task_data = sch.get_task_data<task_data>();
   size_t gold_label = ec[0]->l.multi.label;

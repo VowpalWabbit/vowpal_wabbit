@@ -17,6 +17,7 @@ Implementation by Miro Dudik.
 #include <assert.h>
 #include <sys/timeb.h>
 #include "accumulate.h"
+#include "reductions.h"
 #include "gd.h"
 #include "vw_exception.h"
 
@@ -183,7 +184,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
   else
   {
     for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-      ret += b.regularizers[2 * (iter.index() >> weights.stride_shift())] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+      ret += ((double)b.regularizers[2 * (iter.index() >> weights.stride_shift())]) * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
   }
   return ret;
 }
@@ -235,8 +236,8 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
     if (b.m>0)
       mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
     mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
-    g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
-    g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
+    g1_g1 += ((double)((&(*w))[W_GT])) * ((&(*w))[W_GT]);
     (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
     ((&(*w))[W_GT]) = 0;
   }
@@ -332,7 +333,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       (&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
-      s_q += mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
+      s_q += ((double)mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -408,9 +409,9 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
     g0_d += mem1[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
-    g1_d += (&(*w))[W_GT] * (&(*w))[W_DIR];
-    g1_Hg1 += (&(*w))[W_GT] * (&(*w))[W_GT] * ((&(*w))[W_COND]);
-    g1_g1 += (&(*w))[W_GT] * (&(*w))[W_GT];
+    g1_d += ((double)(&(*w))[W_GT]) * (&(*w))[W_DIR];
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT] * ((&(*w))[W_COND]);
+    g1_g1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT];
   }
 
   wolfe1 = (loss_sum - previous_loss_sum) / (step_size*g0_d);
@@ -667,7 +668,7 @@ int process_pass(vw& all, bfgs& b)
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
       if (!all.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
     }
   }
@@ -726,7 +727,7 @@ int process_pass(vw& all, bfgs& b)
           fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n",
                   "","",ratio,
                   new_step);
-        b.predictions.erase();
+        b.predictions.clear();
         update_weight(all, (float)(-b.step_size+new_step));
         b.step_size = (float)new_step;
         zero_derivative(all);
@@ -756,7 +757,7 @@ int process_pass(vw& all, bfgs& b)
         {
           bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
         }
-        catch (curv_exception e)
+        catch (const curv_exception& e)
         {
           fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
           b.step_size=0.0;
@@ -774,7 +775,7 @@ int process_pass(vw& all, bfgs& b)
           b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
           if (!all.quiet)
             fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-          b.predictions.erase();
+          b.predictions.clear();
           update_weight(all, b.step_size);
         }
       }
@@ -810,7 +811,7 @@ int process_pass(vw& all, bfgs& b)
 
       float d_mag = direction_magnitude(all);
 
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
@@ -886,13 +887,13 @@ void end_pass(bfgs& b)
       //reaching the max number of passes regardless of convergence
       if(b.final_pass == b.current_pass)
       {
-        b.all->trace_message<<"Maximum number of passes reached. ";
+        b.all->opts_n_args.trace_message<<"Maximum number of passes reached. ";
         if(!b.output_regularizer)
-          b.all->trace_message<<"If you want to optimize further, increase the number of passes\n";
+          b.all->opts_n_args.trace_message<<"If you want to optimize further, increase the number of passes\n";
         if(b.output_regularizer)
         {
-          b.all->trace_message<<"\nRegular model file has been created. ";
-          b.all->trace_message<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+          b.all->opts_n_args.trace_message<<"\nRegular model file has been created. ";
+          b.all->opts_n_args.trace_message<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }
@@ -915,7 +916,7 @@ void end_pass(bfgs& b)
         if(b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
-          b.all->trace_message<<"Early termination reached w.r.t. holdout set error";
+          b.all->opts_n_args.trace_message<<"Early termination reached w.r.t. holdout set error";
         }
       } if (b.final_pass == b.current_pass)
       {
@@ -1077,67 +1078,54 @@ void init_driver(bfgs& b)
   b.backstep_on = true;
 }
 
-base_learner* bfgs_setup(vw& all)
+base_learner* bfgs_setup(arguments& arg)
 {
-  if (missing_option(all, false, "bfgs", "use bfgs optimization") &&
-      missing_option(all, false, "conjugate_gradient", "use conjugate gradient based optimization"))
-    return nullptr;
-  new_options(all, "LBFGS options")
-  ("hessian_on", "use second derivative in line search")
-  ("mem", po::value<uint32_t>()->default_value(15), "memory in bfgs")
-  ("termination", po::value<float>()->default_value(0.001f),"Termination threshold");
-  add_options(all);
+  auto b = scoped_calloc_or_throw<bfgs>();
+  if (arg.new_options("LBFGS and Conjugate Gradient options")
+      .critical("conjugate_gradient", "use conjugate gradient based optimization").missing())
+    if (arg.new_options("").critical("bfgs", "use bfgs optimization")
+        (arg.all->hessian_on, "hessian_on", "use second derivative in line search")
+        ("mem", b->m, 15, "memory in bfgs")
+        ("termination", b->rel_threshold, 0.001f,"Termination threshold").missing())
+      return nullptr;
+  b->all = arg.all;
+  b->wolfe1_bound = 0.01;
+  b->first_hessian_on=true;
+  b->first_pass = true;
+  b->gradient_pass = true;
+  b->preconditioner_pass = true;
+  b->backstep_on = false;
+  b->final_pass=arg.all->numpasses;
+  b->no_win_counter = 0;
 
-  po::variables_map& vm = all.vm;
-  bfgs& b = calloc_or_throw<bfgs>();
-  b.all = &all;
-  b.m = vm["mem"].as<uint32_t>();
-  b.rel_threshold = vm["termination"].as<float>();
-  b.wolfe1_bound = 0.01;
-  b.first_hessian_on=true;
-  b.first_pass = true;
-  b.gradient_pass = true;
-  b.preconditioner_pass = true;
-  b.backstep_on = false;
-  b.final_pass=all.numpasses;
-  b.no_win_counter = 0;
-  b.early_stop_thres = 3;
-
-  if(!all.holdout_set_off)
+  if(!arg.all->holdout_set_off)
   {
-    all.sd->holdout_best_loss = FLT_MAX;
-    if(vm.count("early_terminate"))
-      b.early_stop_thres = vm["early_terminate"].as< size_t>();
+    arg.all->sd->holdout_best_loss = FLT_MAX;
+    b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  if (vm.count("hessian_on") || b.m==0)
-  {
-    all.hessian_on = true;
-  }
+  if (b->m==0)
+    arg.all->hessian_on = true;
 
-  if (!all.quiet)
+  if (!arg.all->quiet)
   {
-    if (b.m>0)
-      b.all->trace_message << "enabling BFGS based optimization ";
+    if (b->m>0)
+      b->all->opts_n_args.trace_message << "enabling BFGS based optimization ";
     else
-      b.all->trace_message << "enabling conjugate gradient optimization via BFGS ";
-    if (all.hessian_on)
-      b.all->trace_message << "with curvature calculation" << endl;
+      b->all->opts_n_args.trace_message << "enabling conjugate gradient optimization via BFGS ";
+    if (arg.all->hessian_on)
+      b->all->opts_n_args.trace_message << "with curvature calculation" << endl;
     else
-      b.all->trace_message << "**without** curvature calculation" << endl;
+      b->all->opts_n_args.trace_message << "**without** curvature calculation" << endl;
   }
 
-  if (all.numpasses < 2 && all.training)
-  {
-    free(&b);
+  if (arg.all->numpasses < 2 && arg.all->training)
     THROW("you must make at least 2 passes to use BFGS");
-  }
 
-  all.bfgs = true;
-  all.weights.stride_shift(2);
+  arg.all->bfgs = true;
+  arg.all->weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(&b, learn, all.weights.stride());
-  l.set_predict(predict);
+  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

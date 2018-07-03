@@ -133,7 +133,7 @@ void end_pass(nn& n)
 }
 
 template<bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn& n, base_learner& base, example& ec)
+void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction > 0;
   if (! n.finished_setup)
@@ -374,7 +374,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   n.all->set_minmax (n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, base_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
 {
   for (size_t c=0; c<count; c++)
   {
@@ -409,86 +409,63 @@ void finish(nn& n)
   VW::dealloc_example(nullptr, n.outputweight);
 }
 
-base_learner* nn_setup(vw& all)
+base_learner* nn_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "nn", "Sigmoidal feedforward network with <k> hidden units"))
+  auto n = scoped_calloc_or_throw<nn>();
+  if (arg.new_options("Neural Network")
+      .critical("nn", n->k, "Sigmoidal feedforward network with <k> hidden units")
+      .keep(n->inpass, "inpass", "Train or test sigmoidal feedforward network with input passthrough.")
+      .keep(n->multitask, "multitask", "Share hidden layer across all reduced tasks.")
+      .keep(n->dropout, "dropout", "Train or test sigmoidal feedforward network using dropout.")
+      ("meanfield", "Train or test sigmoidal feedforward network using mean field.").missing())
     return nullptr;
-  new_options(all, "Neural Network options")
-  ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
-  ("multitask", "Share hidden layer across all reduced tasks.")
-  ("dropout", "Train or test sigmoidal feedforward network using dropout.")
-  ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
-  add_options(all);
 
-  po::variables_map& vm = all.vm;
-  nn& n = calloc_or_throw<nn>();
-  n.all = &all;
-  //first parse for number of hidden units
-  n.k = (uint32_t)vm["nn"].as<size_t>();
+  n->all = arg.all;
 
-  if ( vm.count("dropout") )
-  {
-    n.dropout = true;
-    *all.file_options << " --dropout ";
-  }
-
-  if ( vm.count("multitask") )
-  {
-    n.multitask = true;
-    *all.file_options << " --multitask ";
-  }
-
-  if (n.multitask && ! all.quiet)
+  if (n->multitask && ! arg.all->quiet)
     std::cerr << "using multitask sharing for neural network "
-              << (all.training ? "training" : "testing")
+              << (arg.all->training ? "training" : "testing")
               << std::endl;
 
-  if ( vm.count("meanfield") )
+  if ( arg.vm.count("meanfield") )
   {
-    n.dropout = false;
-    if (! all.quiet)
+    n->dropout = false;
+    if (! arg.all->quiet)
       std::cerr << "using mean field for neural network "
-                << (all.training ? "training" : "testing")
+                << (arg.all->training ? "training" : "testing")
                 << std::endl;
   }
 
-  if (n.dropout)
-    if (! all.quiet)
+  if (n->dropout && !arg.all->quiet)
       std::cerr << "using dropout for neural network "
-                << (all.training ? "training" : "testing")
+                << (arg.all->training ? "training" : "testing")
                 << std::endl;
 
-  if (vm.count ("inpass"))
-  {
-    n.inpass = true;
-    *all.file_options << " --inpass";
-
-  }
-
-  if (n.inpass && ! all.quiet)
+  if (n->inpass && !arg.all->quiet)
     std::cerr << "using input passthrough for neural network "
-              << (all.training ? "training" : "testing")
+              << (arg.all->training ? "training" : "testing")
               << std::endl;
 
-  n.finished_setup = false;
-  n.squared_loss = getLossFunction (all, "squared", 0);
+  n->finished_setup = false;
+  n->squared_loss = getLossFunction (*arg.all, "squared", 0);
 
-  n.xsubi = all.random_seed;
+  n->xsubi = arg.all->random_seed;
 
-  n.save_xsubi = n.xsubi;
+  n->save_xsubi = n->xsubi;
 
-  n.hidden_units = calloc_or_throw<float>(n.k);
-  n.dropped_out = calloc_or_throw<bool>(n.k);
-  n.hidden_units_pred = calloc_or_throw<polyprediction>(n.k);
-  n.hiddenbias_pred = calloc_or_throw<polyprediction>(n.k);
+  n->hidden_units = calloc_or_throw<float>(n->k);
+  n->dropped_out = calloc_or_throw<bool>(n->k);
+  n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
+  n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  base_learner* base = setup_base(all);
-  n.increment = base->increment;//Indexing of output layer is odd.
-  learner<nn>&l = init_learner(&n, base,
+  auto base = as_singleline(setup_base(arg));
+  n->increment = base->increment;//Indexing of output layer is odd.
+  nn& nv = *n.get();
+  learner<nn,example>&l = init_learner(n, base,
                                predict_or_learn_multi<true,true>,
                                predict_or_learn_multi<false,true>,
-                               n.k+1);
-  if (n.multitask)
+                               n->k+1);
+  if (nv.multitask)
     l.set_multipredict(multipredict);
   l.set_finish(finish);
   l.set_finish_example(finish_example);

@@ -39,10 +39,9 @@ bool know_all_cost_example(CB::label& ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb& data, base_learner& base, example& ec)
+void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
-
   cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
@@ -66,12 +65,12 @@ void predict_or_learn(cb& data, base_learner& base, example& ec)
   }
 }
 
-void predict_eval(cb&, base_learner&, example&)
+void predict_eval(cb&, single_learner&, example&)
 {
   THROW("can not use a test label for evaluation");
 }
 
-void learn_eval(cb& data, base_learner&, example& ec)
+void learn_eval(cb& data, single_learner&, example& ec)
 {
   CB_EVAL::label ld = ec.l.cb_eval;
 
@@ -90,10 +89,10 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if(!is_test_label(ld))
+  if(!CB::cb_label.test_label(&ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
-  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !CB::cb_label.test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
@@ -110,7 +109,7 @@ void output_example(vw& all, cb& data, example& ec, CB::label& ld)
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
   }
 
-  print_update(all, is_test_label(ld), ec, nullptr, false);
+  print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
 void finish(cb& data)
@@ -123,105 +122,84 @@ void finish(cb& data)
 void finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void eval_finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 }
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(vw& all)
+base_learner* cb_algs_setup(arguments& arg)
 {
-  if (missing_option<size_t, true>(all, "cb", "Use contextual bandit learning with <k> costs"))
+  auto data = scoped_calloc_or_throw<cb>();
+  std::string type_string;
+  bool eval=false;
+
+  if (arg.new_options("Contextual Bandit Options")
+      .critical("cb", data->cbcs.num_actions, "Use contextual bandit learning with <k> costs")
+      .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
+      (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
     return nullptr;
-  new_options(all, "CB options")
-  ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
-  ("eval", "Evaluate a policy rather than optimizing.");
-  add_options(all);
 
-  cb& data = calloc_or_throw<cb>();
-  cb_to_cs& c = data.cbcs;
-  c.num_actions = (uint32_t)all.vm["cb"].as<size_t>();
-
-  bool eval = false;
-  if (all.vm.count("eval"))
-    eval = true;
+  cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;//default for DR
-  if (all.vm.count("cb_type"))
-  {
-    std::string type_string;
-
-    type_string = all.vm["cb_type"].as<std::string>();
-    *all.file_options << " --cb_type " << type_string;
-
-    if (type_string.compare("dr") == 0)
-      c.cb_type = CB_TYPE_DR;
-    else if (type_string.compare("dm") == 0)
+  if (type_string.compare("dr") == 0)
+    c.cb_type = CB_TYPE_DR;
+  else if (type_string.compare("dm") == 0)
     {
       if (eval)
-      {
-        free(&data);
         THROW( "direct method can not be used for evaluation --- it is biased.");
-      }
-
       c.cb_type = CB_TYPE_DM;
       problem_multiplier = 1;
     }
-    else if (type_string.compare("ips") == 0)
+  else if (type_string.compare("ips") == 0)
     {
       c.cb_type = CB_TYPE_IPS;
       problem_multiplier = 1;
     }
-    else
+  else
     {
       std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
       c.cb_type = CB_TYPE_DR;
     }
-  }
-  else
-  {
-    //by default use doubly robust
-    c.cb_type = CB_TYPE_DR;
-    *all.file_options << " --cb_type dr";
-  }
 
-  if (count(all.args.begin(), all.args.end(),"--csoaa") == 0)
+  if (count(arg.args.begin(), arg.args.end(),"--csoaa") == 0)
   {
-    all.args.push_back("--csoaa");
+    arg.args.push_back("--csoaa");
     stringstream ss;
-    ss << all.vm["cb"].as<size_t>();
-    all.args.push_back(ss.str());
+    ss << data->cbcs.num_actions;
+    arg.args.push_back(ss.str());
   }
 
-  base_learner* base = setup_base(all);
+  auto base = as_singleline(setup_base(arg));
   if (eval)
   {
-    all.p->lp = CB_EVAL::cb_eval;
-    all.label_type = label_type::cb_eval;
+    arg.all->p->lp = CB_EVAL::cb_eval;
+    arg.all->label_type = label_type::cb_eval;
   }
   else
   {
-    all.p->lp = CB::cb_label;
-    all.label_type = label_type::cb;
+    arg.all->p->lp = CB::cb_label;
+    arg.all->label_type = label_type::cb;
   }
 
-  learner<cb>* l;
+  learner<cb,example>* l;
   if (eval)
   {
-    l = &init_learner(&data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
+    l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(eval_finish_example);
   }
   else
   {
-    l = &init_learner(&data, base, predict_or_learn<true>, predict_or_learn<false>,
+    l = &init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>,
                       problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  c.scorer = all.scorer;
+  c.scorer = arg.all->scorer;
 
   l->set_finish(finish);
   return make_base(*l);

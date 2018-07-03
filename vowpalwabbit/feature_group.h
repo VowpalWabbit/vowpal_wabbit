@@ -1,4 +1,21 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+*/
+
+#pragma once
+
 #include <memory>
+#include <string>
+#include <cstddef>
+#include "v_array.h"
+
+#ifndef _WIN32
+#include <sys/types.h>
+#else
+#define ssize_t int64_t
+#endif
 
 typedef float feature_value;
 typedef uint64_t feature_index;
@@ -9,7 +26,7 @@ struct feature  //sparse feature definition for the library interface
 { float x;
   uint64_t weight_index;
   feature(float _x, uint64_t _index): x(_x), weight_index(_index) {}
-  feature() {feature(0.f,0);}
+  feature():x(0.f), weight_index(0) {}
 };
 
 struct feature_slice  //a helper struct for functions using the set {v,i,space_name}
@@ -233,6 +250,9 @@ struct features
     sum_feat_sq = 0.f;
   }
 
+  // if one wants to add proper destructor for features, make sure to update ezexample_predict::~ezexample_predict();
+  // ~features() { ... }
+
   inline size_t size() const { return values.size(); }
 
   inline bool nonempty() const { return !values.empty(); }
@@ -251,11 +271,11 @@ struct features
 
   iterator end() { return iterator(values.end(), indicies.end()); }
 
-  void erase()
+  void clear()
   { sum_feat_sq = 0.f;
-    values.erase();
-    indicies.erase();
-    space_names.erase();
+    values.clear();
+    indicies.clear();
+    space_names.clear();
   }
 
   void truncate_to(const features_value_iterator& pos)
@@ -284,6 +304,7 @@ struct features
     indicies.delete_v();
     space_names.delete_v();
   }
+
   void push_back(feature_value v, feature_index i)
   { values.push_back(v);
     indicies.push_back(i);
@@ -331,4 +352,3 @@ struct features
     sum_feat_sq = src.sum_feat_sq;
   }
 };
-

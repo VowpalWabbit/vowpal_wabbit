@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
-LEARNER::base_learner* cb_algs_setup(vw& all);
+LEARNER::base_learner* cb_algs_setup(arguments& arg);
 
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
@@ -20,7 +20,7 @@ namespace CB_ALGS
 
 
 template <bool is_learn>
-float get_cost_pred(LEARNER::base_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
+float get_cost_pred(LEARNER::single_learner* scorer, CB::cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
 { CB::label ld = ec.l.cb;
 
   label_data simple_temp;
@@ -69,6 +69,3 @@ inline float get_unbiased_cost(CB::cb_class* observation, COST_SENSITIVE::label&
 inline bool example_is_newline_not_header(example& ec)
 { return (example_is_newline(ec) && !CB::ec_is_example_header(ec)); }
 }
-
-
-

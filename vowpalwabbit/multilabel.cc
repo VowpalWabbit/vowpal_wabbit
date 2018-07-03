@@ -6,18 +6,10 @@ using namespace std;
 
 namespace MULTILABEL
 {
-bool is_test_label(labels& ld)
-{
-  if (ld.label_v.size() == 0)
-    return true;
-  else
-    return false;
-}
-
 char* bufread_label(labels* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->label_v.erase();
+  ld->label_v.clear();
   c += sizeof(size_t);
   size_t total = sizeof(uint32_t)*num;
   if (buf_read(cache, c, (int)total) < total)
@@ -38,7 +30,7 @@ char* bufread_label(labels* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   labels* ld = (labels*) v;
-  ld->label_v.erase();
+  ld->label_v.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, (int)total) < total)
@@ -73,11 +65,17 @@ void cache_label(void* v, io_buf& cache)
   bufcache_label(ld,c);
 }
 
-void default_label(void* v)
-{
-  labels* ld = (labels*) v;
-  ld->label_v.erase();
-}
+  void default_label(void* v)
+  {
+    labels* ld = (labels*) v;
+    ld->label_v.clear();
+  }
+
+  bool test_label(void* v)
+  {
+    labels* ld = (labels*) v;
+    return ld->label_v.size() == 0;
+  }
 
 void delete_label(void* v)
 {
@@ -99,7 +97,7 @@ void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 {
   labels* ld = (labels*)v;
 
-  ld->label_v.erase();
+  ld->label_v.clear();
   switch(words.size())
   {
   case 0:
@@ -127,6 +125,7 @@ label_parser multilabel = {default_label, parse_label,
                            cache_label, read_cached_label,
                            delete_label, weight,
                            copy_label,
+                           test_label,
                            sizeof(labels)
                           };
 
@@ -155,7 +154,7 @@ void output_example(vw& all, example& ec)
   labels& ld = ec.l.multilabels;
 
   float loss = 0.;
-  if (!is_test_label(ld))
+  if (!test_label(&ld))
   {
     //need to compute exact loss
     labels preds = ec.pred.multilabels;
@@ -167,7 +166,10 @@ void output_example(vw& all, example& ec)
     while(preds_index < preds.label_v.size() && given_index < given.label_v.size())
     {
       if (preds.label_v[preds_index] < given.label_v[given_index])
-        preds_index++;
+        {
+          preds_index++;
+          loss++;
+        }
       else if (preds.label_v[preds_index] > given.label_v[given_index])
       {
         given_index++;
@@ -183,7 +185,7 @@ void output_example(vw& all, example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !is_test_label(ld), loss, 1.f, ec.num_features);
+  all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
     if (sink >= 0)
@@ -200,11 +202,6 @@ void output_example(vw& all, example& ec)
       all.print_text(sink, ss.str(), ec.tag);
     }
 
-  print_update(all, is_test_label(ec.l.multilabels), ec);
-}
-
-bool example_is_test(example& ec)
-{
-  return is_test_label(ec.l.multilabels);
+  print_update(all, test_label(&ec.l.multilabels), ec);
 }
 }

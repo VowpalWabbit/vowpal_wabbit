@@ -251,7 +251,7 @@ class HyperOptimizer(object):
         yh = open(self.holdout_set, 'r')
         self.y_true_holdout = []
         for line in yh:
-            self.y_true_holdout.append(float(line.split('|')[0]))
+            self.y_true_holdout.append(float(line.split()[0]))
         if not self.is_regression:
             self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
         self.logger.info("holdout length: %d" % len(self.y_true_holdout))
@@ -279,6 +279,9 @@ class HyperOptimizer(object):
             y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = -auc(fpr, tpr)
+
+        else:
+            raise KeyError('Invalide outer loss function')
 
         self.logger.info('parameter suffix: %s' % self.param_suffix)
         self.logger.info('loss value: %.6f' % loss)
@@ -316,6 +319,8 @@ class HyperOptimizer(object):
             algo = tpe.suggest
         elif self.searcher == 'rand':
             algo = rand.suggest
+        else:
+            raise KeyError('Invalid searcher')
 
         logging.debug("starting hypersearch...")
         best_params = fmin(objective, space=self.space, trials=self.trials, algo=algo, max_evals=self.max_evals)

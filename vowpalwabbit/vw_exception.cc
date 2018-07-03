@@ -36,18 +36,6 @@ int vw_exception::LineNumber() const
   return lineNumber;
 }
 
-
-vw_argument_disagreement_exception::vw_argument_disagreement_exception(const char* file, int lineNumber, std::string message)
-  : vw_exception(file, lineNumber, message)
-{ }
-
-vw_argument_disagreement_exception::vw_argument_disagreement_exception(const vw_argument_disagreement_exception& ex)
-  : vw_exception(ex)
-{ }
-
-vw_argument_disagreement_exception::~vw_argument_disagreement_exception() _NOEXCEPT
-{ }
-
 #ifdef _WIN32
 
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...)

@@ -154,8 +154,6 @@ void end_pass(gd& g)
   if (all.save_per_pass)
     save_predictor(all, all.final_regressor_name, all.current_pass);
 
-  all.current_pass++;
-
   if(!all.holdout_set_off)
   {
     if(summarize_holdout_set(all, g.no_win_counter))
@@ -331,9 +329,7 @@ float finalize_prediction(shared_data* sd, float ret)
 {
   if ( nanpattern(ret))
   {
-    float ret = 0.;
-    if (ret > sd->max_label) ret = (float)sd->max_label;
-    if (ret < sd->min_label) ret = (float)sd->min_label;
+    ret = 0.;
     cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing " << ret << endl;
     return ret;
   }
@@ -546,15 +542,15 @@ float get_pred_per_update(gd& g, example& ec)
   {
     if(!stateless)
     {
-      g.all->normalized_sum_norm_x += ec.weight * nd.norm_x;
+      g.all->normalized_sum_norm_x += ((double)ec.weight) * nd.norm_x;
       g.total_weight += ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)g.total_weight, (float)g.all->normalized_sum_norm_x, g.neg_norm_power);
     }
     else
     {
-      double nsnx = g.all->normalized_sum_norm_x + ec.weight * nd.norm_x;
-      double tw = g.total_weight + ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>((float)tw, (float)nsnx, g.neg_norm_power);
+      float nsnx = ((float)g.all->normalized_sum_norm_x) + ec.weight * nd.norm_x;
+      float tw = (float)g.total_weight + ec.weight;
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
   }
@@ -973,7 +969,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (resume)
     {
       if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        all.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+        all.opts_n_args.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
       // save_load_online_state(g, model_file, read, text);
       save_load_online_state(all, model_file, read, text, &g);
     }
@@ -1057,122 +1053,115 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(vw& all)
+base_learner* setup(arguments& arg)
 {
-  new_options(all, "Gradient Descent options")
-  ("sgd", "use regular stochastic gradient descent update.")
-  ("adaptive", "use adaptive, individual learning rates.")
-  ("adax", "use adaptive learning rates with x^2 instead of g^2x^2")
-  ("invariant", "use safe/importance aware updates.")
-  ("normalized", "use per feature normalized updates")
-  ("sparse_l2", po::value<float>()->default_value(0.f), "use per feature normalized updates");
-  add_options(all);
-  po::variables_map& vm = all.vm;
-  gd& g = calloc_or_throw<gd>();
-  g.all = &all;
-  g.all->normalized_sum_norm_x = 0;
-  g.no_win_counter = 0;
-  g.total_weight = 0.;
-  g.early_stop_thres = 3;
-  g.sparse_l2 = vm["sparse_l2"].as<float>();
-  g.neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
-  g.neg_power_t = - all.power_t;
-  g.adaptive = all.adaptive;
-  g.normalized = all.normalized_updates;
+  auto g = scoped_calloc_or_throw<gd>();
+  if (arg.new_options("Gradient Descent options")
+      ("sgd", "use regular stochastic gradient descent update.")
+      ("adaptive", "use adaptive, individual learning rates.")
+      ("adax", "use adaptive learning rates with x^2 instead of g^2x^2")
+      ("invariant", "use safe/importance aware updates.")
+      ("normalized", "use per feature normalized updates")
+      ("sparse_l2", g->sparse_l2, 0.f, "use per feature normalized updates")
+      .missing())
+    return nullptr;
 
-  if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
+  g->all = arg.all;
+  g->all->normalized_sum_norm_x = 0;
+  g->no_win_counter = 0;
+  g->total_weight = 0.;
+  g->neg_norm_power = (arg.all->adaptive ? (arg.all->power_t - 1.f) : -1.f);
+  g->neg_power_t = - arg.all->power_t;
+  g->adaptive = arg.all->adaptive;
+  g->normalized = arg.all->normalized_updates;
+
+  if(arg.all->initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (arg.all->initial_t) previous fake datapoints all with norm 1
   {
-    g.all->normalized_sum_norm_x = all.initial_t;
-    g.total_weight = all.initial_t;
+    g->all->normalized_sum_norm_x = arg.all->initial_t;
+    g->total_weight = arg.all->initial_t;
   }
 
   bool feature_mask_off = true;
-  if(vm.count("feature_mask"))
+  if(arg.vm.count("feature_mask"))
     feature_mask_off = false;
 
-  if(!all.holdout_set_off)
+  if(!arg.all->holdout_set_off)
   {
-    all.sd->holdout_best_loss = FLT_MAX;
-    if(vm.count("early_terminate"))
-      g.early_stop_thres = vm["early_terminate"].as< size_t>();
+    arg.all->sd->holdout_best_loss = FLT_MAX;
+    g->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
   }
 
-  if (vm.count("constant"))
-  {
-    g.initial_constant = vm["constant"].as<float>();
-  }
+  g->initial_constant = arg.all->initial_constant;
 
-  if( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") )
+  if( arg.vm.count("sgd") || arg.vm.count("adaptive") || arg.vm.count("invariant") || arg.vm.count("normalized") )
   {
     //nondefault
-    all.adaptive = all.training && vm.count("adaptive");
-    all.invariant_updates = all.training && vm.count("invariant");
-    all.normalized_updates = all.training && vm.count("normalized");
+    arg.all->adaptive = arg.all->training && arg.vm.count("adaptive");
+    arg.all->invariant_updates = arg.all->training && arg.vm.count("invariant");
+    arg.all->normalized_updates = arg.all->training && arg.vm.count("normalized");
 
-    if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
-      all.eta = 10; //default learning rate to 10 for non default update rule
+    if(!arg.vm.count("learning_rate") && !arg.vm.count("l") && !(arg.all->adaptive && arg.all->normalized_updates))
+      arg.all->eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if(!all.adaptive && !all.normalized_updates)
+    if(!arg.all->adaptive && !arg.all->normalized_updates)
     {
-      if (!vm.count("initial_t"))
+      if (!arg.vm.count("initial_t"))
       {
-        all.sd->t = 1.f;
-        all.initial_t = 1.f;
+        arg.all->sd->t = 1.f;
+        arg.all->initial_t = 1.f;
       }
-      all.eta *= powf((float)(all.sd->t), all.power_t);
+      arg.all->eta *= powf((float)(arg.all->sd->t), arg.all->power_t);
     }
   }
   else
   {
-    all.adaptive = all.training;
-    all.invariant_updates = all.training;
-    all.normalized_updates = all.training;
+    arg.all->adaptive = arg.all->training;
+    arg.all->invariant_updates = arg.all->training;
+    arg.all->normalized_updates = arg.all->training;
   }
 
-  if( vm.count("adax"))
-    g.adax = all.training && vm.count("adax");
+  if( arg.vm.count("adax"))
+    g->adax = arg.all->training && arg.vm.count("adax");
 
-  if(g.adax && !all.adaptive)
+  if(g->adax && !arg.all->adaptive)
     THROW("Cannot use adax without adaptive");
 
-  if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
-    all.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
+  if (pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses) < 0.0001 )
+    arg.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << endl;
 
-
-
-  if (all.reg_mode % 2)
-    if (all.audit || all.hash_inv)
+  if (arg.all->reg_mode % 2)
+    if (arg.all->audit || arg.all->hash_inv)
     {
-      g.predict = predict<true, true>;   g.multipredict = multipredict<true, true>;
+      g->predict = predict<true, true>;   g->multipredict = multipredict<true, true>;
     }
     else
     {
-      g.predict = predict<true, false>;  g.multipredict = multipredict<true, false>;
+      g->predict = predict<true, false>;  g->multipredict = multipredict<true, false>;
     }
-  else if (all.audit || all.hash_inv)
+  else if (arg.all->audit || arg.all->hash_inv)
   {
-    g.predict = predict<false, true>;    g.multipredict = multipredict<false, true>;
+    g->predict = predict<false, true>;    g->multipredict = multipredict<false, true>;
   }
   else
   {
-    g.predict = predict<false, false>;   g.multipredict = multipredict<false, false>;
+    g->predict = predict<false, false>;   g->multipredict = multipredict<false, false>;
   }
 
   uint64_t stride;
-  if (all.power_t == 0.5)
-    stride = set_learn<true>(all, feature_mask_off, g);
+  if (arg.all->power_t == 0.5)
+    stride = set_learn<true>(*arg.all, feature_mask_off, *g.get());
   else
-    stride = set_learn<false>(all, feature_mask_off, g);
+    stride = set_learn<false>(*arg.all, feature_mask_off, *g.get());
 
-  all.weights.stride_shift((uint32_t)ceil_log_2(stride-1));
+  arg.all->weights.stride_shift((uint32_t)ceil_log_2(stride-1));
 
-  learner<gd>& ret = init_learner(&g, g.learn, ((uint64_t)1 << all.weights.stride_shift()));
-  ret.set_predict(g.predict);
-  ret.set_sensitivity(g.sensitivity);
-  ret.set_multipredict(g.multipredict);
-  ret.set_update(g.update);
+  gd* bare=g.get();
+  learner<gd,example>& ret = init_learner(g, g->learn, bare->predict, ((uint64_t)1 << arg.all->weights.stride_shift()));
+  ret.set_sensitivity(bare->sensitivity);
+  ret.set_multipredict(bare->multipredict);
+  ret.set_update(bare->update);
   ret.set_save_load(save_load);
   ret.set_end_pass(end_pass);
   return make_base(ret);

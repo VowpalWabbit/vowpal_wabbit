@@ -24,7 +24,4 @@ void print_update_with_score(vw& all, example &ec, uint32_t prediction);
 void finish_example(vw& all, example& ec);
 
 template <class T> void finish_example(vw& all, T&, example& ec) { finish_example(all, ec); }
-
-inline bool label_is_test(label_t* ld)
-{ return ld->label == (uint32_t)-1; }
 }

@@ -12,7 +12,6 @@ class SearchTask():
 
     def __del__(self):
         self.bogus_example.finish()
-        pass
 
     def _run(self, your_own_input_example):
         pass
@@ -44,6 +43,20 @@ class SearchTask():
     def predict(self, my_example, useOracle=False):
         self._call_vw(my_example, isTest=True, useOracle=useOracle);
         return self._output
+
+
+def get_prediction(ec, prediction_type):
+    switch_prediction_type = {
+        pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
+        pylibvw.vw.pSCALARS: ec.get_scalars,
+        pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
+        pylibvw.vw.pACTION_PROBS: ec.get_action_scores,
+        pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
+        pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
+        pylibvw.vw.pPROB: ec.get_prob,
+        pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
+    }
+    return switch_prediction_type[prediction_type]()
 
 
 class vw(pylibvw.vw):
@@ -103,13 +116,15 @@ class vw(pylibvw.vw):
     def learn(self, ec):
         """Perform an online update; ec can either be an example
         object or a string (in which case it is parsed and then
-        learned on)."""
+        learned on) or list which is iterated over."""
         if isinstance(ec, str):
             self.learn_string(ec)
         elif isinstance(ec, example):
             if hasattr(ec, 'setup_done') and not ec.setup_done:
                 ec.setup_example()
             pylibvw.vw.learn(self, ec)
+        elif isinstance(ec, list):
+            pylibvw.vw.learn_multi(self,ec)
         else:
             raise TypeError('expecting string or example object as ec argument for learn, got %s' % type(ec))
 
@@ -126,28 +141,24 @@ class vw(pylibvw.vw):
             ec.setup_done = True
             new_example = True
 
-        if not isinstance(ec, example):
-            raise TypeError('expecting string or example object as ec argument for predict, got %s' % type(ec))
+        if not isinstance(ec, example) and not isinstance(ec, list):
+            raise TypeError('expecting string, example object, or list of example objects as ec argument for predict, got %s' % type(ec))
 
-        if not getattr(ec, 'setup_done', True):
+        if isinstance(ec, example) and not getattr(ec, 'setup_done', True):
             ec.setup_example()
-        pylibvw.vw.predict(self, ec)
 
-        switch_prediction_type = {
-            pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
-            pylibvw.vw.pSCALARS: ec.get_scalars,
-            pylibvw.vw.pACTION_SCORES: ec.get_action_scores,
-            pylibvw.vw.pACTION_PROBS: ec.get_action_scores,
-            pylibvw.vw.pMULTICLASS: ec.get_multiclass_prediction,
-            pylibvw.vw.pMULTILABELS: ec.get_multilabel_predictions,
-            pylibvw.vw.pPROB: ec.get_prob,
-            pylibvw.vw.pMULTICLASSPROBS: ec.get_scalars
-        }
+        if isinstance(ec, example):
+            pylibvw.vw.predict(self, ec)
+        else:
+            pylibvw.vw.predict_multi(self, ec)
 
         if prediction_type is None:
             prediction_type = pylibvw.vw.get_prediction_type(self)
 
-        prediction = switch_prediction_type[prediction_type]()
+        if isinstance(ec, example):
+            prediction = get_prediction(ec, prediction_type)
+        else:
+            prediction = get_prediction(ec[0], prediction_type)
 
         if new_example:
             ec.finish()
@@ -242,41 +253,38 @@ class vw(pylibvw.vw):
             #             P.set_input_at(n, examples[n])
             #     else: # non-LDF
             #         P.set_input(examples)
-            if True:   # TODO: get rid of this
-                if oracle is None: pass
-                elif isinstance(oracle, list):
-                    assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    if len(oracle) > 0:
-                        P.set_oracles(oracle)
-                elif isinstance(oracle, int):
-                    assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    P.set_oracle(oracle)
-                else:
-                    raise TypeError('expecting oracle to be a list or an integer')
-
-                if condition is not None:
-                    if not isinstance(condition, list): condition = [condition]
-                    for c in condition:
-                        if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
-                        if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
-                            P.add_condition(max(0, c[0]), c[1])
-                        elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
-                            P.add_condition_range(max(0,c[0]), max(0,c[1]), c[2])
-                        else:
-                            raise TypeError('item ' + str(c) + ' in condition list malformed')
-
-                if allowed is None: pass
-                elif isinstance(allowed, list):
-                    assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
-                    P.set_alloweds(allowed)
-                else: raise TypeError('allowed argument wrong type')
-
-                if learner_id != 0: P.set_learner_id(learner_id)
-
-                p = P.predict()
-                return p
+            if oracle is None: pass
+            elif isinstance(oracle, list):
+                assert 0 not in oracle, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                if len(oracle) > 0:
+                    P.set_oracles(oracle)
+            elif isinstance(oracle, int):
+                assert oracle > 0, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                P.set_oracle(oracle)
             else:
-                raise TypeError("'examples' should be a pyvw example (or a pylibvw example), or a list of said things")
+                raise TypeError('expecting oracle to be a list or an integer')
+
+            if condition is not None:
+                if not isinstance(condition, list): condition = [condition]
+                for c in condition:
+                    if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
+                    if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
+                        P.add_condition(max(0, c[0]), c[1])
+                    elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
+                        P.add_condition_range(max(0,c[0]), max(0,c[1]), c[2])
+                    else:
+                        raise TypeError('item ' + str(c) + ' in condition list malformed')
+
+            if allowed is None: pass
+            elif isinstance(allowed, list):
+                assert 0 not in allowed, 'multiclass labels are from 1..., please do not use zero or bad things will happen!'
+                P.set_alloweds(allowed)
+            else: raise TypeError('allowed argument wrong type')
+
+            if learner_id != 0: P.set_learner_id(learner_id)
+
+            p = P.predict()
+            return p
 
         sch.predict = predict
         num_actions = sch.get_num_actions()
@@ -457,7 +465,7 @@ class cost_sensitive_label(abstract_label):
 
         self.prediction = ex.get_costsensitive_prediction()
         self.costs = []
-        for i in range(ex.get_costsensitive_num_costs):
+        for i in range(ex.get_costsensitive_num_costs()):
             wc = wclass(ex.get_costsensitive_class(i),
                         ex.get_costsensitive_cost(i),
                         ex.get_costsensitive_partial_prediction(i),
@@ -487,7 +495,7 @@ class cbandits_label(abstract_label):
 
         self.prediction = ex.get_cbandits_prediction()
         self.costs = []
-        for i in range(ex.get_cbandits_num_costs):
+        for i in range(ex.get_cbandits_num_costs()):
             wc = wclass(ex.get_cbandits_class(i),
                         ex.get_cbandits_cost(i),
                         ex.get_cbandits_partial_prediction(i),
@@ -626,7 +634,6 @@ class example(pylibvw.example):
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
-
     def push_hashed_feature(self, ns, f, v=1.):
         """Add a hashed feature to a given namespace."""
         if self.setup_done: self.unsetup_example();
@@ -692,7 +699,6 @@ class example(pylibvw.example):
         #     else:
         #         raise Exception('malformed feature to push of type: ' + str(type(feature)))
         #     self.push_feature(ns, f, v, ns_hash)
-
 
     def finish(self):
         """Tell VW that you're done with this example and it can

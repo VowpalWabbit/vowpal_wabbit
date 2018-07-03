@@ -24,7 +24,7 @@ bool substring_equal(substring&a, substring&b)
 
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
-  ret.erase();
+  ret.clear();
   char *last = s.begin;
   for (; s.begin != s.end; s.begin++)
   {

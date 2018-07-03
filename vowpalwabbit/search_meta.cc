@@ -13,10 +13,10 @@ license as described in the file LICENSE.
 using namespace std;
 namespace DebugMT
 {
-void run(Search::search& sch, vector<example*>& ec);
+void run(Search::search& sch, multi_ex& ec);
 Search::search_metatask metatask = { "debug", run, nullptr, nullptr, nullptr, nullptr };
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   sch.base_task(ec)
   .foreach_action(
@@ -46,8 +46,8 @@ void run(Search::search& sch, vector<example*>& ec)
 
 namespace SelectiveBranchingMT
 {
-void run(Search::search& sch, vector<example*>& ec);
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm);
+void run(Search::search& sch, multi_ex& ec);
+void initialize(Search::search& sch, size_t& num_actions, arguments& vm);
 void finish(Search::search& sch);
 Search::search_metatask metatask = { "selective_branching", run, initialize, finish, nullptr, nullptr };
 
@@ -85,15 +85,14 @@ struct task_data
   }
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  po::options_description opts("selective branching options");
-  opts.add_options()
-  ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
-  ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)");
-  sch.add_program_options(vm, opts);
+  if (arg.new_options("selective branching options")
+      ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
+      ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)").missing())
+    return;
 
   task_data* d = new task_data(max_branches, kbest);
   sch.set_metatask_data(d);
@@ -101,14 +100,14 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
 
 void finish(Search::search& sch) { delete sch.get_metatask_data<task_data>(); }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& d = *sch.get_metatask_data<task_data>();
 
   // generate an initial trajectory, but record possible branches
-  d.branches.erase();
-  d.final.erase();
-  d.trajectory.erase();
+  d.branches.clear();
+  d.final.clear();
+  d.trajectory.clear();
   d.total_cost = 0.;
   d.output_string = nullptr;
 
@@ -160,7 +159,7 @@ void run(Search::search& sch, vector<example*>& ec)
   for (size_t i=0; i<min(d.max_branches, d.branches.size()); i++)
   {
     d.cur_branch = i;
-    d.trajectory.erase();
+    d.trajectory.clear();
     d.total_cost = 0.;
     d.output_string = nullptr;
 
@@ -242,9 +241,9 @@ void run(Search::search& sch, vector<example*>& ec)
 
   // clean up memory
   for (size_t i=0; i<d.branches.size(); i++) d.branches[i].second.delete_v();
-  d.branches.erase();
+  d.branches.clear();
   for (size_t i=0; i<d.final.size(); i++) { d.final[i].first.second.delete_v(); delete d.final[i].second; }
-  d.final.erase();
+  d.final.clear();
   if (d.kbest_out) delete d.kbest_out; d.kbest_out = nullptr;
 }
 }

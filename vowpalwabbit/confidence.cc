@@ -7,7 +7,7 @@ using namespace std;
 struct confidence { vw* all;};
 
 template <bool is_learn, bool is_confidence_after_training>
-void predict_or_learn_with_confidence(confidence& c, base_learner& base, example& ec)
+void predict_or_learn_with_confidence(confidence& c, single_learner& base, example& ec)
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
@@ -65,31 +65,29 @@ void output_and_account_confidence_example(vw& all, example& ec)
 void return_confidence_example(vw& all, confidence& c, example& ec)
 {
   output_and_account_confidence_example(all, ec);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
-base_learner* confidence_setup(vw& all)
+base_learner* confidence_setup(arguments& arg)
 {
-  //parse and set arguments
-  new_options(all, "confidence options") ("confidence_after_training", "Confidence after training");
-  add_options(all);
-  po::variables_map& vm = all.vm;
+  if (arg.new_options("Confidence")
+      .critical("confidence", "Get confidence for binary predictions")
+      ("confidence_after_training", "Confidence after training").missing())
+    return nullptr;
 
-  if(missing_option(all, false, "confidence", "Get confidence for binary predictions")) return nullptr;
-
-  if(!all.training)
+  if(!arg.all->training)
   {
     cout << "Confidence does not work in test mode because learning algorithm state is needed.  Use --save_resume when saving the model and avoid --test_only" << endl;
     return nullptr;
   }
 
-  confidence& data = calloc_or_throw<confidence>();
-  data.all=&all;
+  auto data = scoped_calloc_or_throw<confidence>();
+  data->all=arg.all;
 
-  void (*learn_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
-  void (*predict_with_confidence_ptr)(confidence&, base_learner&, example&) = nullptr;
+  void (*learn_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
+  void (*predict_with_confidence_ptr)(confidence&, single_learner&, example&) = nullptr;
 
-  if(vm.count("confidence_after_training"))
+  if(arg.vm.count("confidence_after_training"))
   {
     learn_with_confidence_ptr = predict_or_learn_with_confidence<true, true>;
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, true>;
@@ -101,7 +99,7 @@ base_learner* confidence_setup(vw& all)
   }
 
   //Create new learner
-  learner<confidence>& l = init_learner(&data, setup_base(all), learn_with_confidence_ptr, predict_with_confidence_ptr);
+  learner<confidence,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn_with_confidence_ptr, predict_with_confidence_ptr);
 
   l.set_finish_example(return_confidence_example);
 

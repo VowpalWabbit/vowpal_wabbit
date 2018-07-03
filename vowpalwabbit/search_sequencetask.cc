@@ -16,7 +16,7 @@ namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf"
 
 namespace SequenceTask
 {
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& /*arg*/)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -24,7 +24,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map&
                    0);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   Search::predictor P(sch, (ptag)0);
   for (size_t i=0; i<ec.size(); i++)
@@ -72,7 +72,7 @@ inline action bilou_to_bio(action y)
   return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
 }
 
-void convert_bio_to_bilou(vector<example*> ec)
+void convert_bio_to_bilou(multi_ex& ec)
 {
   for (size_t n=0; n<ec.size(); n++)
   {
@@ -80,8 +80,7 @@ void convert_bio_to_bilou(vector<example*> ec)
     action y = ylab.label;
     action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
     if (y == 1)   // do nothing
-    {
-    }
+      ;
     else if (y % 2 == 0)     // this is a begin-X
     {
       if (nexty != y + 1) // should be unit
@@ -108,15 +107,18 @@ struct task_data
   size_t multipass;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   task_data * D = new task_data();
-  po::options_description sspan_opts("search sequencespan options");
-  sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
-  sspan_opts.add_options()("search_span_multipass", po::value<size_t>(&(D->multipass))->default_value(1), "do multiple passes");
-  sch.add_program_options(vm, sspan_opts);
+  if (arg.new_options("search sequencespan options")
+      ("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding")
+      ("search_span_multipass", D->multipass, (size_t)1, "do multiple passes").missing())
+    {
+      delete D;
+      return;
+    }
 
-  if (vm.count("search_span_bilou"))
+  if (arg.vm.count("search_span_bilou"))
   {
     cerr << "switching to BILOU encoding for sequence span labeling" << endl;
     D->encoding = BILOU;
@@ -125,8 +127,7 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm)
   else
     D->encoding = BIO;
 
-
-  D->allowed_actions.erase();
+  D->allowed_actions.clear();
 
   if (D->encoding == BIO)
   {
@@ -163,14 +164,14 @@ void finish(Search::search& sch)
   delete D;
 }
 
-void setup(Search::search& sch, vector<example*>& ec)
+void setup(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   if (D.encoding == BILOU)
     convert_bio_to_bilou(ec);
 }
 
-void takedown(Search::search& sch, vector<example*>& ec)
+void takedown(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
 
@@ -182,7 +183,7 @@ void takedown(Search::search& sch, vector<example*>& ec)
     }
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   v_array<action> * y_allowed = &(D.allowed_actions);
@@ -237,7 +238,7 @@ void run(Search::search& sch, vector<example*>& ec)
 
 namespace SequenceTaskCostToGo
 {
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -247,7 +248,7 @@ void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*v
   sch.set_task_data<size_t>(&num_actions);
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   size_t K = * sch.get_task_data<size_t>();
   float*costs = calloc_or_throw<float>(K);
@@ -279,18 +280,17 @@ struct task_data
   bool predict_max;
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, po::variables_map& vm)
+void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
 {
   task_data* D = new task_data();
-
-  po::options_description argmax_opts("argmax options");
-  argmax_opts.add_options()
-  ("cost", po::value<float>(&(D->false_negative_cost))->default_value(10.0), "False Negative Cost")
-  ("negative_weight", po::value<float>(&(D->negative_weight))->default_value(1), "Relative weight of negative examples")
-  ("max", "Disable structure: just predict the max");
-  sch.add_program_options(vm, argmax_opts);
-
-  D->predict_max = vm.count("max") > 0;
+  if (arg.new_options("argmax options")
+      ("cost", D->false_negative_cost, 10.0f, "False Negative Cost")
+      ("negative_weight", D->negative_weight, 1.f, "Relative weight of negative examples")
+      (D->predict_max, "max", "Disable structure: just predict the max").missing())
+    {
+      delete D;
+      return;
+    }
 
   sch.set_task_data(D);
 
@@ -307,7 +307,7 @@ void finish(Search::search& sch)
   delete D;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
@@ -346,7 +346,7 @@ struct task_data
   size_t   num_actions;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, po::variables_map& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, arguments& /*arg*/)
 {
   CS::wclass default_wclass = { 0., 0, 0., 0. };
 
@@ -387,7 +387,7 @@ void my_update_example_indicies(Search::search& sch, bool audit, example* ec, ui
       idx = (((idx >> ss) * mult_amount) + plus_amount) << ss;
 }
 
-void run(Search::search& sch, vector<example*>& ec)
+void run(Search::search& sch, multi_ex& ec)
 {
   task_data *data = sch.get_task_data<task_data>();
   Search::predictor P(sch, (ptag)0);
