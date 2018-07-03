@@ -65,9 +65,12 @@ void finish(cbify& data)
   if (data.use_adf)
   {
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-    {
-      VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-    }
+      {
+        data.adf_data.ecs[a]->pred.a_s.delete_v();
+        VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
+        free(data.adf_data.ecs[a]);
+      }
+    data.adf_data.ecs.~vector<example*>();
   }
 }
 

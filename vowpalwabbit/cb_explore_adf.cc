@@ -75,7 +75,7 @@ struct cb_explore_adf
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
   // for random tie breaking
-  std::set<uint32_t> tied_actions;
+  std::vector<uint32_t> tied_actions;
 
   // for RegCB
   std::vector<float> min_costs;
@@ -228,7 +228,7 @@ void fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
   data.tied_actions.clear();
   for (size_t i = 0; i < preds.size(); ++i)
     if (i == 0 || preds[i].score == preds[0].score)
-      data.tied_actions.insert(preds[i].action);
+      data.tied_actions.push_back(i);
 }
 
 template <bool is_learn>
@@ -279,11 +279,10 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
   for (size_t i = 0; i < num_actions; i++)
     preds[i].score = prob;
   if (!data.first_only)
-  {
-    for (size_t i = 0; i < num_actions; ++i)
-      if (data.tied_actions.count(preds[i].action) > 0)
-        preds[i].score += (1.f - data.epsilon) / data.tied_actions.size();
-  }
+    {
+      for (size_t i = 0; i < data.tied_actions.size(); ++i)
+        preds[data.tied_actions[i]].score += (1.f - data.epsilon) / data.tied_actions.size();
+    }
   else
     preds[0].score += 1.f - data.epsilon;
 }
@@ -425,8 +424,8 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
     if (!data.first_only)
     {
       fill_tied(data, preds);
-      for (uint32_t a : data.tied_actions)
-        top_actions[a] += 1.f / data.tied_actions.size();
+      for (uint32_t preds_index : data.tied_actions)
+        top_actions[preds[preds_index].action] += 1.f / data.tied_actions.size();
     }
     else
       top_actions[preds[0].action] += 1.f;
@@ -486,8 +485,8 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   if (!data.first_only)
   {
     fill_tied(data, preds);
-    for (uint32_t a : data.tied_actions)
-      probs[a].score += additive_probability / data.tied_actions.size();
+    for (uint32_t preds_index : data.tied_actions)
+      probs[preds[preds_index].action].score += additive_probability / data.tied_actions.size();
   }
   else
     probs[preds[0].action].score += additive_probability;
@@ -519,13 +518,13 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
     {
       fill_tied(data, preds);
       const float add_prob = additive_probability / data.tied_actions.size();
-      for (uint32_t a : data.tied_actions)
+      for (uint32_t preds_index : data.tied_actions)
       {
-        if (probs[a].score < min_prob)
-          norm += max(0, add_prob - (min_prob - probs[a].score));
+        if (probs[preds[preds_index].action].score < min_prob)
+          norm += max(0, add_prob - (min_prob - probs[preds[preds_index].action].score));
         else
           norm += add_prob;
-        probs[a].score += add_prob;
+        probs[preds[preds_index].action].score += add_prob;
       }
     }
     else
@@ -566,6 +565,11 @@ void finish(cb_explore_adf& data)
 {
   data.top_actions.~vector<float>();
   data.scores.~vector<float>();
+  data.tied_actions.~vector<uint32_t>();
+  data.min_costs.~vector<float>();
+  data.max_costs.~vector<float>();
+  data.ex_as.~vector<action_scores>();
+  data.ex_costs.~vector<v_array<CB::cb_class>>();
   data.action_probs.delete_v();
   data.cs_labels.costs.delete_v();
   data.cs_labels_2.costs.delete_v();
