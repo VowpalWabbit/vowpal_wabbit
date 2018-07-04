@@ -82,10 +82,6 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
       catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
         { }
 
-      cout << "args = ";
-      for(auto i: args)
-        cout << " " << i;
-      cout << endl;
       dup_args.clear();
       bool previous_option_needs_argument = false;
       for (auto&& arg : args)

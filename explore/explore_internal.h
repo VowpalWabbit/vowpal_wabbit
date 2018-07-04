@@ -124,7 +124,7 @@ namespace exploration
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
-    float num_models = std::accumulate(top_actions_first, top_actions_last, 0);
+    float num_models = std::accumulate(top_actions_first, top_actions_last, 0.);
     if (num_models <= 1e-6)
     {
       // based on above checks we have at least 1 element in pdf
@@ -137,8 +137,9 @@ namespace exploration
 
     // divide late to improve numeric stability
     InputIt t_a = top_actions_first;
+    float normalizer = 1.f / num_models;
     for (OutputIt d = pdf_first; d != pdf_last && t_a != top_actions_last; ++d, ++t_a)
-      *d = *t_a / num_models;
+      *d = *t_a * normalizer;
 
     return S_EXPLORATION_OK;
   }
