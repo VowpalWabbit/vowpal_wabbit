@@ -124,7 +124,7 @@ namespace exploration
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
-    float num_models = std::accumulate(top_actions_first, top_actions_last, 0.);
+    float num_models = (float)std::accumulate(top_actions_first, top_actions_last, 0.);
     if (num_models <= 1e-6)
     {
       // based on above checks we have at least 1 element in pdf
