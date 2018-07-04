@@ -823,7 +823,7 @@ void free_svm_model(svm_model* model)
     // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete (model->support_vect[i])', the warning goes away.
     // Disable SDL warning.
     //    #pragma warning(disable:6001)
-    free(model->support_vec[i]);
+    free_it(model->support_vec[i]);
     //  #pragma warning(default:6001)
 
     model->support_vec[i] = 0;

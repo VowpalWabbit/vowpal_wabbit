@@ -757,7 +757,7 @@ int process_pass(vw& all, bfgs& b)
         {
           bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
         }
-        catch (const curv_exception& e)
+        catch (const curv_exception&)
         {
           fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
           b.step_size=0.0;
