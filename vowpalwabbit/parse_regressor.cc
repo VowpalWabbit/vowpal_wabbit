@@ -465,7 +465,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       }
       else
       {
-        if (all.save_resume) //We need to save our current PRG state
+        if (all.save_resume && all.random_state != 0) //We need to save our current PRG state
           *all.opts_n_args.file_options << " --random_seed " << all.random_state;
 
         msg << "options:"<< all.opts_n_args.file_options->str() << "\n";
