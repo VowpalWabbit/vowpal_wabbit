@@ -142,7 +142,16 @@ void train(gd& g, example& ec, float update)
 void end_pass(gd& g)
 {
   vw& all = *g.all;
-  sync_weights(all);
+  if(all.save_resume)
+    {
+      all.opts_n_args.file_options->precision(15);
+      if (all.sd->gravity != 0.)
+        *all.opts_n_args.file_options << " --l1_state " << all.sd->gravity;
+      if (all.sd->contraction != 1.)
+        *all.opts_n_args.file_options << " --l2_state " << all.sd->contraction;
+    }
+  else
+    sync_weights(all);
   if (all.all_reduce != nullptr)
   {
     if (all.adaptive)
@@ -630,7 +639,7 @@ void update(gd& g, base_learner&, example& ec)
   if ( (update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
 
-  if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+  if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
 
@@ -976,6 +985,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     else
       save_load_regressor(all, model_file, read, text);
   }
+  if (!all.training)//If the regressor was saved as --save_resume, then when testing we want to materialize the weights.
+    sync_weights(all);
 }
 
 template<bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
@@ -1063,6 +1074,8 @@ base_learner* setup(arguments& arg)
       ("invariant", "use safe/importance aware updates.")
       ("normalized", "use per feature normalized updates")
       ("sparse_l2", g->sparse_l2, 0.f, "use per feature normalized updates")
+      ("l1_state", arg.all->sd->gravity, 0., "use per feature normalized updates")
+      ("l2_state", arg.all->sd->contraction, 1., "use per feature normalized updates")
       .missing())
     return nullptr;
 
