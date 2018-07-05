@@ -69,6 +69,12 @@
     <ClInclude Include="str_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="vw_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+>>>>>>> master
     <ClInclude Include="..\include\constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -87,6 +93,7 @@
     <ClInclude Include="interruptable_sleeper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="interruptable_sleeper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -102,6 +109,8 @@
     <ClInclude Include="vw_model\vw_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+=======
+>>>>>>> master
     <ClInclude Include="periodic_background_proc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -156,9 +165,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="factory_resolver.cc">
+<<<<<<< HEAD
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="data_callback_fn.cc">
+=======
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_model.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="data_callback_fn.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_downloader.cc">
+>>>>>>> master
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="context_helper.cc">

@@ -161,9 +161,9 @@ void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld
 void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
   bool shared = CB::ec_is_example_header(*(ec_seq[0]));
-  c.action_sum += ec_seq.size()-2; //-1 for shared -1 for end example
-  if (!shared)
-    c.action_sum += 1;
+  c.action_sum += ec_seq.size();
+  if (shared)
+    c.action_sum -= 1;
   c.event_sum++;
 
   c.mtr_ec_seq.clear();

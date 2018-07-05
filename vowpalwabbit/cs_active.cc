@@ -135,7 +135,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint3
 
 inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float delta, float eta, float& min_pred, float& max_pred, bool& is_range_large)
 {
-  float tol = 1e-6;//1e-20;
+  float tol = 1e-6f;
 
   base.predict(ec, i-1);
   float sens = base.sensitivity(ec, i-1);

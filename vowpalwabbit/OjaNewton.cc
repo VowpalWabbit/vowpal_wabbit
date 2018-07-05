@@ -95,13 +95,13 @@ struct OjaNewton
         double tmp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-          tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
+          tmp += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[k];
         for (uint32_t i = 0; i < length; i++)
           (&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-        norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
+        norm += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[j];
       norm = sqrt(norm);
       for (uint32_t i = 0; i < length; i++)
         (&(weights.strided_index(i)))[j] /= (float)norm;

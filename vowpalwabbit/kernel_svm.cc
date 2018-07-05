@@ -434,7 +434,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   double max_val = 0;
   for(size_t i = 0; i < model->num_support; i++)
   {
-    double tmp = model->alpha[i]*model->support_vec[i]->ex.l.simple.label;
+    float tmp = model->alpha[i]*model->support_vec[i]->ex.l.simple.label;
 
     if((tmp < model->support_vec[i]->ex.l.simple.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
       subopt[i] = fabs(model->delta[i]);
@@ -823,7 +823,7 @@ void free_svm_model(svm_model* model)
     // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete (model->support_vect[i])', the warning goes away.
     // Disable SDL warning.
     //    #pragma warning(disable:6001)
-    free(model->support_vec[i]);
+    free_it(model->support_vec[i]);
     //  #pragma warning(default:6001)
 
     model->support_vec[i] = 0;

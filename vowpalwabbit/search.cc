@@ -672,7 +672,7 @@ void add_example_conditioning(search_private& priv, example& ec, size_t conditio
     {
       if (i + n >= I) break; // no more ngrams
       // we're going to add features for the ngram condition_on_actions[i .. i+N]
-      char name = condition_on_names[i+n];
+      uint64_t name = condition_on_names[i+n];
       fid = fid * 328901 + 71933 * ((condition_on_actions[i+n].a + 349101) * (name + 38490137));
 
       priv.dat_new_feature_ec  = &ec;
@@ -1239,7 +1239,7 @@ int choose_policy(search_private& priv, bool advance_prng=true)
   }
 }
 
-bool cached_item_equivalent(unsigned char*& A, unsigned char*& B)
+bool cached_item_equivalent(unsigned char* const & A, unsigned char* const& B)
 {
   size_t sz_A = *A;
   size_t sz_B = *B;
@@ -2345,7 +2345,7 @@ v_array<CS::label> read_allowed_transitions(action A, const char* filename)
   if (f == nullptr)
     THROW("error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid");
 
-  bool* bg = calloc_or_throw<bool>((A+1)*(A+1));
+  bool* bg = calloc_or_throw<bool>(((size_t)(A+1))*(A+1));
   int rd,from,to,count=0;
   while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
   {

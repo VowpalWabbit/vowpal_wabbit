@@ -34,6 +34,27 @@ namespace reinforcement_learning {
     status_builder& operator=(const status_builder&) = delete;
     status_builder& operator=(status_builder&&) = delete;
   };
+
+  template <typename Last>
+  void report_error(std::ostringstream& os, const Last& last) {
+    os << last;
+  }
+
+  template <typename First, typename ... Rest>
+  void report_error(std::ostringstream& os, const First& first, const Rest& ... rest) {
+    os << first;
+    report_error(os, rest...);
+  }
+
+  template <typename ... All>
+  int report_error(api_status* status, int scode, const All& ... all) {
+    if ( status != nullptr ) {
+      std::ostringstream os;
+      report_error(os, all...);
+      api_status::try_update(status, scode, os.str().c_str());
+    }
+    return scode;
+  }
 }
 
 template <typename T>

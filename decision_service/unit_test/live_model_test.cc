@@ -13,6 +13,7 @@
 #include "api_status.h"
 #include "ranking_response.h"
 #include "err_constants.h"
+<<<<<<< HEAD
 #include "constants.h"
 
 namespace r = reinforcement_learning;
@@ -31,6 +32,8 @@ const auto JSON_CFG = R"(
   }
   )";
 const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
+=======
+>>>>>>> master
 
 BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
@@ -158,10 +161,15 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   http_server.on_initialize(U("http://localhost:8080"),post_error);
 
   //create a simple ds configuration
+<<<<<<< HEAD
   u::config_collection config;
   auto const status = cfg::create_from_json(JSON_CFG,config);
   BOOST_CHECK_EQUAL(status, r::error_code::success);
   config.set(r::name::EH_TEST, "true");
+=======
+  auto config = r::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  config.set("local_eventhub_test", "true");
+>>>>>>> master
 
   ////////////////////////////////////////////////////////////////////
   //// Following mismatched object type is prevented by the compiler
@@ -180,7 +188,11 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
   // request ranking
+<<<<<<< HEAD
   BOOST_CHECK_EQUAL(ds.choose_rank(uuid, JSON_CONTEXT, response), r::error_code::success);
+=======
+  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), r::error_code::success);
+>>>>>>> master
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   BOOST_CHECK_GT(the_server._err_count, 1);

@@ -40,18 +40,32 @@ namespace reinforcement_learning {
       //expect http code 201
       if (response.status_code() == status_codes::Created)
         return error_code::success;
+<<<<<<< HEAD
 
       //report error (cannot use the macro here since return type is auto deduced)
       RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
         response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
         "\npost_data: ", post_data);
+=======
+      //report error
+      return report_error(status, error_code::http_bad_status_code,
+                          "bad http code (expected 201): ",
+                          response.status_code(), "\n",
+                          "post_data: ", post_data);
+>>>>>>> master
     });
     try {
       request_task.wait();
       return request_task.get();
     }
     catch (const std::exception& e) {
+<<<<<<< HEAD
       RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
+=======
+      return report_error(status, error_code::eventhub_http_generic,
+                          e.what(),
+                          "post_data: " , post_data);
+>>>>>>> master
     }
   }
 

@@ -3,6 +3,7 @@
   individual contributors. All rights reserved.  Released under a BSD (revised)
   license as described in the file LICENSE.
 */
+#pragma once
 #include <float.h>
 
 #include "vw.h"
@@ -135,8 +136,8 @@ void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::
   if (ld.costs.size() == 0)//a test example
     for (uint32_t i = 1; i <= c.num_actions; i++)
     { //Explicit declaration for a weak compiler.
-      COST_SENSITIVE::wclass c = { FLT_MAX, i, 0., 0. };
-      cs_ld.costs.push_back(c);
+      COST_SENSITIVE::wclass temp = { FLT_MAX, i, 0., 0. };
+      cs_ld.costs.push_back(temp);
     }
   else if (ld.costs.size() == 1 || ld.costs.size() == 0) //this is a typical example where we can perform all actions
     //in this case generate cost-sensitive example with all actions

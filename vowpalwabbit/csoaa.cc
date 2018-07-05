@@ -113,8 +113,7 @@ void predict_or_learn(csoaa& c, single_learner& base, example& ec)
 
 void finish_example(vw& all, csoaa&, example& ec)
 {
-  output_example(all, ec);
-  VW::finish_example(all, ec);
+  COST_SENSITIVE::finish_example(all, ec);
 }
 
 void finish(csoaa& c)
@@ -578,10 +577,10 @@ void output_example(vw& all, example& ec, bool& hit_loss, multi_ex* ec_seq, ldf&
     float  min_score = FLT_MAX;
     for (size_t k=start_K; k<K; k++)
     {
-      example *ec = (*ec_seq)[k];
-      if (ec->partial_prediction < min_score)
+      example *ec_k = (*ec_seq)[k];
+      if (ec_k->partial_prediction < min_score)
       {
-        min_score = ec->partial_prediction;
+        min_score = ec_k->partial_prediction;
         predicted_K = (uint32_t)k;
       }
     }

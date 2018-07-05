@@ -1,10 +1,14 @@
 #include "model_mgmt.h"
+<<<<<<< HEAD
 #include <new>
+=======
+>>>>>>> master
 
 namespace reinforcement_learning {
   namespace model_management {
 
     model_data::model_data() 
+<<<<<<< HEAD
     :_data{nullptr}, _data_sz { 0 }, _refresh_count { 0 } {}
 
     char* model_data::data() const { return _data; }
@@ -25,4 +29,7 @@ namespace reinforcement_learning {
       _data    = nullptr;
       _data_sz = 0;
     }
+=======
+    :data{nullptr}, data_sz { 0 }, data_refresh_count { 0 } {}
+>>>>>>> master
 }}
