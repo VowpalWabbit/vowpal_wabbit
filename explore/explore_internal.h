@@ -124,8 +124,8 @@ namespace exploration
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
 
-    uint32_t num_models = std::accumulate(top_actions_first, top_actions_last, 0);
-    if (num_models == 0)
+    float num_models = std::accumulate(top_actions_first, top_actions_last, 0);
+    if (num_models <= 1e-6)
     {
       // based on above checks we have at least 1 element in pdf
       *pdf_first = 1;
@@ -138,7 +138,7 @@ namespace exploration
     // divide late to improve numeric stability
     InputIt t_a = top_actions_first;
     for (OutputIt d = pdf_first; d != pdf_last && t_a != top_actions_last; ++d, ++t_a)
-      *d = *t_a / (float)num_models;
+      *d = *t_a / num_models;
 
     return S_EXPLORATION_OK;
   }
@@ -216,7 +216,7 @@ namespace exploration
             *d *= ratio;
       }
     }
-    
+
     return S_EXPLORATION_OK;
   }
 
@@ -251,7 +251,7 @@ namespace exploration
       *pdf_first = 1;
       return S_EXPLORATION_OK;
     }
-    
+
     float draw = total * uniform_random_merand48(seed);
     if (draw > total) //make very sure that draw can not be greater than total.
       draw = total;
@@ -300,7 +300,7 @@ namespace exploration
       OutputIt ranking_first, OutputIt ranking_last, std::random_access_iterator_tag ranking_category)
   {
     if (pdf_last < pdf_first || ranking_last < ranking_first)
-      return E_EXPLORATION_BAD_RANGE; 
+      return E_EXPLORATION_BAD_RANGE;
 
     size_t pdf_size = pdf_last - pdf_first;
     size_t ranking_size = ranking_last - ranking_first;

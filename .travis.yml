@@ -11,7 +11,7 @@ before_install:
   - cd casablanca/Release
   - mkdir build
   - cd build
-  - cmake .. 
+  - cmake ..
   - make
   - sudo make install
   - cd ../../../
@@ -31,6 +31,7 @@ script:
   - make python
   - mvn clean test -f java/pom.xml
   - make test
+  - make rl_clientlib_test
   - cd test
   - ./test_race_condition.sh
   - cd ..

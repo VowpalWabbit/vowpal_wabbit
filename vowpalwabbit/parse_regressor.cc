@@ -100,7 +100,7 @@ template<class T> void initialize_regressor(vw& all, T& weights)
     weights.~T();//dealloc so that we can realloc, now with a known size
     new(&weights) T(length, ss);
   }
-  catch (VW::vw_exception anExc)
+  catch (const VW::vw_exception&)
   {
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }
@@ -192,8 +192,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (read)
       {
         v_length = (uint32_t)buf2_size;
-        if (v_length > 0) // all.model_file_ver = buff2; uses scanf which doesn't accept a maximum buffer length, but just expects valid zero terminated string
-          buff2[min(v_length, default_buf_size) - 1] = '\0';
+        buff2[min(v_length, default_buf_size) - 1] = '\0';
       }
       bytes_read_write += bin_text_read_write(model_file, buff2, v_length,
                                               "", read, msg, text);
@@ -466,6 +465,9 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       }
       else
       {
+        if (all.save_resume && all.random_state != 0) //We need to save our current PRG state
+          *all.opts_n_args.file_options << " --random_seed " << all.random_state;
+
         msg << "options:"<< all.opts_n_args.file_options->str() << "\n";
 
         uint32_t len = (uint32_t)all.opts_n_args.file_options->str().length();

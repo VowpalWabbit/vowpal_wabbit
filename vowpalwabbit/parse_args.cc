@@ -1194,7 +1194,6 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
     time(&all.init_time);
 
     all.opts_n_args.new_options("VW options")
-      ("random_seed", all.random_seed, "seed random number generator")
       ("ring_size", all.p->ring_size, "size of example ring")
       ("onethread", "Disable parse thread").missing();
 
@@ -1230,7 +1229,6 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
       all.all_reduce = new AllReduceSockets(vm["span_server"].as<string>(),
         vm["unique_id"].as<size_t>(), vm["total"].as<size_t>(), vm["node"].as<size_t>());
     }
-    all.random_state = all.random_seed;
     parse_diagnostics(all.opts_n_args);
 
     all.initial_t = (float)all.sd->t;
@@ -1291,6 +1289,10 @@ void parse_modules(vw& all, io_buf& model)
   po::store(pos, vm);
   po::notify(vm);
   all.opts_n_args.file_options->str("");
+
+  all.opts_n_args.new_options("Random Seed option")
+    ("random_seed", all.random_seed, "seed random number generator").missing();
+  all.random_state = all.random_seed;
 
   parse_feature_tweaks(all.opts_n_args); //feature tweaks
 
@@ -1595,7 +1597,6 @@ void finish(vw& all, bool delete_all)
     free(all.sd);
   }
   all.reduction_stack.delete_v();
-  delete all.opts_n_args.file_options;
   for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);

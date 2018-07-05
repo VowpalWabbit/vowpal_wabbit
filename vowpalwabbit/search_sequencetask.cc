@@ -80,8 +80,7 @@ void convert_bio_to_bilou(multi_ex& ec)
     action y = ylab.label;
     action nexty = (n == ec.size()-1) ? 0 : ec[n+1]->l.multi.label;
     if (y == 1)   // do nothing
-    {
-    }
+      ;
     else if (y % 2 == 0)     // this is a begin-X
     {
       if (nexty != y + 1) // should be unit

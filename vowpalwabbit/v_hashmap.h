@@ -21,8 +21,8 @@ public:
     uint64_t hash;
   };
 
-  bool (*equivalent)(void*,K&,K&);
-  bool (*equivalent_no_data)(K&,K&);
+  bool (*equivalent)(void*,const K&, const K&);
+  bool (*equivalent_no_data)(const K&, const K&);
   //  size_t (*hash)(K);
   V default_value;
   v_array<hash_elem> dat;
@@ -35,9 +35,9 @@ public:
   { return dat.end_array-dat.begin();
   }
 
-  void set_default_value(V def) { default_value = def; }
+  void set_default_value(const V& def) { default_value = def; }
 
-  void init_dat(size_t min_size, V def, bool (*eq)(void*,K&,K&), void *eq_dat = nullptr)
+  void init_dat(size_t min_size, const V& def, bool (*eq)(void*, const K&, const K&), void *eq_dat = nullptr)
   {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
@@ -51,7 +51,7 @@ public:
     num_occupants = 0;
   }
 
-  void init(size_t min_size, V def, bool (*eq)(K&,K&))
+  void init(size_t min_size, const V& def, bool (*eq)(const K&, const K&))
   {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size); // resize sets to 0 ==> occupied=false
@@ -65,7 +65,7 @@ public:
     num_occupants = 0;
   }
 
-  void init(size_t min_size, bool (*eq)(K&,K&))
+  void init(size_t min_size, bool (*eq)(const K&, const K&))
   {
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size); // resize sets to 0 ==> occupied=false
@@ -78,12 +78,12 @@ public:
     num_occupants = 0;
   }
 
-  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { init_dat(min_size, def, eq, eq_dat); }
-  v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         { init(min_size, def, eq); }
+  v_hashmap(size_t min_size, const V& def, bool (*eq)(void*,const K&, const K&), void*eq_dat=nullptr) { init_dat(min_size, def, eq, eq_dat); }
+  v_hashmap(size_t min_size, V& def, bool (*eq)(const K&, const K&))                         { init(min_size, def, eq); }
   v_hashmap() { init(1023, nullptr); }
 
-  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=nullptr) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = nullptr; }
-  void set_equivalent(bool (*eq)(K&,K&)) { equivalent_no_data = eq; eq_data = nullptr; equivalent = nullptr; }
+  void set_equivalent(bool (*eq)(void*, const K&, const K&), void*eq_dat=nullptr) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = nullptr; }
+  void set_equivalent(bool (*eq)(const K&, const K&)) { equivalent_no_data = eq; eq_data = nullptr; equivalent = nullptr; }
 
   void delete_v() { dat.delete_v(); }
 
@@ -134,7 +134,7 @@ public:
     }
   }
 
-  void put_after_get_nogrow(K& key, uint64_t hash, V val)
+  void put_after_get_nogrow(const K& key, uint64_t hash, const V& val)
   { //printf("++[lp=%d\tocc=%d\thash=%llu]\n", last_position, dat[last_position].occupied, hash);
     dat[last_position].occupied = true;
     dat[last_position].key = key;
@@ -165,7 +165,7 @@ public:
     tmp.delete_v();
   }
 
-  bool is_equivalent(K& key, K& key2)
+  bool is_equivalent(const K& key, const K& key2)
   { if ((equivalent == nullptr) && (equivalent_no_data == nullptr))
       return true;
     else if (equivalent != nullptr)
@@ -174,7 +174,7 @@ public:
       return equivalent_no_data(key, key2);
   }
 
-  V& get(K key, uint64_t hash)
+  V& get(const K& key, uint64_t hash)
   { size_t sz  = base_size();
     size_t first_position = hash % sz;
     last_position = first_position;
@@ -200,7 +200,7 @@ public:
     }
   }
 
-  bool contains(K& key, size_t hash)
+  bool contains(const K& key, size_t hash)
   { size_t sz  = base_size();
     size_t first_position = hash % sz;
     last_position = first_position;
@@ -229,7 +229,7 @@ public:
   // run get(key, hash).  if you haven't already run get, then
   // you should use put() rather than put_after_get().  these
   // both will overwrite previous values, if they exist.
-  void put_after_get(K& key, uint64_t hash, V val)
+  void put_after_get(const K& key, uint64_t hash, const V& val)
   { if (!dat[last_position].occupied)
     { num_occupants++;
       if (num_occupants*4 >= base_size())          // grow when we're a quarter full
@@ -242,7 +242,7 @@ public:
     put_after_get_nogrow(key, hash, val);
   }
 
-  void put(K& key, uint64_t hash, V val)
+  void put(const K& key, uint64_t hash, const V& val)
   { get(key, hash);
     put_after_get(key, hash, val);
   }

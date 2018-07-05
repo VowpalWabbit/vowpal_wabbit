@@ -48,7 +48,13 @@ struct version_struct
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str)
+    version_struct(const version_struct& v)
+  {
+    major = v.major;
+    minor = v.minor;
+    rev = v.rev;
+  }
+    void operator=(const char* v_str)
   { from_string(v_str);
   }
   bool operator==(version_struct v)
@@ -154,7 +160,7 @@ public:
 
     K = (uint32_t)id2name.size();
     name2id.delete_v();//delete automatically allocated vector.
-    name2id.init(4 * K + 1, 0, substring_equal);
+    name2id.init(4*K+1, 0, substring_equal);
     for (size_t k=0; k<K; k++)
     { substring& l = id2name[k];
       uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
@@ -165,7 +171,7 @@ public:
       substring l_copy = { calloc_or_throw<char>(len), nullptr };
       memcpy(l_copy.begin, l.begin, len * sizeof(char));
       l_copy.end = l_copy.begin + len;
-      name2id.put(l_copy, hash, (uint32_t)(k+1));
+      name2id.put(l_copy, hash, k+1);
     }
   }
 

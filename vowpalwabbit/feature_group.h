@@ -26,7 +26,7 @@ struct feature  //sparse feature definition for the library interface
 { float x;
   uint64_t weight_index;
   feature(float _x, uint64_t _index): x(_x), weight_index(_index) {}
-  feature() {feature(0.f,0);}
+  feature():x(0.f), weight_index(0) {}
 };
 
 struct feature_slice  //a helper struct for functions using the set {v,i,space_name}
@@ -304,6 +304,7 @@ struct features
     indicies.delete_v();
     space_names.delete_v();
   }
+
   void push_back(feature_value v, feature_index i)
   { values.push_back(v);
     indicies.push_back(i);

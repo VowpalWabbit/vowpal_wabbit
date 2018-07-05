@@ -157,7 +157,7 @@ void output_example(vw& all, bs& d, example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
+    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   {

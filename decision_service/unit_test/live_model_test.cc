@@ -3,15 +3,16 @@
 #   define BOOST_TEST_MODULE Main
 #endif
 
+#include <thread>
+#include <boost/test/unit_test.hpp>
+
 #include "http_server/stdafx.h"
 #include "http_server/http_server.h"
 #include "live_model.h"
 #include "config_utility.h"
 #include "api_status.h"
 #include "ranking_response.h"
-#include <thread>
-
-#include <boost/test/unit_test.hpp>
+#include "err_constants.h"
 
 BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
@@ -112,7 +113,7 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 	delete status;
 }
 
-namespace rl = reinforcement_learning;
+namespace r = reinforcement_learning;
 
 class wrong_class {};
 
@@ -125,7 +126,7 @@ class algo_server {
     void shutdown() { ++_err_count; }
 };
 
-void algo_error_func(const rl::api_status&, algo_server* ph) {
+void algo_error_func(const r::api_status&, algo_server* ph) {
   ph->ml_error_handler();
 }
 
@@ -136,7 +137,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   http_server.on_initialize(U("http://localhost:8080"),post_error);
 
   //create a simple ds configuration
-  auto config = rl::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  auto config = r::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
   config.set("local_eventhub_test", "true");
 
   ////////////////////////////////////////////////////////////////////
@@ -147,17 +148,17 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 
   algo_server the_server;
   //create a ds live_model, and initialize with configuration
-  rl::live_model ds(config,algo_error_func,&the_server);
+  r::live_model ds(config,algo_error_func,&the_server);
   
   ds.init(nullptr);
 
   const char*  uuid = "uuid";
   const char*  context = "abcdefghijklmnopqrstuvwxyz;;abcdefghijklmnopqrstuvwxyz";
 
-  rl::ranking_response response;
+  r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
   // request ranking
-  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), rl::error_code::success);
+  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), r::error_code::success);
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   BOOST_CHECK_EQUAL(the_server._err_count, 1);

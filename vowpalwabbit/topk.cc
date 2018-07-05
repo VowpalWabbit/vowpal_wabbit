@@ -61,7 +61,7 @@ void output_example(vw& all, topk& d, example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ld.label * ec.weight;
+    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   if (example_is_newline(ec))
     for (int sink : all.final_prediction_sink)

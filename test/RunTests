@@ -1612,3 +1612,23 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 169: test cbify large
 {VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
     train-sets/ref/rcv1_multiclass.stderr
+
+# Test 170 cbify adf, epsilon-greedy
+{VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
+    train-sets/ref/cbify_epsilon_adf.stderr
+
+# Test 171 cbify cs, epsilon-greedy
+{VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs.stderr
+
+# Test 172 cbify adf cs, epsilon-greedy
+{VW} --cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb
+    train-sets/ref/cbify_epsilon_cs_adf.stderr
+
+# Test 173 cbify adf, regcb
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcb.stderr
+
+# Test 174 cbify adf, regcbopt
+{VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
+    train-sets/ref/cbify_regcbopt.stderr
