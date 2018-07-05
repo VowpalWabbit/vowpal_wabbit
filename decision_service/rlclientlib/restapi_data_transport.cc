@@ -4,10 +4,6 @@
 #include <cpprest/rawptrstream.h>
 #include "api_status.h"
 #include "factory_resolver.h"
-<<<<<<< HEAD
-=======
-#include "err_constants.h"
->>>>>>> master
 
 using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
@@ -41,7 +37,6 @@ namespace reinforcement_learning { namespace model_management {
   int restapi_data_tranport::get_data_info(::utility::datetime& last_modified, ::utility::size64_t& sz, api_status* status) {
 
     // Build request URI and start the request.
-<<<<<<< HEAD
     auto request_task = _httpcli.request(methods::HEAD)
       // Handle response headers arriving.
       .then([&](http_response response) {
@@ -57,46 +52,17 @@ namespace reinforcement_learning { namespace model_management {
         RETURN_ERROR_ARG(status, last_modified_invalid, _url);
 
       sz = response.headers().content_length();
-=======
-    pplx::task<int> requestTask = _httpcli.request(methods::HEAD)
-      // Handle response headers arriving.
-      .then([&](http_response response) {
-      if ( response.status_code() != 200 )
-        RETURN_ERROR(status, error_code::http_bad_status_code, error_code::http_bad_status_code_s);
-
-      auto iter = response.headers().find(U("Last-Modified"));
-      if(iter == response.headers().end())
-        RETURN_ERROR(status, error_code::last_modified_not_found, error_code::last_modified_not_found_s);
-
-      last_modified = ::utility::datetime::from_string(iter->second);
-      if( last_modified.to_interval() == 0)
-        RETURN_ERROR(status, error_code::last_modified_invalid, error_code::last_modified_invalid_s);
-
-      sz = response.headers().content_length();
-      if( sz <= 0 )
-        RETURN_ERROR(status, error_code::bad_content_length, error_code::bad_content_length_s);
->>>>>>> master
 
       return error_code::success;
     });
 
     // Wait for all the outstanding I/O to complete and handle any exceptions
     try {
-<<<<<<< HEAD
       return request_task.get();
     }
     catch ( const std::exception &e ) {
       RETURN_ERROR_LS(status,exception_during_http_req) << e.what() << "\n URL: " << _url;
     }
-=======
-      requestTask.wait();
-    }
-    catch ( const std::exception &e ) {
-      RETURN_ERROR(status,error_code::exception_during_http_req,e.what());
-    }
-
-    return error_code::success;
->>>>>>> master
   }
 
   int restapi_data_tranport::get_data(model_data& ret, api_status* status) {

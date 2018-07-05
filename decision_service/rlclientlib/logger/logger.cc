@@ -1,9 +1,6 @@
 #include "logger.h"
 #include "err_constants.h"
-<<<<<<< HEAD
 #include "constants.h"
-=======
->>>>>>> master
 
 namespace reinforcement_learning
 {
