@@ -17,7 +17,7 @@ namespace reinforcement_learning {
   }
 
   void ranking_response_impl::push_back(const int action_id, const float prob) {
-    _ranking.push_back(std::pair<int,float>(action_id, prob));
+    _ranking.emplace_back(action_id, prob);
   }
 
   size_t ranking_response_impl::size() const { return _ranking.size(); }
@@ -30,7 +30,14 @@ namespace reinforcement_learning {
     return _model_id.c_str();
   }
 
-bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
+  void ranking_response_impl::reset() {
+    _uuid.clear();
+    _chosen_action_id = 0;
+    _model_id.clear();
+    _ranking.clear();
+  }
+
+  bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
     if ( !_ranking.empty() ) {
       action_id =_chosen_action_id;
       return true;

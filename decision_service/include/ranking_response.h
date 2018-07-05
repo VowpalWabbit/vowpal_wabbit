@@ -25,6 +25,7 @@ namespace reinforcement_learning {
     size_t size() const;
     void set_model_id(const char* model_id);
     const char * get_model_id() const;
+    void clear();
 
     ranking_response(ranking_response&&) noexcept;
     ranking_response& operator = (ranking_response&&) noexcept;

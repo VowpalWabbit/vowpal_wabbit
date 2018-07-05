@@ -48,7 +48,11 @@ char const * ranking_response::get_uuid() const {
     return _pimpl->get_model_id();
   }
 
-  ranking_response::ranking_response(ranking_response&& tmp) noexcept {
+void ranking_response::clear() {
+  _pimpl->reset();
+  }
+
+ranking_response::ranking_response(ranking_response&& tmp) noexcept {
     _pimpl = tmp._pimpl;
     tmp._pimpl = nullptr;
   }

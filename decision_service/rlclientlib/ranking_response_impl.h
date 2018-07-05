@@ -18,6 +18,7 @@ namespace reinforcement_learning {
     size_t size() const;
     void set_model_id(const char* model_id);
     const char* get_model_id() const;
+    void reset();
 
     ranking_response_impl(const ranking_response_impl &) = delete;
     ranking_response_impl(ranking_response_impl &&) = delete;
