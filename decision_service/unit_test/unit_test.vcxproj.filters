@@ -65,7 +65,6 @@
     <ClCompile Include="sleeper_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="json_context_parse_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,7 +83,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-=======
->>>>>>> master
   </ItemGroup>
 </Project>
