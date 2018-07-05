@@ -190,7 +190,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
     version_struct v_tmp(t.begin());
     if ( v_tmp != version )
     {
-      cout << "cache has possibly incompatible version, rebuilding" << endl;
+      //      cout << "cache has possibly incompatible version, rebuilding" << endl;
       t.delete_v();
       return 0;
     }
