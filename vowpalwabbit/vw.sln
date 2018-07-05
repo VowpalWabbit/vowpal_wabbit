@@ -83,12 +83,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit_test", "..\decision_se
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{27A9AB97-FC8B-4818-AC80-034FA94998D5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmdline_cpp", "..\decision_service\examples\cmdline_cpp\cmdline_cpp.vcxproj", "{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_usage_cpp", "..\decision_service\examples\basic_usage_cpp\basic_usage_cpp.vcxproj", "{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD} = {C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rl_sim_cpp", "..\decision_service\examples\rl_sim_cpp\rl_sim_cpp.vcxproj", "{E86A833A-514D-424D-9FE7-154225031662}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -477,22 +477,6 @@ Global
 		{18A3556E-493E-4DD5-8C33-760185B764D4}.Release|x64.Build.0 = Release|x64
 		{18A3556E-493E-4DD5-8C33-760185B764D4}.Release|x86.ActiveCfg = Release|Win32
 		{18A3556E-493E-4DD5-8C33-760185B764D4}.Release|x86.Build.0 = Release|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Debug|x64.ActiveCfg = Debug|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Debug|x64.Build.0 = Debug|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Debug|x86.ActiveCfg = Debug|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Debug|x86.Build.0 = Debug|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|Any CPU.ActiveCfg = Release|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|Any CPU.Build.0 = Release|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|x64.ActiveCfg = Debug|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|x64.Build.0 = Debug|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|x86.ActiveCfg = Debug|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.DebugLeakCheck|x86.Build.0 = Debug|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Release|Any CPU.ActiveCfg = Release|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Release|x64.ActiveCfg = Release|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Release|x64.Build.0 = Release|x64
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Release|x86.ActiveCfg = Release|Win32
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D}.Release|x86.Build.0 = Release|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|x64.ActiveCfg = Debug|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|x64.Build.0 = Debug|x64
@@ -509,6 +493,22 @@ Global
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x64.Build.0 = Release|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.ActiveCfg = Release|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.Build.0 = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.ActiveCfg = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.Build.0 = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.ActiveCfg = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.Build.0 = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|Any CPU.ActiveCfg = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|Any CPU.Build.0 = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|x64.ActiveCfg = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|x64.Build.0 = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|x86.ActiveCfg = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.DebugLeakCheck|x86.Build.0 = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|Any CPU.ActiveCfg = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.ActiveCfg = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.Build.0 = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.ActiveCfg = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -518,8 +518,8 @@ Global
 		{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD} = {58DEEBB0-43BC-482C-A744-5A8D7454C811}
 		{18A3556E-493E-4DD5-8C33-760185B764D4} = {58DEEBB0-43BC-482C-A744-5A8D7454C811}
 		{27A9AB97-FC8B-4818-AC80-034FA94998D5} = {58DEEBB0-43BC-482C-A744-5A8D7454C811}
-		{061B7A71-4F97-4FFB-9AB0-C6DF7A27249D} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
+		{E86A833A-514D-424D-9FE7-154225031662} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
