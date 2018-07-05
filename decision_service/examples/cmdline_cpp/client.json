@@ -1,9 +1,0 @@
-{
-    "ApplicationID": "<appid>",
-    "EventHubInteractionConnectionString": "Endpoint=sb://<eh-host>/;SharedAccessKeyName=<keyname>;SharedAccessKey=<key>=;EntityPath=interaction",
-    "EventHubObservationConnectionString": "Endpoint=sb://<eh-host>/;SharedAccessKeyName=<keyname>;SharedAccessKey=<key>=;EntityPath=observation",
-    "IsExplorationEnabled": true,
-    "ModelBlobUri": "https://<storage-host>/mwt-models/current?<blobid>",
-    "AppInsightsKey": "ffffffff-ffff-ffff-ffff-fffffnotused",
-    "InitialExplorationEpsilon": 0.2
-}
