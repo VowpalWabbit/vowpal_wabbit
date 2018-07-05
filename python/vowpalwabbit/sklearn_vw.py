@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: unused-argument, invalid-name, too-many-arguments, too-many-locals
-
-"""
-Utilities to support integration of Vowpal Wabbit and scikit-learn
-"""
+"""Utilities to support integration of Vowpal Wabbit and scikit-learn"""
 
 import numpy as np
 import re
@@ -447,9 +444,11 @@ class VW(BaseEstimator):
         return self.get_vw().get_weight(CONSTANT_HASH)
 
     def save(self, filename):
+        """Save model to file"""
         joblib.dump(dict(params=self.get_params(), coefs=self.get_coefs(), fit=self.fit_), filename=filename)
 
     def load(self, filename):
+        """Load model from file"""
         obj = joblib.load(filename=filename)
         self.set_params(**obj['params'])
         self.set_coefs(obj['coefs'])

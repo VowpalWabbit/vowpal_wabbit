@@ -103,11 +103,8 @@ class Clean(_clean):
 
 class Sdist(_sdist):
     def run(self):
-        # try to run prep if needed
-        try:
-            prep()
-        except:
-            pass
+        # run prep if needed
+        prep()
         _sdist.run(self)
 
 
