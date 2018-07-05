@@ -101,7 +101,7 @@ namespace reinforcement_learning { namespace utility {
       std::lock_guard<std::mutex> lock(_mutex);
 
       if (_version == obj->version) {
-        _pool.push_back(obj);
+        _pool.emplace_back(obj);
         return;
       }
 

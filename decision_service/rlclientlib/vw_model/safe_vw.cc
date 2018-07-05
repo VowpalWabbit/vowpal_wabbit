@@ -135,7 +135,7 @@ namespace reinforcement_learning {
 
     // push examples back into pool for re-use
     for (auto&& ex : examples)
-      _example_pool.push_back(ex);
+      _example_pool.emplace_back(ex);
 
     // cleanup
     examples.delete_v();
