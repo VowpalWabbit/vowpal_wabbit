@@ -2,6 +2,7 @@
 #include <object_factory.h>
 #include <cpprest/asyncrt_utils.h>
 #include "err_constants.h"
+#include "http_helper.h"
 
 namespace sutil = ::utility::conversions;
 
@@ -38,4 +39,12 @@ namespace reinforcement_learning { namespace utility {
       RETURN_ERROR_LS(status, json_parse_error) << error_code::unkown_s;
     }
   }
+
+  web::http::client::http_client_config get_http_config() {
+    web::http::client::http_client_config cfg;
+
+    cfg.set_validate_certificates(false);
+    return cfg;
+  }
+
 }}
