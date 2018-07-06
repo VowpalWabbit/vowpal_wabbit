@@ -173,6 +173,7 @@ clean:
 	cd python  && $(MAKE) clean
 	cd java    && $(MAKE) clean
 	cd decision_service/rlclientlib    && $(MAKE) clean
+	cd decision_service/unit_test; $(MAKE) clean
 	cd decision_service/examples/basic_usage_cpp; $(MAKE) clean
 	cd decision_service/examples/rl_sim_cpp; $(MAKE) clean
 

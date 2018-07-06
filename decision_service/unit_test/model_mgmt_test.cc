@@ -12,9 +12,9 @@
 #include "api_status.h"
 #include "err_constants.h"
 #include <regex>
-#include "periodic_background_proc.h"
-#include "model_downloader.h"
-#include "data_callback_fn.h"
+#include "utility/periodic_background_proc.h"
+#include "model_mgmt/model_downloader.h"
+#include "model_mgmt/data_callback_fn.h"
 #include "http_server/http_server.h"
 #include "config_utility.h"
 #include "config_collection.h"

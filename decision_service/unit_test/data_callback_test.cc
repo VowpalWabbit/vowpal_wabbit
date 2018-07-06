@@ -4,7 +4,7 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
-#include "data_callback_fn.h"
+#include "model_mgmt/data_callback_fn.h"
 
 using namespace reinforcement_learning;
 using namespace model_management;

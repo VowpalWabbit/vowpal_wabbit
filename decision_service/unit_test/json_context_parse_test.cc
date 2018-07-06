@@ -6,7 +6,7 @@
 #include <boost/test/unit_test.hpp>
 #include <cpprest/json.h>
 #include "err_constants.h"
-#include "context_helper.h"
+#include "utility/context_helper.h"
 
 using namespace reinforcement_learning;
 namespace rlutil = reinforcement_learning::utility;
