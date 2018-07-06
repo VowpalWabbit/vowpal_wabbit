@@ -6,18 +6,18 @@
 
 namespace reinforcement_learning {
   class api_status {
-  public:
-    api_status();
+    public:
+      api_status();
 
-    int get_error_code() const;
-    const char* get_error_msg() const;
+      int get_error_code() const;
+      const char* get_error_msg() const;
 
-    static void try_update(api_status* status, int new_code, const char* new_msg);
-    static void try_clear(api_status* status);
+      static void try_update(api_status* status, int new_code, const char* new_msg);
+      static void try_clear(api_status* status);
 
-  private:
-    int _error_code;
-    std::string _error_msg;
+    private:
+      int _error_code;
+      std::string _error_msg;
   };
 
   struct status_builder {
