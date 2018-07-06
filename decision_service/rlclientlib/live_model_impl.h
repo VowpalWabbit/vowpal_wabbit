@@ -2,10 +2,10 @@
 #include <memory>
 #include "logger/logger.h"
 #include "model_mgmt.h"
-#include "data_callback_fn.h"
-#include "model_downloader.h"
+#include "model_mgmt/data_callback_fn.h"
+#include "model_mgmt/model_downloader.h"
 #include "utility/object_pool.h"
-#include "periodic_background_proc.h"
+#include "utility/periodic_background_proc.h"
 #include "object_factory.h"
 
 namespace reinforcement_learning

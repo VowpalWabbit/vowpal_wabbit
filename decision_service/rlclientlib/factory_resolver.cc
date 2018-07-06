@@ -1,7 +1,7 @@
 #include <type_traits>
 #include "factory_resolver.h"
 #include "constants.h"
-#include "restapi_data_transport.h"
+#include "model_mgmt/restapi_data_transport.h"
 #include "vw_model/vw_model.h"
 #include "err_constants.h"
 

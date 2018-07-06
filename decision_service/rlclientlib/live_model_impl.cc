@@ -1,17 +1,16 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/random_generator.hpp>
 
+#include "utility/context_helper.h"
+#include "logger/logger.h"
 #include "api_status.h"
 #include "config_collection.h"
 #include "error_callback_fn.h"
-#include "logger/logger.h"
 #include "ranking_response.h"
 #include "live_model_impl.h"
 #include "ranking_event.h"
 #include "err_constants.h"
 #include "constants.h"
-#include "model_downloader.h"
-#include "context_helper.h"
 #include "vw_model/safe_vw.h"
 #include "explore_internal.h"
 

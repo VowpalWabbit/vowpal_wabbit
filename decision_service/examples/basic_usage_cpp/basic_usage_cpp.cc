@@ -10,7 +10,7 @@ int api_example() {
   r::api_status status;
 
   // Create an interface to reinforcement learning loop using config
-  auto rl = std::make_unique<r::live_model>(config);
+  auto rl = new r::live_model(config);
   scode = rl->init(&status);
   RETURN_ON_ERROR(scode, status);
 

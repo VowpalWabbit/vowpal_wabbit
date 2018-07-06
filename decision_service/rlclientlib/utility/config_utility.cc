@@ -7,7 +7,7 @@
 #include "err_constants.h"
 #include "api_status.h"
 #include "str_util.h"
-#include "../restapi_data_transport.h"
+#include "../model_mgmt/restapi_data_transport.h"
 
 using namespace web;
 using namespace utility::conversions; // string conversions utilities

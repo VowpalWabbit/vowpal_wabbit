@@ -4,15 +4,18 @@
 #include <cpprest/rawptrstream.h>
 #include "api_status.h"
 #include "factory_resolver.h"
+#include "utility/http_helper.h"
 
 using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
 using namespace std::chrono;
 
+namespace u = reinforcement_learning::utility; 
+
 namespace reinforcement_learning { namespace model_management {
 
   restapi_data_tranport::restapi_data_tranport(const std::string& url)
-    : _url(url), _httpcli(::utility::conversions::to_string_t(_url)), _datasz{0} { }
+    : _url(url), _httpcli(::utility::conversions::to_string_t(_url), u::get_http_config()), _datasz{0} { }
 
   /*
    * Example successful response

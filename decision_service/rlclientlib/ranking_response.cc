@@ -22,7 +22,7 @@ char const * ranking_response::get_uuid() const {
 	int ranking_response::get_choosen_action_id(size_t& action_id, api_status* status) const {
     if ( _pimpl->get_choosen_action_id(action_id) )
       return error_code::success;
-    RETURN_ERROR_ARG(status, action_not_found);
+    RETURN_ERROR_LS(status, action_not_found);
     return error_code::success;
   }
 
@@ -60,7 +60,7 @@ ranking_response::ranking_response(ranking_response&& tmp) noexcept {
   ranking_response& ranking_response::operator=(ranking_response&& tmp) noexcept {
     const auto swap = _pimpl;
     _pimpl = tmp._pimpl;
-    tmp._pimpl = _pimpl;
+    tmp._pimpl = swap;
     return *this;
   }
 

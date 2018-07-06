@@ -2,11 +2,13 @@
 #include <sstream>
 #include "eventhub_client.h"
 #include "err_constants.h"
+#include "utility/http_helper.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
 using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
+namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning {
   //private helper
@@ -57,7 +59,7 @@ namespace reinforcement_learning {
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
                                    const std::string& key, const std::string& name, const bool local_test)
-    : _client(build_url(host, name, local_test)),
+    : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
       _authorization_valid_until(0) { }
