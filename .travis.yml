@@ -14,7 +14,7 @@ before_install:
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
   #### begin cpprest
-  - sudo apt-get install g++ git make zlib1g-dev libboost-all-dev libssl-dev cmake
+  - sudo apt-get install g++ git make zlib1g-dev libboost-all-dev libssl-dev
   - git clone https://github.com/Microsoft/cpprestsdk.git casablanca
   - cd casablanca/Release
   - mkdir build
