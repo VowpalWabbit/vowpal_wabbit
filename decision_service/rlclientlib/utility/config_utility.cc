@@ -19,6 +19,39 @@ namespace reinforcement_learning { namespace utility { namespace config {
     return "";
   }
 
+  char* regex_code_str(int code) {
+    switch(code) {
+    case std::regex_constants::error_collate:
+      return "The expression contained an invalid collating element name.";
+    case std::regex_constants::error_ctype:
+      return "The expression contained an invalid character class name.";
+    case std::regex_constants::error_escape:
+      return "The expression contained an invalid escaped character, or a trailing escape.";
+    case std::regex_constants::error_backref:
+      return "The expression contained an invalid back reference.";
+    case std::regex_constants::error_brack:
+      return "The expression contained mismatched brackets([and]).";
+    case std::regex_constants::error_paren:
+      return "The expression contained mismatched parentheses(( and )).";
+    case std::regex_constants::error_brace:
+      return "The expression contained mismatched braces({ and }).";
+    case std::regex_constants::error_badbrace:
+      return "The expression contained an invalid range between braces({ and }).";
+    case std::regex_constants::error_range:
+      return "The expression contained an invalid character range.";
+    case std::regex_constants::error_space:
+      return "There was insufficient memory to convert the expression into a finite state machine.";
+    case std::regex_constants::error_badrepeat:
+      return "The expression contained a repeat specifier(one of * ? +{) that was not preceded by a valid regular expression.";
+    case std::regex_constants::error_complexity:
+      return "The complexity of an attempted match against a regular expression exceeded a pre - set level.";
+    case std::regex_constants::error_stack:
+      return "There was insufficient memory to determine whether the regular expression could match the specified character sequence.";
+    default:
+      return "Undefined regex error";
+    }
+  }
+
   int parse_eventhub_conn_str(const std::string& conn_str, std::string& host, std::string& name, std::string& access_key_name, std::string& access_key, api_status* status) {
     try {
       const std::regex regex_eh_connstr("Endpoint=sb://([^/]+)[^;]+;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=([^;^\\s]+)");
@@ -34,7 +67,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
 
     }
     catch ( const std::regex_error& e) {
-      RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str << ", regex_error: " << e.code() << ", details: " << e.what();
+      RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str << ", regex_error: " << regex_code_str(e.code()) << ", details: " << e.what();
     }
   }
 
