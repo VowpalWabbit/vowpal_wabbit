@@ -1,7 +1,7 @@
 TARGET = librlclient.a
 ARFLAGS = rcs 
 
-INCLUDE = -I ../include -I ../../explore -I ../explore
+INCLUDE = -I ../include -I ../../explore -I ../explore -I ../../rapidjson/include -I ./
 
 .PHONY: default all clean
 
