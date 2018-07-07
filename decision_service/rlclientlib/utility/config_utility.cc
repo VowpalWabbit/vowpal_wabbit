@@ -20,16 +20,22 @@ namespace reinforcement_learning { namespace utility { namespace config {
   }
 
   int parse_eventhub_conn_str(const std::string& conn_str, std::string& host, std::string& name, std::string& access_key_name, std::string& access_key, api_status* status) {
-    const std::regex regex_eh_connstr("Endpoint=sb://([^/]+)[^;]+;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=([^;^\\s]+)");
-    std::smatch match;
-    if(!std::regex_match(conn_str,match,regex_eh_connstr) && !(match.size() == 5)) {
-      RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str;
+    try {
+      const std::regex regex_eh_connstr("Endpoint=sb://([^/]+)[^;]+;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=([^;^\\s]+)");
+      std::smatch match;
+      if ( !std::regex_match(conn_str, match, regex_eh_connstr) && !( match.size() == 5 ) ) {
+        RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str;
+      }
+      host = match[1].str();
+      access_key_name = match[2].str();
+      access_key = match[3].str();
+      name = match[4].str();
+      return error_code::success;
+
     }
-    host = match[1].str();
-    access_key_name = match[2].str();
-    access_key = match[3].str();
-    name = match[4].str();
-    return error_code::success;
+    catch ( const std::regex_error& e) {
+      RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str << ", regex_error: " << e.code() << ", details: " << e.what();
+    }
   }
 
   int set_eventhub_config(const std::string& conn_str, const std::string& cfg_root, config_collection& cc, api_status* status) {
