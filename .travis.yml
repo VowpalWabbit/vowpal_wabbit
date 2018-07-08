@@ -13,7 +13,7 @@ before_install:
   - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports" 
   #### begin g++ 4.9
   # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test                         
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test                         
   - sudo apt-get update
   - sudo apt-get install gcc-4.9 g++-4.9
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
