@@ -4,17 +4,21 @@ compiler:
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test # gcc 4.9 (c++11 support completed in this version)
       - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
     packages:
-      - g++ 4.9
       - cmake
       - cmake-data
-    env:
-      - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
 before_install:
-  - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports"
+  # Remove cmake ppa
+  - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports" 
+  #### begin g++ 4.9
+  # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test                         
+  - sudo apt-get update
+  - sudo apt-get install gcc-4.9 g++-4.9
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
   - sudo add-apt-repository -y --remove "ubuntu-toolchain-r-test"
+  #### end g++ 4.9
   - sudo apt-get update -qq
   - sudo apt-get install -qq libboost-all-dev
   - sudo apt-get install maven
