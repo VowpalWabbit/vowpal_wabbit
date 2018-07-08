@@ -3,34 +3,30 @@
 
 int api_example() {
   u::config_collection config;
-  auto scode = load_config_from_json("client.json", config);
-  RETURN_ON_ERROR_STR(scode, "Unable to Load file: client.json");
+  RETURN_ON_ERROR_STR(load_config_from_json("client.json", config), 
+    "Unable to Load file: client.json");
 
   // api_status is an optional argument used to return status of all API calls
   r::api_status status;
 
   // Create an interface to reinforcement learning loop using config
   auto rl = new r::live_model(config);
-  scode = rl->init(&status);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(rl->init(&status), status);
 
   // Response class
   r::ranking_response response;
 
   // Choose an action
-  scode = rl->choose_rank(uuid, context, response, &status);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(rl->choose_rank(uuid, context, response, &status), status);
 
   size_t choosen_action;
-  scode = response.get_choosen_action_id(choosen_action);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(response.get_choosen_action_id(choosen_action), status);
 
   // Use the response
   std::cout << "Chosen action id is: " << choosen_action << std::endl;
 
   // Report reward recieved
-  scode = rl->report_outcome(uuid, reward, &status);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(rl->report_outcome(uuid, reward, &status), status);
 
   return reinforcement_learning::error_code::success;
 }

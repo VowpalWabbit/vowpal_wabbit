@@ -19,21 +19,25 @@ namespace u = reinforcement_learning::utility;
 int load_file(const std::string& file_name, std::string& file_data);
 int load_config_from_json(const std::string& file_name, u::config_collection& cc);
 
-#define RETURN_ON_ERROR(scode, status) do {                     \
-  if( scode != r::error_code::success ) {                       \
+#define RETURN_ON_ERROR(scodeexpr, status) do {                 \
+  const auto __FILE__##scode = (scodeexpr);                     \
+  if( __FILE__##scode != r::error_code::success ) {             \
     std::cout << status.get_error_msg() << std::endl;           \
-    return scode;                                               \
+    return __FILE__##scode;                                     \
   }                                                             \
 } while ( 0 );                                                  \
 
-#define RETURN_ON_ERROR_STR(scode, str) do {    \
-  if( scode != 0 ) {                          \
-    std::cout << str << std::endl;            \
-    return scode;                             \
-  }                                           \
-} while ( 0 );                                \
+#define RETURN_ON_ERROR_STR(scodeexpr, str) do {                \
+  const auto __FILE__##scode = (scodeexpr);                     \
+  if( __FILE__##scode != 0 ) {                                  \
+    std::cout << str << std::endl;                              \
+    return __FILE__##scode;                                     \
+  }                                                             \
+} while ( 0 );                                                  \
 
 
 char const * const  uuid    = "uuid";
-char const * const  context = R"({"_multi":[{"n1":"v1"},{"n2":"v2"}]})";
+char const * const  context = R"({
+                                  "User":{"id":"a","major":"eng","hobby":"hiking"},
+                                  "_multi":[{"a1":"f1"},{"a2":"f2"}]})";
 char const * const  reward  = R"({})";
