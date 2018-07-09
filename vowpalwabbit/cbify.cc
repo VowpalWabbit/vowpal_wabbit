@@ -16,6 +16,7 @@ using namespace std;
 
 #define WARM_START 1
 #define INTERACTION 2
+#define SKIP 3
 
 #define SUPERVISED_WS 1
 #define BANDIT_WS 2
@@ -88,6 +89,7 @@ struct cbify
 	uint32_t ws_iter;
 	uint32_t inter_iter;
 	MULTICLASS::label_t mc_label;
+	COST_SENSITIVE::label cs_label;
 	COST_SENSITIVE::label* csls;
 	COST_SENSITIVE::label* csl_empty;
 
@@ -139,10 +141,10 @@ void finish(cbify& data)
   data.a_s.delete_v();
   if (data.use_adf)
   {
-		cout<<"The average variance estimate is:"<<data.cumu_var / data.inter_period<<endl;
-		cout<<"The theoretical average variance is:"<<data.num_actions / data.epsilon<<endl;
+		cout<<"The average variance estimate is: "<<data.cumu_var / data.inter_period<<endl;
+		cout<<"The theoretical average variance is: "<<data.num_actions / data.epsilon<<endl;
 		uint32_t argmin = find_min(data.cumulative_costs);
-		cout<<"The last value of lambda chosen is:"<<data.lambdas[argmin]<<endl;
+		cout<<"The last value of lambda chosen is: "<<data.lambdas[argmin]<<endl;
 
     for (size_t a = 0; a < data.adf_data.num_actions; ++a)
       {
@@ -196,6 +198,8 @@ void setup_lambdas(cbify& data)
 {
 	// The lambdas are in fact arranged in ascending order (the 'middle' lambda is 0.5)
 	vector<float>& lambdas = data.lambdas;
+	for (uint32_t i = 0; i<data.choices_lambda; i++)
+		lambdas.push_back(0.f);
 
 	//interaction only
 	if (!data.upd_ws && data.upd_inter)
@@ -294,21 +298,14 @@ float compute_weight_multiplier(cbify& data, size_t i, int ec_type)
 	float ws_train_size = data.ws_train_size;
 	float inter_train_size = data.inter_period;
 
-	if (data.vali_method != INTER_VALI)
-	{
-		if (ec_type == WARM_START && data.ws_iter >= ws_train_size)
-			return 0.0;
-	}
+	//if (data.vali_method != INTER_VALI)
+	//{
+	//	if (ec_type == WARM_START && data.ws_iter >= ws_train_size)
+	//		return 0.0;
+	//}
 
 	float total_train_size = ws_train_size + inter_train_size;
 	if (data.wt_scheme == INSTANCE_WT)
-	{
-		if (ec_type == WARM_START)
-			weight_multiplier = (1-data.lambdas[i]) * total_train_size / ws_train_size;
-		else
-			weight_multiplier = data.lambdas[i] * total_train_size / inter_train_size;
-	}
-	else
 	{
 		float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
@@ -316,6 +313,13 @@ float compute_weight_multiplier(cbify& data, size_t i, int ec_type)
 			weight_multiplier = (1-data.lambdas[i]) * total_train_size / total_weight;
 		else
 			weight_multiplier = data.lambdas[i] * total_train_size / total_weight;
+	}
+	else
+	{
+		if (ec_type == WARM_START)
+			weight_multiplier = (1-data.lambdas[i]) * total_train_size / ws_train_size;
+		else
+			weight_multiplier = data.lambdas[i] * total_train_size / inter_train_size;
 	}
 	return weight_multiplier;
 }
@@ -368,14 +372,17 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   ec.pred.multiclass = cl.action;
 }
 
-uint32_t predict_sublearner_adf(cbify& data, single_learner& base, example& ec, uint32_t i)
+uint32_t predict_sublearner_adf(cbify& data, multi_learner& base, example& ec, uint32_t i)
 {
+	//cout<<"predict using sublearner "<< i <<endl;
 	copy_example_to_adf(data, ec);
-	base.predict(ecs, i);
-	return data.adf_data.ecs[0].pred.a_s[0].action+1;
+	//uint32_t offset = data.adf_data.ecs[0]->ft_offset;
+	//multiline_learn_or_predict<false>(base, data.adf_data.ecs, offset, i);
+	base.predict(data.adf_data.ecs, i);
+	return data.adf_data.ecs[0]->pred.a_s[0].action+1;
 }
 
-void accumu_costs_iv_adf(cbify& data, single_learner& base, example& ec)
+void accumu_costs_iv_adf(cbify& data, multi_learner& base, example& ec)
 {
 	CB::cb_class& cl = data.cl_adf;
 	//IPS for approximating the cumulative costs for all lambdas
@@ -391,7 +398,7 @@ void accumu_costs_iv_adf(cbify& data, single_learner& base, example& ec)
 }
 
 template<bool use_cs>
-void accumu_costs_wsv_adf(cbify& data, single_learner& base)
+void accumu_costs_wsv_adf(cbify& data, multi_learner& base)
 {
 	uint32_t ws_vali_size = data.ws_vali_size;
 	//only update cumulative costs every warm_start_period iterations
@@ -449,13 +456,14 @@ void add_to_vali(cbify& data, example& ec)
 	data.ws_vali.push_back(ec_copy);
 }
 
-uint32_t predict_cs_adf(cbify& data, single_learner& base, example& ec)
+uint32_t predict_sup_adf(cbify& data, multi_learner& base, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
 	return predict_sublearner_adf(data, base, ec, argmin);
 }
 
-void learn_cs_adf(cbify& data, single_learner& base, example& ec, int ec_type)
+template<bool use_cs>
+void learn_sup_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
 	copy_example_to_adf(data, ec);
 	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
@@ -470,42 +478,47 @@ void learn_cs_adf(cbify& data, single_learner& base, example& ec, int ec_type)
 	}
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
 	{
-		data.adf_data.ecs[a].l.cs = csls[a];
+		data.adf_data.ecs[a]->l.cs = csls[a];
 		//cout<<ecs[a].l.cs.costs.size()<<endl;
 	}
 
 	vector<float> old_weights;
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		old_weights[a] = ecs[a].weight;
+		old_weights.push_back(data.adf_data.ecs[a]->weight);
 
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
+		//cout<<"weight multiplier in sup = "<<weight_multiplier<<endl;
+
 		for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-			ecs[a].weight = old_weights[a] * weight_multiplier;
+			data.adf_data.ecs[a]->weight = old_weights[a] * weight_multiplier;
 		multi_learner* cs_learner = as_multiline(data.all->cost_sensitive);
 		cs_learner->learn(data.adf_data.ecs, i);
+
+		//cout<<"cost-sensitive increment = "<<cs_learner->increment<<endl;
 	}
 	//Seems like we don't need to set the weights back as this example will be
 	//discarded anyway
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		ecs[a].weight = old_weights[a];
+		data.adf_data.ecs[a]->weight = old_weights[a];
 }
 
-void predict_or_learn_cs_adf(cbify& data, single_learner& base, example& ec, int ec_type)
+template<bool use_cs>
+void predict_or_learn_sup_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
-	uint32_t action = predict_cs_adf(data, base, ec);
+	uint32_t action = predict_sup_adf(data, base, ec);
 
 	if (ind_update(data, ec_type))
-		learn_cs_adf(data, base, ec, ec_type);
+		learn_sup_adf<use_cs>(data, base, ec, ec_type);
 
 	ec.pred.multiclass = action;
 }
 
-
-uint32_t predict_bandit_adf(cbify& data, single_learner& base, example& ec)
+uint32_t predict_bandit_adf(cbify& data, multi_learner& base, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
+	//cout<<argmin<<endl;
 
   copy_example_to_adf(data, ec);
 	base.predict(data.adf_data.ecs, argmin);
@@ -515,11 +528,13 @@ uint32_t predict_bandit_adf(cbify& data, single_learner& base, example& ec)
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
+	auto& a_s = data.a_s_adf;
+	copy_array<action_score>(a_s, out_ec.pred.a_s);
+
 	return chosen_action;
 }
 
-
-void learn_bandit_adf(cbify& data, single_learner& base, example& ec, int ec_type, uint32_t chosen_action, action_scores& a_s)
+void learn_bandit_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
 	//Store the multiclass input label
   //MULTICLASS::label_t ld = ec.l.multi;
@@ -527,46 +542,68 @@ void learn_bandit_adf(cbify& data, single_learner& base, example& ec, int ec_typ
 
   // add cb label to chosen action
 	auto& cl = data.cl_adf;
-  auto& lab = data.adf_data.ecs[cl.action - 1].l.cb;
+  auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.push_back(cl);
 
 	vector<float> old_weights;
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		old_weights[a] = data.adf_data.ecs[a].weight;
+		old_weights.push_back(data.adf_data.ecs[a]->weight);
 
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
+
+		//cout<<"learn in sublearner "<< i <<" with weight multiplier "<<weight_multiplier<<endl;
 	  for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-			ecs[a].weight = old_weights[a] * weight_multiplier;
-	  base.learn(data.adf_data.ecs);
+			data.adf_data.ecs[a]->weight = old_weights[a] * weight_multiplier;
+	  base.learn(data.adf_data.ecs, i);
+
+		//cout<<"cb-explore increment = "<<base.increment<<endl;
+		//uint32_t offset = data.adf_data.ecs[0]->ft_offset;
+		//multiline_learn_or_predict<true>(base, data.adf_data.ecs, offset, i);
 	}
 
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
-		data.adf_data.ecs[a].weight = old_weights[a];
-
-  //ec.pred.multiclass = cl.action;
+		data.adf_data.ecs[a]->weight = old_weights[a];
 }
 
-void predict_or_learn_bandit_adf(cbify& data, single_learner& base, example& ec, int ec_type)
+template<bool use_cs>
+void predict_or_learn_bandit_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
-	uint32_t action = predict_bandit_adf(data, base, ec);
+	uint32_t chosen_action = predict_bandit_adf(data, base, ec);
+
+	auto& cl = data.cl_adf;
+	auto& a_s = data.a_s_adf;
+	cl.action = a_s[chosen_action].action + 1;
+	cl.probability = a_s[chosen_action].score;
+
+	//cout<<cl.action<<" "<<cl.probability<<" "<<ec.l.multi.label<<endl;
+
+	if(!cl.action)
+		THROW("No action with non-zero probability found!");
+
+	if (use_cs)
+		cl.cost = loss_cs(data, ec.l.cs.costs, cl.action);
+	else
+		cl.cost = loss(data, ec.l.multi.label, cl.action);
 
 	if (ec_type == INTERACTION && data.vali_method == INTER_VALI)
 		accumu_costs_iv_adf(data, base, ec);
 
+	//cout<<cl.action<<" "<<cl.probability<<endl;
+
 	if (ind_update(data, ec_type))
-		learn_bandit_adf(data, base, ec, ec_type, action, data.a_s_adf);
+		learn_bandit_adf(data, base, ec, ec_type);
 
 	if (ec_type == INTERACTION && (data.vali_method == WS_VALI_SPLIT || data.vali_method == WS_VALI_NOSPLIT))
-		accumu_costs_wsv_adf(data, base);
+		accumu_costs_wsv_adf<use_cs>(data, base);
 
-	ec.pred.multiclass = action;
+	ec.pred.multiclass = cl.action;
 }
 
-void accumu_var_adf(cbify& data, single_learner& base, example& ec)
+void accumu_var_adf(cbify& data, multi_learner& base, example& ec)
 {
-	size_t pred_best_approx = predict_cs_adf(data, base, ec);
+	size_t pred_best_approx = predict_sup_adf(data, base, ec);
 	float temp_var;
 
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
@@ -580,52 +617,51 @@ void accumu_var_adf(cbify& data, single_learner& base, example& ec)
 }
 
 template <bool is_learn, bool use_cs>
-void predict_or_learn_adf(cbify& data, single_learner& base, example& ec)
+void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
+	if (use_cs)
+	{
+		data.cs_label = ec.l.cs;
+	}
+	else
+	{
+		data.mc_label = ec.l.multi;
+		if (data.ws_iter < data.ws_period)
+			ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
+		else if (data.inter_iter < data.inter_period)
+			ec.l.multi.label = corrupt_action(data, data.mc_label.label, INTERACTION);
+	}
+
 	if (data.ws_iter < data.ws_period)
 	{
-		if (!use_cs)
-		{
-			data.mc_label = ec.l.multi;
-			ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
-		}
 		if (data.ws_iter < data.ws_train_size)
 		{
 			if (data.ws_type == SUPERVISED_WS)
-				predict_or_learn_cs_adf(data, base, ec, WARM_START);
+				predict_or_learn_sup_adf<use_cs>(data, base, ec, WARM_START);
 			else if (data.ws_type == BANDIT_WS)
-				predict_or_learn_bandit_adf(data, base, ec, WARM_START);
+				predict_or_learn_bandit_adf<use_cs>(data, base, ec, WARM_START);
 		}
 		else
-			add_to_vali(data, ec);
-
-		if (!use_cs)
-		{
-			ec.l.multi = data.mc_label;
-		}
+			add_to_vali<use_cs>(data, ec);
 		ec.weight = 0;
 		data.ws_iter++;
 	}
 	else if (data.inter_iter < data.inter_period)
 	{
-		if (!use_cs)
-		{
-			data.mc_label = ec.l.multi;
-			ec.l.multi.label = corrupt_action(data, data.mc_label.label, INTERACTION);
-		}
-		predict_or_learn_bandit_adf(data, base, ec, INTERACTION);
+		predict_or_learn_bandit_adf<use_cs>(data, base, ec, INTERACTION);
 		accumu_var_adf(data, base, ec);
-
-		if (!use_cs)
-		{
-			ec.l.multi = data.mc_label;
-		}
 		data.inter_iter++;
 	}
 	else
 	{
 		ec.weight = 0;
 	}
+
+	if (use_cs)
+		ec.l.cs = data.cs_label;
+	else
+		ec.l.multi = data.mc_label;
+
 }
 
 
@@ -650,6 +686,20 @@ void init_adf_data(cbify& data, const size_t num_actions)
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
 	}
 	COST_SENSITIVE::cs_label.default_label(data.csl_empty);
+
+	if (data.vali_method == WS_VALI_SPLIT || data.vali_method == WS_VALI_NOSPLIT)
+	{
+		data.ws_train_size = ceil(data.ws_period / 2.0);
+		data.ws_vali_size = data.ws_period - data.ws_train_size;
+	}
+	else
+	{
+		data.ws_train_size = data.ws_period;
+		data.ws_vali_size = 0;
+	}
+	setup_lambdas(data);
+	for (uint32_t i = 0; i < data.choices_lambda; i++)
+		data.cumulative_costs.push_back(0.f);
 }
 
 base_learner* cbify_setup(arguments& arg)
@@ -663,7 +713,6 @@ base_learner* cbify_setup(arguments& arg)
       (use_cs, "cbify_cs", "consume cost-sensitive classification examples instead of multiclass")
       ("loss0", data->loss0, 0.f, "loss for correct label")
       ("loss1", data->loss1, 1.f, "loss for incorrect label")
-			("epsilon", data->epsilon, 0.05f, "greedy probability")
 			("warm_start", data->ws_period, 0U, "number of training examples for warm start")
 			("interaction", data->inter_period, 0U, "number of training examples for bandit processing")
 		  ("choices_lambda", data->choices_lambda, 1U, "numbers of lambdas importance weights to aggregate")
@@ -689,17 +738,6 @@ base_learner* cbify_setup(arguments& arg)
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
-
-	if (data->vali_method == WS_VALI_SPLIT || data->vali_method == WS_VALI_NOSPLIT)
-	{
-		data->ws_train_size = ceil(data->ws_period / 2.0);
-		data->ws_vali_size = data->ws_period - data->ws_train_size;
-	}
-	else
-	{
-		data->ws_train_size = data->ws_period;
-		data->ws_vali_size = 0;
-	}
 
   if (count(arg.args.begin(), arg.args.end(),"--cb_explore") == 0 && !data->use_adf)
   {
@@ -728,10 +766,15 @@ base_learner* cbify_setup(arguments& arg)
   if (data->use_adf)
   {
     multi_learner* base = as_multiline(setup_base(arg));
+		// Not sure why we can only put this line here to pass the value of epsilon
+		data->epsilon = arg.vm["epsilon"].as<float>();
+
     if (use_cs)
       l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, data->choices_lambda);
     else
       l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, arg.all->p, data->choices_lambda);
+
+		//cout<<"cbify increment = "<<l->increment<<endl;
   }
   else
   {

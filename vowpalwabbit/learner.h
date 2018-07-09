@@ -92,22 +92,33 @@ inline float noop_sensitivity(void*, base_learner&, example&) { std::cout << std
 float recur_sensitivity(void*, base_learner&, example&);
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
-{ ex.ft_offset += static_cast<uint32_t>(increment * i);
+{
+	//std::cout<<"in increment_offset singleex: increment = "<<increment<<" ex.ft_offset = "<<ex.ft_offset<<" i = "<<i<<std::endl;
+	ex.ft_offset += static_cast<uint32_t>(increment * i);
 }
 
 inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
-{ for (auto ec : ec_seq)
+{
+	for (auto ec : ec_seq)
+	{
+		//std::cout<<"in increment_offset multiex: increment = "<<increment<<" ec->ft_offset = "<<ec->ft_offset<<" i = "<<i<<std::endl;
     ec->ft_offset += static_cast<uint32_t>(increment * i);
+	}
 }
 
 inline void decrement_offset(example& ex, const size_t increment, const size_t i)
-{ assert(ex.ft_offset >= increment * i);
+{
+	//std::cout<<"in decrement_offset singleex: increment = "<<increment<<" ex.ft_offset = "<<ex.ft_offset<<" i = "<<i<<std::endl;
+	assert(ex.ft_offset >= increment * i);
   ex.ft_offset -= static_cast<uint32_t>(increment * i);
 }
 
 inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
 { for (auto ec : ec_seq)
-  { assert(ec->ft_offset >= increment * i);
+  {
+		//commenting out this line for multiple learning rate aggregation purposes
+		//std::cout<<"in decrement_offset multiex: increment = "<<increment<<" ec->ft_offset = "<<ec->ft_offset<<" i = "<<i<<std::endl;
+		assert(ec->ft_offset >= increment * i);
     ec->ft_offset -= static_cast<uint32_t>(increment * i);
   }
 }
@@ -440,9 +451,11 @@ public:
 
   template<bool is_learn>
   void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
-  { std::vector<uint64_t> saved_offsets(examples.size());
+  { std::vector<uint64_t> saved_offsets;
     for (auto ec : examples)
-    { saved_offsets.push_back(ec->ft_offset);
+    {
+			//std::cout<<"saved offsets before = "<<ec->ft_offset<<std::endl;
+			saved_offsets.push_back(ec->ft_offset);
       ec->ft_offset = offset;
     }
 
@@ -452,6 +465,9 @@ public:
       base.predict(examples, id);
 
     for (size_t i = 0; i < examples.size(); i++)
+		{
       examples[i]->ft_offset = saved_offsets[i];
+			//std::cout<<"saved offsets after = "<<saved_offsets[i]<<std::endl;
+		}
   }
 }

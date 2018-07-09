@@ -1,9 +1,9 @@
 import random
 import numpy as np
 
-classes = 10
-m = 100
-kwperclass = 20
+classes = 2
+m = 10
+kwperclass = 2
 
 def gen_keyword():
 	keyword = np.zeros((classes, m))
