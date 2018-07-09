@@ -39,18 +39,15 @@ int rl_sim::loop() {
     r::api_status status;
 
     // Choose an action
-    auto scode = _rl->choose_rank(req_id.c_str(),context_json.c_str(),response,&status);
-    RETURN_ON_ERROR(scode, status);
+    RETURN_ON_ERROR(_rl->choose_rank(req_id.c_str(), context_json.c_str(), response, &status), status);
     size_t choosen_action;
-    scode = response.get_choosen_action_id(choosen_action);
-    RETURN_ON_ERROR(scode, status);
+    RETURN_ON_ERROR(response.get_choosen_action_id(choosen_action), status);
 
     // What reward did this action get?
     const auto reward = p.get_reward(_actions[choosen_action]);
 
     // Report reward recieved
-    scode = _rl->report_outcome(req_id.c_str(), reward, &status);
-    RETURN_ON_ERROR(scode, status);
+    RETURN_ON_ERROR(_rl->report_outcome(req_id.c_str(), reward, &status), status);
 
     std::cout << "Round:" << round << ", Person:" << p.id() << ", Action:" << choosen_action << ", Reward:" << reward << std::endl;
     response.clear();
@@ -68,8 +65,7 @@ int rl_sim::load_config_from_json(  const std::string& file_name,
   std::string config_str;
 
   // Load contents of config file into a string
-  const auto scode = load_file(file_name, config_str);
-  RETURN_IF_FAIL(scode);
+  RETURN_IF_FAIL(load_file(file_name, config_str));
 
   // Use library supplied convinence method to parse json and build config object
   return c::create_from_json(config_str, cfgcoll, status);
@@ -91,12 +87,10 @@ int rl_sim::init_rl() {
   u::config_collection config;
 
   const auto cfg_file = _options["json_config"].as<std::string>();
-  auto scode = load_config_from_json(cfg_file, config, &status);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(load_config_from_json(cfg_file, config, &status), status);
 
   _rl = std::unique_ptr<r::live_model>(new r::live_model(config));
-  scode = _rl->init(&status);
-  RETURN_ON_ERROR(scode, status);
+  RETURN_ON_ERROR(_rl->init(&status), status);
 
   return r::error_code::success;
 }
