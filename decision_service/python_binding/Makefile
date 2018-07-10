@@ -2,7 +2,7 @@
 TARGET = _rlinference.so
 
 # Python 3.6 is specifically provided, tricky if we want to link against different versions.
-INCLUDE = -I ../include -I ../rlclientlib -I ../../explore -I ../explore -I ../../rapidjson/include -I ./ -I /usr/include/python3.6m
+INCLUDE = -I ../include -I ../rlclientlib -I ../../explore -I ../explore -I ../../rapidjson/include -I ./ $(shell python3.6-config --includes)
 
 VW_LIB = -L ../../vowpalwabbit -lvw -lallreduce
 BOOST_LIBS = -lboost_system -lboost_program_options
