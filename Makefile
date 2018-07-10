@@ -104,6 +104,9 @@ all:	vw library_example java spanning_tree rl_clientlib
 
 export
 
+vowpalwabbitslim:
+	cd vowpalwabbitslim; $(MAKE) -j $(NPROCS) things
+
 rl_clientlib:
 	cd decision_service/rlclientlib; $(MAKE) -j $(NPROCS) things
 
@@ -177,4 +180,4 @@ clean:
 	cd decision_service/examples/basic_usage_cpp; $(MAKE) clean
 	cd decision_service/examples/rl_sim_cpp; $(MAKE) clean
 
-.PHONY: all clean install doc
+.PHONY: all clean install doc vowpalwabbitslim
