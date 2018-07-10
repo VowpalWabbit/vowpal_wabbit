@@ -1,39 +1,54 @@
 // Reinforcement learning API demo
 #include "basic_usage_cpp.h"
 
-int api_example() {
+int main() {
+  // name, value based config object used to initialise the API
   u::config_collection config;
-  RETURN_ON_ERROR_STR(load_config_from_json("client.json", config), 
-    "Unable to Load file: client.json");
 
-  // api_status is an optional argument used to return status of all API calls
+  // Helper method to initialize config from a json file
+  if( load_config_from_json("client.json", config) != err::success ) {
+    std::cout << "Unable to Load file: client.json" << std::endl;
+    return -1;
+  }
+
+  // api_status is an optional argument used to get detailed 
+  // error description from all API calls
   r::api_status status;
 
-  // Create an interface to reinforcement learning loop using config
-  auto rl = new r::live_model(config);
-  RETURN_ON_ERROR(rl->init(&status), status);
+  // (1) Instantiate Inference API using config
+  r::live_model rl(config);
+
+  // (2) Initialize the API
+  if( rl.init(&status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
 
   // Response class
   r::ranking_response response;
 
-  // Choose an action
-  RETURN_ON_ERROR(rl->choose_rank(uuid, context, response, &status), status);
+  // (3) Choose an action
+  if( rl.choose_rank(uuid, context, response, &status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
 
+  // (4) Use the response
   size_t choosen_action;
-  RETURN_ON_ERROR(response.get_choosen_action_id(choosen_action), status);
-
-  // Use the response
+  if( response.get_choosen_action_id(choosen_action, &status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
   std::cout << "Chosen action id is: " << choosen_action << std::endl;
 
-  // Report reward recieved
-  RETURN_ON_ERROR(rl->report_outcome(uuid, reward, &status), status);
+  // (5) Report recieved reward (Optional: if this call is not made, default missing reward is applied)
+  //     Missing reward can be thought of as negative reinforcement
+  if( rl.report_outcome(uuid, reward, &status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
 
-  return reinforcement_learning::error_code::success;
-}
-
-int main() {
-  const auto retcode = api_example();
-  return retcode;
+  return 0;
 }
 
 // Helper methods
