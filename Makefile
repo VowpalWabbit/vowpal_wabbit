@@ -115,6 +115,9 @@ rl_example: vw rl_clientlib
 	cd decision_service/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
 	cd decision_service/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
 
+rl_python: vw
+	cd decision_service/python_binding; $(MAKE) -j $(NPROCS) things
+
 spanning_tree:
 	cd cluster; $(MAKE)
 
