@@ -33,10 +33,15 @@ namespace reinforcement_learning
     return err_code;
   }
 
-  live_model::live_model(const utility::config_collection& config, const error_fn fn, void* err_context) 
-    : _pimpl(new live_model_impl(config, fn, err_context)),
-    _initialized(false)
-  {
+  live_model::live_model(
+    const utility::config_collection& config, 
+    error_fn fn, 
+    void* err_context,
+    transport_factory_t* t_factory,
+    model_factory_t* m_factory
+    ) :
+    _pimpl(new live_model_impl(config, fn, err_context, t_factory, m_factory)),
+    _initialized(false) {
   }
 
   int live_model::choose_rank(const char* uuid, const char* context_json, ranking_response& response,

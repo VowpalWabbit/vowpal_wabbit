@@ -13,104 +13,125 @@
 #include "api_status.h"
 #include "ranking_response.h"
 #include "err_constants.h"
+#include "constants.h"
+
+namespace r = reinforcement_learning;
+namespace u = reinforcement_learning::utility;
+namespace err = reinforcement_learning::error_code;
+namespace cfg = reinforcement_learning::utility::config;
+
+const auto JSON_CFG = R"(
+  {
+    "ApplicationID": "rnc-123456-a",
+    "EventHubInteractionConnectionString": "Endpoint=sb://localhost:8080/;SharedAccessKeyName=RMSAKey;SharedAccessKey=<ASharedAccessKey>=;EntityPath=interaction",
+    "EventHubObservationConnectionString": "Endpoint=sb://localhost:8080/;SharedAccessKeyName=RMSAKey;SharedAccessKey=<ASharedAccessKey>=;EntityPath=observation",
+    "IsExplorationEnabled": true,
+    "ModelBlobUri": "http://localhost:8080",
+    "InitialExplorationEpsilon": 1.0
+  }
+  )";
+const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
 
 BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;
 	http_server.on_initialize(U("http://localhost:8080"));
+  r::api_status status;
 
 	//create a simple ds configuration
-	auto config = reinforcement_learning::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  u::config_collection config;
+	cfg::create_from_json(JSON_CFG, config);
+  config.set(r::name::EH_TEST, "true");
 
 	//create the ds live_model, and initialize it with the config
-	reinforcement_learning::live_model ds(config);
-  ds.init(nullptr);
+	r::live_model ds(config);
+  BOOST_CHECK_EQUAL(ds.init(&status), err::success);
 
-  auto uuid = "uuid";
-  auto context = "context";
-  auto invalid_uuid = "";
-  auto invalid_context = "";
+  const auto uuid = "uuid";
+  const auto invalid_uuid = "";
+  const auto invalid_context = "";
 
-  reinforcement_learning::ranking_response response;
+  r::ranking_response response;
 
 	// request ranking
-	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), reinforcement_learning::error_code::success);
+	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, JSON_CONTEXT, response), err::success);
 
 	//check expected returned codes
-	BOOST_CHECK_EQUAL(ds.choose_rank(invalid_uuid, context, response), reinforcement_learning::error_code::invalid_argument);//invalid uuid
-	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, invalid_context, response), reinforcement_learning::error_code::invalid_argument);//invalid context
-
-	//same tests now but with the api_status
-  auto status = new reinforcement_learning::api_status();
+	BOOST_CHECK_EQUAL(ds.choose_rank(invalid_uuid, JSON_CONTEXT, response), err::invalid_argument);//invalid uuid
+	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, invalid_context, response), err::invalid_argument);//invalid context
 
 	//invalid uuid
-	ds.choose_rank(uuid, invalid_context, response, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), reinforcement_learning::error_code::invalid_argument);
-
+	ds.choose_rank(uuid, invalid_context, response, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), err::invalid_argument);
+  
 	//invalid context
-	ds.choose_rank(invalid_uuid, context, response, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), reinforcement_learning::error_code::invalid_argument);
+	ds.choose_rank(invalid_uuid, JSON_CONTEXT, response, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), err::invalid_argument);
 	
 	//valid request => status is reset
-  reinforcement_learning::api_status::try_update(status, -42, "hello");
-	ds.choose_rank(uuid, context, response, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), 0);
-	BOOST_CHECK_EQUAL(status->get_error_msg(), "");
+  r::api_status::try_update(&status, -42, "hello");
+	ds.choose_rank(uuid, JSON_CONTEXT, response, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), 0);
+	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	//stop the http server
 	http_server.on_shutdown();
-
-	delete status;
 }
 
 BOOST_AUTO_TEST_CASE(live_model_reward)
 {
 	//start a http server that will receive events sent from the eventhub_client
-	http_helper http_server;
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  http_helper http_server;
 	http_server.on_initialize(U("http://localhost:8080"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//create a simple ds configuration
-	auto config = reinforcement_learning::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
-  config.set("local_eventhub_test", "true");  
+  u::config_collection config;
+	cfg::create_from_json(JSON_CFG, config);
+  config.set(r::name::EH_TEST, "true");  
 
 	//create a ds live_model, and initialize with configuration
-  reinforcement_learning::live_model ds(config);
-  ds.init(nullptr);
+  r::live_model ds(config);
 
-	const char*  uuid = "uuid";
-	const char*  reward = "reward";
-	const char*  invalid_uuid = "";
-	const char*  invalid_reward = "";
+  //check api_status content when errors are returned
+  r::api_status status;
+
+  BOOST_CHECK_EQUAL(ds.init(&status), err::success);
+  BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
+  BOOST_CHECK_EQUAL(status.get_error_msg(), "");
+
+  const auto uuid = "uuid";
+	const auto  reward = "reward";
+	const auto  invalid_uuid = "";
+	const auto  invalid_reward = "";
 
 	// report reward
-	BOOST_CHECK_EQUAL(ds.report_outcome(uuid, reward), reinforcement_learning::error_code::success);
+  const auto scode = ds.report_outcome(uuid, reward, &status);
+  BOOST_CHECK_EQUAL(scode, err::success);
+  BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	// check expected returned codes
-	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_uuid, reward), reinforcement_learning::error_code::invalid_argument);//invalid uuid
-	BOOST_CHECK_EQUAL(ds.report_outcome(uuid, invalid_reward), reinforcement_learning::error_code::invalid_argument);//invalid reward
-
-	//check api_status content when errors are returned
-	reinforcement_learning::api_status* status = new reinforcement_learning::api_status();
+	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_uuid, reward), err::invalid_argument);//invalid uuid
+	BOOST_CHECK_EQUAL(ds.report_outcome(uuid, invalid_reward), err::invalid_argument);//invalid reward
 
 	//invalid uuid
-	ds.report_outcome(invalid_uuid, reward, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), reinforcement_learning::error_code::invalid_argument);
+	ds.report_outcome(invalid_uuid, reward, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 
 	//invalid context
-	ds.report_outcome(uuid, invalid_reward, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), reinforcement_learning::error_code::invalid_argument);
+	ds.report_outcome(uuid, invalid_reward, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 	
 	//valid request => status is not modified
-  reinforcement_learning::api_status::try_update(status, -42, "hello");
-  ds.report_outcome(uuid, reward, status);
-	BOOST_CHECK_EQUAL(status->get_error_code(), 0);
-	BOOST_CHECK_EQUAL(status->get_error_msg(), "");
+  r::api_status::try_update(&status, -42, "hello");
+  ds.report_outcome(uuid, reward, &status);
+	BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
+	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	//stop the http server
 	http_server.on_shutdown();
-
-	delete status;
 }
 
 namespace r = reinforcement_learning;
@@ -137,8 +158,10 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   http_server.on_initialize(U("http://localhost:8080"),post_error);
 
   //create a simple ds configuration
-  auto config = r::utility::config::init_from_json(R"({"eventhub_host":"localhost:8080"})");
-  config.set("local_eventhub_test", "true");
+  u::config_collection config;
+  auto const status = cfg::create_from_json(JSON_CFG,config);
+  BOOST_CHECK_EQUAL(status, r::error_code::success);
+  config.set(r::name::EH_TEST, "true");
 
   ////////////////////////////////////////////////////////////////////
   //// Following mismatched object type is prevented by the compiler
@@ -153,15 +176,14 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   ds.init(nullptr);
 
   const char*  uuid = "uuid";
-  const char*  context = "abcdefghijklmnopqrstuvwxyz;;abcdefghijklmnopqrstuvwxyz";
 
   r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
   // request ranking
-  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, context, response), r::error_code::success);
+  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, JSON_CONTEXT, response), r::error_code::success);
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-  BOOST_CHECK_EQUAL(the_server._err_count, 1);
+  BOOST_CHECK_GT(the_server._err_count, 1);
 
   //stop the http server
   http_server.on_shutdown();

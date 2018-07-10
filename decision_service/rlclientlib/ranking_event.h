@@ -9,13 +9,13 @@ namespace reinforcement_learning {
   //serializable ranking event
 	class ranking_event {
 	public:
-		static void serialize(std::ostream& buf, const char* uuid, const char* context,
-      ranking_response& resp, const std::string& model_id);
+		static void serialize(std::ostream& oss, const char* uuid, const char* context,
+      ranking_response& resp);
 	};
 
 	//serializable outcome event
 	class outcome_event {
 	public:
-	  static void serialize(std::ostream& buf, const char* uuid, const char* outcome_data);
+	  static void serialize(std::ostream& oss, const char* uuid, const char* outcome_data);
 	};
 }

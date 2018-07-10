@@ -3,7 +3,7 @@
 #   define BOOST_TEST_MODULE Main
 #endif
 #include <boost/test/unit_test.hpp>
-#include "interruptable_sleeper.h"
+#include "utility/interruptable_sleeper.h"
 #include <thread>
 
 namespace u = reinforcement_learning::utility;

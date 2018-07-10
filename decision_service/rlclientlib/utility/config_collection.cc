@@ -64,4 +64,12 @@ namespace reinforcement_learning { namespace utility {
     return defval;
   }
 
+  float config_collection::get_float(const char* name, float defval) const {
+    auto& map = *_pmap;
+    const auto it = map.find(name);
+    if ( it != map.end() )
+      return atof(it->second.c_str());
+    return defval;
+  }
+
 }}

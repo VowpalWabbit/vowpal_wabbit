@@ -32,13 +32,14 @@ BOOST_AUTO_TEST_CASE(ranking_response_uuid) {
 BOOST_AUTO_TEST_CASE(ranking_response_empty_collection) {
   ranking_response resp;
   api_status s;
-  auto action_id = resp.get_top_action_id(&s);
-  BOOST_CHECK(s.get_error_code() > 0);
-  BOOST_CHECK_EQUAL(action_id, -1);
+  size_t action_id;
+  auto scode = resp.get_choosen_action_id(action_id,&s);
+  BOOST_CHECK_GT(scode, 0);
+  BOOST_CHECK_GT(s.get_error_code() , 0);
 
   action_id = 10;
-  action_id = resp.get_top_action_id();
-  BOOST_CHECK_EQUAL(action_id, -1);
+  scode = resp.get_choosen_action_id(action_id);
+  BOOST_CHECK_GT(scode, 0);
 }
 
 BOOST_AUTO_TEST_CASE(ranking_response_write_read_iterator) {
