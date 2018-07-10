@@ -29,7 +29,7 @@ def sum_files(result_path):
 def parse_sum_file(sum_filename):
 	f = open(sum_filename, 'r')
 	#f.seek(0, 0)
-	table = pd.read_table(f, sep='\s+',lineterminator='\n')
+	table = pd.read_table(f, sep='\s+',lineterminator='\n',error_bad_lines=False)
 
 	return table
 
@@ -120,14 +120,14 @@ def alg_str(alg_name):
 	'Class-1',
 	'Bandit-Only',
 	'Sup-Only',
-	'MinimaxBandits, one validation',
-	'AwesomeBandits with $|\Lambda|$=4, one validation',
-	'AwesomeBandits with $|\Lambda|$=8, one validation',
-	'AwesomeBandits with $|\Lambda|$=16, one validation',
-	'MinimaxBandits, multiple validation',
-	'AwesomeBandits with $|\Lambda|$=4, multiple validation',
-	'AwesomeBandits with $|\Lambda|$=8, multiple validation',
-	'AwesomeBandits with $|\Lambda|$=16, multiple validation',
+	'MinimaxBandits, split validation',
+	'AwesomeBandits with $|\Lambda|$=4, split validation',
+	'AwesomeBandits with $|\Lambda|$=8, split validation',
+	'AwesomeBandits with $|\Lambda|$=16, split validation',
+	'MinimaxBandits, no-split validation',
+	'AwesomeBandits with $|\Lambda|$=4, no-split validation',
+	'AwesomeBandits with $|\Lambda|$=8, no-split validation',
+	'AwesomeBandits with $|\Lambda|$=16, no-split validation',
 	'unknown'])
 
 def alg_str_compatible(alg_name):
@@ -382,7 +382,9 @@ def get_unnormalized_results(result_table):
 	return new_size, new_unnormalized_results
 
 def update_result_dict(results_dict, new_result):
+	print results_dict
 	for k, v in new_result.iteritems():
+		print k
 		results_dict[k].append(v)
 
 
@@ -524,7 +526,7 @@ if __name__ == '__main__':
 	mod.pair_comp_on = False
 	mod.cdf_on = True
 	mod.maj_error_dir = '../../../figs_all/expt_0509/figs_maj_errors/0of1.sum'
-	mod.best_error_dir = '../../../figs_all/expt_0606/best_errors/0of1.sum'
+	mod.best_error_dir = '../../../figs_all/expt_0606/0of1.sum'
 
 	mod.fulldir = mod.results_dir + mod.plot_subdir
 	if not os.path.exists(mod.fulldir):
@@ -571,7 +573,7 @@ if __name__ == '__main__':
 	elif mod.filter == '2':
 		#print all_results['warm_start_size'] >= 100
 		#raw_input(' ')
-		all_results = all_results[all_results['warm_start_size'] >= 100]
+		all_results = all_results[all_results['warm_start'] >= 200]
 	elif mod.filter == '3':
 		all_results = all_results[all_results['num_classes'] >= 3]
 	elif mod.filter == '4':
@@ -580,10 +582,10 @@ if __name__ == '__main__':
 		all_results = all_results[all_results['total_size'] >= 10000]
 		all_results = all_results[all_results['num_classes'] >= 3]
 	elif mod.filter == '6':
-		all_results = all_results[all_results['warm_start_size'] >= 100]
+		all_results = all_results[all_results['warm_start'] >= 100]
 		all_results = all_results[all_results['learning_rate'] == 0.3]
 	elif mod.filter == '7':
-		all_results = all_results[all_results['warm_start_size'] >= 100]
+		all_results = all_results[all_results['warm_start'] >= 100]
 		all_results = all_results[all_results['num_classes'] >= 3]
 
 	plot_all(mod, all_results)
