@@ -1,12 +1,14 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+
 class person {
   public:
     using topic_prob = std::unordered_map<std::string, float>;
-    person(std::string, std::string,
-           std::string, std::string,
-            topic_prob& p);
+    
+    person(std::string id, std::string major,
+               std::string hobby, std::string fav_char, 
+               topic_prob& p);
     ~person();
     std::string get_features();
     float get_reward(const std::string& topic);

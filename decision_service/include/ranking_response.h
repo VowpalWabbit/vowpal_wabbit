@@ -28,9 +28,9 @@ namespace reinforcement_learning {
     void clear();
 
     ranking_response(ranking_response&&) noexcept;
-    ranking_response& operator = (ranking_response&&) noexcept;
+    ranking_response& operator=(ranking_response&&) noexcept;
     ranking_response(const ranking_response&) = delete;
-    ranking_response& operator =(const ranking_response&) = delete;
+    ranking_response& operator=(const ranking_response&) = delete;
   private:
     ranking_response_impl* _pimpl;
 

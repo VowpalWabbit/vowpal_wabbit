@@ -66,12 +66,11 @@ int rl_sim::load_config_from_json(  const std::string& file_name,
 int rl_sim::load_file(const std::string& file_name, std::string& config_str) {
   std::ifstream fs;
   fs.open(file_name);
-  if ( !fs.good() )
-    return reinforcement_learning::error_code::invalid_argument;
+  if ( !fs.good() ) return err::invalid_argument;
   std::stringstream buffer;
   buffer << fs.rdbuf();
   config_str = buffer.str();
-  return reinforcement_learning::error_code::success;
+  return err::success;
 }
 
 int rl_sim::init_rl() {
@@ -130,7 +129,7 @@ std::string rl_sim::create_context_json(const std::string& cntxt, const std::str
 }
 
 std::string rl_sim::create_uuid() {
-  return boost::uuids::to_string(boost::uuids::random_generator()( ));
+  return boost::uuids::to_string(boost::uuids::random_generator()());
 }
 
 rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)) {}

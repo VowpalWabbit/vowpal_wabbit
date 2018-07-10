@@ -25,9 +25,9 @@ namespace reinforcement_learning {
 
 	public:
     // Type declarations
-    using error_fn            = void(*)(const api_status&, void*);
+    using error_fn = void(*)(const api_status&, void*);
     using transport_factory_t = utility::object_factory<model_management::i_data_transport>;
-    using model_factory_t     = utility::object_factory<model_management::i_model>;
+    using model_factory_t = utility::object_factory<model_management::i_model>;
 
     template<typename ErrCntxt>
     using error_fn_t = void(*)( const api_status&, ErrCntxt* );
