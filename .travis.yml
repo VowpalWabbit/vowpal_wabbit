@@ -1,65 +1,11 @@
-language: cpp
-compiler:
-  - gcc
-addons:
-  apt:
-    sources:
-      - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
-    packages:
-      - cmake
-      - cmake-data
+matrix:
+  include:
+    - os: linux
+      services: docker
+      sudo: required
 before_install:
-  # Remove cmake ppa
-  - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports" 
-  #### begin g++ 4.9
-  # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test                         
-  - sudo apt-get update
-  - sudo apt-get install gcc-4.9 g++-4.9
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
-  - sudo add-apt-repository -y --remove "ubuntu-toolchain-r-test"
-  #### end g++ 4.9
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libboost-all-dev
-  - sudo apt-get install maven
-  #### begin cpprest
-  - sudo apt-get install g++ git make zlib1g-dev libboost-all-dev libssl-dev
-  - git clone https://github.com/Microsoft/cpprestsdk.git casablanca
-  - cd casablanca/Release
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-  - sudo make install
-  - cd ../../../
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
-  #### end cpprest
-  - sudo pip install cpp-coveralls wheel
-  # use miniconda for python package testing
-  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
+  - docker pull eisber/vw
 script:
-  - make all
-  - make python
-  - mvn clean test -f java/pom.xml
-  - make test
-  - make rl_clientlib_test
-  - cd test
-  - ./test_race_condition.sh
-  - cd ..
-  - make test_gcov --always-make
-  - cd python
-  - source activate test-python27
-  - pip install pytest readme_renderer
-  - python setup.py check -mrs
-  - python setup.py install
-  - py.test tests
-  - source deactivate
-  - cd ..
-after_success:
-  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+  - docker run --name travis-ci -v $TRAVIS_BUILD_DIR:/vw -t eisber/vw /bin/bash -c "cd vw && ./build-linux.sh"
+# after_success:
+#  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
