@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include <cstdlib>
 #ifdef _WIN32
 #include <WinSock2.h>
+#define ssize_t int64_t
 #else
 #include <sys/types.h>
 #include <unistd.h>
