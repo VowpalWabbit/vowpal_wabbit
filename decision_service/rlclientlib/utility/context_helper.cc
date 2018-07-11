@@ -23,7 +23,7 @@ namespace reinforcement_learning { namespace utility {
     try {
       const auto scontext = sutil::to_string_t(std::string(context));
       auto json_obj = web::json::value::parse(scontext);
-      if ( json_obj.has_array_field(multi) ) {
+      if ( json_obj.has_field(multi) ) { // TODO: has_array_field
         auto const arr = json_obj.at(multi).as_array();
         count = arr.size();
         if ( count > 0 )

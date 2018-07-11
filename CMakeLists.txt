@@ -30,6 +30,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_subdirectory(vowpalwabbit) 
 add_subdirectory(cluster) 
 add_subdirectory(library) 
+add_subdirectory(decision_service) 
 
 # TODO: rapidjson source generates too many warnings
 add_subdirectory(doc) 

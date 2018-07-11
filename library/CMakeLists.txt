@@ -25,8 +25,6 @@ target_link_libraries(test_search PRIVATE vw)
 add_executable(search_generate search_generate.cc)
 target_link_libraries(search_generate PRIVATE vw)
 
-
-
 if(NOT WIN32)
     add_executable(recommend recommend.cc)
     target_link_libraries(recommend PRIVATE vw)
