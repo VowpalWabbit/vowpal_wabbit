@@ -25,20 +25,20 @@ class rl_sim:
             context_json = self.create_context_json(context_features, action_features)
             req_id = str(uuid.uuid4())
 
-            status = rlcl.api_status()
-
-            if (self._rl.choose_rank(req_id, context_json, response, status) != rlcl.error_code.success):
+            response, status = self._rl.choose_rank(req_id, context_json)
+            if (status.get_error_code() != rlcl.error_code.success):
                 print(status.get_error_msg())
                 return -1
 
-            choosen_action = 0
-            if (response.get_choosen_action_id(choosen_action, status) != rlcl.error_code.success):
+            choosen_action, status = response.get_choosen_action_id()
+            if (status.get_error_code() != rlcl.error_code.success):
                 print(status.get_error_msg())
                 return -1
 
             reward = p.get_reward(self._actions[choosen_action])
 
-            if (self._rl.report_outcome(req_id, reward, status) != rlcl.error_code.success):
+            status = self._rl.report_outcome(req_id, reward)
+            if (status.get_error_code() != rlcl.error_code.success):
                 print(status.get_error_msg())
                 return -1
 
@@ -55,14 +55,11 @@ class rl_sim:
         return True
 
     def init_rl(self):
-        status = rlcl.api_status()
-        config = rlcl.config_collection()
-        if (self.load_config_from_json(self._options.json_config, config) != rlcl.error_code.success):
-            print(status.get_error_msg())
-            return -1
+        config = self.load_config_from_json(self._options.json_config)
 
         self._rl = rlcl.live_model(config)
-        if (self._rl.init(status) != rlcl.error_code.success):
+        status = self._rl.init()
+        if (status.get_error_code() != rlcl.error_code.success):
             print(status.get_error_msg())
             return -1
 
@@ -75,10 +72,10 @@ class rl_sim:
         self._actions = ['HerbGarden', 'MachineLearning']
         self._people = [person('rnc', 'engineering', 'hiking', 'spock', tp1), person('mk', 'psychology', 'kids', '7of9', tp2)]
 
-    def load_config_from_json(self, file_name, cfgcoll):
+    def load_config_from_json(self, file_name):
         with open(file_name, 'r') as config_file:
             status = rlcl.api_status()
-            return rlcl.utility_config.create_from_json(config_file.read(), cfgcoll, status)
+            return rlcl.utility_config.create_from_json(config_file.read())[0]
 
     def pick_a_random_person(self):
         return self._people[random.randint(0, len(self._people) - 1)]
