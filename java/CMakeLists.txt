@@ -8,7 +8,7 @@ if (Java_FOUND)
 	configure_file(pom.xml.in ${PROJECT_SOURCE_DIR}/pom.xml @ONLY)
 
 	# TODO: should this run by default?
-	add_custom_target(java # ALL
+	add_custom_target(java ALL
 		COMMAND mvn compile -f pom.xml
 		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 		DEPENDS vw_jni)
