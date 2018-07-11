@@ -14,12 +14,12 @@ int rl_sim::loop() {
     auto& p = pick_a_random_person();
     const auto context_features = p.get_features();
     const auto action_features = get_action_features();
-    const auto context_json = create_context_json(context_features,action_features).c_str();
-    const auto req_id = create_uuid().c_str();  
+    const auto context_json = create_context_json(context_features,action_features);
+    const auto req_id = create_uuid();  
     r::api_status status;
 
     // Choose an action
-    if ( _rl->choose_rank(req_id, context_json, response, &status) != err::success ) {
+    if ( _rl->choose_rank(req_id.c_str(), context_json.c_str(), response, &status) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
       return -1;
     }
@@ -35,7 +35,7 @@ int rl_sim::loop() {
     const auto reward = p.get_reward(_actions[choosen_action]);
 
     // Report reward recieved
-    if ( _rl->report_outcome(req_id, reward, &status) != err::success ) {
+    if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
       return -1;
     }
