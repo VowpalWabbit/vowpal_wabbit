@@ -154,12 +154,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="error_context.h" />
     <ClInclude Include="person.h" />
     <ClInclude Include="rl_sim.h" />
     <ClInclude Include="rl_sim_cpp.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="error_context.cc" />
     <ClCompile Include="person.cc" />
     <ClCompile Include="rl_sim.cc" />
     <ClCompile Include="main.cc" />
