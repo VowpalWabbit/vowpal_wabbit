@@ -1,4 +1,4 @@
-class api_status:
+class exception(Exception):
     def __init__(self):
         pass
 
@@ -13,20 +13,20 @@ class live_model:
         pass
     
     def init(self):
-        return api_status()
+        pass
 
     def choose_rank(self, uuid, context):
-        return ranking_response(), api_status()
+        return ranking_response()
 
     def report_outcome(self, uuid, reward):
-        return api_status()
+        pass
 
 class ranking_response:
     def __init(self):
         pass
 
     def get_choosen_action_id(self):
-        return 0, api_status()
+        return 0
 
 class config_collection:
     def __init__(self):
@@ -38,7 +38,7 @@ class utility_config:
         pass
 
     def create_from_json(config_json):
-        return "", api_status()
+        return ""
 
 class error_code:
     success = 0

@@ -19,33 +19,25 @@ class rl_sim:
 
         round = 0
         while (True):
-            p = self.pick_a_random_person()
-            context_features = p.get_features()
-            action_features = r"""("_multi": [ {"topic":"HerbGarden"}, {"topic":"MachineLearning"} ])"""
-            context_json = self.create_context_json(context_features, action_features)
-            req_id = str(uuid.uuid4())
+            try:
+                p = self.pick_a_random_person()
+                context_features = p.get_features()
+                action_features = r"""("_multi": [ {"topic":"HerbGarden"}, {"topic":"MachineLearning"} ])"""
+                context_json = self.create_context_json(context_features, action_features)
+                req_id = str(uuid.uuid4())
 
-            response, status = self._rl.choose_rank(req_id, context_json)
-            if (status.get_error_code() != rlcl.error_code.success):
-                print(status.get_error_msg())
-                return -1
+                response = self._rl.choose_rank(req_id, context_json)
+                choosen_action = response.get_choosen_action_id()
+                reward = p.get_reward(self._actions[choosen_action])
+                self._rl.report_outcome(req_id, reward)
 
-            choosen_action, status = response.get_choosen_action_id()
-            if (status.get_error_code() != rlcl.error_code.success):
-                print(status.get_error_msg())
-                return -1
+                print('Round: {round}, Person: {person}, Action: {action}, Reward: {reward}'.format(round = round, person = p.id(), action = choosen_action, reward = reward))
 
-            reward = p.get_reward(self._actions[choosen_action])
-
-            status = self._rl.report_outcome(req_id, reward)
-            if (status.get_error_code() != rlcl.error_code.success):
-                print(status.get_error_msg())
-                return -1
-
-            print('Round: {round}, Person: {person}, Action: {action}, Reward: {reward}'.format(round = round, person = p.id(), action = choosen_action, reward = reward))
-
-            round = round + 1
-            time.sleep(0.1)
+                round = round + 1
+                time.sleep(0.1)
+            except rlcl.exception as ex:
+                print('Something bad happened: {description}'.format(description = ex.get_error_msg()))
+                continue
 
     def init(self):
         if (self.init_rl() != rlcl.error_code.success):
@@ -55,15 +47,15 @@ class rl_sim:
         return True
 
     def init_rl(self):
-        config = self.load_config_from_json(self._options.json_config)
+        try:
+            config = self.load_config_from_json(self._options.json_config)
+            self._rl = rlcl.live_model(config)
+            self._rl.init()
+            return rlcl.error_code.success
 
-        self._rl = rlcl.live_model(config)
-        status = self._rl.init()
-        if (status.get_error_code() != rlcl.error_code.success):
-            print(status.get_error_msg())
+        except rlcl.exception as ex:
+            print('Something bad happened: {description}'.format(description = ex.get_error_msg()))
             return -1
-
-        return rlcl.error_code.success
 
     def init_people(self):
         tp1 = {'HerbGarden': 0.002, "MachineLearning": 0.03 }
@@ -74,8 +66,7 @@ class rl_sim:
 
     def load_config_from_json(self, file_name):
         with open(file_name, 'r') as config_file:
-            status = rlcl.api_status()
-            return rlcl.utility_config.create_from_json(config_file.read())[0]
+            return rlcl.utility_config.create_from_json(config_file.read())
 
     def pick_a_random_person(self):
         return self._people[random.randint(0, len(self._people) - 1)]
