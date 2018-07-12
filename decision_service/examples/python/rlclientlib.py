@@ -12,14 +12,14 @@ class live_model:
     def __init__(self, config):
         pass
     
-    def init(self, status):
-        return 0
+    def init(self):
+        return api_status()
 
-    def choose_rank(self, uuid, context, response, status):
-        return 0
+    def choose_rank(self, uuid, context):
+        return ranking_response(), api_status()
 
-    def report_outcome(self, uuid, reward, status):
-        return 0
+    def report_outcome(self, uuid, reward):
+        return api_status()
 
 class ranking_response:
     def __init(self):
@@ -28,8 +28,8 @@ class ranking_response:
     def clear(self):
         pass
 
-    def get_choosen_action_id(self, id, status):
-        return 0
+    def get_choosen_action_id(self):
+        return 0, api_status()
 
 class config_collection:
     def __init__(self):
@@ -40,8 +40,8 @@ class utility_config:
     def __init__(self):
         pass
 
-    def create_from_json(config_json, cc, api_status):
-        return 0
+    def create_from_json(config_json):
+        return "", api_status()
 
 class error_code:
     success = 0
