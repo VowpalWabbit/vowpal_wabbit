@@ -1,6 +1,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <thread>
+#include "error_context.h"
 #include "live_model.h"
 #include "rl_sim_cpp.h"
 #include "person.h"
@@ -21,14 +22,14 @@ int rl_sim::loop() {
     // Choose an action
     if ( _rl->choose_rank(req_id.c_str(), context_json.c_str(), response, &status) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
-      return -1;
+      continue;
     }
 
     // Use the chosen action
     size_t choosen_action;
     if ( response.get_choosen_action_id(choosen_action) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
-      return -1;
+      continue;
     }
 
     // What reward did this action get?
@@ -37,7 +38,7 @@ int rl_sim::loop() {
     // Report reward recieved
     if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
-      return -1;
+      continue;
     }
 
     std::cout << "Round:" << round << ", Person:" << p.id() << ", Action:" << choosen_action << ", Reward:" << reward << std::endl;
@@ -83,7 +84,7 @@ int rl_sim::init_rl() {
     return -1;
   }
 
-  _rl = std::unique_ptr<r::live_model>(new r::live_model(config));
+  _rl = std::unique_ptr<r::live_model>(new r::live_model(config, &on_error, &_error_context));
   if ( _rl->init(&status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;

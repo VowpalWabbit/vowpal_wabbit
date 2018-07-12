@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/program_options.hpp>
+#include "error_context.h"
 #include "person.h"
 #include "live_model.h"
 
@@ -27,5 +28,6 @@ public:
     std::unique_ptr<reinforcement_learning::live_model> _rl;
     std::vector<person> _people;
     std::vector<std::string> _actions;
+    error_context _error_context;
 };
 

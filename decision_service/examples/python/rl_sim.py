@@ -43,7 +43,7 @@ class rl_sim:
                 return -1
 
             print('Round: {round}, Person: {person}, Action: {action}, Reward: {reward}'.format(round = round, person = p.id(), action = choosen_action, reward = reward))
-            response.clear()
+
             round = round + 1
             time.sleep(0.1)
 
