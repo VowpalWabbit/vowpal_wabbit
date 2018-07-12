@@ -25,9 +25,6 @@ class ranking_response:
     def __init(self):
         pass
 
-    def clear(self):
-        pass
-
     def get_choosen_action_id(self):
         return 0, api_status()
 
