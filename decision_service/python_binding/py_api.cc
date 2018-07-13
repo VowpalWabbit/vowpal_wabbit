@@ -91,10 +91,6 @@ namespace reinforcement_learning {
     }
     // Uuid is auto-generated.
     ranking_response live_model::choose_rank(const char* context_json) {
-
-      std::cout << "json"<< std::endl;
-      std::cout << context_json << std::endl;
-      std::cout << "jsonend"<< std::endl;
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
       impl.choose_rank(context_json, response_impl, &status);
