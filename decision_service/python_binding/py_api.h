@@ -12,17 +12,15 @@ namespace reinforcement_learning {
 
     reinforcement_learning::utility::config_collection create_from_json(const std::string& config_json);
 
-#ifndef SWIG
     class error_callback {
     public:
       virtual void on_error(int error_code, const std::string& error_message) {}
       virtual ~error_callback() = default;
     };
-#endif
 
     struct ranking_response {
       std::string uuid;
-      std::string modelid;
+      std::string model_id;
       size_t chosen_action_id;
       std::vector<int> action_ids;
       std::vector<float> probabilities;

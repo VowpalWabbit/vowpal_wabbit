@@ -10,11 +10,12 @@
 
 %include <exception.i>
 %include <std_string.i>
-%include <std_pair.i>
 %include <std_vector.i>
 
 %template(vectori) std::vector<int>;
 %template(vectorf) std::vector<float>;
+
+%feature("director") error_callback;
 
 %include "py_api.h"
 %include "../include/constants.h"
@@ -24,16 +25,9 @@
 namespace reinforcement_learning {
   namespace python {
 
-  %feature("director") error_callback;
-  class error_callback {
-    public:
-      virtual void on_error(int error_code, const std::string& error_message) {}
-      virtual ~error_callback() = default;
-    };
-
-
     class live_model {
     public:
+      //%feature("autodoc", "1")
       live_model(const reinforcement_learning::utility::config_collection config, error_callback& callback);
       live_model(const reinforcement_learning::utility::config_collection config);
 
@@ -50,11 +44,8 @@ namespace reinforcement_learning {
       %pythoncode %{
         def choose_rank(self, *args):
             ranking_response = self.choose_rank_impl(*args)
-            return ranking_response.uuid, ranking_response.modelid, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
+            return ranking_response.uuid, ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
       %}
-
-      private:
-        reinforcement_learning::live_model impl;
     };
   }
 }
