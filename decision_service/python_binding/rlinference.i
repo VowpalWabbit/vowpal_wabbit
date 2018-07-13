@@ -13,8 +13,6 @@
 %include <std_pair.i>
 %include <std_vector.i>
 
-%template() std::pair<int,int>;
-%template(PairVector) std::vector<std::pair<int,float>>;
 %template(vectori) std::vector<int>;
 %template(vectorf) std::vector<float>;
 
