@@ -301,7 +301,7 @@ class VW(BaseEstimator):
 
         # add examples to model
         for n in range(self.passes_):
-            if n > 1:
+            if n >= 1:
                 np.random.shuffle(X)
             for idx, x in enumerate(X):
                 model.learn(x)
@@ -340,7 +340,7 @@ class VW(BaseEstimator):
             if not using convert_to_vw, X is expected to be a list of vw formatted feature vector strings with labels
 
         Returns
-        -------
+        -------hon/vowpalwabbit/sklearn_vw.py#L307
         y : array-like, shape (n_samples, 1 or n_classes)
             Output vector relative to X.
         """
