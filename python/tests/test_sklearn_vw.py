@@ -2,10 +2,12 @@ import os
 
 from collections import namedtuple
 import numpy as np
+import pandas as pd
 import pytest
 
 from vowpalwabbit.sklearn_vw import VW, VWClassifier, VWRegressor, tovw
 from sklearn import datasets
+from sklearn.model_selection import KFold
 from scipy.sparse import csr_matrix
 
 
@@ -184,6 +186,20 @@ class TestVWClassifier:
 
         assert np.allclose(expected, actual)
 
+    def test_shuffle_pd_Series(self):
+        # dummy data in vw format
+        X = pd.Series(['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat'], name='catdog')
+
+        kfold = KFold(n_splits=3, random_state=314, shuffle=False)
+        for train_idx, valid_idx in kfold.split(X):
+            X_train = X[train_idx]
+            # Classifier with multiple passes over the data
+            clf = VWClassifier(passes=3, convert_to_vw=False)
+            # Test that there is no exception raised in the fit on folds
+            try:
+                clf.fit(X_train)
+            except KeyError:
+                pytest.fail("Failed the fit over sub-sampled DataFrame")
 
 class TestVWRegressor:
 
