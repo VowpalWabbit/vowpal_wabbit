@@ -40,7 +40,7 @@ namespace reinforcement_learning
     return scode;
   }
 
-  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status) 
+  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status)
   {
     //clear previous errors if any
     api_status::try_clear(status);
@@ -74,7 +74,7 @@ namespace reinforcement_learning
 
   //here the uuid is auto-generated
   int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
-    return choose_rank(context, boost::uuids::to_string(boost::uuids::random_generator()( )).c_str(), response,
+    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()( )).c_str(), context, response,
       status);
   }
 
@@ -102,7 +102,7 @@ namespace reinforcement_learning
   }
 
   live_model_impl::live_model_impl(
-    const utility::config_collection& config, 
+    const utility::config_collection& config,
     const error_fn fn,
     void* err_context,
     transport_factory_t* t_factory,
@@ -111,7 +111,7 @@ namespace reinforcement_learning
   : _configuration(config),
     _error_cb(fn, err_context),
     _data_cb(_handle_model_update, this),
-    _logger(config, &_error_cb), 
+    _logger(config, &_error_cb),
     _t_factory{t_factory},
     _m_factory{m_factory},
     _transport(nullptr),
@@ -141,7 +141,7 @@ void live_model_impl::handle_model_update(const model_management::model_data& da
 }
 
 int live_model_impl::explore_only(const char* uuid, const char* context,  ranking_response& response, api_status* status) const {
-  
+
   // Generate egreedy pdf
   size_t action_count = 0;
   RETURN_IF_FAIL(utility::get_action_count(action_count, context, status));
