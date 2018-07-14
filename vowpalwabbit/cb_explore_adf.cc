@@ -795,7 +795,12 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     data->explore_type = REGCB;
   else
   {
-    if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
+    if (!arg.vm.count("epsilon"))
+		{
+			data->epsilon = 0.05f;
+			//a hacky way of passing the implicit epsilon value to cbify
+			arg.vm.insert(std::make_pair("epsilon", boost::program_options::variable_value(data->epsilon, false)));
+		}
     data->explore_type = EPS_GREEDY;
   }
 

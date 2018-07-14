@@ -84,7 +84,7 @@ struct cbify
 	CB::cb_class cl_adf;
 	uint32_t ws_train_size;
 	uint32_t ws_vali_size;
-	vector<example> ws_vali;
+	vector<example*> ws_vali;
 	float cumu_var;
 	uint32_t ws_iter;
 	uint32_t inter_iter;
@@ -92,6 +92,7 @@ struct cbify
 	COST_SENSITIVE::label cs_label;
 	COST_SENSITIVE::label* csls;
 	CB::label* cbls;
+	bool use_cs;
 	//COST_SENSITIVE::label* csl_empty;
 
 };
@@ -161,12 +162,21 @@ void finish(cbify& data)
         free(data.adf_data.ecs[a]);
       }
     data.adf_data.ecs.~vector<example*>();
+
+		data.lambdas.~vector<float>();
+		data.cumulative_costs.~vector<float>();
+
+		data.a_s_adf.delete_v();
+		for (size_t i = 0; i < data.ws_vali.size(); ++i)
+		{
+			if (data.use_cs)
+				VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, *data.ws_vali[i]);
+			else
+				VW::dealloc_example(MULTICLASS::mc_label.delete_label, *data.ws_vali[i]);
+			free(data.ws_vali[i]);
+		}
+		data.ws_vali.~vector<example*>();
   }
-
-	data.lambdas.~vector<float>();
-	data.cumulative_costs.~vector<float>();
-
-	data.a_s_adf.delete_v();
 }
 
 void copy_example_to_adf(cbify& data, example& ec)
@@ -439,18 +449,20 @@ void accumu_costs_wsv_adf(cbify& data, multi_learner& base)
 			lb = 0;
 			ub = ws_vali_size;
 		}
+		//cout<<"validation at iteration "<<data.inter_iter<<endl;
+		//cout<<"validation example range: "<< lb << " to " << ub << endl;
 		//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
 			for (uint32_t j = lb; j < ub; j++)
 			{
-				example& ec_vali = data.ws_vali[j];
-				uint32_t pred_label = predict_sublearner_adf(data, base, ec_vali, i);
+				example* ec_vali = data.ws_vali[j];
+				uint32_t pred_label = predict_sublearner_adf(data, base, *ec_vali, i);
 
 				if (use_cs)
-					data.cumulative_costs[i] += loss_cs(data, ec_vali.l.cs.costs, pred_label);
+					data.cumulative_costs[i] += loss_cs(data, ec_vali->l.cs.costs, pred_label);
 				else
-					data.cumulative_costs[i] += loss(data, ec_vali.l.multi.label, pred_label);
+					data.cumulative_costs[i] += loss(data, ec_vali->l.multi.label, pred_label);
 
 				//cout<<ec_vali.l.multi.label<<" "<<pred_label<<endl;
 			}
@@ -463,12 +475,12 @@ template<bool use_cs>
 void add_to_vali(cbify& data, example& ec)
 {
 	//if this does not work, we can try declare ws_vali as an array
-	example ec_copy;
+	example* ec_copy = VW::alloc_examples(sizeof(polylabel), 1);
 
 	if (use_cs)
-		VW::copy_example_data(false, &ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
+		VW::copy_example_data(false, ec_copy, &ec, 0, COST_SENSITIVE::cs_label.copy_label);
 	else
-		VW::copy_example_data(false, &ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
+		VW::copy_example_data(false, ec_copy, &ec, 0, MULTICLASS::mc_label.copy_label);
 
 	data.ws_vali.push_back(ec_copy);
 }
@@ -752,7 +764,7 @@ base_learner* cbify_setup(arguments& arg)
 		  ("choices_lambda", data->choices_lambda, 1U, "the number of candidate lambdas to aggregate (lambda is the importance weight parameter between the two sources) ")
 			("lambda_scheme", data->lambda_scheme, ABS_CENTRAL, "The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(#actions+epsilon), 4: center lambda=epsilon/(#actions+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme")
 			("weighting_scheme", data->wt_scheme, INSTANCE_WT, "weighting scheme (1: per instance weighting, where for every lambda, each contextual bandit example have weight lambda/(1-lambda) times that of each warm start example, 2: per dataset weighting, where for every lambda, the contextual bandit dataset has total weight lambda/(1-lambda) times that of the warm start dataset)")
-			("validation_method", data->vali_method, INTER_VALI, "lambda selection criterion (1: using contextual bandit examples with progressive validation, 2: using warm start examples)")
+			("validation_method", data->vali_method, INTER_VALI, "lambda selection criterion (1: using contextual bandit examples with progressive validation, 2: using warm start examples, with fresh validation examples at each epoch, 3: using warm start examples, with a single validation set throughout)")
 			("overwrite_label", data->overwrite_label, 1U, "the label used by type 3 corruptions (overwriting)")
 			("warm_start_type", data->ws_type, SUPERVISED_WS, "update method of utilizing warm start examples (1: using supervised updates, 2: using contextual bandit updates)").missing())
     return nullptr;
@@ -763,6 +775,7 @@ base_learner* cbify_setup(arguments& arg)
   data->all = arg.all;
 
 	data->num_actions = num_actions;
+	data->use_cs = use_cs;
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
@@ -795,6 +808,7 @@ base_learner* cbify_setup(arguments& arg)
   {
     multi_learner* base = as_multiline(setup_base(arg));
 		// Not sure why we can only put this line here to pass the value of epsilon
+		cout<<"count: "<<arg.vm.count("epsilon")<<endl;
 		data->epsilon = arg.vm["epsilon"].as<float>();
 
     if (use_cs)
