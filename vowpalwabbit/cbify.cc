@@ -93,7 +93,6 @@ struct cbify
 	COST_SENSITIVE::label* csls;
 	CB::label* cbls;
 	bool use_cs;
-	//COST_SENSITIVE::label* csl_empty;
 
 };
 
@@ -219,7 +218,7 @@ float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period
 
 void setup_lambdas(cbify& data)
 {
-	// The lambdas are in fact arranged in ascending order (the 'middle' lambda is 0.5)
+	// The lambdas are arranged in ascending order
 	vector<float>& lambdas = data.lambdas;
 	for (uint32_t i = 0; i<data.choices_lambda; i++)
 		lambdas.push_back(0.f);
@@ -251,10 +250,10 @@ void setup_lambdas(cbify& data)
 		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions, data.ws_period, data.inter_period);
 
 	for (uint32_t i = mid; i > 0; i--)
-		lambdas[i-1] = lambdas[i] / 2;
+		lambdas[i-1] = lambdas[i] / 2.0;
 
 	for (uint32_t i = mid+1; i < data.choices_lambda; i++)
-		lambdas[i] = 1 - (1-lambdas[i-1]) / 2;
+		lambdas[i] = 1 - (1-lambdas[i-1]) / 2.0;
 
 	if (data.lambda_scheme == MINIMAX_CENTRAL_ZEROONE || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 	{
@@ -323,15 +322,8 @@ float compute_weight_multiplier(cbify& data, size_t i, int ec_type)
 	float total_train_size = ws_train_size + inter_train_size;
 	float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
-	//cout<<"weight multiplier:"<<endl;
 	//cout<<i<<" "<<data.lambdas[i]<<endl;
 	//cout<<total_weight<<endl;
-
-	//if (data.vali_method != INTER_VALI)
-	//{
-	//	if (ec_type == WARM_START && data.ws_iter >= ws_train_size)
-	//		return 0.0;
-	//}
 
 	if (data.wt_scheme == INSTANCE_WT)
 	{
@@ -347,6 +339,9 @@ float compute_weight_multiplier(cbify& data, size_t i, int ec_type)
 		else
 			weight_multiplier = data.lambdas[i] * total_train_size / inter_train_size;
 	}
+
+	//cout<<"weight multiplier: "<<weight_multiplier<<endl;
+
 	return weight_multiplier;
 }
 
@@ -474,7 +469,7 @@ void accumu_costs_wsv_adf(cbify& data, multi_learner& base)
 template<bool use_cs>
 void add_to_vali(cbify& data, example& ec)
 {
-	//if this does not work, we can try declare ws_vali as an array
+	//TODO: set the first parameter properly
 	example* ec_copy = VW::alloc_examples(sizeof(polylabel), 1);
 
 	if (use_cs)
@@ -495,7 +490,7 @@ template<bool use_cs>
 void learn_sup_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
 	copy_example_to_adf(data, ec);
-	//generate cost-sensitive label (only for CSOAA's use - this will be retracted at the end)
+	//generate cost-sensitive label (for CSOAA's temporary use)
 	auto& csls = data.csls;
 	auto& cbls = data.cbls;
 	for (size_t a = 0; a < data.adf_data.num_actions; ++a)
@@ -552,7 +547,6 @@ void predict_or_learn_sup_adf(cbify& data, multi_learner& base, example& ec, int
 uint32_t predict_bandit_adf(cbify& data, multi_learner& base, example& ec)
 {
 	uint32_t argmin = find_min(data.cumulative_costs);
-	//cout<<argmin<<endl;
 
   copy_example_to_adf(data, ec);
 	base.predict(data.adf_data.ecs, argmin);
@@ -574,8 +568,6 @@ uint32_t predict_bandit_adf(cbify& data, multi_learner& base, example& ec)
 
 void learn_bandit_adf(cbify& data, multi_learner& base, example& ec, int ec_type)
 {
-	//Store the multiclass input label
-  //MULTICLASS::label_t ld = ec.l.multi;
 	copy_example_to_adf(data, ec);
 
   // add cb label to chosen action
@@ -657,19 +649,21 @@ void accumu_var_adf(cbify& data, multi_learner& base, example& ec)
 template <bool is_learn, bool use_cs>
 void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 {
+	// Corrupt labels (only corrupting multiclass labels as of now)
+
 	if (use_cs)
-	{
 		data.cs_label = ec.l.cs;
-	}
 	else
 	{
 		data.mc_label = ec.l.multi;
-		if (data.ws_iter < data.ws_period)
+		/*if (data.ws_iter < data.ws_period)
 			ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
 		else if (data.inter_iter < data.inter_period)
 			ec.l.multi.label = corrupt_action(data, data.mc_label.label, INTERACTION);
+		*/
 	}
 
+	// Warm start phase
 	if (data.ws_iter < data.ws_period)
 	{
 		if (data.ws_iter < data.ws_train_size)
@@ -684,6 +678,7 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 		ec.weight = 0;
 		data.ws_iter++;
 	}
+	// Interaction phase
 	else if (data.inter_iter < data.inter_period)
 	{
 		predict_or_learn_bandit_adf<use_cs>(data, base, ec, INTERACTION);
@@ -691,18 +686,17 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 		data.a_s_adf.clear();
 		data.inter_iter++;
 	}
+	// Skipping the rest of the examples
 	else
-	{
 		ec.weight = 0;
-	}
 
+	// Store the original labels back
 	if (use_cs)
 		ec.l.cs = data.cs_label;
 	else
 		ec.l.multi = data.mc_label;
 
 }
-
 
 void init_adf_data(cbify& data, const size_t num_actions)
 {
@@ -717,14 +711,13 @@ void init_adf_data(cbify& data, const size_t num_actions)
     CB::cb_label.default_label(&lab);
   }
 
+	// The rest of the initialization is for warm start CB
 	data.csls = calloc_or_throw<COST_SENSITIVE::label>(num_actions);
-	//data.csl_empty = calloc_or_throw<COST_SENSITIVE::label>(1);
 	for (uint32_t a=0; a < num_actions; ++a)
 	{
 		COST_SENSITIVE::cs_label.default_label(&data.csls[a]);
 		data.csls[a].costs.push_back({0, a+1, 0, 0});
 	}
-	//COST_SENSITIVE::cs_label.default_label(data.csl_empty);
 	data.cbls = calloc_or_throw<CB::label>(num_actions);
 
 	if (data.vali_method == WS_VALI_SPLIT || data.vali_method == WS_VALI_NOSPLIT)
@@ -737,9 +730,13 @@ void init_adf_data(cbify& data, const size_t num_actions)
 		data.ws_train_size = data.ws_period;
 		data.ws_vali_size = 0;
 	}
+	data.ws_iter = 0;
+	data.inter_iter = 0;
+
 	setup_lambdas(data);
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 		data.cumulative_costs.push_back(0.f);
+	data.cumu_var = 0.f;
 }
 
 base_learner* cbify_setup(arguments& arg)
@@ -807,9 +804,11 @@ base_learner* cbify_setup(arguments& arg)
   if (data->use_adf)
   {
     multi_learner* base = as_multiline(setup_base(arg));
-		// Not sure why we can only put this line here to pass the value of epsilon
-		cout<<"count: "<<arg.vm.count("epsilon")<<endl;
-		data->epsilon = arg.vm["epsilon"].as<float>();
+		// Note: the current version of warm start CB can only support epsilon greedy exploration
+		// algorithm - we need to wait for the default epsilon value to be passed from cb_explore
+		// is there is one
+		//cout<<"count: "<<arg.vm.count("epsilon") <<endl;
+		data->epsilon = arg.vm.count("epsilon") > 0 ? arg.vm["epsilon"].as<float>() : 0.0f;
 
     if (use_cs)
       l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, data->choices_lambda);
