@@ -1,6 +1,17 @@
-// Reinforcement learning API demo
+/**
+ * @brief Basic usage example
+ * 
+ * @file basic_usage_cpp.cc
+ * @author your name
+ * @date 2018-07-15
+ */
 #include "basic_usage_cpp.h"
 
+/**
+ * @brief Basic API usage example
+ * 
+ * @return int Error code 
+ */
 int api_example() {
   u::config_collection config;
   RETURN_ON_ERROR_STR(load_config_from_json("client.json", config), 

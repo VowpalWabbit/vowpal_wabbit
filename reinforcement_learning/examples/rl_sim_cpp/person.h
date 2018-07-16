@@ -1,16 +1,33 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+/**
+ * @brief Represents a person initiating an interaction
+ */
 class person {
   public:
-    using topic_prob = std::unordered_map<std::string, float>;
-    person(std::string, std::string,
-           std::string, std::string,
-            topic_prob& p);
+    //! Collection type of reward probability for given action
+    using topic_prob = std::unordered_map<std::string, float>; 
+    /**
+     * @brief Construct a new person
+     * 
+     * @param id Unique id for a person
+     * @param major Person feature (major)
+     * @param hobby Person feature (hobby)
+     * @param fav_char Person feature (fav_char)
+     * @param topicprob Probability of reward for a given topic
+     **/
+    person(std::string id, std::string major,
+            std::string hobby, std::string fav_char, 
+            topic_prob& topicprob);
     ~person();
-    std::string get_features();
-    float get_reward(const std::string& topic);
-    std::string id();
+
+    //! Get person features as a json string
+    std::string get_features(); 
+    //! Get the reward for a topic.  Use probability to randomly assign a reward
+    float get_reward(const std::string& topic); 
+    //! Get the person's id
+    std::string id(); 
   private:
     const std::string _id;
     const std::string _major;

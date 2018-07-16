@@ -74,7 +74,7 @@ namespace reinforcement_learning
 
   //here the uuid is auto-generated
   int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
-    return choose_rank(context, boost::uuids::to_string(boost::uuids::random_generator()( )).c_str(), response,
+    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
       status);
   }
 

@@ -78,7 +78,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -106,7 +106,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
