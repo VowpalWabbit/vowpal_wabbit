@@ -1,37 +1,36 @@
-import rlclientlib as rlcl
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python_binding"))
 
+import rlinference
+
+class my_error_callback(rlinference.error_callback):
+  def on_error(self, error_code, error_message):
+    print(error_code)
+    print(error_message)
 
 def load_config_from_json(file_name):
     with open(file_name, 'r') as config_file:
-        return rlcl.utility_config.create_from_json(config_file.read())
+        return rlinference.create_config_from_json(config_file.read())
 
 def main():
-    try:
-        config = rlcl.config_collection()
+    config = load_config_from_json("client.json")
 
-        rl = rlcl.live_model(config)
+    test_cb = my_error_callback()
+    model = rlinference.live_model(config, test_cb)
+    model.init()
 
-        rl.init()
+    uuid = "uuid"
+    context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"a1":"f1"},{"a2":"f2"}]}'
 
-        response = rlcl.ranking_response()
+    uuid, model_id, chosen_action_id, all_action_probabilities = model.choose_rank(context)
 
-        uuid = "uuid"
-        context = r"""({ 
-                       "User":{"id":"a","major":"eng","hobby":"hiking"},
-                       "_multi":[{"a1":"f1"},{"a2":"f2"}]})"""
+    print("uuid: " + uuid)
+    print("model_id: " + model_id)
+    print("chosen action id: " + str(chosen_action_id))
+    print("all action probabilities " + str(all_action_probabilities))
 
-        response = rl.choose_rank(uuid, context)
-
-        choosen_action = response.get_choosen_action_id()
-
-        print('Chosen action id is {choosen_action}'.format(choosen_action = choosen_action))
-
-        reward = 1.0
-        rl.report_outcome(uuid, reward)
-    
-    except rlcl.exception as ex:
-        print('Something bad happened: {description}'.format(description = ex.get_error_msg()))
-        return -1
+    reward = 1.0
+    model.report_outcome(uuid, reward)
 
 if __name__ == "__main__":
    main()

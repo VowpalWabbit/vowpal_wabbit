@@ -33,7 +33,7 @@ namespace reinforcement_learning {
       }
     }
 
-    reinforcement_learning::utility::config_collection create_from_json(const std::string& config_json) {
+    reinforcement_learning::utility::config_collection create_config_from_json(const std::string& config_json) {
       reinforcement_learning::utility::config_collection cc;
       reinforcement_learning::api_status as;
       auto result = reinforcement_learning::utility::config::create_from_json(config_json, cc, &as);

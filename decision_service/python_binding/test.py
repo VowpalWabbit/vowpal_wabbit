@@ -6,7 +6,7 @@ class my_error_callback(rlinference.error_callback):
     print(error_message)
 
 json_contents = open('client.json', 'r').read()
-config = rlinference.create_from_json(json_contents)
+config = rlinference.create_config_from_json(json_contents)
 test_cb = my_error_callback()
 
 model = rlinference.live_model(config, test_cb)

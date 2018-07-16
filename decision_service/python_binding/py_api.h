@@ -10,7 +10,7 @@
 namespace reinforcement_learning {
   namespace python {
 
-    reinforcement_learning::utility::config_collection create_from_json(const std::string& config_json);
+    reinforcement_learning::utility::config_collection create_config_from_json(const std::string& config_json);
 
     class error_callback {
     public:

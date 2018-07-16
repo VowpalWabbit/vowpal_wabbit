@@ -17,9 +17,16 @@
 
 %feature("director") error_callback;
 
+%exception {
+  try {
+    $action
+  } catch(const std::runtime_error& e) {
+    SWIG_exception(SWIG_IndexError, const_cast<char*>(e.what()));
+  }
+}
+
 %include "py_api.h"
 %include "../include/constants.h"
-%include "../include/err_constants.h"
 %include "../include/config_collection.h"
 
 namespace reinforcement_learning {
@@ -27,7 +34,6 @@ namespace reinforcement_learning {
 
     class live_model {
     public:
-      //%feature("autodoc", "1")
       live_model(const reinforcement_learning::utility::config_collection config, error_callback& callback);
       live_model(const reinforcement_learning::utility::config_collection config);
 
