@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <ctype.h>
 #include "parse_example.h"
-#include "../explore/hash.h"
+#include "hash.h"
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"

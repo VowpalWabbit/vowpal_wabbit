@@ -13,7 +13,7 @@ license as described in the file LICENSE.
 #include <sstream>
 
 #include "parse_primitives.h"
-#include "../explore/hash.h"
+#include "hash.h"
 #include "vw_exception.h"
 
 bool substring_equal(const substring& a, const substring& b)
