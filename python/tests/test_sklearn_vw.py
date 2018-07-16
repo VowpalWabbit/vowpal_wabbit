@@ -186,6 +186,17 @@ class TestVWClassifier:
 
         assert np.allclose(expected, actual)
 
+    def test_shuffle_list(self):
+        # dummy data in vw format
+        X = ['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat']
+
+        # Classifier with multiple passes over the data
+        clf = VWClassifier(passes=3, convert_to_vw=False)
+        clf.fit(X)
+
+        # assert that the dummy data was not perturbed
+        assert X == ['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat']
+
     def test_shuffle_pd_Series(self):
         # dummy data in vw format
         X = pd.Series(['1 |Pet cat', '-1 |Pet dog', '1 |Pet cat', '1 |Pet cat'], name='catdog')
