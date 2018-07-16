@@ -6,7 +6,7 @@ INCLUDE = -I ../include -I ../rlclientlib -I ../../explore -I ../explore -I ../.
 
 VW_LIB = -L ../../vowpalwabbit -lvw -lallreduce
 BOOST_LIBS = -lboost_system -lboost_program_options
-CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl 
+CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl
 ALL_LIBS = $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
 
 FLAGS += -fPIC
@@ -22,17 +22,19 @@ SOURCES = $(shell find $(CURDIR)/../rlclientlib . -name '*.cc' ! -name '*_wrap.c
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(shell find $(CURDIR)/../rlclientlib $(CURDIR)/../include . -name '*.h')
 
-INTERFACES = $(wildcard *.i)
-WRAPPED_INTERFACES = $(patsubst %.i, %_wrap.cc, $(INTERFACES))
-SOURCES += $(WRAPPED_INTERFACES)
+MODULE_NAME = rlinference
+MAIN_SWIG_INTERFACE = $(MODULE_NAME).i
+OTHER_SWIG_INTERFACES = $(filter-out $(MAIN_SWIG_INTERFACE), $(wildcard *.i))
+MAIN_SWIG_WRAPPED_INTERFACE = $(MODULE_NAME)_wrap.cc
+SOURCES += $(MAIN_SWIG_WRAPPED_INTERFACE)
 
-%_wrap.cc: %.i
+$(MAIN_SWIG_WRAPPED_INTERFACE): $(MAIN_SWIG_INTERFACE) $(OTHER_SWIG_INTERFACES)
 	swig -c++ -python -o $@ $<
 
 %.o: %.cc $(HEADERS)
 	$(CXX) $(FLAGS) $(INCLUDE) -c $< -o $@
 
-.PRECIOUS: $(TARGET) $(OBJECTS)
+.PRECIOUS: $(TARGET) $(OBJECTS) $(WRAPPED_INTERFACES)
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(FLAGS) -shared -o $@ $(OBJECTS) $(LIBDIR) $(ALL_LIBS)
@@ -41,6 +43,7 @@ clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
 	-rm -f ../rlclientlib/*.o
-	-rm -f *_wrap.cc
-	-rm -f *.py
-	-rm -f *.pyc
+	-rm -f $(MODULE_NAME)_wrap.cc
+	-rm -f $(MODULE_NAME)_wrap.h
+	-rm -f $(MODULE_NAME).py
+	-rm -f $(MODULE_NAME).pyc
