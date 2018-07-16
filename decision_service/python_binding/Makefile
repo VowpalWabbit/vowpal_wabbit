@@ -9,7 +9,7 @@ BOOST_LIBS = -lboost_system -lboost_program_options
 CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl
 ALL_LIBS = $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
 
-FLAGS += -fPIC
+FLAGS += -fPIC -std=c++11
 
 .PHONY: default all clean
 
