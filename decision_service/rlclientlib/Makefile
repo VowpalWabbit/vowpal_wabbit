@@ -3,6 +3,8 @@ ARFLAGS = rcs
 
 INCLUDE = -I ../include -I ../../explore -I ../explore -I ../../rapidjson/include -I ./
 
+FLAGS += -fPIC -std=c++11
+
 .PHONY: default all clean
 
 default: $(TARGET)
@@ -24,4 +26,5 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	-rm -f *.o
+	-rm -f */*.o
 	-rm -f $(TARGET)
