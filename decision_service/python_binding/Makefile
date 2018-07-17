@@ -2,12 +2,10 @@
 TARGET = _rlinference.so
 
 # Python 3.6 is specifically provided, tricky if we want to link against different versions.
-INCLUDE = -I ../include -I ../rlclientlib -I ../../explore -I ../explore -I ../../rapidjson/include -I ./ $(shell python3.6-config --includes)
+INCLUDE = -I ../include -I ./ $(shell python3.6-config --includes)
 
-VW_LIB = -L ../../vowpalwabbit -lvw -lallreduce
-BOOST_LIBS = -lboost_system -lboost_program_options
-CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl
-ALL_LIBS = $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
+RLCLIENT_LIB = -L ../rlclientlib -lrlclient
+ALL_LIBS = $(RLCLIENT_LIB)
 
 FLAGS += -fPIC -std=c++11
 
@@ -18,16 +16,15 @@ all: default
 
 things: all
 
-SOURCES = $(shell find $(CURDIR)/../rlclientlib . -name '*.cc' ! -name '*_wrap.cc')
+SOURCES = $(shell find . -name '*.cc' ! -name '*_wrap.cc')
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
-HEADERS = $(shell find $(CURDIR)/../rlclientlib $(CURDIR)/../include . -name '*.h')
+HEADERS = $(shell find $(CURDIR)/../include . -name '*.h')
 
 MODULE_NAME = rlinference
 MAIN_SWIG_INTERFACE = $(MODULE_NAME).i
 OTHER_SWIG_INTERFACES = $(filter-out $(MAIN_SWIG_INTERFACE), $(wildcard *.i))
 MAIN_SWIG_WRAPPED_INTERFACE = $(MODULE_NAME)_wrap.cc
 SOURCES += $(MAIN_SWIG_WRAPPED_INTERFACE)
-
 $(MAIN_SWIG_WRAPPED_INTERFACE): $(MAIN_SWIG_INTERFACE) $(OTHER_SWIG_INTERFACES)
 	swig -c++ -python -o $@ $<
 
@@ -36,13 +33,15 @@ $(MAIN_SWIG_WRAPPED_INTERFACE): $(MAIN_SWIG_INTERFACE) $(OTHER_SWIG_INTERFACES)
 
 .PRECIOUS: $(TARGET) $(OBJECTS) $(WRAPPED_INTERFACES)
 
-$(TARGET): $(OBJECTS)
+rl_clientlib:
+	cd ../rlclientlib; $(MAKE)
+
+$(TARGET): rl_clientlib $(OBJECTS)
 	$(CXX) $(FLAGS) -shared -o $@ $(OBJECTS) $(LIBDIR) $(ALL_LIBS)
 
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
-	-rm -f ../rlclientlib/*.o
 	-rm -f $(MODULE_NAME)_wrap.cc
 	-rm -f $(MODULE_NAME)_wrap.h
 	-rm -f $(MODULE_NAME).py
