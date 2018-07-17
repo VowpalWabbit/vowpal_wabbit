@@ -1,21 +1,26 @@
-/*! \mainpage Reinforcement Learning
+/*! \mainpage Introduction
 
-Reforcement learning deals with training data that is not labeled.  Either it's not 
-available or not practical to obtain.  Instead a learner is trained to pick the 
-best action based on feedback from previous choices of actions.  It is necessary to 
-collect data by not just exploiting the best predicted action but also exploring the action space.
-If the data is logged carefully along with action probabilities, then it opens up
-further optimization over the choice of policies (learning algorithms).  This is contrast to supervised learning.  
-In supervised leaning there is a large amount of pre-labeled data that a learner is trained on.
+Reforcement learning deals with training data that is not labeled.  Either it's not available or not practical to obtain.  Instead a learner is trained to pick the 
+best action based on feedback from previous choices of actions.  It is necessary to collect data by not just exploiting the best predicted action, but also exploring the action space. If the data is logged carefully along with action probabilities, then further optimization 
+over the choice of policies (learning algorithms) is possible.
 
+
+This is in contrast to supervised learning.  In supervised learning there is a large amount 
+of pre-labeled data that a learner is trained on.
 
 Reinforcement Learning Loop
 ---------------------------
 ![Reinforcement Learning Loop](../rl-loop.GIF)
 
-API Usage: Basic steps to using the Inference API
--------------------------------------------------
-reinforcement_learning::live_model class is the interface to Inference API
+RL Inference API 
+----------------
+This API allows the developer to perform local inference and ship the actions and feedback
+to an online trainer running in the Azure cloud.  It also periodically refreshes its copy
+of the model. 
+
+API Usage: Basic steps to using the RL Inference API
+----------------------------------------------------
+reinforcement_learning::live_model class is the interface to RL Inference API
 - Instantiate and Initialize live_model
 - choose_rank() to choose an action from a list of actions
 - report_outcome() to provide feedback on choosen action  
