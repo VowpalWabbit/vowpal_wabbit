@@ -9,7 +9,7 @@ clone_folder: C:\vowpal_wabbit
 cache: c:\tools\vcpkg\installed\
 build_script:
 - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
-- vcpkg install cpprestsdk:x64-windows rapidjson:x64-windows boost-test:x64-windows boost-program-options:x64-windows boost-align:x64-windows boost-foreach:x64-windows
+- vcpkg install cpprestsdk:x64-windows rapidjson:x64-windows boost-test:x64-windows boost-program-options:x64-windows boost-align:x64-windows boost-foreach:x64-windows boost-uuid:x64-windows
 - mkdir c:\build
 - cd c:\build
 - cmake  -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_GENERATOR_PLATFORM=x64 ../vowpal_wabbit
