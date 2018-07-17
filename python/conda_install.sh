@@ -13,7 +13,7 @@ source activate ${CONDA_DEFAULT_ENV}
 
 # boost packages
 BOOST_V="1.65"
-conda install --yes boost=$BOOST_V libboost=$BOOST_V py-boost=$BOOST_V
+conda install -c conda-forge --yes boost=$BOOST_V libboost=$BOOST_V py-boost=$BOOST_V
 
 # make a soft link to the compiler, since Makefiles internally use `which g++`
 if [ ! -z "${GXX}" ]; then
