@@ -1,36 +1,16 @@
-#include <iostream>
-#include <fstream>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-
-#include "rl_sim.h"
-#include "ranking_response.h"
-#include "person.h"
+#include <thread>
 #include "live_model.h"
 #include "rl_sim_cpp.h"
-#include "config_utility.h"
-
-namespace r = reinforcement_learning;
-namespace u = reinforcement_learning::utility;
-namespace c = reinforcement_learning::utility::config;
-
-rl_sim::rl_sim(boost::program_options::variables_map vm):_options(std::move(vm)) {}
-std::string rl_sim::create_context_json(const std::string& cntxt, const std::string& action) {
-  std::ostringstream oss;
-  oss << "{ " << cntxt << ", " << action << " }";
-  return oss.str();
-}
-
-std::string rl_sim::create_uuid() {
-  return boost::uuids::to_string(boost::uuids::random_generator()( ));
-}
+#include "person.h"
 
 int rl_sim::loop() {
-  if ( !init() ) return r::error_code::success;
+  if ( !init() ) return -1;
   
   auto round = 0;
   r::ranking_response response;
-  while(true) {
+  while ( true ) {
     auto& p = pick_a_random_person();
     const auto context_features = p.get_features();
     const auto action_features = get_action_features();
@@ -39,19 +19,31 @@ int rl_sim::loop() {
     r::api_status status;
 
     // Choose an action
-    RETURN_ON_ERROR(_rl->choose_rank(req_id.c_str(), context_json.c_str(), response, &status), status);
+    if ( _rl->choose_rank(req_id.c_str(), context_json.c_str(), response, &status) != err::success ) {
+      std::cout << status.get_error_msg() << std::endl;
+      return -1;
+    }
+
+    // Use the chosen action
     size_t choosen_action;
-    RETURN_ON_ERROR(response.get_choosen_action_id(choosen_action), status);
+    if ( response.get_choosen_action_id(choosen_action) != err::success ) {
+      std::cout << status.get_error_msg() << std::endl;
+      return -1;
+    }
 
     // What reward did this action get?
     const auto reward = p.get_reward(_actions[choosen_action]);
 
     // Report reward recieved
-    RETURN_ON_ERROR(_rl->report_outcome(req_id.c_str(), reward, &status), status);
+    if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success ) {
+      std::cout << status.get_error_msg() << std::endl;
+      return -1;
+    }
 
     std::cout << "Round:" << round << ", Person:" << p.id() << ", Action:" << choosen_action << ", Reward:" << reward << std::endl;
     response.clear();
     ++round;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 
@@ -68,18 +60,17 @@ int rl_sim::load_config_from_json(  const std::string& file_name,
   RETURN_IF_FAIL(load_file(file_name, config_str));
 
   // Use library supplied convinence method to parse json and build config object
-  return c::create_from_json(config_str, cfgcoll, status);
+  return cfg::create_from_json(config_str, cfgcoll, status);
 }
 
 int rl_sim::load_file(const std::string& file_name, std::string& config_str) {
   std::ifstream fs;
   fs.open(file_name);
-  if ( !fs.good() )
-    return reinforcement_learning::error_code::invalid_argument;
+  if ( !fs.good() ) return err::invalid_argument;
   std::stringstream buffer;
   buffer << fs.rdbuf();
   config_str = buffer.str();
-  return reinforcement_learning::error_code::success;
+  return err::success;
 }
 
 int rl_sim::init_rl() {
@@ -87,12 +78,18 @@ int rl_sim::init_rl() {
   u::config_collection config;
 
   const auto cfg_file = _options["json_config"].as<std::string>();
-  RETURN_ON_ERROR(load_config_from_json(cfg_file, config, &status), status);
+  if ( load_config_from_json(cfg_file, config, &status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
 
   _rl = std::unique_ptr<r::live_model>(new r::live_model(config));
-  RETURN_ON_ERROR(_rl->init(&status), status);
+  if ( _rl->init(&status) != err::success ) {
+    std::cout << status.get_error_msg() << std::endl;
+    return -1;
+  }
 
-  return r::error_code::success;
+  return err::success;
 }
 
 bool rl_sim::init_people() {
@@ -114,7 +111,7 @@ bool rl_sim::init_people() {
 }
 
 bool rl_sim::init() {
-  if ( init_rl() != r::error_code::success ) return false;
+  if ( init_rl() != err::success ) return false;
   if ( !init_people() ) return false;
   return true;
 }
@@ -125,3 +122,14 @@ std::string rl_sim::get_action_features() {
   return oss.str();
 }
 
+std::string rl_sim::create_context_json(const std::string& cntxt, const std::string& action) {
+  std::ostringstream oss;
+  oss << "{ " << cntxt << ", " << action << " }";
+  return oss.str();
+}
+
+std::string rl_sim::create_uuid() {
+  return boost::uuids::to_string(boost::uuids::random_generator()());
+}
+
+rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)) {}
