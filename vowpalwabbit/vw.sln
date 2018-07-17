@@ -75,20 +75,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "python", "python", "{5AF0EC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python27", "..\python\windows27\python27.vcxproj", "{7D381808-CC76-4A1A-A8E6-3F71278858BB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rlclientlib", "..\decision_service\rlclientlib\rlclientlib.vcxproj", "{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rlclientlib", "..\reinforcement_learning\rlclientlib\rlclientlib.vcxproj", "{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reinforcement_learning", "reinforcement_learning", "{58DEEBB0-43BC-482C-A744-5A8D7454C811}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit_test", "..\decision_service\unit_test\unit_test.vcxproj", "{18A3556E-493E-4DD5-8C33-760185B764D4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit_test", "..\reinforcement_learning\unit_test\unit_test.vcxproj", "{18A3556E-493E-4DD5-8C33-760185B764D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{27A9AB97-FC8B-4818-AC80-034FA94998D5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_usage_cpp", "..\decision_service\examples\basic_usage_cpp\basic_usage_cpp.vcxproj", "{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_usage_cpp", "..\reinforcement_learning\examples\basic_usage_cpp\basic_usage_cpp.vcxproj", "{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD} = {C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rl_sim_cpp", "..\decision_service\examples\rl_sim_cpp\rl_sim_cpp.vcxproj", "{E86A833A-514D-424D-9FE7-154225031662}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rl_sim_cpp", "..\reinforcement_learning\examples\rl_sim_cpp\rl_sim_cpp.vcxproj", "{E86A833A-514D-424D-9FE7-154225031662}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
