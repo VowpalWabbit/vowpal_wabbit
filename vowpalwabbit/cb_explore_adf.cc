@@ -74,9 +74,6 @@ struct cb_explore_adf
 
   v_array<COST_SENSITIVE::label> prepped_cs_labels;
 
-  // for random tie breaking
-  std::vector<uint32_t> tied_actions;
-
   // for RegCB
   std::vector<float> min_costs;
   std::vector<float> max_costs;
@@ -220,15 +217,15 @@ void get_cost_ranges(std::vector<float> &min_costs,
   }
 }
 
-void fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
+size_t fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
 {
-  if (data.first_only)
-    return;
-
-  data.tied_actions.clear();
-  for (size_t i = 0; i < preds.size(); ++i)
-    if (i == 0 || preds[i].score == preds[0].score)
-      data.tied_actions.push_back(i);
+  size_t ret = 1;
+  for (size_t i = 1; i < preds.size(); ++i)
+    if (preds[i].score == preds[0].score)
+      ++ret;
+    else
+      return ret;
+  return ret;
 }
 
 template <bool is_learn>
@@ -278,16 +275,16 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
   action_scores& preds = examples[0]->pred.a_s;
 
   uint32_t num_actions = (uint32_t)preds.size();
-  if (!data.first_only)
-    fill_tied(data, preds);
+
+  size_t tied_actions = fill_tied(data,preds);
 
   const float prob = data.epsilon / num_actions;
   for (size_t i = 0; i < num_actions; i++)
     preds[i].score = prob;
   if (!data.first_only)
     {
-      for (size_t i = 0; i < data.tied_actions.size(); ++i)
-        preds[data.tied_actions[i]].score += (1.f - data.epsilon) / data.tied_actions.size();
+      for (size_t i = 0; i < tied_actions; ++i)
+        preds[i].score += (1.f - data.epsilon) / tied_actions;
     }
   else
     preds[0].score += 1.f - data.epsilon;
@@ -303,9 +300,7 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
     {
       CB::label& ld = examples[i]->l.cb;
       if (ld.costs.size() == 1)
-      {
         ld.costs[0].probability = 1.f; // no importance weighting
-      }
     }
 
     multiline_learn_or_predict<true>(base, examples, data.offset);
@@ -429,9 +424,9 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
 
     if (!data.first_only)
     {
-      fill_tied(data, preds);
-      for (uint32_t preds_index : data.tied_actions)
-        top_actions[preds[preds_index].action] += 1.f / data.tied_actions.size();
+      size_t tied_actions = fill_tied(data, preds);
+      for (size_t i = 0; i < tied_actions; ++i)
+        top_actions[preds[i].action] += 1.f / tied_actions;
     }
     else
       top_actions[preds[0].action] += 1.f;
@@ -490,9 +485,9 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
 
   if (!data.first_only)
   {
-    fill_tied(data, preds);
-    for (uint32_t preds_index : data.tied_actions)
-      probs[preds[preds_index].action].score += additive_probability / data.tied_actions.size();
+    size_t tied_actions = fill_tied(data, preds);
+    for (size_t i = 0; i < tied_actions; ++i)
+      probs[preds[i].action].score += additive_probability / tied_actions;
   }
   else
     probs[preds[0].action].score += additive_probability;
@@ -522,16 +517,16 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
       data.scores[i] += preds[i].score;
     if (!data.first_only)
     {
-      fill_tied(data, preds);
-      const float add_prob = additive_probability / data.tied_actions.size();
-      for (uint32_t preds_index : data.tied_actions)
-      {
-        if (probs[preds[preds_index].action].score < min_prob)
-          norm += max(0, add_prob - (min_prob - probs[preds[preds_index].action].score));
-        else
-          norm += add_prob;
-        probs[preds[preds_index].action].score += add_prob;
-      }
+      size_t tied_actions = fill_tied(data, preds);
+      const float add_prob = additive_probability / tied_actions;
+      for (size_t i = 0; i < tied_actions; ++i)
+        {
+          if (probs[preds[i].action].score < min_prob)
+            norm += max(0, add_prob - (min_prob - probs[preds[i].action].score));
+          else
+            norm += add_prob;
+          probs[preds[i].action].score += add_prob;
+        }
     }
     else
       {
@@ -571,7 +566,6 @@ void finish(cb_explore_adf& data)
 {
   data.top_actions.~vector<float>();
   data.scores.~vector<float>();
-  data.tied_actions.~vector<uint32_t>();
   data.min_costs.~vector<float>();
   data.max_costs.~vector<float>();
   data.ex_as.~vector<action_scores>();

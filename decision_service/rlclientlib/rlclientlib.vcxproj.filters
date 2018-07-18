@@ -36,9 +36,6 @@
     <ClInclude Include="live_model_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="restapi_data_transport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility\object_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -66,12 +63,6 @@
     <ClInclude Include="logger\moving_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="str_util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vw_model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -81,19 +72,37 @@
     <ClInclude Include="..\include\factory_resolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\\model_mgmt.h">
+    <ClInclude Include="vw_model\safe_vw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="data_callback_fn.h">
+    <ClInclude Include="utility\object_pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="interruptable_sleeper.h">
+    <ClInclude Include="vw_model\vw_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="periodic_background_proc.h">
+    <ClInclude Include="..\include\model_mgmt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model_downloader.h">
+    <ClInclude Include="..\include\str_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\context_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\interruptable_sleeper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utility\periodic_background_proc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_mgmt\model_downloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_mgmt\data_callback_fn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model_mgmt\restapi_data_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -102,9 +111,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="api_status.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="config_collection.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utility\config_utility.cc">
@@ -128,9 +134,6 @@
     <ClCompile Include="ranking_response.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="restapi_data_transport.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="error_callback_fn.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -140,20 +143,38 @@
     <ClCompile Include="ranking_response_impl.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="str_util.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="factory_resolver.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vw_model.cc">
+    <ClCompile Include="vw_model\safe_vw.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="data_callback_fn.cc">
+    <ClCompile Include="vw_model\vw_model.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="model_downloader.cc">
+    <ClCompile Include="utility\http_helper.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_mgmt\model_downloader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="model_mgmt\restapi_data_transport.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_mgmt\data_callback_fn.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\str_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\context_helper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\config_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

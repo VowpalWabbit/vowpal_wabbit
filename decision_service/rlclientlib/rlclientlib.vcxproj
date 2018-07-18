@@ -78,7 +78,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -106,7 +106,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\decision_service\rlclientlib;$(SolutionDir)..\decision_service\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -144,46 +144,69 @@
     <ClInclude Include="..\include\constants.h" />
     <ClInclude Include="..\include\err_constants.h" />
     <ClInclude Include="..\include\factory_resolver.h" />
-    <ClInclude Include="..\include\\model_mgmt.h" />
-    <ClInclude Include="model_downloader.h" />
-    <ClInclude Include="data_callback_fn.h" />
-    <ClInclude Include="interruptable_sleeper.h" />
-    <ClInclude Include="live_model_impl.h" />
-    <ClInclude Include="error_callback_fn.h" />
-    <ClInclude Include="periodic_background_proc.h" />
-    <ClInclude Include="ranking_event.h" />
+    <ClInclude Include="..\include\model_mgmt.h" />
+    <ClInclude Include="..\include\str_util.h" />
+    <ClInclude Include="utility\context_helper.h" />
+    <ClInclude Include="utility\interruptable_sleeper.h" />
+    <ClInclude Include="utility\periodic_background_proc.h" />
+    <ClInclude Include="utility\object_factory.h" />
+    <ClInclude Include="utility\object_pool.h" />
+    <ClCompile Include="utility\http_helper.h" />
+    <ClInclude Include="model_mgmt\model_downloader.h" />
+    <ClInclude Include="model_mgmt\data_callback_fn.h" />
+    <ClInclude Include="model_mgmt\restapi_data_transport.h" />
     <ClInclude Include="logger\async_batcher.h" />
     <ClInclude Include="logger\moving_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="logger\logger.h" />
+    <ClInclude Include="vw_model\vw_model.h" />
+    <ClInclude Include="vw_model\safe_vw.h" />
+    <ClInclude Include="live_model_impl.h" />
+    <ClInclude Include="error_callback_fn.h" />
+    <ClInclude Include="ranking_event.h" />
     <ClInclude Include="ranking_response_impl.h" />
-    <ClInclude Include="str_util.h" />
-    <ClInclude Include="utility\object_factory.h" />
-    <ClInclude Include="restapi_data_transport.h" />
-    <ClInclude Include="vw_model.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="model_downloader.cc" />
-    <ClCompile Include="data_callback_fn.cc" />
+    <ClCompile Include="model_mgmt\model_downloader.cc" />
+    <ClCompile Include="model_mgmt\restapi_data_transport.cc" />
+    <ClCompile Include="model_mgmt\data_callback_fn.cc" />
+    <ClCompile Include="model_mgmt\model_mgmt.cc" />
+    <ClCompile Include="logger\eventhub_client.cc" />
+    <ClCompile Include="logger\logger.cc" />
+    <ClCompile Include="utility\config_utility.cc" />
+    <ClCompile Include="utility\str_util.cc" />
+    <ClCompile Include="utility\context_helper.cc" />
+    <ClCompile Include="utility\config_collection.cc" />
+    <ClCompile Include="vw_model\vw_model.cc" />
+    <ClCompile Include="vw_model\safe_vw.cc" />
     <ClCompile Include="factory_resolver.cc" />
     <ClCompile Include="live_model_impl.cc" />
     <ClCompile Include="error_callback_fn.cc" />
     <ClCompile Include="api_status.cc" />
-    <ClCompile Include="config_collection.cc" />
     <ClCompile Include="live_model.cc" />
     <ClCompile Include="ranking_event.cc" />
-    <ClCompile Include="logger\eventhub_client.cc" />
-    <ClCompile Include="logger\logger.cc" />
-    <ClCompile Include="model_mgmt\model_mgmt.cc" />
     <ClCompile Include="ranking_response.cc" />
     <ClCompile Include="ranking_response_impl.cc" />
-    <ClCompile Include="restapi_data_transport.cc" />
-    <ClCompile Include="str_util.cc" />
-    <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="vw_model.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\vowpalwabbit\vw_dynamic.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" />
+    <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
+  </Target>
 </Project>

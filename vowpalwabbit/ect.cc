@@ -173,7 +173,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
     level++;
   }
 
-  e.last_pair = (uint32_t)(max_label - 1)*(eliminations);
+  e.last_pair = (uint32_t)((max_label - 1)*eliminations);
 
   if ( max_label > 1)
     e.tree_height = final_depth(eliminations);
