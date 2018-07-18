@@ -58,7 +58,7 @@ def find_boost():
         if find_library(boost_lib):
             break
     else:
-        raise Exception('Could not find boot python library')
+        raise Exception('Could not find boost python library')
 
     return boost_lib
 
