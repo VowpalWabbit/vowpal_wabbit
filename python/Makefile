@@ -8,7 +8,7 @@
 #  $(error Please run 'make' at the top level only)
 #endif
 
-# The python version and python boost library are resolved and set using setup.py
+# When using setup.py to install the PYTHON_* env vars are resolved and set automatically
 
 # When running make directly PYTHON_VERSION and PYTHON_LIBS env vars can be set to change these defaults.
 # For Python 3 one should find the version of libboost-python-dev installed locally as it may not be in
@@ -22,8 +22,13 @@ ifeq ($(PYTHON_LIBS),)
   PYTHON_LIBS = -l boost_python
 endif
 
-PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
-PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
+ifeq ($(PYTHON_INCLUDE),)
+    PYTHON_INCLUDE = $(shell python$(PYTHON_VERSION)-config --includes)
+endif
+
+ifeq ($(PYTHON_LDFLAGS),)
+    PYTHON_LDFLAGS = $(shell python$(PYTHON_VERSION)-config --ldflags)
+endif
 
 JSON_INCLUDE = -I ../rapidjson/include 
 
