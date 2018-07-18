@@ -4,7 +4,7 @@
 if [ ! $(which conda) ]; then
   echo "No conda found. This installation script is useless in this case. See the standard procedure in the docs." >&2
   exit 1
-fi 
+fi
 
 # a consistent compiler (g++ 7.2.0 at the moment)
 conda install --yes gxx_linux-64
@@ -13,7 +13,7 @@ source activate ${CONDA_DEFAULT_ENV}
 
 # boost packages
 BOOST_V="1.65"
-conda install --yes boost=$BOOST_V libboost=$BOOST_V py-boost=$BOOST_V
+conda install -c conda-forge --yes boost=$BOOST_V libboost=$BOOST_V py-boost=$BOOST_V
 
 # make a soft link to the compiler, since Makefiles internally use `which g++`
 if [ ! -z "${GXX}" ]; then
