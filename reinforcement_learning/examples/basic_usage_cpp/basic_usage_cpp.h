@@ -1,3 +1,10 @@
+/**
+ * @brief Simple RL Inference API sample * 
+ * 
+ * @file basic_usage_cpp.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 
 #include <iostream>

@@ -1,3 +1,10 @@
+/**
+ * @brief RL Simulator example defintion.  Simulates user/world interacting with RL  
+ * 
+ * @file rl_sim.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 #include <boost/program_options.hpp>
 #include "person.h"

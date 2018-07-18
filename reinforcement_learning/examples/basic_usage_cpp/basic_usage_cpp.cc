@@ -1,5 +1,5 @@
 /**
- * @brief Basic usage example
+ * @brief Simple RL Inference API sample implementation 
  * 
  * @file basic_usage_cpp.cc
  * @author Rajan Chari
@@ -13,17 +13,18 @@
  * @return int Error code 
  */
 int main() {
-  // name, value based config object used to initialise the API
+  //! name, value based config object used to initialise the API
   u::config_collection config;
 
-  // Helper method to initialize config from a json file
+  //! Helper method to initialize config from a json file
   if( load_config_from_json("client.json", config) != err::success ) {
     std::cout << "Unable to Load file: client.json" << std::endl;
     return -1;
   }
 
-  // api_status is an optional argument used to get detailed 
-  // error description from all API calls
+  /** api_status is an optional argument used to get detailed 
+   *  error description from all API calls 
+   */
   r::api_status status;
 
   //! [(1) Instantiate Inference API using config]

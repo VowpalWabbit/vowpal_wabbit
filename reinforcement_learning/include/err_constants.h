@@ -1,3 +1,10 @@
+/**
+ * @brief Definition of all API error return codes and descriptions 
+ * 
+ * @file err_constants.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 
 namespace reinforcement_learning { namespace error_code {

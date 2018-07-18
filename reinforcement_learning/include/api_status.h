@@ -1,3 +1,10 @@
+/**
+ * @brief api_status definition.  api_status is used to return error information to the caller.
+ * 
+ * @file api_status.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 
 #include <string>

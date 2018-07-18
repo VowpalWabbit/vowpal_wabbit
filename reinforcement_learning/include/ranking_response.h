@@ -1,3 +1,10 @@
+/**
+ * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the choosen action and probabiliy distribution.
+ * 
+ * @file ranking_response.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 #include <cstddef>
 

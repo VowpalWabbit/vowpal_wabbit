@@ -1,3 +1,10 @@
+/**
+ * @brief RL Inference API definition.
+ * 
+ * @file live_model.h
+ * @author your name
+ * @date 2018-07-18
+ */
 #pragma once
 #include "ranking_response.h"
 #include "err_constants.h"
