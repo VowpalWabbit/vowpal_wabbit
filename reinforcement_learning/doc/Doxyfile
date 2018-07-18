@@ -2,11 +2,11 @@
 
 PROJECT_NAME           = "Reinforcement Learning"
 PROJECT_NUMBER         = 1.1
-INPUT = mainpage.dox build.dox
-INPUT += ../include/live_model.h ../include/ranking_response.h ../include/api_status.h ../include/config_collection.h
+INPUT = mainpage.dox build.dox api_config.dox error_codes.dox
+INPUT += ../include/live_model.h ../include/ranking_response.h ../include/api_status.h ../include/config_collection.h ../include/err_constants.h
 INPUT += ../examples/basic_usage_cpp/basic_usage_cpp.cc ../examples/basic_usage_cpp/basic_usage_cpp.h 
 INPUT += ../examples/rl_sim_cpp/rl_sim.cc ../examples/rl_sim_cpp/rl_sim.h
-EXAMPLE_PATH           = ../examples/basic_usage_cpp ../examples/rl_sim_cpp
+EXAMPLE_PATH           = ../examples/basic_usage_cpp ../examples/rl_sim_cpp ../include/err_constants.h
 HTML_STYLESHEET        = doxygen.css
 DOXYFILE_ENCODING      = UTF-8
 

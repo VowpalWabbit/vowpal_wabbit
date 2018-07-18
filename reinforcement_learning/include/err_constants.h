@@ -1,10 +1,10 @@
 #pragma once
 
 namespace reinforcement_learning { namespace error_code {
+  //! [Error Codes]
   //success code
   const int success = 0;
 
-  //error code
   const int invalid_argument            = 1;
   const int background_queue_overflow   = 2;
   const int eventhub_http_generic       = 3;
@@ -32,11 +32,12 @@ namespace reinforcement_learning { namespace error_code {
   const int model_rank_error            = 25;
   const int pdf_sampling_error          = 26;
   const int eh_connstr_parse_error      = 27;
+  //! [Error Codes]
 }}
 
 namespace reinforcement_learning { namespace error_code {
-  //error message
   char const * const unkown_s                   = "Unexpected error.";
+  //! [Error Description]
   char const * const create_fn_exception_s      = "Create function failed.";
   char const * const type_not_registered_s      = "Type not registered with class factory";
   char const * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
@@ -61,4 +62,5 @@ namespace reinforcement_learning { namespace error_code {
   char const * const invalid_argument_s         = "Invalid Argument: ";
   char const * const exception_during_http_req_s = "http request excepton. ";
   char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection connection string.";
+  //! [Error Description]
 }}

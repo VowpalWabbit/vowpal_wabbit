@@ -6,7 +6,7 @@ namespace reinforcement_learning {
   class ranking_response_impl;
 
   /**
-   * @brief Holds action , probability pair of values 
+   * @brief Holds (action, probability) pairs 
    */
   struct action_prob {
     //! action id
@@ -48,7 +48,7 @@ namespace reinforcement_learning {
     int get_choosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
 
     /**
-     * @brief Set the choosen action id.  (This set internally by the API)
+     * @brief Set the choosen action id.  (This is set internally by the API)
      * 
      * @param action_id Chosen action id
      * @param status Optional field with detailed string description if there is an error 
@@ -57,13 +57,13 @@ namespace reinforcement_learning {
     int set_choosen_action_id(size_t action_id, api_status* status = nullptr); // id of the top action chosen by the ds
     
     /**
-     * @brief Set the uuid.  (This set internally by the API)
+     * @brief Set the uuid.  (This is set internally by the API)
      * @param uuid 
      */
     void set_uuid(const char* uuid);
 
     /**
-     * @brief Add (action id, probability) pair to the response (This set internally by the API)
+     * @brief Add (action id, probability) pair to the response (This is set internally by the API)
      * 
      * @param action_id 
      * @param prob 
@@ -80,7 +80,7 @@ namespace reinforcement_learning {
     /**
      * @brief Set the model id 
      * Every call to choose action is associated with a unique model used to predict.  A unique model id
-     * is associated with each unique model. (This set internally by the API)
+     * is associated with each unique model. (This is set internally by the API)
      * @param model_id 
      */
     void set_model_id(const char* model_id);
@@ -88,7 +88,7 @@ namespace reinforcement_learning {
     /**
      * @brief Get the model id
      * Every call to choose action is associated with a unique model used to predict.  A unique model id
-     * is associated with each unique model. (This set internally by the API)
+     * is associated with each unique model. (This is set internally by the API)
      * @return const char* 
      */
     const char * get_model_id() const;
