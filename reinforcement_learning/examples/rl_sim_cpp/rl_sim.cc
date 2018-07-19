@@ -95,13 +95,13 @@ int rl_sim::init_rl() {
 bool rl_sim::init_people() {
 
   person::topic_prob tp1 { 
-    { "HerbGarden",0.002f }, 
-    { "MachineLearning",0.03 } };
+    { "HerbGarden",0.0f }, 
+    { "MachineLearning",0.2f } };
   _people.emplace_back("rnc", "engineering", "hiking", "spock", tp1);
 
   person::topic_prob tp2 {
-    { "HerbGarden",0.015f },
-    { "MachineLearning",0.05 } };
+    { "HerbGarden",0.3f },
+    { "MachineLearning",0.0f } };
   _people.emplace_back("mk", "psychology", "kids", "7of9", tp2);
 
   _actions.emplace_back("HerbGarden");
@@ -118,7 +118,7 @@ bool rl_sim::init() {
 
 std::string rl_sim::get_action_features() {
   std::ostringstream oss;
-  oss << R"("_multi": [ {"topic":"HerbGarden"}, {"topic":"MachineLearning"} ])";
+  oss << R"("_multi": [ { "TAction":{"topic":"HerbGarden"} }, { "TAction":{"topic":"MachineLearning"} } ])";
   return oss.str();
 }
 

@@ -13,7 +13,7 @@ person::~person() {}
 
 std::string person::get_features() {
   std::ostringstream oss;
-  oss << R"("User":{)";
+  oss << R"("GUser":{)";
   oss << R"("id":")" << _id << R"(",)";
   oss << R"("major":")" << _major << R"(",)";
   oss << R"("hobby":")" << _hobby << R"(",)";

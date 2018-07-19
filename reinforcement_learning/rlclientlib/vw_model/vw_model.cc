@@ -31,7 +31,7 @@ namespace reinforcement_learning { namespace model_management {
 
       // Rank actions using the model.  Should generate a pdf
       auto ranking = vw->rank(features);
-      
+
       // Pick using the pdf. NOTE: sample_after_normalizing() can change the pdf
       uint32_t action;
       auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(ranking), std::end(ranking), action);
@@ -40,9 +40,12 @@ namespace reinforcement_learning { namespace model_management {
         RETURN_ERROR_LS(status, exploration_error) << scode;
       }
 
+      response.push_back(action, ranking[action]);
+
       // Setup response with pdf from prediction and choosen action
       for ( size_t idx = 0; idx < ranking.size(); ++idx )
-        response.push_back(idx, ranking[idx]);
+        if ( action != idx)
+          response.push_back(idx, ranking[idx]);
       response.set_choosen_action_id(action);
       response.set_model_id(vw->id());
 
