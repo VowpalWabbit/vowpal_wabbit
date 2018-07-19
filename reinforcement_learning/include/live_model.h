@@ -2,7 +2,7 @@
  * @brief RL Inference API definition.
  * 
  * @file live_model.h
- * @author your name
+ * @author Rajan Chari et al
  * @date 2018-07-18
  */
 #pragma once
@@ -39,7 +39,7 @@ namespace reinforcement_learning {
 
 	public:
     /**
-     * @brief Error callback function
+     * @brief Error callback function.  
      * When live_model is constructed, a background error callback and a 
      * context (void*) is registered. If there is an error in the background thread, 
      * error callback will get invoked with api_status and the context (void*).
@@ -48,13 +48,13 @@ namespace reinforcement_learning {
      */
     using error_fn            = void(*)(const api_status&, void*);
     /**
-     * @brief Factory to create transport for model data
+     * @brief Factory to create transport for model data.  
      * Advanced extension point:  Register another implementation of i_data_transport to 
      * provide updated model data used to hydrate inference model.
      */
     using transport_factory_t = utility::object_factory<model_management::i_data_transport>;
     /**
-     * @brief Factory to create model used in inference
+     * @brief Factory to create model used in inference.  
      * Advanced extension point:  Register another implementation of i_model to 
      * provide hydraded model given updated model data. This model is then used 
      * in inference.
@@ -62,7 +62,7 @@ namespace reinforcement_learning {
     using model_factory_t     = utility::object_factory<model_management::i_model>;
 
     /**
-     * @brief Construct a new live model object
+     * @brief Construct a new live model object.  
      * 
      * @param config Name-Value based configuration
      * @param fn Error callback for handling errors in background thread
@@ -80,7 +80,7 @@ namespace reinforcement_learning {
       model_factory_t* m_factory = &model_factory);
 
     /**
-     * @brief Initialize inference library
+     * @brief Initialize inference library.  
      * Initialize the library and start the background threads used for
      * model managment and sending actions and outcomes to the online trainer
      * @param status  Optional field with detailed string description if there is an error 
@@ -115,7 +115,7 @@ namespace reinforcement_learning {
 		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//uuid is auto-generated
 
     /**
-     * @brief Report the reward for the top action
+     * @brief Report the reward for the top action.  
      * 
      * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
@@ -126,7 +126,7 @@ namespace reinforcement_learning {
 		int report_outcome(const char* uuid, const char* reward, api_status* status= nullptr);
 		
     /**
-     * @brief Report the reward for the top action
+     * @brief Report the reward for the top action.  
      * 
      * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
@@ -137,7 +137,7 @@ namespace reinforcement_learning {
     int report_outcome(const char* uuid, float reward, api_status* status= nullptr);
 
     /**
-     * @brief Error callback function
+     * @brief Error callback function.  
      * When live_model is constructed, a background error callback and a 
      * context (void*) is registered. If there is an error in the background thread, 
      * error callback will get invoked with api_status and the context (void*).
@@ -150,7 +150,7 @@ namespace reinforcement_learning {
     using error_fn_t = void(*)( const api_status&, ErrCntxt* );
 
     /**
-     * @brief Construct a new live model object
+     * @brief Construct a new live model object.  
      * 
      * @tparam ErrCntxt Context type used in error callback.
      * @param config Name-Value based configuration
@@ -170,12 +170,12 @@ namespace reinforcement_learning {
       model_factory_t* m_factory = &model_factory);
 
     /**
-     * @brief Default move constructor for live model object
+     * @brief Default move constructor for live model object.  
      */
     live_model(live_model&&) = default;
 
     /**
-     * @brief Default move assignment operator swaps implementation
+     * @brief Default move assignment operator swaps implementation.  
      */
     live_model& operator=(live_model&&) = default;
 
@@ -190,7 +190,7 @@ namespace reinforcement_learning {
 	};
 
   /**
-     * @brief Construct a new live model object
+     * @brief Construct a new live model object.  
      * 
      * @tparam ErrCntxt Context type used in error callback.
      * @param config Name-Value based configuration

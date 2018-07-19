@@ -2,7 +2,7 @@
  * @brief config_collection definition.  config_collection is a (name,value) pair based collection used to configure the API
  * 
  * @file config_collection.h
- * @author your name
+ * @author Rajan Chari et el
  * @date 2018-07-18
  */
 #pragma once

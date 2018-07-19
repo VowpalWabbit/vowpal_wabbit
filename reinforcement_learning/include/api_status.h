@@ -1,8 +1,8 @@
 /**
- * @brief api_status definition.  api_status is used to return error information to the caller.
+ * @brief api_status definition.  api_status is used to return error information to the caller. (\ref error_codes)
  * 
  * @file api_status.h
- * @author your name
+ * @author Rajan Chari et al
  * @date 2018-07-18
  */
 #pragma once
@@ -20,7 +20,7 @@ namespace reinforcement_learning {
       api_status();
 
       /**
-       * @brief Get the error code 
+       * @brief (\ref error_codes) Get the error code 
        * All API calls will return a status code.  If the optional api_status object is
        * passed in, the code is set in the object also. 
        * @return int Error code
@@ -28,7 +28,7 @@ namespace reinforcement_learning {
       int get_error_code() const;
 
       /**
-       * @brief Get the error msg string
+       * @brief (\ref error_codes) Get the error msg string
        * All API calls will return a status code.  If the optional api_status object is
        * passed in, the detailed error description is passed back using get_error_msg()
        * @return const char* Error description

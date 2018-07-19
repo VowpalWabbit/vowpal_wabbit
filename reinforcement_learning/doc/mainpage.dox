@@ -1,12 +1,9 @@
 /*! \mainpage Introduction
 
-Reforcement learning deals with training data that is not labeled.  Either it's not available or not practical to obtain.  Instead a learner is trained to pick the 
-best action based on feedback from previous choices of actions.  It is necessary to collect data by not just exploiting the best predicted action, but also exploring the action space. If the data is logged carefully along with action probabilities, then further optimization 
-over the choice of policies (learning algorithms) is possible.
-
-
-This is in contrast to supervised learning.  In supervised learning there is a large amount 
-of pre-labeled data that a learner is trained on.
+Enterprises are constantly faced with decisions that require picking from a set of actions based on 
+contextual information. Real world reinforcement-based techniques are effective tools in aiding 
+decision making; they rely on free interaction data to "predict" and "learn". This library implements 
+an interface for reinforcement-based prediction based on contextual bandits.
 
 Reinforcement Learning Loop
 ---------------------------

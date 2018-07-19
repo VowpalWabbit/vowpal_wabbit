@@ -2,7 +2,7 @@
  * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the choosen action and probabiliy distribution.
  * 
  * @file ranking_response.h
- * @author your name
+ * @author Rajan Chari et al
  * @date 2018-07-18
  */
 #pragma once
@@ -13,7 +13,7 @@ namespace reinforcement_learning {
   class ranking_response_impl;
 
   /**
-   * @brief Holds (action, probability) pairs 
+   * @brief Holds (action, probability) pairs.  
    */
   struct action_prob {
     //! action id
@@ -23,7 +23,7 @@ namespace reinforcement_learning {
   };
 
   /**
-   * @brief choose_rank() returns the action choice using ranking_response
+   * @brief choose_rank() returns the action choice using ranking_response.  
    * ranking_response contains all the actions and distribution from with the action was sampled.  It also contains the choosen action id and
    * the unique id representing the choice.  This unique id must be used to report back outcomes against this choice for the online trainer.
    */
@@ -32,13 +32,13 @@ namespace reinforcement_learning {
     ranking_response();
     ~ranking_response();
     /**
-     * @brief Construct a new ranking response object
+     * @brief Construct a new ranking response object.  
      * 
      * @param uuid Unique identifier for this interaction.  The same uuid must also be presented with report_outcome()
      */
     ranking_response(char const* uuid);
     /**
-     * @brief Unique id for this ranking request
+     * @brief Unique id for this ranking request.  
      * The same unique id must be passed back when reporing outcome so it can be
      * tied back to the chosen action.
      * @return const char* 
@@ -46,7 +46,7 @@ namespace reinforcement_learning {
     const char* get_uuid() const;
 
     /**
-     * @brief Get the choosen action id 
+     * @brief Get the choosen action id.  
      * 
      * @param action_id Chosen action id
      * @param status Optional field with detailed string description if there is an error 
@@ -78,14 +78,14 @@ namespace reinforcement_learning {
     void push_back(const int action_id, const float prob);
 
     /**
-     * @brief Size of the action collection
+     * @brief Size of the action collection.  
      * 
      * @return size_t 
      */
     size_t size() const;
 
     /**
-     * @brief Set the model id 
+     * @brief Set the model id.   
      * Every call to choose action is associated with a unique model used to predict.  A unique model id
      * is associated with each unique model. (This is set internally by the API)
      * @param model_id 
@@ -93,7 +93,7 @@ namespace reinforcement_learning {
     void set_model_id(const char* model_id);
 
     /**
-     * @brief Get the model id
+     * @brief Get the model id.  
      * Every call to choose action is associated with a unique model used to predict.  A unique model id
      * is associated with each unique model. (This is set internally by the API)
      * @return const char* 
@@ -101,31 +101,31 @@ namespace reinforcement_learning {
     const char * get_model_id() const;
 
     /**
-     * @brief Clear the response object so that it can be reused.
+     * @brief Clear the response object so that it can be reused.  
      * The goal is to reuse response without reallocating as much as possible.
      */
     void clear();
 
     /**
-     * @brief Move construct a new ranking response object
+     * @brief Move construct a new ranking response object.  
      * The underlying implementation is taken from the rvalue reference.
      */
     ranking_response(ranking_response&&) noexcept;
 
     /**
-     * @brief Move assignment operator for ranking response
+     * @brief Move assignment operator for ranking response.  
      * The underlying implementation is swapped with the rvalue reference.
      * @return ranking_response& 
      */
     ranking_response& operator = (ranking_response&&) noexcept;
 
     /**
-     * @brief Copy constructor is removed since implementaiton will be deleted twice
+     * @brief Copy constructor is removed since implementation will be deleted twice
      */
     ranking_response(const ranking_response&) = delete;
 
     /**
-     * @brief assignment operator is removed since implementaiton will be deleted twice
+     * @brief assignment operator is removed since implementation will be deleted twice
      */
     ranking_response& operator =(const ranking_response&) = delete;
   private:

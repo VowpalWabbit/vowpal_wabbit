@@ -2,7 +2,7 @@
  * @brief Simple RL Inference API sample implementation 
  * 
  * @file basic_usage_cpp.cc
- * @author Rajan Chari
+ * @author Rajan Chari et al
  * @date 2018-07-15
  */
 #include "basic_usage_cpp.h"

@@ -2,7 +2,7 @@
  * @brief RL Simulator example defintion.  Simulates user/world interacting with RL  
  * 
  * @file rl_sim.h
- * @author your name
+ * @author Rajan Chari et al
  * @date 2018-07-18
  */
 #pragma once
