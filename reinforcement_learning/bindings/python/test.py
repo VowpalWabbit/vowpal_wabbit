@@ -87,6 +87,7 @@ class LiveModelTests(unittest.TestCase):
         context = '{"_multi":[{},{}]}'
         model.choose_rank(uuid, context)
         model.report_outcome(uuid, 1.0)
+        model.report_outcome(uuid,"{'result':'res'}")
 
     def test_report_outcome_no_connection(self):
         # Requires dependency injection for network.

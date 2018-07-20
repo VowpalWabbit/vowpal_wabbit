@@ -63,7 +63,7 @@ class rl_sim:
                 context_json = self.create_context_json(context_features, action_features)
                 req_id = str(uuid.uuid4())
 
-                _, model_id, chosen_action_id, all_action_probabilities = self._rl.choose_rank(req_id, context_json)
+                _, model_id, chosen_action_id, action_probabilities = self._rl.choose_rank(req_id, context_json)
                 reward = p.get_reward(self._actions[chosen_action_id])
                 self._rl.report_outcome(req_id, reward)
 
