@@ -1,5 +1,5 @@
 /*! \page Python
-The Python API is in the
+There are Python bindings available for the C++ inference library. These bindings are in the
 \link rlinference
 \endlink
 module.
@@ -13,21 +13,21 @@ and
 for examples of usage of the Python API.
 
 \class rlinference
-\brief Module namespace for Python API.
+\brief Module namespace for Python API. Note: Although the documentation website contains both C++ and Python all classes and functions under the rlinference namespace are for Python only.
 
 \class rlinference::live_model
-\brief Main class that wraps interactions with inference API. choose_rank and report_outcome make up the two logical steps in the inference API.
+\brief Main class that wraps interactions with inference API. choose_rank and report_outcome make up the two logical steps in the inference API. The relevant C++ class is reinforcement_learning::live_model.
 
 \class rlinference::config_collection
-\brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example.
+\brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example. The relevant C++ class is reinforcement_learning::utility::config_collection.
 
 \class rlinference::error_callback
-\brief Abstract class that must be subclassed in order to handle background errors. rlinference::error_callback::on_error must be overriden in the subclass.
+\brief Abstract class that must be subclassed in order to handle background errors. rlinference::error_callback::on_error must be overridden in the subclass.
 
 \fn rlinference::error_callback::on_error(error_code, error_message)
 \memberof rlinference::error_callback
 \pure
-\brief Handler for background errors in the API. Must over overriden by subclassing rlinference::error_callback.
+\brief Handler for background errors in the API. Must over overridden by subclassing rlinference::error_callback.
 \param error_code The error code of the corresponding error as defined in \ref error_codes
 \param error_message Readable string representation of error that occurred.
 \return void
@@ -56,7 +56,7 @@ for examples of usage of the Python API.
 \param context_json Contains action, action features and context features in JSON format.
 \exception RuntimeError Thrown if an internal error occurs.
 \return uuid, model_id, chosen_action_id, action_probabilities
-\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporing outcome so it can be tied back to the chosen action.
+\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
@@ -67,7 +67,7 @@ for examples of usage of the Python API.
 \param context_json Contains action, action features and context features in JSON format.
 \exception RuntimeError Thrown if an internal error occurs.
 \return uuid, model_id, chosen_action_id, action_probabilities
-\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporing outcome so it can be tied back to the chosen action.
+\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
@@ -75,7 +75,7 @@ for examples of usage of the Python API.
 \fn rlinference::live_model::report_outcome(uuid, outcome_data)
 \memberof rlinference::live_model
 \brief Report the reward for the top action.
-\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback recieved.
+\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param outcome_data Reward serialized as a string.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
@@ -83,7 +83,7 @@ for examples of usage of the Python API.
 \fn rlinference::live_model::report_outcome(uuid, reward)
 \memberof rlinference::live_model
 \brief Report the reward for the top action.
-\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback recieved.
+\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param reward Reward as a float.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
