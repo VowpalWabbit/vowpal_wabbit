@@ -11,6 +11,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model.base import LinearClassifierMixin, SparseCoefMixin
 from sklearn.datasets.svmlight_format import dump_svmlight_file
 from sklearn.utils.validation import check_is_fitted
+from sklearn.utils import shuffle
 from sklearn.externals import joblib
 from vowpalwabbit import pyvw
 
@@ -301,9 +302,11 @@ class VW(BaseEstimator):
 
         # add examples to model
         for n in range(self.passes_):
-            if n > 1:
-                np.random.shuffle(X)
-            for idx, x in enumerate(X):
+            if n >= 1:
+                X_ = shuffle(X)
+            else:
+                X_ = X
+            for idx, x in enumerate(X_):
                 model.learn(x)
         self.fit_ = True
         return self
