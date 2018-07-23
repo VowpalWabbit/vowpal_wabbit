@@ -4,7 +4,7 @@ namespace reinforcement_learning {  namespace name {
       const char *const  APP_ID                  = "appid";
       const char *const  MODEL_SRC               = "model.source";
       const char *const  MODEL_BLOB_URI          = "model.blob.uri";
-      const char *const  MODEL_REFRESH_INTERVAL  = "model.refreshintervalms";
+      const char *const  MODEL_REFRESH_INTERVAL_MS  = "model.refreshintervalms";
       const char *const  MODEL_IMPLEMENTATION    = "model.implementation";       // VW vs other ML
       const char *const  VW_CMDLINE              = "vw.commandline";
       const char *const  INITIAL_EPSILON         = "initial_exploration.epsilon";

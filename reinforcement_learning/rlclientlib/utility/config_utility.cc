@@ -97,7 +97,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
       "ApplicationID",
       "ModelBlobUri",
       "InitialExplorationEpsilon",
-      "ModelRefreshPeriodMs",
+      "ModelRefreshIntervalMs",
       "SendHighMaterMark",
       "QueueMaxSize",
       "BatchTimeoutMs"
@@ -110,7 +110,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
       { "QueueMaxSize"              , name::SEND_QUEUE_MAXSIZE },
       { "SendBatchIntervalMs"       , name::SEND_BATCH_INTERVAL },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
-      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL }
+      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS }
     };
     
     auto obj = json::value::parse(to_string_t(config_json));
