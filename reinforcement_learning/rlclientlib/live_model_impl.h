@@ -7,6 +7,7 @@
 #include "utility/object_pool.h"
 #include "utility/periodic_background_proc.h"
 #include "object_factory.h"
+#include "ranking_event.h"
 
 namespace reinforcement_learning
 {
