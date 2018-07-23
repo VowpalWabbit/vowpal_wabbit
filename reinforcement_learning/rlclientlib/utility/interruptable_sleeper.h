@@ -31,12 +31,7 @@ namespace reinforcement_learning { namespace utility {
    */
   template <class Rep, class Period>
   bool interruptable_sleeper::sleep(const std::chrono::duration<Rep, Period>& timeout_duration) {
-    try {
-      std::unique_lock <std::mutex> lock(_mutex);
-      return ! ( _cv.wait_for(lock, timeout_duration, [this]() { return _interrupt; }) );
-    }
-    catch(const std::exception&) {
-      return false;
-    }
+    std::unique_lock <std::mutex> lock(_mutex);
+    return ! ( _cv.wait_for(lock, timeout_duration, [this]() { return _interrupt; }) );
   }
 }}
