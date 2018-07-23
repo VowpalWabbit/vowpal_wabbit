@@ -115,23 +115,51 @@ def gen_vw_options_list(mod):
 def gen_vw_options(mod):
 	if 'optimal_approx' in mod.param:
 		# Fully supervised on full dataset
-		mod.vw_template = {'data':'', 'progress':2.0, 'passes':0, 'oaa':0, 'cache_file':''}
+		mod.vw_template =
+		{'data':'',
+		 'progress':2.0,
+		 'passes':0,
+		 'oaa':0,
+		 'cache_file':''}
 		mod.param['passes'] = 5
 		mod.param['oaa'] = mod.param['num_classes']
 		mod.param['cache_file'] = mod.param['data'] + '.cache'
 	elif 'majority_approx' in mod.param:
 		# Compute majority error; basically we would like to skip vw running as fast as possible
-		mod.vw_template = {'data':'', 'progress':2.0, 'cbify':0, 'warm_start':0, 'bandit':0}
+		mod.vw_template =
+		{'data':'',
+		 'progress':2.0,
+		 'cbify':0,
+		 'warm_start':0,
+		 'bandit':0}
 		mod.param['cbify'] = mod.param['num_classes']
 		mod.param['warm_start'] = 0
-		mod.param['bandit'] = 0
+		mod.param['interaction'] = 0
 	else:
 		# General CB
-		mod.vw_template = {'data':'', 'progress':2.0, 'corrupt_type_bandit':0, 'corrupt_prob_bandit':0.0, 'bandit':0, 'cb_type':'mtr',
-		'choices_lambda':0, 'corrupt_type_supervised':0, 'corrupt_prob_supervised':0.0, 'lambda_scheme':1, 'learning_rate':0.5, 'warm_start_type':1, 'cbify':0, 'warm_start':0, 'overwrite_label':1, 'validation_method':1, 'weighting_scheme':1}
+		mod.vw_template =
+		{'data':'',
+		 'progress':2.0,
+ 		 'cb_type':'mtr',
+		 'cbify':0,
+		 'warm_start':0,
+		 'interaction':0,
+ 		 'choices_lambda':0,
+		 'corrupt_type_interaction':0,
+		 'corrupt_prob_interaction':0.0,
+		 'corrupt_type_supervised':0,
+		 'corrupt_prob_supervised':0.0,
+		 'warm_start_update': True,
+		 'interaction_update': True,
+		 'lambda_scheme':1,
+		 'learning_rate':0.5,
+		 'warm_start_type':1,
+		 'overwrite_label':1,
+		 'validation_method':1,
+		 'weighting_scheme':1}
 
 		mod.param['warm_start'] = mod.param['warm_start_multiplier'] * mod.param['progress']
-		mod.param['bandit'] = mod.param['total_size'] - mod.param['warm_start']
+		mod.param['interaction'] = mod.param['total_size'] - mod.param['warm_start']
 		mod.param['cbify'] = mod.param['num_classes']
 		mod.param['overwrite_label'] = mod.param['majority_class']
 
@@ -142,12 +170,6 @@ def gen_vw_options(mod):
 			mod.param['cb_explore'] = mod.param['num_classes']
 			mod.vw_template['cb_explore'] = 0
 
-		if mod.param['no_warm_start_update'] is True:
-			mod.param['no_supervised'] = ' '
-			mod.vw_template['no_supervised'] = ' '
-		if mod.param['no_interaction_update'] is True:
-			mod.param['no_bandit'] = ' '
-			mod.vw_template['no_bandit'] = ' '
 
 def execute_vw(mod):
 	gen_vw_options(mod)
@@ -186,12 +208,26 @@ def replace_keys(dic, simplified_keymap):
 def param_to_str_simplified(mod):
 	#print 'before replace'
 	#print param
-	vw_run_param_set = ['lambda_scheme','learning_rate','validation_method',
-	'fold','no_warm_start_update','no_interaction_update',
-	'corrupt_prob_bandit', 'corrupt_prob_supervised',
-	'corrupt_type_bandit', 'corrupt_type_supervised',
-	'warm_start_type','warm_start_multiplier','choices_lambda','weighting_scheme',
-	'cb_type','optimal_approx','majority_approx','dataset', 'adf_on']
+	vw_run_param_set =
+	['lambda_scheme',
+	 'learning_rate',
+	 'validation_method',
+	 'fold',
+	 'no_warm_start_update',
+	 'no_interaction_update',
+	 'corrupt_prob_interaction',
+	 'corrupt_prob_warm_start',
+	 'corrupt_type_interaction',
+	 'corrupt_type_warm_start',
+	 'warm_start_type',
+	 'warm_start_multiplier',
+	 'choices_lambda',
+	 'weighting_scheme',
+	 'cb_type',
+	 'optimal_approx',
+	 'majority_approx',
+	 'dataset',
+	 'adf_on']
 
 	mod.template_red = dict([(k,mod.result_template[k]) for k in vw_run_param_set])
 	mod.simplified_keymap_red = dict([(k,mod.simplified_keymap[k]) for k in vw_run_param_set])
@@ -291,86 +327,173 @@ def dictify(param_name, param_choices):
 
 def params_per_task(mod):
 	# Problem parameters
-	params_corrupt_type_sup = dictify('corrupt_type_supervised', mod.choices_corrupt_type_supervised)
-	params_corrupt_prob_sup = dictify('corrupt_prob_supervised', mod.choices_corrupt_prob_supervised)
-	params_corrupt_type_band = dictify('corrupt_type_bandit', mod.choices_corrupt_type_bandit)
-	params_corrupt_prob_band = dictify('corrupt_prob_bandit', mod.choices_corrupt_prob_bandit)
-	params_warm_start_multiplier = dictify('warm_start_multiplier', mod.warm_start_multipliers)
-	params_learning_rate = dictify('learning_rate', mod.learning_rates)
-
+	prm_cor_type_ws = dictify('corrupt_type_warm_start', mod.choices_cor_type_ws)
+	prm_cor_prob_ws = dictify('corrupt_prob_warm_start', mod.choices_cor_prob_ws)
+	prm_cor_type_inter = dictify('corrupt_type_interaction', mod.choices_cor_type_inter)
+	prm_cor_prob_inter = dictify('corrupt_prob_interaction', mod.choices_cor_prob_inter)
+	prm_ws_multiplier = dictify('warm_start_multiplier', mod.ws_multipliers)
+	prm_lrs = dictify('learning_rate', mod.learning_rates)
 	# could potentially induce a bug if the maj and best does not have this parameter
-	params_fold = dictify('fold', mod.folds)
-
+	prm_fold = dictify('fold', mod.folds)
 	# Algorithm parameters
-	params_cb_type = dictify('cb_type', mod.choices_cb_type)
+	prm_cb_type = dictify('cb_type', mod.choices_cb_type)
+	prm_dataset = dictify('dataset', mod.dss)
+	prm_choices_lbd = dictify('choices_lambda', mod.choices_choices_lambda)
+	prm_adf_on = dictify('adf_on', [True])
 
 	# Common parameters
-	params_common = param_cartesian_multi([params_corrupt_type_sup, params_corrupt_prob_sup,
-	params_corrupt_type_band, params_corrupt_prob_band,
-	params_warm_start_multiplier, params_learning_rate, params_cb_type, params_fold])
-	params_common = filter(lambda param: param['corrupt_type_bandit'] == 3 or abs(param['corrupt_prob_bandit']) > 1e-4, params_common)
+	prm_com = param_cartesian_multi(
+	[prm_cor_type_ws,
+	 prm_cor_prob_ws,
+	 prm_cor_type_inter,
+	 prm_cor_prob_inter,
+	 prm_ws_multiplier,
+	 prm_lrs,
+	 prm_cb_type,
+	 prm_fold,
+	 prm_adf_on])
+
+	prm_com_inter_gt = filter(lambda p:
+		                    ((p['corrupt_type_interaction'] == 1 #noiseless for interaction data
+							and abs(param['corrupt_prob_interaction']) < 1e-4)
+							and
+		                    (p['corrupt_type_warm_start'] == 1 #filter out repetitive warm start data
+							or abs(param['corrupt_prob_warm_start']) > 1e-4)),
+						  prm_com)
+
+
+	prm_com_ws_gt = filter(lambda p:
+		                    ((p['corrupt_type_warm_start'] == 1 #noiseless for warm start data
+							and abs(param['corrupt_prob_warm_start']) < 1e-4)
+							and
+		                    (p['corrupt_type_interaction'] == 1 #filter out repetitive interaction data
+							or abs(param['corrupt_prob_interaction']) > 1e-4)),
+						  prm_com)
+
+	prm_com = prm_com_inter_gt + prm_com_ws_gt
 
 	# Baseline parameters construction
 	if mod.baselines_on:
-		params_baseline_basic = [
-		[{'choices_lambda': 1, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'no_warm_start_update': True, 'no_interaction_update': False}, {'no_warm_start_update': False, 'no_interaction_update': True}]
+		prm_baseline_basic =
+		[
+			[
+				#Sup-Only
+		 		{'warm_start_type': 1,
+				 'warm_start_update': True,
+				 'interaction_update': False},
+				#Band-Only
+ 		 		{'warm_start_type': 1,
+ 				 'warm_start_update': False,
+ 				 'interaction_update': True},
+				#Sim-Bandit
+				{'warm_start_type': 2,
+				 'warm_start_update': True,
+ 				 'interaction_update': True}
+				#Sim-Bandit with no warm-start update
+				{'warm_start_type': 2,
+				 'warm_start_update': True,
+ 				 'interaction_update': False}
+			]
 		]
-		params_baseline = param_cartesian_multi([params_common] + params_baseline_basic)
-		#params_baseline = filter(lambda param: param['no_warm_start_update'] == True or param['no_interaction_update'] == True, params_baseline)
+
+		prm_baseline_const =
+		[
+			[
+				{'weighting_scheme':1,
+				 'adf_on':True,
+				 'lambda_scheme':3,
+				 'choices_lambda':1}
+			]
+		]
+		prm_baseline = param_cartesian_multi([prm_common] + prm_baseline_const + prm_baseline_basic)
 	else:
-		params_baseline = []
+		prm_baseline = []
 
 
 	# Algorithm parameters construction
 	if mod.algs_on:
-		params_choices_lambd = dictify('choices_lambda', mod.choices_choices_lambda)
-		params_algs_1 = param_cartesian_multi([params_choices_lambd, [{'no_warm_start_update': False, 'no_interaction_update': False, 'warm_start_type': 1, 'lambda_scheme': 3}], [{'validation_method':2}, {'validation_method':3}]] )
-		params_algs_2 = [{'no_warm_start_update': False, 'no_interaction_update': False, 'warm_start_type': 2, 'lambda_scheme': 1, 'choices_lambda':1}]
-		params_algs = param_cartesian( params_common, params_algs_1 + params_algs_2 )
+		# Algorithms for supervised validation
+		prm_ws_gt =
+		[
+			 [
+		  	 	{'warm_start_update': True,
+				 'interaction_update': True,
+				 'warm_start_type': 1,
+				 'lambda_scheme': 2,
+				 'weighting_scheme': 2}
+			 ],
+			 [
+			 	{'validation_method':2},
+				{'validation_method':3}
+			 ]
+	    ]
+
+		prm_inter_gt =
+		[
+			 [
+		  	 	{'warm_start_update': True,
+				 'interaction_update': True,
+				 'warm_start_type': 1,
+				 'lambda_scheme': 4,
+				 'weighting_scheme': 1}
+			 ],
+		]
+
+		prm_algs_ws_gt = param_cartesian_multi([prm_com_ws_gt] + [prm_choices_lbd] + prm_ws_gt)
+		prm_algs_inter_gt = param_cartesian_multi([prm_com_inter_gt] + [prm_choices_lbd] + prm_inter_gt)
+		prm_algs = prm_algs_ws_gt + prm_algs_inter_gt
 	else:
 		params_algs = []
 
-	params_constant_baseline = [{'weighting_scheme':1,
-	'adf_on':True}]
-	params_constant_algs = [{'weighting_scheme':mod.weighting_scheme,
-	'adf_on':True}]
-
-	params_baseline_and_algs = param_cartesian_multi([params_constant_baseline, params_baseline]) + param_cartesian_multi([params_constant_algs, params_algs])
-
-	#for p in params_common:
-	#	print p
-
-	#for p in params_baseline:
-	#	print p
-
-	print len(params_common)
-	print len(params_baseline)
-	print len(params_algs)
-	print len(params_baseline_and_algs)
-
 	# Optimal baselines parameter construction
 	if mod.optimal_on:
-		params_optimal = [{ 'optimal_approx': True, 'fold': 1, 'corrupt_type_supervised':1, 'corrupt_prob_supervised':0.0, 'corrupt_type_bandit':1, 'corrupt_prob_bandit':0.0} ]
+		params_optimal =
+		[
+			{'optimal_approx': True,
+			 'fold': 1,
+			 'corrupt_type_warm_start':1,
+			 'corrupt_prob_warm_start':0.0,
+			 'corrupt_type_interaction':1,
+			 'corrupt_prob_interaction':0.0}
+	    ]
 	else:
 		params_optimal = []
 
 	if mod.majority_on:
-		params_majority = [{ 'majority_approx': True, 'fold': 1,
-		'corrupt_type_supervised':1, 'corrupt_prob_supervised':0.0, 'corrupt_type_bandit':1, 'corrupt_prob_bandit':0.0} ]
+		params_majority =
+		[
+			{'majority_approx': True,
+			 'fold': 1,
+			 'corrupt_type_warm_start':1,
+			 'corrupt_prob_warm_start':0.0,
+			 'corrupt_type_interaction':1,
+			 'corrupt_prob_interaction':0.0}
+		]
 	else:
 		params_majority = []
 
 
-	#print len(params_baseline)
-	#print len(params_algs)
-	#print len(params_common)
+	#for p in params_common:
+	#	print p
+	#for p in params_baseline:
+	#	print p
+	print len(params_common)
+	print len(params_baseline)
+	print len(params_algs)
 	#raw_input('..')
 
 	# Common factor in all 3 groups: dataset
-	params_dataset = dictify('dataset', mod.dss)
-	params_all = param_cartesian_multi( [params_dataset, params_baseline_and_algs + params_optimal + params_majority] )
+	params_all = param_cartesian_multi(
+	[params_dataset,
+	 params_baseline_and_algs + params_optimal + params_majority])
 
-	params_all = sorted(params_all, key=lambda d: (d['dataset'], d['corrupt_type_supervised'], d['corrupt_prob_supervised'], d['corrupt_type_bandit'], d['corrupt_prob_bandit']))
+	params_all = sorted(params_all,
+						key=lambda d: (d['dataset'],
+						               d['corrupt_type_warm_start'],
+									   d['corrupt_prob_warm_start'],
+									   d['corrupt_type_interaction'],
+									   d['corrupt_prob_interaction'])
+					   )
 	print 'The total number of VW commands to run is: ', len(params_all)
 	#for row in params_all:
 	#	print row
@@ -446,29 +569,31 @@ def main_loop(mod):
 	('num_classes','nc', 0),
 	('total_size', 'ts', 0),
 	('majority_size','ms', 0),
-	('corrupt_type_supervised', 'cts', 0),
-	('corrupt_prob_supervised', 'cps', 0.0),
-	('corrupt_type_bandit', 'ctb', 0),
-	('corrupt_prob_bandit', 'cpb', 0.0),
+	('corrupt_type_warm_start', 'ctws', 0),
+	('corrupt_prob_warm_start', 'cpws', 0.0),
+	('corrupt_type_interaction', 'cti', 0),
+	('corrupt_prob_interaction', 'cpi', 0.0),
 	('adf_on', 'ao', True),
 	('warm_start_multiplier','wsm',1),
 	('warm_start', 'ws', 0),
 	('warm_start_type', 'wst', 0),
-	('bandit_size', 'bs', 0),
-	('bandit_supervised_size_ratio', 'bssr', 0),
+	('interaction', 'bs', 0),
+	('inter_ws_size_ratio', 'iwsr', 0),
 	('cb_type', 'cbt', 'mtr'),
 	('validation_method', 'vm', 0),
 	('weighting_scheme', 'wts', 0),
-	('lambda_scheme','ls',  0),
+	('lambda_scheme', 'ls', 0),
 	('choices_lambda', 'cl', 0),
-	('no_warm_start_update', 'nwsu', False),
-	('no_interaction_update', 'niu', False),
+	('warm_start_update', 'wsu', True),
+	('interaction_update', 'iu', True),
 	('learning_rate', 'lr', 0.0),
 	('optimal_approx', 'oa', False),
 	('majority_approx', 'ma', False),
 	('avg_error', 'ae', 0.0),
 	('actual_variance', 'av', 0.0),
-	('ideal_variance', 'iv', 0.0)]
+	('ideal_variance', 'iv', 0.0),
+	('last_lambda', 'll', 0.0),
+	]
 
  	num_cols = len(mod.result_template_list)
 	mod.result_header_list = [ mod.result_template_list[i][0] for i in range(num_cols) ]
