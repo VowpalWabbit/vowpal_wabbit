@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Vowpal Wabbit setup module """
+""" Vowpal Wabbit python setup module """
 
 import platform
+import re
 import subprocess
 import sys
+import sysconfig
 from codecs import open
 from ctypes.util import find_library
 from distutils.command.clean import clean as _clean
@@ -17,49 +19,52 @@ from shutil import copy, copytree, rmtree
 
 
 system = platform.system()
+version_info = sys.version_info
 here = path.abspath(path.dirname(__file__))
 pylibvw = Extension('pylibvw', sources=['python/pylibvw.cc'])
 
 
 def find_boost():
-    """Find correct boost-python library information """
+    """ Find correct boost-python library information """
     # find_library() has a tricky platform-dependent search behaviour
     # it is not easy to instruct it to do search in a particular location on Linux at least
     # skip find_library checks if python comes from conda 
     # rely on conda to set up libboost_python.so link to what has been actually installed
-    skip_find_library = ('conda' in sys.version)
 
-    if system == 'Linux':
-        # use version suffix if present
-        boost_lib = 'boost_python-py{v[0]}{v[1]}'.format(v=sys.version_info)
-        if sys.version_info.major == 3:
-            for candidate in ['-py36', '-py35', '-py34', '3']:
-                boost_lib = 'boost_python{}'.format(candidate)
-                if find_library(boost_lib):
-                    break
-        if not find_library(boost_lib) or skip_find_library:
-            boost_lib = "boost_python"
+    prefix = 'boost_python'
+    if environ.get('CONDA_PREFIX') is not None:
+        environ['DYLD_LIBRARY_PATH'] = sysconfig.get_config_var('LIBDIR')
+        options = ['']
+    elif system == 'Linux':
+        options = ['-py{v[0]}{v[1]}'.format(v=version_info),
+                   '-py{v[0]}'.format(v=version_info),
+                   '{v[0]}'.format(v=version_info),
+                   '']
     elif system == 'Darwin':
-        # "brew" installations of PythonBoost put lib /usr/local/lib/libboost_python27-mt resp. libboost_python36-mt
-        for candidate in ['{v[0]}{v[1]}'.format(v=sys.version_info), '{}-mt'.format(sys.version_info.major)]:
-            boost_lib = 'boost_python{}'.format(candidate)
-            if find_library(boost_lib):
-                break
-        if sys.version_info.major == 2:
-            boost_lib = 'boost_python-mt'
+        options = ['{v[0]}{v[1]}-mt'.format(v=version_info),
+                   '{v[0]}-mt'.format(v=version_info),
+                   '{v[0]}{v[1]}'.format(v=version_info),
+                   '{v[0]}'.format(v=version_info),
+                   '-mt',
+                   '']
     elif system == 'Cygwin':
-        boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
+        options = ['{v[0]}-mt'.format(v=version_info),
+                   '-mt']
     else:
         raise Exception('Building on this system is not currently supported')
 
-    if not find_library(boost_lib) and not skip_find_library:
+    for option in options:
+        boost_lib = '{pre}{opt}'.format(pre=prefix, opt=option)
+        if find_library(boost_lib):
+            break
+    else:
         raise Exception('Could not find boost python library')
 
     return boost_lib
 
 
 def prep():
-    """Prepare source directories for building extension """
+    """ Prepare source directories for building extension """
 
     # helper function to exclude subdirectories during copytree calls
     def exclude_dirs(cur_dir, _):
@@ -85,7 +90,7 @@ def prep():
 
 
 class Clean(_clean):
-    """Clean up after building python package directories """
+    """ Clean up after building python package directories """
     def run(self):
         try:
             remove(path.join(here, '.coverage'))
@@ -103,35 +108,53 @@ class Clean(_clean):
 
 class Sdist(_sdist):
     def run(self):
-        # try to run prep if needed
-        try:
-            prep()
-        except:
-            pass
+        # run prep if needed
+        prep()
         _sdist.run(self)
 
 
 class VWBuildExt(_build_ext):
-    """Build pylibvw.so and install it as a python extension """
+    """ Build pylibvw.so and install it as a python extension """
     def build_extension(self, ext):
         prep()
         target_dir = path.dirname(self.get_ext_fullpath(ext.name))
         if not path.isdir(target_dir):
             makedirs(target_dir)
         if system == 'Windows':
-            if sys.version_info[0] == 2 and sys.version_info[1] == 7:
-                copy(path.join(here, 'bin', 'pyvw27.dll'), self.get_ext_fullpath(ext.name))
-            elif sys.version_info[0] == 3 and sys.version_info[1] == 5:
-                copy(path.join(here, 'bin', 'pyvw35.dll'), self.get_ext_fullpath(ext.name))
-            elif sys.version_info[0] == 3 and sys.version_info[1] == 6:
-                copy(path.join(here, 'bin', 'pyvw36.dll'), self.get_ext_fullpath(ext.name))
+            sys_version = '{v[0]}{v[1]}'.format(v=version_info)
+            if sys_version in ['27', '35', '36']:
+                copy(path.join(here, 'bin', 'pyvw{}.dll'.format(sys_version)), self.get_ext_fullpath(ext.name))
             else:
                 raise Exception('Pre-built vw/python library for Windows is not supported for this python version')
         else:
-            env = environ
-            env['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=sys.version_info)
-            env['PYTHON_LIBS'] = '-l {}'.format(find_boost())
-            subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=env)
+            py_config_path = 'python-config'
+            projectbase = sysconfig.get_config_var('projectbase')
+            if projectbase is not None:
+                configs = ['python{v[0]}.{v[1]}-config'.format(v=version_info),
+                           'python{v[0]}-config'.format(v=version_info),
+                           'python-config']
+                for config in configs:
+                    py_config_path = path.join(projectbase, config)
+                    if path.exists(py_config_path):
+                        environ['PYTHON_CONFIG'] = py_config_path
+                        break
+
+            environ['PYTHON_VERSION'] = '{v[0]}.{v[1]}'.format(v=version_info)
+            environ['PYTHON_LIBS'] = '-l {}'.format(find_boost())
+            environ['PYTHON_INCLUDE'] = subprocess.check_output([py_config_path, '--includes']).decode("utf-8").strip()
+            environ['PYTHON_LDFLAGS'] = subprocess.check_output([py_config_path, '--ldflags']).decode("utf-8").strip()
+
+            if system == 'Darwin':
+                # Can't find a way around this hack, pulling LDFLAGS from sysconfig does not work in all cases
+                environ['PYTHON_LDFLAGS'] = re.sub(',-stack_size,[0-9]*', '', environ['PYTHON_LDFLAGS'])
+
+            # Use boost library install by Anaconda
+            conda_base = environ.get('CONDA_PREFIX')
+            if conda_base is not None:
+                environ['USER_BOOST_INCLUDE'] = '-I {b}/include/boost -I {b}/include'.format(b=conda_base)
+                environ['USER_BOOST_LIBRARY'] = '-L {b}/lib'.format(b=conda_base)
+
+            subprocess.check_call(['make', 'python'], cwd=path.join(here, 'src'), env=environ)
             ext_suffix = 'so' if not system == 'Cygwin' else 'dll'
             copy(path.join(here, 'src', 'python', '{name}.{suffix}'.format(name=ext.name, suffix=ext_suffix)),
                  self.get_ext_fullpath(ext.name))
@@ -204,8 +227,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],

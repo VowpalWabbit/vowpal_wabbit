@@ -58,9 +58,7 @@ namespace reinforcement_learning {
       }
       catch(const std::exception& e) {
         _thread_is_running = false;
-        return report_error(status, error_code::background_thread_start,
-                            "Unable to start background thread to log events. ",
-                            e.what());
+        RETURN_ERROR_LS(status, background_thread_start) << " (logger)" << e.what();
       }
     }
     return error_code::success;
@@ -72,9 +70,7 @@ namespace reinforcement_learning {
       _queue.push(std::move(evt));
       return error_code::success;
     }
-
-    return report_error(status, error_code::background_queue_overflow,
-                        "Dropped event: " , evt);
+    RETURN_ERROR_LS(status, background_queue_overflow) << "Dropped event: " << evt;
   }
 
   template <typename TSender>

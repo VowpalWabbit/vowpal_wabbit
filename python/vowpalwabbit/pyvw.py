@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+"""Python binding for pylibvw class"""
+
 from __future__ import division
 import pylibvw
 
 
 class SearchTask():
+    """Search task class"""
     def __init__(self, vw, sch, num_actions):
         self.vw = vw
         self.sch = sch
@@ -16,7 +20,7 @@ class SearchTask():
     def _run(self, your_own_input_example):
         pass
 
-    def _call_vw(self, my_example, isTest, useOracle=False): # run_fn, setup_fn, takedown_fn, isTest):
+    def _call_vw(self, my_example, isTest, useOracle=False):  # run_fn, setup_fn, takedown_fn, isTest):
         self._output = None
         self.bogus_example.set_test_only(isTest)
         def run(): self._output = self._run(my_example)
@@ -30,22 +34,27 @@ class SearchTask():
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
 
     def learn(self, data_iterator):
+        """Train search task by providing an iterator of examples"""
         for my_example in data_iterator.__iter__():
             self._call_vw(my_example, isTest=False);
 
     def example(self, initStringOrDict=None, labelType=pylibvw.vw.lDefault):
-        """TODO"""
+        """Create an example
+            initStringOrDict can specify example as VW formatted string, or a dictionary
+            labelType can specify the desire label type"""
         if self.sch.predict_needs_example():
             return self.vw.example(initStringOrDict, labelType)
         else:
             return self.vw.example(None, labelType)
 
     def predict(self, my_example, useOracle=False):
+        """Return prediction"""
         self._call_vw(my_example, isTest=True, useOracle=useOracle);
         return self._output
 
 
 def get_prediction(ec, prediction_type):
+    """Get specified type of prediction from example"""
     switch_prediction_type = {
         pylibvw.vw.pSCALAR: ec.get_simplelabel_prediction,
         pylibvw.vw.pSCALARS: ec.get_scalars,
@@ -383,6 +392,7 @@ class abstract_label:
 
 
 class simple_label(abstract_label):
+    """Class for simple VW label"""
     def __init__(self, label=0., weight=1., initial=0., prediction=0.):
         abstract_label.__init__(self)
         if isinstance(label, example):
@@ -407,6 +417,7 @@ class simple_label(abstract_label):
 
 
 class multiclass_label(abstract_label):
+    """Class for multiclass VW label with prediction"""
     def __init__(self, label=1, weight=1., prediction=1):
         abstract_label.__init__(self)
         if isinstance(label, example):
@@ -429,6 +440,7 @@ class multiclass_label(abstract_label):
 
 
 class multiclass_probabilities_label(abstract_label):
+    """Class for multiclass VW label with probabilities"""
     def __init__(self, label, prediction=None):
         abstract_label.__init__(self)
         if isinstance(label, example):
@@ -447,6 +459,7 @@ class multiclass_probabilities_label(abstract_label):
 
 
 class cost_sensitive_label(abstract_label):
+    """Class for cost sensative VW label"""
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):
@@ -477,6 +490,7 @@ class cost_sensitive_label(abstract_label):
 
 
 class cbandits_label(abstract_label):
+    """Class for contextual bandits VW label"""
     def __init__(self, costs=[], prediction=0):
         abstract_label.__init__(self)
         if isinstance(costs, example):

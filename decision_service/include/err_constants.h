@@ -24,20 +24,41 @@ namespace reinforcement_learning { namespace error_code {
   const int bad_time_interval           = 17;
   const int data_callback_exception     = 18;
   const int data_callback_not_set       = 19;
+  const int json_no_actions_found       = 20;
+  const int json_parse_error            = 21;
+  const int exploration_error           = 22;
+  const int action_out_of_bounds        = 23;
+  const int model_update_error          = 24;
+  const int model_rank_error            = 25;
+  const int pdf_sampling_error          = 26;
+  const int eh_connstr_parse_error      = 27;
 }}
 
 namespace reinforcement_learning { namespace error_code {
   //error message
-  const char * const unkown_s                   = "Unexpected error.";
-  const char * const create_fn_exception_s      = "Create function failed.";
-  const char * const type_not_registered_s      = "Type not registered with class factory";
-  const char * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
-  const char * const http_bad_status_code_s     = "http request returned a bad status code";
-  const char * const last_modified_not_found_s  = "Last-Modified http header not found in response";
-  const char * const last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";
-  const char * const bad_content_length_s       = "Content-Length header not set or set to zero";
-  const char * const model_export_frequency_not_provided_s = "Export frequency of model not specified in configuration.";
-  const char * const bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
-  const char * const data_callback_exception_s  = "Background data callback threw an exception. ";
-  const char * const data_callback_not_set_s    = "Data callback handler not set";
+  char const * const unkown_s                   = "Unexpected error.";
+  char const * const create_fn_exception_s      = "Create function failed.";
+  char const * const type_not_registered_s      = "Type not registered with class factory";
+  char const * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
+  char const * const http_bad_status_code_s     = "http request returned a bad status code";
+  char const * const last_modified_not_found_s  = "Last-Modified http header not found in response";
+  char const * const last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";
+  char const * const bad_content_length_s       = "Content-Length header not set or set to zero";
+  char const * const model_export_frequency_not_provided_s = "Export frequency of model not specified in configuration.";
+  char const * const bad_time_interval_s        = "Bad time interval string.  Format should be hh:mm:ss";
+  char const * const data_callback_exception_s  = "Background data callback threw an exception. ";
+  char const * const data_callback_not_set_s    = "Data callback handler not set";
+  char const * const json_no_actions_found_s    = "Context json did not have actions (_multi array empty or not found)";
+  char const * const exploration_error_s        = "Exploration error code: ";
+  char const * const model_rank_error_s         = "Error while ranking actions using model: ";
+  char const * const model_update_error_s       = "Error updating model: ";
+  char const * const action_not_found_s         = "No actions found in action collection";
+  char const * const action_out_of_bounds_s     = "Action id out of bounds.";
+  char const * const background_thread_start_s  = "Unable to start background thread. ";
+  char const * const background_queue_overflow_s = "Background queue overflow. ";
+  char const * const eventhub_http_generic_s    = "http error while connecting to event hub. ";
+  char const * const json_parse_error_s         = "Unable to parse JSON. ";
+  char const * const invalid_argument_s         = "Invalid Argument: ";
+  char const * const exception_during_http_req_s = "http request excepton. ";
+  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection connection string.";
 }}

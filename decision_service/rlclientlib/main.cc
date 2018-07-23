@@ -17,7 +17,8 @@ void error_handler(const api_status& error, void* user_context)
 
 int main()
 {
-	const auto config = init_from_json(R"({"eventhub_host":"localhost:8080"})");
+  config_collection config;
+  create_from_json(R"({"eventhub_host":"localhost:8080"})",config);
 
 	auto error_cntxt = 1;
 	// Create a ds live_model, and initialize with configuration
@@ -69,7 +70,8 @@ config_collection load_config()
 {
 	// Option 1: load configuration from decision service config json
 	auto const config_json = load_config_json();
-	auto config = init_from_json(config_json);
+  config_collection config;
+  create_from_json(config_json, config);
 
 	// Option 2: set different config values used to initialize ds client library
 	config.set("name", "value");
@@ -83,5 +85,9 @@ void display_response(const ranking_response& response)
 	for (auto i : response)
 		std::cout << "(" << i.action_id << "," << i.probability << ") ";
 	fprintf(stdout, "\n");
-	fprintf(stdout, "top action id = %d\n", response.get_top_action_id());
+  size_t action_id=0;
+  if(error_code::success == response.get_choosen_action_id(action_id))
+  	fprintf(stdout, "top action id = %d\n", (int)action_id);
+  else
+    fprintf(stdout, "error choosing action\n");
 }

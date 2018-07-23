@@ -158,7 +158,7 @@ void finish(cbify& data)
       {
         data.adf_data.ecs[a]->pred.a_s.delete_v();
         VW::dealloc_example(CB::cb_label.delete_label, *data.adf_data.ecs[a]);
-        free(data.adf_data.ecs[a]);
+        free_it(data.adf_data.ecs[a]);
       }
     data.adf_data.ecs.~vector<example*>();
 

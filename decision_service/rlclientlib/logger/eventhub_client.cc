@@ -2,11 +2,13 @@
 #include <sstream>
 #include "eventhub_client.h"
 #include "err_constants.h"
+#include "utility/http_helper.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
 using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
+namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning {
   //private helper
@@ -35,33 +37,29 @@ namespace reinforcement_learning {
     }
     request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data);
-    //TODO fix linux issue if the client is not re-created
-    //web::http::client::http_client client(build_url(_eventhub_host, _eventhub_name));
+    request.set_body(post_data.c_str());
     auto request_task = _client.request(request).then([&](http_response response) {
       //expect http code 201
       if (response.status_code() == status_codes::Created)
         return error_code::success;
-      //report error
-      return report_error(status, error_code::http_bad_status_code,
-                          "bad http code (expected 201): ",
-                          response.status_code(), "\n",
-                          "post_data: ", post_data);
+
+      //report error (cannot use the macro here since return type is auto deduced)
+      RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
+        response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
+        "\npost_data: ", post_data);
     });
     try {
       request_task.wait();
       return request_task.get();
     }
     catch (const std::exception& e) {
-      return report_error(status, error_code::eventhub_http_generic,
-                          e.what(),
-                          "post_data: " , post_data);
+      RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
                                    const std::string& key, const std::string& name, const bool local_test)
-    : _client(build_url(host, name, local_test)),
+    : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
       _authorization_valid_until(0) { }

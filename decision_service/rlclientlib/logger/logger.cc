@@ -1,27 +1,28 @@
 #include "logger.h"
 #include "err_constants.h"
+#include "constants.h"
 
 namespace reinforcement_learning
 {
   logger::logger(const utility::config_collection& c, error_callback_fn* perror_cb)
     : _ranking_client(
-        c.get("eventhub_host", "localhost:8080"),
-        c.get("shared_access_key_name", ""),
-        c.get("shared_access_key", ""),
-        c.get("eventhub_interaction_name", "interaction"),
-        c.get_bool("local_eventhub_test",false)),
+        c.get(name::INTERACTION_EH_HOST     , "localhost:8080"),
+        c.get(name::INTERACTION_EH_KEY_NAME , ""),
+        c.get(name::INTERACTION_EH_KEY      , ""),
+        c.get(name::INTERACTION_EH_NAME     , "interaction"),
+        c.get_bool(name::EH_TEST            ,false)),
       _outcome_client(
-        c.get("eventhub_host", "localhost:8080"),
-        c.get("shared_access_key_name", ""),
-        c.get("shared_access_key", ""),
-        c.get("eventhub_observation_name", "observation"),
-        c.get_bool("local_eventhub_test", false)),
+        c.get(name::OBSERVATION_EH_HOST     , "localhost:8080"),
+        c.get(name::OBSERVATION_EH_KEY_NAME , ""),
+        c.get(name::OBSERVATION_EH_KEY      , ""),
+        c.get(name::OBSERVATION_EH_NAME     , "observation"),
+        c.get_bool(name::EH_TEST            ,false)),
       _async_batcher(
         _ranking_client,
         perror_cb,
-        c.get_int("send_high_water_mark", 4 * 1024 * 1024),
-        c.get_int("batch_timeout_ms", 1000),
-        c.get_int("queue_max_size", 1000 * 2))
+        c.get_int(name::SEND_HIGH_WATER_MARK, 4 * 1024 * 1024),
+        c.get_int(name::SEND_BATCH_INTERVAL , 1000),
+        c.get_int(name::SEND_QUEUE_MAXSIZE  , 1000 * 2))
   {
   }
 

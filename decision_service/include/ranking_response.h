@@ -15,13 +15,22 @@ namespace reinforcement_learning {
   public:
     ranking_response();
     ranking_response(char const* uuid);
+    ~ranking_response();
 
     const char* get_uuid() const; // unique id
-    int get_top_action_id(api_status* status = nullptr) const; // id of the top action chosen by the ds
+    int get_choosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
+    int set_choosen_action_id(size_t id, api_status* status = nullptr); // id of the top action chosen by the ds
     void set_uuid(const char* uuid);
     void push_back(const int action_id, const float prob);
     size_t size() const;
+    void set_model_id(const char* model_id);
+    const char * get_model_id() const;
+    void clear();
 
+    ranking_response(ranking_response&&) noexcept;
+    ranking_response& operator=(ranking_response&&) noexcept;
+    ranking_response(const ranking_response&) = delete;
+    ranking_response& operator=(const ranking_response&) = delete;
   private:
     ranking_response_impl* _pimpl;
 

@@ -1609,12 +1609,12 @@ void finish(vw& all, bool delete_all)
     // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the warning goes away.
     // Disable SDL warning.
     //    #pragma warning(disable:6001)
-    free(all.loaded_dictionaries[i].name);
+    free_it(all.loaded_dictionaries[i].name);
     //#pragma warning(default:6001)
 
     all.loaded_dictionaries[i].dict->iter(delete_dictionary_entry);
     all.loaded_dictionaries[i].dict->delete_v();
-    free(all.loaded_dictionaries[i].dict);
+    free_it(all.loaded_dictionaries[i].dict);
   }
   delete all.loss;
 

@@ -103,16 +103,18 @@ For Mac OSX
     # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
     $ brew install boost-python3
 
-Having `conda` on a Linux-based system requires a build with conda-provided packages to ensure consistency. There is a dedicated script that installs required packages directly into your conda environment:
+Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
 
 .. code-block:: bash
 
     git clone https://github.com/JohnLangford/vowpal_wabbit.git
-    ./vowpal_wabbit/python/conda_install.sh
-    
-This procedure was tested with python3, but is expected to also work with python2.
+    # create conda environment if necessary
+    conda create -n vowpalwabbit
+    source activate vowpalwabbit
+    # install necessary boost dependencies
+    conda install -y -c anaconda boost
+    pip install -e vowpal_wabbit/python
 
- 
 Development
 -----------
 
