@@ -16,6 +16,7 @@ namespace reinforcement_learning {
 	//serializable outcome event
 	class outcome_event {
 	public:
-	  static void serialize(std::ostream& oss, const char* uuid, const char* outcome_data);
-	};
+    static void serialize(std::ostream& oss, const char* uuid, const char* outcome_data);
+    static void serialize(std::ostream& oss, const char* uuid, float reward);
+  };
 }

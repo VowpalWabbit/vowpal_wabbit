@@ -7,6 +7,7 @@
 #include "utility/object_pool.h"
 #include "utility/periodic_background_proc.h"
 #include "object_factory.h"
+#include "ranking_event.h"
 
 namespace reinforcement_learning
 {
@@ -51,6 +52,8 @@ namespace reinforcement_learning
     void handle_model_update(const model_management::model_data& data);
     int explore_only(const char* uuid, const char* context, ranking_response& response, api_status* status) const;
     int explore_exploit(const char* uuid, const char* context, ranking_response& response, api_status* status) const;
+    template<typename D>
+    int report_outcome_internal(const char* uuid, D outcome_data, api_status* status);
 
   private:
     // Internal implementation state
@@ -68,4 +71,21 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::model_downloader> _model_download;
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
   };
+
+  template <typename D>
+  int live_model_impl::report_outcome_internal(const char* uuid, D outcome_data, api_status* status) {
+    // Clear previous errors if any
+    api_status::try_clear(status);
+
+    // Serialize outcome
+    _buff.seekp(0, std::ostringstream::beg);
+    outcome_event::serialize(_buff, uuid, outcome_data);
+    _buff << std::ends;
+    auto sbuf = _buff.str();
+
+    // Send the outcome event to the backend
+    RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));
+
+    return error_code::success;
+  }
 }
