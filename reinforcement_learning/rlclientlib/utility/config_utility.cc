@@ -19,7 +19,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     return "";
   }
 
-  char* regex_code_str(int code) {
+  const char* regex_code_str(int code) {
     switch(code) {
     case std::regex_constants::error_collate:
       return "The expression contained an invalid collating element name.";
@@ -96,11 +96,11 @@ namespace reinforcement_learning { namespace utility { namespace config {
     const char* json_names[] = {
       "ApplicationID",
       "ModelBlobUri",
+      "InitialExplorationEpsilon"
+      "ModelRefreshIntervalMs",
       "SendHighMaterMark",
       "QueueMaxSize",
-      "SendBatchIntervalMs",
-      "InitialExplorationEpsilon",
-      "ModelRefreshIntervalMs"
+      "BatchTimeoutMs"
     };
 
     const std::map<std::string, std::string> from_to = {
@@ -110,7 +110,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
       { "QueueMaxSize"              , name::SEND_QUEUE_MAXSIZE },
       { "SendBatchIntervalMs"       , name::SEND_BATCH_INTERVAL },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
-      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL }
+      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS }
     };
 
     auto obj = json::value::parse(to_string_t(config_json));

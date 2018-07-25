@@ -27,7 +27,7 @@
     <ClInclude Include="rl_sim_cpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="error_context.h">
+    <ClInclude Include="simulation_stats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClCompile Include="rl_sim.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="error_context.cc">
+    <ClCompile Include="simulation_stats.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

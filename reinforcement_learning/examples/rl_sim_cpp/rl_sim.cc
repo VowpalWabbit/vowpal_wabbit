@@ -5,13 +5,19 @@
 #include "live_model.h"
 #include "rl_sim_cpp.h"
 #include "person.h"
+#include "simulation_stats.h"
+
+using namespace std;
+
+std::string get_dist_str(const reinforcement_learning::ranking_response& response);
 
 int rl_sim::loop() {
   if ( !init() ) return -1;
   
-  auto round = 0;
   r::ranking_response response;
-  while ( true ) {
+  simulation_stats stats;
+
+  while ( _run_loop ) {
     auto& p = pick_a_random_person();
     const auto context_features = p.get_features();
     const auto action_features = get_action_features();
@@ -36,15 +42,19 @@ int rl_sim::loop() {
     const auto reward = p.get_reward(_actions[choosen_action]);
 
     // Report reward recieved
-    if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success ) {
+    if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success && reward > 0.00001f ) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
 
-    std::cout << "Round:" << round << ", Person:" << p.id() << ", Action:" << choosen_action << ", Reward:" << reward << std::endl;
+    stats.record(p.id(), choosen_action, reward);
+
+    std::cout << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
+      << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
+
     response.clear();
-    ++round;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   }
 }
 
@@ -74,6 +84,10 @@ int rl_sim::load_file(const std::string& file_name, std::string& config_str) {
   return err::success;
 }
 
+void _on_error(const reinforcement_learning::api_status& status, rl_sim* psim) {
+  psim->on_error(status);
+}
+
 int rl_sim::init_rl() {
   r::api_status status;
   u::config_collection config;
@@ -84,7 +98,7 @@ int rl_sim::init_rl() {
     return -1;
   }
 
-  _rl = std::unique_ptr<r::live_model>(new r::live_model(config, &on_error, &_error_context));
+  _rl = std::unique_ptr<r::live_model>(new r::live_model(config,_on_error,this));
   if ( _rl->init(&status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
@@ -96,13 +110,13 @@ int rl_sim::init_rl() {
 bool rl_sim::init_people() {
 
   person::topic_prob tp1 { 
-    { "HerbGarden",0.0f }, 
-    { "MachineLearning",0.2f } };
+    { "HerbGarden",0.03f }, 
+    { "MachineLearning",0.1f } };
   _people.emplace_back("rnc", "engineering", "hiking", "spock", tp1);
 
   person::topic_prob tp2 {
     { "HerbGarden",0.3f },
-    { "MachineLearning",0.0f } };
+    { "MachineLearning",0.1f } };
   _people.emplace_back("mk", "psychology", "kids", "7of9", tp2);
 
   _actions.emplace_back("HerbGarden");
@@ -123,6 +137,12 @@ std::string rl_sim::get_action_features() {
   return oss.str();
 }
 
+void rl_sim::on_error(const reinforcement_learning::api_status& status) {
+  std::cout << "Background error in Inference API: " << status.get_error_msg() << std::endl;
+  std::cout << "Exiting simulation loop." << std::endl;
+  _run_loop = false;
+}
+
 std::string rl_sim::create_context_json(const std::string& cntxt, const std::string& action) {
   std::ostringstream oss;
   oss << "{ " << cntxt << ", " << action << " }";
@@ -134,3 +154,15 @@ std::string rl_sim::create_uuid() {
 }
 
 rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)) {}
+
+std::string get_dist_str(const reinforcement_learning::ranking_response& response) {
+  std::string ret;
+  ret += "(";
+  for (auto& ap_pair : response) {
+    ret += "[" + to_string(ap_pair.action_id) + ",";
+    ret += to_string(ap_pair.probability) + "]";
+    ret += " ,";
+  }
+  ret += ")";
+  return ret;
+}

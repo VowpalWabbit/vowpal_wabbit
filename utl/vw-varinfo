@@ -369,7 +369,7 @@ sub do_train($$) {
     my ($trainset, $model) = @_;
     my $cmd = "$VW --quiet $VWARGS";
     unless ($cmd =~ /(?:\s(?:-d|--data)\s)/) {
-        $cmd .= " $trainset";
+        $cmd .= " -d $trainset";
     }
     unless ($cmd =~ /(?:\s(?:-f|--final_regressor))/) {
         $cmd .= " -f $model";
