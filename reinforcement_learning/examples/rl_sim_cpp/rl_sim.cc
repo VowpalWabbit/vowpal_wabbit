@@ -1,7 +1,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <thread>
-#include "error_context.h"
+
 #include "live_model.h"
 #include "rl_sim_cpp.h"
 #include "person.h"
@@ -158,7 +158,7 @@ rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)
 std::string get_dist_str(const reinforcement_learning::ranking_response& response) {
   std::string ret;
   ret += "(";
-  for (auto& ap_pair : response) {
+  for (const auto& ap_pair : response) {
     ret += "[" + to_string(ap_pair.action_id) + ",";
     ret += to_string(ap_pair.probability) + "]";
     ret += " ,";
