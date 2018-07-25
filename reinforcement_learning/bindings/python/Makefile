@@ -1,6 +1,8 @@
 # Underscore is required to be consistent with Swig's name generation
 TARGET = _rlinference.so
 
+PIP_FOLDER = ./rlinference/
+
 # Python 3.6 is specifically provided, tricky if we want to link against different versions.
 INCLUDE = -I ../../include -I ./ $(shell python3.6-config --includes)
 RLCLIENT_LIB = -L ../../rlclientlib -lrlclient
@@ -11,7 +13,7 @@ ALL_LIBS = $(RLCLIENT_LIB) $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
 
 .PHONY: default all clean
 
-default: $(TARGET)
+default: pip
 all: default
 
 things: all
@@ -30,15 +32,18 @@ HEADERS = $(shell find $(CURDIR)/../../include . -name '*.h')
 $(MAIN_SWIG_WRAPPED_INTERFACE): $(MAIN_SWIG_INTERFACE) $(OTHER_SWIG_INTERFACES)
 	swig -c++ -python -o $@ $<
 
+pip: $(MAIN_SWIG_WRAPPED_INTERFACE)
+	cp $(MODULE_NAME).py $(PIP_FOLDER) & python3.6 setup.py bdist_wheel
+
 %.o: %.cc $(HEADERS)
 	$(CXX) $(FLAGS) $(INCLUDE) -c $< -o $@
 
-.PRECIOUS: $(TARGET) $(OBJECTS)
+.PRECIOUS: $(TARGET) $(OBJECTS) $(WRAPPED_INTERFACES)
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(FLAGS) -shared -o $@ $(OBJECTS) $(LIBDIR) $(ALL_LIBS)
 
-test:
+test: $(TARGET)
 	python3.6 -m unittest -v test
 
 clean:
@@ -48,3 +53,8 @@ clean:
 	-rm -f $(MODULE_NAME)_wrap.h
 	-rm -f $(MODULE_NAME).py
 	-rm -f $(MODULE_NAME).pyc
+	-rm -f $(PIP_FOLDER)/$(MODULE_NAME).py
+	-python3.6 setup.py clean --all
+	-rm -rf *.egg-info
+	-rm -rf dist
+	-rm -rf __pycache__
