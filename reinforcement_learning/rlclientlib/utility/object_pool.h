@@ -51,6 +51,7 @@ namespace reinforcement_learning { namespace utility {
     }
 
     TObject* operator->() { return _obj->val(); }
+    TObject* get() { return _obj->val(); }
   };
 
   template<typename TObject, typename TFactory>

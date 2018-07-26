@@ -6,7 +6,7 @@ namespace reinforcement_learning {
   ranking_response_impl::ranking_response_impl(const std::string& uuid)
   : _uuid {uuid}, _chosen_action_id{0} {}
 
-  bool ranking_response_impl::get_action(const size_t idx, int* action_id, float* prob) const {
+  bool ranking_response_impl::get_action(const size_t idx, size_t* action_id, float* prob) const {
     if ( idx < _ranking.size() ) {
       auto& t = _ranking[idx];
       *action_id = t.first;
@@ -16,7 +16,7 @@ namespace reinforcement_learning {
     return false;
   }
 
-  void ranking_response_impl::push_back(const int action_id, const float prob) {
+  void ranking_response_impl::push_back(const size_t action_id, const float prob) {
     _ranking.emplace_back(action_id, prob);
   }
 

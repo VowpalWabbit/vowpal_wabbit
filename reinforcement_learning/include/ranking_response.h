@@ -17,7 +17,7 @@ namespace reinforcement_learning {
    */
   struct action_prob {
     //! action id
-    int action_id;      
+    size_t action_id;      
     //! probablity associated with the action id
     float probability;  
   };
@@ -75,7 +75,7 @@ namespace reinforcement_learning {
      * @param action_id 
      * @param prob 
      */
-    void push_back(const int action_id, const float prob);
+    void push_back(const size_t action_id, const float prob);
 
     /**
      * @brief Size of the action collection.  

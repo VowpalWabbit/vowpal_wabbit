@@ -105,6 +105,9 @@
     <ClInclude Include="model_mgmt\restapi_data_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="utility\data_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -171,6 +174,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utility\config_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utility\data_buffer.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
