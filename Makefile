@@ -104,7 +104,7 @@ all:	vw library_example java spanning_tree rl_clientlib
 
 export
 
-rl_clientlib:
+rl_clientlib: vw
 	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
 
 rl_clientlib_test: vw rl_clientlib
