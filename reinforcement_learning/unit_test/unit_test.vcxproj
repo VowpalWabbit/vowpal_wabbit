@@ -161,6 +161,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="async_batcher_test.cc" />
+    <ClCompile Include="data_buffer_test.cc" />
     <ClCompile Include="data_callback_test.cc" />
     <ClCompile Include="err_callback_test.cc" />
     <ClCompile Include="concurrent_queue_test.cc" />
