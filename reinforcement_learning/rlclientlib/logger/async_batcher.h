@@ -2,11 +2,11 @@
 
 #include <string>
 #include <thread>
-#include <sstream>
 #include "moving_queue.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
 #include "err_constants.h"
+#include "utility/data_buffer.h"
 
 namespace reinforcement_learning {
   class error_callback_fn;
@@ -42,7 +42,7 @@ namespace reinforcement_learning {
 		moving_queue<std::string> _queue;     //a queue to accumulate batch of events
 		std::thread _background_thread;       //a background thread runs a timer that flushes the queue
 		bool _thread_is_running;
-    std::ostringstream _buffer;           //re-used buffer to prevent re-allocation during sends
+    utility::data_buffer _buffer;           //re-used buffer to prevent re-allocation during sends
 		size_t _send_high_water_mark;
 		size_t _batch_timeout_ms;
 		size_t _queue_max_size;
@@ -70,7 +70,7 @@ namespace reinforcement_learning {
       _queue.push(std::move(evt));
       return error_code::success;
     }
-    RETURN_ERROR_LS(status, background_queue_overflow) << "Dropped event: " << evt;
+    RETURN_ERROR_LS(status, background_queue_overflow) << "Queue size: " << _queue.size() << "Dropped event: " << evt ;
   }
 
   template <typename TSender>
@@ -101,7 +101,7 @@ namespace reinforcement_learning {
 
     // Send size not satisfied.  Shift to larger buffer to satisfy send.
     // Copy is needed but reuse existing tmp buffer to avoid allocation
-    _buffer.seekp(0, _buffer.beg);
+    _buffer.reset();
     _buffer << buf_to_send;
 
     while( remaining > 0 && filled_size < _send_high_water_mark) {
@@ -110,7 +110,6 @@ namespace reinforcement_learning {
       --remaining;
       filled_size += buf_to_send.size();
     }
-
     buf_to_send = std::move(_buffer.str());
     return remaining;
   }

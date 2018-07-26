@@ -71,5 +71,14 @@ namespace reinforcement_learning { namespace utility {
       return atof(it->second.c_str());
     return defval;
   }
-
 }}
+
+std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::config_collection& cc) {
+  os << "{" << std::endl;
+  for ( const auto& v : *( cc._pmap ) ) {
+    os << "  (" << v.first << ", " << v.second << ")" << std::endl;
+  }
+  os << "}" << std::endl;
+  return os;
+}
+
