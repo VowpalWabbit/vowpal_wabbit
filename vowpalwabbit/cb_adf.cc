@@ -383,9 +383,10 @@ base_learner* cb_adf_setup(arguments& arg)
        || ld->rank_all || arg.vm.count("csoaa_rank") == 0)
   {
     if (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0)
+    {
       arg.args.push_back("--csoaa_ldf");
-    if (count(arg.args.begin(), arg.args.end(), "multiline") == 0)
       arg.args.push_back("multiline");
+    }
     if (count(arg.args.begin(), arg.args.end(), "--csoaa_rank") == 0)
       arg.args.push_back("--csoaa_rank");
   }
