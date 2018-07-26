@@ -151,6 +151,8 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                     found_disagreement = duplicate_option->second.as<size_t>() != first_option_occurrence->second.as<size_t>();
                   else if (duplicate_option->second.value().type() == typeid(uint32_t))
                     found_disagreement = duplicate_option->second.as<uint32_t>() != first_option_occurrence->second.as<uint32_t>();
+                  else if (duplicate_option->second.value().type() == typeid(uint64_t))
+                    found_disagreement = duplicate_option->second.as<uint64_t>() != first_option_occurrence->second.as<uint64_t>();
                   else if (duplicate_option->second.value().type() == typeid(bool))
                     found_disagreement = duplicate_option->second.as<bool>() != first_option_occurrence->second.as<bool>();
                   else
