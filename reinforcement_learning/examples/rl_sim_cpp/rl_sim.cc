@@ -9,7 +9,6 @@
 using namespace std;
 
 std::string get_dist_str(const reinforcement_learning::ranking_response& response);
-void curr_time();
 
 int rl_sim::loop() {
   if ( !init() ) return -1;
@@ -50,7 +49,6 @@ int rl_sim::loop() {
     stats.record(p.id(), choosen_action, reward);
 
     if ( stats.count() % 2 == 0 ) {
-      curr_time();
       std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
         << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
     }
@@ -165,20 +163,11 @@ rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)
 std::string get_dist_str(const reinforcement_learning::ranking_response& response) {
   std::string ret;
   ret += "(";
-  for (auto& ap_pair : response) {
+  for (auto ap_pair : response) {
     ret += "[" + to_string(ap_pair.action_id) + ",";
     ret += to_string(ap_pair.probability) + "]";
     ret += " ,";
   }
   ret += ")";
   return ret;
-}
-
-void curr_time(){
-  const auto time_point = std::chrono::system_clock::now();
-  auto ttp = std::chrono::system_clock::to_time_t(time_point);
-  char chr[50];
-  const auto e = ctime_s(chr, 50, &ttp);
-  if ( e ) std::cout << "Time??";
-  else std::cout << chr; 
 }

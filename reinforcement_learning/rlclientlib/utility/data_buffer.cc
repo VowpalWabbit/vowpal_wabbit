@@ -8,7 +8,6 @@ namespace reinforcement_learning { namespace utility {
 
   std::string data_buffer::str() {
     std::string retval(std::begin(_buffer), std::end(_buffer));
-    std::cout << retval << std::endl;
     return retval;
   }
 
