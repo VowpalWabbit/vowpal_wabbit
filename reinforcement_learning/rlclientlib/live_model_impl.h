@@ -62,7 +62,6 @@ namespace reinforcement_learning
     utility::config_collection _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
-    std::ostringstream _buff;
     logger _logger;
     transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
@@ -70,6 +69,7 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::i_model> _model;
     std::unique_ptr<model_management::model_downloader> _model_download;
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
+    utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
   };
 
   template <typename D>
@@ -78,10 +78,10 @@ namespace reinforcement_learning
     api_status::try_clear(status);
 
     // Serialize outcome
-    _buff.seekp(0, std::ostringstream::beg);
-    outcome_event::serialize(_buff, uuid, outcome_data);
-    _buff << std::ends;
-    auto sbuf = _buff.str();
+    utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
+    buffer->reset();
+    outcome_event::serialize(*buffer.get(), uuid, outcome_data);
+    auto sbuf = buffer->str();
 
     // Send the outcome event to the backend
     RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));

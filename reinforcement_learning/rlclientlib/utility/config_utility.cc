@@ -106,9 +106,9 @@ namespace reinforcement_learning { namespace utility { namespace config {
     const std::map<std::string, std::string> from_to = {
       { "ApplicationID"             , name::APP_ID },
       { "ModelBlobUri"              , name::MODEL_BLOB_URI },
-      { "SendHighMaterMark"         , name::SEND_HIGH_WATER_MARK },
-      { "QueueMaxSize"              , name::SEND_QUEUE_MAXSIZE },
-      { "SendBatchIntervalMs"       , name::SEND_BATCH_INTERVAL },
+      { "SendHighMaterMark"         , name::INTERACTION_SEND_HIGH_WATER_MARK },
+      { "QueueMaxSize"              , name::INTERACTION_SEND_QUEUE_MAXSIZE },
+      { "SendBatchIntervalMs"       , name::INTERACTION_SEND_BATCH_INTERVAL_MS },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
       { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS }
     };
