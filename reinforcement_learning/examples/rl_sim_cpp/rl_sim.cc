@@ -9,6 +9,7 @@
 using namespace std;
 
 std::string get_dist_str(const reinforcement_learning::ranking_response& response);
+void curr_time();
 
 int rl_sim::loop() {
   if ( !init() ) return -1;
@@ -48,13 +49,18 @@ int rl_sim::loop() {
 
     stats.record(p.id(), choosen_action, reward);
 
-    std::cout << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
-      << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
+    if ( stats.count() % 2 == 0 ) {
+      curr_time();
+      std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
+        << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
+    }
 
     response.clear();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   }
+
+  return 0;
 }
 
 person& rl_sim::pick_a_random_person() {
@@ -102,6 +108,8 @@ int rl_sim::init_rl() {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
+
+  std::cout << " API Config " << config;
 
   return err::success;
 }
@@ -164,4 +172,13 @@ std::string get_dist_str(const reinforcement_learning::ranking_response& respons
   }
   ret += ")";
   return ret;
+}
+
+void curr_time(){
+  const auto time_point = std::chrono::system_clock::now();
+  auto ttp = std::chrono::system_clock::to_time_t(time_point);
+  char chr[50];
+  const auto e = ctime_s(chr, 50, &ttp);
+  if ( e ) std::cout << "Time??";
+  else std::cout << chr; 
 }
