@@ -31,8 +31,11 @@ namespace reinforcement_learning {
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})" << std::ends;
 	}
 
-  void outcome_event::serialize(ostream& oss, const char* uuid, const char* outcome_data)
-	{
+  void outcome_event::serialize(ostream& oss, const char* uuid, const char* outcome_data) {
     oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})" << std::ends;
-	}
+  }
+
+  void outcome_event::serialize(ostream& oss, const char* uuid, float reward) {
+    oss << R"({"EventId":")" << uuid << R"(","v":)" << reward << R"(})" << std::ends;
+  }
 }

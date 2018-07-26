@@ -157,12 +157,14 @@
     <ClInclude Include="person.h" />
     <ClInclude Include="rl_sim.h" />
     <ClInclude Include="rl_sim_cpp.h" />
+    <ClInclude Include="simulation_stats.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="person.cc" />
     <ClCompile Include="rl_sim.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="simulation_stats.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rlclientlib\rlclientlib.vcxproj">

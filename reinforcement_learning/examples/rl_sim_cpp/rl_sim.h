@@ -32,6 +32,13 @@ public:
    */
   int loop();
 
+  /**
+   * @brief error handler for background errors
+   * _on_error free funciton is registered as the background error handler with the api
+   * on_error is called by _on_error()
+   */
+  void on_error(const reinforcement_learning::api_status& status);
+
   private:
     /**
      * @brief Create a context json string
@@ -107,11 +114,12 @@ public:
      * @return std::string 
      */
     std::string get_action_features();
-  
+
   private:
     boost::program_options::variables_map _options;
     std::unique_ptr<reinforcement_learning::live_model> _rl;
     std::vector<person> _people;
     std::vector<std::string> _actions;
+    bool _run_loop = true;
 };
 

@@ -28,6 +28,7 @@ namespace reinforcement_learning
   using pooled_vw = utility::pooled_object_guard<safe_vw, safe_vw_factory>;
 
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
+  int check_null_or_empty(const char* arg1, api_status* status);
 
   int live_model_impl::init(api_status* status) {
     int scode = _logger.init(status);
@@ -64,6 +65,7 @@ namespace reinforcement_learning
     // Serialize the event
     _buff.seekp(0, std::ostringstream::beg);
     ranking_event::serialize(_buff, uuid, context, response);
+    _buff << std::ends;
     auto sbuf = _buff.str();
 
     // Send the ranking event to the backend
@@ -79,26 +81,15 @@ namespace reinforcement_learning
   }
 
   int live_model_impl::report_outcome(const char* uuid, const char* outcome_data, api_status* status) {
-    // Clear previous errors if any
-    api_status::try_clear(status);
-
     // Check arguments
     RETURN_IF_FAIL(check_null_or_empty(uuid, outcome_data, status));
-
-    // Serialize outcome
-    _buff.clear();
-    _buff.seekp(0, _buff.beg);
-    outcome_event::serialize(_buff,uuid, outcome_data);
-    auto sbuf = _buff.str();
-
-    // Send the outcome event to the backend
-    RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));
-
-    return error_code::success;
+    return report_outcome_internal(uuid, outcome_data, status);
   }
 
   int live_model_impl::report_outcome(const char* uuid, float reward, api_status* status) {
-    return report_outcome(uuid, to_string(reward).c_str(), status);
+    // Check arguments
+    RETURN_IF_FAIL(check_null_or_empty(uuid, status));
+    return report_outcome_internal(uuid, reward, status);
   }
 
   live_model_impl::live_model_impl(
@@ -117,7 +108,7 @@ namespace reinforcement_learning
     _transport(nullptr),
     _model(nullptr),
     _model_download(nullptr),
-    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL, 60 * 5), &_error_cb) { }
+    _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb) { }
 
 int live_model_impl::init_model(api_status* status) {
   const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
@@ -190,4 +181,26 @@ int live_model_impl::init_model_mgmt(api_status* status) {
   this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb));
   return _bg_model_proc.init(_model_download.get(),status);
 }
+
+//helper: check if at least one of the arguments is null or empty
+int check_null_or_empty(const char* arg1, const char* arg2, api_status* status) {
+  if ( !arg1 || !arg2 || strlen(arg1) == 0 || strlen(arg2) == 0 ) {
+    api_status::try_update(status, error_code::invalid_argument,
+      "one of the arguments passed to the ds is null or empty");
+    return error_code::invalid_argument;
+  }
+
+  return error_code::success;
+}
+
+int check_null_or_empty(const char* arg1, api_status* status) {
+  if ( !arg1 || strlen(arg1) == 0) {
+    api_status::try_update(status, error_code::invalid_argument,
+      "one of the arguments passed to the ds is null or empty");
+    return error_code::invalid_argument;
+  }
+
+  return error_code::success;
+}
+
 }
