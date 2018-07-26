@@ -48,10 +48,8 @@ int rl_sim::loop() {
 
     stats.record(p.id(), choosen_action, reward);
 
-    if ( stats.count() % 2 == 0 ) {
-      std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
-        << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
-    }
+    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
+      << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
 
     response.clear();
 
