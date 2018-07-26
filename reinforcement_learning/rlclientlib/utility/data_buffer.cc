@@ -6,7 +6,7 @@
 namespace reinforcement_learning { namespace utility {
   void data_buffer::reset() { _buffer.clear(); }
 
-  std::string data_buffer::str() {
+  std::string data_buffer::str() const{
     std::string retval(std::begin(_buffer), std::end(_buffer));
     return retval;
   }

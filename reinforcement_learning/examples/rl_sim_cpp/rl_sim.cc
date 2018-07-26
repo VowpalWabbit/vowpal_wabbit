@@ -161,7 +161,7 @@ rl_sim::rl_sim(boost::program_options::variables_map vm) :_options(std::move(vm)
 std::string get_dist_str(const reinforcement_learning::ranking_response& response) {
   std::string ret;
   ret += "(";
-  for (auto ap_pair : response) {
+  for (const auto& ap_pair : response) {
     ret += "[" + to_string(ap_pair.action_id) + ",";
     ret += to_string(ap_pair.probability) + "]";
     ret += " ,";

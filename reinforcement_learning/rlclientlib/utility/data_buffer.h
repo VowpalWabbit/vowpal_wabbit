@@ -7,7 +7,7 @@ namespace reinforcement_learning { namespace utility {
   public:
 
     void reset();
-    std::string str();
+    std::string str() const;
     void remove_last();
 
     data_buffer& operator<<(const std::string& cs);
