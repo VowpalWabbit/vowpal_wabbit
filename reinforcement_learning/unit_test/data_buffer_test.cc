@@ -43,3 +43,20 @@ BOOST_AUTO_TEST_CASE(remove_last_from_nonempty_data_buffer) {
 
   BOOST_CHECK_EQUAL(buffer.str(), "test");
 }
+
+BOOST_AUTO_TEST_CASE(empty_data_buffer_reset) {
+  data_buffer buffer;
+
+  buffer.reset();
+
+  BOOST_CHECK_EQUAL(buffer.str(), "");
+}
+
+BOOST_AUTO_TEST_CASE(nonempty_data_buffer_reset) {
+  data_buffer buffer;
+
+  buffer << "test";
+  buffer.reset();
+
+  BOOST_CHECK_EQUAL(buffer.str(), "");
+}
