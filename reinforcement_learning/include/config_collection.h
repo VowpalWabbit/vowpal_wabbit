@@ -9,6 +9,12 @@
 #include <string>
 #include <unordered_map>
 
+namespace reinforcement_learning {namespace utility {
+  class config_collection;
+}}
+
+std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::config_collection&);
+
 namespace reinforcement_learning { namespace utility {
   /**
    * @brief Configuration class to initialize the API
@@ -38,6 +44,8 @@ namespace reinforcement_learning { namespace utility {
     bool get_bool(const char* str, bool defval) const;
     //! Gets the value as a float.  If the value does not exist or if there is an error, it returns defval
     float get_float(const char* name, float defval) const; 
+    //! friend Left shift operator
+    friend std::ostream& ::operator<<(std::ostream& os, const config_collection&);
 
     private:
     using map_type = std::unordered_map<std::string, std::string>;  //! Collection type that holds the (name,value) pairs 

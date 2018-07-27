@@ -34,7 +34,7 @@ char const * ranking_response::get_uuid() const {
     _pimpl->_uuid = uuid;
 	}
 
-  void ranking_response::push_back(const int action_id, const float prob) {
+  void ranking_response::push_back(const size_t action_id, const float prob) {
     _pimpl->push_back(action_id, prob);
   }
 
@@ -80,7 +80,7 @@ ranking_response::ranking_response(ranking_response&& tmp) noexcept {
   }
 
   action_prob ranking_response::ranking_iterator::operator*() const {
-    int action_id;
+    size_t action_id;
     float prob;
     _p_resp_impl->get_action(_idx, &action_id, &prob);
     return action_prob { action_id, prob };

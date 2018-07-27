@@ -49,13 +49,15 @@ int rl_sim::loop() {
 
     stats.record(p.id(), choosen_action, reward);
 
-    std::cout << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
+    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
       << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
 
     response.clear();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   }
+
+  return 0;
 }
 
 person& rl_sim::pick_a_random_person() {
@@ -103,6 +105,8 @@ int rl_sim::init_rl() {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
+
+  std::cout << " API Config " << config;
 
   return err::success;
 }

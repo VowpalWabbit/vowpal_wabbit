@@ -16,9 +16,12 @@ namespace reinforcement_learning {  namespace name {
       const char *const  OBSERVATION_EH_NAME     = "observation.eventhub.name";
       const char *const  OBSERVATION_EH_KEY_NAME = "observation.eventhub.keyname";
       const char *const  OBSERVATION_EH_KEY      = "observation.eventhub.key";
-      const char *const  SEND_HIGH_WATER_MARK    = "eh.send.highwatermark";
-      const char *const  SEND_QUEUE_MAXSIZE      = "eh.send.queue.maxsize";
-      const char *const  SEND_BATCH_INTERVAL     = "eh.send.batchintervalms";
+      const char *const  INTERACTION_SEND_HIGH_WATER_MARK     = "interaction.send.highwatermark";
+      const char *const  INTERACTION_SEND_QUEUE_MAXSIZE       = "interaction.send.queue.maxsize";
+      const char *const  INTERACTION_SEND_BATCH_INTERVAL_MS   = "interaction.send.batchintervalms";
+      const char *const  OBSERVATION_SEND_HIGH_WATER_MARK     = "observation.send.highwatermark";
+      const char *const  OBSERVATION_SEND_QUEUE_MAXSIZE       = "observation.send.queue.maxsize";
+      const char *const  OBSERVATION_SEND_BATCH_INTERVAL_MS   = "observation.send.batchintervalms";
       const char *const  EH_TEST                 = "eventhub.mock";
 }}
 

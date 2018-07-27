@@ -1,11 +1,13 @@
 #include "ranking_event.h"
 #include "ranking_response.h"
-#include <ostream>
+#include "utility/data_buffer.h"
 
 using namespace std;
 
 namespace reinforcement_learning {
-  void ranking_event::serialize(ostream& oss, const char* uuid, const char* context,
+  namespace u = utility;
+
+  void ranking_event::serialize(u::data_buffer& oss, const char* uuid, const char* context,
     ranking_response& resp) {
 
     //add version and eventId
@@ -16,7 +18,7 @@ namespace reinforcement_learning {
     if ( resp.size() > 0 ) {
       for ( auto const &r : resp )
         oss << r.action_id + 1 << ",";
-      oss.seekp(-1, oss.cur);//remove last
+      oss.remove_last();//remove trailing ,
     }
 
     //add probabilities
@@ -24,18 +26,18 @@ namespace reinforcement_learning {
     if ( resp.size() > 0 ) {
       for ( auto const &r : resp )
         oss << r.probability << ",";
-      oss.seekp(-1, oss.cur);//remove last
+      oss.remove_last();//remove trailing ,
     }
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})" << std::ends;
+    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})";
 	}
 
-  void outcome_event::serialize(ostream& oss, const char* uuid, const char* outcome_data) {
-    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})" << std::ends;
+  void outcome_event::serialize(u::data_buffer& oss, const char* uuid, const char* outcome_data) {
+    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})";
   }
 
-  void outcome_event::serialize(ostream& oss, const char* uuid, float reward) {
-    oss << R"({"EventId":")" << uuid << R"(","v":)" << reward << R"(})" << std::ends;
+  void outcome_event::serialize(u::data_buffer& oss, const char* uuid, float reward) {
+    oss << R"({"EventId":")" << uuid << R"(","v":)" << reward << R"(})";
   }
 }
