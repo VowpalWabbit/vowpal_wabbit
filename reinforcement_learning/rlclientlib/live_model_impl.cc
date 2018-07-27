@@ -103,7 +103,7 @@ namespace reinforcement_learning {
       _model(nullptr),
       _model_download(nullptr),
       _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
-      _buffer_pool(new u::buffer_factory()) { }
+      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) { }
 
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);

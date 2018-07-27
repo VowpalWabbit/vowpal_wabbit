@@ -60,3 +60,12 @@ BOOST_AUTO_TEST_CASE(nonempty_data_buffer_reset) {
 
   BOOST_CHECK_EQUAL(buffer.str(), "");
 }
+
+BOOST_AUTO_TEST_CASE(translation_data_buffer_reset) {
+  data_buffer buffer(translate_func('s', 'n'));
+
+  buffer << "test";
+
+  BOOST_CHECK_EQUAL(buffer.str(), "tent");
+}
+
