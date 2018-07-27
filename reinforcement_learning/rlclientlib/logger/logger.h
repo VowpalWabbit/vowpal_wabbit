@@ -23,7 +23,7 @@ namespace reinforcement_learning {
 		//log to the outcome eventhub (direct sending, no batching)
 		int append_outcome(std::string&, api_status* = nullptr);
 
-	  private:
+	private:
     eventhub_client _ranking_client, _outcome_client; //clients to send data to the eventhub
 		async_batcher<eventhub_client> _ranking_batcher;    //handle batching for the data sent to the eventhub client
     async_batcher<eventhub_client> _outcome_batcher;    //handle batching for the data sent to the eventhub client
