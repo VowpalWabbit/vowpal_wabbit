@@ -75,7 +75,7 @@ void test_loop::validity_loop(unsigned int thread_id)
   r::api_status status;
   int step = examples / 100;
   for (unsigned int i = 0; i < examples; ++i) {
-    if (i % step == 0) std::cout << (i / step) << "%" << std::endl;
+    if (step > 0 && i % step == 0) std::cout << (i / step) << "%" << std::endl;
 
     if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
