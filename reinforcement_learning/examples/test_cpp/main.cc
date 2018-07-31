@@ -18,7 +18,6 @@ po::variables_map process_cmd_line(const int argc, char** argv) {
     ("examples,n", po::value<unsigned int>()->default_value(10), "Number of examples per thread")
     ("actions,a", po::value<unsigned int>()->default_value(2), "Number of actions")
     ("experiment_name,e", po::value<std::string>()->required(), "experiment name")
-    ("log_path,l", po::value<std::string>()->required(), "log file path")
     ("perf,p", "if it is perf test (otherwise - validity)")
     ("float_reward,f", "if reward is float (otherwise - json)")
     ;

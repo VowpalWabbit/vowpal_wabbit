@@ -19,7 +19,7 @@ test_loop::test_loop(const boost::program_options::variables_map& vm)
   , is_perf(vm.count("perf") > 0)
 {
   for (unsigned int i = 0; i < threads; ++i) {
-    loggers.push_back(std::ofstream(vm["log_path"].as<std::string>() + "." + std::to_string(i), std::ofstream::out));
+    loggers.push_back(std::ofstream(vm["experiment_name"].as<std::string>() + "." + std::to_string(i), std::ofstream::out));
   }
 }
 
@@ -73,8 +73,10 @@ void test_loop::validity_loop(unsigned int thread_id)
 {
   r::ranking_response response;
   r::api_status status;
-
+  int step = examples / 100;
   for (unsigned int i = 0; i < examples; ++i) {
+    if (i % step == 0) std::cout << (i / step) << "%" << std::endl;
+
     if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
