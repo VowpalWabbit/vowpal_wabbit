@@ -21,10 +21,7 @@
     <ClCompile Include="test_loop.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="perf_logger.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="validity_logger.cc">
+    <ClCompile Include="test_data_provider.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,13 +29,7 @@
     <ClInclude Include="test_loop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="test_logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="perf_logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="validity_logger.h">
+    <ClInclude Include="test_data_provider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

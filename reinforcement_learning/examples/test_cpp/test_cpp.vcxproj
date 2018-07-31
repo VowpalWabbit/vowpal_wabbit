@@ -120,15 +120,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cc" />
-    <ClCompile Include="perf_logger.cc" />
+    <ClCompile Include="test_data_provider.cc" />
     <ClCompile Include="test_loop.cc" />
-    <ClCompile Include="validity_logger.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="perf_logger.h" />
-    <ClInclude Include="test_logger.h" />
+    <ClInclude Include="test_data_provider.h" />
     <ClInclude Include="test_loop.h" />
-    <ClInclude Include="validity_logger.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rlclientlib\rlclientlib.vcxproj">
