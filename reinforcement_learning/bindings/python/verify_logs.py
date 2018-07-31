@@ -9,15 +9,13 @@ def process_cmd_line(args):
     parser.add_argument('--log_file', help='log file that was replayed', required=True)
     return parser.parse_args(args)
 
-def main(args):
-    options = process_cmd_line(args)
-
+def compare(replay_log, remote_log):
     # Due to replaying logs on the same loop after the EventHub buffer has cleared, EventIds can be duplicated.
     # Use lists to deal with this instead of assuming EventId is unique.
     remote_logged_events = defaultdict(list)
 
     # Preprocess and save the events from the remote log into a dictionary for easy lookup
-    with open(options.remote_log_file) as fp:
+    with open(remote_log) as fp:
         for count, line in enumerate(fp):
             current_example = json.loads(line)
             remote_logged_events[current_example["EventId"]].append(current_example)
@@ -25,7 +23,7 @@ def main(args):
     success = 0
     fail = 0
     # Iterate over each of the events that should have been sent to the server and verify they were received.
-    with open(options.log_file) as fp:
+    with open(replay_log) as fp:
         for count, line in enumerate(fp):
             current_example = json.loads(line)
             current_event_id = current_example["EventId"]
@@ -55,6 +53,12 @@ def main(args):
 
     print("Pass: " + str(success))
     print("Fail: " + str(fail))
+
+    return (fail == 0)
+
+def main(args):
+    options = process_cmd_line(args)
+    compare(options.log_file, options.remote_log_file)
 
 
 if __name__ == "__main__":
