@@ -96,7 +96,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     const char* json_names[] = {
       "ApplicationID",
       "ModelBlobUri",
-      "InitialExplorationEpsilon"
+      "InitialExplorationEpsilon",
       "ModelRefreshIntervalMs",
       "SendHighMaterMark",
       "QueueMaxSize",
