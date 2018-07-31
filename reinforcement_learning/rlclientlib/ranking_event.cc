@@ -8,7 +8,7 @@ namespace reinforcement_learning {
   namespace u = utility;
 
   void ranking_event::serialize(u::data_buffer& oss, const char* uuid, const char* context,
-    ranking_response& resp) {
+    const ranking_response& resp) {
 
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << uuid;
@@ -34,7 +34,7 @@ namespace reinforcement_learning {
 	}
 
   void outcome_event::serialize(u::data_buffer& oss, const char* uuid, const char* outcome_data) {
-    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})";
+    oss << R"({"EventId":")" << uuid << R"(","v":)" << outcome_data << R"(})";
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* uuid, float reward) {
