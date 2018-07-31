@@ -17,8 +17,8 @@ test_data_provider::test_data_provider(const std::string& experiment_name, unsig
     for (unsigned int i = 0; i < examples; ++i) {
       uuids[t][i] = create_uuid(experiment_name, t, i);
       contexts[t][i] = create_context_json(create_features(t, i), action_features);
-      rewards[t][i] = create_json_reward(t, i);
       reward_flag[t][i] = (i % 10 == 0);
+      rewards[t][i] = create_json_reward(t, i);
     }
   }
 }
