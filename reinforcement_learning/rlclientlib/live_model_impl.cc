@@ -144,12 +144,12 @@ namespace reinforcement_learning {
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(top_action_id, pdf[top_action_id]);
+    response.push_back(choosen_action_id, pdf[choosen_action_id]);
     // Setup response with pdf from prediction and choosen action
     for (size_t idx = 0; idx < pdf.size(); ++idx)
-      if (top_action_id != idx)
+      if (choosen_action_id != idx)
         response.push_back(idx, pdf[idx]);
-    response.set_choosen_action_id(top_action_id);
+    response.set_choosen_action_id(choosen_action_id);
     return error_code::success;
   }
 
