@@ -95,7 +95,6 @@ void test_loop::validity_loop(unsigned int thread_id)
     }
 
     test_inputs.log(thread_id, i, response, loggers[thread_id]);
-    response.clear();
   }
 }
 
@@ -106,8 +105,11 @@ void test_loop::perf_loop(unsigned int thread_id)
 
   std::cout << "Perf test is started..." << std::endl;
   std::cout << "Choose_rank..." << std::endl;
+  int step = examples / 100;
   const auto choose_rank_start = std::chrono::high_resolution_clock::now();
   for (unsigned int i = 0; i < examples; ++i) {
+    if (step > 0 && i % step == 0) std::cout << (i / step) << "%" << std::endl;
+
     if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
@@ -122,7 +124,6 @@ void test_loop::perf_loop(unsigned int thread_id)
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
-    response.clear();
   }
   const auto report_outcome_end = std::chrono::high_resolution_clock::now();
 
