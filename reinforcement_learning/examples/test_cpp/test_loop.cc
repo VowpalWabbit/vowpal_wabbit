@@ -101,17 +101,17 @@ void test_loop::perf_loop(unsigned int thread_id)
 
   std::cout << "Perf test is started..." << std::endl;
   std::cout << "Choose_rank..." << std::endl;
-  std::chrono::steady_clock::time_point choose_rank_start = std::chrono::steady_clock::now();
+  const auto choose_rank_start = std::chrono::high_resolution_clock::now();
   for (unsigned int i = 0; i < examples; ++i) {
     if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
   }
-  std::chrono::steady_clock::time_point choose_rank_end = std::chrono::steady_clock::now();
+  const auto choose_rank_end = std::chrono::high_resolution_clock::now();
 
   std::cout << "Report_outcome..." << std::endl;
-  std::chrono::steady_clock::time_point report_outcome_start = std::chrono::steady_clock::now();
+  const auto report_outcome_start = std::chrono::high_resolution_clock::now();
   for (unsigned int i = 0; i < examples; ++i) {
     if (test_inputs.report_outcome(rl.get(), thread_id, i, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
@@ -119,7 +119,7 @@ void test_loop::perf_loop(unsigned int thread_id)
     }
     response.clear();
   }
-  std::chrono::steady_clock::time_point report_outcome_end = std::chrono::steady_clock::now();
+  const auto report_outcome_end = std::chrono::high_resolution_clock::now();
 
   loggers[thread_id] << thread_id << ": Choose_rank: " << (std::chrono::duration_cast<std::chrono::microseconds>(choose_rank_end - choose_rank_start).count()) / examples << std::endl;
   loggers[thread_id] << thread_id << ": Report outcome: " << (std::chrono::duration_cast<std::chrono::microseconds>(report_outcome_end - report_outcome_start).count()) / examples << std::endl;
