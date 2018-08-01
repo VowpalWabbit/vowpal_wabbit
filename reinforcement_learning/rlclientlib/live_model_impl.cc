@@ -43,6 +43,7 @@ namespace reinforcement_learning {
 
   int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response,
                                    api_status* status) {
+    response.clear();
     //clear previous errors if any
     api_status::try_clear(status);
     //check arguments
