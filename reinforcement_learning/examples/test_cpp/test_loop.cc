@@ -14,12 +14,13 @@ namespace po = boost::program_options;
 test_loop::test_loop(const boost::program_options::variables_map& vm) 
   : threads(vm["threads"].as<unsigned int>())
   , examples(vm["examples"].as<unsigned int>())
+  , experiment_name(generate_experiment_name(vm["experiment_name"].as<std::string>(), threads, examples, vm["actions"].as<unsigned int>()))
   , json_config(vm["json_config"].as<std::string>())
-  , test_inputs(vm["experiment_name"].as<std::string>(), threads, examples, vm["actions"].as<unsigned int>(), vm.count("float_reward") > 0)
+  , test_inputs(experiment_name, threads, examples, vm["actions"].as<unsigned int>(), vm.count("float_reward") > 0)
   , is_perf(vm.count("perf") > 0)
 {
   for (unsigned int i = 0; i < threads; ++i) {
-    loggers.push_back(std::ofstream(vm["experiment_name"].as<std::string>() + "." + std::to_string(i), std::ofstream::out));
+    loggers.push_back(std::ofstream(experiment_name + "." + std::to_string(i), std::ofstream::out));
   }
 }
 
@@ -57,6 +58,10 @@ int test_loop::load_file(const std::string& file_name, std::string& config_str) 
   buffer << fs.rdbuf();
   config_str = buffer.str();
   return err::success;
+}
+
+std::string test_loop::generate_experiment_name(const std::string& experiment_name_base, unsigned int threads, unsigned int examples, unsigned int actions) {
+  return experiment_name_base + "-t" + std::to_string(threads) + "-n" + std::to_string(examples) + "-a" + std::to_string(actions);
 }
 
 void test_loop::run() {
@@ -121,7 +126,10 @@ void test_loop::perf_loop(unsigned int thread_id)
   }
   const auto report_outcome_end = std::chrono::high_resolution_clock::now();
 
-  loggers[thread_id] << thread_id << ": Choose_rank: " << (std::chrono::duration_cast<std::chrono::microseconds>(choose_rank_end - choose_rank_start).count()) / examples << std::endl;
-  loggers[thread_id] << thread_id << ": Report outcome: " << (std::chrono::duration_cast<std::chrono::microseconds>(report_outcome_end - report_outcome_start).count()) / examples << std::endl;
+  const auto choose_rank_perf = (std::chrono::duration_cast<std::chrono::microseconds>(choose_rank_end - choose_rank_start).count()) / examples;
+  const auto report_outcome_perf = (std::chrono::duration_cast<std::chrono::microseconds>(report_outcome_end - report_outcome_start).count()) / examples;
+  
+  loggers[thread_id] << thread_id << ": Choose_rank: " << choose_rank_perf << std::endl;
+  loggers[thread_id] << thread_id << ": Report outcome: " << report_outcome_perf << std::endl;
 }
 
