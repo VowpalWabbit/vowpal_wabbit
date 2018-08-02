@@ -5,18 +5,17 @@
 
 #include <sstream>
 
-test_data_provider::test_data_provider(const std::string& experiment_name, size_t threads, size_t examples, size_t actions, bool _is_float_reward)
+test_data_provider::test_data_provider(const std::string& experiment_name, size_t threads, size_t examples, size_t features, size_t actions, bool _is_float_reward)
   : uuids(threads, std::vector<std::string>(examples))
   , contexts(threads, std::vector<std::string>(examples))
   , rewards(threads, std::vector<std::string>(examples))
   , reward_flag(threads, std::vector<bool>(examples))
   , is_float_reward(_is_float_reward)
 {
-  const std::string action_features = get_action_features(actions);
   for (size_t t = 0; t < threads; ++t) {
     for (size_t i = 0; i < examples; ++i) {
       uuids[t][i] = create_uuid(experiment_name, t, i);
-      contexts[t][i] = create_context_json(create_features(t, i), action_features);
+      contexts[t][i] = create_context_json(create_features(features, t, i), create_action_features(actions, features, i));
       reward_flag[t][i] = (i % 10 == 0);
       rewards[t][i] = create_json_reward(t, i);
     }
@@ -29,23 +28,32 @@ std::string test_data_provider::create_uuid(const std::string& experiment_name, 
   return oss.str();
 }
 
-std::string test_data_provider::get_action_features(size_t count) const {
+std::string test_data_provider::create_action_features(size_t actions, size_t features, size_t example_id) const {
   std::ostringstream oss;
   oss << R"("_multi": [ )";
-  for (size_t i = 0; i + 1 < count; ++i) {
-    oss << R"({ "TAction":{"topic":"topic_)" << i << R"("} }, )";
+  for (size_t a = 0; a < actions; ++a) {
+	  oss << R"({ "TAction":{)";
+	  for (size_t f = 0; f < features; ++f) {
+      oss << R"("a_f_)" << f << R"(":"value_)" << (a + f + example_id) << R"(")";
+      if (f + 1 < features) oss << ",";
+	  }
+    oss << "}}";
+	  if (a + 1 < actions) oss << ",";
   }
-  oss << R"({ "TAction":{"topic":"topic_)" << (count - 1) << R"("} } ])";
+  oss << R"(])";
   return oss.str();
 }
 
-std::string test_data_provider::create_features(size_t thread_id, size_t example_id) const {
+std::string test_data_provider::create_features(size_t features, size_t thread_id, size_t example_id) const {
   std::ostringstream oss;
   oss << R"("GUser":{)";
-  oss << R"("f_int":)" << thread_id << R"(,)";
+  oss << R"("f_int":)" << example_id << R"(,)";
   oss << R"("f_float":)" << float(example_id) + 0.5 << R"(,)";
-  oss << R"("f_string":")" << "s_" << thread_id;
-  oss << R"("})";
+  for (size_t f = 0; f < features; ++f) {
+    oss << R"("f_str_)" << f << R"(":"value_)" << (f + thread_id + example_id) << R"(")";
+    if (f + 1 < features) oss << ",";
+  }
+  oss << R"(})";
   return oss.str();
 }
 

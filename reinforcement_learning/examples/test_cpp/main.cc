@@ -14,9 +14,10 @@ po::variables_map process_cmd_line(const int argc, char** argv) {
     ("help", "produce help message")
     ("json_config,j", po::value<std::string>()->
       default_value("client.json"), "JSON file with config information for hosted RL loop")
-    ("threads,t", po::value<unsigned int>()->default_value(1), "Number of threads")
-    ("examples,n", po::value<unsigned int>()->default_value(10), "Number of examples per thread")
-    ("actions,a", po::value<unsigned int>()->default_value(2), "Number of actions")
+    ("threads,t", po::value<size_t>()->default_value(1), "Number of threads")
+    ("examples,n", po::value<size_t>()->default_value(10), "Number of examples per thread")
+	  ("features,x", po::value<size_t>()->default_value(10), "Features count")
+    ("actions,a", po::value<size_t>()->default_value(2), "Number of actions")
     ("experiment_name,e", po::value<std::string>()->required(), "experiment name")
     ("perf,p", "if it is perf test (otherwise - validity)")
     ("float_reward,f", "if reward is float (otherwise - json)")
