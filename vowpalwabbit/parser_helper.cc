@@ -34,6 +34,30 @@ std::vector<std::string> opts_to_args(const std::vector<boost::program_options::
   return args;
 }
 
+// Performs unique operation over collection without requiring the collection to be sorted first.
+// Returns pointer to first element after unique elements to erase from until end of collection.
+// Original ordering of elements is preserved.
+template <typename ForwardIterator>
+ForwardIterator stable_unique(ForwardIterator begin, ForwardIterator end)
+{
+  using value_t = decltype(typename std::iterator_traits<ForwardIterator>::value_type());
+
+  set<value_t> unique_set;
+
+  auto current_head = begin;
+  for (auto current_check = begin; current_check != end; current_check++)
+  {
+    if (unique_set.find(*current_check) == unique_set.end())
+    {
+      unique_set.insert(*current_check);
+      *current_head = *current_check;
+      current_head++;
+    }
+  }
+
+  return current_head;
+}
+
 // blackbox wrapping of boost program options to ignore duplicate specification of options allowed only ones, but specified multiple times
 // Behavior: only the first occurence is kept
 // Strategy: add one argument after each other until we trigger multiple_occurrences exception. Special care has to be taken of arguments to options.
@@ -59,16 +83,8 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
               if (it.second.value().type() == typeid(vector<string>))
                 {
                   auto& values = it.second.as<vector<string>>();
-                  set<string> unique_set;
-                  auto current_head = values.begin();
-                  for (auto current_check = values.begin(); current_check != values.end(); current_check++)
-                    if (unique_set.find(*current_check) == unique_set.end())
-                      {
-                        unique_set.insert(*current_check);
-                        *current_head = *current_check;
-                        current_head++;
-                      }
-                  values.erase(current_head, values.end());
+                  auto end = stable_unique(values.begin(), values.end());
+                  values.erase(end, values.end());
                 }
             }
 
