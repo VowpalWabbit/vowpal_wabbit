@@ -40,7 +40,7 @@ std::vector<std::string> opts_to_args(const std::vector<boost::program_options::
 template <typename ForwardIterator>
 ForwardIterator stable_unique(ForwardIterator begin, ForwardIterator end)
 {
-  using value_t = decltype(typename std::iterator_traits<ForwardIterator>::value_type());
+  using value_t = typename std::iterator_traits<ForwardIterator>::value_type;
 
   set<value_t> unique_set;
 
