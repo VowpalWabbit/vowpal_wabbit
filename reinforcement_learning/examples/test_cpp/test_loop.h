@@ -15,14 +15,14 @@ private:
   int load_config_from_json(const std::string& file_name,
     reinforcement_learning::utility::config_collection& cfgcoll,
     reinforcement_learning::api_status* status) const;
-  std::string generate_experiment_name(const std::string& experiment_name_base, unsigned int threads, unsigned int examples, unsigned int actions);
+  std::string generate_experiment_name(const std::string& experiment_name_base, size_t threads, size_t examples, size_t actions);
 
-  void validity_loop(unsigned int thread_id);
-  void perf_loop(unsigned int thread_id);
+  void validity_loop(size_t thread_id);
+  void perf_loop(size_t thread_id);
 
 private:
-  const unsigned int threads;
-  const unsigned int examples;
+  const size_t threads;
+  const size_t examples;
   const std::string experiment_name;
   const std::string json_config;
   test_data_provider test_inputs;
