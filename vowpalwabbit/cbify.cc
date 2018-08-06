@@ -656,11 +656,10 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
 	else
 	{
 		data.mc_label = ec.l.multi;
-		/*if (data.ws_iter < data.ws_period)
+		if (data.ws_iter < data.ws_period)
 			ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
 		else if (data.inter_iter < data.inter_period)
 			ec.l.multi.label = corrupt_action(data, data.mc_label.label, INTERACTION);
-		*/
 	}
 
 	// Warm start phase

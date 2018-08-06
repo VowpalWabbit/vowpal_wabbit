@@ -13,6 +13,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 from matplotlib.font_manager import FontProperties
+from collections import Counter
 
 
 class model:
@@ -250,9 +251,9 @@ def problem_text(name_problem):
 
 def plot_cdf(alg_name, errs):
 
-	print alg_name
-	print errs
-	print len(errs)
+	#print alg_name
+	#print errs
+	#print len(errs)
 
 	col, sty = alg_color_style(alg_name)
 
@@ -301,6 +302,21 @@ def plot_all_cdfs(alg_results, mod):
 	plt.savefig(mod.problemdir+'cdf_nolegend.pdf')
 	save_legend(mod, indices)
 	plt.clf()
+
+def plot_all_lrs(lrs, mod):
+	alg_names = lrs.keys()
+
+	for i in range(len(alg_names)):
+		pylab.figure(figsize=(8,6))
+		lrs_alg = lrs[alg_names[i]]
+		counts = Counter(lrs_alg)
+		names = list(counts.keys())
+		names_sorted = sorted(names)
+		values = [counts[n] for n in names_sorted]
+		plt.barh(range(len(names_sorted)),values)
+		plt.yticks(range(len(names_sorted)),names_sorted)
+		plt.savefig(mod.problemdir+alg_str_compatible(alg_names[i])+'_lr.pdf')
+		plt.clf()
 
 
 def plot_all_pair_comp(alg_results, sizes, mod):
@@ -367,6 +383,7 @@ def get_maj_error(maj_error_table, name_dataset):
 
 def get_unnormalized_results(result_table):
 	new_unnormalized_results = {}
+	new_lr = {}
 	new_size = 0
 
 	i = 0
@@ -377,9 +394,10 @@ def get_unnormalized_results(result_table):
 		if row['bandit_size'] == new_size:
 			alg_name = (row['warm_start_type'], row['choices_lambda'], row['no_warm_start_update'], row['no_interaction_update'], row['validation_method'])
 			new_unnormalized_results[alg_name] = row['avg_error']
+			new_lr[alg_name] = row['learning_rate']
 		i += 1
 
-	return new_size, new_unnormalized_results
+	return new_size, new_unnormalized_results, new_lr
 
 def update_result_dict(results_dict, new_result):
 	print results_dict
@@ -393,10 +411,10 @@ def plot_all(mod, all_results):
 	#all_results = all_results[all_results['corrupt_prob_supervised']!=0.0]
 
 	grouped_by_problem = all_results.groupby(['corrupt_type_supervised',
-						'corrupt_prob_supervised',
-						'corrupt_type_bandit',
-						'corrupt_prob_bandit',
-						'bandit_supervised_size_ratio'])
+											  'corrupt_prob_supervised',
+											  'corrupt_type_bandit',
+											  'corrupt_prob_bandit',
+											  'bandit_supervised_size_ratio'])
 
 	#then group by dataset and warm_start size (corresponding to each point in cdf)
 	for name_problem, group_problem in grouped_by_problem:
@@ -405,7 +423,8 @@ def plot_all(mod, all_results):
 		sizes = None
 		mod.name_problem = name_problem
 
-		grouped_by_dataset = group_problem.groupby(['dataset','warm_start'])
+		grouped_by_dataset = group_problem.groupby(['dataset',
+													'warm_start'])
 		#then select unique combinations of (no_supervised, no_bandit, choices_lambda)
 		#e.g. (True, True, 1), (True, False, 1), (False, True, 1), (False, False, 2)
 		#(False, False, 8), and compute a normalized score
@@ -413,8 +432,13 @@ def plot_all(mod, all_results):
 		for name_dataset, group_dataset in grouped_by_dataset:
 			result_table = group_dataset
 
-			grouped_by_algorithm = group_dataset.groupby(['warm_start_type', 'choices_lambda', 'no_warm_start_update', 'no_interaction_update',
-			'validation_method'])
+		 	group_dataset = group_dataset.reset_index(drop=True)
+
+			grouped_by_algorithm = group_dataset.groupby(['warm_start_type',
+			                                              'choices_lambda',
+														  'no_warm_start_update',
+														  'no_interaction_update',
+														  'validation_method'])
 
 			mod.name_dataset = name_dataset
 
@@ -423,11 +447,18 @@ def plot_all(mod, all_results):
 
 			#In the future this should be changed if we run multiple folds: we
 			#should average among folds before choosing the min
-			result_table = grouped_by_algorithm.min()
-			result_table = result_table.reset_index()
+			#result_table = grouped_by_algorithm.min()
+			#result_table = result_table.reset_index()
 
+			#print grouped_by_algorithm
+			#grouped_by_algorithm.describe()
+
+			idx = grouped_by_algorithm.apply(lambda df:df["avg_error"].idxmin())
+			result_table = group_dataset.ix[idx, :]
+			#print idx
 			#print result_table
-
+			#print group_dataset
+			#raw_input('..')
 
 			#group_dataset.groupby(['choices_lambda','no_supervised',														'no_bandit'])
 				#print alg_results
@@ -436,8 +467,9 @@ def plot_all(mod, all_results):
 			#in general (including the first time) - record the error rates of all algorithms
 			#print result_table
 
-			new_size, new_unnormalized_result = get_unnormalized_results(result_table)
+			new_size, new_unnormalized_result, new_lr = get_unnormalized_results(result_table)
 			new_unnormalized_result[(0, 0, False, False, 1)] = get_maj_error(mod.maj_error_table, mod.name_dataset)
+			new_lr[(0, 0, False, False, 1)] = 0.0
 			new_normalized_result = normalize_score(new_unnormalized_result, mod)
 
 			#first time - generate names of algorithms considered
@@ -445,9 +477,11 @@ def plot_all(mod, all_results):
 				sizes = []
 				unnormalized_results = dict([(k,[]) for k in new_unnormalized_result.keys()])
 				normalized_results = dict([(k,[]) for k in new_unnormalized_result.keys()])
+				lrs = dict([(k,[]) for k in new_unnormalized_result.keys()])
 
 			update_result_dict(unnormalized_results, new_unnormalized_result)
 			update_result_dict(normalized_results, new_normalized_result)
+			update_result_dict(lrs, new_lr)
 			sizes.append(new_size)
 
 			#print 'sizes:'
@@ -467,6 +501,8 @@ def plot_all(mod, all_results):
 			plot_all_pair_comp(unnormalized_results, sizes, mod)
 		if mod.cdf_on is True:
 			plot_all_cdfs(normalized_results, mod)
+
+		plot_all_lrs(lrs, mod)
 
 def save_to_hdf(mod):
 	print 'saving to hdf..'
@@ -549,12 +585,16 @@ if __name__ == '__main__':
 	#print mod.best_error_table[mod.best_error_table['dataset'] == 'ds_160_5.vw.gz']
 	#raw_input(' ')
 
+	#print all_results
+	#raw_input('..')
+
 	all_results = all_results[all_results['choices_lambda'] != 0]
 
 	#ignore the no update row:
 	all_results = all_results[(all_results['no_warm_start_update'] == False) | (all_results['no_interaction_update'] == False)]
 	#ignore the choice_lambda = 4 row
 	all_results = all_results[(all_results['choices_lambda'] != 4)]
+
 
 
 

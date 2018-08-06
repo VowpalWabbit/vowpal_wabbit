@@ -13,36 +13,51 @@ class model:
 	def __init__(self):
 		# Setting up argument-independent learning parameters in the constructor
 		self.baselines_on = True
-		self.algs_on = True
-		self.optimal_on = True
-		self.majority_on = True
+		self.algs_on = False
+		self.optimal_on = False
+		self.majority_on = False
+
+		self.ws_gt_on = True
+		self.inter_gt_on = False
 
 		self.num_checkpoints = 200
 
 		# use fractions instead of absolute numbers
 		self.ws_multipliers = [pow(2,i) for i in range(4)]
+		#self.ws_multipliers = [pow(2,i) for i in range(2)]
 
 		self.choices_cb_type = ['mtr']
 		#mod.choices_choices_lambda = [2,4,8]
 		self.choices_choices_lambda = [2,8,16]
 
-		#mod.choices_cor_type_ws = [1,2,3]
-		#mod.choices_cor_prob_ws = [0.0,0.5,1.0]
+		#self.choices_cor_type_ws = [1,2,3]
+		#self.choices_cor_prob_ws = [0.0,0.5,1.0]
 		self.choices_cor_type_ws = [1]
 		self.choices_cor_prob_ws = [0.0]
 
-		self.choices_cor_type_inter = [1,2,3]
-		self.choices_cor_prob_inter = [0.0,0.5,1.0]
+		self.choices_cor_type_inter = [1]
+		self.choices_cor_prob_inter = [0.0, 0.125, 0.25, 0.5]
 
-		self.validation_method = 1
-		self.weighting_scheme = 2
+		self.choices_loss_enc = [(-1, 0)]
+		#self.choices_cor_type_inter = [1,2]
+		#self.choices_cor_prob_inter = [0.0,0.5]
 
-		#self.epsilon = 0.05
+		self.choices_epsilon = [0.05, 0.1]
 		#self.epsilon_on = True
-		self.lr_template = [0.1, 0.03, 0.3, 0.01, 1.0, 0.003, 3.0, 0.001, 10.0]
-		self.adf_on = True
+		#self.lr_template = [0.1, 0.03, 0.3, 0.01, 1.0, 0.003, 3.0, 0.001, 10.0, 0.0003, 30.0, 0.0001, 100.0]
+		self.choices_adf = [True]
 		self.critical_size_ratios = [184 * pow(2, -i) for i in range(7) ]
 
+def gen_lr(n):
+	m = math.floor(n / 4.0)
+	if n % 4 == 0:
+		return 0.1 * pow(10, m)
+	if n % 4 == 1:
+		return 0.03 * pow(10, -m)
+	if n % 4 == 2:
+		return 0.3 * pow(10, m)
+	if n % 4 == 3:
+		return 0.01 * pow(10, -m)
 
 def collect_stats(mod):
 	avg_error_value = avg_error(mod)
@@ -155,7 +170,10 @@ def gen_vw_options(mod):
 									   ('validation_method',1),
 									   ('weighting_scheme',1),
 									   ('learning_rate',0.5),
-   									   ('progress',2.0),])
+									   ('epsilon', 0.05),
+									   ('loss0', 0),
+									   ('loss1', 0),
+   									   ('progress',2.0)])
 
 		mod.param['warm_start'] = mod.param['warm_start_multiplier'] * mod.param['progress']
 		mod.param['interaction'] = mod.param['total_size'] - mod.param['warm_start']
@@ -221,7 +239,10 @@ def param_to_str_simplified(mod):
 	 'optimal_approx',
 	 'majority_approx',
 	 'learning_rate',
-	 'adf_on']
+	 'adf_on',
+	 'epsilon',
+	 'loss0',
+	 'loss1']
 
 	mod.template_red = OrderedDict([(k,mod.result_template[k]) for k in vw_run_param_set])
 	#mod.simplified_keymap_red = dict([(k,mod.simplified_keymap[k]) for k in vw_run_param_set])
@@ -311,10 +332,15 @@ def dictify(param_name, param_choices):
 	result = []
 	for param in param_choices:
 		dic = {}
-		dic[param_name] = param
+		if isinstance(param_name, tuple):
+			for i in range(len(param_name)):
+				dic[param_name[i]] = param[i]
+		else:
+			dic[param_name] = param
 		result.append(dic)
-	print param_name, len(result)
+	print param_name, result
 	return result
+
 
 def params_per_task(mod):
 	# Problem parameters
@@ -330,7 +356,9 @@ def params_per_task(mod):
 	prm_cb_type = dictify('cb_type', mod.choices_cb_type)
 	prm_dataset = dictify('dataset', mod.dss)
 	prm_choices_lbd = dictify('choices_lambda', mod.choices_choices_lambda)
-	prm_adf_on = dictify('adf_on', [True])
+	prm_choices_eps = dictify('epsilon', mod.choices_epsilon)
+	prm_adf_on = dictify('adf_on', mod.choices_adf)
+	prm_loss_enc = dictify(('loss0', 'loss1'), mod.choices_loss_enc)
 
 	# Common parameters
 	prm_com = param_cartesian_multi(
@@ -342,21 +370,29 @@ def params_per_task(mod):
 	 prm_lrs,
 	 prm_cb_type,
 	 prm_fold,
-	 prm_adf_on])
+	 prm_adf_on,
+	 prm_choices_eps,
+	 prm_loss_enc])
 
-	fltr_inter_gt = lambda p: ((p['corrupt_type_interaction'] == 1 #noiseless for interaction data
-							and abs(p['corrupt_prob_interaction']) < 1e-4)
-							and
-		                    (p['corrupt_type_warm_start'] == 1 #filter out repetitive warm start data
-							or abs(p['corrupt_prob_warm_start']) > 1e-4))
+	if mod.inter_gt_on:
+		fltr_inter_gt = lambda p: ((p['corrupt_type_interaction'] == 1 #noiseless for interaction data
+								and abs(p['corrupt_prob_interaction']) < 1e-4)
+								and
+			                    (p['corrupt_type_warm_start'] == 1 #filter out repetitive warm start data
+								or abs(p['corrupt_prob_warm_start']) > 1e-4))
+	else:
+		fltr_inter_gt = lambda p: False
 
 	prm_com_inter_gt = filter(fltr_inter_gt, prm_com)
 
-	fltr_ws_gt = lambda p: ((p['corrupt_type_warm_start'] == 1 #noiseless for warm start data
-						and abs(p['corrupt_prob_warm_start']) < 1e-4)
-						and
-	                    (p['corrupt_type_interaction'] == 1 #filter out repetitive interaction data
-						or abs(p['corrupt_prob_interaction']) > 1e-4))
+	if mod.ws_gt_on:
+		fltr_ws_gt = lambda p: ((p['corrupt_type_warm_start'] == 1 #noiseless for warm start data
+							and abs(p['corrupt_prob_warm_start']) < 1e-4)
+							and
+		                    (p['corrupt_type_interaction'] == 1 #filter out repetitive interaction data
+							or abs(p['corrupt_prob_interaction']) > 1e-4))
+	else:
+		fltr_ws_gt = lambda p: False
 
 	prm_com_ws_gt = filter(fltr_ws_gt, prm_com)
 
@@ -378,8 +414,9 @@ def params_per_task(mod):
 				#Sim-Bandit
 				{'warm_start_type': 2,
 				 'warm_start_update': True,
- 				 'interaction_update': True},
-				#Sim-Bandit with no warm-start update
+ 				 'interaction_update': True,
+				 'lambda_scheme': 1},
+				#Sim-Bandit with only warm-start update
 				{'warm_start_type': 2,
 				 'warm_start_update': True,
  				 'interaction_update': False}
@@ -486,10 +523,10 @@ def params_per_task(mod):
 									   d['corrupt_prob_warm_start'],
 									   d['corrupt_type_interaction'],
 									   d['corrupt_prob_interaction'])
-					   )
+					 )
 	print 'The total number of VW commands to run is: ', len(prm_all)
-	#for row in prm_all:
-	#	print row
+	for row in prm_all:
+		print row
 	return get_params_task(prm_all)
 
 
@@ -586,6 +623,9 @@ def main_loop(mod):
 	('actual_variance', 'av', 0.0),
 	('ideal_variance', 'iv', 0.0),
 	('last_lambda', 'll', 0.0),
+	('epsilon', 'eps', 0.0),
+	('loss0', 'l0', 0.0),
+	('loss1', 'l1', 0.0),
 	]
 
  	num_cols = len(mod.result_template_list)
@@ -643,9 +683,9 @@ if __name__ == '__main__':
 
 	if args.task_id == 0:
 		# Compile vw in one of the subfolders
-		process = subprocess.Popen('make -C .. clean; make -C ..', shell=True, stdout=f, stderr=f)
-		subprocess.check_call(cmd, shell=True)
-		process.wait()
+		#process = subprocess.Popen('make -C .. clean; make -C ..', shell=True, stdout=f, stderr=f)
+		#subprocess.check_call(cmd, shell=True)
+		#process.wait()
 
 		# To avoid race condition of writing to the same file at the same time
 		create_dir(args.results_dir)
@@ -664,10 +704,10 @@ if __name__ == '__main__':
 		while not os.path.exists(flag_dir):
 			time.sleep(1)
 
-	if args.num_learning_rates <= 0 or args.num_learning_rates >= 10:
-		mod.learning_rates = mod.lr_template
+	if args.num_learning_rates <= 0:
+		mod.learning_rates = [gen_lr(0)]
 	else:
-		mod.learning_rates = mod.lr_template[:args.num_learning_rates]
+		mod.learning_rates = [gen_lr(i) for i in range(args.num_learning_rates)]
 	#mod.folds = range(1,11)
 	mod.folds = range(1, args.num_folds+1)
 
