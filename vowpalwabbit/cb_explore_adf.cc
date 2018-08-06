@@ -260,17 +260,12 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-	//cout<<"data offset = "<<data.offset<<endl;
-	//cout<<"example feature offset before = "<<examples[0]->ft_offset<<endl;
 	data.offset = examples[0]->ft_offset;
-  //cout << "in p_or_l_g" << endl;
   //Explore uniform random an epsilon fraction of the time.
   if (is_learn && test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
     multiline_learn_or_predict<false>(base, examples, data.offset);
-
-	//cout<<"example feature offset after = "<<examples[0]->ft_offset<<endl;
 
   action_scores& preds = examples[0]->pred.a_s;
 
@@ -789,12 +784,7 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     data->explore_type = REGCB;
   else
   {
-    if (!arg.vm.count("epsilon"))
-		{
-			data->epsilon = 0.05f;
-			//a hacky way of passing the implicit epsilon value to cbify
-			arg.vm.insert(std::make_pair("epsilon", boost::program_options::variable_value(data->epsilon, false)));
-		}
+    if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
     data->explore_type = EPS_GREEDY;
   }
 

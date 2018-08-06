@@ -22,8 +22,6 @@ struct cb_explore
   cb_to_cs cbcs;
   v_array<uint32_t> preds;
   v_array<float> cover_probs;
-  v_array<float> cost_lambda;
-  v_array<float> lambdas;
 
   CB::label cb_label;
   COST_SENSITIVE::label cs_label;
@@ -36,8 +34,6 @@ struct cb_explore
   size_t bag_size;
   size_t cover_size;
   float psi;
-  size_t lambda_size;
-	float n_2;
 
   size_t counter;
 
@@ -192,20 +188,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, example& ec)
     data.cs_label.costs.clear();
     float norm = min_prob * num_actions;
     ec.l.cb = data.cb_label;
-
     data.cbcs.known_cost = get_observed_cost(data.cb_label);
-		//cout<<"cbcs's cb type is "<<data.cbcs.cb_type<<endl;
-
-		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
-		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
-
-
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label);
     for(uint32_t i = 0; i < num_actions; i++)
       probabilities[i] = 0;
-
-		//for (size_t i = 0; i < data.cbcs.num_actions; i++)
-		//	cout<<"action "<<i<<" has cost "<<data.cs_label.costs[i].x<<endl;
 
     ec.l.cs = data.second_cs_label;
     //2. Update functions

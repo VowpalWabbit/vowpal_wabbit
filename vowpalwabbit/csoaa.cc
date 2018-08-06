@@ -33,12 +33,9 @@ inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost
 {
   if (is_learn)
   {
-    float old_weight = ec.weight;
-		if (cost == FLT_MAX) ec.weight = 0.f;
-    //ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
+    ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
     base.learn(ec, i-1);
-    ec.weight = old_weight;
   }
   else
     base.predict(ec, i-1);
@@ -284,7 +281,6 @@ bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
-  //  cout << endl;
   return isTest;
 }
 
@@ -372,12 +368,10 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, size_t start_K, mul
 
     simple_label.initial = 0.;
     float old_weight = ec->weight;
-    //cout << "weight = " << ec->weight << endl;
     if (!data.treat_as_classifier)   // treat like regression
       simple_label.label = costs[0].x;
     else     // treat like classification
     {
-      //cout << "here" << endl;
       if (costs[0].x <= min_cost)
       {
         simple_label.label = -1.;

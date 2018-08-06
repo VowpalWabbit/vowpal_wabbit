@@ -39,10 +39,9 @@ struct cb_to_cs_adf
   //for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-
   LEARNER::single_learner* scorer;
-	
-	//for scaling the weights of MTR
+
+  //for scaling the weights in MTR
 	uint32_t num_actions;
 
 };
@@ -118,7 +117,6 @@ void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32
 
   //get cost prediction for this action
   wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
-	//std::cout<<"wc.x = "<<wc.x<<std::endl;
 
   c.pred_scores.costs.push_back(wc);
   //add correction if we observed cost for this action and regressor is wrong
