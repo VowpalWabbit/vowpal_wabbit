@@ -113,9 +113,7 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
-
-	//adjust the importance weight to scale by a factor of 1/num_actions (the last term)
-  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum) * (1.f / mydata.gen_cs.num_actions);
+  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
   GEN_CS::call_cs_ldf<true>(base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
@@ -354,7 +352,6 @@ base_learner* cb_adf_setup(arguments& arg)
     return nullptr;
 
   ld->all = arg.all;
-	ld->gen_cs.num_actions = arg.vm["cbify"].as<uint32_t>();
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;//default for IPS
@@ -386,9 +383,10 @@ base_learner* cb_adf_setup(arguments& arg)
        || ld->rank_all || arg.vm.count("csoaa_rank") == 0)
   {
     if (count(arg.args.begin(), arg.args.end(), "--csoaa_ldf") == 0)
+    {
       arg.args.push_back("--csoaa_ldf");
-    if (count(arg.args.begin(), arg.args.end(), "multiline") == 0)
       arg.args.push_back("multiline");
+    }
     if (count(arg.args.begin(), arg.args.end(), "--csoaa_rank") == 0)
       arg.args.push_back("--csoaa_rank");
   }
