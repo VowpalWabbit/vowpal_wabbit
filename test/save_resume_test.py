@@ -5,7 +5,7 @@ import sys
 import os
 import optparse
 import random
-from itertools import izip_longest
+from six.moves import zip_longest
 
 
 def system(cmd, verbose=True):
@@ -42,12 +42,9 @@ def get_file_size(filename, cache={}):
 
 
 def choice_no_replacement(a, size):
-    result = []
-    while a and len(result) < size:
-        x = random.choice(a)
-        a.remove(x)
-        result.append(x)
-    return result
+    result = list(a)
+    random.shuffle(result)
+    return result[:size]
 
 
 def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False):
@@ -86,7 +83,7 @@ def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False)
                 predictions_normal = read_output('head -n %s %s | tail -n %s | VW --quiet -i %s.full -t -p /dev/stdout' % (splits[index + 1], filename, splits[index + 1] - split, tmp_model), verbose=verbose)
                 predictions_resume = read_output('head -n %s %s | tail -n %s | VW --quiet -i %s.resume -t -p /dev/stdout' % (splits[index + 1], filename, splits[index + 1] - split, tmp_model), verbose=verbose)
 
-                for index, (p_normal, p_resume) in enumerate(izip_longest(predictions_normal.split('\n'), predictions_resume.split('\n'))):
+                for index, (p_normal, p_resume) in enumerate(zip_longest(predictions_normal.split('\n'), predictions_resume.split('\n'))):
                     if p_normal != p_resume:
                         if verbose:
                             sys.stderr.write('line %s: %r != %r\n' % (index + 1, p_normal, p_resume))
@@ -163,7 +160,7 @@ if __name__ == '__main__':
         #errors += do_test(filename, '--ksvm', known_failure=True)
 
         errors += do_test('train-sets/multiclass', '--oaa 10')
-        errors += do_test('train-sets/multiclass', '--oaa 10')
+        errors += do_test('train-sets/multiclass', '--csoaa 10')
         errors += do_test('train-sets/multiclass', '--ect 10')
         errors += do_test('train-sets/multiclass', '--log_multi 10')
         errors += do_test('train-sets/multiclass', '--recall_tree 10')
