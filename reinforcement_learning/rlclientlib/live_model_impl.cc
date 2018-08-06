@@ -2,7 +2,7 @@
 #include <boost/uuid/random_generator.hpp>
 
 #include "utility/context_helper.h"
-#include "logger/logger.h"
+#include "logger.h"
 #include "api_status.h"
 #include "config_collection.h"
 #include "error_callback_fn.h"
@@ -13,6 +13,8 @@
 #include "constants.h"
 #include "vw_model/safe_vw.h"
 #include "explore_internal.h"
+
+#include "factory_resolver.h"
 
 // Some namespace changes for more concise code
 namespace e = exploration;
@@ -31,14 +33,11 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, api_status* status);
 
   int live_model_impl::init(api_status* status) {
-    int scode = _logger.init(status);
-    RETURN_IF_FAIL(scode);
-    scode = init_model(status);
-    RETURN_IF_FAIL(scode);
-    scode = init_model_mgmt(status);
-    RETURN_IF_FAIL(scode);
+    // RETURN_IF_FAIL(_logger.init(status));
+    RETURN_IF_FAIL(init_model(status));
+    RETURN_IF_FAIL(init_model_mgmt(status));
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
-    return scode;
+    return error_code::success;
   }
 
   int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response,
@@ -47,15 +46,12 @@ namespace reinforcement_learning {
     api_status::try_clear(status);
     //check arguments
     RETURN_IF_FAIL(check_null_or_empty(uuid, context, status));
-    int scode;
     if (!_model_data_received) {
-      scode = explore_only(uuid, context, response, status);
-      RETURN_IF_FAIL(scode);
+      RETURN_IF_FAIL(explore_only(uuid, context, response, status));
       response.set_model_id("N/A");
     }
     else {
-      scode = explore_exploit(uuid, context, response, status);
-      RETURN_IF_FAIL(scode);
+      RETURN_IF_FAIL(explore_exploit(uuid, context, response, status));
     }
     response.set_uuid(uuid);
     // Serialize the event
@@ -64,7 +60,7 @@ namespace reinforcement_learning {
     ranking_event::serialize(*guard.get(), uuid, context, response);
     auto sbuf = guard->str();
     // Send the ranking event to the backend
-    RETURN_IF_FAIL(_logger.append_ranking(sbuf, status));
+    RETURN_IF_FAIL(_ranking_logger->append(sbuf, status));
     return error_code::success;
   }
 
@@ -88,22 +84,52 @@ namespace reinforcement_learning {
 
   live_model_impl::live_model_impl(
     const utility::config_collection& config,
-    const error_fn fn,
-    void* err_context,
-    transport_factory_t* t_factory,
-    model_factory_t* m_factory
+    error_fn fn,
+    void* err_context
   )
     : _configuration(config),
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
-      _logger(config, &_error_cb),
-      _t_factory{t_factory},
-      _m_factory{m_factory},
       _transport(nullptr),
       _model(nullptr),
       _model_download(nullptr),
       _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) { }
+      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
+  {
+    // User has not supplied dependencies, use defaults here.
+    _t_factory = &data_transport_factory;
+    _m_factory = &model_factory;
+    _ranking_logger = std::make_shared<event_hub_observation_logger>(config, &_error_cb);
+    _outcome_logger = std::make_shared<event_hub_interaction_logger>(config, &_error_cb);
+  }
+
+  live_model_impl::live_model_impl(
+    const utility::config_collection& config,
+    error_fn fn,
+    void* err_context,
+    transport_factory_t* t_factory,
+    model_factory_t* m_factory,
+    logger_i* ranking_logger,
+    logger_i* outcome_logger
+  )
+    : _configuration(config),
+      _error_cb(fn, err_context),
+      _data_cb(_handle_model_update, this),
+      _transport(nullptr),
+      _model(nullptr),
+      _model_download(nullptr),
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
+      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
+  {
+    // User has supplied dependencies to consume, it is their responsibility to manage the lifetime.
+    // However, for parity with default arguments shared_ptrs are used and the delete function is a no-op.
+    _t_factory = t_factory;
+    _m_factory = m_factory;
+
+    // Shared pointers with custom deleters that intentionally don't call delete
+    _ranking_logger = std::shared_ptr<logger_i>(ranking_logger, [](logger_i* p){});
+    _outcome_logger = std::shared_ptr<logger_i>(outcome_logger, [](logger_i* p){});
+  }
 
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);

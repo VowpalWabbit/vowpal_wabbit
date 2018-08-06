@@ -1,13 +1,15 @@
 #pragma once
-#include <memory>
-#include "logger/logger.h"
+#include "logger.h"
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"
 #include "model_mgmt/model_downloader.h"
 #include "utility/object_pool.h"
+#include "utility/data_buffer.h"
 #include "utility/periodic_background_proc.h"
 #include "object_factory.h"
 #include "ranking_event.h"
+
+#include <memory>
 
 namespace reinforcement_learning
 {
@@ -27,17 +29,23 @@ namespace reinforcement_learning
     int choose_rank(const char* uuid, const char* context, ranking_response& response, api_status* status);
     //here the uuid is auto-generated
     int choose_rank(const char* context, ranking_response& response, api_status* status);
-    
+
     int report_outcome(const char* uuid, const char* outcome_data, api_status* status);
     int report_outcome(const char* uuid, float reward, api_status* status);
-    
+
     explicit live_model_impl(
-      const utility::config_collection& config, 
+      const utility::config_collection& config,
+      error_fn fn = nullptr,
+      void* err_context = nullptr);
+
+    explicit live_model_impl(
+      const utility::config_collection& config,
       error_fn fn,
-      void* err_context, 
+      void* err_context,
       transport_factory_t* t_factory,
-      model_factory_t* m_factory
-      );
+      model_factory_t* m_factory,
+      logger_i* ranking_logger,
+      logger_i* outcome_logger);
 
     live_model_impl(const live_model_impl&) = delete;
     live_model_impl(live_model_impl&&) = delete;
@@ -62,9 +70,14 @@ namespace reinforcement_learning
     utility::config_collection _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
-    logger _logger;
+
+    std::shared_ptr<logger_i> _ranking_logger;
+    std::shared_ptr<logger_i> _outcome_logger;
+
+    // TODO convert interfaces and use shared ptrs
     transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
+
     std::unique_ptr<model_management::i_data_transport> _transport;
     std::unique_ptr<model_management::i_model> _model;
     std::unique_ptr<model_management::model_downloader> _model_download;
@@ -84,7 +97,7 @@ namespace reinforcement_learning
     auto sbuf = buffer->str();
 
     // Send the outcome event to the backend
-    RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));
+    RETURN_IF_FAIL(_outcome_logger->append(sbuf, status));
 
     return error_code::success;
   }

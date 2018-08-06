@@ -42,9 +42,6 @@
     <ClInclude Include="..\include\ranking_response.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="logger\logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ranking_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -106,6 +103,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="utility\data_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="logger\logger_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -177,6 +180,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utility\data_buffer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="logger\logger_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

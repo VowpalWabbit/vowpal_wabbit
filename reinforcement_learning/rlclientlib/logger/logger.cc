@@ -2,62 +2,41 @@
 #include "err_constants.h"
 #include "constants.h"
 
+#include "logger_impl.h"
+
 namespace reinforcement_learning
 {
-  logger::logger(const utility::config_collection& c, error_callback_fn* perror_cb)
-    : _ranking_client(
-        c.get(name::INTERACTION_EH_HOST     , "localhost:8080"),
-        c.get(name::INTERACTION_EH_KEY_NAME , ""),
-        c.get(name::INTERACTION_EH_KEY      , ""),
-        c.get(name::INTERACTION_EH_NAME     , "interaction"),
-        c.get_bool(name::EH_TEST            ,false)),
-      _outcome_client(
-        c.get(name::OBSERVATION_EH_HOST     , "localhost:8080"),
-        c.get(name::OBSERVATION_EH_KEY_NAME , ""),
-        c.get(name::OBSERVATION_EH_KEY      , ""),
-        c.get(name::OBSERVATION_EH_NAME     , "observation"),
-        c.get_bool(name::EH_TEST            ,false)),
-      _ranking_batcher(
-        _ranking_client,
-        perror_cb,
-        c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
-        c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS , 1000),
-        c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE  , 100000 * 2)),
-      _outcome_batcher(
-        _outcome_client,
-        perror_cb,
-        c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
-        c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000 ),
-        c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 10000 * 2))
+  event_hub_logger::event_hub_logger(
+    const utility::config_collection& c,
+    const std::string& event_hub_host,
+    const std::string& event_hub_key_name,
+    const std::string& event_hub_key,
+    const std::string& event_hub_name,
+    int send_high_watermark,
+    int send_batch_interval_ms,
+    int send_queue_maxsize,
+    error_callback_fn* perror_cb)
   {
+    _pimpl = std::unique_ptr<event_hub_logger_impl>(new event_hub_logger_impl(
+      c,
+      event_hub_host,
+      event_hub_key_name,
+      event_hub_key,
+      event_hub_name,
+      send_high_watermark,
+      send_batch_interval_ms,
+      send_queue_maxsize,
+      perror_cb));
   }
 
-  int logger::init(api_status* status) {
-    auto err_code = error_code::success;
-    err_code = _ranking_batcher.init(status);
-    if ( err_code != error_code::success )
-      return err_code;
-    err_code = _ranking_client.init(status);
-    if ( err_code != error_code::success )
-      return err_code;
-    err_code = _outcome_batcher.init(status);
-    if ( err_code != error_code::success )
-      return err_code;
-    err_code = _outcome_client.init(status);
-    if ( err_code != error_code::success )
-      return err_code;
-    return err_code;
+  event_hub_logger::~event_hub_logger() = default;
+
+  int event_hub_logger::init(api_status* status) {
+    return _pimpl->init(status);
   }
 
-  int logger::append_ranking(std::string& item, api_status* status)
+  int event_hub_logger::v_append(std::string& item, api_status* status)
   {
-    //add item to the batch (will be sent later)
-    return _ranking_batcher.append(item, status);
-  }
-
-  int logger::append_outcome(std::string& item, api_status* status)
-  {
-    //send to the eventhub
-    return _outcome_batcher.append(item, status);
+    return _pimpl->append(item, status);
   }
 }
