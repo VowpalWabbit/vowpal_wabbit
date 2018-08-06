@@ -1,0 +1,31 @@
+/*! \mainpage Introduction
+
+Enterprises are constantly faced with decisions that require picking from a set of actions based on 
+contextual information. Real world reinforcement-based techniques are effective tools in aiding 
+decision making; they rely on free interaction data to "predict" and "learn". This library implements 
+an interface for reinforcement-based prediction based on contextual bandits.
+
+Reinforcement Learning Loop
+---------------------------
+![Reinforcement Learning Loop](../rl-loop.GIF)
+
+RL Inference API 
+----------------
+This API allows the developer to perform local inference and ship the actions and feedback
+to an online trainer running in the Azure cloud.  It also periodically refreshes its copy
+of the model. 
+
+API Usage: Basic steps to using the RL Inference API
+----------------------------------------------------
+reinforcement_learning::live_model class is the interface to RL Inference API
+- Instantiate and Initialize live_model
+\snippet examples/basic_usage_cpp/basic_usage_cpp.cc (1) Instantiate Inference API using config
+\snippet examples/basic_usage_cpp/basic_usage_cpp.cc (2) Initialize the API
+- choose_rank() to choose an action from a list of actions
+\snippet examples/basic_usage_cpp/basic_usage_cpp.cc (3) Choose an action
+- (Optional) report_outcome() to provide feedback on choosen action  
+\snippet examples/basic_usage_cpp/basic_usage_cpp.cc (5) Report outcome
+
+\example basic_usage_cpp.cc
+\example rl_sim.cc
+*/
