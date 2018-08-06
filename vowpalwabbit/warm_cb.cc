@@ -4,7 +4,7 @@
 #include "rand48.h"
 #include "bs.h"
 #include "vw.h"
-#include "../explore/hash.h"
+#include "hash.h"
 #include "explore.h"
 
 #include <vector>
