@@ -73,6 +73,7 @@ license as described in the file LICENSE.
 #include "explore_eval.h"
 #include "baseline.h"
 #include "classweight.h"
+#include "warm_cb.h"
 // #include "cntk.h"
 
 using namespace std;
@@ -1140,6 +1141,7 @@ void parse_reductions(arguments& arg)
   all.reduction_stack.push_back(mwt_setup);
   all.reduction_stack.push_back(cb_explore_setup);
   all.reduction_stack.push_back(cb_explore_adf_setup);
+  all.reduction_stack.push_back(warm_cb_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(explore_eval_setup);
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);

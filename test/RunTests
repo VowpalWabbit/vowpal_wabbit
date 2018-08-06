@@ -1633,38 +1633,38 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
     train-sets/ref/cbify_regcbopt.stderr
 
-# Test 175 cbify warm start
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 -d train-sets/multiclass
+# Test 175 warm_cb warm start
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 -d train-sets/multiclass
     train-sets/ref/cbify_ws.stderr
 
 # Test 176 cbify warm start with lambda set containing 0/1
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --lambda_scheme 2 -d train-sets/multiclass
     train-sets/ref/cbify_ws_lambda_zeroone.stderr
 
 # Test 177 cbify warm start with warm start update turned off
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update false -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_update false -d train-sets/multiclass
     train-sets/ref/cbify_ws_no_ws_upd.stderr
 
 # Test 178 cbify warm start with interaction update turned off
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update false -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --interaction_update false -d train-sets/multiclass
     train-sets/ref/cbify_ws_no_int_upd.stderr
 
 # Test 179 cbify warm start with bandit warm start type (Sim-Bandit)
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_type 2 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --warm_start_type 2 -d train-sets/multiclass
     train-sets/ref/cbify_ws_simbandit.stderr
 
 # Test 180 cbify warm start with UAR supervised corruption
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 1 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 1 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
     train-sets/ref/cbify_ws_uar.stderr
 
 # Test 181 cbify warm start with CYC supervised corruption
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 2 --corrupt_prob_warm_start 0.5 -d train-sets/multiclass
     train-sets/ref/cbify_ws_cyc.stderr
 
 # Test 182 cbify warm start with MAJ supervised corruption
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 3 --corrupt_prob_warm_start 0.5 --overwrite_label 1 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_warm_start 3 --corrupt_prob_warm_start 0.5 --overwrite_label 1 -d train-sets/multiclass
     train-sets/ref/cbify_ws_maj.stderr
 
 # Test 183 cbify warm start with warm start distribution being the ground truth
-{VW} --cbify 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_interaction 2 --corrupt_prob_interaction 0.5 --weighting_scheme 2 --validation_method 2 -d train-sets/multiclass
+{VW} --warm_cb 10 --cb_explore_adf --cb_type mtr --epsilon 0.05 --warm_start 3 --interaction 7 --choices_lambda 8 --corrupt_type_interaction 2 --corrupt_prob_interaction 0.5 --weighting_scheme 2 --validation_method 2 -d train-sets/multiclass
     train-sets/ref/cbify_ws_wsgt.stderr
