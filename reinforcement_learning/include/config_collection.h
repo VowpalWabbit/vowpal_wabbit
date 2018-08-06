@@ -47,7 +47,7 @@ namespace reinforcement_learning { namespace utility {
     //! friend Left shift operator
     friend std::ostream& ::operator<<(std::ostream& os, const config_collection&);
 
-    private:
+  private:
     using map_type = std::unordered_map<std::string, std::string>;  //! Collection type that holds the (name,value) pairs 
     map_type* _pmap; //! Collection that holds the (name,value) pairs 
   };

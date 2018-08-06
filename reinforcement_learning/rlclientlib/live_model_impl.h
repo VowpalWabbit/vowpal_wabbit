@@ -70,6 +70,7 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::model_downloader> _model_download;
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
     utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
+    uint64_t _seed_shift;
   };
 
   template <typename D>

@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "vw_model/safe_vw.h"
 #include "explore_internal.h"
+#include "hash.h"
 
 // Some namespace changes for more concise code
 namespace e = exploration;
@@ -38,6 +39,8 @@ namespace reinforcement_learning {
     scode = init_model_mgmt(status);
     RETURN_IF_FAIL(scode);
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
+    const char* app_id = _configuration.get(name::APP_ID, "");
+    _seed_shift = uniform_hash(app_id, strlen(app_id), 0);
     return scode;
   }
 
@@ -141,7 +144,8 @@ namespace reinforcement_learning {
     }
     // Pick using the pdf
     uint32_t choosen_action_id;
-    scode = e::sample_after_normalizing(uuid, begin(pdf), end(pdf), choosen_action_id);
+    const uint64_t seed = uniform_hash(uuid, strlen(uuid), 0) + _seed_shift;
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), choosen_action_id);
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
