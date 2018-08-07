@@ -161,7 +161,8 @@ namespace reinforcement_learning {
 
   int live_model_impl::explore_exploit(const char* uuid, const char* context, ranking_response& response,
                                        api_status* status) const {
-    return _model->choose_rank(uuid, context, response, status);
+    const uint64_t seed = uniform_hash(uuid, strlen(uuid), 0) + _seed_shift;
+    return _model->choose_rank(seed, context, response, status);
   }
 
   int live_model_impl::init_model_mgmt(api_status* status) {
