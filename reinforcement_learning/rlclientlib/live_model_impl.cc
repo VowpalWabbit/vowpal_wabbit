@@ -151,10 +151,10 @@ namespace reinforcement_learning {
     }
     response.push_back(choosen_action_id, pdf[choosen_action_id]);
     // Setup response with pdf from prediction and choosen action
-	for (size_t idx = 1; idx < pdf.size(); ++idx) {
-	  const auto cur_idx = choosen_action_id != idx ? idx : 0;
-	  response.push_back(cur_idx, pdf[cur_idx]);
-	}
+    for (size_t idx = 1; idx < pdf.size(); ++idx) {
+      const auto cur_idx = choosen_action_id != idx ? idx : 0;
+      response.push_back(cur_idx, pdf[cur_idx]);
+    }
     response.set_choosen_action_id(choosen_action_id);
     return error_code::success;
   }
