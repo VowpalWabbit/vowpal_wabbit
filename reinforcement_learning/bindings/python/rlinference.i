@@ -57,7 +57,9 @@ namespace reinforcement_learning {
       %pythoncode %{
         def choose_rank(self, *args):
             ranking_response = self.choose_rank_impl(*args)
-            return ranking_response.uuid, ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
+            if len(args) == 1:
+                return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities)), ranking_response.uuid
+            return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
       %}
     };
   }

@@ -22,7 +22,14 @@ def main():
     uuid = "uuid"
     context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"a1":"f1"},{"a2":"f2"}]}'
 
-    uuid, model_id, chosen_action_id, action_probabilities = model.choose_rank(context)
+    model_id, chosen_action_id, action_probabilities = model.choose_rank(uuid, context)
+
+    print("uuid: " + uuid)
+    print("model_id: " + model_id)
+    print("chosen action id: " + str(chosen_action_id))
+    print("all action probabilities " + str(action_probabilities))
+
+    model_id, chosen_action_id, action_probabilities, uuid = model.choose_rank(context)
 
     print("uuid: " + uuid)
     print("model_id: " + model_id)
