@@ -162,7 +162,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="error_context.cc" />
     <ClCompile Include="person.cc" />
     <ClCompile Include="rl_sim.cc" />
     <ClCompile Include="main.cc" />
