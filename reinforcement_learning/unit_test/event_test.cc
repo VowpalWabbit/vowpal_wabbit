@@ -14,12 +14,12 @@ using namespace std;
 BOOST_AUTO_TEST_CASE(serialize_outcome)
 {
   const auto uuid = "uuid";
-	const auto outcome_data = "1.0";
+	const auto outcome_data = 1.0;
 
   utility::data_buffer oss;
   outcome_event::serialize(oss, uuid, outcome_data);
   const auto serialized_str = oss.str();
-  const char * expected = R"({"EventId":"uuid","v":"1.0"})";
+  const char * expected = R"({"EventId":"uuid","v":1.000000})";
 
 	BOOST_CHECK_EQUAL(serialized_str.c_str(), expected);
 }
@@ -27,12 +27,12 @@ BOOST_AUTO_TEST_CASE(serialize_outcome)
 BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
 {
 	const auto uuid = "";
-	const auto outcome_data = "";
+	const auto outcome_data = "{}";
 
   utility::data_buffer oss;
   outcome_event::serialize(oss, uuid, outcome_data);
   const auto serialized = oss.str();
-	const auto expected = R"({"EventId":"","v":""})";
+	const auto expected = R"({"EventId":"","v":{}})";
 
 	BOOST_CHECK_EQUAL(serialized.c_str(), expected);
 }
