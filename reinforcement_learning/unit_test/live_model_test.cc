@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;
-	http_server.on_initialize(U("http://localhost:8080"));
+	BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   r::api_status status;
 
 	//create a simple ds configuration
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
 	//start a http server that will receive events sent from the eventhub_client
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   http_helper http_server;
-	http_server.on_initialize(U("http://localhost:8080"));
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//create a simple ds configuration
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   //start a http server that will receive events sent from the eventhub_client
   bool post_error = true;
   http_helper http_server;
-  http_server.on_initialize(U("http://localhost:8080"),post_error);
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080"),post_error));
 
   //create a simple ds configuration
   u::config_collection config;
