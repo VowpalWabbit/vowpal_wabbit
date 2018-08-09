@@ -121,7 +121,7 @@ namespace reinforcement_learning {
     std::string buf_to_send;
     // Handle batching
     while (remaining > 0) {
-      remaining = (remaining, buf_to_send);
+      remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
       if ( _sender.send(buf_to_send, &status) != error_code::success )
         ERROR_CALLBACK(_perror_cb, status);
