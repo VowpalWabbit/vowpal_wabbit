@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(send_something)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;
-	http_server.on_initialize(U("http://localhost:8080"));
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
 
 	//create a client
 	eventhub_client eh("localhost:8080", "", "", "", true);
@@ -31,7 +31,4 @@ BOOST_AUTO_TEST_CASE(send_something)
   //send events
 	BOOST_CHECK_EQUAL(eh.send("message 1", &ret),error_code::success);
   BOOST_CHECK_EQUAL(eh.send("message 2", &ret), error_code::success);
-
-	//stop the http server
-	http_server.on_shutdown();
 }
