@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 {
 	//start a http server that will receive events sent from the eventhub_client
 	http_helper http_server;
-	BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   r::api_status status;
 
 	//create a simple ds configuration
@@ -74,9 +74,6 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 	ds.choose_rank(uuid, JSON_CONTEXT, response, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), 0);
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
-
-	//stop the http server
-	http_server.on_shutdown();
 }
 
 BOOST_AUTO_TEST_CASE(live_model_reward)
@@ -129,9 +126,6 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
   ds.report_outcome(uuid, reward, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
-
-	//stop the http server
-	http_server.on_shutdown();
 }
 
 namespace r = reinforcement_learning;
@@ -184,7 +178,4 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   BOOST_CHECK_GT(the_server._err_count, 1);
-
-  //stop the http server
-  http_server.on_shutdown();
 }

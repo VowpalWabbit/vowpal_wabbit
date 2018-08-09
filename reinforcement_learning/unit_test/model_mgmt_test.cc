@@ -107,8 +107,6 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );
   BOOST_CHECK_LE(diff.count(), 500);
   BOOST_CHECK_EQUAL(data_ctxt, 20);
-
-  http_server.on_shutdown();
 }
 
 BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
@@ -135,8 +133,6 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   BOOST_CHECK_EQUAL(md.refresh_count(), 2);
 
   delete data_transport;
-
-  http_server.on_shutdown();
 }
 #endif //_WIN32 (http_server http protocol issues in linux)
 
