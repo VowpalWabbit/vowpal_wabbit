@@ -108,7 +108,7 @@ namespace reinforcement_learning {
       check_api_status(status);
     }
 
-    void live_model::report_outcome(const char* uuid, float reward) {
+    void live_model::report_reward(const char* uuid, float reward) {
       reinforcement_learning::api_status status;
       impl.report_outcome(uuid, reward, &status);
       check_api_status(status);

@@ -40,7 +40,7 @@ namespace reinforcement_learning {
       ranking_response choose_rank(const char* context_json);
 
       void report_outcome(const char* uuid, const char* outcome_data);
-      void report_outcome(const char* uuid, float reward);
+      void report_reward(const char* uuid, float reward);
 
       private:
         reinforcement_learning::live_model impl;
