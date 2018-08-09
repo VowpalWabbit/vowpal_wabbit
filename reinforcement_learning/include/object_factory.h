@@ -6,19 +6,19 @@
 
 namespace reinforcement_learning { namespace utility
 {
-    template<class I>
+    template<class I, typename ...Args>
     struct object_factory
     {
-      using create_fn = std::function<int (I** retval, const config_collection&, api_status* status)>;
+      using create_fn = std::function<int (I** retval, Args&& ...args, api_status* status)>;
 
       void register_type(const std::string& name, create_fn fptr) { _creators[name] = fptr; }
 
-      int create(I** retval, const std::string& name, const config_collection& cc,api_status* status = nullptr) {
+      int create(I** retval, const std::string& name, Args&& ...args, api_status* status= nullptr) {
         auto it = _creators.find(name);
 
         if ( it != _creators.end() ) {
           try {
-            return ( it->second )( retval, cc, status );
+            return ( it->second )( retval, std::forward<Args>(args)..., status );
           }
           catch ( const std::exception& e ) {
             // Create functions should not throw. However registered function might be a user defined function

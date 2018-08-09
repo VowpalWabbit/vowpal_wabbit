@@ -36,6 +36,7 @@ namespace reinforcement_learning {
     // RETURN_IF_FAIL(_logger.init(status));
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
+    RETURN_IF_FAIL(init_loggers(status));
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
     return error_code::success;
   }
@@ -85,57 +86,39 @@ namespace reinforcement_learning {
   live_model_impl::live_model_impl(
     const utility::config_collection& config,
     error_fn fn,
-    void* err_context
-  )
-    : _configuration(config),
-      _error_cb(fn, err_context),
-      _data_cb(_handle_model_update, this),
-      _transport(nullptr),
-      _model(nullptr),
-      _model_download(nullptr),
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
-  {
-    // User has not supplied dependencies, use defaults here.
-    _t_factory = &data_transport_factory;
-    _m_factory = &model_factory;
-    _ranking_logger = std::make_shared<event_hub_observation_logger>(config, &_error_cb);
-    _outcome_logger = std::make_shared<event_hub_interaction_logger>(config, &_error_cb);
-  }
-
-  live_model_impl::live_model_impl(
-    const utility::config_collection& config,
-    error_fn fn,
     void* err_context,
-    transport_factory_t* t_factory,
+    data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_i* ranking_logger,
-    logger_i* outcome_logger
+    logger_factory_t* logger_factory
   )
     : _configuration(config),
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
-      _transport(nullptr),
-      _model(nullptr),
-      _model_download(nullptr),
+      _t_factory{t_factory},
+      _m_factory{m_factory},
+      _logger_factory{logger_factory},
       _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
       _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
-  {
-    // User has supplied dependencies to consume, it is their responsibility to manage the lifetime.
-    // However, for parity with default arguments shared_ptrs are used and the delete function is a no-op.
-    _t_factory = t_factory;
-    _m_factory = m_factory;
-
-    // Shared pointers with custom deleters that intentionally don't call delete
-    _ranking_logger = std::shared_ptr<logger_i>(ranking_logger, [](logger_i* p){});
-    _outcome_logger = std::shared_ptr<logger_i>(outcome_logger, [](logger_i* p){});
-  }
+  {}
 
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
     m::i_model* pmodel;
     RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration,status));
     _model.reset(pmodel);
+    return error_code::success;
+  }
+
+  int live_model_impl::init_loggers(api_status* status) {
+    const auto ranking_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
+    i_logger* ranking_logger;
+    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, &_error_cb, status));
+    _ranking_logger.reset(ranking_logger);
+
+    const auto outcome_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
+    i_logger* outcome_logger;
+    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, &_error_cb, status));
+    _outcome_logger.reset(outcome_logger);
     return error_code::success;
   }
 

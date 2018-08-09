@@ -15,7 +15,7 @@ namespace reinforcement_learning { namespace model_management {
     int run_iteration(api_status* status) const;
   private:
     // Lifetime of pointers managed by user of this class
-    i_data_transport* _ptrans;
-    data_callback_fn* _pdata_cb;
+    i_data_transport* _ptrans = nullptr;
+    data_callback_fn* _pdata_cb = nullptr;
   };
 }}

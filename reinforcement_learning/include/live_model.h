@@ -50,19 +50,6 @@ namespace reinforcement_learning {
      * NOTE: Error callback will get invoked in a background thread.
      */
     using error_fn = void(*)(const api_status&, void*);
-    /**
-     * @brief Factory to create transport for model data.
-     * Advanced extension point:  Register another implementation of i_data_transport to
-     * provide updated model data used to hydrate inference model.
-     */
-    using transport_factory_t = utility::object_factory<model_management::i_data_transport>;
-    /**
-     * @brief Factory to create model used in inference.
-     * Advanced extension point:  Register another implementation of i_model to
-     * provide hydraded model given updated model data. This model is then used
-     * in inference.
-     */
-    using model_factory_t = utility::object_factory<model_management::i_model>;
 
     /**
     * @brief Construct a new live model object.
@@ -78,16 +65,10 @@ namespace reinforcement_learning {
     explicit live_model(
       const utility::config_collection& config,
       error_fn fn = nullptr,
-      void* err_context = nullptr);
-
-    explicit live_model(
-      const utility::config_collection& config,
-      error_fn fn,
-      void* err_context,
-      transport_factory_t* t_factory,
-      model_factory_t* m_factory,
-      logger_i* ranking_logger,
-      logger_i* outcome_logger);
+      void* err_context = nullptr,
+      data_transport_factory_t* t_factory = &data_transport_factory,
+      model_factory_t* m_factory = &model_factory,
+      logger_factory_t* logger_factory = &logger_factory);
 
     /**
      * @brief Initialize inference library.
@@ -175,17 +156,10 @@ namespace reinforcement_learning {
     explicit live_model(
       const utility::config_collection& config,
       error_fn_t<ErrCntxt> fn = nullptr,
-      ErrCntxt* err_context = nullptr);
-
-    template<typename ErrCntxt>
-    explicit live_model(
-      const utility::config_collection& config,
-      error_fn_t<ErrCntxt> fn,
-      ErrCntxt* err_context,
-      transport_factory_t* t_factory,
-      model_factory_t* m_factory,
-      logger_i* ranking_logger,
-      logger_i* outcome_logger);
+      ErrCntxt* err_context = nullptr,
+      data_transport_factory_t* t_factory = &data_transport_factory,
+      model_factory_t* m_factory = &model_factory,
+      logger_factory_t* logger_factory = &logger_factory);
 
     /**
      * @brief Default move constructor for live model object.
@@ -222,19 +196,10 @@ namespace reinforcement_learning {
   live_model::live_model(
     const utility::config_collection& config,
     error_fn_t<ErrCntxt> fn,
-    ErrCntxt* err_context)
-    : live_model(config, (error_fn)(fn), (void*)(err_context))
-  {}
-
-  template<typename ErrCntxt>
-  live_model::live_model(
-    const utility::config_collection& config,
-    error_fn_t<ErrCntxt> fn,
     ErrCntxt* err_context,
-    transport_factory_t* t_factory,
+    data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_i* ranking_logger,
-    logger_i* outcome_logger)
-    : live_model(config, (error_fn)(fn), (void*)(err_context), t_factory, m_factory, ranking_logger, outcome_logger)
+    logger_factory_t* logger_factory)
+    : live_model(config, (error_fn)(fn), (void*)(err_context), t_factory, m_factory, logger_factory)
   {}
 }

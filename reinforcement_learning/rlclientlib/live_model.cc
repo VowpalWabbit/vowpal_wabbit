@@ -15,21 +15,13 @@ namespace reinforcement_learning
   live_model::live_model(
     const utility::config_collection& config,
     error_fn fn,
-    void* err_context)
-  {
-    _pimpl = std::unique_ptr<live_model_impl>(new live_model_impl(config, fn, err_context));
-  }
-
-  live_model::live_model(
-    const utility::config_collection& config,
-    error_fn fn,
     void* err_context,
-    transport_factory_t* t_factory,
+    data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_i* ranking_logger,
-    logger_i* outcome_logger)
+    logger_factory_t* logger_factory)
   {
-    _pimpl = std::unique_ptr<live_model_impl>(new live_model_impl(config, fn, err_context, t_factory, m_factory, ranking_logger, outcome_logger));
+    _pimpl = std::unique_ptr<live_model_impl>(
+      new live_model_impl(config, fn, err_context, t_factory, m_factory, logger_factory));
   }
 
   live_model::~live_model() = default;
