@@ -1,5 +1,3 @@
-import os, sys
-
 import rl_client
 
 class my_error_callback(rl_client.error_callback):

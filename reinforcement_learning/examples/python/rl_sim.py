@@ -3,7 +3,6 @@ import random
 import sys
 import time
 import uuid
-import os
 
 import rl_client
 
