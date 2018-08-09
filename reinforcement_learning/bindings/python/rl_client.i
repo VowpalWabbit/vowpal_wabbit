@@ -52,7 +52,7 @@ namespace reinforcement_learning {
       reinforcement_learning::python::ranking_response choose_rank(const char* context_json);
 
       void report_outcome(const char* uuid, const char* outcome_data);
-      void report_reward(const char* uuid, float reward);
+      void report_outcome(const char* uuid, float reward);
 
       %pythoncode %{
         def choose_rank(self, *args):

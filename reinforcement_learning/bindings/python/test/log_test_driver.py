@@ -1,9 +1,9 @@
 import argparse
-import numbers
 import json
 import sys
 import os
 
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python"))
 import rl_client
 
 class my_error_callback(rl_client.error_callback):
@@ -33,14 +33,12 @@ def main(args):
             current_example = json.loads(line)
 
             context_json = json.dumps(current_example["c"])
-            model_id, chosen_action_id, action_probabilities = model.choose_rank(current_example["EventId"], context_json)
+            uuid, model_id, chosen_action_id, action_probabilities = model.choose_rank(current_example["EventId"], context_json)
 
             if("o" in current_example):
                 for observation in current_example["o"]:
-                    if isinstance(observation["v"], numbers.Real):
-                        model.report_reward(observation["EventId"], observation["v"])
-                    else:
-                        model.report_outcome(observation["EventId"], json.dumps(observation["v"]))
+                    model.report_outcome(observation["EventId"], observation["v"])
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
