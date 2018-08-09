@@ -1,6 +1,6 @@
 /*! \page Python
 There are Python bindings available for the C++ inference library. These bindings are in the
-\link rlinference
+\link rl_client
 \endlink
 module.
 
@@ -12,45 +12,45 @@ and
 \endlink
 for examples of usage of the Python API.
 
-\class rlinference
-\brief Module namespace for Python API. Note: Although the documentation website contains both C++ and Python all classes and functions under the rlinference namespace are for Python only.
+\class rl_client
+\brief Module namespace for Python API. Note: Although the documentation website contains both C++ and Python all classes and functions under the rl_client namespace are for Python only.
 
-\class rlinference::live_model
+\class rl_client::live_model
 \brief Main class that wraps interactions with inference API. choose_rank and report_outcome make up the two logical steps in the inference API. The relevant C++ class is reinforcement_learning::live_model.
 
-\class rlinference::config_collection
+\class rl_client::config_collection
 \brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example. The relevant C++ class is reinforcement_learning::utility::config_collection.
 
-\class rlinference::error_callback
-\brief Abstract class that must be subclassed in order to handle background errors. rlinference::error_callback::on_error must be overridden in the subclass.
+\class rl_client::error_callback
+\brief Abstract class that must be subclassed in order to handle background errors. rl_client::error_callback::on_error must be overridden in the subclass.
 
-\fn rlinference::error_callback::on_error(error_code, error_message)
-\memberof rlinference::error_callback
+\fn rl_client::error_callback::on_error(error_code, error_message)
+\memberof rl_client::error_callback
 \pure
-\brief Handler for background errors in the API. Must over overridden by subclassing rlinference::error_callback.
+\brief Handler for background errors in the API. Must over overridden by subclassing rl_client::error_callback.
 \param error_code The error code of the corresponding error as defined in \ref error_codes
 \param error_message Readable string representation of error that occurred.
 \return void
 
-\fn rlinference::live_model::live_model(config_collection, error_callback)
-\memberof rlinference::live_model
+\fn rl_client::live_model::live_model(config_collection, error_callback)
+\memberof rl_client::live_model
 \brief Constructor for live_model. The provided error_callback is used if any background errors occur.
 \param config_collection Configuration object defining connection strings and other parameters.
 \param error_callback Callback object used for background errors.
 
-\fn rlinference::live_model::live_model(config_collection)
-\memberof rlinference::live_model
+\fn rl_client::live_model::live_model(config_collection)
+\memberof rl_client::live_model
 \brief Constructor for live_model. This overload is provided if no background error_callback is required. Failures will be silent.
 \param config_collection Configuration object defining connection strings and other parameters.
 
-\fn rlinference::live_model::init()
-\memberof rlinference::live_model
+\fn rl_client::live_model::init()
+\memberof rl_client::live_model
 \brief Must be called before any usage of choose_rank or report_outcome.
 \exception RuntimeError Thrown if initialization fails.
 \return void
 
-\fn rlinference::live_model::choose_rank(uuid, context_json)
-\memberof rlinference::live_model
+\fn rl_client::live_model::choose_rank(uuid, context_json)
+\memberof rl_client::live_model
 \brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
 \param uuid The unique identifier for this interaction. The same uuid should be used when reporting the outcome for this action.
 \param context_json Contains action, action features and context features in JSON format.
@@ -61,8 +61,8 @@ for examples of usage of the Python API.
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
 
-\fn rlinference::live_model::choose_rank(context_json)
-\memberof rlinference::live_model
+\fn rl_client::live_model::choose_rank(context_json)
+\memberof rl_client::live_model
 \brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
 \param context_json Contains action, action features and context features in JSON format.
 \exception RuntimeError Thrown if an internal error occurs.
@@ -72,63 +72,63 @@ for examples of usage of the Python API.
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
 
-\fn rlinference::live_model::report_outcome(uuid, outcome_data)
-\memberof rlinference::live_model
+\fn rl_client::live_model::report_outcome(uuid, outcome_data)
+\memberof rl_client::live_model
 \brief Report the reward for the top action.
 \param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param outcome_data Reward serialized as a string.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 
-\fn rlinference::live_model::report_outcome(uuid, reward)
-\memberof rlinference::live_model
+\fn rl_client::live_model::report_outcome(uuid, reward)
+\memberof rl_client::live_model
 \brief Report the reward for the top action.
 \param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param reward Reward as a float.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 
-\fn rlinference::config_collection::set(name, value)
-\memberof rlinference::config_collection
+\fn rl_client::config_collection::set(name, value)
+\memberof rl_client::config_collection
 \brief Sets the value for a given name.  It overrides any existing values for that name.
 \param name Key to set in collection.
 \param value Value to set.
 \return void
 
-\fn rlinference::config_collection::get(name, defval)
-\memberof rlinference::config_collection
+\fn rl_client::config_collection::get(name, defval)
+\memberof rl_client::config_collection
 \brief Gets the value for a given name.  If the value does not exist, it returns defval.
 \param name Key to retrieve
 \param defval Default value if key is not found or error occurs.
 \return string
 
-\fn rlinference::config_collection::get_int(name, defval)
-\memberof rlinference::config_collection
+\fn rl_client::config_collection::get_int(name, defval)
+\memberof rl_client::config_collection
 \brief Gets the value as an integer. If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (int) Default value if key is not found or error occurs.
 \return int
 
-\fn rlinference::config_collection::get_bool(name, defval)
-\memberof rlinference::config_collection
+\fn rl_client::config_collection::get_bool(name, defval)
+\memberof rl_client::config_collection
 \brief Gets the value as an boolean.  If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (bool) Default value if key is not found or error occurs.
 \return bool
 
-\fn rlinference::config_collection::get_float(name, defval)
-\memberof rlinference::config_collection
+\fn rl_client::config_collection::get_float(name, defval)
+\memberof rl_client::config_collection
 \brief Gets the value as an float.  If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (float) Default value if key is not found or error occurs.
 \return float
 
-\fn rlinference::create_config_from_json(config_json)
-\memberof rlinference
+\fn rl_client::create_config_from_json(config_json)
+\memberof rl_client
 \static
-\brief Creates an rlinference::config_collection object from the equivalent JSON representation of the config. See \ref api_config for an example configuration file.
+\brief Creates an rl_client::config_collection object from the equivalent JSON representation of the config. See \ref api_config for an example configuration file.
 \param config_json JSON string representation of configuration
-\return rlinference::config_collection
+\return rl_client::config_collection
 
 \example basic_usage.py
 \example rl_sim.py

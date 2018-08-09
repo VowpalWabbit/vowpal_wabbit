@@ -4,16 +4,16 @@ import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python"))
-import rlinference
+import rl_client
 
-class my_error_callback(rlinference.error_callback):
+class my_error_callback(rl_client.error_callback):
   def on_error(self, error_code, error_message):
     print("Background error:")
     print(error_message)
 
 def load_config_from_json(file_name):
     with open(file_name, 'r') as config_file:
-        return rlinference.create_config_from_json(config_file.read())
+        return rl_client.create_config_from_json(config_file.read())
 
 def process_cmd_line(args):
     parser = argparse.ArgumentParser()
@@ -25,7 +25,7 @@ def main(args):
     options = process_cmd_line(args)
 
     config = load_config_from_json(options.json_config)
-    model = rlinference.live_model(config, my_error_callback())
+    model = rl_client.live_model(config, my_error_callback())
     model.init()
 
     with open(options.log_file) as fp:

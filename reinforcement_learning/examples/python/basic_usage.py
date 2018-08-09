@@ -1,22 +1,21 @@
 import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python"))
 
-import rlinference
+import rl_client
 
-class my_error_callback(rlinference.error_callback):
+class my_error_callback(rl_client.error_callback):
     def on_error(self, error_code, error_message):
         print("Background error:")
         print(error_message)
 
 def load_config_from_json(file_name):
     with open(file_name, 'r') as config_file:
-        return rlinference.create_config_from_json(config_file.read())
+        return rl_client.create_config_from_json(config_file.read())
 
 def main():
     config = load_config_from_json("client.json")
 
     test_cb = my_error_callback()
-    model = rlinference.live_model(config, test_cb)
+    model = rl_client.live_model(config, test_cb)
     model.init()
 
     uuid = "uuid"

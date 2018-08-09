@@ -1,7 +1,7 @@
 # Underscore is required to be consistent with Swig's name generation
-TARGET = _rlinference.so
+TARGET = _rl_client.so
 
-PIP_FOLDER = ./rlinference/
+PIP_FOLDER = ./rl_client/
 
 # Python 3.6 is specifically provided, tricky if we want to link against different versions.
 INCLUDE = -I ../../include -I ./ $(shell python3.6-config --includes)
@@ -18,7 +18,7 @@ all: default
 
 things: all
 
-MODULE_NAME = rlinference
+MODULE_NAME = rl_client
 MAIN_SWIG_INTERFACE = $(MODULE_NAME).i
 OTHER_SWIG_INTERFACES = $(filter-out $(MAIN_SWIG_INTERFACE), $(wildcard *.i))
 MAIN_SWIG_WRAPPED_INTERFACE = $(MODULE_NAME)_wrap.cc

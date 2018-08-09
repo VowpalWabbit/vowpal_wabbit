@@ -1,4 +1,4 @@
-%module(directors="1") rlinference
+%module(directors="1") rl_client
 
 %{
 #define SWIG_FILE_WITH_INIT

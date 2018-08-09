@@ -5,17 +5,16 @@ import time
 import uuid
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "bindings", "python"))
-import rlinference
+import rl_client
 
-class my_error_callback(rlinference.error_callback):
+class my_error_callback(rl_client.error_callback):
   def on_error(self, error_code, error_message):
     print("Background error:")
     print(error_message)
 
 def load_config_from_json(file_name):
     with open(file_name, 'r') as config_file:
-        return rlinference.create_config_from_json(config_file.read())
+        return rl_client.create_config_from_json(config_file.read())
 
 class person:
     def __init__(self, id, major, hobby, fav_char, p):
@@ -42,11 +41,11 @@ class rl_sim:
         self._options = args
 
         self.config = load_config_from_json(self._options.json_config)
-        self._rl = rlinference.live_model(self.config, my_error_callback())
+        self._rl = rl_client.live_model(self.config, my_error_callback())
         self._rl.init()
 
-        tp1 = {'HerbGarden': 0.002, "MachineLearning": 0.03 }
-        tp2 = {'HerbGarden': 0.015, "MachineLearning": 0.05 }
+        tp1 = {'HerbGarden': 0.6, "MachineLearning": 0.4 }
+        tp2 = {'HerbGarden': 0.2, "MachineLearning": 0.8 }
 
         self._actions = ['HerbGarden', 'MachineLearning']
         self._people = [
@@ -63,7 +62,7 @@ class rl_sim:
                 context_json = self.create_context_json(context_features, action_features)
                 req_id = str(uuid.uuid4())
 
-                _, model_id, chosen_action_id, action_probabilities = self._rl.choose_rank(req_id, context_json)
+                model_id, chosen_action_id, action_probabilities = self._rl.choose_rank(req_id, context_json)
                 reward = p.get_reward(self._actions[chosen_action_id])
                 self._rl.report_outcome(req_id, reward)
 

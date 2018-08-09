@@ -7,7 +7,7 @@ with open('README.md', 'r') as fh:
 external_deps_dir = '/home/ataymano/restore_e2e_1/'
 
 extension_module = setuptools.Extension(
-  	'rlinference._rlinference',
+  	'rl_client._rl_client',
   	sources = glob.glob('*.cc'),
   	library_dirs = [],
   	include_dirs = ['../../include/'],
@@ -19,8 +19,8 @@ extension_module = setuptools.Extension(
 )
 
 setuptools.setup(
-    version = '0.0.4',
-    name = 'rlinference',
+    version = '0.0.5',
+    name = 'rl_client',
     url = 'https://github.com/JohnLangford/vowpal_wabbit', 
     description = 'Python binding for reinforcement learning client library',
     long_description = long_description,
@@ -28,7 +28,7 @@ setuptools.setup(
     author_email = 'decisionservicedevs@microsoft.com',
     license = 'MIT',
     ext_modules = [extension_module],
-    py_modules = ['rlinference.py'],
+    py_modules = ['rl_client.py'],
     packages = setuptools.find_packages(),
     classifiers = (
         'License :: OSI Approved :: MIT License',
