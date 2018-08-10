@@ -19,7 +19,7 @@ namespace reinforcement_learning {
     };
 
     struct ranking_response {
-      std::string uuid;
+      std::string event_id;
       std::string model_id;
       size_t chosen_action_id;
       std::vector<int> action_ids;
@@ -35,12 +35,12 @@ namespace reinforcement_learning {
 
       void init();
 
-      ranking_response choose_rank(const char* uuid, const char* context_json);
-      // Uuid is auto-generated.
+      ranking_response choose_rank(const char* event_id, const char* context_json);
+      // event_id is auto-generated.
       ranking_response choose_rank(const char* context_json);
 
-      void report_outcome(const char* uuid, const char* outcome_data);
-      void report_outcome(const char* uuid, float reward);
+      void report_outcome(const char* event_id, const char* outcome_data);
+      void report_outcome(const char* event_id, float reward);
 
       private:
         reinforcement_learning::live_model impl;

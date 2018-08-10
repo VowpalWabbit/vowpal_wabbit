@@ -86,7 +86,7 @@ void test_loop::validity_loop(size_t thread_id)
   for (size_t i = 0; i < examples; ++i) {
     if (step > 0 && i % step == 0 && thread_id == 0) std::cout << "\r" << (i / step) << "%";
 
-    if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
+    if (rl->choose_rank(test_inputs.get_event_id(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
@@ -115,7 +115,7 @@ void test_loop::perf_loop(size_t thread_id)
   for (size_t i = 0; i < examples; ++i) {
     if (step > 0 && i % step == 0 && thread_id == 0) std::cout << "\r" << (i / step) << "%";
 
-    if (rl->choose_rank(test_inputs.get_uuid(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
+    if (rl->choose_rank(test_inputs.get_event_id(thread_id, i), test_inputs.get_context(thread_id, i), response, &status) != err::success) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }

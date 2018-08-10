@@ -3,8 +3,8 @@
 
 namespace reinforcement_learning {
  
-  ranking_response_impl::ranking_response_impl(const std::string& uuid)
-  : _uuid {uuid}, _chosen_action_id{0} {}
+  ranking_response_impl::ranking_response_impl(const std::string& event_id)
+  : _event_id {event_id}, _chosen_action_id{0} {}
 
   bool ranking_response_impl::get_action(const size_t idx, size_t* action_id, float* prob) const {
     if ( idx < _ranking.size() ) {
@@ -31,7 +31,7 @@ namespace reinforcement_learning {
   }
 
   void ranking_response_impl::reset() {
-    _uuid.clear();
+    _event_id.clear();
     _chosen_action_id = 0;
     _model_id.clear();
     _ranking.clear();

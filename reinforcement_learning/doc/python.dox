@@ -49,14 +49,13 @@ for examples of usage of the Python API.
 \exception RuntimeError Thrown if initialization fails.
 \return void
 
-\fn rl_client::live_model::choose_rank(uuid, context_json)
+\fn rl_client::live_model::choose_rank(event_id, context_json)
 \memberof rl_client::live_model
 \brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
-\param uuid The unique identifier for this interaction. The same uuid should be used when reporting the outcome for this action.
+\param event_id The unique identifier for this interaction. The same event_id should be used when reporting the outcome for this action.
 \param context_json Contains action, action features and context features in JSON format.
 \exception RuntimeError Thrown if an internal error occurs.
-\return uuid, model_id, chosen_action_id, action_probabilities
-\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
+\return model_id, chosen_action_id, action_probabilities
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
@@ -66,24 +65,24 @@ for examples of usage of the Python API.
 \brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
 \param context_json Contains action, action features and context features in JSON format.
 \exception RuntimeError Thrown if an internal error occurs.
-\return uuid, model_id, chosen_action_id, action_probabilities
-\return uuid - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
+\return model_id, chosen_action_id, action_probabilities, event_id
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
+\return event_id - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
 
-\fn rl_client::live_model::report_outcome(uuid, outcome_data)
+\fn rl_client::live_model::report_outcome(event_id, outcome_data)
 \memberof rl_client::live_model
 \brief Report the reward for the top action.
-\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
+\param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param outcome_data Reward serialized as a string.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 
-\fn rl_client::live_model::report_outcome(uuid, reward)
+\fn rl_client::live_model::report_outcome(event_id, reward)
 \memberof rl_client::live_model
 \brief Report the reward for the top action.
-\param uuid The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
+\param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
 \param reward Reward as a float.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void

@@ -16,25 +16,25 @@ def main():
     model = rl_client.live_model(config, test_cb)
     model.init()
 
-    uuid = "uuid"
+    event_id = "event_id"
     context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"a1":"f1"},{"a2":"f2"}]}'
 
-    model_id, chosen_action_id, action_probabilities = model.choose_rank(uuid, context)
+    model_id, chosen_action_id, action_probabilities = model.choose_rank(event_id, context)
 
-    print("uuid: " + uuid)
+    print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(action_probabilities))
 
-    model_id, chosen_action_id, action_probabilities, uuid = model.choose_rank(context)
+    model_id, chosen_action_id, action_probabilities, event_id = model.choose_rank(context)
 
-    print("uuid: " + uuid)
+    print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(action_probabilities))
 
     reward = 1.0
-    model.report_outcome(uuid, reward)
+    model.report_outcome(event_id, reward)
 
 if __name__ == "__main__":
    main()

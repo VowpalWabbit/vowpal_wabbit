@@ -34,16 +34,16 @@ namespace reinforcement_learning {
     /**
      * @brief Construct a new ranking response object.  
      * 
-     * @param uuid Unique identifier for this interaction.  The same uuid must also be presented with report_outcome()
+     * @param event_id Unique identifier for this interaction.  The same event_id must also be presented with report_outcome()
      */
-    ranking_response(char const* uuid);
+    ranking_response(char const* event_id);
     /**
      * @brief Unique id for this ranking request.  
      * The same unique id must be passed back when reporing outcome so it can be
      * tied back to the chosen action.
      * @return const char* 
      */
-    const char* get_uuid() const;
+    const char* get_event_id() const;
 
     /**
      * @brief Get the chosen action id.  
@@ -64,10 +64,10 @@ namespace reinforcement_learning {
     int set_chosen_action_id(size_t action_id, api_status* status = nullptr); // id of the top action chosen by the ds
     
     /**
-     * @brief Set the uuid.  (This is set internally by the API)
-     * @param uuid 
+     * @brief Set the event_id.  (This is set internally by the API)
+     * @param event_id 
      */
-    void set_uuid(const char* uuid);
+    void set_event_id(const char* event_id);
 
     /**
      * @brief Add (action id, probability) pair to the response (This is set internally by the API)

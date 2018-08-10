@@ -92,49 +92,49 @@ namespace reinforcement_learning {
      * @brief Choose an action, given a list of action, action features and context features. 
      * Choose an action by using the inferencing model to create a probability distribution over actions 
      * and then drawing from the distribution.
-     * @param uuid  The unique identifier for this interaction.  The same uuid should be used when
+     * @param event_id  The unique identifier for this interaction.  The same event_id should be used when
      *              reporting the outcome for this action.  
      * @param context_json Contains action, action features and context features in json format
      * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * uuid, const char * context_json, ranking_response& resp, api_status* status= nullptr);
+		int choose_rank(const char * event_id, const char * context_json, ranking_response& resp, api_status* status= nullptr);
 
     /**
      * @brief Choose an action, given a list of action, action features and context features. 
      * Choose an action by using the inferencing model to create a probability distribution over actions 
      * and then drawing from the distribution.  An unique id will be generated and returned in the ranking_response.
-     * The same uuid should be used when reporting the outcome for this action.
+     * The same event_id should be used when reporting the outcome for this action.
      * 
      * @param context_json Contains action, action features and context features in json format
      * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//uuid is auto-generated
+		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//event_id is auto-generated
 
     /**
      * @brief Report the reward for the top action.  
      * 
-     * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
+     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
      * @param reward Outcome/Reward serialized as a string
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int report_outcome(const char* uuid, const char* reward, api_status* status= nullptr);
+		int report_outcome(const char* event_id, const char* reward, api_status* status= nullptr);
 		
     /**
      * @brief Report the reward for the top action.  
      * 
-     * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
+     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
      * @param reward Outcome/Reward as float
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-    int report_outcome(const char* uuid, float reward, api_status* status= nullptr);
+    int report_outcome(const char* event_id, float reward, api_status* status= nullptr);
 
     /**
      * @brief Error callback function.  

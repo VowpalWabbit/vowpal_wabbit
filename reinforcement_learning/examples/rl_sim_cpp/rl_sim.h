@@ -50,11 +50,11 @@ public:
     std::string create_context_json(const std::string& cntxt, const std::string& action);
 
     /**
-     * @brief Create a uuid used to match choose_rank and report_outcome() 
+     * @brief Create a event_id used to match choose_rank and report_outcome() 
      * 
      * @return std::string 
      */
-    std::string create_uuid();
+    std::string create_event_id();
 
     /**
      * @brief Pick a person from the list of people.  Use uniform random.

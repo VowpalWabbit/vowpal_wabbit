@@ -59,35 +59,35 @@ class LiveModelTests(unittest.TestCase):
         model = rl_client.live_model(self.config)
         model.init()
 
-        uuid = "uuid"
+        event_id = "event_id"
         context = '{"_multi":[{},{}]}'
-        model.choose_rank(uuid, context)
+        model.choose_rank(event_id, context)
 
     def test_choose_rank_invalid_context(self):
         model = rl_client.live_model(self.config)
         model.init()
 
-        uuid = "uuid"
+        event_id = "event_id"
         invalid_context = ""
-        self.assertRaises(Exception, model.choose_rank, uuid, invalid_context)
+        self.assertRaises(Exception, model.choose_rank, event_id, invalid_context)
 
-    def test_choose_rank_invalid_uuid(self):
+    def test_choose_rank_invalid_event_id(self):
         model = rl_client.live_model(self.config)
         model.init()
 
-        invalid_uuid = ""
+        invalid_event_id = ""
         context = '{"_multi":[{},{}]}'
-        self.assertRaises(Exception, model.choose_rank, invalid_uuid, context)
+        self.assertRaises(Exception, model.choose_rank, invalid_event_id, context)
 
     def test_report_outcome(self):
         model = rl_client.live_model(self.config)
         model.init()
 
-        uuid = "uuid"
+        event_id = "event_id"
         context = '{"_multi":[{},{}]}'
-        model.choose_rank(uuid, context)
-        model.report_outcome(uuid, 1.0)
-        model.report_outcome(uuid,"{'result':'res'}")
+        model.choose_rank(event_id, context)
+        model.report_outcome(event_id, 1.0)
+        model.report_outcome(event_id,"{'result':'res'}")
 
     def test_report_outcome_no_connection(self):
         # Requires dependency injection for network.

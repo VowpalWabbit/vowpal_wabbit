@@ -48,30 +48,30 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 	r::live_model ds(config);
   BOOST_CHECK_EQUAL(ds.init(&status), err::success);
 
-  const auto uuid = "uuid";
-  const auto invalid_uuid = "";
+  const auto event_id = "event_id";
+  const auto invalid_event_id = "";
   const auto invalid_context = "";
 
   r::ranking_response response;
 
 	// request ranking
-	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, JSON_CONTEXT, response), err::success);
+	BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), err::success);
 
 	//check expected returned codes
-	BOOST_CHECK_EQUAL(ds.choose_rank(invalid_uuid, JSON_CONTEXT, response), err::invalid_argument);//invalid uuid
-	BOOST_CHECK_EQUAL(ds.choose_rank(uuid, invalid_context, response), err::invalid_argument);//invalid context
+	BOOST_CHECK_EQUAL(ds.choose_rank(invalid_event_id, JSON_CONTEXT, response), err::invalid_argument);//invalid event_id
+	BOOST_CHECK_EQUAL(ds.choose_rank(event_id, invalid_context, response), err::invalid_argument);//invalid context
 
-	//invalid uuid
-	ds.choose_rank(uuid, invalid_context, response, &status);
+	//invalid event_id
+	ds.choose_rank(event_id, invalid_context, response, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), err::invalid_argument);
   
 	//invalid context
-	ds.choose_rank(invalid_uuid, JSON_CONTEXT, response, &status);
+	ds.choose_rank(invalid_event_id, JSON_CONTEXT, response, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), err::invalid_argument);
 	
 	//valid request => status is reset
   r::api_status::try_update(&status, -42, "hello");
-	ds.choose_rank(uuid, JSON_CONTEXT, response, &status);
+	ds.choose_rank(event_id, JSON_CONTEXT, response, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), 0);
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 }
@@ -99,31 +99,31 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
   BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
   BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
-  const auto uuid = "uuid";
+  const auto event_id = "event_id";
 	const auto  reward = "reward";
-	const auto  invalid_uuid = "";
+	const auto  invalid_event_id = "";
 	const auto  invalid_reward = "";
 
 	// report reward
-  const auto scode = ds.report_outcome(uuid, reward, &status);
+  const auto scode = ds.report_outcome(event_id, reward, &status);
   BOOST_CHECK_EQUAL(scode, err::success);
   BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	// check expected returned codes
-	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_uuid, reward), err::invalid_argument);//invalid uuid
-	BOOST_CHECK_EQUAL(ds.report_outcome(uuid, invalid_reward), err::invalid_argument);//invalid reward
+	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_event_id, reward), err::invalid_argument);//invalid event_id
+	BOOST_CHECK_EQUAL(ds.report_outcome(event_id, invalid_reward), err::invalid_argument);//invalid reward
 
-	//invalid uuid
-	ds.report_outcome(invalid_uuid, reward, &status);
+	//invalid event_id
+	ds.report_outcome(invalid_event_id, reward, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 
 	//invalid context
-	ds.report_outcome(uuid, invalid_reward, &status);
+	ds.report_outcome(event_id, invalid_reward, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 	
 	//valid request => status is not modified
   r::api_status::try_update(&status, -42, "hello");
-  ds.report_outcome(uuid, reward, &status);
+  ds.report_outcome(event_id, reward, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 }
@@ -169,12 +169,12 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   
   ds.init(nullptr);
 
-  const char*  uuid = "uuid";
+  const char*  event_id = "event_id";
 
   r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
   // request ranking
-  BOOST_CHECK_EQUAL(ds.choose_rank(uuid, JSON_CONTEXT, response), r::error_code::success);
+  BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), r::error_code::success);
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   BOOST_CHECK_GT(the_server._err_count, 1);

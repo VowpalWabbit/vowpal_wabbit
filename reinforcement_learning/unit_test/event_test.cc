@@ -13,24 +13,24 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE(serialize_outcome)
 {
-  const auto uuid = "uuid";
+  const auto event_id = "event_id";
 	const auto outcome_data = 1.0;
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, uuid, outcome_data);
+  outcome_event::serialize(oss, event_id, outcome_data);
   const auto serialized_str = oss.str();
-  const char * expected = R"({"EventId":"uuid","v":1.000000})";
+  const char * expected = R"({"EventId":"event_id","v":1.000000})";
 
 	BOOST_CHECK_EQUAL(serialized_str.c_str(), expected);
 }
 
 BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
 {
-	const auto uuid = "";
+	const auto event_id = "";
 	const auto outcome_data = "{}";
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, uuid, outcome_data);
+  outcome_event::serialize(oss, event_id, outcome_data);
   const auto serialized = oss.str();
 	const auto expected = R"({"EventId":"","v":{}})";
 
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
 
 BOOST_AUTO_TEST_CASE(serialize_ranking)
 {
-	const auto uuid = "uuid";
+	const auto event_id = "event_id";
 	const auto context = "{context}";
 	ranking_response resp;
 	resp.push_back(1, 0.8f);
@@ -47,24 +47,24 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
 	resp.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event::serialize(oss, uuid, context, resp);
+  ranking_event::serialize(oss, event_id, context, resp);
   const std::string serialized = oss.str();
-	const auto expected = R"({"Version":"1","EventId":"uuid","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"}})";
+	const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"}})";
 
 	BOOST_CHECK_EQUAL(serialized.c_str(), expected);
 }
 
 BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
 {
-	const auto uuid = "uuid";
+	const auto event_id = "event_id";
 	const auto context = "{context}";
 	ranking_response ranking;
 	ranking.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event::serialize(oss, uuid, context, ranking);
+  ranking_event::serialize(oss, event_id, context, ranking);
   const auto serialized = oss.str();
-	const auto expected = R"({"Version":"1","EventId":"uuid","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
+	const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
 
 	BOOST_CHECK_EQUAL(serialized.c_str(), expected);
 }

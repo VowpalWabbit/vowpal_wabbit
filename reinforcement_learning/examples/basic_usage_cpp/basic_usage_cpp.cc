@@ -42,7 +42,7 @@ int main() {
   // Response class
   r::ranking_response response;
 
-  if( rl.choose_rank(uuid, context, response, &status) != err::success ) {
+  if( rl.choose_rank(event_id, context, response, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
@@ -60,7 +60,7 @@ int main() {
   //! [(5) Report outcome]
   //     Report recieved reward (Optional: if this call is not made, default missing reward is applied)
   //     Missing reward can be thought of as negative reinforcement
-  if( rl.report_outcome(uuid, reward, &status) != err::success ) {
+  if( rl.report_outcome(event_id, reward, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }

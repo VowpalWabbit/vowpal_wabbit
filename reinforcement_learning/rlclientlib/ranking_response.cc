@@ -8,15 +8,15 @@ namespace reinforcement_learning {
   ranking_response::ranking_response()
   : _pimpl { new ranking_response_impl() } {}
 
-  ranking_response::ranking_response(char const* uuid) 
-  : _pimpl{ new ranking_response_impl(uuid) } {}
+  ranking_response::ranking_response(char const* event_id) 
+  : _pimpl{ new ranking_response_impl(event_id) } {}
 
 ranking_response::~ranking_response() {
   delete _pimpl;
   }
 
-char const * ranking_response::get_uuid() const {
-    return _pimpl->_uuid.c_str();
+char const * ranking_response::get_event_id() const {
+    return _pimpl->_event_id.c_str();
 	}
 
 	int ranking_response::get_chosen_action_id(size_t& action_id, api_status* status) const {
@@ -30,8 +30,8 @@ char const * ranking_response::get_uuid() const {
     return _pimpl->set_chosen_action_id(id, status);
   }
 
-  void ranking_response::set_uuid(char const * uuid) {
-    _pimpl->_uuid = uuid;
+  void ranking_response::set_event_id(char const * event_id) {
+    _pimpl->_event_id = event_id;
 	}
 
   void ranking_response::push_back(const size_t action_id, const float prob) {

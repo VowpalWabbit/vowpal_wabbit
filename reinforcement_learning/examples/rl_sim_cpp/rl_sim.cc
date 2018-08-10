@@ -22,7 +22,7 @@ int rl_sim::loop() {
     const auto context_features = p.get_features();
     const auto action_features = get_action_features();
     const auto context_json = create_context_json(context_features,action_features);
-    const auto req_id = create_uuid();  
+    const auto req_id = create_event_id();  
     r::api_status status;
 
     // Choose an action
@@ -151,7 +151,7 @@ std::string rl_sim::create_context_json(const std::string& cntxt, const std::str
   return oss.str();
 }
 
-std::string rl_sim::create_uuid() {
+std::string rl_sim::create_event_id() {
   return boost::uuids::to_string(boost::uuids::random_generator()());
 }
 

@@ -6,7 +6,7 @@
 #include <sstream>
 
 test_data_provider::test_data_provider(const std::string& experiment_name, size_t threads, size_t examples, size_t features, size_t actions, bool _is_float_reward)
-  : uuids(threads, std::vector<std::string>(examples))
+  : event_ids(threads, std::vector<std::string>(examples))
   , contexts(threads, std::vector<std::string>(examples))
   , rewards(threads, std::vector<std::string>(examples))
   , reward_flag(threads, std::vector<bool>(examples))
@@ -14,7 +14,7 @@ test_data_provider::test_data_provider(const std::string& experiment_name, size_
 {
   for (size_t t = 0; t < threads; ++t) {
     for (size_t i = 0; i < examples; ++i) {
-      uuids[t][i] = create_uuid(experiment_name, t, i);
+      event_ids[t][i] = create_event_id(experiment_name, t, i);
       contexts[t][i] = create_context_json(create_features(features, t, i), create_action_features(actions, features, i));
       reward_flag[t][i] = (i % 10 == 0);
       rewards[t][i] = create_json_reward(t, i);
@@ -22,7 +22,7 @@ test_data_provider::test_data_provider(const std::string& experiment_name, size_
   }
 }
 
-std::string test_data_provider::create_uuid(const std::string& experiment_name, size_t thread_id, size_t example_id) const {
+std::string test_data_provider::create_event_id(const std::string& experiment_name, size_t thread_id, size_t example_id) const {
   std::ostringstream oss;
   oss << experiment_name << "-" << thread_id << "-" << example_id;
   return oss.str();
@@ -78,8 +78,8 @@ const char* test_data_provider::get_reward_json(size_t thread_id, size_t example
 }
 
 
-const char* test_data_provider::get_uuid(size_t thread_id, size_t example_id) const {
-  return uuids[thread_id][example_id].c_str();
+const char* test_data_provider::get_event_id(size_t thread_id, size_t example_id) const {
+  return event_ids[thread_id][example_id].c_str();
 }
 
 const char* test_data_provider::get_context(size_t thread_id, size_t example_id) const {
@@ -105,21 +105,21 @@ void test_data_provider::log(size_t thread_id, size_t example_id, const reinforc
 
   if (is_rewarded(thread_id, example_id)) {
     if (is_float_reward)
-      reinforcement_learning::outcome_event::serialize(buffer, get_uuid(thread_id, example_id), get_reward(thread_id, example_id));
+      reinforcement_learning::outcome_event::serialize(buffer, get_event_id(thread_id, example_id), get_reward(thread_id, example_id));
     else
-      reinforcement_learning::outcome_event::serialize(buffer, get_uuid(thread_id, example_id), get_reward_json(thread_id, example_id));
+      reinforcement_learning::outcome_event::serialize(buffer, get_event_id(thread_id, example_id), get_reward_json(thread_id, example_id));
 
     logger << R"("o":[)" << buffer.str() << "],";
     buffer.reset();
   }
 
-  reinforcement_learning::ranking_event::serialize(buffer, get_uuid(thread_id, example_id), get_context(thread_id, example_id), response);
+  reinforcement_learning::ranking_event::serialize(buffer, get_event_id(thread_id, example_id), get_context(thread_id, example_id), response);
   const std::string buffer_str = buffer.str();
   logger << buffer_str.substr(1, buffer_str.length() - 1) << std::endl;
 }
 
 int test_data_provider::report_outcome(reinforcement_learning::live_model* rl, size_t thread_id, size_t example_id, reinforcement_learning::api_status* status) const {
   if (is_float_reward)
-    return rl->report_outcome(get_uuid(thread_id, example_id), get_reward(thread_id, example_id), status);
-  return rl->report_outcome(get_uuid(thread_id, example_id), get_reward_json(thread_id, example_id), status);
+    return rl->report_outcome(get_event_id(thread_id, example_id), get_reward(thread_id, example_id), status);
+  return rl->report_outcome(get_event_id(thread_id, example_id), get_reward_json(thread_id, example_id), status);
 }

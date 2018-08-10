@@ -22,11 +22,11 @@ datacol get_test_data() {
   };
 }
 
-BOOST_AUTO_TEST_CASE(ranking_response_uuid) {
+BOOST_AUTO_TEST_CASE(ranking_response_event_id) {
   ranking_response resp;
-  BOOST_CHECK_EQUAL(resp.get_uuid(), "");
-  ranking_response resp2("uuid");
-  BOOST_CHECK_EQUAL(resp2.get_uuid(), "uuid");
+  BOOST_CHECK_EQUAL(resp.get_event_id(), "");
+  ranking_response resp2("event_id");
+  BOOST_CHECK_EQUAL(resp2.get_event_id(), "event_id");
 }
 
 BOOST_AUTO_TEST_CASE(ranking_response_empty_collection) {

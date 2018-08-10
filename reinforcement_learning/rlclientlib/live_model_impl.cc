@@ -44,50 +44,50 @@ namespace reinforcement_learning {
     return scode;
   }
 
-  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
                                    api_status* status) {
     response.clear();
     //clear previous errors if any
     api_status::try_clear(status);
     //check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, context, status));
+    RETURN_IF_FAIL(check_null_or_empty(event_id, context, status));
     int scode;
     if (!_model_data_received) {
-      scode = explore_only(uuid, context, response, status);
+      scode = explore_only(event_id, context, response, status);
       RETURN_IF_FAIL(scode);
       response.set_model_id("N/A");
     }
     else {
-      scode = explore_exploit(uuid, context, response, status);
+      scode = explore_exploit(event_id, context, response, status);
       RETURN_IF_FAIL(scode);
     }
-    response.set_uuid(uuid);
+    response.set_event_id(event_id);
     // Serialize the event
     u::pooled_object_guard<u::data_buffer, u::buffer_factory> guard(_buffer_pool, _buffer_pool.get_or_create());
     guard->reset();
-    ranking_event::serialize(*guard.get(), uuid, context, response);
+    ranking_event::serialize(*guard.get(), event_id, context, response);
     auto sbuf = guard->str();
     // Send the ranking event to the backend
     RETURN_IF_FAIL(_logger.append_ranking(sbuf, status));
     return error_code::success;
   }
 
-  //here the uuid is auto-generated
+  //here the event_id is auto-generated
   int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
     return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
                        status);
   }
 
-  int live_model_impl::report_outcome(const char* uuid, const char* outcome_data, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, const char* outcome_data, api_status* status) {
     // Check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, outcome_data, status));
-    return report_outcome_internal(uuid, outcome_data, status);
+    RETURN_IF_FAIL(check_null_or_empty(event_id, outcome_data, status));
+    return report_outcome_internal(event_id, outcome_data, status);
   }
 
-  int live_model_impl::report_outcome(const char* uuid, float reward, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, float reward, api_status* status) {
     // Check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, status));
-    return report_outcome_internal(uuid, reward, status);
+    RETURN_IF_FAIL(check_null_or_empty(event_id, status));
+    return report_outcome_internal(event_id, reward, status);
   }
 
   live_model_impl::live_model_impl(
@@ -130,7 +130,7 @@ namespace reinforcement_learning {
     _model_data_received = true;
   }
 
-  int live_model_impl::explore_only(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
                                     api_status* status) const {
     // Generate egreedy pdf
     size_t action_count = 0;
@@ -144,7 +144,7 @@ namespace reinforcement_learning {
     }
     // Pick using the pdf
     uint32_t chosen_action_id;
-    const uint64_t seed = uniform_hash(uuid, strlen(uuid), 0) + _seed_shift;
+    const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
@@ -159,9 +159,9 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int live_model_impl::explore_exploit(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::explore_exploit(const char* event_id, const char* context, ranking_response& response,
                                        api_status* status) const {
-    const uint64_t seed = uniform_hash(uuid, strlen(uuid), 0) + _seed_shift;
+    const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     return _model->choose_rank(seed, context, response, status);
   }
 

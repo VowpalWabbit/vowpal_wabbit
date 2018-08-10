@@ -60,7 +60,7 @@ namespace reinforcement_learning {
       ranking_response response;
       reinforcement_learning::api_status status;
 
-      response.uuid = response_impl.get_uuid();
+      response.event_id = response_impl.get_event_id();
       response.model_id = response_impl.get_model_id();
 
       size_t chosen_action_id;
@@ -84,15 +84,15 @@ namespace reinforcement_learning {
       return response;
     }
 
-    ranking_response live_model::choose_rank(const char* uuid, const char* context_json) {
+    ranking_response live_model::choose_rank(const char* event_id, const char* context_json) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
-      impl.choose_rank(uuid, context_json, response_impl, &status);
+      impl.choose_rank(event_id, context_json, response_impl, &status);
       check_api_status(status);
 
       return convert_ranking_response(response_impl);
     }
-    // Uuid is auto-generated.
+    // event_id is auto-generated.
     ranking_response live_model::choose_rank(const char* context_json) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
@@ -102,15 +102,15 @@ namespace reinforcement_learning {
       return convert_ranking_response(response_impl);
     }
 
-    void live_model::report_outcome(const char* uuid, const char* outcome_data) {
+    void live_model::report_outcome(const char* event_id, const char* outcome_data) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(uuid, outcome_data, &status);
+      impl.report_outcome(event_id, outcome_data, &status);
       check_api_status(status);
     }
 
-    void live_model::report_outcome(const char* uuid, float reward) {
+    void live_model::report_outcome(const char* event_id, float reward) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(uuid, reward, &status);
+      impl.report_outcome(event_id, reward, &status);
       check_api_status(status);
     }
   }
