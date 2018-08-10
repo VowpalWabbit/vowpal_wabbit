@@ -4,7 +4,7 @@
 #include "utility/context_helper.h"
 #include "logger/logger.h"
 #include "api_status.h"
-#include "config_collection.h"
+#include "configuration.h"
 #include "error_callback_fn.h"
 #include "ranking_response.h"
 #include "live_model_impl.h"
@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "vw_model/safe_vw.h"
 #include "explore_internal.h"
+#include "hash.h"
 
 // Some namespace changes for more concise code
 namespace e = exploration;
@@ -38,56 +39,59 @@ namespace reinforcement_learning {
     scode = init_model_mgmt(status);
     RETURN_IF_FAIL(scode);
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
+    const char* app_id = _configuration.get(name::APP_ID, "");
+    _seed_shift = uniform_hash(app_id, strlen(app_id), 0);
     return scode;
   }
 
-  int live_model_impl::choose_rank(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
                                    api_status* status) {
+    response.clear();
     //clear previous errors if any
     api_status::try_clear(status);
     //check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, context, status));
+    RETURN_IF_FAIL(check_null_or_empty(event_id, context, status));
     int scode;
     if (!_model_data_received) {
-      scode = explore_only(uuid, context, response, status);
+      scode = explore_only(event_id, context, response, status);
       RETURN_IF_FAIL(scode);
       response.set_model_id("N/A");
     }
     else {
-      scode = explore_exploit(uuid, context, response, status);
+      scode = explore_exploit(event_id, context, response, status);
       RETURN_IF_FAIL(scode);
     }
-    response.set_uuid(uuid);
+    response.set_event_id(event_id);
     // Serialize the event
     u::pooled_object_guard<u::data_buffer, u::buffer_factory> guard(_buffer_pool, _buffer_pool.get_or_create());
     guard->reset();
-    ranking_event::serialize(*guard.get(), uuid, context, response);
+    ranking_event::serialize(*guard.get(), event_id, context, response);
     auto sbuf = guard->str();
     // Send the ranking event to the backend
     RETURN_IF_FAIL(_logger.append_ranking(sbuf, status));
     return error_code::success;
   }
 
-  //here the uuid is auto-generated
+  //here the event_id is auto-generated
   int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
     return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
                        status);
   }
 
-  int live_model_impl::report_outcome(const char* uuid, const char* outcome_data, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, const char* outcome, api_status* status) {
     // Check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, outcome_data, status));
-    return report_outcome_internal(uuid, outcome_data, status);
+    RETURN_IF_FAIL(check_null_or_empty(event_id, outcome, status));
+    return report_outcome_internal(event_id, outcome, status);
   }
 
-  int live_model_impl::report_outcome(const char* uuid, float reward, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, float outcome, api_status* status) {
     // Check arguments
-    RETURN_IF_FAIL(check_null_or_empty(uuid, status));
-    return report_outcome_internal(uuid, reward, status);
+    RETURN_IF_FAIL(check_null_or_empty(event_id, status));
+    return report_outcome_internal(event_id, outcome, status);
   }
 
   live_model_impl::live_model_impl(
-    const utility::config_collection& config,
+    const utility::configuration& config,
     const error_fn fn,
     void* err_context,
     transport_factory_t* t_factory,
@@ -126,7 +130,7 @@ namespace reinforcement_learning {
     _model_data_received = true;
   }
 
-  int live_model_impl::explore_only(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
                                     api_status* status) const {
     // Generate egreedy pdf
     size_t action_count = 0;
@@ -139,23 +143,26 @@ namespace reinforcement_learning {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
     // Pick using the pdf
-    uint32_t choosen_action_id;
-    scode = e::sample_after_normalizing(uuid, begin(pdf), end(pdf), choosen_action_id);
+    uint32_t chosen_action_id;
+    const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(top_action_id, pdf[top_action_id]);
-    // Setup response with pdf from prediction and choosen action
-    for (size_t idx = 0; idx < pdf.size(); ++idx)
-      if (top_action_id != idx)
-        response.push_back(idx, pdf[idx]);
-    response.set_choosen_action_id(top_action_id);
+    response.push_back(chosen_action_id, pdf[chosen_action_id]);
+    // Setup response with pdf from prediction and chosen action
+    for (size_t idx = 1; idx < pdf.size(); ++idx) {
+      const auto cur_idx = chosen_action_id != idx ? idx : 0;
+      response.push_back(cur_idx, pdf[cur_idx]);
+    }
+    response.set_chosen_action_id(chosen_action_id);
     return error_code::success;
   }
 
-  int live_model_impl::explore_exploit(const char* uuid, const char* context, ranking_response& response,
+  int live_model_impl::explore_exploit(const char* event_id, const char* context, ranking_response& response,
                                        api_status* status) const {
-    return _model->choose_rank(uuid, context, response, status);
+    const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
+    return _model->choose_rank(seed, context, response, status);
   }
 
   int live_model_impl::init_model_mgmt(api_status* status) {

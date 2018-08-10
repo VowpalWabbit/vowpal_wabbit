@@ -8,30 +8,30 @@ namespace reinforcement_learning {
   ranking_response::ranking_response()
   : _pimpl { new ranking_response_impl() } {}
 
-  ranking_response::ranking_response(char const* uuid) 
-  : _pimpl{ new ranking_response_impl(uuid) } {}
+  ranking_response::ranking_response(char const* event_id) 
+  : _pimpl{ new ranking_response_impl(event_id) } {}
 
 ranking_response::~ranking_response() {
   delete _pimpl;
   }
 
-char const * ranking_response::get_uuid() const {
-    return _pimpl->_uuid.c_str();
+char const * ranking_response::get_event_id() const {
+    return _pimpl->_event_id.c_str();
 	}
 
-	int ranking_response::get_choosen_action_id(size_t& action_id, api_status* status) const {
-    if ( _pimpl->get_choosen_action_id(action_id) )
+	int ranking_response::get_chosen_action_id(size_t& action_id, api_status* status) const {
+    if ( _pimpl->get_chosen_action_id(action_id) )
       return error_code::success;
     RETURN_ERROR_LS(status, action_not_found);
     return error_code::success;
   }
 
-  int ranking_response::set_choosen_action_id(size_t id, api_status* status) {
-    return _pimpl->set_choosen_action_id(id, status);
+  int ranking_response::set_chosen_action_id(size_t id, api_status* status) {
+    return _pimpl->set_chosen_action_id(id, status);
   }
 
-  void ranking_response::set_uuid(char const * uuid) {
-    _pimpl->_uuid = uuid;
+  void ranking_response::set_event_id(char const * event_id) {
+    _pimpl->_event_id = event_id;
 	}
 
   void ranking_response::push_back(const size_t action_id, const float prob) {

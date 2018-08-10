@@ -23,7 +23,7 @@ namespace reinforcement_learning {
   }                               //
                                   //
   namespace utility {             //
-    class config_collection;      //
+    class configuration;      //
   }                               //
   //////////////////////////////////
 
@@ -33,7 +33,7 @@ namespace reinforcement_learning {
    * 
    * - (1) Instantiate and Initialize 
    * - (2) choose_rank() to choose an action from a list of actions
-   * - (3) report_outcome() to provide feedback on choosen action  
+   * - (3) report_outcome() to provide feedback on chosen action  
    */
 	class live_model {
 
@@ -73,7 +73,7 @@ namespace reinforcement_learning {
      *                    used for local inference.
      */
     explicit live_model(
-      const utility::config_collection& config, 
+      const utility::configuration& config, 
       error_fn fn = nullptr,                     
       void* err_context = nullptr,               
       transport_factory_t* t_factory = &data_transport_factory, 
@@ -92,49 +92,49 @@ namespace reinforcement_learning {
      * @brief Choose an action, given a list of action, action features and context features. 
      * Choose an action by using the inferencing model to create a probability distribution over actions 
      * and then drawing from the distribution.
-     * @param uuid  The unique identifier for this interaction.  The same uuid should be used when
+     * @param event_id  The unique identifier for this interaction.  The same event_id should be used when
      *              reporting the outcome for this action.  
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the choosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * uuid, const char * context_json, ranking_response& resp, api_status* status= nullptr);
+		int choose_rank(const char * event_id, const char * context_json, ranking_response& resp, api_status* status= nullptr);
 
     /**
      * @brief Choose an action, given a list of action, action features and context features. 
      * Choose an action by using the inferencing model to create a probability distribution over actions 
      * and then drawing from the distribution.  An unique id will be generated and returned in the ranking_response.
-     * The same uuid should be used when reporting the outcome for this action.
+     * The same event_id should be used when reporting the outcome for this action.
      * 
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the choosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//uuid is auto-generated
+		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//event_id is auto-generated
 
     /**
-     * @brief Report the reward for the top action.  
+     * @brief Report the outcome for the top action.  
      * 
-     * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
+     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
-     * @param reward Outcome/Reward serialized as a string
+     * @param outcome Outcome serialized as a string
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int report_outcome(const char* uuid, const char* reward, api_status* status= nullptr);
+		int report_outcome(const char* event_id, const char* outcome, api_status* status= nullptr);
 		
     /**
-     * @brief Report the reward for the top action.  
+     * @brief Report the outcome for the top action.  
      * 
-     * @param uuid  The unique identifier used when choosing an action should be presented here.  This is so that
+     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
-     * @param reward Outcome/Reward as float
+     * @param outcome Outcome as float
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-    int report_outcome(const char* uuid, float reward, api_status* status= nullptr);
+    int report_outcome(const char* event_id, float outcome, api_status* status= nullptr);
 
     /**
      * @brief Error callback function.  
@@ -163,7 +163,7 @@ namespace reinforcement_learning {
      */
     template<typename ErrCntxt>
     explicit live_model(
-      const utility::config_collection& config,
+      const utility::configuration& config,
       error_fn_t<ErrCntxt> fn = nullptr,
       ErrCntxt* err_context = nullptr,
       transport_factory_t* t_factory = &data_transport_factory,
@@ -203,7 +203,7 @@ namespace reinforcement_learning {
    */
   template <typename ErrCtxt>
   live_model::live_model(
-    const utility::config_collection& config,
+    const utility::configuration& config,
     error_fn_t<ErrCtxt> fn,
     ErrCtxt* err_context,
     transport_factory_t* t_factory,

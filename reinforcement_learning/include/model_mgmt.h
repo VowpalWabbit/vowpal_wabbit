@@ -40,7 +40,7 @@ namespace reinforcement_learning { namespace model_management {
     class i_model {
     public:
       virtual int update(const model_data& data, api_status* status = nullptr) = 0;
-      virtual int choose_rank(const char* rnd_seed, const char* features, ranking_response& response, api_status* status = nullptr) = 0;
+      virtual int choose_rank(uint64_t rnd_seed, const char* features, ranking_response& response, api_status* status = nullptr) = 0;
       virtual ~i_model() = default;
     };
 }

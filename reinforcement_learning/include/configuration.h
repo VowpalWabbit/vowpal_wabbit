@@ -1,7 +1,7 @@
 /**
- * @brief config_collection definition.  config_collection is a (name,value) pair based collection used to configure the API
+ * @brief configuration definition.  configuration is a (name,value) pair based collection used to configure the API
  * 
- * @file config_collection.h
+ * @file configuration.h
  * @author Rajan Chari et el
  * @date 2018-07-18
  */
@@ -10,29 +10,29 @@
 #include <unordered_map>
 
 namespace reinforcement_learning {namespace utility {
-  class config_collection;
+  class configuration;
 }}
 
-std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::config_collection&);
+std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::configuration&);
 
 namespace reinforcement_learning { namespace utility {
   /**
    * @brief Configuration class to initialize the API
    * Represents a collection of (name,value) pairs used to configure the API
    */
-  class config_collection
+  class configuration
   {
   public:
-    config_collection();
-    ~config_collection();
+    configuration();
+    ~configuration();
     //! Copy constructor
-    config_collection(const config_collection&);
+    configuration(const configuration&);
     //! Assignment operator
-    config_collection& operator=(const config_collection&);
+    configuration& operator=(const configuration&);
     //! Move constructor
-    config_collection& operator=(config_collection&&) noexcept;
+    configuration& operator=(configuration&&) noexcept;
     //! Move assignment operator
-    config_collection(config_collection&&) noexcept;
+    configuration(configuration&&) noexcept;
 
     //! Sets the value for a given name.  It overrides any existing values for that name
     void set(const char* name, const char* value);
@@ -45,9 +45,9 @@ namespace reinforcement_learning { namespace utility {
     //! Gets the value as a float.  If the value does not exist or if there is an error, it returns defval
     float get_float(const char* name, float defval) const; 
     //! friend Left shift operator
-    friend std::ostream& ::operator<<(std::ostream& os, const config_collection&);
+    friend std::ostream& ::operator<<(std::ostream& os, const configuration&);
 
-    private:
+  private:
     using map_type = std::unordered_map<std::string, std::string>;  //! Collection type that holds the (name,value) pairs 
     map_type* _pmap; //! Collection that holds the (name,value) pairs 
   };

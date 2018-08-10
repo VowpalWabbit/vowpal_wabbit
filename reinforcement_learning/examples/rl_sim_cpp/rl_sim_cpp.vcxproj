@@ -154,6 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="error_context.h" />
     <ClInclude Include="person.h" />
     <ClInclude Include="rl_sim.h" />
     <ClInclude Include="rl_sim_cpp.h" />

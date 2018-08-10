@@ -1,5 +1,5 @@
 /**
- * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the choosen action and probabiliy distribution.
+ * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the chosen action and probabiliy distribution.
  * 
  * @file ranking_response.h
  * @author Rajan Chari et al
@@ -24,7 +24,7 @@ namespace reinforcement_learning {
 
   /**
    * @brief choose_rank() returns the action choice using ranking_response.  
-   * ranking_response contains all the actions and distribution from with the action was sampled.  It also contains the choosen action id and
+   * ranking_response contains all the actions and distribution from with the action was sampled.  It also contains the chosen action id and
    * the unique id representing the choice.  This unique id must be used to report back outcomes against this choice for the online trainer.
    */
   class ranking_response {
@@ -34,40 +34,40 @@ namespace reinforcement_learning {
     /**
      * @brief Construct a new ranking response object.  
      * 
-     * @param uuid Unique identifier for this interaction.  The same uuid must also be presented with report_outcome()
+     * @param event_id Unique identifier for this interaction.  The same event_id must also be presented with report_outcome()
      */
-    ranking_response(char const* uuid);
+    ranking_response(char const* event_id);
     /**
      * @brief Unique id for this ranking request.  
      * The same unique id must be passed back when reporing outcome so it can be
      * tied back to the chosen action.
      * @return const char* 
      */
-    const char* get_uuid() const;
+    const char* get_event_id() const;
 
     /**
-     * @brief Get the choosen action id.  
+     * @brief Get the chosen action id.  
      * 
      * @param action_id Chosen action id
      * @param status Optional field with detailed string description if there is an error 
      * @return int Error code
      */
-    int get_choosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
+    int get_chosen_action_id(size_t& action_id, api_status* status = nullptr) const; // id of the top action chosen by the ds
 
     /**
-     * @brief Set the choosen action id.  (This is set internally by the API)
+     * @brief Set the chosen action id.  (This is set internally by the API)
      * 
      * @param action_id Chosen action id
      * @param status Optional field with detailed string description if there is an error 
      * @return int Error code
      */
-    int set_choosen_action_id(size_t action_id, api_status* status = nullptr); // id of the top action chosen by the ds
+    int set_chosen_action_id(size_t action_id, api_status* status = nullptr); // id of the top action chosen by the ds
     
     /**
-     * @brief Set the uuid.  (This is set internally by the API)
-     * @param uuid 
+     * @brief Set the event_id.  (This is set internally by the API)
+     * @param event_id 
      */
-    void set_uuid(const char* uuid);
+    void set_event_id(const char* event_id);
 
     /**
      * @brief Add (action id, probability) pair to the response (This is set internally by the API)

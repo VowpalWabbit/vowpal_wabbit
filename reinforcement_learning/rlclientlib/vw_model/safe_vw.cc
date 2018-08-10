@@ -110,7 +110,7 @@ namespace reinforcement_learning {
 
   example& safe_vw::get_or_create_example_f(void* vw) { return *(((safe_vw*)vw)->get_or_create_example()); }
 
-  std::vector<float> safe_vw::rank(const char* context)
+  void safe_vw::rank(const char* context, std::vector<int>& actions, std::vector<float>& scores)
   {
     auto examples = v_init<example*>();
     examples.push_back(get_or_create_example());
@@ -128,10 +128,13 @@ namespace reinforcement_learning {
     _vw->predict(examples2);
 
     // prediction are in the first-example
-    std::vector<float> ranking;
-    ranking.resize(examples2[0]->pred.a_s.size());
-    for (auto&& a_s : examples2[0]->pred.a_s)
-      ranking[a_s.action] = a_s.score;
+    const auto& predictions = examples2[0]->pred.a_s;
+    actions.resize(predictions.size());
+    scores.resize(predictions.size());
+    for (size_t i = 0; i < predictions.size(); ++i) {
+      actions[i] = predictions[i].action;
+      scores[i] = predictions[i].score;
+    }
 
     // push examples back into pool for re-use
     for (auto&& ex : examples)
@@ -139,8 +142,6 @@ namespace reinforcement_learning {
 
     // cleanup
     examples.delete_v();
-
-    return ranking;
   }
 
 const char* safe_vw::id() const {
