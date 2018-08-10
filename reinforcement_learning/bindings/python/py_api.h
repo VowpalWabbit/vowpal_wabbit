@@ -3,13 +3,13 @@
 #include <vector>
 #include <string>
 
-#include "config_collection.h"
+#include "configuration.h"
 #include "live_model.h"
 
 namespace reinforcement_learning {
   namespace python {
 
-    reinforcement_learning::utility::config_collection create_config_from_json(const std::string& config_json);
+    reinforcement_learning::utility::configuration create_config_from_json(const std::string& config_json);
 
     class error_callback {
     public:
@@ -29,8 +29,8 @@ namespace reinforcement_learning {
 #ifndef SWIG
     class live_model {
     public:
-      live_model(const reinforcement_learning::utility::config_collection config, error_callback& callback);
-      live_model(const reinforcement_learning::utility::config_collection config);
+      live_model(const reinforcement_learning::utility::configuration config, error_callback& callback);
+      live_model(const reinforcement_learning::utility::configuration config);
 
       void init();
 

@@ -14,7 +14,7 @@
  */
 int main() {
   //! name, value based config object used to initialise the API
-  u::config_collection config;
+  u::configuration config;
 
   //! Helper method to initialize config from a json file
   if( load_config_from_json("client.json", config) != err::success ) {
@@ -72,18 +72,18 @@ int main() {
 // Helper methods
 
 //! Load config from json file
-int load_config_from_json(const std::string& file_name, u::config_collection& cfgcoll) {
+int load_config_from_json(const std::string& file_name, u::configuration& cfgcoll) {
   std::string config_str;
   // Load contents of config file into a string
   const auto scode = load_file(file_name, config_str);
   if ( scode != 0 ) return scode;
 
-  //! [Create a config_collection from json string]
+  //! [Create a configuration from json string]
   // Use library supplied convinence method to parse json and build config object
   // namespace cfg=reinforcement_learning::utility::config;
   
   return cfg::create_from_json(config_str, cfgcoll);
-  //! [Create a config_collection from json string]
+  //! [Create a configuration from json string]
 }
 
 //! Load contents of file into a string

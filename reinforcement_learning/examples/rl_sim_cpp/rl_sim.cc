@@ -63,7 +63,7 @@ person& rl_sim::pick_a_random_person() {
 }
 
 int rl_sim::load_config_from_json(  const std::string& file_name, 
-                                    u::config_collection& cfgcoll,
+                                    u::configuration& cfgcoll,
                                     r::api_status* status) {
   std::string config_str;
 
@@ -90,7 +90,7 @@ void _on_error(const reinforcement_learning::api_status& status, rl_sim* psim) {
 
 int rl_sim::init_rl() {
   r::api_status status;
-  u::config_collection config;
+  u::configuration config;
 
   const auto cfg_file = _options["json_config"].as<std::string>();
   if ( load_config_from_json(cfg_file, config, &status) != err::success ) {

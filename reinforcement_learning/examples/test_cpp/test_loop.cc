@@ -27,7 +27,7 @@ test_loop::test_loop(const boost::program_options::variables_map& vm)
 
 bool test_loop::init() {
   r::api_status status;
-  u::config_collection config;
+  u::configuration config;
 
   if (load_config_from_json(json_config, config, &status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
@@ -44,7 +44,7 @@ bool test_loop::init() {
 }
 
 int test_loop::load_config_from_json(const std::string& file_name,
-  u::config_collection& cfgcoll,
+  u::configuration& cfgcoll,
   r::api_status* status) const {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));

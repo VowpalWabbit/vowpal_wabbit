@@ -1,7 +1,7 @@
 #include "py_api.h"
 
 #include "config_utility.h"
-#include "config_collection.h"
+#include "configuration.h"
 #include "factory_resolver.h"
 #include "api_status.h"
 #include "err_constants.h"
@@ -33,8 +33,8 @@ namespace reinforcement_learning {
       }
     }
 
-    reinforcement_learning::utility::config_collection create_config_from_json(const std::string& config_json) {
-      reinforcement_learning::utility::config_collection config;
+    reinforcement_learning::utility::configuration create_config_from_json(const std::string& config_json) {
+      reinforcement_learning::utility::configuration config;
       reinforcement_learning::api_status status;
       reinforcement_learning::utility::config::create_from_json(config_json, config, &status);
       check_api_status(status);
@@ -42,11 +42,11 @@ namespace reinforcement_learning {
       return config;
     }
 
-    live_model::live_model(const reinforcement_learning::utility::config_collection config, error_callback& callback)
+    live_model::live_model(const reinforcement_learning::utility::configuration config, error_callback& callback)
       : impl(config, &dispatch_error_internal, &callback, &data_transport_factory, &model_factory)
     {}
 
-    live_model::live_model(const reinforcement_learning::utility::config_collection config)
+    live_model::live_model(const reinforcement_learning::utility::configuration config)
       : impl(config, nullptr, nullptr, &data_transport_factory, &model_factory)
     {}
 

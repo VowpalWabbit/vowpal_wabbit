@@ -6,7 +6,7 @@ using namespace personalization;
 using namespace personalization::utility;
 using namespace personalization::utility::config;
 
-config_collection load_config();
+configuration load_config();
 void display_response(const ranking_response&);
 
 void error_handler(const api_status& error, void* user_context)
@@ -17,7 +17,7 @@ void error_handler(const api_status& error, void* user_context)
 
 int main()
 {
-  config_collection config;
+  configuration config;
   create_from_json(R"({"eventhub_host":"localhost:8080"})",config);
 
 	auto error_cntxt = 1;
@@ -66,11 +66,11 @@ int main()
 	return 0;
 }
 
-config_collection load_config()
+configuration load_config()
 {
 	// Option 1: load configuration from decision service config json
 	auto const config_json = load_config_json();
-  config_collection config;
+  configuration config;
   create_from_json(config_json, config);
 
 	// Option 2: set different config values used to initialize ds client library

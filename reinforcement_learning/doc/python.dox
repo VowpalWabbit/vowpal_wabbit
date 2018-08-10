@@ -18,8 +18,8 @@ for examples of usage of the Python API.
 \class rl_client::live_model
 \brief Main class that wraps interactions with inference API. choose_rank and report_outcome make up the two logical steps in the inference API. The relevant C++ class is reinforcement_learning::live_model.
 
-\class rl_client::config_collection
-\brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example. The relevant C++ class is reinforcement_learning::utility::config_collection.
+\class rl_client::configuration
+\brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example. The relevant C++ class is reinforcement_learning::utility::configuration.
 
 \class rl_client::error_callback
 \brief Abstract class that must be subclassed in order to handle background errors. rl_client::error_callback::on_error must be overridden in the subclass.
@@ -32,16 +32,16 @@ for examples of usage of the Python API.
 \param error_message Readable string representation of error that occurred.
 \return void
 
-\fn rl_client::live_model::live_model(config_collection, error_callback)
+\fn rl_client::live_model::live_model(configuration, error_callback)
 \memberof rl_client::live_model
 \brief Constructor for live_model. The provided error_callback is used if any background errors occur.
-\param config_collection Configuration object defining connection strings and other parameters.
+\param configuration Configuration object defining connection strings and other parameters.
 \param error_callback Callback object used for background errors.
 
-\fn rl_client::live_model::live_model(config_collection)
+\fn rl_client::live_model::live_model(configuration)
 \memberof rl_client::live_model
 \brief Constructor for live_model. This overload is provided if no background error_callback is required. Failures will be silent.
-\param config_collection Configuration object defining connection strings and other parameters.
+\param configuration Configuration object defining connection strings and other parameters.
 
 \fn rl_client::live_model::init()
 \memberof rl_client::live_model
@@ -87,36 +87,36 @@ for examples of usage of the Python API.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 
-\fn rl_client::config_collection::set(name, value)
-\memberof rl_client::config_collection
+\fn rl_client::configuration::set(name, value)
+\memberof rl_client::configuration
 \brief Sets the value for a given name.  It overrides any existing values for that name.
 \param name Key to set in collection.
 \param value Value to set.
 \return void
 
-\fn rl_client::config_collection::get(name, defval)
-\memberof rl_client::config_collection
+\fn rl_client::configuration::get(name, defval)
+\memberof rl_client::configuration
 \brief Gets the value for a given name.  If the value does not exist, it returns defval.
 \param name Key to retrieve
 \param defval Default value if key is not found or error occurs.
 \return string
 
-\fn rl_client::config_collection::get_int(name, defval)
-\memberof rl_client::config_collection
+\fn rl_client::configuration::get_int(name, defval)
+\memberof rl_client::configuration
 \brief Gets the value as an integer. If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (int) Default value if key is not found or error occurs.
 \return int
 
-\fn rl_client::config_collection::get_bool(name, defval)
-\memberof rl_client::config_collection
+\fn rl_client::configuration::get_bool(name, defval)
+\memberof rl_client::configuration
 \brief Gets the value as an boolean.  If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (bool) Default value if key is not found or error occurs.
 \return bool
 
-\fn rl_client::config_collection::get_float(name, defval)
-\memberof rl_client::config_collection
+\fn rl_client::configuration::get_float(name, defval)
+\memberof rl_client::configuration
 \brief Gets the value as an float.  If the value does not exist or if there is an error, it returns defval.
 \param name Key to retrieve
 \param defval (float) Default value if key is not found or error occurs.
@@ -125,9 +125,9 @@ for examples of usage of the Python API.
 \fn rl_client::create_config_from_json(config_json)
 \memberof rl_client
 \static
-\brief Creates an rl_client::config_collection object from the equivalent JSON representation of the config. See \ref api_config for an example configuration file.
+\brief Creates an rl_client::configuration object from the equivalent JSON representation of the config. See \ref api_config for an example configuration file.
 \param config_json JSON string representation of configuration
-\return rl_client::config_collection
+\return rl_client::configuration
 
 \example basic_usage.py
 \example rl_sim.py

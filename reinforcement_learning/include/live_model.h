@@ -23,7 +23,7 @@ namespace reinforcement_learning {
   }                               //
                                   //
   namespace utility {             //
-    class config_collection;      //
+    class configuration;      //
   }                               //
   //////////////////////////////////
 
@@ -73,7 +73,7 @@ namespace reinforcement_learning {
      *                    used for local inference.
      */
     explicit live_model(
-      const utility::config_collection& config, 
+      const utility::configuration& config, 
       error_fn fn = nullptr,                     
       void* err_context = nullptr,               
       transport_factory_t* t_factory = &data_transport_factory, 
@@ -163,7 +163,7 @@ namespace reinforcement_learning {
      */
     template<typename ErrCntxt>
     explicit live_model(
-      const utility::config_collection& config,
+      const utility::configuration& config,
       error_fn_t<ErrCntxt> fn = nullptr,
       ErrCntxt* err_context = nullptr,
       transport_factory_t* t_factory = &data_transport_factory,
@@ -203,7 +203,7 @@ namespace reinforcement_learning {
    */
   template <typename ErrCtxt>
   live_model::live_model(
-    const utility::config_collection& config,
+    const utility::configuration& config,
     error_fn_t<ErrCtxt> fn,
     ErrCtxt* err_context,
     transport_factory_t* t_factory,

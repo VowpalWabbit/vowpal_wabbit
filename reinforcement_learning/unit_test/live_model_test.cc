@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
   r::api_status status;
 
 	//create a simple ds configuration
-  u::config_collection config;
+  u::configuration config;
 	cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(live_model_outcome)
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//create a simple ds configuration
-  u::config_collection config;
+  u::configuration config;
 	cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");  
 
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080"),post_error));
 
   //create a simple ds configuration
-  u::config_collection config;
+  u::configuration config;
   auto const status = cfg::create_from_json(JSON_CFG,config);
   BOOST_CHECK_EQUAL(status, r::error_code::success);
   config.set(r::name::EH_TEST, "true");

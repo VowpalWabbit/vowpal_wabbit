@@ -73,7 +73,7 @@ public:
      */
     int load_config_from_json(
       const std::string& str, 
-      reinforcement_learning::utility::config_collection& config,
+      reinforcement_learning::utility::configuration& config,
       reinforcement_learning::api_status* status);
 
     /**

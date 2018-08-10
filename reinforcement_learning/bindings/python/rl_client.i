@@ -5,7 +5,7 @@
 #include "py_api.h"
 #include "../../include/constants.h"
 #include "../../include/err_constants.h"
-#include "config_collection.h"
+#include "configuration.h"
 %}
 
 %include <exception.i>
@@ -28,7 +28,7 @@
 %include "py_api.h"
 %include "../../include/constants.h"
 %include "../../include/err_constants.h"
-%include "../../include/config_collection.h"
+%include "../../include/configuration.h"
 
 %feature("pythonprepend") reinforcement_learning::python::live_model::live_model %{
     # If the overloaded version with a callback is called stash a reference to it so that the object is not deleted prematurely.
@@ -41,8 +41,8 @@ namespace reinforcement_learning {
 
     class live_model {
     public:
-      live_model(const reinforcement_learning::utility::config_collection config, error_callback& callback);
-      live_model(const reinforcement_learning::utility::config_collection config);
+      live_model(const reinforcement_learning::utility::configuration config, error_callback& callback);
+      live_model(const reinforcement_learning::utility::configuration config);
 
       void init();
 

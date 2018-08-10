@@ -136,7 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
-    <ClInclude Include="..\include\config_collection.h" />
+    <ClInclude Include="..\include\configuration.h" />
     <ClInclude Include="..\include\live_model.h" />
     <ClInclude Include="..\include\personalization.h" />
     <ClInclude Include="..\include\ranking_response.h" />
@@ -178,7 +178,7 @@
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="utility\str_util.cc" />
     <ClCompile Include="utility\context_helper.cc" />
-    <ClCompile Include="utility\config_collection.cc" />
+    <ClCompile Include="utility\configuration.cc" />
     <ClCompile Include="vw_model\vw_model.cc" />
     <ClCompile Include="vw_model\safe_vw.cc" />
     <ClCompile Include="factory_resolver.cc" />

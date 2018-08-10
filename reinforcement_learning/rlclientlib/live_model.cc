@@ -34,7 +34,7 @@ namespace reinforcement_learning
   }
 
   live_model::live_model(
-    const utility::config_collection& config, 
+    const utility::configuration& config, 
     error_fn fn, 
     void* err_context,
     transport_factory_t* t_factory,

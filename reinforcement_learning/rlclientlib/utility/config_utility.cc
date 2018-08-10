@@ -2,7 +2,7 @@
 #include <regex>
 #include "config_utility.h"
 #include "cpprest/json.h"
-#include "config_collection.h"
+#include "configuration.h"
 #include "constants.h"
 #include "err_constants.h"
 #include "api_status.h"
@@ -71,7 +71,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     }
   }
 
-  int set_eventhub_config(const std::string& conn_str, const std::string& cfg_root, config_collection& cc, api_status* status) {
+  int set_eventhub_config(const std::string& conn_str, const std::string& cfg_root, configuration& cc, api_status* status) {
     std::string host;
     std::string name;
     std::string access_key_name;
@@ -92,7 +92,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     return from;
   }
 
-  int create_from_json(const std::string& config_json, config_collection& cc, api_status* status) {
+  int create_from_json(const std::string& config_json, configuration& cc, api_status* status) {
     const char* json_names[] = {
       "ApplicationID",
       "ModelBlobUri",

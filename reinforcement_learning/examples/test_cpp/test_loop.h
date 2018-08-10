@@ -13,7 +13,7 @@ public:
 private:
   int load_file(const std::string& file_name, std::string& config_str) const;
   int load_config_from_json(const std::string& file_name,
-    reinforcement_learning::utility::config_collection& cfgcoll,
+    reinforcement_learning::utility::configuration& cfgcoll,
     reinforcement_learning::api_status* status) const;
   std::string generate_experiment_name(const std::string& experiment_name_base, 
 	size_t threads, size_t examples, size_t features, size_t actions);

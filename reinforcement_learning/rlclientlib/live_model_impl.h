@@ -32,7 +32,7 @@ namespace reinforcement_learning
     int report_outcome(const char* event_id, float outcome, api_status* status);
     
     explicit live_model_impl(
-      const utility::config_collection& config, 
+      const utility::configuration& config, 
       error_fn fn,
       void* err_context, 
       transport_factory_t* t_factory,
@@ -59,7 +59,7 @@ namespace reinforcement_learning
     // Internal implementation state
     bool _model_data_received = false;
     float _initial_epsilon = 0.2f;
-    utility::config_collection _configuration;
+    utility::configuration _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
     logger _logger;

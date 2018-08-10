@@ -17,7 +17,7 @@
 #include "model_mgmt/data_callback_fn.h"
 #include "http_server/http_server.h"
 #include "config_utility.h"
-#include "config_collection.h"
+#include "configuration.h"
 
 namespace r = reinforcement_learning;
 namespace m = reinforcement_learning::model_management;
@@ -39,7 +39,7 @@ const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
 
 m::model_data get_model_data();
 
-int get_export_frequency(const u::config_collection& cc, int& interval_ms, r::api_status* status) {
+int get_export_frequency(const u::configuration& cc, int& interval_ms, r::api_status* status) {
   const auto export_freq_s = cc.get("ModelExportFrequency", nullptr);
   if ( export_freq_s == nullptr ) {
     RETURN_ERROR_LS(status, model_export_frequency_not_provided);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   http_helper http_server;
   http_server.on_initialize(U("http://localhost:8080"));
   //create a simple ds configuration
-  u::config_collection cc;
+  u::configuration cc;
   auto scode = cfg::create_from_json(JSON_CFG,cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   http_helper http_server;
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   //create a simple ds configuration
-  u::config_collection cc;
+  u::configuration cc;
   auto scode = cfg::create_from_json(JSON_CFG,cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
@@ -143,7 +143,7 @@ const char * const CFG_PARAM = "model.local.file";
 BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 {
   register_local_file_factory();
-  const u::config_collection cc;
+  const u::configuration cc;
 
   m::i_data_transport* data_transport;
   auto scode = r::data_transport_factory.create(&data_transport, DUMMY_DATA_TRANSPORT, cc);
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(vw_model_factory)
 {
   register_local_file_factory();
   
-  u::config_collection model_cc;
+  u::configuration model_cc;
   model_cc.set(r::name::VW_CMDLINE, "--lda 5");
   m::i_model* vw;
   const auto scode = r::model_factory.create(&vw, r::value::VW, model_cc);
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(vw_model_factory)
 
 m::model_data get_model_data()
 {
-  const u::config_collection cc;
+  const u::configuration cc;
   m::i_data_transport* data_transport;
   r::data_transport_factory.create(&data_transport, DUMMY_DATA_TRANSPORT, cc);
   std::unique_ptr<m::i_data_transport> pdt(data_transport);
@@ -187,7 +187,7 @@ class dummy_data_transport : public m::i_data_transport {
 };
 
 int dummy_data_tranport_create( m::i_data_transport** retval, 
-                                    const u::config_collection& cfg, 
+                                    const u::configuration& cfg, 
                                     r::api_status* status) {
   *retval = new dummy_data_transport();
   return r::error_code::success;

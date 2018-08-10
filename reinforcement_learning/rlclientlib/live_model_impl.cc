@@ -4,7 +4,7 @@
 #include "utility/context_helper.h"
 #include "logger/logger.h"
 #include "api_status.h"
-#include "config_collection.h"
+#include "configuration.h"
 #include "error_callback_fn.h"
 #include "ranking_response.h"
 #include "live_model_impl.h"
@@ -91,7 +91,7 @@ namespace reinforcement_learning {
   }
 
   live_model_impl::live_model_impl(
-    const utility::config_collection& config,
+    const utility::configuration& config,
     const error_fn fn,
     void* err_context,
     transport_factory_t* t_factory,
