@@ -4,8 +4,8 @@ class simulation_stats {
 public:
   simulation_stats();
   ~simulation_stats();
-  void record(const std::string& id, size_t choosen_action, const float reward);
-  std::string get_stats(const std::string& id, size_t choosen_action);
+  void record(const std::string& id, size_t chosen_action, const float reward);
+  std::string get_stats(const std::string& id, size_t chosen_action);
   int count() const;
 
 private:

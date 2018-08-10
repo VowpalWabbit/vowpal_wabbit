@@ -32,14 +32,14 @@ int rl_sim::loop() {
     }
 
     // Use the chosen action
-    size_t choosen_action;
-    if ( response.get_choosen_action_id(choosen_action) != err::success ) {
+    size_t chosen_action;
+    if ( response.get_chosen_action_id(chosen_action) != err::success ) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
 
     // What reward did this action get?
-    const auto reward = p.get_reward(_actions[choosen_action]);
+    const auto reward = p.get_reward(_actions[chosen_action]);
 
     // Report reward recieved
     if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success && reward > 0.00001f ) {
@@ -47,10 +47,10 @@ int rl_sim::loop() {
       continue;
     }
 
-    stats.record(p.id(), choosen_action, reward);
+    stats.record(p.id(), chosen_action, reward);
 
-    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << choosen_action << ", reward, " << reward
-      << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), choosen_action) << std::endl;
+    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << chosen_action << ", reward, " << reward
+      << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), chosen_action) << std::endl;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   }

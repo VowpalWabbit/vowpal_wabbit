@@ -92,7 +92,7 @@ bool test_data_provider::is_rewarded(size_t thread_id, size_t example_id) const 
 
 void test_data_provider::log(size_t thread_id, size_t example_id, const reinforcement_learning::ranking_response& response, std::ostream& logger) const {
   size_t action_id;
-  response.get_choosen_action_id(action_id);
+  response.get_chosen_action_id(action_id);
   float prob = 0;
   for (auto it = response.begin(); it != response.end(); ++it) {
     if ((*it).action_id == action_id) {

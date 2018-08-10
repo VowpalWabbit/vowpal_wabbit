@@ -11,8 +11,8 @@ namespace reinforcement_learning {
     ranking_response_impl() = default;
     explicit ranking_response_impl(const std::string & uuid);
 
-    bool get_choosen_action_id(size_t& action_id) const;
-    int set_choosen_action_id(size_t action_id, api_status* status);
+    bool get_chosen_action_id(size_t& action_id) const;
+    int set_chosen_action_id(size_t action_id, api_status* status);
     bool get_action(const size_t idx, size_t* action_id, float* prob) const;
     void push_back(const size_t action_id, const float prob);
     size_t size() const;

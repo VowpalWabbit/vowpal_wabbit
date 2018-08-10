@@ -49,12 +49,12 @@ int main() {
   //! [(3) Choose an action]
 
   //! [(4) Use the response]
-  size_t choosen_action;
-  if( response.get_choosen_action_id(choosen_action, &status) != err::success ) {
+  size_t chosen_action;
+  if( response.get_chosen_action_id(chosen_action, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
-  std::cout << "Chosen action id is: " << choosen_action << std::endl;
+  std::cout << "Chosen action id is: " << chosen_action << std::endl;
   //! [(4) Use the response]
 
   //! [(5) Report outcome]

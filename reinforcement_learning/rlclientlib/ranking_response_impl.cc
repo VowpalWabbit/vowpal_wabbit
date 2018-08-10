@@ -37,7 +37,7 @@ namespace reinforcement_learning {
     _ranking.clear();
   }
 
-  bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
+  bool ranking_response_impl::get_chosen_action_id(size_t& action_id) const {
     if ( !_ranking.empty() ) {
       action_id =_chosen_action_id;
       return true;
@@ -45,7 +45,7 @@ namespace reinforcement_learning {
     return false;
   }
 
-  int ranking_response_impl::set_choosen_action_id(size_t action_id, api_status* status) {
+  int ranking_response_impl::set_chosen_action_id(size_t action_id, api_status* status) {
     if ( action_id >= _ranking.size() ) {
       RETURN_ERROR_LS(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
     }

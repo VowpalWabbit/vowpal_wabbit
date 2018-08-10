@@ -19,15 +19,15 @@ char const * ranking_response::get_uuid() const {
     return _pimpl->_uuid.c_str();
 	}
 
-	int ranking_response::get_choosen_action_id(size_t& action_id, api_status* status) const {
-    if ( _pimpl->get_choosen_action_id(action_id) )
+	int ranking_response::get_chosen_action_id(size_t& action_id, api_status* status) const {
+    if ( _pimpl->get_chosen_action_id(action_id) )
       return error_code::success;
     RETURN_ERROR_LS(status, action_not_found);
     return error_code::success;
   }
 
-  int ranking_response::set_choosen_action_id(size_t id, api_status* status) {
-    return _pimpl->set_choosen_action_id(id, status);
+  int ranking_response::set_chosen_action_id(size_t id, api_status* status) {
+    return _pimpl->set_chosen_action_id(id, status);
   }
 
   void ranking_response::set_uuid(char const * uuid) {

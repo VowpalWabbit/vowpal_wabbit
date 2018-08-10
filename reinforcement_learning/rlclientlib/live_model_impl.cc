@@ -143,19 +143,19 @@ namespace reinforcement_learning {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
     // Pick using the pdf
-    uint32_t choosen_action_id;
+    uint32_t chosen_action_id;
     const uint64_t seed = uniform_hash(uuid, strlen(uuid), 0) + _seed_shift;
-    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), choosen_action_id);
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(choosen_action_id, pdf[choosen_action_id]);
-    // Setup response with pdf from prediction and choosen action
+    response.push_back(chosen_action_id, pdf[chosen_action_id]);
+    // Setup response with pdf from prediction and chosen action
     for (size_t idx = 1; idx < pdf.size(); ++idx) {
-      const auto cur_idx = choosen_action_id != idx ? idx : 0;
+      const auto cur_idx = chosen_action_id != idx ? idx : 0;
       response.push_back(cur_idx, pdf[cur_idx]);
     }
-    response.set_choosen_action_id(choosen_action_id);
+    response.set_chosen_action_id(chosen_action_id);
     return error_code::success;
   }
 

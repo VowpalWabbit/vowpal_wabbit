@@ -44,12 +44,12 @@ namespace reinforcement_learning { namespace model_management {
 
       response.push_back(actions[action], scores[action]);
 
-      // Setup response with pdf from prediction and choosen action
+      // Setup response with pdf from prediction and chosen action
       for (size_t idx = 1; idx < actions.size(); ++idx) {
         const auto cur_idx = action != idx ? idx : 0;
         response.push_back(actions[cur_idx], scores[cur_idx]);
       }
-      response.set_choosen_action_id(action);
+      response.set_chosen_action_id(action);
       response.set_model_id(vw->id());
 
       return error_code::success;

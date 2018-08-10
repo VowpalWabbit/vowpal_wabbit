@@ -64,7 +64,7 @@ namespace reinforcement_learning {
       response.model_id = response_impl.get_model_id();
 
       size_t chosen_action_id;
-      response_impl.get_choosen_action_id(chosen_action_id, &status);
+      response_impl.get_chosen_action_id(chosen_action_id, &status);
       check_api_status(status);
       response.chosen_action_id = chosen_action_id;
 

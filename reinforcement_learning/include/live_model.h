@@ -33,7 +33,7 @@ namespace reinforcement_learning {
    * 
    * - (1) Instantiate and Initialize 
    * - (2) choose_rank() to choose an action from a list of actions
-   * - (3) report_outcome() to provide feedback on choosen action  
+   * - (3) report_outcome() to provide feedback on chosen action  
    */
 	class live_model {
 
@@ -95,7 +95,7 @@ namespace reinforcement_learning {
      * @param uuid  The unique identifier for this interaction.  The same uuid should be used when
      *              reporting the outcome for this action.  
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the choosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
@@ -108,7 +108,7 @@ namespace reinforcement_learning {
      * The same uuid should be used when reporting the outcome for this action.
      * 
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the choosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
