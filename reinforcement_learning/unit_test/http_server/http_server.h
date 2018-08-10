@@ -46,9 +46,10 @@ public:
     }
 	}
 
-	void on_shutdown()
-	{
-		g_http->close().wait();
-		return;
-	}
+  ~http_helper()
+  {
+    if (g_http != nullptr) {
+      g_http->close().wait();
+    }
+  }
 };
