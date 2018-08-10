@@ -29,6 +29,8 @@ namespace reinforcement_learning {
     virtual int v_append(std::string& data, api_status* status) override;
 
   private:
+    bool _initialized = false;
+
     //clients to send data to the eventhub
     eventhub_client _client;
 

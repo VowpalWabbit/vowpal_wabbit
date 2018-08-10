@@ -116,15 +116,21 @@ namespace reinforcement_learning {
   template <typename TSender>
   void async_batcher<TSender>::flush() {
     const auto queue_size = _queue.size();
-    if (queue_size == 0) return;
+
+    // Early exit if queue is empty.
+    if (queue_size == 0) {
+      return;
+    }
+
     auto remaining = queue_size;
     std::string buf_to_send;
     // Handle batching
     while (remaining > 0) {
       remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
-      if ( _sender.send(buf_to_send, &status) != error_code::success )
+      if ( _sender.send(buf_to_send, &status) != error_code::success ) {
         ERROR_CALLBACK(_perror_cb, status);
+      }
     }
   }
 

@@ -33,7 +33,6 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, api_status* status);
 
   int live_model_impl::init(api_status* status) {
-    // RETURN_IF_FAIL(_logger.init(status));
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
     RETURN_IF_FAIL(init_loggers(status));
@@ -114,11 +113,14 @@ namespace reinforcement_learning {
     i_logger* ranking_logger;
     RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, &_error_cb, status));
     _ranking_logger.reset(ranking_logger);
+    RETURN_IF_FAIL(_ranking_logger->init(status));
 
     const auto outcome_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
     i_logger* outcome_logger;
     RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, &_error_cb, status));
     _outcome_logger.reset(outcome_logger);
+    RETURN_IF_FAIL(_outcome_logger->init(status));
+
     return error_code::success;
   }
 
