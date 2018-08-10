@@ -58,9 +58,9 @@ int main() {
   //! [(4) Use the response]
 
   //! [(5) Report outcome]
-  //     Report recieved reward (Optional: if this call is not made, default missing reward is applied)
-  //     Missing reward can be thought of as negative reinforcement
-  if( rl.report_outcome(event_id, reward, &status) != err::success ) {
+  //     Report recieved outcome (Optional: if this call is not made, default missing outcome is applied)
+  //     Missing outcome can be thought of as negative reinforcement
+  if( rl.report_outcome(event_id, outcome, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }

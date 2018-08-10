@@ -51,8 +51,8 @@ namespace reinforcement_learning {
       // event_id is auto-generated.
       reinforcement_learning::python::ranking_response choose_rank(const char* context_json);
 
-      void report_outcome(const char* event_id, const char* outcome_data);
-      void report_outcome(const char* event_id, float reward);
+      void report_outcome(const char* event_id, const char* outcome);
+      void report_outcome(const char* event_id, float outcome);
 
       %pythoncode %{
         def choose_rank(self, *args):

@@ -5,9 +5,9 @@ simulation_stats::simulation_stats() = default;
 
 simulation_stats::~simulation_stats() = default;
 
-void simulation_stats::record(const std::string& id, size_t chosen_action, const float reward) {
+void simulation_stats::record(const std::string& id, size_t chosen_action, const float outcome) {
   auto& action_stats = _action_stats[std::make_pair(id, chosen_action)];
-  if ( reward > 0.00001f )
+  if ( outcome > 0.00001f )
     ++action_stats.first;
   ++action_stats.second;
   auto& person_count = _person_stats[id];

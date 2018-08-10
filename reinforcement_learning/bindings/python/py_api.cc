@@ -102,15 +102,15 @@ namespace reinforcement_learning {
       return convert_ranking_response(response_impl);
     }
 
-    void live_model::report_outcome(const char* event_id, const char* outcome_data) {
+    void live_model::report_outcome(const char* event_id, const char* outcome) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(event_id, outcome_data, &status);
+      impl.report_outcome(event_id, outcome, &status);
       check_api_status(status);
     }
 
-    void live_model::report_outcome(const char* event_id, float reward) {
+    void live_model::report_outcome(const char* event_id, float outcome) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(event_id, reward, &status);
+      impl.report_outcome(event_id, outcome, &status);
       check_api_status(status);
     }
   }

@@ -57,15 +57,15 @@ namespace reinforcement_learning
     return _pimpl->choose_rank(context_json, response, status);
   }
 
-  int live_model::report_outcome(const char* event_id, const char* outcome_data, api_status* status)
+  int live_model::report_outcome(const char* event_id, const char* outcome, api_status* status)
   {
     INIT_CHECK();
-    return _pimpl->report_outcome(event_id, outcome_data, status);
+    return _pimpl->report_outcome(event_id, outcome, status);
   }
 
-  int live_model::report_outcome(const char* event_id, float reward, api_status* status)
+  int live_model::report_outcome(const char* event_id, float outcome, api_status* status)
   {
     INIT_CHECK();
-    return _pimpl->report_outcome(event_id, reward, status);
+    return _pimpl->report_outcome(event_id, outcome, status);
   }
 }

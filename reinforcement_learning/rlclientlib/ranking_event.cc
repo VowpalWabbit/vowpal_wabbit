@@ -33,11 +33,11 @@ namespace reinforcement_learning {
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})";
 	}
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome_data) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome_data << R"(})";
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome) {
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float reward) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << reward << R"(})";
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome) {
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 }

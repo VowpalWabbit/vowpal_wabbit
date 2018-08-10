@@ -45,7 +45,7 @@ int main()
 	/* do something with the top_action */
 	display_response(response);
 
-	// Report the reward to ds
+	// Report the outcome to ds
 	success = model.report_outcome(response.get_event_id(), 1.0f, &status);
 	if (success != 0) 
 	{
@@ -54,9 +54,9 @@ int main()
 		std::cout << "status error msg : " << status.get_error_msg() << std::endl;
 	}
 
-	// Send another reward with an invalid event_id
+	// Send another outcome with an invalid event_id
 	const char* invalid_event_id = "";
-	success = model.report_outcome(invalid_event_id, "outcome_data", &status);
+	success = model.report_outcome(invalid_event_id, "outcome", &status);
 	if (success != 0)
 	{
 		std::cout << "an error happened with code: " << success << std::endl;

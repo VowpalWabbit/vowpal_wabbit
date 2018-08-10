@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request)
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 }
 
-BOOST_AUTO_TEST_CASE(live_model_reward)
+BOOST_AUTO_TEST_CASE(live_model_outcome)
 {
 	//start a http server that will receive events sent from the eventhub_client
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -100,30 +100,30 @@ BOOST_AUTO_TEST_CASE(live_model_reward)
   BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
   const auto event_id = "event_id";
-	const auto  reward = "reward";
+	const auto  outcome = "outcome";
 	const auto  invalid_event_id = "";
-	const auto  invalid_reward = "";
+	const auto  invalid_outcome = "";
 
-	// report reward
-  const auto scode = ds.report_outcome(event_id, reward, &status);
+	// report outcome
+  const auto scode = ds.report_outcome(event_id, outcome, &status);
   BOOST_CHECK_EQUAL(scode, err::success);
   BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 
 	// check expected returned codes
-	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_event_id, reward), err::invalid_argument);//invalid event_id
-	BOOST_CHECK_EQUAL(ds.report_outcome(event_id, invalid_reward), err::invalid_argument);//invalid reward
+	BOOST_CHECK_EQUAL(ds.report_outcome(invalid_event_id, outcome), err::invalid_argument);//invalid event_id
+	BOOST_CHECK_EQUAL(ds.report_outcome(event_id, invalid_outcome), err::invalid_argument);//invalid outcome
 
 	//invalid event_id
-	ds.report_outcome(invalid_event_id, reward, &status);
+	ds.report_outcome(invalid_event_id, outcome, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 
 	//invalid context
-	ds.report_outcome(event_id, invalid_reward, &status);
+	ds.report_outcome(event_id, invalid_outcome, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), reinforcement_learning::error_code::invalid_argument);
 	
 	//valid request => status is not modified
   r::api_status::try_update(&status, -42, "hello");
-  ds.report_outcome(event_id, reward, &status);
+  ds.report_outcome(event_id, outcome, &status);
 	BOOST_CHECK_EQUAL(status.get_error_code(), err::success);
 	BOOST_CHECK_EQUAL(status.get_error_msg(), "");
 }

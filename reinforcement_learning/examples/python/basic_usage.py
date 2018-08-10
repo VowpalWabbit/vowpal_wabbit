@@ -33,8 +33,8 @@ def main():
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(action_probabilities))
 
-    reward = 1.0
-    model.report_outcome(event_id, reward)
+    outcome = 1.0
+    model.report_outcome(event_id, outcome)
 
 if __name__ == "__main__":
    main()

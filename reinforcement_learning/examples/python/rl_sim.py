@@ -26,7 +26,7 @@ class person:
     def get_features(self):
         return '"User":{{"id":"{}","major":"{}","hobby":"{}","favorite_character":"{}"}}'.format(self._id, self._major, self._hobby, self._favorite_character)
 
-    def get_reward(self, chosen_action):
+    def get_outcome(self, chosen_action):
         draw_uniform = random.uniform(0, 10000)
         norm_draw_val = draw_uniform / 10000.0
         click_prob = self._topic_click_probability[chosen_action]
@@ -62,11 +62,11 @@ class rl_sim:
                 req_id = str(uuid.uuid4())
 
                 model_id, chosen_action_id, action_probabilities = self._rl.choose_rank(req_id, context_json)
-                reward = p.get_reward(self._actions[chosen_action_id])
-                self._rl.report_outcome(req_id, reward)
+                outcome = p.get_outcome(self._actions[chosen_action_id])
+                self._rl.report_outcome(req_id, outcome)
 
-                print('Round: {}, Person: {}, Action: {}, Reward: {}'
-                    .format(round, p._id, chosen_action_id, reward))
+                print('Round: {}, Person: {}, Action: {}, Outcome: {}'
+                    .format(round, p._id, chosen_action_id, outcome))
 
                 round = round + 1
                 time.sleep(0.1)

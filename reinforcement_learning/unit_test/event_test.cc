@@ -14,10 +14,10 @@ using namespace std;
 BOOST_AUTO_TEST_CASE(serialize_outcome)
 {
   const auto event_id = "event_id";
-	const auto outcome_data = 1.0;
+	const auto outcome = 1.0;
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, event_id, outcome_data);
+  outcome_event::serialize(oss, event_id, outcome);
   const auto serialized_str = oss.str();
   const char * expected = R"({"EventId":"event_id","v":1.000000})";
 
@@ -27,10 +27,10 @@ BOOST_AUTO_TEST_CASE(serialize_outcome)
 BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
 {
 	const auto event_id = "";
-	const auto outcome_data = "{}";
+	const auto outcome = "{}";
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, event_id, outcome_data);
+  outcome_event::serialize(oss, event_id, outcome);
   const auto serialized = oss.str();
 	const auto expected = R"({"EventId":"","v":{}})";
 

@@ -13,8 +13,8 @@
 /**
  * @brief Reinforcement Learning Simulator
  * This class simulates a user interacting with a reinforcement learning loop where
- * a person is chosen in random then an action is chosen and the reward generated.
- * The generated reward is reported back to the reinforcement learning loop.
+ * a person is chosen in random then an action is chosen and the outcome generated.
+ * The generated outcome is reported back to the reinforcement learning loop.
  */
 class rl_sim {
 public:

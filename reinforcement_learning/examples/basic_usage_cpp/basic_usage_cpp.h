@@ -25,4 +25,4 @@ char const * const  event_id    = "event_id";
 char const * const  context = R"({
                                   "GUser":{"id":"a","major":"eng","hobby":"hiking"},
                                   "_multi":[ { "TAction":{"a1":"f1"} },{"TAction":{"a2":"f2"}}]})";
-float reward  = 1.0f;
+float outcome  = 1.0f;

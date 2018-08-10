@@ -20,7 +20,7 @@ po::variables_map process_cmd_line(const int argc, char** argv) {
     ("actions,a", po::value<size_t>()->default_value(2), "Number of actions")
     ("experiment_name,e", po::value<std::string>()->required(), "experiment name")
     ("perf,p", "if it is perf test (otherwise - validity)")
-    ("float_reward,f", "if reward is float (otherwise - json)")
+    ("float_outcome,f", "if outcome is float (otherwise - json)")
     ;
 
   po::variables_map vm;

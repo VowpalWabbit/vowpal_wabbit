@@ -78,16 +78,16 @@ namespace reinforcement_learning {
                        status);
   }
 
-  int live_model_impl::report_outcome(const char* event_id, const char* outcome_data, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, const char* outcome, api_status* status) {
     // Check arguments
-    RETURN_IF_FAIL(check_null_or_empty(event_id, outcome_data, status));
-    return report_outcome_internal(event_id, outcome_data, status);
+    RETURN_IF_FAIL(check_null_or_empty(event_id, outcome, status));
+    return report_outcome_internal(event_id, outcome, status);
   }
 
-  int live_model_impl::report_outcome(const char* event_id, float reward, api_status* status) {
+  int live_model_impl::report_outcome(const char* event_id, float outcome, api_status* status) {
     // Check arguments
     RETURN_IF_FAIL(check_null_or_empty(event_id, status));
-    return report_outcome_internal(event_id, reward, status);
+    return report_outcome_internal(event_id, outcome, status);
   }
 
   live_model_impl::live_model_impl(

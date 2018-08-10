@@ -37,8 +37,8 @@ def main(args):
 
             if("o" in current_example):
                 for observation in current_example["o"]:
-                    reward = observation["v"] if isinstance(observation["v"], numbers.Real) else json.dumps(observation["v"])
-                    model.report_outcome(observation["EventId"], reward)
+                    outcome = observation["v"] if isinstance(observation["v"], numbers.Real) else json.dumps(observation["v"])
+                    model.report_outcome(observation["EventId"], outcome)
 
 
 if __name__ == "__main__":

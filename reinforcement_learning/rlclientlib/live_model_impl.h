@@ -28,8 +28,8 @@ namespace reinforcement_learning
     //here the event_id is auto-generated
     int choose_rank(const char* context, ranking_response& response, api_status* status);
     
-    int report_outcome(const char* event_id, const char* outcome_data, api_status* status);
-    int report_outcome(const char* event_id, float reward, api_status* status);
+    int report_outcome(const char* event_id, const char* outcome, api_status* status);
+    int report_outcome(const char* event_id, float outcome, api_status* status);
     
     explicit live_model_impl(
       const utility::config_collection& config, 
@@ -53,7 +53,7 @@ namespace reinforcement_learning
     int explore_only(const char* event_id, const char* context, ranking_response& response, api_status* status) const;
     int explore_exploit(const char* event_id, const char* context, ranking_response& response, api_status* status) const;
     template<typename D>
-    int report_outcome_internal(const char* event_id, D outcome_data, api_status* status);
+    int report_outcome_internal(const char* event_id, D outcome, api_status* status);
 
   private:
     // Internal implementation state
@@ -74,14 +74,14 @@ namespace reinforcement_learning
   };
 
   template <typename D>
-  int live_model_impl::report_outcome_internal(const char* event_id, D outcome_data, api_status* status) {
+  int live_model_impl::report_outcome_internal(const char* event_id, D outcome, api_status* status) {
     // Clear previous errors if any
     api_status::try_clear(status);
 
     // Serialize outcome
     utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
     buffer->reset();
-    outcome_event::serialize(*buffer.get(), event_id, outcome_data);
+    outcome_event::serialize(*buffer.get(), event_id, outcome);
     auto sbuf = buffer->str();
 
     // Send the outcome event to the backend

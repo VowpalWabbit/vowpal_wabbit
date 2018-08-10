@@ -38,18 +38,18 @@ int rl_sim::loop() {
       continue;
     }
 
-    // What reward did this action get?
-    const auto reward = p.get_reward(_actions[chosen_action]);
+    // What outcome did this action get?
+    const auto outcome = p.get_outcome(_actions[chosen_action]);
 
-    // Report reward recieved
-    if ( _rl->report_outcome(req_id.c_str(), reward, &status) != err::success && reward > 0.00001f ) {
+    // Report outcome recieved
+    if ( _rl->report_outcome(req_id.c_str(), outcome, &status) != err::success && outcome > 0.00001f ) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
     }
 
-    stats.record(p.id(), chosen_action, reward);
+    stats.record(p.id(), chosen_action, outcome);
 
-    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << chosen_action << ", reward, " << reward
+    std::cout << " " << stats.count() << ", ctxt, " << p.id() << ", action, " << chosen_action << ", outcome, " << outcome
       << ", dist, " << get_dist_str(response) << ", " << stats.get_stats(p.id(), chosen_action) << std::endl;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));

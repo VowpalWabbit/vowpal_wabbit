@@ -71,19 +71,19 @@ for examples of usage of the Python API.
 \return action_probabilities - List of pairs describing the probability of choosing each action.
 \return event_id - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
 
-\fn rl_client::live_model::report_outcome(event_id, outcome_data)
+\fn rl_client::live_model::report_outcome(event_id, outcome)
 \memberof rl_client::live_model
-\brief Report the reward for the top action.
+\brief Report the outcome for the top action.
 \param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
-\param outcome_data Reward serialized as a string.
+\param outcome Outcome serialized as a string.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 
-\fn rl_client::live_model::report_outcome(event_id, reward)
+\fn rl_client::live_model::report_outcome(event_id, outcome)
 \memberof rl_client::live_model
-\brief Report the reward for the top action.
+\brief Report the outcome for the top action.
 \param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
-\param reward Reward as a float.
+\param outcome Outcome as a float.
 \exception RuntimeError Thrown if an internal error occurs.
 \return void
 

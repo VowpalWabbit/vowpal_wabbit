@@ -115,26 +115,26 @@ namespace reinforcement_learning {
 		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//event_id is auto-generated
 
     /**
-     * @brief Report the reward for the top action.  
+     * @brief Report the outcome for the top action.  
      * 
      * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
-     * @param reward Outcome/Reward serialized as a string
+     * @param outcome Outcome serialized as a string
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int report_outcome(const char* event_id, const char* reward, api_status* status= nullptr);
+		int report_outcome(const char* event_id, const char* outcome, api_status* status= nullptr);
 		
     /**
-     * @brief Report the reward for the top action.  
+     * @brief Report the outcome for the top action.  
      * 
      * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
      *              the action taken can be matched with feeback recieved. 
-     * @param reward Outcome/Reward as float
+     * @param outcome Outcome as float
      * @param status  Optional field with detailed string description if there is an error 
      * @return int Return error code.  This will also be returned in the api_status object
      */
-    int report_outcome(const char* event_id, float reward, api_status* status= nullptr);
+    int report_outcome(const char* event_id, float outcome, api_status* status= nullptr);
 
     /**
      * @brief Error callback function.  
