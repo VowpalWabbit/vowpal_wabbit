@@ -36,7 +36,7 @@ Note: `https://aka.ms/rl_client_python` points to a binary targeting x64 Linux P
 \fn rl_client::error_callback::on_error(error_code, error_message)
 \memberof rl_client::error_callback
 \pure
-\brief Handler for background errors in the API. Must over overridden by subclassing rl_client::error_callback.
+\brief Handler for background errors in the API. Must be overridden by subclassing rl_client::error_callback.
 \param error_code The error code of the corresponding error as defined in \ref error_codes
 \param error_message Readable string representation of error that occurred.
 \return void
