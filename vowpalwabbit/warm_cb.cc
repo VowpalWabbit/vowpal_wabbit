@@ -117,7 +117,6 @@ uint32_t find_min(vector<T> arr)
 
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
-		//cout<<arr[i]<<endl;
 		if (arr[i] < min_val)
 		{
 			min_val = arr[i];
@@ -211,7 +210,7 @@ void setup_lambdas(warm_cb& data)
 	for (uint32_t i = 0; i<data.choices_lambda; i++)
 		lambdas.push_back(0.f);
 
-	//interaction only
+	//interaction only: set all lambda's to be identically 1
 	if (!data.upd_ws && data.upd_inter)
 	{
 		for (uint32_t i = 0; i<data.choices_lambda; i++)
@@ -219,16 +218,13 @@ void setup_lambdas(warm_cb& data)
 		return;
 	}
 
-	//warm start only
+	//warm start only: set all lambda's to be identically 0
 	if (!data.upd_inter && data.upd_ws)
 	{
 		for (uint32_t i = 0; i<data.choices_lambda; i++)
 			lambdas[i] = 0.0;
 		return;
 	}
-
-	//if no warm start and no interaction, then as there are no updates anyway,
-	//we are still fine
 
 	uint32_t mid = data.choices_lambda / 2;
 
@@ -310,9 +306,6 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 	float total_train_size = ws_train_size + inter_train_size;
 	float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
-	//cout<<i<<" "<<data.lambdas[i]<<endl;
-	//cout<<total_weight<<endl;
-
 	if (data.wt_scheme == INSTANCE_WT)
 	{
 		if (ec_type == WARM_START)
@@ -327,20 +320,13 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 		else
 			weight_multiplier = data.lambdas[i] * total_train_size / inter_train_size;
 	}
-
-	//cout<<"weight multiplier: "<<weight_multiplier<<endl;
-
 	return weight_multiplier;
 }
 
 uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, example& ec, uint32_t i)
 {
-	//cout<<"predict using sublearner "<< i <<endl;
 	copy_example_to_adf(data, ec);
-	//uint32_t offset = data.ecs[0]->ft_offset;
-	//multiline_learn_or_predict<false>(base, data.ecs, offset, i);
 	base.predict(data.ecs, i);
-	//cout<<"greedy label = " << data.ecs[0]->pred.a_s[0].action+1 << endl;
 	return data.ecs[0]->pred.a_s[0].action+1;
 }
 
@@ -354,16 +340,14 @@ void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
 
 		if (action == cl.action)
 			data.cumulative_costs[i] += cl.cost / cl.probability;
-		//cout<<data.cumulative_costs[i]<<endl;
 	}
-	//cout<<endl;
 }
 
 template<bool use_cs>
 void accumu_costs_wsv_adf(warm_cb& data, multi_learner& base)
 {
 	uint32_t ws_vali_size = data.ws_vali_size;
-	//only update cumulative costs every warm_start_period iterations
+	//only update cumulative costs at the end of every epoch
 	if ( data.inter_iter >= 1 && abs( log2(data.inter_iter+1) - floor(log2(data.inter_iter+1)) ) < 1e-4 )
 	{
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
@@ -384,9 +368,7 @@ void accumu_costs_wsv_adf(warm_cb& data, multi_learner& base)
 			lb = 0;
 			ub = ws_vali_size;
 		}
-		//cout<<"validation at iteration "<<data.inter_iter<<endl;
-		//cout<<"validation example range: "<< lb << " to " << ub << endl;
-		//cout<<"updating validation error on supervised data: " << data.bandit_iter / data.warm_start_period << endl;
+
 		for (uint32_t i = 0; i < data.choices_lambda; i++)
 		{
 			for (uint32_t j = lb; j < ub; j++)
@@ -398,10 +380,7 @@ void accumu_costs_wsv_adf(warm_cb& data, multi_learner& base)
 					data.cumulative_costs[i] += loss_cs(data, ec_vali->l.cs.costs, pred_label);
 				else
 					data.cumulative_costs[i] += loss(data, ec_vali->l.multi.label, pred_label);
-
-				//cout<<ec_vali.l.multi.label<<" "<<pred_label<<endl;
 			}
-			//cout<<data.cumulative_costs[i]<<endl;
 		}
 	}
 }
@@ -430,7 +409,7 @@ template<bool use_cs>
 void learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
 {
 	copy_example_to_adf(data, ec);
-	//generate cost-sensitive label (for CSOAA's temporary use)
+	//generate cost-sensitive label (for cost-sensitive learner's temporary use)
 	auto& csls = data.csls;
 	auto& cbls = data.cbls;
 	for (size_t a = 0; a < data.num_actions; ++a)
@@ -445,7 +424,6 @@ void learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
 	{
 		cbls[a] = data.ecs[a]->l.cb;
 		data.ecs[a]->l.cs = csls[a];
-		//cout<<ecs[a].l.cs.costs.size()<<endl;
 	}
 
 	vector<float> old_weights;
@@ -455,17 +433,12 @@ void learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
-		//cout<<"weight multiplier in sup = "<<weight_multiplier<<endl;
-
 		for (size_t a = 0; a < data.num_actions; ++a)
 			data.ecs[a]->weight = old_weights[a] * weight_multiplier;
 		multi_learner* cs_learner = as_multiline(data.all->cost_sensitive);
 		cs_learner->learn(data.ecs, i);
-
-		//cout<<"cost-sensitive increment = "<<cs_learner->increment<<endl;
 	}
-	//Seems like we don't need to set the weights back as this example will be
-	//discarded anyway
+
 	for (size_t a = 0; a < data.num_actions; ++a)
 		data.ecs[a]->weight = old_weights[a];
 
@@ -496,10 +469,6 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, example& ec)
   if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s), end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-	//cout<<"predict using sublearner "<< argmin <<endl;
-	//cout<<"greedy label = " << data.ecs[0]->pred.a_s[0].action+1 << endl;
-	//cout<<"chosen action = " << chosen_action << endl;
-
 	auto& a_s = data.a_s_adf;
 	copy_array<action_score>(a_s, out_ec.pred.a_s);
 
@@ -522,15 +491,9 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec, int ec_ty
 	for (uint32_t i = 0; i < data.choices_lambda; i++)
 	{
 		float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
-
-		//cout<<"learn in sublearner "<< i <<" with weight multiplier "<<weight_multiplier<<endl;
 	  for (size_t a = 0; a < data.num_actions; ++a)
 			data.ecs[a]->weight = old_weights[a] * weight_multiplier;
 	  base.learn(data.ecs, i);
-
-		//cout<<"cb-explore increment = "<<base.increment<<endl;
-		//uint32_t offset = data.ecs[0]->ft_offset;
-		//multiline_learn_or_predict<true>(base, data.ecs, offset, i);
 	}
 
 	for (size_t a = 0; a < data.num_actions; ++a)
@@ -547,8 +510,6 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
 	cl.action = a_s[chosen_action].action + 1;
 	cl.probability = a_s[chosen_action].score;
 
-	//cout<<cl.action<<" "<<cl.probability<<" "<<ec.l.multi.label<<endl;
-
 	if(!cl.action)
 		THROW("No action with non-zero probability found!");
 
@@ -559,8 +520,6 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
 
 	if (ec_type == INTERACTION && data.vali_method == INTER_VALI)
 		accumu_costs_iv_adf(data, base, ec);
-
-	//cout<<cl.action<<" "<<cl.probability<<endl;
 
 	if (ind_update(data, ec_type))
 		learn_bandit_adf(data, base, ec, ec_type);
@@ -581,16 +540,12 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, example& ec)
 			temp_var = 1.0 / data.a_s_adf[a].score;
 
 	data.cumu_var += temp_var;
-
-	//cout<<"variance at bandit round "<< data.inter_iter << " = " << temp_var << endl;
-	//cout<<pred_best_approx<<" "<<data.a_s_adf[0].action+1<<endl;
 }
 
 template <bool is_learn, bool use_cs>
 void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 {
 	// Corrupt labels (only corrupting multiclass labels as of now)
-
 	if (use_cs)
 		data.cs_label = ec.l.cs;
 	else
@@ -629,7 +584,7 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 	else
 		ec.weight = 0;
 
-	// Store the original labels back
+	// Restore the original labels
 	if (use_cs)
 		ec.l.cs = data.cs_label;
 	else
@@ -726,10 +681,9 @@ base_learner* warm_cb_setup(arguments& arg)
   learner<warm_cb,example>* l;
 
   multi_learner* base = as_multiline(setup_base(arg));
-	// Note: the current version of warm start CB can only support epsilon greedy exploration
-	// algorithm - we need to wait for the default epsilon value to be passed from cb_explore
-	// is there is one
-	//cout<<"count: "<<arg.vm.count("epsilon") <<endl;
+	// Note: the current version of warm start CB can only support epsilon-greedy exploration
+	// We need to wait for the epsilon value to be passed from the base
+  // cb_explore learner, if there is one
   if (arg.vm.count("epsilon") == 0)
   {
     cerr<<"Warning: no epsilon (greedy parameter) specified; resetting to 0.05"<<endl;
@@ -742,8 +696,6 @@ base_learner* warm_cb_setup(arguments& arg)
     l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, data->choices_lambda);
   else
     l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, arg.all->p, data->choices_lambda);
-
-	//cout<<"warm_cb increment = "<<l->increment<<endl;
 
   l->set_finish(finish);
   arg.all->delete_prediction = nullptr;
