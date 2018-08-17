@@ -25,28 +25,31 @@ namespace reinforcement_learning { namespace model_management {
     return error_code::success;
   }
 
-  int vw_model::choose_rank(const char* rnd_seed, const char* features, ranking_response& response, api_status* status) {
+  int vw_model::choose_rank(uint64_t rnd_seed, const char* features, ranking_response& response, api_status* status) {
     try {
       pooled_vw vw(_vw_pool, _vw_pool.get_or_create());
 
       // Rank actions using the model.  Should generate a pdf
-      auto ranking = vw->rank(features);
+      std::vector<int> actions;
+      std::vector<float> scores;
+      vw->rank(features, actions, scores);
 
       // Pick using the pdf. NOTE: sample_after_normalizing() can change the pdf
       uint32_t action;
-      auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(ranking), std::end(ranking), action);
+      auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(scores), std::end(scores), action);
 
       if ( S_EXPLORATION_OK != scode ) {
         RETURN_ERROR_LS(status, exploration_error) << scode;
       }
 
-      response.push_back(action, ranking[action]);
+      response.push_back(actions[action], scores[action]);
 
-      // Setup response with pdf from prediction and choosen action
-      for ( size_t idx = 0; idx < ranking.size(); ++idx )
-        if ( action != idx)
-          response.push_back(idx, ranking[idx]);
-      response.set_choosen_action_id(action);
+      // Setup response with pdf from prediction and chosen action
+      for (size_t idx = 1; idx < actions.size(); ++idx) {
+        const auto cur_idx = action != idx ? idx : 0;
+        response.push_back(actions[cur_idx], scores[cur_idx]);
+      }
+      response.set_chosen_action_id(action);
       response.set_model_id(vw->id());
 
       return error_code::success;

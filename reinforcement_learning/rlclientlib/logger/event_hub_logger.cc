@@ -5,7 +5,7 @@
 namespace reinforcement_learning
 {
   event_hub_logger::event_hub_logger(
-    const utility::config_collection& c,
+    const utility::configuration& c,
     const std::string& event_hub_host,
     const std::string& event_hub_key_name,
     const std::string& event_hub_key,

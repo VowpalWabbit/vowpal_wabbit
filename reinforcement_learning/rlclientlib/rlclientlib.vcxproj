@@ -136,7 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
-    <ClInclude Include="..\include\config_collection.h" />
+    <ClInclude Include="..\include\configuration.h" />
     <ClInclude Include="..\include\live_model.h" />
     <ClInclude Include="..\include\personalization.h" />
     <ClInclude Include="..\include\ranking_response.h" />
@@ -178,7 +178,7 @@
     <ClCompile Include="utility\config_utility.cc" />
     <ClCompile Include="utility\str_util.cc" />
     <ClCompile Include="utility\context_helper.cc" />
-    <ClCompile Include="utility\config_collection.cc" />
+    <ClCompile Include="utility\configuration.cc" />
     <ClCompile Include="vw_model\vw_model.cc" />
     <ClCompile Include="vw_model\safe_vw.cc" />
     <ClCompile Include="factory_resolver.cc" />
@@ -202,13 +202,11 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" />
-    <Import Project="..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets" Condition="Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets'))" />
-    <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost_program_options-vc140.1.63.0.0\build\native\boost_program_options-vc140.targets'))" />
   </Target>
 </Project>

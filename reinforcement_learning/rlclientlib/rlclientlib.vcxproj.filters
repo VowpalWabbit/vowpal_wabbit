@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -24,7 +24,7 @@
     <ClInclude Include="logger\async_batcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\config_collection.h">
+    <ClInclude Include="..\include\configuration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\config_utility.h">
@@ -108,9 +108,6 @@
     <ClInclude Include="..\include\logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="logger\logger_impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -126,9 +123,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="logger\eventhub_client.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="logger\logger.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="model_mgmt\model_mgmt.cc">
@@ -176,13 +170,10 @@
     <ClCompile Include="utility\context_helper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utility\config_collection.cc">
+    <ClCompile Include="utility\configuration.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utility\data_buffer.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="logger\logger_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

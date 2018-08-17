@@ -8,7 +8,7 @@ namespace reinforcement_learning { namespace model_management {
   public:
     vw_model();
     int update(const model_data& data, api_status* status = nullptr) override;
-    int choose_rank(const char* rnd_seed, const char* features, ranking_response& response, api_status* status = nullptr) override;
+    int choose_rank(uint64_t rnd_seed, const char* features, ranking_response& response, api_status* status = nullptr) override;
   private:
     using vw_ptr = std::shared_ptr<safe_vw>;
     using pooled_vw = utility::pooled_object_guard<safe_vw, safe_vw_factory>;

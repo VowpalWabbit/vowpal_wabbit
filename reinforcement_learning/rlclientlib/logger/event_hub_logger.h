@@ -2,7 +2,7 @@
 
 #include "logger.h"
 
-#include "config_collection.h"
+#include "configuration.h"
 #include "constants.h"
 #include "async_batcher.h"
 #include "eventhub_client.h"
@@ -14,7 +14,7 @@ namespace reinforcement_learning {
   class event_hub_logger : public i_logger {
   public:
     event_hub_logger(
-      const utility::config_collection&,
+      const utility::configuration&,
       const std::string& event_hub_host,
       const std::string& event_hub_key_name,
       const std::string& event_hub_key,
@@ -40,7 +40,7 @@ namespace reinforcement_learning {
 
   class event_hub_observation_logger : public event_hub_logger {
   public:
-    event_hub_observation_logger(const utility::config_collection& c, error_callback_fn* perror_cb = nullptr)
+    event_hub_observation_logger(const utility::configuration& c, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
         c,
         c.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
@@ -56,7 +56,7 @@ namespace reinforcement_learning {
 
   class event_hub_interaction_logger : public event_hub_logger {
   public:
-    event_hub_interaction_logger(const utility::config_collection& c, error_callback_fn* perror_cb = nullptr)
+    event_hub_interaction_logger(const utility::configuration& c, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
         c,
         c.get(name::INTERACTION_EH_HOST, "localhost:8080"),

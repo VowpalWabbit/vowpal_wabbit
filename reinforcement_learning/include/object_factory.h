@@ -1,5 +1,5 @@
 #pragma once
-#include "config_collection.h"
+#include "configuration.h"
 #include "api_status.h"
 #include "err_constants.h"
 #include <functional>

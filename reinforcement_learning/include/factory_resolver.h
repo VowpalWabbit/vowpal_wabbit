@@ -3,7 +3,7 @@
 
 namespace reinforcement_learning  {
   namespace utility {
-    class config_collection;
+    class configuration;
   }
 
   // Forward declarations
@@ -19,15 +19,15 @@ namespace reinforcement_learning  {
    * Advanced extension point:  Register another implementation of i_data_transport to
    * provide updated model data used to hydrate inference model.
    */
-  using data_transport_factory_t = utility::object_factory<model_management::i_data_transport, const utility::config_collection&>;
+  using data_transport_factory_t = utility::object_factory<model_management::i_data_transport, const utility::configuration&>;
   /**
    * @brief Factory to create model used in inference.
    * Advanced extension point:  Register another implementation of i_model to
    * provide hydraded model given updated model data. This model is then used
    * in inference.
    */
-  using model_factory_t = utility::object_factory<model_management::i_model, const utility::config_collection&>;
-  using logger_factory_t = utility::object_factory<i_logger, const utility::config_collection&, error_callback_fn*>;
+  using model_factory_t = utility::object_factory<model_management::i_model, const utility::configuration&>;
+  using logger_factory_t = utility::object_factory<i_logger, const utility::configuration&, error_callback_fn*>;
 
   extern data_transport_factory_t& data_transport_factory;
   extern model_factory_t& model_factory;

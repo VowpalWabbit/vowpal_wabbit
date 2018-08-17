@@ -46,10 +46,10 @@ namespace reinforcement_learning {
     }
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::config_collection& cfg, api_status* status);
-  int vw_model_create(m::i_model** retval, const u::config_collection&, api_status* status);
-  int observation_logger_create(i_logger** retval, const u::config_collection&, error_callback_fn*, api_status* status);
-  int interaction_logger_create(i_logger** retval, const u::config_collection&, error_callback_fn*, api_status* status);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status);
+  int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
+  int observation_logger_create(i_logger** retval, const u::configuration&, error_callback_fn*, api_status* status);
+  int interaction_logger_create(i_logger** retval, const u::configuration&, error_callback_fn*, api_status* status);
 
   void factory_initializer::register_default_factories() {
     data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
@@ -58,7 +58,7 @@ namespace reinforcement_learning {
     logger_factory.register_type(value::INTERACTION_EH_LOGGER, interaction_logger_create);
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::config_collection& cfg, api_status* status) {
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status) {
     const auto uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
     if ( uri == nullptr ) {
       api_status::try_update(status, error_code::http_uri_not_provided, error_code::http_uri_not_provided_s);
@@ -74,17 +74,17 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int vw_model_create(m::i_model** retval, const u::config_collection&, api_status* status) {
+  int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status) {
     *retval = new m::vw_model();
     return error_code::success;
   }
 
-  int observation_logger_create(i_logger** retval, const u::config_collection& cfg, error_callback_fn* error_callback, api_status* status) {
+  int observation_logger_create(i_logger** retval, const u::configuration& cfg, error_callback_fn* error_callback, api_status* status) {
     *retval = new event_hub_observation_logger(cfg, error_callback);
     return error_code::success;
   }
 
-  int interaction_logger_create(i_logger** retval, const u::config_collection& cfg, error_callback_fn* error_callback, api_status* status) {
+  int interaction_logger_create(i_logger** retval, const u::configuration& cfg, error_callback_fn* error_callback, api_status* status) {
     *retval = new event_hub_interaction_logger(cfg, error_callback);
     return error_code::success;
   }
