@@ -39,15 +39,15 @@ namespace reinforcement_learning {
     }
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::config_collection& cfg, api_status* status);
-  int vw_model_create(m::i_model** retval, const u::config_collection&, api_status* status);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status);
+  int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
 
   void factory_initializer::register_default_factories() {
     data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
     model_factory.register_type(value::VW, vw_model_create);
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::config_collection& cfg, api_status* status) {
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status) {
     const auto uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
     if ( uri == nullptr ) {
       api_status::try_update(status, error_code::http_uri_not_provided, error_code::http_uri_not_provided_s);
@@ -63,7 +63,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int vw_model_create(m::i_model** retval, const u::config_collection&, api_status* status) {
+  int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status) {
     *retval = new m::vw_model();
     return error_code::success;
   }

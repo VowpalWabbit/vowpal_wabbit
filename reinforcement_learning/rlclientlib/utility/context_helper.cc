@@ -4,6 +4,8 @@
 #include "err_constants.h"
 #include "http_helper.h"
 
+#include <chrono>
+
 namespace sutil = ::utility::conversions;
 
 namespace reinforcement_learning { namespace utility {
@@ -11,13 +13,13 @@ namespace reinforcement_learning { namespace utility {
   /**
    * \brief Get the number of actions found in context json string.  Actions should be in an array
    * called _multi under the root name space.  {_multi:[{"name1":"val1"},{"name1":"val1"}]}
-   * 
+   *
    * \param count   : Return value passed in as a reference.
    * \param context : String with context json
    * \param status  : Pointer to api_status object that contains an error code and error description in
    *                  case of failure
    * \return  error_code::success if there are no errors.  If there are errors then the error code is
-   *          returned. 
+   *          returned.
    */
   int get_action_count(size_t& count, const char *context, api_status* status) {
     try {
@@ -44,6 +46,8 @@ namespace reinforcement_learning { namespace utility {
     web::http::client::http_client_config cfg;
 
     cfg.set_validate_certificates(false);
+    // Set a timeout for network requests to avoid hanging too long because of network issues.
+    cfg.set_timeout(std::chrono::seconds(2));
     return cfg;
   }
 

@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(basic_explore_test) {
   float pdf[NUM_ACTIONS];
   auto scode = e::generate_epsilon_greedy(epsilon, top_action_id, pdf, pdf + NUM_ACTIONS);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
-  uint32_t choosen_index;
-  scode = e::sample_after_normalizing(7791, pdf, pdf + NUM_ACTIONS, choosen_index);
+  uint32_t chosen_index;
+  scode = e::sample_after_normalizing(7791, pdf, pdf + NUM_ACTIONS, chosen_index);
   BOOST_CHECK_EQUAL(scode, S_EXPLORATION_OK);
 }

@@ -70,7 +70,7 @@ namespace reinforcement_learning {
     // re-create authorization token if needed
     if (now > _authorization_valid_until - 60 * 15) {
       _authorization_valid_until = now + 60 * 60 * 24 * 7; // 1 week
-      // construct "sr" 
+      // construct "sr"
       std::ostringstream resource_stream;
       resource_stream << "https://" << _eventhub_host << "/" << _eventhub_name;
       // encode(resource_stream)

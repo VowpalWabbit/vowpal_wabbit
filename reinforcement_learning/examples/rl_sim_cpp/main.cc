@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     // Instantiate reinforement learning simulater 
     rl_sim sim(vm);
 
-    // Run loop: (1) world event (2) choose action (3) report reward
+    // Run loop: (1) world event (2) choose action (3) report outcome
     return sim.loop();
   }
   catch ( const std::exception& e ) {

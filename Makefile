@@ -114,6 +114,10 @@ rl_clientlib_test: vw rl_clientlib
 rl_example: vw rl_clientlib
 	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
+
+rl_python: vw rl_clientlib
+	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
 
 spanning_tree:
 	cd cluster; $(MAKE)
@@ -174,7 +178,9 @@ clean:
 	cd java    && $(MAKE) clean
 	cd reinforcement_learning/rlclientlib    && $(MAKE) clean
 	cd reinforcement_learning/unit_test; $(MAKE) clean
+	cd reinforcement_learning/bindings/python; $(MAKE) clean
 	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) clean
 	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) clean
+	cd reinforcement_learning/examples/test_cpp; $(MAKE) clean
 
 .PHONY: all clean install doc

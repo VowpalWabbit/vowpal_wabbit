@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config_collection.h"
+#include "configuration.h"
 #include "async_batcher.h"
 #include "eventhub_client.h"
 #include "api_status.h"
@@ -13,7 +13,7 @@ namespace reinforcement_learning {
 	class logger {
 
 	public:
-		logger(const utility::config_collection&, error_callback_fn* perror_cb = nullptr);
+		logger(const utility::configuration&, error_callback_fn* perror_cb = nullptr);
     
 	  int init(api_status* status);
 

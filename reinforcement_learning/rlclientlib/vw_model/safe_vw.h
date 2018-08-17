@@ -21,7 +21,7 @@ namespace reinforcement_learning {
 
     ~safe_vw();
 
-    std::vector<float> rank(const char* context);
+    void rank(const char* context, std::vector<int>& actions, std::vector<float>& scores);
     const char* id() const;
 
     friend class safe_vw_factory;

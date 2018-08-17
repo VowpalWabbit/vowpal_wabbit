@@ -7,11 +7,11 @@ using namespace std;
 namespace reinforcement_learning {
   namespace u = utility;
 
-  void ranking_event::serialize(u::data_buffer& oss, const char* uuid, const char* context,
-    ranking_response& resp) {
+  void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
+    const ranking_response& resp) {
 
     //add version and eventId
-    oss << R"({"Version":"1","EventId":")" << uuid;
+    oss << R"({"Version":"1","EventId":")" << event_id;
 
     //add action ids
     oss << R"(","a":[)";
@@ -33,11 +33,11 @@ namespace reinforcement_learning {
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("}})";
 	}
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* uuid, const char* outcome_data) {
-    oss << R"({"EventId":")" << uuid << R"(","v":")" << outcome_data << R"("})";
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome) {
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* uuid, float reward) {
-    oss << R"({"EventId":")" << uuid << R"(","v":)" << reward << R"(})";
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome) {
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 }
