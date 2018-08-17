@@ -210,7 +210,7 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                           num_features, all.progress_add, all.progress_arg);;
+                           num_features, all.progress_add, all.progress_arg);
     }
     else
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
