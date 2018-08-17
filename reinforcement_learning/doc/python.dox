@@ -1,0 +1,144 @@
+/*! \page Python
+There are Python bindings available for the C++ inference library. These bindings are in the
+\link rl_client
+\endlink
+module.
+
+See
+\link basic_usage.py
+\endlink
+and
+\link rl_sim.py
+\endlink
+for examples of usage of the Python API.
+
+## Installation
+
+~~~
+wget -O rl_client-0.0.5-cp36-cp36m-linux_x86_64.whl https://aka.ms/rl_client_python
+python3.6 -m pip install rl_client-0.0.5-cp36-cp36m-linux_x86_64.whl
+~~~
+
+Note: `https://aka.ms/rl_client_python` points to a binary targeting x64 Linux Python3.6
+
+\class rl_client
+\brief Module namespace for Python API. Note: Although the documentation website contains both C++ and Python all classes and functions under the rl_client namespace are for Python only.
+
+\class rl_client::live_model
+\brief Main class that wraps interactions with inference API. choose_rank and report_outcome make up the two logical steps in the inference API. The relevant C++ class is reinforcement_learning::live_model.
+
+\class rl_client::configuration
+\brief Container class for all configuration values. Generally is constructed from client.json file read from disk. See \ref api_config for an example. The relevant C++ class is reinforcement_learning::utility::configuration.
+
+\class rl_client::error_callback
+\brief Abstract class that must be subclassed in order to handle background errors. rl_client::error_callback::on_error must be overridden in the subclass.
+
+\fn rl_client::error_callback::on_error(error_code, error_message)
+\memberof rl_client::error_callback
+\pure
+\brief Handler for background errors in the API. Must be overridden by subclassing rl_client::error_callback.
+\param error_code The error code of the corresponding error as defined in \ref error_codes
+\param error_message Readable string representation of error that occurred.
+\return void
+
+\fn rl_client::live_model::live_model(configuration, error_callback)
+\memberof rl_client::live_model
+\brief Constructor for live_model. The provided error_callback is used if any background errors occur.
+\param configuration Configuration object defining connection strings and other parameters.
+\param error_callback Callback object used for background errors.
+
+\fn rl_client::live_model::live_model(configuration)
+\memberof rl_client::live_model
+\brief Constructor for live_model. This overload is provided if no background error_callback is required. Failures will be silent.
+\param configuration Configuration object defining connection strings and other parameters.
+
+\fn rl_client::live_model::init()
+\memberof rl_client::live_model
+\brief Must be called before any usage of choose_rank or report_outcome.
+\exception RuntimeError Thrown if initialization fails.
+\return void
+
+\fn rl_client::live_model::choose_rank(event_id, context_json)
+\memberof rl_client::live_model
+\brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
+\param event_id The unique identifier for this interaction. The same event_id should be used when reporting the outcome for this action.
+\param context_json Contains action, action features and context features in JSON format.
+\exception RuntimeError Thrown if an internal error occurs.
+\return model_id, chosen_action_id, action_probabilities
+\return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
+\return chosen_action_id - ID of action chosen by model.
+\return action_probabilities - List of pairs describing the probability of choosing each action.
+
+\fn rl_client::live_model::choose_rank(context_json)
+\memberof rl_client::live_model
+\brief Choose an action, given a list of action, action features and context features. Choose an action by using the inferencing model to create a probability distribution over actions and then drawing from the distribution.
+\param context_json Contains action, action features and context features in JSON format.
+\exception RuntimeError Thrown if an internal error occurs.
+\return model_id, chosen_action_id, action_probabilities, event_id
+\return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
+\return chosen_action_id - ID of action chosen by model.
+\return action_probabilities - List of pairs describing the probability of choosing each action.
+\return event_id - 	Unique id for this ranking request. The same unique id must be passed back when reporting outcome so it can be tied back to the chosen action.
+
+\fn rl_client::live_model::report_outcome(event_id, outcome)
+\memberof rl_client::live_model
+\brief Report the outcome for the top action.
+\param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
+\param outcome Outcome serialized as a string.
+\exception RuntimeError Thrown if an internal error occurs.
+\return void
+
+\fn rl_client::live_model::report_outcome(event_id, outcome)
+\memberof rl_client::live_model
+\brief Report the outcome for the top action.
+\param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received.
+\param outcome Outcome as a float.
+\exception RuntimeError Thrown if an internal error occurs.
+\return void
+
+\fn rl_client::configuration::set(name, value)
+\memberof rl_client::configuration
+\brief Sets the value for a given name.  It overrides any existing values for that name.
+\param name Key to set in collection.
+\param value Value to set.
+\return void
+
+\fn rl_client::configuration::get(name, defval)
+\memberof rl_client::configuration
+\brief Gets the value for a given name.  If the value does not exist, it returns defval.
+\param name Key to retrieve
+\param defval Default value if key is not found or error occurs.
+\return string
+
+\fn rl_client::configuration::get_int(name, defval)
+\memberof rl_client::configuration
+\brief Gets the value as an integer. If the value does not exist or if there is an error, it returns defval.
+\param name Key to retrieve
+\param defval (int) Default value if key is not found or error occurs.
+\return int
+
+\fn rl_client::configuration::get_bool(name, defval)
+\memberof rl_client::configuration
+\brief Gets the value as an boolean.  If the value does not exist or if there is an error, it returns defval.
+\param name Key to retrieve
+\param defval (bool) Default value if key is not found or error occurs.
+\return bool
+
+\fn rl_client::configuration::get_float(name, defval)
+\memberof rl_client::configuration
+\brief Gets the value as an float.  If the value does not exist or if there is an error, it returns defval.
+\param name Key to retrieve
+\param defval (float) Default value if key is not found or error occurs.
+\return float
+
+\fn rl_client::create_config_from_json(config_json)
+\memberof rl_client
+\static
+\brief Creates an rl_client::configuration object from the equivalent JSON representation of the config. See \ref api_config for an example configuration file.
+\param config_json JSON string representation of configuration
+\return rl_client::configuration
+
+\example basic_usage.py
+\example rl_sim.py
+
+*/

@@ -23,7 +23,7 @@ reinforcement_learning::live_model class is the interface to RL Inference API
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (2) Initialize the API
 - choose_rank() to choose an action from a list of actions
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (3) Choose an action
-- (Optional) report_outcome() to provide feedback on choosen action  
+- (Optional) report_outcome() to provide feedback on chosen action  
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (5) Report outcome
 
 \example basic_usage_cpp.cc

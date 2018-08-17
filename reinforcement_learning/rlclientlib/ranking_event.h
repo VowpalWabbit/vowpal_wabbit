@@ -8,14 +8,14 @@ namespace reinforcement_learning {
   //serializable ranking event
 	class ranking_event {
 	public:
-		static void serialize(utility::data_buffer& oss, const char* uuid, const char* context,
-      ranking_response& resp);
+		static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
+      const ranking_response& resp);
 	};
 
 	//serializable outcome event
 	class outcome_event {
 	public:
-    static void serialize(utility::data_buffer& oss, const char* uuid, const char* outcome_data);
-    static void serialize(utility::data_buffer& oss, const char* uuid, float reward);
+    static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome);
+    static void serialize(utility::data_buffer& oss, const char* event_id, float outcome);
   };
 }

@@ -4,7 +4,7 @@
 
 namespace reinforcement_learning
 {
-  logger::logger(const utility::config_collection& c, error_callback_fn* perror_cb)
+  logger::logger(const utility::configuration& c, error_callback_fn* perror_cb)
     : _ranking_client(
         c.get(name::INTERACTION_EH_HOST     , "localhost:8080"),
         c.get(name::INTERACTION_EH_KEY_NAME , ""),

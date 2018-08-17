@@ -1,23 +1,23 @@
-#include "config_collection.h"
+#include "configuration.h"
 #include "str_util.h"
 
 namespace reinforcement_learning { namespace utility {
 
-  config_collection::config_collection():_pmap(new map_type()) {}
-  config_collection::~config_collection() { delete _pmap; }
+  configuration::configuration():_pmap(new map_type()) {}
+  configuration::~configuration() { delete _pmap; }
 
-  config_collection::config_collection(const config_collection& other) {
+  configuration::configuration(const configuration& other) {
     _pmap = new map_type(*( other._pmap ));
   }
 
-  config_collection& config_collection::operator=(const config_collection& rhs) {
+  configuration& configuration::operator=(const configuration& rhs) {
     if ( this != &rhs ) {
       _pmap = new map_type(*(rhs._pmap));
     }
     return *this;
   }
 
-  config_collection& config_collection::operator=(config_collection&& temp) noexcept {
+  configuration& configuration::operator=(configuration&& temp) noexcept {
     if ( this != &temp ) {
       auto& map = *_pmap;
       temp._pmap->swap(map);
@@ -25,17 +25,17 @@ namespace reinforcement_learning { namespace utility {
     return *this;
   }
 
-  config_collection::config_collection(config_collection&& temp) noexcept {
+  configuration::configuration(configuration&& temp) noexcept {
     _pmap = temp._pmap;
     temp._pmap = nullptr;
   }
 
-  void config_collection::set(const char* name, const char* value) {
+  void configuration::set(const char* name, const char* value) {
     auto& map = *_pmap;
     map[name] = value;
   }
 
-  const char* config_collection::get(const char* name, const char* defval) const {
+  const char* configuration::get(const char* name, const char* defval) const {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if (it != map.end())
@@ -43,7 +43,7 @@ namespace reinforcement_learning { namespace utility {
     return defval;
   }
 
-  int config_collection::get_int(const char* name, const int defval) const {
+  int configuration::get_int(const char* name, const int defval) const {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if (it != map.end())
@@ -51,7 +51,7 @@ namespace reinforcement_learning { namespace utility {
     return defval;
   }
 
-  bool config_collection::get_bool(const char* name, const bool defval) const {
+  bool configuration::get_bool(const char* name, const bool defval) const {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if ( it != map.end() ) {
@@ -64,7 +64,7 @@ namespace reinforcement_learning { namespace utility {
     return defval;
   }
 
-  float config_collection::get_float(const char* name, float defval) const {
+  float configuration::get_float(const char* name, float defval) const {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if ( it != map.end() )
@@ -73,7 +73,7 @@ namespace reinforcement_learning { namespace utility {
   }
 }}
 
-std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::config_collection& cc) {
+std::ostream& operator<<(std::ostream& os, const reinforcement_learning::utility::configuration& cc) {
   os << "{" << std::endl;
   for ( const auto& v : *( cc._pmap ) ) {
     os << "  (" << v.first << ", " << v.second << ")" << std::endl;
