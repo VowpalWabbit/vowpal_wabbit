@@ -47,7 +47,7 @@ namespace reinforcement_learning { namespace error_code {
   //! [Error Description]
   char const * const create_fn_exception_s      = "Create function failed.";
   char const * const type_not_registered_s      = "Type not registered with class factory";
-  char const * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
+  char const * const http_uri_not_provided_s    = "URL parameter was not passed in via configuration";
   char const * const http_bad_status_code_s     = "http request returned a bad status code";
   char const * const last_modified_not_found_s  = "Last-Modified http header not found in response";
   char const * const last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";

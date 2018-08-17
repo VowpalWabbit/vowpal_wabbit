@@ -34,7 +34,7 @@ namespace reinforcement_learning
   }
 
   live_model::live_model(
-    const utility::config_collection& config, 
+    const utility::configuration& config, 
     error_fn fn, 
     void* err_context,
     transport_factory_t* t_factory,
@@ -44,11 +44,11 @@ namespace reinforcement_learning
     _initialized(false) {
   }
 
-  int live_model::choose_rank(const char* uuid, const char* context_json, ranking_response& response,
+  int live_model::choose_rank(const char* event_id, const char* context_json, ranking_response& response,
                               api_status* status)
   {
     INIT_CHECK();
-    return _pimpl->choose_rank(uuid, context_json, response, status);
+    return _pimpl->choose_rank(event_id, context_json, response, status);
   }
 
   int live_model::choose_rank(const char* context_json, ranking_response& response, api_status* status)
@@ -57,15 +57,15 @@ namespace reinforcement_learning
     return _pimpl->choose_rank(context_json, response, status);
   }
 
-  int live_model::report_outcome(const char* uuid, const char* outcome_data, api_status* status)
+  int live_model::report_outcome(const char* event_id, const char* outcome, api_status* status)
   {
     INIT_CHECK();
-    return _pimpl->report_outcome(uuid, outcome_data, status);
+    return _pimpl->report_outcome(event_id, outcome, status);
   }
 
-  int live_model::report_outcome(const char* uuid, float reward, api_status* status)
+  int live_model::report_outcome(const char* event_id, float outcome, api_status* status)
   {
     INIT_CHECK();
-    return _pimpl->report_outcome(uuid, reward, status);
+    return _pimpl->report_outcome(event_id, outcome, status);
   }
 }

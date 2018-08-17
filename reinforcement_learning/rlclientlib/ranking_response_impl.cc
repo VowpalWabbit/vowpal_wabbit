@@ -3,8 +3,8 @@
 
 namespace reinforcement_learning {
  
-  ranking_response_impl::ranking_response_impl(const std::string& uuid)
-  : _uuid {uuid}, _chosen_action_id{0} {}
+  ranking_response_impl::ranking_response_impl(const std::string& event_id)
+  : _event_id {event_id}, _chosen_action_id{0} {}
 
   bool ranking_response_impl::get_action(const size_t idx, size_t* action_id, float* prob) const {
     if ( idx < _ranking.size() ) {
@@ -31,13 +31,13 @@ namespace reinforcement_learning {
   }
 
   void ranking_response_impl::reset() {
-    _uuid.clear();
+    _event_id.clear();
     _chosen_action_id = 0;
     _model_id.clear();
     _ranking.clear();
   }
 
-  bool ranking_response_impl::get_choosen_action_id(size_t& action_id) const {
+  bool ranking_response_impl::get_chosen_action_id(size_t& action_id) const {
     if ( !_ranking.empty() ) {
       action_id =_chosen_action_id;
       return true;
@@ -45,7 +45,7 @@ namespace reinforcement_learning {
     return false;
   }
 
-  int ranking_response_impl::set_choosen_action_id(size_t action_id, api_status* status) {
+  int ranking_response_impl::set_chosen_action_id(size_t action_id, api_status* status) {
     if ( action_id >= _ranking.size() ) {
       RETURN_ERROR_LS(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
     }

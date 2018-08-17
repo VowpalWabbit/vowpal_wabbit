@@ -19,10 +19,10 @@ namespace cfg = u::config;
 namespace err = r::error_code;
 
 int load_file(const std::string& file_name, std::string& file_data);
-int load_config_from_json(const std::string& file_name, u::config_collection& cc);
+int load_config_from_json(const std::string& file_name, u::configuration& cc);
 
-char const * const  uuid    = "uuid";
+char const * const  event_id    = "event_id";
 char const * const  context = R"({
                                   "GUser":{"id":"a","major":"eng","hobby":"hiking"},
                                   "_multi":[ { "TAction":{"a1":"f1"} },{"TAction":{"a2":"f2"}}]})";
-float reward  = 1.0f;
+float outcome  = 1.0f;

@@ -1,9 +1,9 @@
 /*! \page api_config API Configuration
 
-RL Inference API can be configured using cfg::config_collection.  config_collection is a collection of (name,value) config settings.
+RL Inference API can be configured using cfg::configuration.  configuration is a collection of (name,value) config settings.
 They can be setup manually as follows: 
 ~~~~~
-    cfg::config_collection cc;
+    cfg::configuration cc;
     cc.set("appid", "062618a");
     cc.set("model.blob.uri", "https://<storage>.blob.core.windows.net/mwt-models/currebnt?sv=2017-07-29&sr=b&sig=<sig>&st=2018-06-26T09%3A00%3A55Z&se=2028-06-26T09%3A01%3A55Z&sp=r");
     cc.set("interaction.eventhub.key", "<SAKey>");
@@ -17,7 +17,7 @@ They can be setup manually as follows:
     cc.set("observation.eventhub.key", "<SAKey>");
 ~~~~~
 
-config_collection can also be loaded from a config file associated with the online trainer in Azure.  The client.json config file has the following format:
+configuration can also be loaded from a config file associated with the online trainer in Azure.  The client.json config file has the following format:
 ~~~~~
 {
     "ApplicationID": "<appid>",
@@ -30,8 +30,8 @@ config_collection can also be loaded from a config file associated with the onli
 }
 ~~~~~
 
-Initialize a config_collection from a json string:
-\snippet examples/basic_usage_cpp/basic_usage_cpp.cc Create a config_collection from json string
+Initialize a configuration from a json string:
+\snippet examples/basic_usage_cpp/basic_usage_cpp.cc Create a configuration from json string
 
 Instantiate Inference API using config:
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (1) Instantiate Inference API using config

@@ -22,10 +22,10 @@ std::string person::get_features() {
   return oss.str();
 }
 
-float person::get_reward(const std::string& choosen_action) {
+float person::get_outcome(const std::string& chosen_action) {
   int draw_uniform = rand() % 10000;
   float norm_draw_val = (float)draw_uniform / 10000.0;
-  float click_prob = _topic_click_probability[choosen_action];
+  float click_prob = _topic_click_probability[chosen_action];
   if ( norm_draw_val <= click_prob )
     return 1.0f;
   else
