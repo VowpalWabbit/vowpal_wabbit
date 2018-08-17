@@ -43,16 +43,16 @@ namespace reinforcement_learning {
     }
 
     live_model::live_model(const reinforcement_learning::utility::configuration config, error_callback& callback)
-      : impl(config, &dispatch_error_internal, &callback, &data_transport_factory, &model_factory)
+      : _impl(config, &dispatch_error_internal, &callback, &data_transport_factory, &model_factory)
     {}
 
     live_model::live_model(const reinforcement_learning::utility::configuration config)
-      : impl(config, nullptr, nullptr, &data_transport_factory, &model_factory)
+      : _impl(config, nullptr, nullptr, &data_transport_factory, &model_factory)
     {}
 
     void live_model::init() {
       reinforcement_learning::api_status status;
-      impl.init(&status);
+      _impl.init(&status);
       check_api_status(status);
     }
 
@@ -87,7 +87,7 @@ namespace reinforcement_learning {
     ranking_response live_model::choose_rank(const char* event_id, const char* context_json) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
-      impl.choose_rank(event_id, context_json, response_impl, &status);
+      _impl.choose_rank(event_id, context_json, response_impl, &status);
       check_api_status(status);
 
       return convert_ranking_response(response_impl);
@@ -96,7 +96,7 @@ namespace reinforcement_learning {
     ranking_response live_model::choose_rank(const char* context_json) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
-      impl.choose_rank(context_json, response_impl, &status);
+      _impl.choose_rank(context_json, response_impl, &status);
       check_api_status(status);
 
       return convert_ranking_response(response_impl);
@@ -104,13 +104,13 @@ namespace reinforcement_learning {
 
     void live_model::report_outcome(const char* event_id, const char* outcome) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(event_id, outcome, &status);
+      _impl.report_outcome(event_id, outcome, &status);
       check_api_status(status);
     }
 
     void live_model::report_outcome(const char* event_id, float outcome) {
       reinforcement_learning::api_status status;
-      impl.report_outcome(event_id, outcome, &status);
+      _impl.report_outcome(event_id, outcome, &status);
       check_api_status(status);
     }
   }

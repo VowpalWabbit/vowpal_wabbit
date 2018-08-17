@@ -12,6 +12,7 @@
 #include "err_constants.h"
 #include "constants.h"
 #include "vw_model/safe_vw.h"
+
 #include "explore_internal.h"
 #include "hash.h"
 
@@ -144,6 +145,7 @@ namespace reinforcement_learning {
     }
     // Pick using the pdf
     uint32_t chosen_action_id;
+    // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
     if (S_EXPLORATION_OK != scode) {
@@ -161,6 +163,7 @@ namespace reinforcement_learning {
 
   int live_model_impl::explore_exploit(const char* event_id, const char* context, ranking_response& response,
                                        api_status* status) const {
+    // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     return _model->choose_rank(seed, context, response, status);
   }

@@ -42,7 +42,7 @@ namespace reinforcement_learning {
       void report_outcome(const char* event_id, float outcome);
 
       private:
-        reinforcement_learning::live_model impl;
+        reinforcement_learning::live_model _impl;
     };
 #endif
   }

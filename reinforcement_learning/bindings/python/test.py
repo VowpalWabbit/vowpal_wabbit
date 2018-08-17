@@ -10,8 +10,7 @@ test_config_json = '''
     "ModelBlobUri": "https://<storage>.blob.core.windows.net/mwt-models/current?sv=2017-07-29&sr=b&sig=<sig>&st=2018-06-26T09%3A00%3A55Z&se=2028-06-26T09%3A01%3A55Z&sp=r",
     "AppInsightsKey": "<AppInsightsKey>",
     "InitialExplorationEpsilon": 1.0,
-    "SendBatchIntervalMs": 5,
-    "SendHighMaterMark": true
+    "SendBatchIntervalMs": 5
 }
 '''
 
@@ -36,9 +35,6 @@ class ConfigTests(unittest.TestCase):
 
     def test_get_int(self):
         self.assertEqual(self.config.get_int(rl_client.SEND_BATCH_INTERVAL,-1), 5)
-
-    def test_get_bool(self):
-        self.assertEqual(self.config.get_bool(rl_client.SEND_HIGH_WATER_MARK, False), True)
 
     def test_get_float(self):
         self.assertAlmostEqual(self.config.get_float(rl_client.INITIAL_EPSILON, -1.0), 1.0)

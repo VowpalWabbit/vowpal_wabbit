@@ -46,6 +46,7 @@ namespace reinforcement_learning { namespace utility {
     web::http::client::http_client_config cfg;
 
     cfg.set_validate_certificates(false);
+    // Set a timeout for network requests to avoid hanging too long because of network issues.
     cfg.set_timeout(std::chrono::seconds(2));
     return cfg;
   }
