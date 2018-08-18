@@ -17,7 +17,7 @@ def main():
     model.init()
 
     event_id = "event_id"
-    context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"a1":"f1"},{"a2":"f2"}]}'
+    context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"N1":{"F1":"V1"},"N2":{"F2":"V2"}},{"N3":{"F1":"V3"}}]}'
 
     model_id, chosen_action_id, action_probabilities = model.choose_rank(event_id, context)
 
