@@ -13,7 +13,13 @@ namespace reinforcement_learning { namespace utility
 
       void register_type(const std::string& name, create_fn fptr) { _creators[name] = fptr; }
 
-      int create(I** retval, const std::string& name, Args&& ...args, api_status* status= nullptr) {
+      // There is a compiler bug in MSVC where a parameter pack cannot be followed by a default argument,
+      // so an overload is used to get around this.
+      int create(I** retval, const std::string& name, Args&& ...args) {
+        return create(retval, name, args..., nullptr);
+      }
+
+      int create(I** retval, const std::string& name, Args&& ...args, api_status* status) {
         auto it = _creators.find(name);
 
         if ( it != _creators.end() ) {
