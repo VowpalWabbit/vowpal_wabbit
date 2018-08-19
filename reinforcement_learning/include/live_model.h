@@ -61,6 +61,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data  from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
+     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
+     *                       interaction and the other for interaction which logs to Event Hub.
      */
     explicit live_model(
       const utility::configuration& config,
@@ -151,6 +153,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data  from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
+     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
+     *                       interaction and the other for interaction which logs to Event Hub.
      */
     template<typename ErrCntxt>
     explicit live_model(
@@ -191,6 +195,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data  from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
+     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
+     *                       interaction and the other for interaction which logs to Event Hub.
    */
   template<typename ErrCntxt>
   live_model::live_model(

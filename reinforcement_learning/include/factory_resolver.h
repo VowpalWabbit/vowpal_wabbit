@@ -27,6 +27,11 @@ namespace reinforcement_learning  {
    * in inference.
    */
   using model_factory_t = utility::object_factory<model_management::i_model, const utility::configuration&>;
+  /**
+   * @brief Factory to create loggers used to record the interactions and observations.
+   * Advanced extension point:  Register another implementation of i_logger to
+   * provide the mechanism used when logging interaction and observation events.
+   */
   using logger_factory_t = utility::object_factory<i_logger, const utility::configuration&, error_callback_fn*>;
 
   extern data_transport_factory_t& data_transport_factory;
