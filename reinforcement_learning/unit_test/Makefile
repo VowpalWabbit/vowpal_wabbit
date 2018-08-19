@@ -1,12 +1,12 @@
 TARGET = rlclient-test.out
 
-RL_LIB = -L ../rlclientlib -lrlclient 
+RL_LIB = -L ../rlclientlib -lrlclient
 VW_LIB = -L../../vowpalwabbit -lvw -lallreduce
-BOOST_LIBS = -lboost_unit_test_framework -lboost_system 
-CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl 
+BOOST_LIBS = -lboost_unit_test_framework -lboost_system
+CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl
 ALL_LIBS = $(RL_LIB) $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
 
-INCLUDE = -I ../include -I ../rlclientlib -I ../explore -I ../../explore
+INCLUDE = -I ../include -I ../rlclientlib -I ../explore -I ../../explore -I ../ext_libs
 
 .PHONY: default all clean
 
