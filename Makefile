@@ -118,6 +118,8 @@ rl_example: vw rl_clientlib
 	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
+
 
 rl_python: vw rl_clientlib
 	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
