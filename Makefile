@@ -107,6 +107,9 @@ export
 rl_clientlib: vw
 	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
 
+# O3 turns on the devirtualize optimization option. This is not compatible with mock testing as some
+# virtual methods can be devirtualized if possible.
+rl_clientlib_test: FLAGS:=$(filter-out -O3,$(FLAGS))
 rl_clientlib_test: vw rl_clientlib
 	cd reinforcement_learning/unit_test; $(MAKE) -j $(NPROCS) things
 	(cd reinforcement_learning/unit_test && ./rlclient-test.out)

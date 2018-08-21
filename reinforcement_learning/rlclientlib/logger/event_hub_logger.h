@@ -24,7 +24,7 @@ namespace reinforcement_learning {
       int send_queue_maxsize,
       error_callback_fn* perror_cb = nullptr);
 
-    int init(api_status* status) override;
+    virtual int init(api_status* status) override;
   protected:
     virtual int v_append(std::string& data, api_status* status) override;
 
