@@ -1,5 +1,5 @@
 /**
- * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the chosen action and probabiliy distribution.
+ * @brief ranking_response definition. ranking_response is returned from choose_rank call.  It contains the chosen action and probability distribution.
  *
  * @file ranking_response.h
  * @author Rajan Chari et al
@@ -13,7 +13,7 @@ namespace reinforcement_learning {
   class ranking_response_impl;
 
   /**
-   * @brief Holmodel (action, probability) pairs.
+   * @brief Holds (action, probability) pairs.
    */
   struct action_prob {
     //! action id
@@ -25,7 +25,7 @@ namespace reinforcement_learning {
   /**
    * @brief choose_rank() returns the action choice using ranking_response.
    * ranking_response contains all the actions and distribution from with the action was sampled.  It also contains the chosen action id and
-   * the unique id representing the choice.  This unique id must be used to report back outcomes against this choice for the online trainer.
+   * the unique event_id representing the choice.  This unique event_id must be used to report back outcomes against this choice for the online trainer.
    */
   class ranking_response {
   public:
@@ -34,13 +34,13 @@ namespace reinforcement_learning {
     /**
      * @brief Construct a new ranking response object.
      *
-     * @param event_id Unique identifier for this interaction.  The same event_id must also be presented with report_outcome()
+     * @param event_id The unique identifier for this interaction.  This event_id must be used when reporting the outcome for this action
      */
     ranking_response(char const* event_id);
+
     /**
-     * @brief Unique id for this ranking request.
-     * The same unique id must be passed back when reporing outcome so it can be
-     * tied back to the chosen action.
+     * @brief Unique event_id for this ranking request.
+     * This event_id must be used when calling report_outcome so it can be joined with the chosen action
      * @return const char*
      */
     const char* get_event_id() const;
@@ -85,16 +85,16 @@ namespace reinforcement_learning {
     size_t size() const;
 
     /**
-     * @brief Set the model id.
-     * Every call to choose action is associated with a unique model used to predict.  A unique model id
+     * @brief Set the model_id.
+     * Every call to choose action is associated with a unique model used to predict.  A unique model_id
      * is associated with each unique model. (This is set internally by the API)
      * @param model_id
      */
     void set_model_id(const char* model_id);
 
     /**
-     * @brief Get the model id.
-     * Every call to choose action is associated with a unique model used to predict.  A unique model id
+     * @brief Get the model_id.
+     * Every call to choose action is associated with a unique model used to predict.  A unique model_id
      * is associated with each unique model. (This is set internally by the API)
      * @return const char*
      */
@@ -108,16 +108,16 @@ namespace reinforcement_learning {
 
     /**
      * @brief Move construct a new ranking response object.
-     * The underlying implementation is taken from the rvalue reference.
+     * The underlying data is taken from the rvalue reference.
      */
     ranking_response(ranking_response&&) noexcept;
 
     /**
      * @brief Move assignment operator for ranking response.
-     * The underlying implementation is swapped with the rvalue reference.
+     * The underlying data is taken from rvalue reference, and then it is cleared.
      * @return ranking_response&
      */
-    ranking_response& operator = (ranking_response&&) noexcept;
+    ranking_response& operator=(ranking_response&&) noexcept;
 
     /**
      * @brief Copy constructor is removed since implementation will be deleted twice
@@ -133,27 +133,27 @@ namespace reinforcement_learning {
 
   public:
     /**
-     * @brief Forward iterator class used to access the (action,probability) collection
+     * @brief Forward iterator class used to access the (action, probability) collection
      */
     class ranking_iterator {
     public:
-      //! Construct an (action,probability) collection iterator using the ranking_response implementation
+      //! Construct an (action, probability) collection iterator using the ranking_response implementation
       ranking_iterator(ranking_response_impl*);
-      //! Construct an (action,probability) collection iterator using the ranking_response implementation and size
+      //! Construct an (action, probability) collection iterator using the ranking_response implementation and size
       ranking_iterator(ranking_response_impl*, size_t);
       //! Move the iterator to the next element
       ranking_iterator& operator++();
       //! Inequality comparison for the iterator
       bool operator!=(const ranking_iterator& other) const;
-      //! Dereferencing operator to get the (action,probability) pair
+      //! Dereferencing operator to get the (action, probability) pair
       action_prob operator*() const;
     private:
       ranking_response_impl* _p_resp_impl;
       size_t _idx;
     };
-    //! Returns an iterator pointing to the first element of the (action,probability) collection
+    //! Returns an iterator pointing to the first element of the (action, probability) collection
     ranking_iterator begin() const;
-    //! Returns an iterator referring to the past-the-end element of the (action,probability) collection.
+    //! Returns an iterator referring to the past-the-end element of the (action, probability) collection.
     ranking_iterator end() const;
   };
 }

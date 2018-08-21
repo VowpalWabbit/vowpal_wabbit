@@ -23,11 +23,11 @@ namespace reinforcement_learning {
   }                               //
                                   //
   namespace utility {             //
-    class configuration;      //
+    class configuration;          //
   }                               //
   //////////////////////////////////
 
-	// Reinforcement learning client
+  // Reinforcement learning client
   /**
    * @brief Interface class for the Inference API.
    *
@@ -35,9 +35,9 @@ namespace reinforcement_learning {
    * - (2) choose_rank() to choose an action from a list of actions
    * - (3) report_outcome() to provide feedback on chosen action
    */
-	class live_model {
+  class live_model {
 
-	public:
+  public:
     /**
      * @brief Error callback function.
      * When live_model is constructed, a background error callback and a
@@ -46,7 +46,7 @@ namespace reinforcement_learning {
      *
      * NOTE: Error callback will get invoked in a background thread.
      */
-    using error_fn            = void(*)(const api_status&, void*);
+    using error_fn = void(*)(const api_status&, void*);
     /**
      * @brief Factory to create transport for model data.
      * Advanced extension point:  Register another implementation of i_data_transport to
@@ -59,7 +59,7 @@ namespace reinforcement_learning {
      * provide hydraded model given updated model data. This model is then used
      * in inference.
      */
-    using model_factory_t     = utility::object_factory<model_management::i_model>;
+    using model_factory_t = utility::object_factory<model_management::i_model>;
 
     /**
      * @brief Construct a new live model object.
@@ -67,10 +67,10 @@ namespace reinforcement_learning {
      * @param config Name-Value based configuration
      * @param fn Error callback for handling errors in background thread
      * @param err_context Context passed back during Error callback
-     * @param t_factory Transport factory.  The default transport factory is initialised with a
-     *                  REST based transport that gets data  from an Azure storage account
+     * @param t_factory Transport factory.  The default transport factory is initialized with a
+     *                  REST based transport that gets data from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
-     *                    used for local inference.
+     *                    used for local inference
      */
     explicit live_model(
       const utility::configuration& config,
@@ -89,47 +89,47 @@ namespace reinforcement_learning {
     int init(api_status* status=nullptr);
 
     /**
-     * @brief Choose an action, given a list of action, action features and context features.
-     * Choose an action by using the inferencing model to create a probability distribution over actions
-     * and then drawing from the distribution.
+     * @brief Choose an action, given a list of actions, action features and context features. The
+     * inference library chooses an action by creating a probability distribution over the actions
+     * and then sampling from it.
      * @param event_id  The unique identifier for this interaction.  The same event_id should be used when
-     *              reporting the outcome for this action.
+     *                  reporting the outcome for this action.
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distribution used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * event_id, const char * context_json, ranking_response& resp, api_status* status= nullptr);
+    int choose_rank(const char * event_id, const char * context_json, ranking_response& resp, api_status* status= nullptr);
 
     /**
-     * @brief Choose an action, given a list of action, action features and context features.
-     * Choose an action by using the inferencing model to create a probability distribution over actions
-     * and then drawing from the distribution.  A unique event_id will be generated and returned in the ranking_response.
+     * @brief Choose an action, given a list of actions, action features and context features. The
+     * inference library chooses an action by creating a probability distribution over the actions
+     * and then sampling from it.  A unique event_id will be generated and returned in the ranking_response.
      * The same event_id should be used when reporting the outcome for this action.
      *
      * @param context_json Contains action, action features and context features in json format
-     * @param resp Ranking response contains the chosen action, probability distrubtion used for sampling actions and ranked actions
+     * @param resp Ranking response contains the chosen action, probability distribution used for sampling actions and ranked actions
      * @param status  Optional field with detailed string description if there is an error
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//event_id is auto-generated
+    int choose_rank(const char * context_json, ranking_response& resp, api_status* status= nullptr);//event_id is auto-generated
 
     /**
      * @brief Report the outcome for the top action.
      *
-     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
-     *              the action taken can be matched with feedback received.
+     * @param event_id  The unique event_id used when choosing an action should be presented here.  This is so that
+     *                  the action taken can be matched with feedback received.
      * @param outcome Outcome serialized as a string
      * @param status  Optional field with detailed string description if there is an error
      * @return int Return error code.  This will also be returned in the api_status object
      */
-		int report_outcome(const char* event_id, const char* outcome, api_status* status= nullptr);
+    int report_outcome(const char* event_id, const char* outcome, api_status* status= nullptr);
 
     /**
      * @brief Report the outcome for the top action.
      *
-     * @param event_id  The unique identifier used when choosing an action should be presented here.  This is so that
-     *              the action taken can be matched with feedback received.
+     * @param event_id  The unique event_id used when choosing an action should be presented here.  This is so that
+     *                  the action taken can be matched with feedback received.
      * @param outcome Outcome as float
      * @param status  Optional field with detailed string description if there is an error
      * @return int Return error code.  This will also be returned in the api_status object
@@ -156,10 +156,10 @@ namespace reinforcement_learning {
      * @param config Name-Value based configuration
      * @param fn Error callback for handling errors in background thread
      * @param err_context Context passed back during Error callback
-     * @param t_factory Transport factory.  The default transport factory is initialised with a
-     *                  REST based transport that gets data  from an Azure storage account
+     * @param t_factory Transport factory.  The default transport factory is initialized with a
+     *                  REST based transport that gets data from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
-     *                    used for local inference.
+    *                   used for local inference.
      */
     template<typename ErrCntxt>
     explicit live_model(
@@ -179,27 +179,27 @@ namespace reinforcement_learning {
      */
     live_model& operator=(live_model&&) = default;
 
-	  live_model(const live_model&) = delete;       //! Prevent accidental copy, since destructor will deallocate the implementation
+    live_model(const live_model&) = delete;       //! Prevent accidental copy, since destructor will deallocate the implementation
     live_model& operator=(live_model&) = delete;  //! Prevent accidental copy, since destructor will deallocate the implementation
 
     ~live_model();
 
   private:
-		live_model_impl* _pimpl;  //! The actual implementation details are forwarded to this object (PIMPL pattern)
+    live_model_impl* _pimpl;  //! The actual implementation details are forwarded to this object (PIMPL pattern)
     bool _initialized;        //! Guard to ensure that live_model is properly initialized. i.e. init() was called and successfully initialized.
-	};
+  };
 
   /**
-     * @brief Construct a new live model object.
-     *
-     * @tparam ErrCntxt Context type used in error callback.
-     * @param config Name-Value based configuration
-     * @param fn Error callback for handling errors in background thread
-     * @param err_context Context passed back during Error callback
-     * @param t_factory Transport factory.  The default transport factory is initialised with a
-     *                  REST based transport that gets data  from an Azure storage account
-     * @param m_factory Model factory.  The default model factory hydrates vw models
-     *                    used for local inference.
+   * @brief Construct a new live model object.
+   *
+   * @tparam ErrCntxt Context type used in error callback.
+   * @param config Name-Value based configuration
+   * @param fn Error callback for handling errors in background thread
+   * @param err_context Context passed back during Error callback
+   * @param t_factory Transport factory.  The default transport factory is initialized with a
+   *                  REST based transport that gets data from an Azure storage account
+   * @param m_factory Model factory.  The default model factory hydrates vw models
+   *                  used for local inference.
    */
   template <typename ErrCtxt>
   live_model::live_model(
