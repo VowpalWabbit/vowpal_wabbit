@@ -17,7 +17,7 @@
 #include "logger.h"
 #include "model_mgmt.h"
 
-#include <fakeit.hpp>
+#include <fakeit/fakeit.hpp>
 
 namespace r = reinforcement_learning;
 namespace u = reinforcement_learning::utility;
