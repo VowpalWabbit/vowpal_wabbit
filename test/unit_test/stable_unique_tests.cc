@@ -4,7 +4,6 @@
 #include <boost/test/test_tools.hpp>
 
 #include <vector>
-#include <algorithm>
 
 #include "stable_unique.h"
 
