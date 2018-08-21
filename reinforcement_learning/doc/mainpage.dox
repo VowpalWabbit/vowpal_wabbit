@@ -11,19 +11,20 @@ Reinforcement Learning Loop
 
 RL Inference API
 ----------------
-This API allows the developer to perform local inference and ship the actions and feedback
-to an online trainer running in the Azure cloud.  It also periodically refreshes its copy
-of the model.
+This API allows the developer to perform inference (choosing an action from an action set)
+and to report the outcome of this decision. The inference library automatically sends the action set,
+the decision, and the outcome to an online trainer running in the Azure cloud. It also periodically
+refreshes its copy of the model produced by the online trainer.
 
 API Usage: Basic steps to using the RL Inference API
 ----------------------------------------------------
-reinforcement_learning::live_model class is the interface to RL Inference API
-- Instantiate and Initialize live_model
+reinforcement_learning::live_model class is the main driving interface of the RL Inference API
+- Instantiate and initialize live_model
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (1) Instantiate Inference API using config
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (2) Initialize the API
-- choose_rank() to choose an action from a list of actions
+- choose_rank() to choose an action from a list of actions (action set)
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (3) Choose an action
-- (Optional) report_outcome() to provide feedback on chosen action
+- report_outcome() to provide the outcome of the chosen action (The default outcome is used when this call is not used)
 \snippet examples/basic_usage_cpp/basic_usage_cpp.cc (5) Report outcome
 
 \example basic_usage_cpp.cc
