@@ -1,5 +1,5 @@
 /**
- * @brief RL inference API example showing custom overriden interface
+ * @brief model inference API example showing custom overriden interface
  *
  * @file override_interface.cc
  * @author Jack Gerrits et al
@@ -17,7 +17,6 @@
 // Namespace manipulation for brevity
 namespace r = reinforcement_learning;
 namespace u = r::utility;
-namespace cfg = u::config;
 namespace err = r::error_code;
 
 // Custom implementations must inherit from the respective i_* abstract class.
@@ -28,37 +27,37 @@ public:
   {}
 
   virtual int init(r::api_status* status) override {
-    return r::error_code::success;
+    return err::success;
   }
 
 protected:
   virtual int v_append(std::string& data, r::api_status* status) override {
     _stream << data << std::endl;
-    return r::error_code::success;
+    return err::success;
   }
 
 private:
   std::ostream& _stream;
 };
 
-//! Load contents of file into a string
+// Load contents of file into a string
 int load_file(const std::string& file_name, std::string& config_str) {
   std::ifstream fs;
   fs.open(file_name);
   if (!fs.good())
-    return reinforcement_learning::error_code::invalid_argument;
+    return err::invalid_argument;
   std::stringstream buffer;
   buffer << fs.rdbuf();
   config_str = buffer.str();
-  return r::error_code::success;
+  return err::success;
 }
 
-//! Load config from json file
+// Load config from json file
 int load_config_from_json(const std::string& file_name, u::configuration& cfg) {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));
-  RETURN_IF_FAIL(cfg::create_from_json(config_str, cfg));
-  return r::error_code::success;
+  RETURN_IF_FAIL(u::config::create_from_json(config_str, cfg));
+  return err::success;
 }
 
 int main() {
@@ -82,9 +81,9 @@ int main() {
   stdout_logger_factory.register_type(r::value::INTERACTION_EH_LOGGER, create_ostream_logger_fn);
 
   // Default factories defined in factory_resolver.h are passed as well as the custom stdout logger.
-  r::live_model rl(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
+  r::live_model model(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
 
-  if( rl.init(&status) != err::success ) {
+  if( model.init(&status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
@@ -96,12 +95,12 @@ int main() {
      R"({"GUser":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[ { "TAction":{"a1":"f1"} },{"TAction":{"a2":"f2"}}]})";
   float outcome  = 1.0f;
 
-  if ( rl.choose_rank(event_id, context, response, &status) != err::success ) {
+  if ( model.choose_rank(event_id, context, response, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
 
-  if( rl.report_outcome(event_id, outcome, &status) != err::success ) {
+  if( model.report_outcome(event_id, outcome, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }

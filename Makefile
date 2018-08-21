@@ -120,7 +120,6 @@ rl_example: vw rl_clientlib
 	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
 
-
 rl_python: vw rl_clientlib
 	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
 
