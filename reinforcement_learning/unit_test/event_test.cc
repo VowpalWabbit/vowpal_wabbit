@@ -14,7 +14,7 @@ using namespace std;
 BOOST_AUTO_TEST_CASE(serialize_outcome)
 {
   const auto event_id = "event_id";
-	const auto outcome = 1.0;
+	const auto outcome = 1.0f;
 
   utility::data_buffer oss;
   outcome_event::serialize(oss, event_id, outcome);

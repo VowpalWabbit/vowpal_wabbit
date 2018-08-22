@@ -82,7 +82,7 @@ void test_loop::validity_loop(size_t thread_id)
 {
   r::ranking_response response;
   r::api_status status;
-  int step = examples / 100;
+  auto const step = examples / 100;
   for (size_t i = 0; i < examples; ++i) {
     if (step > 0 && i % step == 0 && thread_id == 0) std::cout << "\r" << (i / step) << "%";
 
@@ -110,7 +110,7 @@ void test_loop::perf_loop(size_t thread_id)
 
   std::cout << "Perf test is started..." << std::endl;
   std::cout << "Choose_rank..." << std::endl;
-  int step = examples / 100;
+  auto const step = examples / 100;
   const auto choose_rank_start = chrono::high_resolution_clock::now();
   for (size_t i = 0; i < examples; ++i) {
     if (step > 0 && i % step == 0 && thread_id == 0) std::cout << "\r" << (i / step) << "%";
