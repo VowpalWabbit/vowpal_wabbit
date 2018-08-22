@@ -41,7 +41,7 @@ int rl_sim::loop() {
     // What outcome did this action get?
     const auto outcome = p.get_outcome(_actions[chosen_action]);
 
-    // Report outcome recieved
+    // Report outcome received
     if ( _rl->report_outcome(req_id.c_str(), outcome, &status) != err::success && outcome > 0.00001f ) {
       std::cout << status.get_error_msg() << std::endl;
       continue;
@@ -63,15 +63,15 @@ person& rl_sim::pick_a_random_person() {
 }
 
 int rl_sim::load_config_from_json(  const std::string& file_name, 
-                                    u::configuration& cfgcoll,
+                                    u::configuration& config,
                                     r::api_status* status) {
   std::string config_str;
 
   // Load contents of config file into a string
   RETURN_IF_FAIL(load_file(file_name, config_str));
 
-  // Use library supplied convinence method to parse json and build config object
-  return cfg::create_from_json(config_str, cfgcoll, status);
+  // Use library supplied convenience method to parse json and build config object
+  return cfg::create_from_json(config_str, config, status);
 }
 
 int rl_sim::load_file(const std::string& file_name, std::string& config_str) {
@@ -92,8 +92,8 @@ int rl_sim::init_rl() {
   r::api_status status;
   u::configuration config;
 
-  const auto cfg_file = _options["json_config"].as<std::string>();
-  if ( load_config_from_json(cfg_file, config, &status) != err::success ) {
+  const auto config_file = _options["json_config"].as<std::string>();
+  if ( load_config_from_json(config_file, config, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }

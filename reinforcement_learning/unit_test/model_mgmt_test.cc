@@ -187,7 +187,7 @@ class dummy_data_transport : public m::i_data_transport {
 };
 
 int dummy_data_tranport_create( m::i_data_transport** retval, 
-                                    const u::configuration& cfg, 
+                                    const u::configuration& config, 
                                     r::api_status* status) {
   *retval = new dummy_data_transport();
   return r::error_code::success;

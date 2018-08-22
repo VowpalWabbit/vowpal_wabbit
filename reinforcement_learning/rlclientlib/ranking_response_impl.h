@@ -9,7 +9,7 @@ namespace reinforcement_learning {
   class ranking_response_impl {
   public:
     ranking_response_impl() = default;
-    explicit ranking_response_impl(const std::string & event_id);
+    explicit ranking_response_impl(const std::string& event_id);
 
     bool get_chosen_action_id(size_t& action_id) const;
     int set_chosen_action_id(size_t action_id, api_status* status);
@@ -20,12 +20,12 @@ namespace reinforcement_learning {
     const char* get_model_id() const;
     void reset();
 
-    ranking_response_impl(const ranking_response_impl &) = delete;
-    ranking_response_impl(ranking_response_impl &&) = delete;
-    ranking_response_impl& operator=(const ranking_response_impl &) = delete;
-    ranking_response_impl& operator=(ranking_response_impl &&) = delete;
+    ranking_response_impl(const ranking_response_impl&) = delete;
+    ranking_response_impl(ranking_response_impl&&) = delete;
+    ranking_response_impl& operator=(const ranking_response_impl&) = delete;
+    ranking_response_impl& operator=(ranking_response_impl&&) = delete;
 
-    private:
+  private:
     std::string _event_id;
     size_t _chosen_action_id;
     std::string _model_id;

@@ -44,11 +44,11 @@ bool test_loop::init() {
 }
 
 int test_loop::load_config_from_json(const std::string& file_name,
-  u::configuration& cfgcoll,
+  u::configuration& config,
   r::api_status* status) const {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));
-  return cfg::create_from_json(config_str, cfgcoll, status);
+  return cfg::create_from_json(config_str, config, status);
 }
 
 int test_loop::load_file(const std::string& file_name, std::string& config_str) const {

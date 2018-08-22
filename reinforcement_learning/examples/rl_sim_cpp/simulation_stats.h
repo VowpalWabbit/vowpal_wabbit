@@ -9,7 +9,7 @@ public:
   int count() const;
 
 private:
-  std::map<std::pair<std::string, int>, std::pair<int, int>> _action_stats;
+  std::map<std::pair<std::string, size_t>, std::pair<int, int>> _action_stats;
   std::map<std::string, int> _person_stats;
   int _total_events = 0;
 };
