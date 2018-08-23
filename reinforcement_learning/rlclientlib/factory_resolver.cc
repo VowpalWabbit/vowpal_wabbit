@@ -13,7 +13,7 @@ namespace reinforcement_learning {
   namespace u = utility;
   // For proper static intialization
   // Check https://en.wikibooks.org/wiki/More_C++_Idioms/Nifty_Counter for explanation
-  static int init_guard;  // guranteed to be zero when loaded
+  static int init_guard;  // guaranteed to be zero when loaded
 
   // properly aligned memory for the factory object
   template <typename T>
@@ -23,7 +23,7 @@ namespace reinforcement_learning {
   static natural_align<model_factory_t>::type modelfactory_buf;
   static natural_align<logger_factory_t>::type loggerfactory_buf;
 
-  // Reference should point to the allocated memory to be initalized by placement new in factory_initializer::factory_initializer()
+  // Reference should point to the allocated memory to be initialized by placement new in factory_initializer::factory_initializer()
   data_transport_factory_t& data_transport_factory = (data_transport_factory_t&)( dtfactory_buf );
   model_factory_t& model_factory = (model_factory_t&)( modelfactory_buf );
   logger_factory_t& logger_factory = (logger_factory_t&)( loggerfactory_buf );
@@ -46,7 +46,7 @@ namespace reinforcement_learning {
     }
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status);
   int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
   int observation_logger_create(i_logger** retval, const u::configuration&, error_callback_fn*, api_status* status);
   int interaction_logger_create(i_logger** retval, const u::configuration&, error_callback_fn*, api_status* status);
@@ -58,8 +58,8 @@ namespace reinforcement_learning {
     logger_factory.register_type(value::INTERACTION_EH_LOGGER, interaction_logger_create);
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status) {
-    const auto uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status) {
+    const auto uri = config.get(name::MODEL_BLOB_URI, nullptr);
     if ( uri == nullptr ) {
       api_status::try_update(status, error_code::http_uri_not_provided, error_code::http_uri_not_provided_s);
       return error_code::http_uri_not_provided;

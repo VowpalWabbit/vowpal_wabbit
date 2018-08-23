@@ -70,7 +70,7 @@ std::string test_data_provider::create_context_json(const std::string& cntxt, co
 }
 
 float test_data_provider::get_outcome(size_t thread_id, size_t example_id) const {
-  return is_rewarded(thread_id, example_id) ? (thread_id  + example_id) : 0;
+  return is_rewarded(thread_id, example_id) ? static_cast<float>(thread_id  + example_id) : 0.f;
 }
 
 const char* test_data_provider::get_outcome_json(size_t thread_id, size_t example_id) const {
