@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
     const auto vm = process_cmd_line(argc, argv);
     if ( is_help(vm) ) return 0;
 
-    // Instantiate reinforement learning simulater 
+    // Instantiate reinforcement learning simulator 
     rl_sim sim(vm);
 
     // Run loop: (1) world event (2) choose action (3) report outcome
@@ -39,4 +39,3 @@ po::variables_map process_cmd_line(const int argc, char** argv) {
 bool is_help(const po::variables_map& vm) {
   return vm.count("help") > 0;
 }
-

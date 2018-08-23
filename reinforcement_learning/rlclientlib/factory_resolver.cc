@@ -10,7 +10,7 @@ namespace reinforcement_learning {
   namespace u = utility;
   // For proper static intialization 
   // Check https://en.wikibooks.org/wiki/More_C++_Idioms/Nifty_Counter for explanation
-  static int init_guard;  // guranteed to be zero when loaded
+  static int init_guard;  // guaranteed to be zero when loaded
 
   // properly aligned memory for the factory object 
   template <typename T>
@@ -19,7 +19,7 @@ namespace reinforcement_learning {
   static natural_align<dtfactory>::type dtfactory_buf;
   static natural_align<modelfactory>::type modelfactory_buf;
 
-  // reference should point to the allocated memory to be initalized by placement new in factory_initializer::factory_initializer()
+  // reference should point to the allocated memory to be initialized by placement new in factory_initializer::factory_initializer()
   dtfactory& data_transport_factory = (dtfactory&)( dtfactory_buf );
   modelfactory& model_factory = (modelfactory&)( modelfactory_buf );
 
@@ -39,7 +39,7 @@ namespace reinforcement_learning {
     }
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status);
   int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
 
   void factory_initializer::register_default_factories() {
@@ -47,8 +47,8 @@ namespace reinforcement_learning {
     model_factory.register_type(value::VW, vw_model_create);
   }
 
-  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& cfg, api_status* status) {
-    const auto uri = cfg.get(name::MODEL_BLOB_URI, nullptr);
+  int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status) {
+    const auto uri = config.get(name::MODEL_BLOB_URI, nullptr);
     if ( uri == nullptr ) {
       api_status::try_update(status, error_code::http_uri_not_provided, error_code::http_uri_not_provided_s);
       return error_code::http_uri_not_provided;

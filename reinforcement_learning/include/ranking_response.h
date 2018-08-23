@@ -18,7 +18,7 @@ namespace reinforcement_learning {
   struct action_prob {
     //! action id
     size_t action_id;
-    //! probablity associated with the action id
+    //! probability associated with the action id
     float probability;
   };
 
