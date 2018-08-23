@@ -1,6 +1,8 @@
 #include "configuration.h"
 #include "str_util.h"
 
+#include <cstdlib>
+
 namespace reinforcement_learning { namespace utility {
 
   configuration::configuration():_pmap(new map_type()) {}
@@ -68,7 +70,7 @@ namespace reinforcement_learning { namespace utility {
     auto& map = *_pmap;
     const auto it = map.find(name);
     if ( it != map.end() )
-      return atof(it->second.c_str());
+      return strtof(it->second.c_str(), nullptr);
     return defval;
   }
 }}

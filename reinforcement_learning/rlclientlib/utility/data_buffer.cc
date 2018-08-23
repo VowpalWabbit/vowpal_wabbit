@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace reinforcement_learning { namespace utility {
-  data_buffer::data_buffer() {}
+  data_buffer::data_buffer() = default;
 
   data_buffer::data_buffer(const translate_func& _translate) : translate(_translate) {}
 

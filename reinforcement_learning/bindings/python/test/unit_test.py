@@ -10,7 +10,7 @@ test_config_json = '''
     "ModelBlobUri": "https://<storage>.blob.core.windows.net/mwt-models/current?sv=2017-07-29&sr=b&sig=<sig>&st=2018-06-26T09%3A00%3A55Z&se=2028-06-26T09%3A01%3A55Z&sp=r",
     "AppInsightsKey": "<AppInsightsKey>",
     "InitialExplorationEpsilon": 1.0,
-    "SendBatchIntervalMs": 5
+    "ModelRefreshIntervalMs": 5
 }
 '''
 
@@ -34,7 +34,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(self.config.get("UnsetKey", "DefaultValue"), "DefaultValue")
 
     def test_get_int(self):
-        self.assertEqual(self.config.get_int(rl_client.SEND_BATCH_INTERVAL,-1), 5)
+        self.assertEqual(self.config.get_int(rl_client.MODEL_REFRESH_INTERVAL_MS,-1), 5)
 
     def test_get_float(self):
         self.assertAlmostEqual(self.config.get_float(rl_client.INITIAL_EPSILON, -1.0), 1.0)

@@ -2,12 +2,12 @@
 #include <object_factory.h>
 
 namespace reinforcement_learning {
- 
+
   ranking_response_impl::ranking_response_impl(const std::string& event_id)
-  : _event_id {event_id}, _chosen_action_id{0} {}
+    : _event_id{event_id}, _chosen_action_id{0} {}
 
   bool ranking_response_impl::get_action(const size_t idx, size_t* action_id, float* prob) const {
-    if ( idx < _ranking.size() ) {
+    if (idx < _ranking.size()) {
       auto& t = _ranking[idx];
       *action_id = t.first;
       *prob = t.second;
@@ -20,8 +20,10 @@ namespace reinforcement_learning {
     _ranking.emplace_back(action_id, prob);
   }
 
-  size_t ranking_response_impl::size() const { return _ranking.size(); }
-  
+  size_t ranking_response_impl::size() const {
+    return _ranking.size();
+  }
+
   void ranking_response_impl::set_model_id(const char* model_id) {
     _model_id = model_id;
   }
@@ -38,15 +40,15 @@ namespace reinforcement_learning {
   }
 
   bool ranking_response_impl::get_chosen_action_id(size_t& action_id) const {
-    if ( !_ranking.empty() ) {
-      action_id =_chosen_action_id;
+    if (!_ranking.empty()) {
+      action_id = _chosen_action_id;
       return true;
     }
     return false;
   }
 
   int ranking_response_impl::set_chosen_action_id(size_t action_id, api_status* status) {
-    if ( action_id >= _ranking.size() ) {
+    if (action_id >= _ranking.size()) {
       RETURN_ERROR_LS(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
     }
 

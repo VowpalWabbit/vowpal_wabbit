@@ -23,11 +23,11 @@ class person {
     ~person();
 
     //! Get person features as a json string
-    std::string get_features(); 
+    std::string get_features() const; 
     //! Get the outcome for a topic.  Use probability to randomly assign a outcome
     float get_outcome(const std::string& topic); 
     //! Get the person's id
-    std::string id(); 
+    std::string id() const; 
   private:
     const std::string _id;
     const std::string _major;
