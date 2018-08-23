@@ -52,7 +52,7 @@ namespace reinforcement_learning {
   int interaction_logger_create(i_logger** retval, const u::configuration&, error_callback_fn*, api_status* status);
 
   void factory_initializer::register_default_factories() {
-    data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
+    data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
     model_factory.register_type(value::VW, vw_model_create);
     logger_factory.register_type(value::OBSERVATION_EH_LOGGER, observation_logger_create);
     logger_factory.register_type(value::INTERACTION_EH_LOGGER, interaction_logger_create);

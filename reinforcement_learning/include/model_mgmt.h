@@ -25,20 +25,38 @@ namespace reinforcement_learning { namespace model_management {
 
         model_data();
         ~model_data();
+
+        model_data(model_data const& other) = delete;
+        model_data& operator=(model_data const& other) = delete;
+
+        model_data(model_data&& other) noexcept
+          : _data(other._data),
+            _data_sz(other._data_sz),
+            _refresh_count(other._refresh_count) {}
+
+        model_data& operator=(model_data&& other) noexcept {
+          if (this == &other)
+            return *this;
+          _data = other._data;
+          _data_sz = other._data_sz;
+          _refresh_count = other._refresh_count;
+          return *this;
+        }
+
       private:
         char * _data = nullptr;
         size_t _data_sz = 0;
         uint32_t _refresh_count = 0;
     };
 
-    // The i_data_transport interface provides the way to retrieve the data for a model from some source.
+    //! The i_data_transport interface provides the way to retrieve the data for a model from some source.
     class i_data_transport {
     public:
       virtual int get_data(model_data& data, api_status* status = nullptr) = 0;
       virtual ~i_data_transport() = default;
     };
 
-    // The i_model interfaces provides the resolution from the raw model_data to a consumable object.
+    //! The i_model interfaces provides the resolution from the raw model_data to a consumable object.
     class i_model {
     public:
       virtual int update(const model_data& data, api_status* status = nullptr) = 0;

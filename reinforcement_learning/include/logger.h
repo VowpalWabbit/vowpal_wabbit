@@ -9,7 +9,7 @@ namespace reinforcement_learning {
   public:
     virtual int init(api_status* status) = 0;
 
-    // In order to avoid having default parameters in the pure virtual function, wrap it in this call.
+    //! In order to avoid having default parameters in the pure virtual function, wrap it in this call.
     int append(std::string& data, api_status* status = nullptr)
     {
       return v_append(data, status);

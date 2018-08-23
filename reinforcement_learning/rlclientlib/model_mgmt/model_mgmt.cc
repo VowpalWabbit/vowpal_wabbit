@@ -5,11 +5,7 @@
 namespace reinforcement_learning {
   namespace model_management {
 
-    model_data::model_data() :
-      _data{nullptr},
-      _data_sz { 0 },
-      _refresh_count { 0 }
-    {}
+    model_data::model_data() = default;
 
     model_data::~model_data() {
       free();
@@ -43,10 +39,8 @@ namespace reinforcement_learning {
     }
 
     void model_data::free() {
-      if(_data != nullptr) {
-        delete[] _data;
-        _data = nullptr;
-        _data_sz = 0;
-      }
+      delete[] _data;
+      _data = nullptr;
+      _data_sz = 0;
     }
 }}

@@ -31,10 +31,10 @@ namespace reinforcement_learning {
   private:
     bool _initialized = false;
 
-    //clients to send data to the eventhub
+    // Clients to send data to the eventhub
     eventhub_client _client;
 
-    //handle batching for the data sent to the eventhub client
+    // Handle batching for the data sent to the eventhub client
     async_batcher<eventhub_client> _batcher;
   };
 
@@ -46,10 +46,10 @@ namespace reinforcement_learning {
         c.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
         c.get(name::OBSERVATION_EH_KEY_NAME, ""),
         c.get(name::OBSERVATION_EH_KEY, ""),
-        c.get(name::OBSERVATION_EH_NAME, "interaction"),
+        c.get(name::OBSERVATION_EH_NAME, "observation"),
         c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000),
-        c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 10000 * 2),
+        c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 100000 * 2),
         perror_cb)
     {}
   };
@@ -65,7 +65,7 @@ namespace reinforcement_learning {
         c.get(name::INTERACTION_EH_NAME, "interaction"),
         c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS, 1000),
-        c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE, 10000 * 2),
+        c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE, 100000 * 2),
         perror_cb)
     {}
   };

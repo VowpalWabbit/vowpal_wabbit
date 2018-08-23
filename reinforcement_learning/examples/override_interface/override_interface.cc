@@ -7,6 +7,7 @@
  */
 #include <iostream>
 #include <fstream>
+#include <mutex>
 
 #include "config_utility.h"
 #include "live_model.h"
@@ -22,9 +23,9 @@ namespace err = r::error_code;
 // Custom implementations must inherit from the respective i_* abstract class.
 class ostream_logger : public r::i_logger {
 public:
-  ostream_logger(std::ostream& stream)
-    : _stream(stream)
-  {}
+  ostream_logger(std::ostream& stream, std::mutex& mutex)
+    : _stream(stream),
+      _mutex(mutex) {}
 
   virtual int init(r::api_status* status) override {
     return err::success;
@@ -32,12 +33,14 @@ public:
 
 protected:
   virtual int v_append(std::string& data, r::api_status* status) override {
+    std::lock_guard<std::mutex> lock(_mutex);
     _stream << data << std::endl;
     return err::success;
   }
 
 private:
   std::ostream& _stream;
+  std::mutex& _mutex;
 };
 
 // Load contents of file into a string
@@ -62,20 +65,23 @@ int load_config_from_json(const std::string& file_name, u::configuration& cfg) {
 
 int main() {
   u::configuration config;
-  if( load_config_from_json("client.json", config) != err::success ) {
+  if (load_config_from_json("client.json", config) != err::success) {
     std::cout << "Unable to Load file: client.json" << std::endl;
     return -1;
   }
   r::api_status status;
 
+  // Used to synchronize writes to cout across multiple logger.
+  std::mutex cout_mutex;
+
   // Define a create function to be used in the factory.
   auto const create_ostream_logger_fn =
-    [](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) {
-    *retval = new ostream_logger(std::cout);
+    [&](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) {
+    *retval = new ostream_logger(std::cout, cout_mutex);
     return err::success;
   };
 
-  // Create a local factory and register the create function with it usinf the corresponding implementation keys defined in constants.h
+  // Create a local factory and register the create function with it using the corresponding implementation keys defined in constants.h
   r::logger_factory_t stdout_logger_factory;
   stdout_logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER, create_ostream_logger_fn);
   stdout_logger_factory.register_type(r::value::INTERACTION_EH_LOGGER, create_ostream_logger_fn);
@@ -83,24 +89,24 @@ int main() {
   // Default factories defined in factory_resolver.h are passed as well as the custom stdout logger.
   r::live_model model(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
 
-  if( model.init(&status) != err::success ) {
+  if (model.init(&status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
 
   r::ranking_response response;
 
-  char const * const event_id = "event_id";
-  char const * const context =
-     R"({"GUser":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[ { "TAction":{"a1":"f1"} },{"TAction":{"a2":"f2"}}]})";
-  float outcome  = 1.0f;
+  char const* const event_id = "event_id";
+  char const* const context =
+    R"({"GUser":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[ { "TAction":{"a1":"f1"} },{"TAction":{"a2":"f2"}}]})";
+  float outcome = 1.0f;
 
-  if ( model.choose_rank(event_id, context, response, &status) != err::success ) {
+  if (model.choose_rank(event_id, context, response, &status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
 
-  if( model.report_outcome(event_id, outcome, &status) != err::success ) {
+  if (model.report_outcome(event_id, outcome, &status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
