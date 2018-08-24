@@ -1,13 +1,16 @@
 #pragma once
-#include <memory>
-#include "logger/logger.h"
+#include "logger.h"
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"
 #include "model_mgmt/model_downloader.h"
 #include "utility/object_pool.h"
+#include "utility/data_buffer.h"
 #include "utility/periodic_background_proc.h"
-#include "object_factory.h"
 #include "ranking_event.h"
+
+#include "factory_resolver.h"
+
+#include <memory>
 
 namespace reinforcement_learning
 {
@@ -19,25 +22,23 @@ namespace reinforcement_learning
   class live_model_impl {
   public:
     using error_fn = void(*)( const api_status&, void* user_context );
-    using transport_factory_t = utility::object_factory<model_management::i_data_transport>;
-    using model_factory_t = utility::object_factory<model_management::i_model>;
 
     int init(api_status* status);
 
     int choose_rank(const char* event_id, const char* context, ranking_response& response, api_status* status);
     //here the event_id is auto-generated
     int choose_rank(const char* context, ranking_response& response, api_status* status);
-    
-    int report_outcome(const char* event_id, const char* outcome, api_status* status);
-    int report_outcome(const char* event_id, float outcome, api_status* status);
-    
+
+    int report_outcome(const char* event_id, const char* outcome_data, api_status* status);
+    int report_outcome(const char* event_id, float reward, api_status* status);
+
     explicit live_model_impl(
-      const utility::configuration& config, 
+      const utility::configuration& config,
       error_fn fn,
-      void* err_context, 
-      transport_factory_t* t_factory,
-      model_factory_t* m_factory
-      );
+      void* err_context,
+      data_transport_factory_t* t_factory,
+      model_factory_t* m_factory,
+      logger_factory_t* logger_factory);
 
     live_model_impl(const live_model_impl&) = delete;
     live_model_impl(live_model_impl&&) = delete;
@@ -48,6 +49,7 @@ namespace reinforcement_learning
     // Internal implementation methods
     int init_model(api_status* status);
     int init_model_mgmt(api_status* status);
+    int init_loggers(api_status* status);
     static void _handle_model_update(const model_management::model_data& data, live_model_impl* ctxt);
     void handle_model_update(const model_management::model_data& data);
     int explore_only(const char* event_id, const char* context, ranking_response& response, api_status* status) const;
@@ -62,12 +64,17 @@ namespace reinforcement_learning
     utility::configuration _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
-    logger _logger;
-    transport_factory_t* _t_factory;
+
+    data_transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
-    std::unique_ptr<model_management::i_data_transport> _transport;
-    std::unique_ptr<model_management::i_model> _model;
-    std::unique_ptr<model_management::model_downloader> _model_download;
+    logger_factory_t* _logger_factory;
+
+    std::unique_ptr<model_management::i_data_transport> _transport{nullptr};
+    std::unique_ptr<model_management::i_model> _model{nullptr};
+    std::unique_ptr<i_logger> _ranking_logger{nullptr};
+    std::unique_ptr<i_logger> _outcome_logger{nullptr};
+    std::unique_ptr<model_management::model_downloader> _model_download{nullptr};
+
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
     utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
     uint64_t _seed_shift;
@@ -85,7 +92,7 @@ namespace reinforcement_learning
     auto sbuf = buffer->str();
 
     // Send the outcome event to the backend
-    RETURN_IF_FAIL(_logger.append_outcome(sbuf, status));
+    RETURN_IF_FAIL(_outcome_logger->append(sbuf, status));
 
     return error_code::success;
   }

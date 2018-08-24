@@ -14,9 +14,10 @@ namespace reinforcement_learning { namespace model_management {
 
   model_downloader& model_downloader::operator=(model_downloader&& temp) noexcept {
     if (&temp != this) {
-      const auto x = _ptrans;
-      _ptrans      = temp._ptrans;
-      temp._ptrans = x;
+      _ptrans = temp._ptrans;
+      temp._ptrans = nullptr;
+      _pdata_cb = temp._pdata_cb;
+      temp._pdata_cb = nullptr;
     }
     return *this;
   }
@@ -25,14 +26,12 @@ namespace reinforcement_learning { namespace model_management {
     model_data md;
     RETURN_IF_FAIL(_ptrans->get_data(md, status));
 
-    // If the data size is zero, its not a valid model
-    if ( md.data_sz() <= 0 )
+    // If the data size is zero, it's not a valid model
+    if (md.data_sz() <= 0) {
       return error_code::success;
+    }
 
     const auto scode = _pdata_cb->report_data(md, status);
-
-    // Release the data.
-    md.free();
     return scode;
   }
 }}

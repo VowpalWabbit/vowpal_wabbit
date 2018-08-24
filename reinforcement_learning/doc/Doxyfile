@@ -8,6 +8,7 @@ INPUT += ../examples/basic_usage_cpp/basic_usage_cpp.cc ../examples/basic_usage_
 INPUT += ../examples/rl_sim_cpp/rl_sim.cc ../examples/rl_sim_cpp/rl_sim.h
 EXAMPLE_PATH = ../examples/basic_usage_cpp ../examples/rl_sim_cpp ../include/err_constants.h
 EXAMPLE_PATH += ../examples/python/basic_usage.py ../examples/python/rl_sim.py
+EXAMPLE_PATH += ../examples/override_interface
 HTML_STYLESHEET        = doxygen.css
 DOXYFILE_ENCODING      = UTF-8
 

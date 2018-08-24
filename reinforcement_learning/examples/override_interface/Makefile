@@ -1,12 +1,12 @@
-TARGET = rlclient-test.out
+TARGET = override_interface.out
 
-RL_LIB = -L ../rlclientlib -lrlclient
-VW_LIB = -L../../vowpalwabbit -lvw -lallreduce
-BOOST_LIBS = -lboost_unit_test_framework -lboost_system
+RL_LIB = -L ../../rlclientlib -lrlclient
+VW_LIB = -L ../../../vowpalwabbit -lvw -lallreduce
+BOOST_LIBS = -lboost_system
 CPPREST_LIBS = -lcpprest -lssl -lcrypto -pthread -ldl
 ALL_LIBS = $(RL_LIB) $(VW_LIB) $(BOOST_LIBS) $(CPPREST_LIBS) $(LIBS)
 
-INCLUDE = -I ../include -I ../rlclientlib -I ../explore -I ../../explore -I ../ext_libs
+INCLUDE = -I ../../include -I ../../rlclientlib -I ../../explore -I ../../../explore
 
 .PHONY: default all clean
 
@@ -15,7 +15,7 @@ all: default
 
 things: all
 
-SOURCES = $(wildcard *.cc) http_server/http_server.cc #$(wildcard */*.cc)
+SOURCES = $(wildcard *.cc)
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 HEADERS = $(wildcard *.h)
 

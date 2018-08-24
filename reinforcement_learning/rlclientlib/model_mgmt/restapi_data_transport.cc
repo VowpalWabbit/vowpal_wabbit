@@ -10,12 +10,13 @@ using namespace web; // Common features like URIs.
 using namespace web::http; // Common HTTP functionality
 using namespace std::chrono;
 
-namespace u = reinforcement_learning::utility; 
+namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning { namespace model_management {
 
   restapi_data_tranport::restapi_data_tranport(const std::string& url)
-    : _url(url), _httpcli(::utility::conversions::to_string_t(_url), u::get_http_config()), _datasz{0} { }
+    : _url(url), _httpcli(::utility::conversions::to_string_t(_url), u::get_http_config()), _datasz{0}
+  {}
 
   /*
    * Example successful response
@@ -43,7 +44,7 @@ namespace reinforcement_learning { namespace model_management {
     auto request_task = _httpcli.request(methods::HEAD)
       // Handle response headers arriving.
       .then([&](http_response response) {
-      if ( response.status_code() != 200 ) 
+      if ( response.status_code() != 200 )
         RETURN_ERROR_ARG(status, http_bad_status_code, _url);
 
       const auto iter = response.headers().find(U("Last-Modified"));
@@ -92,7 +93,7 @@ namespace reinforcement_learning { namespace model_management {
 
       curr_last_modified = ::utility::datetime::from_string(iter->second);
       if ( curr_last_modified.to_interval() == 0 )
-        RETURN_ERROR_ARG(status, last_modified_invalid, "Found: ", 
+        RETURN_ERROR_ARG(status, last_modified_invalid, "Found: ",
           ::utility::conversions::to_utf8string(curr_last_modified.to_string()), _url);
 
       curr_datasz = response.headers().content_length();
@@ -110,7 +111,7 @@ namespace reinforcement_learning { namespace model_management {
       else {
         ret.data_sz(0);
       }
-      
+
       _last_modified = curr_last_modified;
       return error_code::success;
     });

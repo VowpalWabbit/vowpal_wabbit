@@ -1,7 +1,4 @@
-#include <boost/uuid/uuid_generators.hpp> // generators
-#include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 #include "live_model.h"
-#include "logger/logger.h"
 #include "live_model_impl.h"
 #include "err_constants.h"
 
@@ -15,33 +12,30 @@
 
 namespace reinforcement_learning
 {
-  //live_model implementation
-  live_model::~live_model()
+  live_model::live_model(
+    const utility::configuration& config,
+    error_fn fn,
+    void* err_context,
+    data_transport_factory_t* t_factory,
+    model_factory_t* m_factory,
+    logger_factory_t* logger_factory)
   {
-    delete _pimpl;
+    _pimpl = std::unique_ptr<live_model_impl>(
+      new live_model_impl(config, fn, err_context, t_factory, m_factory, logger_factory));
   }
 
+  live_model::~live_model() = default;
+
   int live_model::init(api_status* status) {
-    if ( _initialized )
+    if (_initialized)
       return error_code::success;
 
     const auto err_code = _pimpl->init(status);
-    if ( err_code == error_code::success ) {
+    if (err_code == error_code::success) {
       _initialized = true;
     }
 
     return err_code;
-  }
-
-  live_model::live_model(
-    const utility::configuration& config, 
-    error_fn fn, 
-    void* err_context,
-    transport_factory_t* t_factory,
-    model_factory_t* m_factory
-    ) :
-    _pimpl(new live_model_impl(config, fn, err_context, t_factory, m_factory)),
-    _initialized(false) {
   }
 
   int live_model::choose_rank(const char* event_id, const char* context_json, ranking_response& response,

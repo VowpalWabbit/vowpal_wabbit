@@ -107,6 +107,10 @@ export
 rl_clientlib: vw
 	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
 
+# Devirtualization is an optimization that changes the vtable if the compiler decides a function
+# doesn't need to be virtual. This is incompatible with the mocking framework used in testing as it
+# makes the vtable structure unpredictable
+rl_clientlib_test: FLAGS += -fno-devirtualize
 rl_clientlib_test: vw rl_clientlib
 	cd reinforcement_learning/unit_test; $(MAKE) -j $(NPROCS) things
 	(cd reinforcement_learning/unit_test && ./rlclient-test.out)
@@ -115,6 +119,7 @@ rl_example: vw rl_clientlib
 	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
 
 rl_python: vw rl_clientlib
 	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things

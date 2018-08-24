@@ -22,11 +22,15 @@ namespace reinforcement_learning {  namespace name {
       const char *const  OBSERVATION_SEND_HIGH_WATER_MARK     = "observation.send.highwatermark";
       const char *const  OBSERVATION_SEND_QUEUE_MAXSIZE       = "observation.send.queue.maxsize";
       const char *const  OBSERVATION_SEND_BATCH_INTERVAL_MS   = "observation.send.batchintervalms";
+      const char *const  OBSERVATION_LOGGER_IMPLEMENTATION    = "observation.logger.implementation";
+      const char *const  INTERACTION_LOGGER_IMPLEMENTATION    = "interaction.logger.implementation";
       const char *const  EH_TEST                 = "eventhub.mock";
 }}
 
 namespace reinforcement_learning {  namespace value {
-      const char * const AZURE_STORAGE_BLOB = "AZURE_STORAGE_BLOB";
-      const char * const VW                 = "VW";
+      const char *const AZURE_STORAGE_BLOB = "AZURE_STORAGE_BLOB";
+      const char *const VW                 = "VW";
+      const char *const OBSERVATION_EH_LOGGER = "OBSERVATION_EH_LOGGER";
+      const char *const INTERACTION_EH_LOGGER = "INTERACTION_EH_LOGGER";
 }}
 

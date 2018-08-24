@@ -1,4 +1,5 @@
 #include "data_callback_fn.h"
+
 #include <exception>
 #include <object_factory.h>
 #include "err_constants.h"
@@ -9,7 +10,7 @@ namespace reinforcement_learning { namespace model_management {
       RETURN_ERROR_LS(status, data_callback_not_set);
     }
 
-    // need not be thread safe since this is only called from one thread
+    // Need not be thread safe since this is only called from one thread.
     try {
       _fn(data, _context);
       return error_code::success;
@@ -23,5 +24,6 @@ namespace reinforcement_learning { namespace model_management {
   }
 
   data_callback_fn::data_callback_fn(data_fn fn, void* ctxt)
-  : _fn{fn}, _context{ctxt} {}
+    : _fn{fn}, _context{ctxt}
+  {}
 }}
