@@ -2,32 +2,36 @@
 # -*- coding: utf-8 -*-
 # vim: ts=4 sw=4 expandtab
 #
-# Convert TSV/CSV to VW training set format
+# pylint: disable=bad-continuation,len-as-condition
+# pylint: disable=global-statement,misplaced-comparison-constant
 #
-# Summary of features supported.
-#   - Use header line for feature names (disable with '-H' option)
-#   - If no header present will number features as 1..k based on column number
-#   - Multiclass labels will be auto-converted to 1..k if they are
-#     non-numeric e.g. Species: {setosa, versicolor, virginica} -> {1, 2, 3}
-#   - Categorical features are auto-converted to vw boolean name=value
-#     (a.k.a 'one-hot-encoding')
-#   - Numerical features will use name:value
-#   - -l <labelcol> and -i <idcol> command-line options allow specifiying
-#     the label and id column numbers respectively.
-#     Also: negative numbers support the "from end of line" convention
-#     (e.g: -1 is last column, -2 is next-to-last, etc.)
-#   - By default, auto-splits columns on commas and/or tabs
-#   - Allows specifying/overriding the input separator: -s <sep>
-#   - By default skips empty and zero values (-e to disable skips)
-#   - Supports -b (binary label) option for auto converting 0 -> -1
-#     for vw logistic regression.
-#   - Additional numeric args on the command-line specify additional
-#     column to ignore (not use as input features).
-#
-# Also see: usage()
-#
-# Ariel Faigon, 2016
-#
+"""
+   Convert TSV/CSV to VW training set format
+
+   Summary of features supported.
+   - Use header line for feature names (disable with '-H' option)
+   - If no header present will number features as 1..k based on column number
+   - Multiclass labels will be auto-converted to 1..k if they are
+     non-numeric e.g. Species: {setosa, versicolor, virginica} -> {1, 2, 3}
+   - Categorical features are auto-converted to vw boolean name=value
+     (a.k.a 'one-hot-encoding')
+   - Numerical features will use name:value
+   - -l <labelcol> and -i <idcol> command-line options allow specifiying
+     the label and id column numbers respectively.
+     Also: negative numbers support the "from end of line" convention
+     (e.g: -1 is last column, -2 is next-to-last, etc.)
+   - By default, auto-splits columns on commas and/or tabs
+   - Allows specifying/overriding the input separator: -s <sep>
+   - By default skips empty and zero values (-e to disable skips)
+   - Supports -b (binary label) option for auto converting 0 -> -1
+     for vw logistic regression.
+   - Additional numeric args on the command-line specify additional
+     column to ignore (not use as input features).
+
+  Also see: usage()
+
+  Author: Ariel Faigon, 2016
+"""
 from __future__ import print_function
 import sys
 import errno
@@ -40,15 +44,18 @@ ARGV0 = os.path.basename(__file__)
 Verbose = True
 
 def err(msg):
+    """print message on stderr"""
     sys.stderr.write(msg)
     sys.stderr.flush()
 
 def die(msg):
+    """print error message & exit(1)"""
     err(msg)
     sys.exit(1)
 
 def v(fmt, *args):
-    if not Verbose: 
+    """verbosity func (active when -v is in effect)"""
+    if not Verbose:
         return
     if len(args) == 0:
         err(fmt)
@@ -56,6 +63,7 @@ def v(fmt, *args):
         err(fmt % args)
 
 def is_number(s):
+    """return True if string-arg looks like a number"""
     try:
         float(s)
         return True
@@ -90,7 +98,7 @@ Usage = 'Usage: ' + ARGV0 + """ [options] [ignore columns] [file.csv...]
         Additional integer (including negative: index from end) arguments
         will be interpreted as additional columns to ignore (drop from input)
 
-    Notes: 
+    Notes:
         Column numbers start at 0 (zero)
 
         Column numbers from-end start at -1
@@ -124,6 +132,7 @@ Usage = 'Usage: ' + ARGV0 + """ [options] [ignore columns] [file.csv...]
 """
 
 def usage():
+    """Pring usage message and exit"""
     die(Usage)
 
 def process_args():
@@ -234,15 +243,8 @@ def label2k(label):
     Label2KMap[label] = MaxK
     return MaxK
 
-def is_number(s):
-    """return True if string-arg looks like a number"""
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
 def col2idx(colno, maxcol, which):
+    """column to index mapping"""
     if which is None:
         which = 'Label'
 
@@ -256,18 +258,19 @@ def col2idx(colno, maxcol, which):
     return colidx
 
 def list_diff(first, second):
-    """list difference"""
+    """list asymmetrical difference A-B between two collections"""
     second = set(second)
     return [item for item in first if item not in second]
 
 
 def main():
+    """csv2vw main program"""
     args, ignore_cols = process_args()
 
     feature_names = []
     feature_idxs = []
     remove_indexes = []
- 
+
     for lineno, line in enumerate(args.input_file):
         line = line.rstrip('\r\n')
         f = re.split(args.s, line)
@@ -289,7 +292,7 @@ def main():
                 # ignore_cols = [ args.I ]
                 # if re.search(r'[^-0-9]+', args.I):
                 #    ignore_cols = re.split(r'[^-0-9]+', args.I)
-                for ic in ignore_cols: 
+                for ic in ignore_cols:
                     if is_number(ic):
                         ic_ix = col2idx(int(ic), last_idx, 'Ignore')
                         remove_indexes.append(ic_ix)
@@ -335,7 +338,7 @@ def main():
             # (Getting about 5MB/sec processing bandwidth) in perl
             # python optimization: combine the line with one join at the end
             # (use only one print per line)
-            line_parts = [ '%s %s|' % (label, tag) ]
+            line_parts = ['%s %s|' % (label, tag)]
 
             # v("Before feature loop: line_parts: %s\n", line_parts)
             for i in feature_idxs:
@@ -344,7 +347,7 @@ def main():
                 if args.e:
                     if not f[i] or f[i] == '0':
                         continue
-    
+
                 sep = ':' if is_number(f[i]) else '='
                 line_parts.append('%s%s%s' % (feature_names[i], sep, f[i]))
                 # v("bottom of feature loop: line_parts: %s\n", line_parts)
@@ -370,4 +373,3 @@ def main():
 #
 if __name__ == '__main__':
     sys.exit(main())
-
