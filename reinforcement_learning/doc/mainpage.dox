@@ -29,4 +29,5 @@ reinforcement_learning::live_model class is the main driving interface of the RL
 
 \example basic_usage_cpp.cc
 \example rl_sim.cc
+\example override_interface.cc
 */

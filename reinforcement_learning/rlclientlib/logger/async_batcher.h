@@ -11,43 +11,43 @@
 namespace reinforcement_learning {
   class error_callback_fn;
 
-	// This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
-	// A batch is shipped with TSender::send(data)
-	template <typename TSender>
-	class async_batcher 
+  // This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
+  // A batch is shipped with TSender::send(data)
+  template <typename TSender>
+  class async_batcher
   {
-	public:
+  public:
     int init(api_status* status);
 
     int append(std::string&& evt, api_status* status = nullptr);
     int append(std::string& evt, api_status* status = nullptr);
 
-	  private:
+  private:
     void timer(); //the timer triggers a queue flush (run in background)
-	  size_t fill_buffer(size_t remaining, std::string& buf_to_send);
+    size_t fill_buffer(size_t remaining, std::string& buf_to_send);
     void flush(); //flush all batches
 
-	public:
-	  async_batcher(TSender& pipe, 
+  public:
+    async_batcher(TSender& pipe,
                   error_callback_fn* perror_cb = nullptr,
-	                size_t send_high_water_mark = (1024 * 1024 * 4), 
+                  size_t send_high_water_mark = (1024 * 1024 * 4),
                   size_t batch_timeout_ms = 1000,
-	                size_t queue_max_size = (8 * 1024));
+                  size_t queue_max_size = (8 * 1024));
 
-	  ~async_batcher();
+    ~async_batcher();
 
-	private:
-		TSender& _sender;                     //somewhere to send the batch of data
+  private:
+    TSender& _sender;                       // Somewhere to send the batch of data.
 
-		moving_queue<std::string> _queue;     //a queue to accumulate batch of events
-		std::thread _background_thread;       //a background thread runs a timer that flushes the queue
-		bool _thread_is_running;
-    utility::data_buffer _buffer;           //re-used buffer to prevent re-allocation during sends
-		size_t _send_high_water_mark;
-		size_t _batch_timeout_ms;
-		size_t _queue_max_size;
+    moving_queue<std::string> _queue;       // A queue to accumulate batch of events.
+    std::thread _background_thread;         // A background thread runs a timer that flushes the queue.
+    bool _thread_is_running;
+    utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
+    size_t _send_high_water_mark;
+    size_t _batch_timeout_ms;
+    size_t _queue_max_size;
     error_callback_fn* _perror_cb;
-	};
+  };
 
   template <typename TSender>
   int async_batcher<TSender>::init(api_status* status) {
@@ -79,8 +79,7 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  void async_batcher<TSender>::timer() 
-  {
+  void async_batcher<TSender>::timer() {
     while ( _thread_is_running ) {
       std::this_thread::sleep_for(std::chrono::milliseconds(_batch_timeout_ms));
       flush();
@@ -88,7 +87,7 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  size_t async_batcher<TSender>::fill_buffer(size_t remaining, std::string& buf_to_send) 
+  size_t async_batcher<TSender>::fill_buffer(size_t remaining, std::string& buf_to_send)
   {
     // There is at least one element.  Pop uses move assignment
     // Copy can be avoided if send size is satisfied
@@ -117,15 +116,21 @@ namespace reinforcement_learning {
   template <typename TSender>
   void async_batcher<TSender>::flush() {
     const auto queue_size = _queue.size();
-    if (queue_size == 0) return;
+
+    // Early exit if queue is empty.
+    if (queue_size == 0) {
+      return;
+    }
+
     auto remaining = queue_size;
     std::string buf_to_send;
-    //handle batching
+    // Handle batching
     while (remaining > 0) {
       remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
-      if ( _sender.send(buf_to_send, &status) != error_code::success )
+      if ( _sender.send(buf_to_send, &status) != error_code::success ) {
         ERROR_CALLBACK(_perror_cb, status);
+      }
     }
   }
 
@@ -138,8 +143,7 @@ namespace reinforcement_learning {
               _batch_timeout_ms(batch_timeout_ms),
               _queue_max_size(queue_max_size) ,
               _perror_cb(perror_cb)
-  {
-  }
+  {}
 
   template <typename TSender>
   async_batcher<TSender>::~async_batcher() {

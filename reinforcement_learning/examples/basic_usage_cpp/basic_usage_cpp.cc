@@ -58,7 +58,7 @@ int main() {
   //! [(4) Use the response]
 
   //! [(5) Report outcome]
-  //     Report recieved outcome (Optional: if this call is not made, default missing outcome is applied)
+  //     Report received outcome (Optional: if this call is not made, default missing outcome is applied)
   //     Missing outcome can be thought of as negative reinforcement
   if( rl.report_outcome(event_id, outcome, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
@@ -72,17 +72,17 @@ int main() {
 // Helper methods
 
 //! Load config from json file
-int load_config_from_json(const std::string& file_name, u::configuration& cfgcoll) {
+int load_config_from_json(const std::string& file_name, u::configuration& config) {
   std::string config_str;
   // Load contents of config file into a string
   const auto scode = load_file(file_name, config_str);
   if ( scode != 0 ) return scode;
 
   //! [Create a configuration from json string]
-  // Use library supplied convinence method to parse json and build config object
+  // Use library supplied convenience method to parse json and build config object
   // namespace cfg=reinforcement_learning::utility::config;
   
-  return cfg::create_from_json(config_str, cfgcoll);
+  return cfg::create_from_json(config_str, config);
   //! [Create a configuration from json string]
 }
 

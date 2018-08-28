@@ -2,7 +2,7 @@
 #include <boost/uuid/random_generator.hpp>
 
 #include "utility/context_helper.h"
-#include "logger/logger.h"
+#include "logger.h"
 #include "api_status.h"
 #include "configuration.h"
 #include "error_callback_fn.h"
@@ -15,6 +15,8 @@
 
 #include "explore_internal.h"
 #include "hash.h"
+
+#include "factory_resolver.h"
 
 // Some namespace changes for more concise code
 namespace e = exploration;
@@ -33,16 +35,13 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, api_status* status);
 
   int live_model_impl::init(api_status* status) {
-    int scode = _logger.init(status);
-    RETURN_IF_FAIL(scode);
-    scode = init_model(status);
-    RETURN_IF_FAIL(scode);
-    scode = init_model_mgmt(status);
-    RETURN_IF_FAIL(scode);
+    RETURN_IF_FAIL(init_model(status));
+    RETURN_IF_FAIL(init_model_mgmt(status));
+    RETURN_IF_FAIL(init_loggers(status));
     _initial_epsilon = _configuration.get_float(name::INITIAL_EPSILON, 0.2f);
     const char* app_id = _configuration.get(name::APP_ID, "");
     _seed_shift = uniform_hash(app_id, strlen(app_id), 0);
-    return scode;
+    return error_code::success;
   }
 
   int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
@@ -50,17 +49,15 @@ namespace reinforcement_learning {
     response.clear();
     //clear previous errors if any
     api_status::try_clear(status);
+
     //check arguments
     RETURN_IF_FAIL(check_null_or_empty(event_id, context, status));
-    int scode;
     if (!_model_data_received) {
-      scode = explore_only(event_id, context, response, status);
-      RETURN_IF_FAIL(scode);
+      RETURN_IF_FAIL(explore_only(event_id, context, response, status));
       response.set_model_id("N/A");
     }
     else {
-      scode = explore_exploit(event_id, context, response, status);
-      RETURN_IF_FAIL(scode);
+      RETURN_IF_FAIL(explore_exploit(event_id, context, response, status));
     }
     response.set_event_id(event_id);
     // Serialize the event
@@ -69,7 +66,7 @@ namespace reinforcement_learning {
     ranking_event::serialize(*guard.get(), event_id, context, response);
     auto sbuf = guard->str();
     // Send the ranking event to the backend
-    RETURN_IF_FAIL(_logger.append_ranking(sbuf, status));
+    RETURN_IF_FAIL(_ranking_logger->append(sbuf, status));
     return error_code::success;
   }
 
@@ -95,26 +92,41 @@ namespace reinforcement_learning {
     const utility::configuration& config,
     const error_fn fn,
     void* err_context,
-    transport_factory_t* t_factory,
-    model_factory_t* m_factory
+    data_transport_factory_t* t_factory,
+    model_factory_t* m_factory,
+    logger_factory_t* logger_factory
   )
     : _configuration(config),
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
-      _logger(config, &_error_cb),
       _t_factory{t_factory},
       _m_factory{m_factory},
-      _transport(nullptr),
-      _model(nullptr),
-      _model_download(nullptr),
+      _logger_factory{logger_factory},
       _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) { }
+      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
+  {}
 
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
     m::i_model* pmodel;
     RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration,status));
     _model.reset(pmodel);
+    return error_code::success;
+  }
+
+  int live_model_impl::init_loggers(api_status* status) {
+    const auto ranking_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
+    i_logger* ranking_logger;
+    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, &_error_cb, status));
+    _ranking_logger.reset(ranking_logger);
+    RETURN_IF_FAIL(_ranking_logger->init(status));
+
+    const auto outcome_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
+    i_logger* outcome_logger;
+    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, &_error_cb, status));
+    _outcome_logger.reset(outcome_logger);
+    RETURN_IF_FAIL(_outcome_logger->init(status));
+
     return error_code::success;
   }
 

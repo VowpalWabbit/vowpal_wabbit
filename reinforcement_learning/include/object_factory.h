@@ -6,19 +6,25 @@
 
 namespace reinforcement_learning { namespace utility
 {
-    template<class I>
+    template<class I, typename ...Args>
     struct object_factory
     {
-      using create_fn = std::function<int (I** retval, const configuration&, api_status* status)>;
+      using create_fn = std::function<int (I** retval, Args&& ...args, api_status* status)>;
 
       void register_type(const std::string& name, create_fn fptr) { _creators[name] = fptr; }
 
-      int create(I** retval, const std::string& name, const configuration& cc,api_status* status = nullptr) {
+      // There is a compiler bug in MSVC where a parameter pack cannot be followed by a default argument,
+      // so an overload is used to get around this.
+      int create(I** retval, const std::string& name, Args&& ...args) {
+        return create(retval, name, args..., nullptr);
+      }
+
+      int create(I** retval, const std::string& name, Args&& ...args, api_status* status) {
         auto it = _creators.find(name);
 
         if ( it != _creators.end() ) {
           try {
-            return ( it->second )( retval, cc, status );
+            return ( it->second )( retval, std::forward<Args>(args)..., status );
           }
           catch ( const std::exception& e ) {
             // Create functions should not throw. However registered function might be a user defined function

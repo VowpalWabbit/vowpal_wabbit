@@ -4,7 +4,7 @@
 #include "../utility/object_pool.h"
 
 namespace reinforcement_learning { namespace model_management {
-  class vw_model : public i_model{
+  class vw_model : public i_model {
   public:
     vw_model();
     int update(const model_data& data, api_status* status = nullptr) override;

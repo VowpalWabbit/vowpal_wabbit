@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(factory_tempate_usage) {
   struct impl_B : public an_interface { explicit impl_B(int b) {} void do_something() override {} };
 
   auto b = 5;  // arbitrary variable to illustrate a point
-  u::object_factory<an_interface> factory;
+  u::object_factory<an_interface, const u::configuration&> factory;
 
   auto create_A_fn = [](an_interface** pret, const u::configuration&, r::api_status*) -> int {
     *pret = new impl_A();

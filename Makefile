@@ -107,6 +107,10 @@ export
 rl_clientlib: vw
 	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
 
+# Devirtualization is an optimization that changes the vtable if the compiler decides a function
+# doesn't need to be virtual. This is incompatible with the mocking framework used in testing as it
+# makes the vtable structure unpredictable
+rl_clientlib_test: FLAGS += -fno-devirtualize
 rl_clientlib_test: vw rl_clientlib
 	cd reinforcement_learning/unit_test; $(MAKE) -j $(NPROCS) things
 	(cd reinforcement_learning/unit_test && ./rlclient-test.out)
@@ -115,6 +119,7 @@ rl_example: vw rl_clientlib
 	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
 	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
 
 rl_python: vw rl_clientlib
 	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
@@ -151,11 +156,15 @@ java: vw
 
 .FORCE:
 
-test: .FORCE vw library_example
+test: .FORCE vw library_example unit_test
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
 	cd test && python save_resume_test.py --verbose_on_fail
+
+unit_test: vw
+	cd test/unit_test; $(MAKE) -j $(NPROCS) things
+	(cd test/unit_test && ./vw-unit-test.out)
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."
