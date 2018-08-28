@@ -7,6 +7,7 @@
 #include "../error_callback_fn.h"
 #include "err_constants.h"
 #include "utility/data_buffer.h"
+#include "utility/periodic_background_proc.h"
 
 namespace reinforcement_learning {
   class error_callback_fn;
@@ -14,16 +15,16 @@ namespace reinforcement_learning {
   // This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
   // A batch is shipped with TSender::send(data)
   template <typename TSender>
-  class async_batcher
-  {
+  class async_batcher {
   public:
     int init(api_status* status);
 
     int append(std::string&& evt, api_status* status = nullptr);
     int append(std::string& evt, api_status* status = nullptr);
 
+    int run_iteration(api_status* status);
+
   private:
-    void timer(); //the timer triggers a queue flush (run in background)
     size_t fill_buffer(size_t remaining, std::string& buf_to_send);
     void flush(); //flush all batches
 
@@ -40,27 +41,17 @@ namespace reinforcement_learning {
     TSender& _sender;                       // Somewhere to send the batch of data.
 
     moving_queue<std::string> _queue;       // A queue to accumulate batch of events.
-    std::thread _background_thread;         // A background thread runs a timer that flushes the queue.
-    bool _thread_is_running;
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
-    size_t _batch_timeout_ms;
     size_t _queue_max_size;
     error_callback_fn* _perror_cb;
+
+    utility::periodic_background_proc<async_batcher> _bgproc;
   };
 
   template <typename TSender>
   int async_batcher<TSender>::init(api_status* status) {
-    if ( !_thread_is_running ) {
-      try {
-        _thread_is_running = true;
-        _background_thread = std::thread(&async_batcher::timer, this);
-      }
-      catch(const std::exception& e) {
-        _thread_is_running = false;
-        RETURN_ERROR_LS(status, background_thread_start) << " (logger)" << e.what();
-      }
-    }
+    RETURN_IF_FAIL(_bgproc.init(this, status));
     return error_code::success;
   }
 
@@ -79,11 +70,9 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  void async_batcher<TSender>::timer() {
-    while ( _thread_is_running ) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(_batch_timeout_ms));
-      flush();
-    }
+  int async_batcher<TSender>::run_iteration(api_status* status) {
+    flush();
+    return error_code::success;
   }
 
   template <typename TSender>
@@ -138,19 +127,16 @@ namespace reinforcement_learning {
   async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t send_high_water_mark,
                                         const size_t batch_timeout_ms, const size_t queue_max_size)
               : _sender(pipe),
-              _thread_is_running(false),
               _send_high_water_mark(send_high_water_mark),
-              _batch_timeout_ms(batch_timeout_ms),
               _queue_max_size(queue_max_size) ,
-              _perror_cb(perror_cb)
+              _perror_cb(perror_cb),
+              _bgproc(static_cast<int>(batch_timeout_ms), perror_cb)
   {}
 
   template <typename TSender>
   async_batcher<TSender>::~async_batcher() {
-    //stop the thread and flush the queue before exiting
-    _thread_is_running = false;
-    if (_background_thread.joinable())
-      _background_thread.join();
+    // Stop the background procedure the queue before exiting
+    _bgproc.stop();
     if (_queue.size() > 0)
       flush();
   }

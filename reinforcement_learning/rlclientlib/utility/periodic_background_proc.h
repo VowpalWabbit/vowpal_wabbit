@@ -46,8 +46,8 @@ namespace reinforcement_learning { namespace utility {
 
   template <typename BgProc>
   periodic_background_proc<BgProc>::periodic_background_proc(const int interval_ms, error_callback_fn* perror_cb)
-    : _thread_is_running { false }, _interval_ms { interval_ms }, 
-      _proc(nullptr), _perror_cb(perror_cb) 
+    : _thread_is_running { false }, _interval_ms { interval_ms },
+      _proc(nullptr), _perror_cb(perror_cb)
   {}
 
   template <typename BgProc>
@@ -89,7 +89,7 @@ namespace reinforcement_learning { namespace utility {
   void periodic_background_proc<BGProc>::time_loop() {
     while ( _thread_is_running ) {
       api_status status;
-      
+
       // Run the background task once
       if ( _proc->run_iteration(&status) != error_code::success ) {
         ERROR_CALLBACK(_perror_cb, status);

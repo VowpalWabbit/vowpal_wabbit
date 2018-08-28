@@ -88,10 +88,10 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   std::unique_ptr<m::i_data_transport> transport(temp_transport);
 
   r::api_status status;
- 
+
   int repeatms;
   get_export_frequency(cc, repeatms, &status);
-  
+
   int err_ctxt;
   int data_ctxt;
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
 }
 
 BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
-{ 
+{
   //start a http server that will receive events sent from the eventhub_client
   http_helper http_server;
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(data_transport_user_extention)
 BOOST_AUTO_TEST_CASE(vw_model_factory)
 {
   register_local_file_factory();
-  
+
   u::configuration model_cc;
   model_cc.set(r::name::VW_CMDLINE, "--lda 5");
   m::i_model* vw;
@@ -186,8 +186,8 @@ class dummy_data_transport : public m::i_data_transport {
   }
 };
 
-int dummy_data_tranport_create( m::i_data_transport** retval, 
-                                    const u::configuration& config, 
+int dummy_data_tranport_create( m::i_data_transport** retval,
+                                    const u::configuration& config,
                                     r::api_status* status) {
   *retval = new dummy_data_transport();
   return r::error_code::success;

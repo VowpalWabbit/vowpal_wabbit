@@ -65,7 +65,7 @@ namespace reinforcement_learning
     utility::configuration _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
-    //utility::watchdog _watchdog;
+    utility::watchdog _watchdog;
 
     data_transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
@@ -86,6 +86,11 @@ namespace reinforcement_learning
   int live_model_impl::report_outcome_internal(const char* event_id, D outcome, api_status* status) {
     // Clear previous errors if any
     api_status::try_clear(status);
+
+    // Check watchdog for any background errors.
+    if (_watchdog.should_report_unhandled_background_error()) {
+      return error_code::unhandled_background_error_occurred;
+    }
 
     // Serialize outcome
     utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
