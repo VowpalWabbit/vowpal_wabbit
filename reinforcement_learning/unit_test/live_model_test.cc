@@ -138,11 +138,11 @@ namespace r = reinforcement_learning;
 class wrong_class {};
 
 class algo_server {
-  public:
+ public:
     algo_server() : _err_count{0} {}
     void ml_error_handler(void) { shutdown(); }
     int _err_count;
-  private:
+ private:
     void shutdown() { ++_err_count; }
 };
 
@@ -171,13 +171,13 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   algo_server the_server;
   //create a ds live_model, and initialize with configuration
   r::live_model ds(config,algo_error_func,&the_server);
+  BOOST_CHECK_EQUAL(the_server._err_count, 0);
 
   ds.init(nullptr);
 
-  const char*  event_id = "event_id";
+  const char* event_id = "event_id";
 
   r::ranking_response response;
-  BOOST_CHECK_EQUAL(the_server._err_count, 0);
   // request ranking
   BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), r::error_code::success);
   //wait until the timeout triggers and error callback is fired

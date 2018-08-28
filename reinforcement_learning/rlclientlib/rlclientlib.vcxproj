@@ -163,6 +163,7 @@
     <ClInclude Include="logger\async_batcher.h" />
     <ClInclude Include="logger\moving_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
+    <ClInclude Include="utility\watchdog.h" />
     <ClInclude Include="vw_model\vw_model.h" />
     <ClInclude Include="vw_model\safe_vw.h" />
     <ClInclude Include="live_model_impl.h" />
@@ -180,6 +181,7 @@
     <ClCompile Include="utility\str_util.cc" />
     <ClCompile Include="utility\context_helper.cc" />
     <ClCompile Include="utility\configuration.cc" />
+    <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="vw_model\vw_model.cc" />
     <ClCompile Include="vw_model\safe_vw.cc" />
     <ClCompile Include="factory_resolver.cc" />

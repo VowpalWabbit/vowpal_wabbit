@@ -9,6 +9,7 @@
 #include "ranking_event.h"
 
 #include "factory_resolver.h"
+#include "utility/watchdog.h"
 
 #include <memory>
 
@@ -64,6 +65,7 @@ namespace reinforcement_learning
     utility::configuration _configuration;
     error_callback_fn _error_cb;
     model_management::data_callback_fn _data_cb;
+    //utility::watchdog _watchdog;
 
     data_transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
