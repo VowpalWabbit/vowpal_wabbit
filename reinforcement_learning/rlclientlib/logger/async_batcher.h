@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <thread>
+
 #include "moving_queue.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
@@ -30,6 +30,7 @@ namespace reinforcement_learning {
 
   public:
     async_batcher(TSender& pipe,
+                  utility::watchdog& watchdog,
                   error_callback_fn* perror_cb = nullptr,
                   size_t send_high_water_mark = (1024 * 1024 * 4),
                   size_t batch_timeout_ms = 1000,
@@ -46,12 +47,12 @@ namespace reinforcement_learning {
     size_t _queue_max_size;
     error_callback_fn* _perror_cb;
 
-    utility::periodic_background_proc<async_batcher> _bgproc;
+    utility::periodic_background_proc<async_batcher> _periodic_background_proc;
   };
 
   template <typename TSender>
   int async_batcher<TSender>::init(api_status* status) {
-    RETURN_IF_FAIL(_bgproc.init(this, status));
+    RETURN_IF_FAIL(_periodic_background_proc.init(this, status));
     return error_code::success;
   }
 
@@ -124,20 +125,21 @@ namespace reinforcement_learning {
   }
 
   template <typename TSender>
-  async_batcher<TSender>::async_batcher(TSender& pipe, error_callback_fn* perror_cb, const size_t send_high_water_mark,
+  async_batcher<TSender>::async_batcher(TSender& pipe, utility::watchdog& watchdog, error_callback_fn* perror_cb, const size_t send_high_water_mark,
                                         const size_t batch_timeout_ms, const size_t queue_max_size)
               : _sender(pipe),
               _send_high_water_mark(send_high_water_mark),
               _queue_max_size(queue_max_size) ,
               _perror_cb(perror_cb),
-              _bgproc(static_cast<int>(batch_timeout_ms), perror_cb)
+              _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb)
   {}
 
   template <typename TSender>
   async_batcher<TSender>::~async_batcher() {
     // Stop the background procedure the queue before exiting
-    _bgproc.stop();
-    if (_queue.size() > 0)
+    _periodic_background_proc.stop();
+    if (_queue.size() > 0) {
       flush();
+    }
   }
 }

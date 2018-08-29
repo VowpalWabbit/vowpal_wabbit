@@ -76,7 +76,7 @@ int main() {
 
   // Define a create function to be used in the factory.
   auto const create_ostream_logger_fn =
-    [&](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) {
+    [&](r::i_logger** retval, const u::configuration&, reinforcement_learning::utility::watchdog&, r::error_callback_fn*, r::api_status*) {
     *retval = new ostream_logger(std::cout, cout_mutex);
     return err::success;
   };

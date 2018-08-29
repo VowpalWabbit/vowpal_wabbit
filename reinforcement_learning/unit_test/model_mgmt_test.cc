@@ -18,6 +18,7 @@
 #include "http_server/http_server.h"
 #include "config_utility.h"
 #include "configuration.h"
+#include "utility/watchdog.h"
 
 namespace r = reinforcement_learning;
 namespace m = reinforcement_learning::model_management;
@@ -97,11 +98,15 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
   m::data_callback_fn dfn(dummy_data_fn, &data_ctxt);
 
-  u::periodic_background_proc<m::model_downloader> bgproc(repeatms,&efn);
+  reinforcement_learning::utility::watchdog watchdog(&efn);
+
+  u::periodic_background_proc<m::model_downloader> bgproc(repeatms, watchdog, "Test model downloader", &efn);
 
   const auto start = std::chrono::system_clock::now();
   m::model_downloader md(transport.get(), &dfn);
   scode = bgproc.init(&md);
+  // There needs to be a wait here to ensure stop is not called before the background proc has a chance to run its iteration.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   bgproc.stop();
   const auto stop = std::chrono::system_clock::now();
   const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>( stop - start );

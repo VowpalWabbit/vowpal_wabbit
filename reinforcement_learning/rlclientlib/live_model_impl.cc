@@ -108,7 +108,7 @@ namespace reinforcement_learning {
       _t_factory{t_factory},
       _m_factory{m_factory},
       _logger_factory{logger_factory},
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000),_watchdog, "Model downloader", &_error_cb),
       _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) {
     // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
     if (fn == nullptr) {
@@ -128,17 +128,15 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::init_loggers(api_status* status) {
-    const auto ranking_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION,
-      value::OBSERVATION_EH_LOGGER);
+    const auto ranking_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
     i_logger* ranking_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, _watchdog, &_error_cb, status));
     _ranking_logger.reset(ranking_logger);
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
-    const auto outcome_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION,
-      value::INTERACTION_EH_LOGGER);
+    const auto outcome_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
     i_logger* outcome_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, _watchdog, &_error_cb, status));
     _outcome_logger.reset(outcome_logger);
     RETURN_IF_FAIL(_outcome_logger->init(status));
 

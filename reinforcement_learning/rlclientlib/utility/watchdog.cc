@@ -15,7 +15,7 @@ watchdog::~watchdog() {
   stop();
 }
 
-void watchdog::register_thread(std::thread::id const& thread_id, std::string&& thread_name, long long const timeout) {
+void watchdog::register_thread(std::thread::id const& thread_id, std::string const& thread_name, long long const timeout) {
   std::lock_guard<std::mutex> lock(_watchdog_mutex);
 
   // Watchdog timeout should reflect the thread with the tightest time requirement.
@@ -89,7 +89,6 @@ void watchdog::loop() {
     {
       std::unique_lock<std::mutex> lock(_watchdog_mutex);
       for (auto& kv : _thread_infos) {
-        auto const thread_id = kv.first;
         auto& thread_info = kv.second;
 
         thread_info.last_verify_time = clock_t::now();
