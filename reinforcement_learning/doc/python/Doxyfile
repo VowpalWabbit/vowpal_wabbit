@@ -1,0 +1,24 @@
+# Doxyfile 1.8.13
+
+PROJECT_NAME = "Reinforcement Learning"
+PROJECT_NUMBER = 1.1
+
+# Input files
+INPUT = python.dox
+EXAMPLE_PATH += ../../examples/python/basic_usage.py ../../examples/python/rl_sim.py
+
+HTML_STYLESHEET = ../doxygen.css
+LAYOUT_FILE = ../layout.xml
+HTML_HEADER = header.html
+DOXYFILE_ENCODING = UTF-8
+
+# Don't generate index so we can use our custom one for navigating between projects
+DISABLE_INDEX = YES
+GENERATE_TREEVIEW = YES
+
+GENERATE_LATEX = NO
+
+TAB_SIZE = 2
+
+# Suppress build warnings when Doxygen tries to use Graphviz
+HAVE_DOT = NO
