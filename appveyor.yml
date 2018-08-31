@@ -5,7 +5,7 @@ configuration:
 platform: x64
 
 environment:
-  APPVEYOR_RDP_PASSWORD: AppVeyorRdp
+  APPVEYOR_RDP_PASSWORD: AppVeyorRdp246!
 
 init:
   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
