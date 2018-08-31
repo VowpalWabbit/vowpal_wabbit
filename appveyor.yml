@@ -11,8 +11,8 @@ shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
-- cd c:\tools\vcpkg
-- git pull
+- rd /s /q C:\OpenSSL-v11-Win32
+- rd /s /q C:\OpenSSL-v11-Win64
 - vcpkg install cpprestsdk:x64-windows
 - cd c:\vowpal_wabbit
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
