@@ -3,10 +3,16 @@ os: Windows Server 2012 R2
 configuration:
 - Release
 platform: x64
+
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
+- rd /s /q C:\OpenSSL-v11-Win32
+- rd /s /q C:\OpenSSL-v11-Win64
 - vcpkg install cpprestsdk:x64-windows
 - cd c:\vowpal_wabbit
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
@@ -27,4 +33,6 @@ test_script:
        vstest.console /Platform:x64 /inIsolation vowpalwabbit\x64\Release\cs_unittest.dll /TestCaseFilter:"TestCategory!=NotOnVSO"
     }
 on_failure:
-- ps: Get-ChildItem C:\Users\appveyor\AppData\Local\CrashDumps\\*.dmp | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+- ps: Push-AppveyorArtifact C:\Tools\vcpkg\buildtrees\cpprestsdk\install-x64-windows-dbg-out.log -FileName install-x64-windows-dbg-out.log
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) 
+
