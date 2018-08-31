@@ -11,9 +11,6 @@ shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
-- cd c:\tools\vcpkg
-- git pull
-- git checkout d1853d9
 - vcpkg install cpprestsdk:x64-windows
 - cd c:\vowpal_wabbit
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
@@ -35,4 +32,5 @@ test_script:
     }
 on_failure:
 - ps: Push-AppveyorArtifact C:\Tools\vcpkg\buildtrees\cpprestsdk\install-x64-windows-dbg-out.log -FileName install-x64-windows-dbg-out.log
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) 
 
