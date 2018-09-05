@@ -33,7 +33,7 @@ def main(args):
             current_example = json.loads(line)
 
             context_json = json.dumps(current_example["c"])
-            model_id, chosen_action_id, action_probabilities = model.choose_rank(current_example["EventId"], context_json)
+            model_id, chosen_action_id, actions_probabilities = model.choose_rank(current_example["EventId"], context_json)
 
             if("o" in current_example):
                 for observation in current_example["o"]:
