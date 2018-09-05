@@ -19,19 +19,19 @@ def main():
     event_id = "event_id"
     context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"N1":{"F1":"V1"},"N2":{"F2":"V2"}},{"N3":{"F1":"V3"}}]}'
 
-    model_id, chosen_action_id, action_probabilities = model.choose_rank(event_id, context)
+    model_id, chosen_action_id, actions_probabilities = model.choose_rank(event_id, context)
 
     print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
-    print("all action probabilities " + str(action_probabilities))
+    print("all action probabilities " + str(actions_probabilities))
 
-    model_id, chosen_action_id, action_probabilities, event_id = model.choose_rank(context)
+    model_id, chosen_action_id, actions_probabilities, event_id = model.choose_rank(context)
 
     print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
-    print("all action probabilities " + str(action_probabilities))
+    print("actions probabilities list: " + str(actions_probabilities))
 
     outcome = 1.0
     model.report_outcome(event_id, outcome)
