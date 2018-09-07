@@ -88,7 +88,7 @@ namespace reinforcement_learning
     api_status::try_clear(status);
 
     // Check watchdog for any background errors.
-    if (_watchdog.should_report_unhandled_background_error()) {
+    if (_watchdog.has_background_error_been_reported()) {
       return error_code::unhandled_background_error_occurred;
     }
 

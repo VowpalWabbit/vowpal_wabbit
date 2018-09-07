@@ -34,7 +34,7 @@ void watchdog::register_thread(std::thread::id const& thread_id, std::string con
   _sleeper.interrupt();
 }
 
-void watchdog::unregister_thread(std::thread::id const thread_id) {
+void watchdog::unregister_thread(std::thread::id const& thread_id) {
   std::lock_guard<std::mutex> lock(_watchdog_mutex);
 
   auto const iterator = _thread_infos.find(thread_id);
@@ -43,7 +43,7 @@ void watchdog::unregister_thread(std::thread::id const thread_id) {
   }
 }
 
-void watchdog::check_in(std::thread::id const thread_id) {
+void watchdog::check_in(std::thread::id const& thread_id) {
   std::lock_guard<std::mutex> lock(_watchdog_mutex);
 
   auto const it = _thread_infos.find(thread_id);
@@ -115,7 +115,7 @@ void watchdog::loop() {
   }
 }
 
-bool watchdog::should_report_unhandled_background_error() const {
+bool watchdog::has_background_error_been_reported() const {
   return _unhandled_background_error_occurred.load();
 }
 

@@ -20,17 +20,17 @@ BOOST_AUTO_TEST_CASE(watchdog_fail_after_registration) {
   watchdog.start(nullptr);
 
   // Verify it begins not in an error state.
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(fail_timeout));
 
   // Verify after waiting with no registered threads there is still no error.
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
 
   watchdog.register_thread(std::this_thread::get_id(), "Test thread 1", timeout);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(fail_timeout));
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), true);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), true);
 }
 
 BOOST_AUTO_TEST_CASE(watchdog_unregister) {
@@ -38,10 +38,10 @@ BOOST_AUTO_TEST_CASE(watchdog_unregister) {
   watchdog.start(nullptr);
 
   watchdog.register_thread(std::this_thread::get_id(), "Test thread 1", timeout);
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
   watchdog.unregister_thread(std::this_thread::get_id());
   std::this_thread::sleep_for(std::chrono::milliseconds(fail_timeout));
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
 }
 
 BOOST_AUTO_TEST_CASE(watchdog_fail_after_several_iterations) {
@@ -49,17 +49,17 @@ BOOST_AUTO_TEST_CASE(watchdog_fail_after_several_iterations) {
   watchdog.start(nullptr);
 
   watchdog.register_thread(std::this_thread::get_id(), "Test thread 1", timeout);
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
 
   for(auto i = 0; i < 5; i++) {
     watchdog.check_in(std::this_thread::get_id());
-    BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+    BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
     std::this_thread::sleep_for(std::chrono::milliseconds(safe_timeout));
   }
 
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
   std::this_thread::sleep_for(std::chrono::milliseconds(fail_timeout));
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), true);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), true);
 }
 
 BOOST_AUTO_TEST_CASE(watchdog_report_with_error_handler) {
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(watchdog_multiple_threads) {
     });
   }
 
-  BOOST_CHECK_EQUAL(watchdog.should_report_unhandled_background_error(), false);
+  BOOST_CHECK_EQUAL(watchdog.has_background_error_been_reported(), false);
 
   for(auto& t : threads) {
     if(t.joinable()) {

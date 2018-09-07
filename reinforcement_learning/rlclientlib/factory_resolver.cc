@@ -49,8 +49,8 @@ namespace reinforcement_learning {
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status);
   int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
-  int observation_logger_create(i_logger** retval, const u::configuration&, utility::watchdog& watchdog, error_callback_fn*,  api_status* status);
-  int interaction_logger_create(i_logger** retval, const u::configuration&, utility::watchdog& watchdog, error_callback_fn*, api_status* status);
+  int observation_logger_create(i_logger** retval, const u::configuration&, u::watchdog& watchdog, error_callback_fn*,  api_status* status);
+  int interaction_logger_create(i_logger** retval, const u::configuration&, u::watchdog& watchdog, error_callback_fn*, api_status* status);
 
   void factory_initializer::register_default_factories() {
     data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
@@ -80,12 +80,12 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int observation_logger_create(i_logger** retval, const u::configuration& cfg, utility::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
+  int observation_logger_create(i_logger** retval, const u::configuration& cfg, u::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
     *retval = new event_hub_observation_logger(cfg, watchdog, error_callback);
     return error_code::success;
   }
 
-  int interaction_logger_create(i_logger** retval, const u::configuration& cfg, utility::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
+  int interaction_logger_create(i_logger** retval, const u::configuration& cfg, u::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
     *retval = new event_hub_interaction_logger(cfg, watchdog, error_callback);
     return error_code::success;
   }

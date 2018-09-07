@@ -19,14 +19,14 @@ namespace reinforcement_learning {
       ~watchdog();
 
       void register_thread(std::thread::id const& thread_id, std::string const& thread_name, long long const timeout);
-      void unregister_thread(std::thread::id const thread_id);
-      void check_in(std::thread::id const thread_id);
+      void unregister_thread(std::thread::id const& thread_id);
+      void check_in(std::thread::id const& thread_id);
 
       int start(api_status* status);
       void stop();
       void loop();
 
-      bool should_report_unhandled_background_error() const;
+      bool has_background_error_been_reported() const;
       void set_unhandled_background_error(bool const value);
 
       watchdog(watchdog const& other) = delete;

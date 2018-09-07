@@ -70,7 +70,7 @@ namespace reinforcement_learning { namespace error_code {
   char const * const json_parse_error_s         = "Unable to parse JSON. ";
   char const * const invalid_argument_s         = "Invalid Argument: ";
   char const * const exception_during_http_req_s = "http request exception. ";
-  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection connection string.";
+  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection string.";
   char const * const unhandled_background_error_occurred_s = "A background thread encountered an error but there was no error handler registered. Register an error handler to see the error code and message.";
   char const * const thread_unresponsive_timeout_s = "A background thread exceeded the watchdog timer.";
   //! [Error Description]

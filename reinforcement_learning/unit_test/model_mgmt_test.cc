@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
   m::data_callback_fn dfn(dummy_data_fn, &data_ctxt);
 
-  reinforcement_learning::utility::watchdog watchdog(&efn);
+  u::watchdog watchdog(&efn);
 
   u::periodic_background_proc<m::model_downloader> bgproc(repeatms, watchdog, "Test model downloader", &efn);
 

@@ -34,6 +34,11 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
   int check_null_or_empty(const char* arg1, api_status* status);
 
+  void default_error_callback(const api_status& status, void* watchdog_context) {
+    auto watchdog = static_cast<utility::watchdog*>(watchdog_context);
+    watchdog->set_unhandled_background_error(true);
+  }
+
   int live_model_impl::init(api_status* status) {
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
@@ -51,7 +56,7 @@ namespace reinforcement_learning {
     api_status::try_clear(status);
 
     // Check watchdog for any background errors.
-    if (_watchdog.should_report_unhandled_background_error()) {
+    if (_watchdog.has_background_error_been_reported()) {
       return error_code::unhandled_background_error_occurred;
     }
 
@@ -108,14 +113,11 @@ namespace reinforcement_learning {
       _t_factory{t_factory},
       _m_factory{m_factory},
       _logger_factory{logger_factory},
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000),_watchdog, "Model downloader", &_error_cb),
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb),
       _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) {
     // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
     if (fn == nullptr) {
-      _error_cb.set([](const api_status&, void* watchdog_context) {
-        auto watchdog = static_cast<utility::watchdog*>(watchdog_context);
-        watchdog->set_unhandled_background_error(true);
-      }, &_watchdog);
+      _error_cb.set(&default_error_callback, &_watchdog);
     }
   }
 
