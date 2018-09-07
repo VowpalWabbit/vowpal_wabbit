@@ -283,6 +283,8 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   r::api_status status;
   BOOST_CHECK_EQUAL(model.init(&status), err::success);
 
+  auto const version_number = "1";
+
   auto const event_id_1 = "event_id";
   auto const event_id_2 = "event_id_2";
 
@@ -296,10 +298,10 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
     BOOST_CHECK_EQUAL(model.report_outcome(event_id_2, 1.0), err::success);
   }
 
-  auto const expected_interaction_1 = u::concat(R"({"Version":"1","EventId":")", event_id_1, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
+  auto const expected_interaction_1 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_1, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_1 = u::concat(R"({"EventId":")", event_id_1, R"(","v":1.000000})");
 
-  auto const expected_interaction_2 = u::concat(R"({"Version":"1","EventId":")", event_id_2, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
+  auto const expected_interaction_2 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_2, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_2 = u::concat(R"({"EventId":")", event_id_2, R"(","v":1.000000})");
 
   Verify(Method(mock_observation_logger, init)).Exactly(1);
