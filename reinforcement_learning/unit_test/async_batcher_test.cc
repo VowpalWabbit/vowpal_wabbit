@@ -12,8 +12,7 @@
 using namespace reinforcement_learning;
 
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
-class sender 
-{
+class sender {
 public:
   std::vector<std::string> items;
   int send(const std::string& item, api_status* s = nullptr) {
@@ -34,16 +33,17 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   sender s;
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
-  async_batcher<sender> batcher(s, &error_fn,262143, timeout_ms, 8192);
+  utility::watchdog watchdog;
+  async_batcher<sender> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
- 
+
   //add 2 items in the current batch
   batcher.append("foo");
   batcher.append("bar");
 
   //wait until the timeout triggers
   std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
-    
+
   //check the batch was sent
   std::string expected = "foo\nbar";
   BOOST_REQUIRE_EQUAL(s.items.size(), 1);
@@ -56,7 +56,8 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   sender s;
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn, send_high_water_mark);
+  utility::watchdog watchdog;
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
   //add 2 items in the current batch
@@ -84,7 +85,8 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
   sender s;
-  async_batcher<sender>* batcher = new async_batcher<sender>(s);
+  utility::watchdog watchdog;
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog);
   batcher->init(nullptr);
 
   batcher->append("foo");
@@ -106,32 +108,34 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
 //test that events are dropped if the queue max capacity is reached
 BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
 {
-	sender s;
-	size_t timeout_ms = 100;
-	size_t queue_max_size = 2;
+  sender s;
+  size_t timeout_ms = 100;
+  size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, &error_fn,262143, timeout_ms, queue_max_size);
+  utility::watchdog watchdog;
+  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
 
-	BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
-	BOOST_CHECK_EQUAL(batcher->append("2"), error_code::success);
-	BOOST_CHECK_EQUAL(batcher->append("3"), error_code::background_queue_overflow);
-	
-	//'3' was dropped because of the overflow
-	std::string expected_batch = "1\n2";
+  BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
+  BOOST_CHECK_EQUAL(batcher->append("2"), error_code::success);
+  BOOST_CHECK_EQUAL(batcher->append("3"), error_code::background_queue_overflow);
 
-	delete batcher;
+  //'3' was dropped because of the overflow
+  std::string expected_batch = "1\n2";
 
-	BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-	BOOST_CHECK_EQUAL(s.items.front(), expected_batch);
+  delete batcher;
+
+  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
+  BOOST_CHECK_EQUAL(s.items.front(), expected_batch);
 }
 
 //test that status_api is correctly set when the queue_overflow error happens
-BOOST_AUTO_TEST_CASE(queue_overflow_return_error) 
+BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
 {
   sender s;
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  async_batcher<sender> batcher(s, &error_fn ,262143, 1000, queue_max_size);
+  utility::watchdog watchdog;
+  async_batcher<sender> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
 
   //pass the status to each call, then check its content
   api_status status;
