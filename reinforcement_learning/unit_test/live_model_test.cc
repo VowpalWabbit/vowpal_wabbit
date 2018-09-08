@@ -139,11 +139,11 @@ namespace r = reinforcement_learning;
 class wrong_class {};
 
 class algo_server {
-  public:
+ public:
     algo_server() : _err_count{0} {}
     void ml_error_handler(void) { shutdown(); }
     int _err_count;
-  private:
+ private:
     void shutdown() { ++_err_count; }
 };
 
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 
   ds.init(nullptr);
 
-  const char*  event_id = "event_id";
+  const char* event_id = "event_id";
 
   r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
@@ -203,9 +203,9 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
 
   r::logger_factory_t logger_factory;
   logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
+    [&mock_logger](r::i_logger** retval, const u::configuration&, reinforcement_learning::utility::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
   logger_factory.register_type(r::value::INTERACTION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
+    [&mock_logger](r::i_logger** retval, const u::configuration&, reinforcement_learning::utility::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
 
   r::data_transport_factory_t data_transport_factory;
   data_transport_factory.register_type(r::value::AZURE_STORAGE_BLOB,

@@ -73,8 +73,7 @@ namespace reinforcement_learning { namespace model_management {
 
     ::utility::datetime curr_last_modified;
     ::utility::size64_t curr_datasz;
-    const auto err = get_data_info(curr_last_modified, curr_datasz, status);
-    RETURN_IF_FAIL(err);
+    RETURN_IF_FAIL(get_data_info(curr_last_modified, curr_datasz, status));
 
     if ( curr_last_modified == _last_modified && curr_datasz == _datasz )
       return error_code::success;
@@ -82,8 +81,8 @@ namespace reinforcement_learning { namespace model_management {
     // Build request URI and start the request.
     auto request_task = _httpcli.request(methods::GET)
       // Handle response headers arriving.
-      .then([&](pplx::task<http_response> respTask) {
-      auto response = respTask.get();
+      .then([&](pplx::task<http_response> resp_task) {
+      auto response = resp_task.get();
       if ( response.status_code() != 200 )
         RETURN_ERROR_ARG(status, http_bad_status_code, "Found: ", response.status_code(), _url);
 
@@ -126,7 +125,7 @@ namespace reinforcement_learning { namespace model_management {
     }
     catch ( ... ) {
       ret.free();
-      RETURN_ERROR_LS(status, exception_during_http_req) << error_code::unkown_s;
+      RETURN_ERROR_LS(status, exception_during_http_req) << error_code::unknown_s;
     }
 
     return error_code::success;
