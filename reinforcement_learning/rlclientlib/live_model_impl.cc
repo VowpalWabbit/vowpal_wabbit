@@ -34,6 +34,11 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status);
   int check_null_or_empty(const char* arg1, api_status* status);
 
+  void default_error_callback(const api_status& status, void* watchdog_context) {
+    auto watchdog = static_cast<utility::watchdog*>(watchdog_context);
+    watchdog->set_unhandled_background_error(true);
+  }
+
   int live_model_impl::init(api_status* status) {
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
@@ -45,10 +50,15 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
-                                   api_status* status) {
+    api_status* status) {
     response.clear();
     //clear previous errors if any
     api_status::try_clear(status);
+
+    // Check watchdog for any background errors.
+    if (_watchdog.has_background_error_been_reported()) {
+      return error_code::unhandled_background_error_occurred;
+    }
 
     //check arguments
     RETURN_IF_FAIL(check_null_or_empty(event_id, context, status));
@@ -73,7 +83,7 @@ namespace reinforcement_learning {
   //here the event_id is auto-generated
   int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
     return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
-                       status);
+      status);
   }
 
   int live_model_impl::report_outcome(const char* event_id, const char* outcome, api_status* status) {
@@ -99,12 +109,17 @@ namespace reinforcement_learning {
     : _configuration(config),
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
+      _watchdog(&_error_cb),
       _t_factory{t_factory},
       _m_factory{m_factory},
       _logger_factory{logger_factory},
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' ')))
-  {}
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb),
+      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) {
+    // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
+    if (fn == nullptr) {
+      _error_cb.set(&default_error_callback, &_watchdog);
+    }
+  }
 
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
@@ -117,13 +132,13 @@ namespace reinforcement_learning {
   int live_model_impl::init_loggers(api_status* status) {
     const auto ranking_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
     i_logger* ranking_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, _watchdog, &_error_cb, status));
     _ranking_logger.reset(ranking_logger);
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
     const auto outcome_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
     i_logger* outcome_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, _watchdog, &_error_cb, status));
     _outcome_logger.reset(outcome_logger);
     RETURN_IF_FAIL(_outcome_logger->init(status));
 
@@ -144,7 +159,7 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
-                                    api_status* status) const {
+    api_status* status) const {
     // Generate egreedy pdf
     size_t action_count = 0;
     RETURN_IF_FAIL(utility::get_action_count(action_count, context, status));
@@ -174,7 +189,7 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::explore_exploit(const char* event_id, const char* context, ranking_response& response,
-                                       api_status* status) const {
+    api_status* status) const {
     // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     return _model->choose_rank(seed, context, response, status);
@@ -196,7 +211,7 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, const char* arg2, api_status* status) {
     if (!arg1 || !arg2 || strlen(arg1) == 0 || strlen(arg2) == 0) {
       api_status::try_update(status, error_code::invalid_argument,
-                             "one of the arguments passed to the ds is null or empty");
+        "one of the arguments passed to the ds is null or empty");
       return error_code::invalid_argument;
     }
     return error_code::success;
@@ -205,7 +220,7 @@ namespace reinforcement_learning {
   int check_null_or_empty(const char* arg1, api_status* status) {
     if (!arg1 || strlen(arg1) == 0) {
       api_status::try_update(status, error_code::invalid_argument,
-                             "one of the arguments passed to the ds is null or empty");
+        "one of the arguments passed to the ds is null or empty");
       return error_code::invalid_argument;
     }
     return error_code::success;

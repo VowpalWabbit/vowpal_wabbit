@@ -38,7 +38,7 @@ namespace reinforcement_learning { namespace utility {
       RETURN_ERROR_LS(status, json_parse_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR_LS(status, json_parse_error) << error_code::unkown_s;
+      RETURN_ERROR_LS(status, json_parse_error) << error_code::unknown_s;
     }
   }
 
