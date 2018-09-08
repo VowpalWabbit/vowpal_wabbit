@@ -8,6 +8,7 @@
 #include "eventhub_client.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
+#include "utility/watchdog.h"
 
 namespace reinforcement_learning {
   // This class wraps logging event to event_hub in a generic way that live_model can consume.
@@ -22,6 +23,7 @@ namespace reinforcement_learning {
       int send_high_watermark,
       int send_batch_interval_ms,
       int send_queue_maxsize,
+      utility::watchdog& watchdog,
       error_callback_fn* perror_cb = nullptr);
 
     virtual int init(api_status* status) override;
@@ -40,7 +42,7 @@ namespace reinforcement_learning {
 
   class event_hub_observation_logger : public event_hub_logger {
   public:
-    event_hub_observation_logger(const utility::configuration& c, error_callback_fn* perror_cb = nullptr)
+    event_hub_observation_logger(const utility::configuration& c, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
         c,
         c.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
@@ -50,13 +52,14 @@ namespace reinforcement_learning {
         c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 100000 * 2),
+        watchdog,
         perror_cb)
     {}
   };
 
   class event_hub_interaction_logger : public event_hub_logger {
   public:
-    event_hub_interaction_logger(const utility::configuration& c, error_callback_fn* perror_cb = nullptr)
+    event_hub_interaction_logger(const utility::configuration& c, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
         c,
         c.get(name::INTERACTION_EH_HOST, "localhost:8080"),
@@ -66,6 +69,7 @@ namespace reinforcement_learning {
         c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE, 100000 * 2),
+        watchdog,
         perror_cb)
     {}
   };
