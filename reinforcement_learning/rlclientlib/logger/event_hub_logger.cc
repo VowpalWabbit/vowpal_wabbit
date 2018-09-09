@@ -14,9 +14,8 @@ namespace reinforcement_learning
     u::watchdog& watchdog,
     error_callback_fn* perror_cb
   )
-    : _client(logger),
-      _batcher(
-        *_client,
+    : _batcher(
+        logger,
         watchdog,
         perror_cb,
         send_high_watermark,
@@ -27,7 +26,6 @@ namespace reinforcement_learning
 
   int event_hub_logger::init(api_status* status) {
     RETURN_IF_FAIL(_batcher.init(status));
-    RETURN_IF_FAIL(_client->init(status));
     _initialized = true;
     return error_code::success;
   }

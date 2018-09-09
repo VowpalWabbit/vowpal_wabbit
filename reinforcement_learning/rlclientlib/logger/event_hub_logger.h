@@ -32,9 +32,6 @@ namespace reinforcement_learning {
   protected:
     bool _initialized = false;
 
-    // Clients to send data to the eventhub
-    std::unique_ptr<i_logger> _client;
-
     // Handle batching for the data sent to the eventhub client
     async_batcher _batcher;
 
