@@ -24,6 +24,7 @@
     <ClCompile Include="ranking_response_impl.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="logger\event_hub_logger.cc" />
+    <ClCompile Include="utility\watchdog.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -57,6 +58,7 @@
     <ClInclude Include="logger\event_hub_logger.h" />
     <ClInclude Include="..\include\logger.h" />
     <ClInclude Include="..\include\object_factory.h" />
+    <ClInclude Include="utility\watchdog.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

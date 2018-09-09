@@ -25,7 +25,7 @@ namespace reinforcement_learning {
       error_callback_fn& operator=(const error_callback_fn&) = delete;
       error_callback_fn& operator=(error_callback_fn&&) = delete;
 
-    private:      
+    private:
       std::mutex _mutex;
       error_fn _fn;
       void* _context;
