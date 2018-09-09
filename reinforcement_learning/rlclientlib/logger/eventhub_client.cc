@@ -25,7 +25,7 @@ namespace reinforcement_learning {
 
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
-  int eventhub_client::send(const std::string& post_data, api_status* status) {
+  int eventhub_client::v_append(const std::string& post_data, api_status* status) {
     http_request request(methods::POST);
     if (authorization(status) != error_code::success)
       return status->get_error_code();
@@ -55,10 +55,6 @@ namespace reinforcement_learning {
     catch (const std::exception& e) {
       RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
-  }
-
-  int eventhub_client::v_append(std::string& data, api_status* status) {
-    return send(data, status);
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,

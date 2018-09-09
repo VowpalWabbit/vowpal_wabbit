@@ -20,7 +20,7 @@ namespace reinforcement_learning {
                     const std::string&, const std::string&, bool local_test = false);
 
   protected:
-    virtual int v_append(std::string& data, api_status* status) override;
+    virtual int v_append(const std::string& data, api_status* status) override;
 
   private:
     int authorization(api_status* status);

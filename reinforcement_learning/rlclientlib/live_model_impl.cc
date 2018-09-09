@@ -70,13 +70,7 @@ namespace reinforcement_learning {
       RETURN_IF_FAIL(explore_exploit(event_id, context, response, status));
     }
     response.set_event_id(event_id);
-    // Serialize the event
-    u::pooled_object_guard<u::data_buffer, u::buffer_factory> guard(_buffer_pool, _buffer_pool.get_or_create());
-    guard->reset();
-    ranking_event::serialize(*guard.get(), event_id, context, response);
-    auto sbuf = guard->str();
-    // Send the ranking event to the backend
-    RETURN_IF_FAIL(_ranking_logger->append(sbuf, status));
+    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, response, status));
     return error_code::success;
   }
 
@@ -113,8 +107,7 @@ namespace reinforcement_learning {
       _t_factory{t_factory},
       _m_factory{m_factory},
       _logger_factory{logger_factory},
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) {
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb) {
     // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
     if (fn == nullptr) {
       _error_cb.set(&default_error_callback, &_watchdog);

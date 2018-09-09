@@ -4,7 +4,6 @@
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"
 #include "model_mgmt/model_downloader.h"
-#include "utility/object_pool.h"
 #include "utility/data_buffer.h"
 #include "utility/periodic_background_proc.h"
 #include "ranking_event.h"
@@ -79,7 +78,6 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::model_downloader> _model_download{nullptr};
 
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
-    utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
     uint64_t _seed_shift;
   };
 
@@ -93,14 +91,8 @@ namespace reinforcement_learning
       return error_code::unhandled_background_error_occurred;
     }
 
-    // Serialize outcome
-    utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
-    buffer->reset();
-    outcome_event::serialize(*buffer.get(), event_id, outcome);
-    auto sbuf = buffer->str();
-
     // Send the outcome event to the backend
-    RETURN_IF_FAIL(_outcome_logger->append(sbuf, status));
+    RETURN_IF_FAIL(_outcome_logger->log(event_id, outcome, status));
 
     return error_code::success;
   }
