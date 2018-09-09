@@ -57,6 +57,7 @@ namespace reinforcement_learning {
     model_factory.register_type(value::VW, vw_model_create);
     logger_factory.register_type(value::OBSERVATION_EH_LOGGER, observation_logger_create);
     logger_factory.register_type(value::INTERACTION_EH_LOGGER, interaction_logger_create);
+    logger_factory.register_type(value::EH_LOGGER, interaction_logger_create);
   }
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status) {
@@ -81,12 +82,22 @@ namespace reinforcement_learning {
   }
 
   int observation_logger_create(i_logger** retval, const u::configuration& cfg, u::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
-    *retval = new event_hub_observation_logger(cfg, watchdog, error_callback);
+    *retval = new eventhub_client(
+      cfg.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
+      cfg.get(name::OBSERVATION_EH_KEY_NAME, ""),
+      cfg.get(name::OBSERVATION_EH_KEY, ""),
+      cfg.get(name::OBSERVATION_EH_NAME, "observation"),
+      cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
 
   int interaction_logger_create(i_logger** retval, const u::configuration& cfg, u::watchdog& watchdog, error_callback_fn* error_callback, api_status* status) {
-    *retval = new event_hub_interaction_logger(cfg, watchdog, error_callback);
+    *retval = new eventhub_client(
+      cfg.get(name::INTERACTION_EH_HOST, "localhost:8080"),
+      cfg.get(name::INTERACTION_EH_KEY_NAME, ""),
+      cfg.get(name::INTERACTION_EH_KEY, ""),
+      cfg.get(name::INTERACTION_EH_NAME, "interaction"),
+      cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
 }

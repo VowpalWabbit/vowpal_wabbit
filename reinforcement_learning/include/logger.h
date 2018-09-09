@@ -16,7 +16,8 @@ namespace reinforcement_learning {
     }
 
     virtual ~i_logger() = default;
-    protected:
-      virtual int v_append(std::string& data, api_status* status) = 0;
+  
+  protected:
+    virtual int v_append(std::string& data, api_status* status) = 0;
   };
 }

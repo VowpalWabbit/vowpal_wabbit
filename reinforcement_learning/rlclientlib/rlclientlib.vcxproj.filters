@@ -25,6 +25,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="logger\event_hub_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
+    <ClCompile Include="logger\async_batcher.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />

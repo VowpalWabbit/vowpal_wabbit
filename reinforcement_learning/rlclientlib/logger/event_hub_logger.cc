@@ -5,25 +5,16 @@
 namespace reinforcement_learning
 {
   event_hub_logger::event_hub_logger(
-    const utility::configuration& c,
-    const std::string& event_hub_host,
-    const std::string& event_hub_key_name,
-    const std::string& event_hub_key,
-    const std::string& event_hub_name,
+    i_logger* logger,
     int send_high_watermark,
     int send_batch_interval_ms,
     int send_queue_maxsize,
     utility::watchdog& watchdog,
     error_callback_fn* perror_cb
   )
-    : _client(
-        event_hub_host,
-        event_hub_key_name,
-        event_hub_key,
-        event_hub_name,
-        c.get_bool(name::EH_TEST, false)),
+    : _client(logger),
       _batcher(
-        _client,
+        *_client,
         watchdog,
         perror_cb,
         send_high_watermark,
@@ -33,12 +24,12 @@ namespace reinforcement_learning
 
   int event_hub_logger::init(api_status* status) {
     RETURN_IF_FAIL(_batcher.init(status));
-    RETURN_IF_FAIL(_client.init(status));
+    RETURN_IF_FAIL(_client->init(status));
     _initialized = true;
     return error_code::success;
   }
 
-  int event_hub_logger::v_append(std::string& item, api_status* status) {
+  int event_hub_logger::append(std::string& item, api_status* status) {
     if(!_initialized) {
       api_status::try_update(status, error_code::not_initialized,
         "Logger not initialized. Call init() first.");

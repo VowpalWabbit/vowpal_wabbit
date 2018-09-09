@@ -57,6 +57,10 @@ namespace reinforcement_learning {
     }
   }
 
+  int eventhub_client::v_append(std::string& data, api_status* status) {
+    return send(data, status);
+  }
+
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
                                    const std::string& key, const std::string& name, const bool local_test)
     : _client(build_url(host, name, local_test), u::get_http_config()),
