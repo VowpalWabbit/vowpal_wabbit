@@ -1,10 +1,16 @@
+import os
+import sys
 import glob
 import setuptools
 
+if 'RL_PYTHON_EXT_DEPS' in os.environ:
+    external_deps_dir = os.environ['RL_PYTHON_EXT_DEPS']
+else:
+    print("RL_PYTHON_EXT_DEPS environment variable must be set with the path to retrieve dependencies from")
+    sys.exit(1)
+
 with open('README.md', 'r') as fh:
     long_description = fh.read()
-
-external_deps_dir = '/home/ataymano/restore_e2e_1/'
 
 extension_module = setuptools.Extension(
   	'rl_client._rl_client',
@@ -21,7 +27,7 @@ extension_module = setuptools.Extension(
 setuptools.setup(
     version = '0.0.5',
     name = 'rl_client',
-    url = 'https://github.com/JohnLangford/vowpal_wabbit', 
+    url = 'https://github.com/JohnLangford/vowpal_wabbit',
     description = 'Python binding for reinforcement learning client library',
     long_description = long_description,
     author = 'Microsoft Corporation',
