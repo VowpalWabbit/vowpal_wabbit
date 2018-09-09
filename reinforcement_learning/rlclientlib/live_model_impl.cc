@@ -132,13 +132,13 @@ namespace reinforcement_learning {
   int live_model_impl::init_loggers(api_status* status) {
     const auto ranking_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
     i_logger* ranking_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, _watchdog, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, status));
     _ranking_logger.reset(new interaction_logger(_configuration, ranking_logger, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
     const auto outcome_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
     i_logger* outcome_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, _watchdog, &_error_cb, status));
+    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, status));
     _outcome_logger.reset(new observation_logger(_configuration, outcome_logger, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_outcome_logger->init(status));
 

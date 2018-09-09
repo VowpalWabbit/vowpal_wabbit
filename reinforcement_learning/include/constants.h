@@ -32,6 +32,5 @@ namespace reinforcement_learning {  namespace value {
       const char *const VW                 = "VW";
       const char *const OBSERVATION_EH_LOGGER = "OBSERVATION_EH_LOGGER";
       const char *const INTERACTION_EH_LOGGER = "INTERACTION_EH_LOGGER";
-      const char *const EH_LOGGER = "EH_LOGGER";
 }}
 

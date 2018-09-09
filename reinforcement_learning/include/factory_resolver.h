@@ -33,7 +33,7 @@ namespace reinforcement_learning  {
    * Advanced extension point:  Register another implementation of i_logger to
    * provide the mechanism used when logging interaction and observation events.
    */
-  using logger_factory_t = utility::object_factory<i_logger, const utility::configuration&, utility::watchdog&, error_callback_fn*>;
+  using logger_factory_t = utility::object_factory<i_logger, const utility::configuration&>;
 
   extern data_transport_factory_t& data_transport_factory;
   extern model_factory_t& model_factory;
