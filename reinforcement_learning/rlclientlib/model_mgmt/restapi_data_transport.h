@@ -16,7 +16,6 @@ namespace reinforcement_learning { namespace model_management {
     std::string _url;
     web::http::client::http_client _httpcli;
     ::utility::datetime _last_modified;
-    uint32_t _data_refresh_count;
     uint64_t _datasz;
   };
 }}

@@ -83,6 +83,9 @@
     <ClCompile Include="data_buffer_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="watchdog_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
