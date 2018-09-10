@@ -203,9 +203,9 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
 
   r::logger_factory_t logger_factory;
   logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, reinforcement_learning::utility::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
+    [&mock_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
   logger_factory.register_type(r::value::INTERACTION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, reinforcement_learning::utility::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
+    [&mock_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
 
   r::data_transport_factory_t data_transport_factory;
   data_transport_factory.register_type(r::value::AZURE_STORAGE_BLOB,
@@ -263,9 +263,9 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
 
   r::logger_factory_t logger_factory;
   logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER,
-    [&mock_observation_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_observation_logger.get(); return err::success; });
+    [&mock_observation_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_observation_logger.get(); return err::success; });
   logger_factory.register_type(r::value::INTERACTION_EH_LOGGER,
-    [&mock_interaction_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_interaction_logger.get(); return err::success; });
+    [&mock_interaction_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_interaction_logger.get(); return err::success; });
 
   r::data_transport_factory_t data_transport_factory;
   data_transport_factory.register_type(r::value::AZURE_STORAGE_BLOB,
