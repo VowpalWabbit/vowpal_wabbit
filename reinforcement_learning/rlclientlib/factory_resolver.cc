@@ -22,18 +22,18 @@ namespace reinforcement_learning {
 
   static natural_align<data_transport_factory_t>::type dtfactory_buf;
   static natural_align<model_factory_t>::type modelfactory_buf;
-  static natural_align<logger_factory_t>::type loggerfactory_buf;
+  static natural_align<sender_factory_t>::type senderfactory_buf;
 
   // Reference should point to the allocated memory to be initialized by placement new in factory_initializer::factory_initializer()
   data_transport_factory_t& data_transport_factory = (data_transport_factory_t&)( dtfactory_buf );
   model_factory_t& model_factory = (model_factory_t&)( modelfactory_buf );
-  logger_factory_t& logger_factory = (logger_factory_t&)( loggerfactory_buf );
+  sender_factory_t& sender_factory = (sender_factory_t&)( senderfactory_buf );
 
   factory_initializer::factory_initializer() {
     if ( init_guard++ == 0 ) {
       new ( &data_transport_factory ) data_transport_factory_t();
       new ( &model_factory ) model_factory_t();
-      new ( &logger_factory ) logger_factory_t();
+      new ( &sender_factory ) sender_factory_t();
 
       register_default_factories();
     }
@@ -43,20 +43,20 @@ namespace reinforcement_learning {
     if ( --init_guard == 0 ) {
       ( &data_transport_factory )->~data_transport_factory_t();
       ( &model_factory )->~model_factory_t();
-      ( &logger_factory )->~logger_factory_t();
+      ( &sender_factory )->~sender_factory_t();
     }
   }
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status);
   int vw_model_create(m::i_model** retval, const u::configuration&, api_status* status);
-  int observation_logger_create(i_logger** retval, const u::configuration&, api_status* status);
-  int interaction_logger_create(i_logger** retval, const u::configuration&, api_status* status);
+  int observation_sender_create(i_sender** retval, const u::configuration&, api_status* status);
+  int interaction_sender_create(i_sender** retval, const u::configuration&, api_status* status);
 
   void factory_initializer::register_default_factories() {
     data_transport_factory.register_type(value::AZURE_STORAGE_BLOB, restapi_data_tranport_create);
     model_factory.register_type(value::VW, vw_model_create);
-    logger_factory.register_type(value::OBSERVATION_EH_LOGGER, observation_logger_create);
-    logger_factory.register_type(value::INTERACTION_EH_LOGGER, interaction_logger_create);
+    sender_factory.register_type(value::OBSERVATION_EH_SENDER, observation_sender_create);
+    sender_factory.register_type(value::INTERACTION_EH_SENDER, interaction_sender_create);
   }
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, api_status* status) {
@@ -80,7 +80,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int observation_logger_create(i_logger** retval, const u::configuration& cfg, api_status* status) {
+  int observation_sender_create(i_sender** retval, const u::configuration& cfg, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
       cfg.get(name::OBSERVATION_EH_KEY_NAME, ""),
@@ -90,7 +90,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int interaction_logger_create(i_logger** retval, const u::configuration& cfg, api_status* status) {
+  int interaction_sender_create(i_sender** retval, const u::configuration& cfg, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::INTERACTION_EH_HOST, "localhost:8080"),
       cfg.get(name::INTERACTION_EH_KEY_NAME, ""),

@@ -9,7 +9,7 @@ namespace reinforcement_learning {
 
   //the eventhub_client send string data in POST request to an http endpoint
   //it handles authorization headers specific for the azure event hubs
-  class eventhub_client : public i_logger {
+  class eventhub_client : public i_sender {
   public:
     virtual int init(api_status* status) override;
 
@@ -20,7 +20,7 @@ namespace reinforcement_learning {
                     const std::string&, const std::string&, bool local_test = false);
 
   protected:
-    virtual int v_append(const std::string& data, api_status* status) override;
+    virtual int v_send(const std::string& data, api_status* status) override;
 
   private:
     int authorization(api_status* status);

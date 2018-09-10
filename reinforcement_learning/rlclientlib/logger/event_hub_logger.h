@@ -18,7 +18,7 @@ namespace reinforcement_learning {
   class event_hub_logger {
   public:
     event_hub_logger(
-      i_logger* logger,
+      i_sender* sender,
       int send_high_watermark,
       int send_batch_interval_ms,
       int send_queue_maxsize,
@@ -41,9 +41,9 @@ namespace reinforcement_learning {
 
   class interaction_logger : public event_hub_logger {
   public:
-    interaction_logger(const utility::configuration& c, i_logger* logger, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
+    interaction_logger(const utility::configuration& c, i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
-        logger,
+        sender,
         c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE, 100000 * 2),
@@ -56,9 +56,9 @@ namespace reinforcement_learning {
 
   class observation_logger : public event_hub_logger {
   public:
-    observation_logger(const utility::configuration& c, i_logger* logger, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
+    observation_logger(const utility::configuration& c, i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
       : event_hub_logger(
-        logger,
+        sender,
         c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 100000 * 2),

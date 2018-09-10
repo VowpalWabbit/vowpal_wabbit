@@ -63,15 +63,15 @@ namespace reinforcement_learning {
     while (remaining > 0) {
       remaining = fill_buffer(remaining, buf_to_send);
       api_status status;
-      if (_logger->append(buf_to_send, &status) != error_code::success) {
+      if (_sender->send(buf_to_send, &status) != error_code::success) {
         ERROR_CALLBACK(_perror_cb, status);
       }
     }
   }
 
-  async_batcher::async_batcher(i_logger* logger, utility::watchdog& watchdog, error_callback_fn* perror_cb, const size_t send_high_water_mark,
+  async_batcher::async_batcher(i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb, const size_t send_high_water_mark,
     const size_t batch_timeout_ms, const size_t queue_max_size)
-    : _logger(logger),
+    : _sender(sender),
     _send_high_water_mark(send_high_water_mark),
     _queue_max_size(queue_max_size),
     _perror_cb(perror_cb),

@@ -12,7 +12,7 @@ namespace reinforcement_learning  {
     class i_data_transport;
     class i_model;
   }
-  class i_logger;
+  class i_sender;
   class error_callback_fn;
 
   /**
@@ -33,11 +33,11 @@ namespace reinforcement_learning  {
    * Advanced extension point:  Register another implementation of i_logger to
    * provide the mechanism used when logging interaction and observation events.
    */
-  using logger_factory_t = utility::object_factory<i_logger, const utility::configuration&>;
+  using sender_factory_t = utility::object_factory<i_sender, const utility::configuration&>;
 
   extern data_transport_factory_t& data_transport_factory;
   extern model_factory_t& model_factory;
-  extern logger_factory_t& logger_factory;
+  extern sender_factory_t& sender_factory;
 
   // For proper static intialization
   // Check https://en.wikibooks.org/wiki/More_C++_Idioms/Nifty_Counter for explanation

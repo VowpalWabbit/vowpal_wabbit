@@ -7,7 +7,7 @@ namespace reinforcement_learning
   namespace u = utility;
 
   event_hub_logger::event_hub_logger(
-    i_logger* logger,
+    i_sender* sender,
     int send_high_watermark,
     int send_batch_interval_ms,
     int send_queue_maxsize,
@@ -15,7 +15,7 @@ namespace reinforcement_learning
     error_callback_fn* perror_cb
   )
     : _batcher(
-        logger,
+        sender,
         watchdog,
         perror_cb,
         send_high_watermark,

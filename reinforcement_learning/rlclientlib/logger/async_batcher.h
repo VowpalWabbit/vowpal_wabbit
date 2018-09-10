@@ -29,7 +29,7 @@ namespace reinforcement_learning {
     void flush(); //flush all batches
 
   public:
-    async_batcher(i_logger* logger,
+    async_batcher(i_sender* sender,
                   utility::watchdog& watchdog,
                   error_callback_fn* perror_cb = nullptr,
                   size_t send_high_water_mark = (1024 * 1024 * 4),
@@ -39,7 +39,7 @@ namespace reinforcement_learning {
     ~async_batcher();
 
   private:
-    std::unique_ptr<i_logger> _logger;
+    std::unique_ptr<i_sender> _sender;
 
     moving_queue<std::string> _queue;       // A queue to accumulate batch of events.
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.

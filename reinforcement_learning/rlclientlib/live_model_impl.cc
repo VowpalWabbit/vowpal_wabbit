@@ -98,7 +98,7 @@ namespace reinforcement_learning {
     void* err_context,
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_factory_t* logger_factory
+    sender_factory_t* sender_factory
   )
     : _configuration(config),
       _error_cb(fn, err_context),
@@ -106,7 +106,7 @@ namespace reinforcement_learning {
       _watchdog(&_error_cb),
       _t_factory{t_factory},
       _m_factory{m_factory},
-      _logger_factory{logger_factory},
+      _sender_factory{sender_factory},
       _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb) {
     // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
     if (fn == nullptr) {
@@ -123,16 +123,16 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::init_loggers(api_status* status) {
-    const auto ranking_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
-    i_logger* ranking_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, status));
-    _ranking_logger.reset(new interaction_logger(_configuration, ranking_logger, _watchdog, &_error_cb));
+    const auto ranking_sender_impl = _configuration.get(name::INTERACTION_SENDER_IMPLEMENTATION, value::INTERACTION_EH_SENDER);
+    i_sender* ranking_sender;
+    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, status));
+    _ranking_logger.reset(new interaction_logger(_configuration, ranking_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
-    const auto outcome_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
-    i_logger* outcome_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, status));
-    _outcome_logger.reset(new observation_logger(_configuration, outcome_logger, _watchdog, &_error_cb));
+    const auto outcome_sender_impl = _configuration.get(name::OBSERVATION_SENDER_IMPLEMENTATION, value::OBSERVATION_EH_SENDER);
+    i_sender* outcome_sender;
+    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, status));
+    _outcome_logger.reset(new observation_logger(_configuration, outcome_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_outcome_logger->init(status));
 
     return error_code::success;
