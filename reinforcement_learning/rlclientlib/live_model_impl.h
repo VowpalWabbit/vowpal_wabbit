@@ -6,7 +6,6 @@
 #include "model_mgmt/model_downloader.h"
 #include "utility/data_buffer.h"
 #include "utility/periodic_background_proc.h"
-#include "ranking_event.h"
 
 #include "factory_resolver.h"
 #include "utility/watchdog.h"

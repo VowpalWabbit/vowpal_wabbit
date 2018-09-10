@@ -11,6 +11,7 @@
 #include "../error_callback_fn.h"
 #include "utility/watchdog.h"
 #include "ranking_response.h"
+#include "ranking_event.h"
 
 namespace reinforcement_learning {
   // This class wraps logging event to event_hub in a generic way that live_model can consume.
