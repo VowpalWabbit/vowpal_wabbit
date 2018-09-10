@@ -1,7 +1,7 @@
 #pragma once
 
 #include "api_status.h"
-#include "logger.h"
+#include "sender.h"
 
 #include <cpprest/http_client.h>
 

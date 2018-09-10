@@ -57,7 +57,7 @@
     <ClInclude Include="ranking_event.h" />
     <ClInclude Include="ranking_response_impl.h" />
     <ClInclude Include="logger\event_hub_logger.h" />
-    <ClInclude Include="..\include\logger.h" />
+    <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
   </ItemGroup>

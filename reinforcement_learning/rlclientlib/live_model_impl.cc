@@ -2,7 +2,7 @@
 #include <boost/uuid/random_generator.hpp>
 
 #include "utility/context_helper.h"
-#include "logger.h"
+#include "sender.h"
 #include "api_status.h"
 #include "configuration.h"
 #include "error_callback_fn.h"

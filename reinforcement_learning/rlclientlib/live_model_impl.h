@@ -1,5 +1,5 @@
 #pragma once
-#include "logger.h"
+#include "sender.h"
 #include "logger/event_hub_logger.h"
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"

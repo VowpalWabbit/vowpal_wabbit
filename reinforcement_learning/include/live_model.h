@@ -9,7 +9,7 @@
 #include "ranking_response.h"
 #include "err_constants.h"
 #include "factory_resolver.h"
-#include "logger.h"
+#include "sender.h"
 
 #include <memory>
 

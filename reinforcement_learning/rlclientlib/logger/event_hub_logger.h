@@ -1,6 +1,6 @@
 #pragma once
 
-#include "logger.h"
+#include "sender.h"
 #include "utility/object_pool.h"
 
 #include "configuration.h"

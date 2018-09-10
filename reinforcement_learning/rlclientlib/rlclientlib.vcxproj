@@ -138,7 +138,7 @@
     <ClInclude Include="..\include\api_status.h" />
     <ClInclude Include="..\include\configuration.h" />
     <ClInclude Include="..\include\live_model.h" />
-    <ClInclude Include="..\include\logger.h" />
+    <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="..\include\personalization.h" />
     <ClInclude Include="..\include\ranking_response.h" />

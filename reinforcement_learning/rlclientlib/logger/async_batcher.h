@@ -3,7 +3,7 @@
 #include <string>
 
 #include "moving_queue.h"
-#include "logger.h"
+#include "sender.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
 #include "err_constants.h"
