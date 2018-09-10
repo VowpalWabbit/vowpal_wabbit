@@ -26,7 +26,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\vowpalwabbit\vw_dynamic.vcxproj">
+    <ProjectReference Include="..\..\vowpalwabbit\vw_core.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
   </ItemGroup>
