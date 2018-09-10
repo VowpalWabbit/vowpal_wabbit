@@ -4,10 +4,8 @@
 
 #include "constants.h"
 #include "err_constants.h"
-
+#include "ranking_response.h"
 #include "model_mgmt.h"
-
-//#include <boost/test/unit_test.hpp>
 
 namespace r = reinforcement_learning;
 namespace m = r::model_management;
