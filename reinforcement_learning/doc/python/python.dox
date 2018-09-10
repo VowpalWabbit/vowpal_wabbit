@@ -1,4 +1,4 @@
-/*! \page Python
+/*! \mainpage Introduction
 There are Python bindings available for the C++ inference library. These bindings are in the
 \link rl_client
 \endlink
