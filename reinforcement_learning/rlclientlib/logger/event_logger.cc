@@ -1,4 +1,4 @@
-#include "event_hub_logger.h"
+#include "event_logger.h"
 #include "ranking_event.h"
 #include "err_constants.h"
 
@@ -6,7 +6,7 @@ namespace reinforcement_learning
 {
   namespace u = utility;
 
-  event_hub_logger::event_hub_logger(
+  event_logger::event_logger(
     i_sender* sender,
     int send_high_watermark,
     int send_batch_interval_ms,
@@ -24,13 +24,13 @@ namespace reinforcement_learning
       _buffer_pool(new u::buffer_factory(u::translate_func('\n', ' ')))
   {}
 
-  int event_hub_logger::init(api_status* status) {
+  int event_logger::init(api_status* status) {
     RETURN_IF_FAIL(_batcher.init(status));
     _initialized = true;
     return error_code::success;
   }
 
-  int event_hub_logger::append(std::string& item, api_status* status) {
+  int event_logger::append(std::string& item, api_status* status) {
     if(!_initialized) {
       api_status::try_update(status, error_code::not_initialized,
         "Logger not initialized. Call init() first.");

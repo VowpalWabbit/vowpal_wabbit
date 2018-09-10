@@ -4,7 +4,7 @@
 #include "err_constants.h"
 #include "model_mgmt/restapi_data_transport.h"
 #include "vw_model/vw_model.h"
-#include "logger/event_hub_logger.h"
+#include "logger/event_logger.h"
 #include "utility/watchdog.h"
 
 #include <type_traits>

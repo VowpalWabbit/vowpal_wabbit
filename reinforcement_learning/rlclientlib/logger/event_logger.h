@@ -15,9 +15,9 @@
 
 namespace reinforcement_learning {
   // This class wraps logging event to event_hub in a generic way that live_model can consume.
-  class event_hub_logger {
+  class event_logger {
   public:
-    event_hub_logger(
+    event_logger(
       i_sender* sender,
       int send_high_watermark,
       int send_batch_interval_ms,
@@ -39,10 +39,10 @@ namespace reinforcement_learning {
     utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
   };
 
-  class interaction_logger : public event_hub_logger {
+  class interaction_logger : public event_logger {
   public:
     interaction_logger(const utility::configuration& c, i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
-      : event_hub_logger(
+      : event_logger(
         sender,
         c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS, 1000),
@@ -54,10 +54,10 @@ namespace reinforcement_learning {
     int log(const char* event_id, const char* context, const ranking_response& response, api_status* status);
   };
 
-  class observation_logger : public event_hub_logger {
+  class observation_logger : public event_logger {
   public:
     observation_logger(const utility::configuration& c, i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb = nullptr)
-      : event_hub_logger(
+      : event_logger(
         sender,
         c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000),

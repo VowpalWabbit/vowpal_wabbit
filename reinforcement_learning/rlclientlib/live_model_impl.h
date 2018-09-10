@@ -1,6 +1,6 @@
 #pragma once
 #include "sender.h"
-#include "logger/event_hub_logger.h"
+#include "logger/event_logger.h"
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"
 #include "model_mgmt/model_downloader.h"
