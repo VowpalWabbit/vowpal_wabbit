@@ -61,8 +61,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
-     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
-     *                       interaction and the other for interaction which logs to Event Hub.
+     * @param sender_factory Sender factory.  The default factory provides two senders, one for
+     *                       interaction and the other for observation which logs to Event Hub.
      */
     explicit live_model(
       const utility::configuration& config,
