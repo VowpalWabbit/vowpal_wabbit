@@ -70,7 +70,7 @@ namespace reinforcement_learning {
       void* err_context = nullptr,
       data_transport_factory_t* t_factory = &data_transport_factory,
       model_factory_t* m_factory = &model_factory,
-      sender_factory_t* logger_factory = &sender_factory);
+      sender_factory_t* sender_factory = &sender_factory);
 
     /**
      * @brief Initialize inference library.
@@ -163,7 +163,7 @@ namespace reinforcement_learning {
       ErrCntxt* err_context = nullptr,
       data_transport_factory_t* t_factory = &data_transport_factory,
       model_factory_t* m_factory = &model_factory,
-      sender_factory_t* logger_factory = &sender_factory);
+      sender_factory_t* sender_factory = &sender_factory);
 
     /**
      * @brief Default move constructor for live model object.
@@ -206,6 +206,6 @@ namespace reinforcement_learning {
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
     sender_factory_t* sender_factory)
-    : live_model(config, (error_fn)(fn), (void*)(err_context), t_factory, m_factory, logger_factory)
+    : live_model(config, (error_fn)(fn), (void*)(err_context), t_factory, m_factory, sender_factory)
   {}
 }
