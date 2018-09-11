@@ -21,6 +21,9 @@
     <ClInclude Include="http_server\http_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mock_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -81,6 +84,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="data_buffer_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="watchdog_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mock_util.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

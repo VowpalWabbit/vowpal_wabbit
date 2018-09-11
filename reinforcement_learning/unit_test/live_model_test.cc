@@ -6,8 +6,6 @@
 #include <thread>
 #include <boost/test/unit_test.hpp>
 
-#include "http_server/stdafx.h"
-#include "http_server/http_server.h"
 #include "live_model.h"
 #include "config_utility.h"
 #include "api_status.h"
@@ -17,6 +15,10 @@
 #include "logger.h"
 #include "model_mgmt.h"
 #include "str_util.h"
+
+#include "mock_util.h"
+#include "http_server/stdafx.h"
+#include "http_server/http_server.h"
 
 #include <fakeit/fakeit.hpp>
 
@@ -41,18 +43,23 @@ const auto JSON_CFG = R"(
 const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
 
 BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
-  //start a http server that will receive events sent from the eventhub_client
-  http_helper http_server;
-  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
-  r::api_status status;
+  auto mock_logger = get_mock_logger();
+  auto mock_data_transport = get_mock_data_transport();
+  auto mock_model = get_mock_model();
+
+  auto logger_factory = get_mock_logger_factory(mock_logger.get(), mock_logger.get());
+  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
+  auto model_factory = get_mock_model_factory(mock_model.get());
 
   //create a simple ds configuration
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
+  r::api_status status;
+
   //create the ds live_model, and initialize it with the config
-  r::live_model ds(config);
+  r::live_model ds(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), logger_factory.get());
   BOOST_CHECK_EQUAL(ds.init(&status), err::success);
 
   const auto event_id = "event_id";
@@ -64,11 +71,11 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
   // request ranking
   BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), err::success);
 
-  //check expected returned codes
-  BOOST_CHECK_EQUAL(ds.choose_rank(invalid_event_id, JSON_CONTEXT, response), err::invalid_argument);//invalid event_id
-  BOOST_CHECK_EQUAL(ds.choose_rank(event_id, invalid_context, response), err::invalid_argument);//invalid context
+  // check expected returned codes
+  BOOST_CHECK_EQUAL(ds.choose_rank(invalid_event_id, JSON_CONTEXT, response), err::invalid_argument); // invalid event_id
+  BOOST_CHECK_EQUAL(ds.choose_rank(event_id, invalid_context, response), err::invalid_argument); // invalid context
 
-  //invalid event_id
+  // invalid event_id
   ds.choose_rank(event_id, invalid_context, response, &status);
   BOOST_CHECK_EQUAL(status.get_error_code(), err::invalid_argument);
 
@@ -84,11 +91,13 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_outcome) {
-  //start a http server that will receive events sent from the eventhub_client
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  http_helper http_server;
-  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  auto mock_logger = get_mock_logger();
+  auto mock_data_transport = get_mock_data_transport();
+  auto mock_model = get_mock_model();
+
+  auto logger_factory = get_mock_logger_factory(mock_logger.get(), mock_logger.get());
+  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
+  auto model_factory = get_mock_model_factory(mock_model.get());
 
   //create a simple ds configuration
   u::configuration config;
@@ -96,7 +105,7 @@ BOOST_AUTO_TEST_CASE(live_model_outcome) {
   config.set(r::name::EH_TEST, "true");
 
   //create a ds live_model, and initialize with configuration
-  r::live_model ds(config);
+  r::live_model ds(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), logger_factory.get());
 
   //check api_status content when errors are returned
   r::api_status status;
@@ -139,11 +148,11 @@ namespace r = reinforcement_learning;
 class wrong_class {};
 
 class algo_server {
-  public:
+ public:
     algo_server() : _err_count{0} {}
     void ml_error_handler(void) { shutdown(); }
     int _err_count;
-  private:
+ private:
     void shutdown() { ++_err_count; }
 };
 
@@ -175,7 +184,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 
   ds.init(nullptr);
 
-  const char*  event_id = "event_id";
+  const char* event_id = "event_id";
 
   r::ranking_response response;
   BOOST_CHECK_EQUAL(the_server._err_count, 0);
@@ -187,38 +196,19 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_mocks) {
-  Mock<r::i_logger> mock_logger;
-  When(Method(mock_logger, init)).AlwaysReturn(err::success);
-  When(Method(mock_logger, append)).AlwaysReturn(err::success);
-  Fake(Dtor(mock_logger));
+  auto mock_logger = get_mock_logger();
+  auto mock_data_transport = get_mock_data_transport();
+  auto mock_model = get_mock_model();
 
-  Mock<m::i_data_transport> mock_data_transport;
-  When(Method(mock_data_transport, get_data)).AlwaysReturn(err::success);
-  Fake(Dtor(mock_data_transport));
-
-  Mock<m::i_model> mock_model;
-  When(Method(mock_model, update)).AlwaysReturn(err::success);
-  When(Method(mock_model, choose_rank)).AlwaysReturn(err::success);
-  Fake(Dtor(mock_model));
-
-  r::logger_factory_t logger_factory;
-  logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
-  logger_factory.register_type(r::value::INTERACTION_EH_LOGGER,
-    [&mock_logger](r::i_logger** retval, const u::configuration&, r::error_callback_fn*, r::api_status*) { *retval = &mock_logger.get(); return err::success; });
-
-  r::data_transport_factory_t data_transport_factory;
-  data_transport_factory.register_type(r::value::AZURE_STORAGE_BLOB,
-    [&mock_data_transport](m::i_data_transport** retval, const u::configuration&, r::api_status*){*retval = &mock_data_transport.get(); return err::success;});
-  r::model_factory_t model_factory;
-  model_factory.register_type(r::value::VW,
-    [&mock_model](m::i_model** retval, const u::configuration&, r::api_status*){*retval = &mock_model.get(); return err::success;});
+  auto logger_factory = get_mock_logger_factory(mock_logger.get(), mock_logger.get());
+  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
+  auto model_factory = get_mock_model_factory(mock_model.get());
 
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
-  r::live_model model(config, nullptr, nullptr, &data_transport_factory, &model_factory, &logger_factory);
+  r::live_model model(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), logger_factory.get());
 
   r::api_status status;
   BOOST_CHECK_EQUAL(model.init(&status), err::success);
@@ -229,8 +219,8 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
   BOOST_CHECK_EQUAL(model.choose_rank(event_id, JSON_CONTEXT, response), err::success);
   BOOST_CHECK_EQUAL(model.report_outcome(event_id, 1.0), err::success);
 
-  Verify(Method(mock_logger, init)).Exactly(2);
-  Verify(Method(mock_logger, append)).Exactly(2);
+  Verify(Method((*mock_logger), init)).Exactly(2);
+  Verify(Method((*mock_logger), append)).Exactly(2);
 }
 
 BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {

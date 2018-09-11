@@ -13,6 +13,7 @@ namespace reinforcement_learning
     int send_high_watermark,
     int send_batch_interval_ms,
     int send_queue_maxsize,
+    utility::watchdog& watchdog,
     error_callback_fn* perror_cb
   )
     : _client(
@@ -23,6 +24,7 @@ namespace reinforcement_learning
         c.get_bool(name::EH_TEST, false)),
       _batcher(
         _client,
+        watchdog,
         perror_cb,
         send_high_watermark,
         send_batch_interval_ms,
