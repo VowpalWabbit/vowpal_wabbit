@@ -135,10 +135,12 @@ Global
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Debug|x64.Build.0 = Debug|x64
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Debug|x86.ActiveCfg = Debug|Win32
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Debug|x86.Build.0 = Debug|Win32
-		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|Any CPU.ActiveCfg = DebugLeakCheck|Win32
-		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x64.ActiveCfg = DebugLeakCheck|x64
-		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x86.ActiveCfg = DebugLeakCheck|Win32
-		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x86.Build.0 = DebugLeakCheck|Win32
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|Any CPU.ActiveCfg = Release|Win32
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|Any CPU.Build.0 = Release|Win32
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x64.ActiveCfg = Debug|x64
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x64.Build.0 = Debug|x64
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x86.ActiveCfg = Debug|Win32
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.DebugLeakCheck|x86.Build.0 = Debug|Win32
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Release|Any CPU.ActiveCfg = Release|x64
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Release|Any CPU.Build.0 = Release|x64
 		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}.Release|x64.ActiveCfg = Release|x64
@@ -488,7 +490,7 @@ Global
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
+		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 	EndGlobalSection
 EndGlobal

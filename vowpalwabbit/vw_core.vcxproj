@@ -147,7 +147,7 @@
 
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\target\$(Configuration)\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <IntDir>$(SolutionDir)out\int\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 
   <!-- <PropertyGroup Condition="'$(Platform)'=='x64'">
