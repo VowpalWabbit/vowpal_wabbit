@@ -14,7 +14,8 @@ LIBSSL_FOLDER='openssl-1.0.2g'
 ZLIB_PATH='https://zlib.net/fossils/zlib-1.2.8.tar.gz'
 ZLIB_FOLDER='zlib-1.2.8'
 
-BUILD_DIR=$1
+: ${RL_PYTHON_EXT_DEPS?"RL_PYTHON_EXT_DEPS environment variable must be set with the path to save dependencies to"}
+BUILD_DIR=$RL_PYTHON_EXT_DEPS
 
 mkdir -p $BUILD_DIR
 BUILD_DIR=$(readlink -f $BUILD_DIR)
@@ -78,4 +79,4 @@ if [ ! -f $BUILD_DIR/libz.a ]; then
 	make
 
 	cp libz.a $BUILD_DIR
-fi               
+fi
