@@ -47,11 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs_testhelp", "..\cs\testhe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vw_common", "..\cs\common\vw_common.csproj", "{E621E022-C1F8-433F-905A-AB9A3DE072B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs_leaktest", "..\cs\leaktest\cs_leaktest.csproj", "{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs_testcommon", "..\cs\testcommon\cs_testcommon.csproj", "{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cs_vld", "..\cs\cli\cs_vld.vcxproj", "{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_core", "vw_core.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3593}"
 EndProject
@@ -259,16 +255,6 @@ Global
 		{E621E022-C1F8-433F-905A-AB9A3DE072B7}.Release|x64.ActiveCfg = Release|x64
 		{E621E022-C1F8-433F-905A-AB9A3DE072B7}.Release|x64.Build.0 = Release|x64
 		{E621E022-C1F8-433F-905A-AB9A3DE072B7}.Release|x86.ActiveCfg = Release|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Debug|x64.ActiveCfg = Debug|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Debug|x86.ActiveCfg = Debug|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.DebugLeakCheck|Any CPU.ActiveCfg = DebugLeakCheck|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.DebugLeakCheck|x64.ActiveCfg = DebugLeakCheck|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.DebugLeakCheck|x64.Build.0 = DebugLeakCheck|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.DebugLeakCheck|x86.ActiveCfg = DebugLeakCheck|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Release|Any CPU.ActiveCfg = Release|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Release|x64.ActiveCfg = Release|x64
-		{492EA3A7-8A41-459E-BBC3-5A3FE9DDFC68}.Release|x86.ActiveCfg = Release|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Debug|x64.ActiveCfg = Debug|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Debug|x64.Build.0 = Debug|x64
@@ -281,16 +267,6 @@ Global
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.ActiveCfg = Release|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x64.Build.0 = Release|x64
 		{6A9CBEAB-427F-4D8D-9559-B76B42B0895C}.Release|x86.ActiveCfg = Release|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Debug|x64.ActiveCfg = Debug|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Debug|x86.ActiveCfg = Debug|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.DebugLeakCheck|Any CPU.ActiveCfg = DebugLeakCheck|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.DebugLeakCheck|x64.ActiveCfg = DebugLeakCheck|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.DebugLeakCheck|x64.Build.0 = DebugLeakCheck|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.DebugLeakCheck|x86.ActiveCfg = DebugLeakCheck|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Release|Any CPU.ActiveCfg = Release|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Release|x64.ActiveCfg = Release|x64
-		{3D57A6AF-DE8C-40DC-ABDE-E4CE1B9C0D20}.Release|x86.ActiveCfg = Release|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|Any CPU.Build.0 = Debug|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x64.ActiveCfg = Debug|x64
@@ -493,7 +469,7 @@ Global
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
 		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
+		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
 	EndGlobalSection
 EndGlobal
