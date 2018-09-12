@@ -87,11 +87,6 @@ namespace reinforcement_learning
     // Clear previous errors if any
     api_status::try_clear(status);
 
-    // Check watchdog for any background errors.
-    if (_watchdog.has_background_error_been_reported()) {
-      return error_code::unhandled_background_error_occurred;
-    }
-
     // Serialize outcome
     utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
     buffer->reset();
@@ -100,6 +95,11 @@ namespace reinforcement_learning
 
     // Send the outcome event to the backend
     RETURN_IF_FAIL(_outcome_logger->append(sbuf, status));
+
+    // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
+    if (_watchdog.has_background_error_been_reported()) {
+      RETURN_ERROR_LS(status, unhandled_background_error_occurred);
+    }
 
     return error_code::success;
   }
