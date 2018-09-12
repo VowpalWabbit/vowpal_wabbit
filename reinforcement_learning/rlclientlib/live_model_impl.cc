@@ -55,11 +55,6 @@ namespace reinforcement_learning {
     //clear previous errors if any
     api_status::try_clear(status);
 
-    // Check watchdog for any background errors.
-    if (_watchdog.has_background_error_been_reported()) {
-      return error_code::unhandled_background_error_occurred;
-    }
-
     //check arguments
     RETURN_IF_FAIL(check_null_or_empty(event_id, context, status));
     if (!_model_data_received) {
@@ -71,6 +66,12 @@ namespace reinforcement_learning {
     }
     response.set_event_id(event_id);
     RETURN_IF_FAIL(_ranking_logger->log(event_id, context, response, status));
+
+    // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
+    if (_watchdog.has_background_error_been_reported()) {
+      RETURN_ERROR_LS(status, unhandled_background_error_occurred);
+    }
+
     return error_code::success;
   }
 
