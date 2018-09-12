@@ -8,6 +8,8 @@
 #include <memory>
 
 std::unique_ptr<fakeit::Mock<reinforcement_learning::i_sender>> get_mock_sender();
+std::unique_ptr<fakeit::Mock<reinforcement_learning::i_sender>> get_mock_sender(std::vector<std::string>& recorded_messages);
+
 std::unique_ptr<fakeit::Mock<reinforcement_learning::model_management::i_data_transport>> get_mock_data_transport();
 std::unique_ptr<fakeit::Mock<reinforcement_learning::model_management::i_model>> get_mock_model();
 

@@ -196,7 +196,8 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_mocks) {
-  auto mock_sender = get_mock_sender();
+  std::vector<std::string> recorded;
+  auto mock_sender = get_mock_sender(recorded);
   auto mock_data_transport = get_mock_data_transport();
   auto mock_model = get_mock_model();
 
@@ -207,45 +208,34 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
+  {
+    r::live_model model(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), sender_factory.get());
 
-  r::live_model model(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), sender_factory.get());
+    r::api_status status;
+    BOOST_CHECK_EQUAL(model.init(&status), err::success);
 
-  r::api_status status;
-  BOOST_CHECK_EQUAL(model.init(&status), err::success);
+    const auto event_id = "event_id";
+    r::ranking_response response;
 
-  const auto event_id = "event_id";
-  r::ranking_response response;
+    BOOST_CHECK_EQUAL(model.choose_rank(event_id, JSON_CONTEXT, response), err::success);
+    BOOST_CHECK_EQUAL(model.report_outcome(event_id, 1.0), err::success);
 
-  BOOST_CHECK_EQUAL(model.choose_rank(event_id, JSON_CONTEXT, response), err::success);
-  BOOST_CHECK_EQUAL(model.report_outcome(event_id, 1.0), err::success);
-
-  Verify(Method((*mock_sender), init)).Exactly(2);
-  Verify(Method((*mock_sender), send)).Exactly(2);
+    Verify(Method((*mock_sender), init)).Exactly(2);
+  }
+  BOOST_CHECK_EQUAL(recorded.size(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
-  Mock<r::i_sender> mock_observation_sender;
   std::vector<std::string> recorded_observations;
-  When(Method(mock_observation_sender, init)).AlwaysReturn(err::success);
-  When(Method(mock_observation_sender, send)).AlwaysDo(
-    [&recorded_observations](const std::string& message, reinforcement_learning::api_status* status) {
-    recorded_observations.push_back(message); return err::success;
-  });
-  Fake(Dtor(mock_observation_sender));
+  auto mock_observation_sender = get_mock_sender(recorded_observations);
 
-  Mock<r::i_sender> mock_interaction_sender;
   std::vector<std::string> recorded_interactions;
-  When(Method(mock_interaction_sender, init)).AlwaysReturn(err::success);
-  When(Method(mock_interaction_sender, send)).AlwaysDo(
-    [&recorded_interactions](const std::string& message, reinforcement_learning::api_status* status) {
-    recorded_interactions.push_back(message); return err::success;
-  });
-  Fake(Dtor(mock_interaction_sender));
+  auto mock_interaction_sender = get_mock_sender(recorded_interactions);
 
   auto mock_data_transport = get_mock_data_transport();
   auto mock_model = get_mock_model();
 
-  auto logger_factory = get_mock_sender_factory(&mock_observation_sender, &mock_interaction_sender);
+  auto logger_factory = get_mock_sender_factory(mock_observation_sender.get(), mock_interaction_sender.get());
   auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
   auto model_factory = get_mock_model_factory(mock_model.get());
 
@@ -253,43 +243,63 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
-  r::live_model model(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), logger_factory.get());
-
-  r::api_status status;
-  BOOST_CHECK_EQUAL(model.init(&status), err::success);
-
   auto const version_number = "1";
 
   auto const event_id_1 = "event_id";
   auto const event_id_2 = "event_id_2";
-
-  r::ranking_response response;
-  auto const num_iterations = 5;
-  for (auto i = 0; i < num_iterations; i++) {
-    BOOST_CHECK_EQUAL(model.choose_rank(event_id_1, JSON_CONTEXT, response), err::success);
-    BOOST_CHECK_EQUAL(model.report_outcome(event_id_1, 1.0), err::success);
-
-    BOOST_CHECK_EQUAL(model.choose_rank(event_id_2, JSON_CONTEXT, response), err::success);
-    BOOST_CHECK_EQUAL(model.report_outcome(event_id_2, 1.0), err::success);
-  }
 
   auto const expected_interaction_1 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_1, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_1 = u::concat(R"({"EventId":")", event_id_1, R"(","v":1.000000})");
 
   auto const expected_interaction_2 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_2, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_2 = u::concat(R"({"EventId":")", event_id_2, R"(","v":1.000000})");
+  auto const num_iterations = 5;
 
-  Verify(Method(mock_observation_sender, init)).Exactly(1);
-  Verify(Method(mock_interaction_sender, init)).Exactly(1);
-  Verify(Method(mock_interaction_sender, send)).Exactly(num_iterations * 2);
-  Verify(Method(mock_observation_sender, send)).Exactly(num_iterations * 2);
+  std::string expected_interactions;
+  std::string expected_observations;
+  {
+    r::live_model model(config, nullptr, nullptr, data_transport_factory.get(), model_factory.get(), logger_factory.get());
 
-  for (auto i = 0; i < num_iterations * 2; i += 2) {
-    BOOST_CHECK_EQUAL(recorded_observations[i], expected_observation_1);
-    BOOST_CHECK_EQUAL(recorded_observations[i + 1], expected_observation_2);
+    r::api_status status;
+    BOOST_CHECK_EQUAL(model.init(&status), err::success);
 
-    BOOST_CHECK_EQUAL(recorded_interactions[i], expected_interaction_1);
-    BOOST_CHECK_EQUAL(recorded_interactions[i + 1], expected_interaction_2);
+    r::ranking_response response;
+    for (auto i = 0; i < num_iterations; i++) {
+      BOOST_CHECK_EQUAL(model.choose_rank(event_id_1, JSON_CONTEXT, response), err::success);
+      BOOST_CHECK_EQUAL(model.report_outcome(event_id_1, 1.0), err::success);
+      expected_interactions += expected_interaction_1 + '\n';
+      expected_observations += expected_observation_1 + '\n';
+
+      BOOST_CHECK_EQUAL(model.choose_rank(event_id_2, JSON_CONTEXT, response), err::success);
+      BOOST_CHECK_EQUAL(model.report_outcome(event_id_2, 1.0), err::success);
+      expected_interactions += expected_interaction_2;
+      expected_observations += expected_observation_2;
+      if (i + 1 < num_iterations) {
+        expected_interactions += '\n';
+        expected_observations += '\n';
+      }
+    }
+
+    Verify(Method((*mock_observation_sender), init)).Exactly(1);
+    Verify(Method((*mock_interaction_sender), init)).Exactly(1);
   }
+  std::string recorded_interactions_all;
+  for (auto i = 0; i < recorded_interactions.size(); ++i) {
+    recorded_interactions_all += recorded_interactions[i];
+    if (i + 1 < recorded_interactions.size()) {
+      recorded_interactions_all += '\n';
+    }
+  }
+
+  std::string recorded_observations_all;
+  for (auto i = 0; i < recorded_interactions.size(); ++i) {
+    recorded_observations_all += recorded_observations[i];
+    if (i + 1 < recorded_observations.size()) {
+      recorded_observations_all += '\n';
+    }
+  }
+
+  BOOST_CHECK_EQUAL(recorded_interactions_all, expected_interactions);
+  BOOST_CHECK_EQUAL(recorded_observations_all, expected_observations);
 }
 
