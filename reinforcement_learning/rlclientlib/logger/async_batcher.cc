@@ -2,6 +2,7 @@
 
 namespace reinforcement_learning {
   int async_batcher::init(api_status* status) {
+    RETURN_IF_FAIL(_sender->init(status));
     RETURN_IF_FAIL(_periodic_background_proc.init(this, status));
     return error_code::success;
   }

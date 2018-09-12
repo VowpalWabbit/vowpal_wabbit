@@ -12,10 +12,16 @@
 using namespace reinforcement_learning;
 
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
-class sender {
+class sender : public i_sender {
 public:
-  std::vector<std::string> items;
-  int send(const std::string& item, api_status* s = nullptr) {
+  std::vector<std::string>& items;
+  sender(std::vector<std::string>& _items) : items(_items) {}
+
+  virtual int init(api_status* s) override {
+    return 0;
+  }
+
+  virtual int v_send(const std::string& item, api_status* s = nullptr) override{
     items.push_back(item);
     return error_code::success;
   };
@@ -30,11 +36,13 @@ void expect_no_error(const api_status& s, void* cntxt)
 //test the flush mecanism based on a timer
 BOOST_AUTO_TEST_CASE(flush_timeout)
 {
-  sender s;
+  std::vector<std::string> items;
+  auto s = new sender(items);
+
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<sender> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
+  async_batcher batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
   //add 2 items in the current batch
@@ -46,18 +54,19 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
 
   //check the batch was sent
   std::string expected = "foo\nbar";
-  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-  BOOST_CHECK_EQUAL(s.items.front(), expected);
+  BOOST_REQUIRE_EQUAL(items.size(), 1);
+  BOOST_CHECK_EQUAL(items.front(), expected);
 }
 
 //test that the batcher split batches as expected
 BOOST_AUTO_TEST_CASE(flush_batches)
 {
-  sender s;
+  std::vector<std::string> items;
+  auto s = new sender(items);
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn, send_high_water_mark);
+  async_batcher* batcher = new async_batcher(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
   //add 2 items in the current batch
@@ -73,9 +82,9 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 
   delete batcher;//flush force
 
-  BOOST_REQUIRE_EQUAL(s.items.size(), 2);
-  auto batch_0 = s.items[0];
-  auto batch_1 = s.items[1];
+  BOOST_REQUIRE_EQUAL(items.size(), 2);
+  auto batch_0 = items[0];
+  auto batch_1 = items[1];
 
   BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
   BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
@@ -84,36 +93,38 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 //test that the batcher flushes everything before deletion
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
-  sender s;
+  std::vector<std::string> items;
+  auto s = new sender(items);
   utility::watchdog watchdog;
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog);
+  async_batcher* batcher = new async_batcher(s, watchdog);
   batcher->init(nullptr);
 
   batcher->append("foo");
   batcher->append("bar");
 
   //batch was not sent yet
-  BOOST_CHECK_EQUAL(s.items.size(), 0);
+  BOOST_CHECK_EQUAL(items.size(), 0);
 
   //batch flush is triggered on delete
   delete batcher;
 
   std::string expected = "foo\nbar";
 
-  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-  BOOST_CHECK_EQUAL(s.items.front(), expected);
+  BOOST_REQUIRE_EQUAL(items.size(), 1);
+  BOOST_CHECK_EQUAL(items.front(), expected);
 }
 
 
 //test that events are dropped if the queue max capacity is reached
 BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
 {
-  sender s;
+  std::vector<std::string> items;
+  auto s = new sender(items);
   size_t timeout_ms = 100;
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
+  async_batcher* batcher = new async_batcher(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
 
   BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
   BOOST_CHECK_EQUAL(batcher->append("2"), error_code::success);
@@ -124,18 +135,19 @@ BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
 
   delete batcher;
 
-  BOOST_REQUIRE_EQUAL(s.items.size(), 1);
-  BOOST_CHECK_EQUAL(s.items.front(), expected_batch);
+  BOOST_REQUIRE_EQUAL(items.size(), 1);
+  BOOST_CHECK_EQUAL(items.front(), expected_batch);
 }
 
 //test that status_api is correctly set when the queue_overflow error happens
 BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
 {
-  sender s;
+  std::vector<std::string> items;
+  auto s = new sender(items);
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<sender> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
+  async_batcher batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
 
   //pass the status to each call, then check its content
   api_status status;

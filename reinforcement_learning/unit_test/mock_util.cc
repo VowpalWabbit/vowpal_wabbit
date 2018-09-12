@@ -13,12 +13,12 @@ namespace u = r::utility;
 
 using namespace fakeit;
 
-std::unique_ptr<fakeit::Mock<r::i_logger>> get_mock_logger() {
-  auto mock = std::unique_ptr<fakeit::Mock<r::i_logger>>(
-    new fakeit::Mock<r::i_logger>());
+std::unique_ptr<fakeit::Mock<r::i_sender>> get_mock_sender() {
+  auto mock = std::unique_ptr<fakeit::Mock<r::i_sender>>(
+    new fakeit::Mock<r::i_sender>());
 
   When(Method((*mock), init)).AlwaysReturn(r::error_code::success);
-  When(Method((*mock), append)).AlwaysReturn(r::error_code::success);
+  When(Method((*mock), send)).AlwaysReturn(r::error_code::success);
   Fake(Dtor((*mock)));
 
   return mock;
@@ -45,13 +45,13 @@ std::unique_ptr<fakeit::Mock<m::i_model>> get_mock_model() {
   return mock;
 }
 
-std::unique_ptr<r::logger_factory_t> get_mock_logger_factory(fakeit::Mock<r::i_logger>* mock_observation_logger, fakeit::Mock<r::i_logger>* mock_interaction_logger) {
-  auto factory = std::unique_ptr<r::logger_factory_t>(
-    new r::logger_factory_t());
-  factory->register_type(r::value::OBSERVATION_EH_LOGGER,
-    [mock_observation_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_observation_logger->get(); return r::error_code::success; });
-  factory->register_type(r::value::INTERACTION_EH_LOGGER,
-    [mock_interaction_logger](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) { *retval = &mock_interaction_logger->get(); return r::error_code::success; });
+std::unique_ptr<r::sender_factory_t> get_mock_sender_factory(fakeit::Mock<r::i_sender>* mock_observation_sender, fakeit::Mock<r::i_sender>* mock_interaction_sender) {
+  auto factory = std::unique_ptr<r::sender_factory_t>(
+    new r::sender_factory_t());
+  factory->register_type(r::value::OBSERVATION_EH_SENDER,
+    [mock_observation_sender](r::i_sender** retval, const u::configuration&, r::api_status*) { *retval = &mock_observation_sender->get(); return r::error_code::success; });
+  factory->register_type(r::value::INTERACTION_EH_SENDER,
+    [mock_interaction_sender](r::i_sender** retval, const u::configuration&, r::api_status*) { *retval = &mock_interaction_sender->get(); return r::error_code::success; });
   return factory;
 }
 
