@@ -14,5 +14,4 @@ extern "C" {
     API int LoadConfigFromJson(const int json_length, const char* json_value, u::configuration);
     //Add
     //Remove?
-    //LoadJson
 }

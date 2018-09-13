@@ -4,5 +4,4 @@
 
 // Global exports
 extern "C" {
-    API void SayHello(void);
 }

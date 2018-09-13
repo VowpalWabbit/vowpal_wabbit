@@ -18,13 +18,13 @@ namespace Rl.Net.Native
     {
         private readonly Delete<THandle> operatorDelete;
 
-        protected NativeObject(New<THandle> operatorNew, Delete<THandle> operatorDelete) 
-        : base(operatorNew(), ownsHandle: true)
+        protected NativeObject(New<THandle> operatorNew, Delete<THandle> operatorDelete)
+            : base(operatorNew(), ownsHandle: true)
         {
             this.operatorDelete = operatorDelete;
 
-            // TODO: PRECHECKIN: Check nulls in Debug
-            Console.Out.WriteLine($"New object at at {this.handle.ToInt64():x}");
+            // TODO: Check nulls in Debug
+            Debug.WriteLine($"New object at at {this.handle.ToInt64():x}");
         }
 
         override public bool IsInvalid
@@ -42,13 +42,17 @@ namespace Rl.Net.Native
             // safe to call here. In NetCore, Interlocked.Exchange(IntPtr...) is marked with Intrinsic().
             // so it *should* be safe.
             IntPtr localHandle = Interlocked.Exchange(ref this.handle, IntPtr.Zero);
-            if (localHandle == null)
+            if (localHandle == IntPtr.Zero)
             {
-                return true; // What does the contract say we need to do here, semantically?
+                // The SafeHandle contract is supposed to guarantee that ReleaseHandle() will only be
+                // called once, and only if the handle is valid (in our case != IntPtr.Zero). Failures
+                // here can be caused by odd timing issues under the hood, so raise a Managed Debugging
+                // Assistant event (in VS with DebuggerAttached) by returning false here.
+                return false;
             }
 
             // Here, we must obey all rules for constrained execution regions.
-            Console.Out.WriteLine($"Deleting object at at {localHandle.ToInt64():x}");
+            Debug.WriteLine($"Deleting object at at {localHandle.ToInt64():x}");
             operatorDelete(localHandle);
             
             return true;
