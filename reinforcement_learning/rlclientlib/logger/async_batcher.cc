@@ -7,19 +7,23 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int async_batcher::append(std::string&& evt, api_status* status) {
-    if (_queue.size() < _queue_max_size) {
-      _queue.push(std::move(evt));
-      return error_code::success;
-    }
-    RETURN_ERROR_LS(status, background_queue_overflow) << "Queue size: " << _queue.size() << "Dropped event: " << evt;
+  int async_batcher::append(message&& evt, api_status* status) {
+    _queue.push(std::move(evt));
+    return error_code::success;
   }
 
-  int async_batcher::append(std::string& evt, api_status* status) {
+  int async_batcher::append(message& evt, api_status* status) {
     return append(std::move(evt), status);
   }
 
+  void async_batcher::prune_if_needed() {
+    if (_queue.size() > _queue_max_size) {
+      _queue.prune(_pass_drop_prob);
+    }
+  }
+
   int async_batcher::run_iteration(api_status* status) {
+    prune_if_needed();
     flush();
     return error_code::success;
   }
@@ -28,7 +32,9 @@ namespace reinforcement_learning {
   {
     // There is at least one element.  Pop uses move assignment
     // Copy can be avoided if send size is satisfied
-    _queue.pop(&buf_to_send);
+    message buf;
+    _queue.pop(&buf);
+    buf_to_send = buf.str();
     auto filled_size = buf_to_send.size();
     --remaining;
     if (remaining <= 0 || filled_size >= _send_high_water_mark) {
@@ -41,8 +47,8 @@ namespace reinforcement_learning {
     _buffer << buf_to_send;
 
     while (remaining > 0 && filled_size < _send_high_water_mark) {
-      _queue.pop(&buf_to_send);
-      _buffer << "\n" << buf_to_send;
+      _queue.pop(&buf);
+      _buffer << "\n" << buf.str();
       --remaining;
       filled_size += buf_to_send.size();
     }
@@ -76,7 +82,8 @@ namespace reinforcement_learning {
     _send_high_water_mark(send_high_water_mark),
     _queue_max_size(queue_max_size),
     _perror_cb(perror_cb),
-    _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb)
+    _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb),
+    _pass_drop_prob(0.5)
   {}
 
   async_batcher::~async_batcher() {

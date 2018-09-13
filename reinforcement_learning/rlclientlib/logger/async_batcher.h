@@ -3,6 +3,7 @@
 #include <string>
 
 #include "moving_queue.h"
+#include "message.h"
 #include "sender.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
@@ -19,13 +20,14 @@ namespace reinforcement_learning {
   public:
     int init(api_status* status);
 
-    int append(std::string&& evt, api_status* status = nullptr);
-    int append(std::string& evt, api_status* status = nullptr);
+    int append(message&& evt, api_status* status = nullptr);
+    int append(message& evt, api_status* status = nullptr);
 
     int run_iteration(api_status* status);
 
   private:
     size_t fill_buffer(size_t remaining, std::string& buf_to_send);
+    void prune_if_needed();
     void flush(); //flush all batches
 
   public:
@@ -41,12 +43,13 @@ namespace reinforcement_learning {
   private:
     std::unique_ptr<i_sender> _sender;
 
-    moving_queue<std::string> _queue;       // A queue to accumulate batch of events.
+    moving_queue<message> _queue;       // A queue to accumulate batch of events.
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
     size_t _queue_max_size;
     error_callback_fn* _perror_cb;
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
+    float _pass_drop_prob;
   };
 }

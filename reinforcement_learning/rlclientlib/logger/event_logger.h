@@ -28,7 +28,8 @@ namespace reinforcement_learning {
     int init(api_status* status);
   
   protected:
-    int append(std::string& data, api_status* status);
+    int append(message&& data, api_status* status);
+    int append(message& item, api_status* status);
 
   protected:
     bool _initialized = false;
@@ -72,10 +73,7 @@ namespace reinforcement_learning {
       utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
       buffer->reset();
       outcome_event::serialize(*buffer.get(), event_id, outcome);
-      auto sbuf = buffer->str();
-
-      // Send the outcome event to the backend
-      return append(sbuf, status);
+      return append(std::move(message(event_id, buffer->str())), status);
     }
   };
 }

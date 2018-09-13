@@ -30,7 +30,7 @@ namespace reinforcement_learning
     return error_code::success;
   }
 
-  int event_logger::append(std::string& item, api_status* status) {
+  int event_logger::append(message&& item, api_status* status) {
     if(!_initialized) {
       api_status::try_update(status, error_code::not_initialized,
         "Logger not initialized. Call init() first.");
@@ -41,11 +41,14 @@ namespace reinforcement_learning
     return _batcher.append(item, status);
   }
 
+  int event_logger::append(message& item, api_status* status) {
+    return append(std::move(item), status);
+  }
+
   int interaction_logger::log(const char* event_id, const char* context, const ranking_response& response, api_status* status) {
     u::pooled_object_guard<u::data_buffer, u::buffer_factory> guard(_buffer_pool, _buffer_pool.get_or_create());
     guard->reset();
     ranking_event::serialize(*guard.get(), event_id, context, response);
-    auto sbuf = guard->str();
-    return append(sbuf, status);
+    return append(std::move(message(event_id, guard->str())), status);
   }
 }
