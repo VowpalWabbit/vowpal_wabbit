@@ -71,7 +71,7 @@ namespace reinforcement_learning {
 
   ranking_event::ranking_event(u::data_buffer& oss, const char* event_id, const char* context,
     const ranking_response& response, float pass_prob)
-    : event(event_id)
+    : event(event_id, pass_prob)
   {
     serialize(oss, event_id, context, response, _pass_prob);
     _body = oss.str();
@@ -124,7 +124,7 @@ namespace reinforcement_learning {
   { }
 
   outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob)
-    : event(event_id)
+    : event(event_id, pass_prob)
   {
     serialize(oss, event_id, outcome);
     _body = oss.str();

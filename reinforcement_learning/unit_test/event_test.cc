@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
   utility::data_buffer oss;
   ranking_event::serialize(oss, event_id, context, resp);
   const std::string serialized = oss.str();
-  const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"}})";
+  const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"},"pdrop":0.0000})";
 
   BOOST_CHECK_EQUAL(serialized.c_str(), expected);
 }
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
   utility::data_buffer oss;
   ranking_event::serialize(oss, event_id, context, ranking);
   const auto serialized = oss.str();
-  const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
+  const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"},"pdrop":0.0000})";
 
   BOOST_CHECK_EQUAL(serialized.c_str(), expected);
 }
