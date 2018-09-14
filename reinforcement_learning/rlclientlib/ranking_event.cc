@@ -35,20 +35,20 @@ namespace reinforcement_learning {
   event::event()
   {}
 
-  event::event(const char* event_id, float survival_prob)
+  event::event(const char* event_id, float pass_prob)
     : _event_id(event_id)
-    , _survival_prob(survival_prob)
+    , _pass_prob(pass_prob)
   {}
 
   event::event(event&& other)
     : _event_id(std::move(other._event_id))
-    , _survival_prob(other._survival_prob)
+    , _pass_prob(other._pass_prob)
   {}
 
   event& event::operator=(event&& other) {
     if (&other != this) {
       _event_id = std::move(other._event_id);
-      _survival_prob = other._survival_prob;
+      _pass_prob = other._pass_prob;
     }
     return *this;
   }
@@ -56,7 +56,7 @@ namespace reinforcement_learning {
   event::~event() {}
 
   bool event::try_drop(float pass_prob, int drop_pass) {
-    _survival_prob *= pass_prob;
+    _pass_prob *= pass_prob;
     return prg(drop_pass) > pass_prob;
   }
 
@@ -73,7 +73,7 @@ namespace reinforcement_learning {
     const ranking_response& response, float pass_prob)
     : event(event_id)
   {
-    serialize(oss, event_id, context, response, _survival_prob);
+    serialize(oss, event_id, context, response, _pass_prob);
     _body = oss.str();
   }
 
@@ -91,7 +91,7 @@ namespace reinforcement_learning {
   }
 
   std::string ranking_event::str() {
-    return prob_helper::patch(_body, _survival_prob);
+    return prob_helper::patch(_body, 1 - _pass_prob);
   }
 
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,

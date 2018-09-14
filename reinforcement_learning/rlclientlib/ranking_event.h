@@ -7,7 +7,7 @@ namespace reinforcement_learning {
   class event {
   public:
     event();
-    event(const char* event_id, float survival_prob = 1);
+    event(const char* event_id, float pass_prob = 1);
     event(event&& other);
 
     event& operator=(event&& other);
@@ -22,7 +22,7 @@ namespace reinforcement_learning {
     float prg(int drop_pass) const;
   protected:
     std::string _event_id;
-    float _survival_prob;
+    float _pass_prob;
   };
 
   class ranking_response;
