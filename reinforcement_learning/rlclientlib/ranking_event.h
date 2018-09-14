@@ -4,24 +4,66 @@
 namespace reinforcement_learning {
   namespace utility { class data_buffer; }
 
+  class event {
+  public:
+    event();
+    event(const char* event_id, float pdrop = 1);
+    event(event&& other);
+
+    event& operator=(event&& other);
+
+    virtual ~event();
+
+    virtual bool try_drop(float drop_prob, int drop_pass);
+
+    virtual std::string str() = 0;
+  
+  protected:
+    std::string _event_id;
+    float _pdrop;
+  };
+
   class ranking_response;
 
   //serializable ranking event
-  class ranking_event {
+  class ranking_event : public event {
+  public:
+    ranking_event();
+
+    ranking_event(utility::data_buffer& oss, const char* event_id, const char* context,
+      const ranking_response& resp, float pdrop = 1);
+
+    ranking_event(ranking_event&& other);
+
+    ranking_event& operator=(ranking_event&& other);
+
+    virtual std::string str() override;
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
       const ranking_response& resp, float pdrop = 1);
+
+  private:
+    std::string _body;
   };
 
   //serializable outcome event
-  class outcome_event {
+  class outcome_event : public event {
+  public:
+    outcome_event();
+
+    outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pdrop = 1);
+    outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pdrop = 1 );
+
+    outcome_event(outcome_event&& other);
+    outcome_event& operator=(outcome_event&& other);
+
+    virtual std::string str() override;
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float pdrop = 1);
     static void serialize(utility::data_buffer& oss, const char* event_id, float outcome, float pdrop = 1);
-  };
 
-  class pdrop_patcher {
-  public:
-    static std::string patch(std::string& msg, float pdrop);
+  private:
+    std::string _body;
+    float _pdrop;
   };
 }

@@ -25,8 +25,6 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
-    <ClCompile Include="logger\async_batcher.cc" />
-    <ClCompile Include="message.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -61,7 +59,6 @@
     <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
-    <ClInclude Include="message.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

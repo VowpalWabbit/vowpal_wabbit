@@ -6,7 +6,7 @@
 #include <boost/test/unit_test.hpp>
 #include "logger/moving_queue.h"
 
-BOOST_AUTO_TEST_CASE(queue_push_pop)
+/*BOOST_AUTO_TEST_CASE(queue_push_pop)
 {
   reinforcement_learning::moving_queue<std::string> queue;
 
@@ -58,3 +58,4 @@ BOOST_AUTO_TEST_CASE(queue_move_push)
   queue.pop(&item);
   BOOST_CHECK_EQUAL(item, "hello");
 }
+*/

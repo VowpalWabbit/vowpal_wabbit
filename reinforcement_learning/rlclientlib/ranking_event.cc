@@ -22,10 +22,65 @@ namespace reinforcement_learning {
     static size_t length() {
       return precision + 2;
     }
+    
+    static string patch(string& message, float pdrop) {
+      return message.replace(message.size() - prob_helper::length() - 1, prob_helper::length(), prob_helper::format(pdrop));
+    }
   };
 
-  string pdrop_patcher::patch(string& message, float pdrop) {
-    return message.replace(message.size() - prob_helper::length() - 1, prob_helper::length(), prob_helper::format(pdrop));
+  event::event()
+  {}
+
+  event::event(const char* event_id, float pdrop) 
+    : _event_id(event_id)
+    , _pdrop(pdrop)
+  {}
+
+  event::event(event&& other) 
+    : _event_id(other._event_id)
+    , _pdrop(other._pdrop)
+  {}
+
+  event& event::operator=(event&& other) {
+    if (&other != this) {
+      _event_id = other._event_id;
+      _pdrop = other._pdrop;
+    }
+    return *this;
+  }
+
+  event::~event() {}
+
+  bool event::try_drop(float drop_prob, int drop_pass) {
+    return false;
+  }
+
+  ranking_event::ranking_event()
+  { }
+
+  ranking_event::ranking_event(u::data_buffer& oss, const char* event_id, const char* context,
+    const ranking_response& response, float pdrop)
+    : event(event_id)
+  {
+    serialize(oss, event_id, context, response, _pdrop);
+    _body = oss.str();
+  }
+
+  ranking_event::ranking_event(ranking_event&& other)
+    : event(std::move(other))
+    , _body(other._body)
+  {}
+
+  ranking_event& ranking_event::operator=(ranking_event&& other) {
+    if (&other != this) {
+      event::operator=(std::move(other));
+      _body = other._body;
+    }
+    return *this;
+  }
+
+  std::string ranking_event::str() {
+    return prob_helper::patch(_body, _pdrop);
   }
 
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
@@ -53,6 +108,40 @@ namespace reinforcement_learning {
     //add model id
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("},"pdrop":)" << prob_helper::format(pdrop) << R"(})";
 	}
+
+  outcome_event::outcome_event()
+  { }
+
+  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pdrop) 
+    : event(event_id)
+  {
+    serialize(oss, event_id, outcome);
+    _body = oss.str();
+  }
+
+  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pdrop)
+    : event(event_id)
+  {
+    serialize(oss, event_id, outcome);
+    _body = oss.str();
+  }
+
+  outcome_event::outcome_event(outcome_event&& other) 
+    : event(std::move(other))
+    , _body(other._body) 
+  { }
+
+  outcome_event& outcome_event::operator=(outcome_event&& other) {
+    if (&other != this) {
+      event::operator=(std::move(other));
+      _body = other._body;
+    }
+    return *this;
+  }
+
+  std::string outcome_event::str() {
+    return _body;
+  }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pdrop) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(,"pdrop":)" << prob_helper::format(pdrop) << R"(})";

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "ranking_event.h"
+
 #include <list>
 #include <queue>
 #include <mutex>
-
+#include <type_traits>
 
 namespace reinforcement_learning {
 
@@ -17,6 +19,9 @@ namespace reinforcement_learning {
     int _drop_pass{ 0 };
 
   public:
+    moving_queue() {
+      static_assert(std::is_base_of<event, T>::value, "T must be a descendant of event");
+    }
 
     void pop(T* item)
     {
