@@ -47,7 +47,7 @@
     <ClInclude Include="model_mgmt\data_callback_fn.h" />
     <ClInclude Include="model_mgmt\restapi_data_transport.h" />
     <ClInclude Include="logger\async_batcher.h" />
-    <ClInclude Include="logger\moving_queue.h" />
+    <ClInclude Include="logger\event_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="vw_model\vw_model.h" />
     <ClInclude Include="vw_model\safe_vw.h" />
