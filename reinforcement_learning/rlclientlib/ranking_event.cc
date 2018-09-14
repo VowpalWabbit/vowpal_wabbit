@@ -128,7 +128,7 @@ namespace reinforcement_learning {
 
   outcome_event::outcome_event(outcome_event&& other) 
     : event(std::move(other))
-    , _body(std::move(other._body)) 
+    , _body(std::move(other._body))
   { }
 
   outcome_event& outcome_event::operator=(outcome_event&& other) {
@@ -144,10 +144,10 @@ namespace reinforcement_learning {
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pdrop) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(,"pdrop":)" << prob_helper::format(pdrop) << R"(})";
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome, float pdrop) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(,"pdrop":)" << prob_helper::format(pdrop) << R"(})";
+    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 }
