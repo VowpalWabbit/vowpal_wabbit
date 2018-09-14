@@ -44,7 +44,7 @@ namespace reinforcement_learning {
   private:
     std::unique_ptr<i_sender> _sender;
 
-    moving_queue<TEvent> _queue;       // A queue to accumulate batch of events.
+    event_queue<TEvent> _queue;       // A queue to accumulate batch of events.
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
     size_t _queue_max_size;

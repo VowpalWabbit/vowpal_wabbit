@@ -11,7 +11,7 @@ namespace reinforcement_learning {
 
   //a moving concurrent queue with locks and mutex
   template <class T>
-  class moving_queue {
+  class event_queue {
     using queue_t = std::list<T>;
 
     queue_t _queue;
@@ -19,7 +19,7 @@ namespace reinforcement_learning {
     int _drop_pass{ 0 };
 
   public:
-    moving_queue() {
+    event_queue() {
       static_assert(std::is_base_of<event, T>::value, "T must be a descendant of event");
     }
 
