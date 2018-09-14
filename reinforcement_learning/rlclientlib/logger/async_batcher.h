@@ -107,7 +107,8 @@ namespace reinforcement_learning {
 
     while (remaining > 0 && filled_size < _send_high_water_mark) {
       _queue.pop(&buf);
-      _buffer << "\n" << buf.str();
+      buf_to_send = buf.str();
+      _buffer << "\n" << buf_to_send;
       --remaining;
       filled_size += buf_to_send.size();
     }

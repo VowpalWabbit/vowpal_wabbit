@@ -27,6 +27,27 @@ public:
   };
 };
 
+class test_event : public event {
+public:
+  test_event() {}
+  test_event(const std::string& id) : event(id.c_str()) {}
+
+  test_event(test_event&& other) : event(std::move(other)) {}
+  test_event& operator=(test_event&& other)
+  {
+    if (&other != this) event::operator=(std::move(other));
+    return *this;
+  }
+
+  bool try_drop(float drop_prob, int _drop_pass) override {
+    return false;
+  }
+
+  std::string str() override {
+    return _event_id;
+  }
+};
+
 void expect_no_error(const api_status& s, void* cntxt)
 {
   BOOST_ASSERT(s.get_error_code() == error_code::success);
@@ -34,7 +55,7 @@ void expect_no_error(const api_status& s, void* cntxt)
 }
 
 //test the flush mecanism based on a timer
-/*BOOST_AUTO_TEST_CASE(flush_timeout)
+BOOST_AUTO_TEST_CASE(flush_timeout)
 {
   std::vector<std::string> items;
   auto s = new sender(items);
@@ -42,12 +63,12 @@ void expect_no_error(const api_status& s, void* cntxt)
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
+  async_batcher<test_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
   //add 2 items in the current batch
-  batcher.append("foo");
-  batcher.append("bar");
+  batcher.append(test_event("foo"));
+  batcher.append(test_event("bar"));
 
   //wait until the timeout triggers
   std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
@@ -66,16 +87,16 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher* batcher = new async_batcher(s, watchdog, &error_fn, send_high_water_mark);
+  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
   //add 2 items in the current batch
-  batcher->append("foo");    //3 bytes
-  batcher->append("bar-yyy");//7 bytes
+  batcher->append(test_event("foo"));    //3 bytes
+  batcher->append(test_event("bar-yyy"));//7 bytes
 
   //'send_high_water_mark' will be triggered by previous 2 items.
   //next item will be added in a new batch
-  batcher->append("hello");
+  batcher->append(test_event("hello"));
 
   std::string expected_batch_0 = "foo\nbar-yyy";
   std::string expected_batch_1 = "hello";
@@ -88,19 +109,19 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 
   BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
   BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
-}*/
+}
 
 //test that the batcher flushes everything before deletion
-/*BOOST_AUTO_TEST_CASE(flush_after_deletion)
+BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
   std::vector<std::string> items;
   auto s = new sender(items);
   utility::watchdog watchdog;
-  async_batcher* batcher = new async_batcher(s, watchdog);
+  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog);
   batcher->init(nullptr);
 
-  batcher->append("foo");
-  batcher->append("bar");
+  batcher->append(test_event("foo"));
+  batcher->append(test_event("bar"));
 
   //batch was not sent yet
   BOOST_CHECK_EQUAL(items.size(), 0);
@@ -112,8 +133,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 
   BOOST_REQUIRE_EQUAL(items.size(), 1);
   BOOST_CHECK_EQUAL(items.front(), expected);
-}*/
-
+}
 
 //test that events are dropped if the queue max capacity is reached
 /*BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
@@ -124,11 +144,11 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher* batcher = new async_batcher(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
+  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
 
-  BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
-  BOOST_CHECK_EQUAL(batcher->append("2"), error_code::success);
-  BOOST_CHECK_EQUAL(batcher->append("3"), error_code::background_queue_overflow);
+  BOOST_CHECK_EQUAL(batcher->append(test_event("1")), error_code::success);
+  BOOST_CHECK_EQUAL(batcher->append(test_event("2")), error_code::success);
+  BOOST_CHECK_EQUAL(batcher->append(test_event("3")), error_code::background_queue_overflow);
 
   //'3' was dropped because of the overflow
   std::string expected_batch = "1\n2";
@@ -137,27 +157,27 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 
   BOOST_REQUIRE_EQUAL(items.size(), 1);
   BOOST_CHECK_EQUAL(items.front(), expected_batch);
-}
+}*/
 
 //test that status_api is correctly set when the queue_overflow error happens
-BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
+/*BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
 {
   std::vector<std::string> items;
   auto s = new sender(items);
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
+  async_batcher<test_event> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
 
   //pass the status to each call, then check its content
   api_status status;
 
   //adding 2 elements of ok
-  BOOST_CHECK_EQUAL(batcher.append("1", &status), error_code::success);
-  BOOST_CHECK_EQUAL(batcher.append("2", &status), error_code::success);
+  BOOST_CHECK_EQUAL(batcher.append(test_event("1"), &status), error_code::success);
+  BOOST_CHECK_EQUAL(batcher.append(test_event("2"), &status), error_code::success);
 
   //the batcher will try to exceed its queue capacity
-  BOOST_CHECK_EQUAL(batcher.append("3", &status), error_code::background_queue_overflow);
+  BOOST_CHECK_EQUAL(batcher.append(test_event("3"), &status), error_code::background_queue_overflow);
 
   //verify that the error status is correct
   BOOST_CHECK_EQUAL(status.get_error_code(), error_code::background_queue_overflow);
