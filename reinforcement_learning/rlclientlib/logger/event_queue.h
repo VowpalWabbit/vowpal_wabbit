@@ -40,7 +40,7 @@ namespace reinforcement_learning {
     void push(T&& item)
     {
       std::unique_lock<std::mutex> mlock(_mutex);
-      _queue.push_back(std::move(item));
+      _queue.push_back(std::forward<T>(item));
     }
 
     void prune(float drop_prob)

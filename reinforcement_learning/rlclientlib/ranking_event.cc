@@ -37,13 +37,13 @@ namespace reinforcement_learning {
   {}
 
   event::event(event&& other) 
-    : _event_id(other._event_id)
+    : _event_id(std::move(other._event_id))
     , _pdrop(other._pdrop)
   {}
 
   event& event::operator=(event&& other) {
     if (&other != this) {
-      _event_id = other._event_id;
+      _event_id = std::move(other._event_id);
       _pdrop = other._pdrop;
     }
     return *this;
@@ -68,13 +68,13 @@ namespace reinforcement_learning {
 
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
-    , _body(other._body)
+    , _body(std::move(other._body))
   {}
 
   ranking_event& ranking_event::operator=(ranking_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
-      _body = other._body;
+      _body = std::move(other._body);
     }
     return *this;
   }
@@ -128,13 +128,13 @@ namespace reinforcement_learning {
 
   outcome_event::outcome_event(outcome_event&& other) 
     : event(std::move(other))
-    , _body(other._body) 
+    , _body(std::move(other._body)) 
   { }
 
   outcome_event& outcome_event::operator=(outcome_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
-      _body = other._body;
+      _body = std::move(other._body);
     }
     return *this;
   }
