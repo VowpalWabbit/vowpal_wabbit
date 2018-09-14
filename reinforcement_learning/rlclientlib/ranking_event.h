@@ -64,6 +64,5 @@ namespace reinforcement_learning {
 
   private:
     std::string _body;
-    float _pdrop;
   };
 }
