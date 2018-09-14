@@ -43,11 +43,11 @@ namespace reinforcement_learning {
       _queue.push_back(std::forward<T>(item));
     }
 
-    void prune(float drop_prob)
+    void prune(float pass_prob)
     {
       std::unique_lock<std::mutex> mlock(_mutex);
       for (typename queue_t::iterator it = _queue.begin(); it != _queue.end();) {
-        it = it->try_drop(drop_prob, _drop_pass) ? _queue.erase(it) : (++it);
+        it = it->try_drop(pass_prob, _drop_pass) ? _queue.erase(it) : (++it);
       }
       ++_drop_pass;
     }

@@ -51,7 +51,7 @@ namespace reinforcement_learning {
     error_callback_fn* _perror_cb;
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
-    float _pass_drop_prob;
+    float _pass_prob;
   };
 
   template<typename TEvent>
@@ -75,7 +75,7 @@ namespace reinforcement_learning {
   template<typename TEvent>
   void async_batcher<TEvent>::prune_if_needed() {
     if (_queue.size() > _queue_max_size) {
-      _queue.prune(_pass_drop_prob);
+      _queue.prune(_pass_prob);
     }
   }
 
@@ -145,7 +145,7 @@ namespace reinforcement_learning {
     _queue_max_size(queue_max_size),
     _perror_cb(perror_cb),
     _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb),
-    _pass_drop_prob(0.5)
+    _pass_prob(0.5)
   {}
 
   template<typename TEvent>

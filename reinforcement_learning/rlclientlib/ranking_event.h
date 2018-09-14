@@ -14,10 +14,12 @@ namespace reinforcement_learning {
 
     virtual ~event();
 
-    virtual bool try_drop(float survival_prob, int drop_pass);
+    virtual bool try_drop(float pass_prob, int drop_pass);
 
     virtual std::string str() = 0;
   
+  protected:
+    float prg(int drop_pass) const;
   protected:
     std::string _event_id;
     float _survival_prob;
@@ -31,7 +33,7 @@ namespace reinforcement_learning {
     ranking_event();
 
     ranking_event(utility::data_buffer& oss, const char* event_id, const char* context,
-      const ranking_response& resp, float survival_prob = 1);
+      const ranking_response& resp, float pass_prob = 1);
 
     ranking_event(ranking_event&& other);
 
@@ -40,7 +42,7 @@ namespace reinforcement_learning {
     virtual std::string str() override;
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
-      const ranking_response& resp, float survival_prob = 1);
+      const ranking_response& resp, float pass_prob = 1);
 
   private:
     std::string _body;
@@ -51,16 +53,16 @@ namespace reinforcement_learning {
   public:
     outcome_event();
 
-    outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float survival_prob = 1);
-    outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float survival_prob = 1 );
+    outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
+    outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1 );
 
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
 
     virtual std::string str() override;
   public:
-    static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float survival_prob = 1);
-    static void serialize(utility::data_buffer& oss, const char* event_id, float outcome, float survival_prob = 1);
+    static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
+    static void serialize(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
 
   private:
     std::string _body;
