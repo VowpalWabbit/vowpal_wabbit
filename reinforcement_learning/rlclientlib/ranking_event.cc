@@ -31,20 +31,20 @@ namespace reinforcement_learning {
   event::event()
   {}
 
-  event::event(const char* event_id, float pdrop) 
+  event::event(const char* event_id, float survival_prob)
     : _event_id(event_id)
-    , _pdrop(pdrop)
+    , _survival_prob(survival_prob)
   {}
 
-  event::event(event&& other) 
+  event::event(event&& other)
     : _event_id(std::move(other._event_id))
-    , _pdrop(other._pdrop)
+    , _survival_prob(other._survival_prob)
   {}
 
   event& event::operator=(event&& other) {
     if (&other != this) {
       _event_id = std::move(other._event_id);
-      _pdrop = other._pdrop;
+      _survival_prob = other._survival_prob;
     }
     return *this;
   }
@@ -62,7 +62,7 @@ namespace reinforcement_learning {
     const ranking_response& response, float pdrop)
     : event(event_id)
   {
-    serialize(oss, event_id, context, response, _pdrop);
+    serialize(oss, event_id, context, response, _survival_prob);
     _body = oss.str();
   }
 
@@ -80,11 +80,11 @@ namespace reinforcement_learning {
   }
 
   std::string ranking_event::str() {
-    return prob_helper::patch(_body, _pdrop);
+    return prob_helper::patch(_body, _survival_prob);
   }
 
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
-    const ranking_response& resp, float pdrop) {
+    const ranking_response& resp, float survival_prob) {
 
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << event_id;
@@ -106,27 +106,27 @@ namespace reinforcement_learning {
     }
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("},"pdrop":)" << prob_helper::format(pdrop) << R"(})";
+    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("},"pdrop":)" << prob_helper::format(1 - survival_prob) << R"(})";
 	}
 
   outcome_event::outcome_event()
   { }
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pdrop) 
+  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float survival_prob) 
     : event(event_id)
   {
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pdrop)
+  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float survival_prob)
     : event(event_id)
   {
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
 
-  outcome_event::outcome_event(outcome_event&& other) 
+  outcome_event::outcome_event(outcome_event&& other)
     : event(std::move(other))
     , _body(std::move(other._body))
   { }
@@ -143,11 +143,11 @@ namespace reinforcement_learning {
     return _body;
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pdrop) {
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float survival_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome, float pdrop) {
+  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome, float survival_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
   }
 }

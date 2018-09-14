@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
 
   ranking_event evt(buffer, "interaction_id", "interaction_context", resp);
 
-  ranking_event expected(expected_buffer, "interaction_id", "interaction_context", resp, 0.75);
+  ranking_event expected(expected_buffer, "interaction_id", "interaction_context", resp, 0.25);
 
   evt.try_drop(0.5, 1);
   evt.try_drop(0.5, 1);
