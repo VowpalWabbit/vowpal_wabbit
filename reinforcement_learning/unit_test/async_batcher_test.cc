@@ -27,13 +27,13 @@ public:
   };
 };
 
-class test_event : public event {
+class test_undroppable_event : public event {
 public:
-  test_event() {}
-  test_event(const std::string& id) : event(id.c_str()) {}
+  test_undroppable_event() {}
+  test_undroppable_event(const std::string& id) : event(id.c_str()) {}
 
-  test_event(test_event&& other) : event(std::move(other)) {}
-  test_event& operator=(test_event&& other)
+  test_undroppable_event(test_undroppable_event&& other) : event(std::move(other)) {}
+  test_undroppable_event& operator=(test_undroppable_event&& other)
   {
     if (&other != this) event::operator=(std::move(other));
     return *this;
@@ -63,12 +63,12 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<test_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
+  async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
   //add 2 items in the current batch
-  batcher.append(test_event("foo"));
-  batcher.append(test_event("bar"));
+  batcher.append(test_undroppable_event("foo"));
+  batcher.append(test_undroppable_event("bar"));
 
   //wait until the timeout triggers
   std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
@@ -87,16 +87,16 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog;
-  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog, &error_fn, send_high_water_mark);
+  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
   //add 2 items in the current batch
-  batcher->append(test_event("foo"));    //3 bytes
-  batcher->append(test_event("bar-yyy"));//7 bytes
+  batcher->append(test_undroppable_event("foo"));    //3 bytes
+  batcher->append(test_undroppable_event("bar-yyy"));//7 bytes
 
   //'send_high_water_mark' will be triggered by previous 2 items.
   //next item will be added in a new batch
-  batcher->append(test_event("hello"));
+  batcher->append(test_undroppable_event("hello"));
 
   std::string expected_batch_0 = "foo\nbar-yyy";
   std::string expected_batch_1 = "hello";
@@ -117,11 +117,11 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   std::vector<std::string> items;
   auto s = new sender(items);
   utility::watchdog watchdog;
-  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog);
+  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
 
-  batcher->append(test_event("foo"));
-  batcher->append(test_event("bar"));
+  batcher->append(test_undroppable_event("foo"));
+  batcher->append(test_undroppable_event("bar"));
 
   //batch was not sent yet
   BOOST_CHECK_EQUAL(items.size(), 0);
