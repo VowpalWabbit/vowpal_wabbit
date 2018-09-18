@@ -27,7 +27,7 @@ namespace reinforcement_learning {
     int run_iteration(api_status* status);
 
   private:
-    size_t fill_buffer(size_t remaining, std::string& buf_to_send);
+    size_t fill_buffer(size_t remaining);
     void prune_if_needed();
     void flush(); //flush all batches
 
@@ -87,32 +87,17 @@ namespace reinforcement_learning {
   }
 
   template<typename TEvent>
-  size_t async_batcher<TEvent>::fill_buffer(size_t remaining, std::string& buf_to_send)
+  size_t async_batcher<TEvent>::fill_buffer(size_t remaining)
   {
-    // There is at least one element.  Pop uses move assignment
-    // Copy can be avoided if send size is satisfied
-    TEvent buf;
-    _queue.pop(&buf);
-    buf_to_send = buf.str();
-    auto filled_size = buf_to_send.size();
-    --remaining;
-    if (remaining <= 0 || filled_size >= _send_high_water_mark) {
-      return remaining;
-    }
-
-    // Send size not satisfied.  Shift to larger buffer to satisfy send.
-    // Copy is needed but reuse existing tmp buffer to avoid allocation
+    TEvent evt;
     _buffer.reset();
-    _buffer << buf_to_send;
 
-    while (remaining > 0 && filled_size < _send_high_water_mark) {
-      _queue.pop(&buf);
-      buf_to_send = buf.str();
-      _buffer << "\n" << buf_to_send;
+    while (remaining > 0 && _buffer.size() < _send_high_water_mark) {
+      _queue.pop(&evt);
+      evt.serialize(_buffer);
+      _buffer << "\n";
       --remaining;
-      filled_size += buf_to_send.size();
     }
-    buf_to_send = std::move(_buffer.str());
     return remaining;
   }
 
@@ -126,12 +111,11 @@ namespace reinforcement_learning {
     }
 
     auto remaining = queue_size;
-    std::string buf_to_send;
     // Handle batching
     while (remaining > 0) {
-      remaining = fill_buffer(remaining, buf_to_send);
+      remaining = fill_buffer(remaining);
       api_status status;
-      if (_sender->send(buf_to_send, &status) != error_code::success) {
+      if (_sender->send(_buffer.str(), &status) != error_code::success) {
         ERROR_CALLBACK(_perror_cb, status);
       }
     }

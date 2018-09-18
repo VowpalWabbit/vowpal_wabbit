@@ -13,25 +13,6 @@ using namespace std;
 namespace reinforcement_learning {
   namespace u = utility;
 
-  class prob_helper {
-  public:
-    static const int precision = 4;
-
-    static std::string format(float value) {
-      stringstream ss;
-      ss << std::fixed << std::setprecision(precision) << value;
-      return ss.str();
-    }
-
-    static size_t length() {
-      return precision + 2;
-    }
-    
-    static string patch(string& message, float pdrop) {
-      return message.replace(message.size() - prob_helper::length() - 1, prob_helper::length(), prob_helper::format(pdrop));
-    }
-  };
-
   event::event()
   {}
 
@@ -90,8 +71,12 @@ namespace reinforcement_learning {
     return *this;
   }
 
-  std::string ranking_event::str() {
-    return prob_helper::patch(_body, 1 - _pass_prob);
+  void ranking_event::serialize(u::data_buffer& oss) {
+    oss << _body;
+    if (_pass_prob < 1) {
+      oss << R"(,"pdrop":)" << _pass_prob;
+    }
+    oss << R"(})";
   }
 
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
@@ -117,7 +102,7 @@ namespace reinforcement_learning {
     }
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("},"pdrop":)" << prob_helper::format(1 - pass_prob) << R"(})";
+    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
 	}
 
   outcome_event::outcome_event()
@@ -150,8 +135,8 @@ namespace reinforcement_learning {
     return *this;
   }
 
-  std::string outcome_event::str() {
-    return _body;
+  void outcome_event::serialize(u::data_buffer& oss) {
+    oss << _body;
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {

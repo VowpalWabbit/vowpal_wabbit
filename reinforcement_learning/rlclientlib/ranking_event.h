@@ -16,7 +16,7 @@ namespace reinforcement_learning {
 
     virtual bool try_drop(float pass_prob, int drop_pass);
 
-    virtual std::string str() = 0;
+    virtual void serialize(utility::data_buffer& buffer) = 0;
   
   protected:
     float prg(int drop_pass) const;
@@ -39,7 +39,7 @@ namespace reinforcement_learning {
 
     ranking_event& operator=(ranking_event&& other);
 
-    virtual std::string str() override;
+    virtual void serialize(utility::data_buffer& buffer) override;
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
       const ranking_response& resp, float pass_prob = 1);
@@ -59,7 +59,7 @@ namespace reinforcement_learning {
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
 
-    virtual std::string str() override;
+    virtual void serialize(utility::data_buffer& buffer) override;
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
     static void serialize(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
