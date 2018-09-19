@@ -59,7 +59,7 @@ int load_file(const std::string& file_name, std::string& config_str) {
 int load_config_from_json(const std::string& file_name, u::configuration& cfg) {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));
-  RETURN_IF_FAIL(u::config::create_from_json(config_str, cfg, nullptr));
+  RETURN_IF_FAIL(u::config::create_from_json(config_str, cfg));
   return err::success;
 }
 

@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   http_server.on_initialize(U("http://localhost:8080"));
   //create a simple ds configuration
   u::configuration cc;
-  auto scode = cfg::create_from_json(JSON_CFG,cc,nullptr);
+  auto scode = cfg::create_from_json(JSON_CFG,cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
   cc.set("ModelExportFrequency", "00:01:00");
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   //create a simple ds configuration
   u::configuration cc;
-  auto scode = cfg::create_from_json(JSON_CFG,cc,nullptr);
+  auto scode = cfg::create_from_json(JSON_CFG,cc);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
 

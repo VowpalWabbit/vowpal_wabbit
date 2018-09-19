@@ -75,7 +75,7 @@ namespace reinforcement_learning {
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {
-      RETURN_ERROR_LS(status, unhandled_background_error_occurred);
+      RETURN_ERROR_LS(_trace_logger.get(), status, unhandled_background_error_occurred);
     }
 
     return error_code::success;

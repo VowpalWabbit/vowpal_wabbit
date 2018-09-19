@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(test_trace_logging) {
 
   //create a simple ds configuration
   u::configuration config;
-  cfg::create_from_json(JSON_CFG, config, nullptr);
+  cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
   config.set(r::name::TRACE_LOG_IMPLEMENTATION, "VectorTracer");
   r::trace_logger_factory.register_type("VectorTracer", vector_trace_create);

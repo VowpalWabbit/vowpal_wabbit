@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
 
   //create a simple ds configuration
   u::configuration config;
-  cfg::create_from_json(JSON_CFG, config, nullptr);
+  cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
   r::api_status status;
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(live_model_outcome) {
 
   //create a simple ds configuration
   u::configuration config;
-  cfg::create_from_json(JSON_CFG, config, nullptr);
+  cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
   //create a ds live_model, and initialize with configuration
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 
   //create a simple ds configuration
   u::configuration config;
-  auto const status = cfg::create_from_json(JSON_CFG, config, nullptr);
+  auto const status = cfg::create_from_json(JSON_CFG, config);
   BOOST_CHECK_EQUAL(status, r::error_code::success);
   config.set(r::name::EH_TEST, "true");
 
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
   auto model_factory = get_mock_model_factory(mock_model.get());
 
   u::configuration config;
-  cfg::create_from_json(JSON_CFG, config, nullptr);
+  cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
   r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), logger_factory.get());
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   auto model_factory = get_mock_model_factory(mock_model.get());
 
   u::configuration config;
-  cfg::create_from_json(JSON_CFG, config, nullptr);
+  cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
   r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), logger_factory.get());
