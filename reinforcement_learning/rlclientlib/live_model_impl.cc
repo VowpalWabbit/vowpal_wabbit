@@ -136,8 +136,7 @@ namespace reinforcement_learning {
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
     m::i_model* pmodel;
-    auto retcode = _m_factory->create(&pmodel, std::string(model_impl), _configuration, _trace_logger.get(), status);
-    RETURN_IF_FAIL(retcode);
+    RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration, _trace_logger.get(), status));
     _model.reset(pmodel);
     return error_code::success;
   }
