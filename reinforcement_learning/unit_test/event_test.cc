@@ -84,5 +84,10 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
   evt.try_drop(0.5, 1);
   evt.try_drop(0.5, 1);
 
-  BOOST_CHECK_EQUAL(evt.str(), expected.str());
+  buffer.reset();
+  expected_buffer.reset();
+  evt.serialize(buffer);
+  expected.serialize(expected_buffer);
+
+  BOOST_CHECK_EQUAL(buffer.str(), expected_buffer.str());
 }

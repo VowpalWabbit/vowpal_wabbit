@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "logger/async_batcher.h"
+#include "utility/data_buffer.h"
 #include "err_constants.h"
 
 using namespace reinforcement_learning;
@@ -43,8 +44,14 @@ public:
     return false;
   }
 
-  std::string str() override {
-    return _event_id;
+  void serialize(utility::data_buffer& buf) override {
+    buf << _event_id;
+  }
+
+  std::string str() {
+    utility::data_buffer buf;
+    serialize(buf);
+    return buf.str();
   }
 };
 

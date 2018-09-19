@@ -3,6 +3,7 @@
 #   define BOOST_TEST_MODULE Main
 #endif
 
+#include "utility/data_buffer.h"
 #include "logger/event_queue.h"
 #include <boost/test/unit_test.hpp>
 
@@ -25,8 +26,14 @@ public:
     return _event_id.substr(0, 4) == "drop";
   }
 
-  std::string str() override {
-    return _event_id;
+  void serialize(utility::data_buffer& buffer) override {
+    buffer << _event_id;
+  }
+
+  std::string str() {
+    utility::data_buffer buf;
+    serialize(buf);
+    return buf.str();
   }
 };
 
