@@ -59,7 +59,7 @@ int load_file(const std::string& file_name, std::string& config_str) {
 int load_config_from_json(const std::string& file_name, u::configuration& cfg) {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));
-  RETURN_IF_FAIL(u::config::create_from_json(config_str, cfg));
+  RETURN_IF_FAIL(u::config::create_from_json(config_str, cfg, nullptr));
   return err::success;
 }
 
@@ -76,7 +76,7 @@ int main() {
 
   // Define a create function to be used in the factory.
   auto const create_ostream_logger_fn =
-    [&](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) {
+    [&](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::i_trace* trace, r::api_status*) {
     *retval = new ostream_logger(std::cout, cout_mutex);
     return err::success;
   };
@@ -87,7 +87,7 @@ int main() {
   stdout_logger_factory.register_type(r::value::INTERACTION_EH_LOGGER, create_ostream_logger_fn);
 
   // Default factories defined in factory_resolver.h are passed as well as the custom stdout logger.
-  r::live_model model(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
+  r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
 
   if (model.init(&status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;

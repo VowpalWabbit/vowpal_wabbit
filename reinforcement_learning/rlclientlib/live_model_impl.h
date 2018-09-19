@@ -37,6 +37,7 @@ namespace reinforcement_learning
       const utility::configuration& config,
       error_fn fn,
       void* err_context,
+      trace_logger_factory_t* trace_factory,
       data_transport_factory_t* t_factory,
       model_factory_t* m_factory,
       logger_factory_t* logger_factory);
@@ -51,6 +52,7 @@ namespace reinforcement_learning
     int init_model(api_status* status);
     int init_model_mgmt(api_status* status);
     int init_loggers(api_status* status);
+    int init_trace(api_status* status);
     static void _handle_model_update(const model_management::model_data& data, live_model_impl* ctxt);
     void handle_model_update(const model_management::model_data& data);
     int explore_only(const char* event_id, const char* context, ranking_response& response, api_status* status) const;
@@ -67,6 +69,7 @@ namespace reinforcement_learning
     model_management::data_callback_fn _data_cb;
     utility::watchdog _watchdog;
 
+    trace_logger_factory_t* _trace_factory;
     data_transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
     logger_factory_t* _logger_factory;
@@ -76,6 +79,7 @@ namespace reinforcement_learning
     std::unique_ptr<i_logger> _ranking_logger{nullptr};
     std::unique_ptr<i_logger> _outcome_logger{nullptr};
     std::unique_ptr<model_management::model_downloader> _model_download{nullptr};
+    std::unique_ptr<i_trace> _trace_logger { nullptr };
 
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
     utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;

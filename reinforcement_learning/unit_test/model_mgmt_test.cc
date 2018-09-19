@@ -43,7 +43,7 @@ m::model_data get_model_data();
 int get_export_frequency(const u::configuration& cc, int& interval_ms, r::api_status* status) {
   const auto export_freq_s = cc.get("ModelExportFrequency", nullptr);
   if ( export_freq_s == nullptr ) {
-    RETURN_ERROR_LS(status, model_export_frequency_not_provided);
+    RETURN_ERROR_LS(nullptr, status, model_export_frequency_not_provided);
   }
   // hh:mm:ss
   const std::regex re("\\s*([0-9]+):([0-9]+):([0-9]+)\\s*");
@@ -54,12 +54,12 @@ int get_export_frequency(const u::configuration& cc, int& interval_ms, r::api_st
     const auto secs = atoi(m[3].str().c_str());
     interval_ms = hrs * 60 * 60 * 1000 + mins * 60 * 1000 + secs * 1000;
     if ( interval_ms == 0 ) {
-      RETURN_ERROR_LS(status, bad_time_interval);
+      RETURN_ERROR_LS(nullptr, status, bad_time_interval);
     }
     return e::success;
   }
   else {
-    RETURN_ERROR_LS(status, bad_time_interval);
+    RETURN_ERROR_LS(nullptr, status, bad_time_interval);
   }
 }
 
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   http_server.on_initialize(U("http://localhost:8080"));
   //create a simple ds configuration
   u::configuration cc;
-  auto scode = cfg::create_from_json(JSON_CFG,cc);
+  auto scode = cfg::create_from_json(JSON_CFG,cc,nullptr);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
   cc.set("ModelExportFrequency", "00:01:00");
@@ -98,12 +98,12 @@ BOOST_AUTO_TEST_CASE(background_mock_azure_get) {
   r::error_callback_fn efn(dummy_error_fn,&err_ctxt);
   m::data_callback_fn dfn(dummy_data_fn, &data_ctxt);
 
-  u::watchdog watchdog(&efn);
+  u::watchdog watchdog(nullptr,&efn);
 
   u::periodic_background_proc<m::model_downloader> bgproc(repeatms, watchdog, "Test model downloader", &efn);
 
   const auto start = std::chrono::system_clock::now();
-  m::model_downloader md(transport.get(), &dfn);
+  m::model_downloader md(transport.get(), &dfn,nullptr);
   scode = bgproc.init(&md);
   // There needs to be a wait here to ensure stop is not called before the background proc has a chance to run its iteration.
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(mock_azure_storage_model_data)
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
   //create a simple ds configuration
   u::configuration cc;
-  auto scode = cfg::create_from_json(JSON_CFG,cc);
+  auto scode = cfg::create_from_json(JSON_CFG,cc,nullptr);
   BOOST_CHECK_EQUAL(scode, r::error_code::success);
   cc.set(r::name::EH_TEST, "true"); // local test event hub
 
@@ -193,6 +193,7 @@ class dummy_data_transport : public m::i_data_transport {
 
 int dummy_data_tranport_create( m::i_data_transport** retval,
                                     const u::configuration& config,
+                                    r::i_trace* trace,
                                     r::api_status* status) {
   *retval = new dummy_data_transport();
   return r::error_code::success;

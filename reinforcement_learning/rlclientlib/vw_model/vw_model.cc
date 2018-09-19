@@ -3,23 +3,27 @@
 #include "object_factory.h"
 #include "explore.h"
 #include "ranking_response.h"
+#include "trace_logger.h"
+#include "str_util.h"
 
 namespace e = exploration;
 namespace reinforcement_learning { namespace model_management {
   
-  vw_model::vw_model() :_vw_pool(nullptr) 
-  {}
+  vw_model::vw_model(i_trace* trace_logger) :
+    _vw_pool(nullptr) , _trace_logger(trace_logger) {
+  }
 
   int vw_model::update(const model_data& data, api_status* status) {
     try {
+      TRACE_LOG(_trace_logger, utility::concat("Recieved new model data. With size ", data.data_sz()));
       const auto new_model = std::make_shared<safe_vw>(data.data(), data.data_sz());
       _vw_pool.update_factory(new safe_vw_factory(new_model));
     }
     catch(const std::exception& e) {
-      RETURN_ERROR_LS(status, model_update_error) << e.what();
+      RETURN_ERROR_LS(_trace_logger, status, model_update_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR_LS(status, model_update_error) << "Unkown error";
+      RETURN_ERROR_LS(_trace_logger, status, model_update_error) << "Unkown error";
     }
 
     return error_code::success;
@@ -39,7 +43,7 @@ namespace reinforcement_learning { namespace model_management {
       auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(scores), std::end(scores), action);
 
       if ( S_EXPLORATION_OK != scode ) {
-        RETURN_ERROR_LS(status, exploration_error) << scode;
+        RETURN_ERROR_LS(_trace_logger, status, exploration_error) << scode;
       }
 
       response.push_back(actions[action], scores[action]);
@@ -55,10 +59,10 @@ namespace reinforcement_learning { namespace model_management {
       return error_code::success;
     }
     catch ( const std::exception& e) {
-      RETURN_ERROR_LS(status, model_rank_error) << e.what();
+      RETURN_ERROR_LS(_trace_logger, status, model_rank_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR_LS(status, model_rank_error) << "Unkown error";
+      RETURN_ERROR_LS(_trace_logger, status, model_rank_error) << "Unkown error";
     }
   }
 }}

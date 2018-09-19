@@ -25,6 +25,7 @@ namespace reinforcement_learning {  namespace name {
       const char *const  OBSERVATION_LOGGER_IMPLEMENTATION    = "observation.logger.implementation";
       const char *const  INTERACTION_LOGGER_IMPLEMENTATION    = "interaction.logger.implementation";
       const char *const  EH_TEST                 = "eventhub.mock";
+      const char *const  TRACE_LOG_IMPLEMENTATION = "trace.logger.implementation";
 }}
 
 namespace reinforcement_learning {  namespace value {
@@ -32,5 +33,7 @@ namespace reinforcement_learning {  namespace value {
       const char *const VW                 = "VW";
       const char *const OBSERVATION_EH_LOGGER = "OBSERVATION_EH_LOGGER";
       const char *const INTERACTION_EH_LOGGER = "INTERACTION_EH_LOGGER";
+      const char *const NULL_TRACE_LOGGER = "NULL_TRACE_LOGGER";
+      const char *const CONSOLE_TRACE_LOGGER = "CONSOLE_TRACE_LOGGER";
 }}
 

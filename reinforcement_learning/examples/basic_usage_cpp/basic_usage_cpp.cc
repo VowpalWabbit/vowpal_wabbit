@@ -82,7 +82,7 @@ int load_config_from_json(const std::string& file_name, u::configuration& config
   // Use library supplied convenience method to parse json and build config object
   // namespace cfg=reinforcement_learning::utility::config;
   
-  return cfg::create_from_json(config_str, config);
+  return cfg::create_from_json(config_str, config, nullptr);
   //! [Create a configuration from json string]
 }
 

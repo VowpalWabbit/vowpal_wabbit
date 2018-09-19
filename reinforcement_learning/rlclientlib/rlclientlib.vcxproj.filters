@@ -25,6 +25,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="logger\event_hub_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
+    <ClCompile Include="console_tracer.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -59,6 +60,8 @@
     <ClInclude Include="..\include\logger.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
+    <ClInclude Include="..\include\trace_logger.h" />
+    <ClInclude Include="console_tracer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   sender s;
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<sender> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   sender s;
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
   sender s;
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog);
   batcher->init(nullptr);
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
   size_t timeout_ms = 100;
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<sender>* batcher = new async_batcher<sender>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
 
   BOOST_CHECK_EQUAL(batcher->append("1"), error_code::success);
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
   sender s;
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<sender> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
 
   //pass the status to each call, then check its content

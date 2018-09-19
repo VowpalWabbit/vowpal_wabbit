@@ -62,7 +62,7 @@ namespace reinforcement_learning {
       _queue.push(std::move(evt));
       return error_code::success;
     }
-    RETURN_ERROR_LS(status, background_queue_overflow) << "Queue size: " << _queue.size() << "Dropped event: " << evt ;
+    RETURN_ERROR_LS(nullptr, status, background_queue_overflow) << "Queue size: " << _queue.size() << "Dropped event: " << evt ;
   }
 
   template <typename TSender>

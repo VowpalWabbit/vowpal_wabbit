@@ -4,12 +4,13 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include "trace_logger.h"
 
 using namespace reinforcement_learning;
 using namespace reinforcement_learning::utility;
 
-watchdog::watchdog(error_callback_fn* error_callback)
-  : _error_callback(error_callback) {}
+watchdog::watchdog(i_trace* trace_logger, error_callback_fn* error_callback)
+  : _error_callback(error_callback), _trace_logger(trace_logger) {}
 
 watchdog::~watchdog() {
   stop();
@@ -62,7 +63,7 @@ int watchdog::start(api_status* status) {
       _watchdog_thread = std::thread(&watchdog::loop, this);
     }
     catch (const std::exception& e) {
-      RETURN_ERROR_LS(status, background_thread_start) << " (watchdog)" << e.what();
+      RETURN_ERROR_LS(_trace_logger, status, background_thread_start) << " (watchdog)" << e.what();
     }
   }
 
@@ -107,6 +108,7 @@ void watchdog::loop() {
     api_status status;
     for (auto const& failed_thread_name : failed_thread_names) {
       auto message = concat(error_code::thread_unresponsive_timeout, ", ", failed_thread_name, " is unresponsive.");
+      TRACE_LOG(_trace_logger, message);
       api_status::try_update(&status, error_code::thread_unresponsive_timeout, message.c_str());
       _error_callback->report_error(status);
     }

@@ -4,6 +4,7 @@
 #include <cpprest/http_client.h>
 
 namespace reinforcement_learning {
+  class i_trace;
 
   //the eventhub_client send string data in POST request to an http endpoint
   //it handles authorization headers specific for the azure event hubs
@@ -15,7 +16,7 @@ namespace reinforcement_learning {
     int send(const std::string&, api_status* status = nullptr);
 
     eventhub_client(const std::string&, const std::string&,
-                    const std::string&, const std::string&, bool local_test = false);
+                    const std::string&, const std::string&, i_trace* trace, bool local_test = false);
 
     private:
     int authorization(api_status* status);
@@ -30,6 +31,7 @@ namespace reinforcement_learning {
     std::string _authorization;
     long long _authorization_valid_until; //in seconds
     std::mutex _mutex;
+    i_trace* _trace;
 
     // cannot be copied or assigned
     eventhub_client(const eventhub_client&) = delete;

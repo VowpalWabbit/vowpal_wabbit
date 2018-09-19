@@ -4,10 +4,12 @@
 #include <string>
 #include <cpprest/http_client.h>
 
-namespace reinforcement_learning { namespace model_management {
+namespace reinforcement_learning { 
+  class i_trace;
+  namespace model_management {
   class restapi_data_tranport : public i_data_transport {
   public:
-    restapi_data_tranport(const std::string& url);
+    restapi_data_tranport(const std::string& url, i_trace* trace);
     int get_data(model_data& data, api_status* status) override;
     int check(api_status* status);
   private:
@@ -17,5 +19,6 @@ namespace reinforcement_learning { namespace model_management {
     web::http::client::http_client _httpcli;
     ::utility::datetime _last_modified;
     uint64_t _datasz;
+    i_trace* _trace;
   };
 }}

@@ -21,6 +21,7 @@ namespace reinforcement_learning
         event_hub_key_name,
         event_hub_key,
         event_hub_name,
+        nullptr,
         c.get_bool(name::EH_TEST, false)),
       _batcher(
         _client,

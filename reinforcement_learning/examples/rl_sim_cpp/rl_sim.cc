@@ -71,7 +71,7 @@ int rl_sim::load_config_from_json(  const std::string& file_name,
   RETURN_IF_FAIL(load_file(file_name, config_str));
 
   // Use library supplied convenience method to parse json and build config object
-  return cfg::create_from_json(config_str, config, status);
+  return cfg::create_from_json(config_str, config, nullptr, status);
 }
 
 int rl_sim::load_file(const std::string& file_name, std::string& config_str) {

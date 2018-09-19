@@ -10,12 +10,13 @@
 #include "interruptable_sleeper.h"
 
 namespace reinforcement_learning {
+  class i_trace;
   namespace utility {
 
 
     class watchdog {
     public:
-      explicit watchdog(error_callback_fn* error_callback = nullptr);
+      explicit watchdog(i_trace* trace_logger, error_callback_fn* error_callback = nullptr);
       ~watchdog();
 
       void register_thread(std::thread::id const& thread_id, std::string const& thread_name, long long const timeout);
@@ -56,6 +57,7 @@ namespace reinforcement_learning {
 
       error_callback_fn* _error_callback;
       std::atomic<bool> _unhandled_background_error_occurred{false};
+      i_trace* _trace_logger;
     };
   }
 }
