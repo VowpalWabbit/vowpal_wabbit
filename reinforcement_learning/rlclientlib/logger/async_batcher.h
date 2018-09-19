@@ -98,6 +98,8 @@ namespace reinforcement_learning {
       _buffer << "\n";
       --remaining;
     }
+    _buffer.remove_last();
+
     return remaining;
   }
 

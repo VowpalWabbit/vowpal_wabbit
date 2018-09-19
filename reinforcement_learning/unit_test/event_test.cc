@@ -47,11 +47,14 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
   resp.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event::serialize(oss, event_id, context, resp);
-  const std::string serialized = oss.str();
-  const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"},"pdrop":0.0000})";
 
-  BOOST_CHECK_EQUAL(serialized.c_str(), expected);
+  ranking_event evt(oss, event_id, context, resp);
+  oss.reset();
+  evt.serialize(oss);
+
+  const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"}})";
+
+  BOOST_CHECK_EQUAL(oss.str(), expected);
 }
 
 BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
@@ -62,11 +65,13 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
   ranking.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event::serialize(oss, event_id, context, ranking);
-  const auto serialized = oss.str();
-  const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"},"pdrop":0.0000})";
+  ranking_event evt(oss, event_id, context, ranking);
+  oss.reset();
+  evt.serialize(oss);
 
-  BOOST_CHECK_EQUAL(serialized.c_str(), expected);
+  const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
+
+  BOOST_CHECK_EQUAL(oss.str(), expected);
 }
 
 BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {

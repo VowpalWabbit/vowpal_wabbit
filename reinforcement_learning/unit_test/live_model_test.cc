@@ -248,10 +248,10 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   auto const event_id_1 = "event_id";
   auto const event_id_2 = "event_id_2";
 
-  auto const expected_interaction_1 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_1, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"},"pdrop":0.0000})");
+  auto const expected_interaction_1 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_1, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_1 = u::concat(R"({"EventId":")", event_id_1, R"(","v":1.000000})");
 
-  auto const expected_interaction_2 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_2, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"},"pdrop":0.0000})");
+  auto const expected_interaction_2 = u::concat(R"({"Version":")", version_number, R"(","EventId":")", event_id_2, R"(","a":[1,2],"c":)", JSON_CONTEXT, R"(,"p":[0.500000,0.500000],"VWState":{"m":"N/A"}})");
   auto const expected_observation_2 = u::concat(R"({"EventId":")", event_id_2, R"(","v":1.000000})");
   auto const num_iterations = 5;
 
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   }
 
   std::string recorded_observations_all;
-  for (size_t i = 0; i < recorded_interactions.size(); ++i) {
+  for (size_t i = 0; i < recorded_observations.size(); ++i) {
     recorded_observations_all += recorded_observations[i];
     if (i + 1 < recorded_observations.size()) {
       recorded_observations_all += '\n';
