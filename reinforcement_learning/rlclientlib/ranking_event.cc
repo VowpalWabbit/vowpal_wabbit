@@ -74,7 +74,7 @@ namespace reinforcement_learning {
   void ranking_event::serialize(u::data_buffer& oss) {
     oss << _body;
     if (_pass_prob < 1) {
-      oss << R"(,"pdrop":)" << _pass_prob;
+      oss << R"(,"pdrop":)" << (1 - _pass_prob);
     }
     oss << R"(})";
   }
