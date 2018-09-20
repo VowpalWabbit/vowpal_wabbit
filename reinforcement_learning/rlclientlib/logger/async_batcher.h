@@ -64,6 +64,7 @@ namespace reinforcement_learning {
   template<typename TEvent>
   int async_batcher<TEvent>::append(TEvent&& evt, api_status* status) {
     _queue.push(std::move(evt));
+    prune_if_needed();
     return error_code::success;
   }
 
@@ -81,7 +82,6 @@ namespace reinforcement_learning {
 
   template<typename TEvent>
   int async_batcher<TEvent>::run_iteration(api_status* status) {
-    prune_if_needed();
     flush();
     return error_code::success;
   }
