@@ -13,7 +13,7 @@
 #include "live_model.h"
 #include "factory_resolver.h"
 #include "constants.h"
-#include "logger.h"
+#include "sender.h"
 
 // Namespace manipulation for brevity
 namespace r = reinforcement_learning;
@@ -21,9 +21,9 @@ namespace u = r::utility;
 namespace err = r::error_code;
 
 // Custom implementations must inherit from the respective i_* abstract class.
-class ostream_logger : public r::i_logger {
+class ostream_sender : public r::i_sender {
 public:
-  ostream_logger(std::ostream& stream, std::mutex& mutex)
+  ostream_sender(std::ostream& stream, std::mutex& mutex)
     : _stream(stream),
       _mutex(mutex) {}
 
@@ -32,7 +32,7 @@ public:
   }
 
 protected:
-  virtual int v_append(std::string& data, r::api_status* status) override {
+  virtual int v_send(const std::string& data, r::api_status* status) override {
     std::lock_guard<std::mutex> lock(_mutex);
     _stream << data << std::endl;
     return err::success;
@@ -75,16 +75,16 @@ int main() {
   std::mutex cout_mutex;
 
   // Define a create function to be used in the factory.
-  auto const create_ostream_logger_fn =
-    [&](r::i_logger** retval, const u::configuration&, u::watchdog&, r::error_callback_fn*, r::api_status*) {
-    *retval = new ostream_logger(std::cout, cout_mutex);
+  auto const create_ostream_sender_fn =
+    [&](r::i_sender** retval, const u::configuration&, r::api_status*) {
+    *retval = new ostream_sender(std::cout, cout_mutex);
     return err::success;
   };
 
   // Create a local factory and register the create function with it using the corresponding implementation keys defined in constants.h
-  r::logger_factory_t stdout_logger_factory;
-  stdout_logger_factory.register_type(r::value::OBSERVATION_EH_LOGGER, create_ostream_logger_fn);
-  stdout_logger_factory.register_type(r::value::INTERACTION_EH_LOGGER, create_ostream_logger_fn);
+  r::sender_factory_t stdout_logger_factory;
+  stdout_logger_factory.register_type(r::value::OBSERVATION_EH_SENDER, create_ostream_sender_fn);
+  stdout_logger_factory.register_type(r::value::INTERACTION_EH_SENDER, create_ostream_sender_fn);
 
   // Default factories defined in factory_resolver.h are passed as well as the custom stdout logger.
   r::live_model model(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);

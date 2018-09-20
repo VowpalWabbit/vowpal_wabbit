@@ -23,7 +23,7 @@
     <ClCompile Include="ranking_response.cc" />
     <ClCompile Include="ranking_response_impl.cc" />
     <ClCompile Include="main.cc" />
-    <ClCompile Include="logger\event_hub_logger.cc" />
+    <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -47,7 +47,7 @@
     <ClInclude Include="model_mgmt\data_callback_fn.h" />
     <ClInclude Include="model_mgmt\restapi_data_transport.h" />
     <ClInclude Include="logger\async_batcher.h" />
-    <ClInclude Include="logger\moving_queue.h" />
+    <ClInclude Include="logger\event_queue.h" />
     <ClInclude Include="logger\eventhub_client.h" />
     <ClInclude Include="vw_model\vw_model.h" />
     <ClInclude Include="vw_model\safe_vw.h" />
@@ -55,8 +55,8 @@
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
     <ClInclude Include="ranking_response_impl.h" />
-    <ClInclude Include="logger\event_hub_logger.h" />
-    <ClInclude Include="..\include\logger.h" />
+    <ClInclude Include="logger\event_logger.h" />
+    <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
   </ItemGroup>

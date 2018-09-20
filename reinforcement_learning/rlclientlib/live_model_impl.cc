@@ -2,7 +2,7 @@
 #include <boost/uuid/random_generator.hpp>
 
 #include "utility/context_helper.h"
-#include "logger.h"
+#include "sender.h"
 #include "api_status.h"
 #include "configuration.h"
 #include "error_callback_fn.h"
@@ -65,13 +65,7 @@ namespace reinforcement_learning {
       RETURN_IF_FAIL(explore_exploit(event_id, context, response, status));
     }
     response.set_event_id(event_id);
-    // Serialize the event
-    u::pooled_object_guard<u::data_buffer, u::buffer_factory> guard(_buffer_pool, _buffer_pool.get_or_create());
-    guard->reset();
-    ranking_event::serialize(*guard.get(), event_id, context, response);
-    auto sbuf = guard->str();
-    // Send the ranking event to the backend
-    RETURN_IF_FAIL(_ranking_logger->append(sbuf, status));
+    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, response, status));
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {
@@ -105,7 +99,7 @@ namespace reinforcement_learning {
     void* err_context,
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_factory_t* logger_factory
+    sender_factory_t* sender_factory
   )
     : _configuration(config),
       _error_cb(fn, err_context),
@@ -113,9 +107,8 @@ namespace reinforcement_learning {
       _watchdog(&_error_cb),
       _t_factory{t_factory},
       _m_factory{m_factory},
-      _logger_factory{logger_factory},
-      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb),
-      _buffer_pool(new u::buffer_factory(utility::translate_func('\n', ' '))) {
+      _sender_factory{sender_factory},
+      _bg_model_proc(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb) {
     // If there is no user supplied error callback, supply a default one that does nothing but report unhandled background errors.
     if (fn == nullptr) {
       _error_cb.set(&default_error_callback, &_watchdog);
@@ -131,16 +124,16 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::init_loggers(api_status* status) {
-    const auto ranking_logger_impl = _configuration.get(name::INTERACTION_LOGGER_IMPLEMENTATION, value::INTERACTION_EH_LOGGER);
-    i_logger* ranking_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&ranking_logger, ranking_logger_impl, _configuration, _watchdog, &_error_cb, status));
-    _ranking_logger.reset(ranking_logger);
+    const auto ranking_sender_impl = _configuration.get(name::INTERACTION_SENDER_IMPLEMENTATION, value::INTERACTION_EH_SENDER);
+    i_sender* ranking_sender;
+    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, status));
+    _ranking_logger.reset(new interaction_logger(_configuration, ranking_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
-    const auto outcome_logger_impl = _configuration.get(name::OBSERVATION_LOGGER_IMPLEMENTATION, value::OBSERVATION_EH_LOGGER);
-    i_logger* outcome_logger;
-    RETURN_IF_FAIL(_logger_factory->create(&outcome_logger, outcome_logger_impl, _configuration, _watchdog, &_error_cb, status));
-    _outcome_logger.reset(outcome_logger);
+    const auto outcome_sender_impl = _configuration.get(name::OBSERVATION_SENDER_IMPLEMENTATION, value::OBSERVATION_EH_SENDER);
+    i_sender* outcome_sender;
+    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, status));
+    _outcome_logger.reset(new observation_logger(_configuration, outcome_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_outcome_logger->init(status));
 
     return error_code::success;

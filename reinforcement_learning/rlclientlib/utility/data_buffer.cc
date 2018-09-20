@@ -15,6 +15,10 @@ namespace reinforcement_learning { namespace utility {
     return retval;
   }
 
+  size_t data_buffer::size() const {
+    return _buffer.size();
+  }
+
   void data_buffer::remove_last() { _buffer.pop_back(); }
 
   buffer_factory::buffer_factory(const translate_func& _translate) : translate(_translate) {}
