@@ -27,6 +27,14 @@ namespace Rl.Net.Native
             Debug.WriteLine($"New object at at {this.handle.ToInt64():x}");
         }
 
+        internal IntPtr NativeHandle
+        {
+            get
+            {
+                return this.handle;
+            }
+        }
+
         override public bool IsInvalid
         {
             get

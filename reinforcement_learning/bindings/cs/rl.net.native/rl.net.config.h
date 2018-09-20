@@ -11,7 +11,7 @@ extern "C" {
     API u::configuration* CreateConfig();
     API void DeleteConfig(u::configuration* config);
 
-    API int LoadConfigFromJson(const int json_length, const char* json_value, u::configuration);
+    API int LoadConfigurationFromJson(const int json_length, const char* json_value, u::configuration* config, r::api_status* status = nullptr);
     //Add
     //Remove?
 }

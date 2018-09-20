@@ -13,20 +13,19 @@ namespace Rl.Net {
         [DllImport("rl.net.native.dll")]
         private static extern void DeleteConfig(IntPtr config);
 
-        [DllImport("rl.net.native.dll")] // We need to decide on accepted string encodings here. By default, I'm declaring this a unicode string.
-        private static extern int LoadConfigurationFromJson(int jsonLength, [MarshalAs(UnmanagedType.LPWStr)] string json, IntPtr config);
+        [DllImport("rl.net.native.dll")]
+        private static extern int LoadConfigurationFromJson(int jsonLength, [MarshalAs(NativeMethods.StringMarshalling)] string json, IntPtr config, IntPtr apiStatus);
 
-        // TODO: Once we expose direct manipulation methods on configuration, this can go public
         public Configuration() : base(new New<Configuration>(CreateConfig), new Delete<Configuration>(DeleteConfig))
         {
         }
 
-        public static bool TryLoadConfigurationFromJson(string json, out Configuration config)
+        public static bool TryLoadConfigurationFromJson(string json, out Configuration config, ApiStatus apiStatus = null)
         {
             config = new Configuration();
 
-            int result = LoadConfigurationFromJson(json.Length, json, config.handle);
-            return true;
+            int result = LoadConfigurationFromJson(json.Length, json, config.NativeHandle, apiStatus.ToNativeHandleOrNullptr());
+            return result == NativeMethods.SuccessStatus;
         }
     }
 }

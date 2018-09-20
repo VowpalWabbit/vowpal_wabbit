@@ -3,14 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <OutputPath>$(SolutionDir)$(Platform)\$(Configuration)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../rl.net.native/rl.net.native.vcxproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Copy Include="$(SolutionDir)$(Platform)\$(Configuration)\rl.net.native.dll" />
-    <Copy Include="$(SolutionDir)$(Platform)\$(Configuration)\rl.net.native.pdb" />
-  </ItemGroup>
 </Project>

@@ -87,11 +87,17 @@
   <ItemGroup>
     <ClCompile Include="rl.net.global.cc" />
     <ClCompile Include="rl.net.config.cc" />
+    <ClCompile Include="rl.net.api_status.cc" />
+    <ClCompile Include="rl.net.live_model.cc" />
+    <ClCompile Include="rl.net.ranking_response.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rl.net.native.h" />
     <ClInclude Include="rl.net.global.h" />
     <ClInclude Include="rl.net.config.h" />
+    <ClInclude Include="rl.net.api_status.h" />
+    <ClInclude Include="rl.net.live_model.h" />
+    <ClInclude Include="rl.net.ranking_response.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\rlclientlib\rlclientlib.vcxproj">
