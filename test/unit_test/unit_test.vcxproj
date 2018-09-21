@@ -152,8 +152,9 @@
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <PostBuildEvent>
+      <!-- This goes away if we switch to pulling in all of our boost dependencies via vcpkg -->
       <Command Condition="'$(Platform)'=='x64'">xcopy /Y ..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\lib\native\address-model-64\lib\*.dll $(OutDir)</Command>
-      <Command Condition="'$(Platform)'=='x86'">xcopy /Y ..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\lib\native\address-model-32\lib\*.dll $(OutDir)</Command>
+      <Command Condition="'$(Platform)'=='Win32'">xcopy /Y ..\..\vowpalwabbit\packages\boost_unit_test_framework-vc140.1.63.0.0\lib\native\address-model-32\lib\*.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>
