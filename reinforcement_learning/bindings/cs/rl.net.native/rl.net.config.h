@@ -2,16 +2,13 @@
 
 #pragma once
 
-//int load_file(const std::string& file_name, std::string& file_data);
-//int load_config_from_json(const std::string& file_name, u::configuration& cc);
-
 // Exports
 extern "C" {
     // NOTE: THIS IS NOT POLYMORPHISM SAFE!
-    API u::configuration* CreateConfig();
-    API void DeleteConfig(u::configuration* config);
+    API reinforcement_learning::utility::configuration* CreateConfig();
+    API void DeleteConfig(reinforcement_learning::utility::configuration* config);
 
-    API int LoadConfigurationFromJson(const int json_length, const char* json_value, u::configuration* config, r::api_status* status = nullptr);
+    API int LoadConfigurationFromJson(const int json_length, const char* json_value, reinforcement_learning::utility::configuration* config, reinforcement_learning::api_status* status = nullptr);
     //Add
     //Remove?
 }

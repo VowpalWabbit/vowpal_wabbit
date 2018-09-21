@@ -1,26 +1,26 @@
 #include "rl.net.live_model.h"
 
-API r::live_model* CreateLiveModel(u::configuration* config)
+API reinforcement_learning::live_model* CreateLiveModel(reinforcement_learning::utility::configuration* config)
 {
-    return new r::live_model(*config);
+    return new reinforcement_learning::live_model(*config);
 }
 
-API void DeleteLiveModel(r::live_model* livemodel)
+API void DeleteLiveModel(reinforcement_learning::live_model* livemodel)
 {
     delete livemodel;
 }
 
-API int InitLiveModel(r::live_model* livemodel, r::api_status* status)
+API int InitLiveModel(reinforcement_learning::live_model* livemodel, reinforcement_learning::api_status* status)
 {
     return livemodel->init(status);
 }
 
-API int LiveModelChooseRank(r::live_model* livemodel, const char * event_id, const char * context_json, r::ranking_response* resp, r::api_status* status)
+API int LiveModelChooseRank(reinforcement_learning::live_model* livemodel, const char * event_id, const char * context_json, reinforcement_learning::ranking_response* resp, reinforcement_learning::api_status* status)
 {
     return livemodel->choose_rank(event_id, context_json, *resp, status);
 }
 
-API int LiveModelReportOutcome(r::live_model* livemodel, const char * event_id, float outcome, r::api_status* status)
+API int LiveModelReportOutcome(reinforcement_learning::live_model* livemodel, const char * event_id, float outcome, reinforcement_learning::api_status* status)
 {
     return livemodel->report_outcome(event_id, outcome, status);
 }

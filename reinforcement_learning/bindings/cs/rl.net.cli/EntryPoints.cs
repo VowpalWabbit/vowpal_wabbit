@@ -30,7 +30,8 @@ namespace Rl.Net.Cli {
                                   ""GUser"":{""id"":""a"",""major"":""eng"",""hobby"":""hiking""},
                                   ""_multi"":[ { ""TAction"":{""a1"":""f1""} },{""TAction"":{""a2"":""f2""}}]})";
 
-            if (args.Length != 1) {
+            if (args.Length != 1) 
+            {
                 WriteErrorAndExit("Missing path to client configuration json");
             }
 

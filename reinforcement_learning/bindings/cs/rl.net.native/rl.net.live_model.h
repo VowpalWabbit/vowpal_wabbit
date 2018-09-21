@@ -5,10 +5,10 @@
 // Global exports
 extern "C" {
     // NOTE: THIS IS NOT POLYMORPHISM SAFE!
-    API r::live_model* CreateLiveModel(u::configuration* config);
-    API void DeleteLiveModel(r::live_model* livemodel);
+    API reinforcement_learning::live_model* CreateLiveModel(reinforcement_learning::utility::configuration* config);
+    API void DeleteLiveModel(reinforcement_learning::live_model* livemodel);
 
-    API int InitLiveModel(r::live_model* livemodel, r::api_status* status = nullptr);
-    API int LiveModelChooseRank(r::live_model* livemodel, const char * event_id, const char * context_json, r::ranking_response* resp, r::api_status* status = nullptr);
-    API int LiveModelReportOutcome(r::live_model* livemodel, const char * event_id, float outcome, r::api_status* status = nullptr);
+    API int InitLiveModel(reinforcement_learning::live_model* livemodel, reinforcement_learning::api_status* status = nullptr);
+    API int LiveModelChooseRank(reinforcement_learning::live_model* livemodel, const char * event_id, const char * context_json, reinforcement_learning::ranking_response* resp, reinforcement_learning::api_status* status = nullptr);
+    API int LiveModelReportOutcome(reinforcement_learning::live_model* livemodel, const char * event_id, float outcome, reinforcement_learning::api_status* status = nullptr);
 }

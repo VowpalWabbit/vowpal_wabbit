@@ -37,7 +37,12 @@ namespace Rl.Net {
             return result == NativeMethods.SuccessStatus;
         }
 
-        // TODO: This is a bit of an akward API, as it requires pre-construction of the RankingResponse.
+        public bool TryChooseRank(string actionId, string contextJson, out RankingResponse response, ApiStatus apiStatus = null)
+        {
+            response = new RankingResponse();
+            return this.TryChooseRank(actionId, contextJson, response, apiStatus);
+        }
+
         public bool TryChooseRank(string actionId, string contextJson, RankingResponse response, ApiStatus apiStatus = null)
         {
             int result = LiveModelChooseRank(this.NativeHandle, actionId, contextJson, response.NativeHandle, apiStatus.ToNativeHandleOrNullptr());

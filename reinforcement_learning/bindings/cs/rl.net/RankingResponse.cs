@@ -10,7 +10,7 @@ namespace Rl.Net {
     [StructLayout(LayoutKind.Sequential)]
     internal struct ActionProbability
     {
-        public UIntPtr ActionId; // If we expose this publically, this will not be CLI-compliant
+        public UIntPtr ActionId; // If we expose this publicly, this will not be CLS-compliant
                                  // No idea if that could cause issues going to .NET Core (probably
                                  // not, but this is something we should check.), but having to do
                                  // a conversion on every iteration feels very heavyweight. Can 
@@ -35,10 +35,10 @@ namespace Rl.Net {
         [return: MarshalAs(NativeMethods.StringMarshalling)]
         private static extern string GetRankingModelId(IntPtr rankingResponse);
 
-        // TODO: CLI-compliance requires that we not publically expose unsigned types.
+        // TODO: CLS-compliance requires that we not publically expose unsigned types.
         // Probably not a big issue ("9e18 actions ought to be enough for anyone...")
         [DllImport("rl.net.native.dll")]
-        private static extern UIntPtr GetRankingSize(IntPtr rankingResponse);
+        private static extern UIntPtr GetRankingActionCount(IntPtr rankingResponse);
 
         [DllImport("rl.net.native.dll")]
         private static extern int GetRankingChosenAction(IntPtr rankingResponse, out UIntPtr action_id, IntPtr status);
@@ -58,7 +58,7 @@ namespace Rl.Net {
         {
             get
             {
-                ulong unsignedSize = GetRankingSize(this.NativeHandle).ToUInt64();
+                ulong unsignedSize = GetRankingActionCount(this.NativeHandle).ToUInt64();
                 Debug.Assert(unsignedSize < Int64.MaxValue, "We do not support collections with size larger than _I64_MAX/Int64.MaxValue");
     
                 return (long)unsignedSize;
@@ -72,7 +72,7 @@ namespace Rl.Net {
             UIntPtr chosenAction;
             int result = GetRankingChosenAction(this.NativeHandle, out chosenAction, status.ToNativeHandleOrNullptr());
 
-            if (result == NativeMethods.SuccessStatus)
+            if (result != NativeMethods.SuccessStatus)
             {
                 return false;
             }
