@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -45,7 +45,7 @@ private:
   /// </summary>
   /// <remarks>
   /// This is used to emit empty lines to cache while handling multiline examples.
-  /// Used internally by Learn(IEnumerable<String> lines)
+  /// Used internally by Learn(IEnumerable&lt;String&gt; lines)
   /// </remarks>
   void CacheEmptyLine();
 

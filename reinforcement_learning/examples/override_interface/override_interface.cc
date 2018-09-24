@@ -75,9 +75,9 @@ int main() {
   std::mutex cout_mutex;
 
   // Define a create function to be used in the factory.
-  auto const create_ostream_logger_fn =
+  auto const create_ostream_sender_fn =
     [&](r::i_sender** retval, const u::configuration&, r::i_trace* trace, r::api_status*) {
-    *retval = new ostream_logger(std::cout, cout_mutex);
+    *retval = new ostream_sender(std::cout, cout_mutex);
     return err::success;
   };
 
