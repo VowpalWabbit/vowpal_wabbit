@@ -165,7 +165,6 @@
     <ClCompile Include="data_buffer_test.cc" />
     <ClCompile Include="data_callback_test.cc" />
     <ClCompile Include="err_callback_test.cc" />
-    <ClCompile Include="concurrent_queue_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="factory_test.cc" />
     <ClCompile Include="json_context_parse_test.cc" />
@@ -176,6 +175,7 @@
     <ClCompile Include="main.cc" />
     <ClCompile Include="mock_util.cc" />
     <ClCompile Include="model_mgmt_test.cc" />
+    <ClCompile Include="event_queue_test.cc" />
     <ClCompile Include="object_pool_test.cc" />
     <ClCompile Include="ranking_response_test.cc" />
     <ClCompile Include="safe_vw_test.cc" />

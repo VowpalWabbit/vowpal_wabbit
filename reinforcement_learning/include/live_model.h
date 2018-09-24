@@ -9,7 +9,7 @@
 #include "ranking_response.h"
 #include "err_constants.h"
 #include "factory_resolver.h"
-#include "logger.h"
+#include "sender.h"
 
 #include <memory>
 
@@ -61,8 +61,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
-     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
-     *                       interaction and the other for interaction which logs to Event Hub.
+     * @param sender_factory Sender factory.  The default factory provides two senders, one for
+     *                       interaction and the other for observation which logs to Event Hub.
      */
     explicit live_model(
       const utility::configuration& config,
@@ -71,7 +71,7 @@ namespace reinforcement_learning {
       trace_logger_factory_t* trace_factory = &trace_logger_factory,
       data_transport_factory_t* t_factory = &data_transport_factory,
       model_factory_t* m_factory = &model_factory,
-      logger_factory_t* logger_factory = &logger_factory);
+      sender_factory_t* sender_factory = &sender_factory);
 
     /**
      * @brief Initialize inference library.
@@ -154,8 +154,8 @@ namespace reinforcement_learning {
      *                  REST based transport that gets data from an Azure storage account
      * @param m_factory Model factory.  The default model factory hydrates vw models
      *                    used for local inference.
-     * @param logger_factory Logger factory.  The default factory provides two loggers, one for
-     *                       interaction and the other for interaction which logs to Event Hub.
+     * @param sender_factory Sender factory.  The default factory provides two senders, one for
+     *                       interaction and the other for observation which logs to Event Hub.
      */
     template<typename ErrCntxt>
     explicit live_model(
@@ -165,7 +165,7 @@ namespace reinforcement_learning {
       trace_logger_factory_t* trace_factory = &trace_logger_factory,
       data_transport_factory_t* t_factory = &data_transport_factory,
       model_factory_t* m_factory = &model_factory,
-      logger_factory_t* logger_factory = &logger_factory);
+      sender_factory_t* sender_factory = &sender_factory);
 
     /**
      * @brief Default move constructor for live model object.
@@ -197,8 +197,8 @@ namespace reinforcement_learning {
    *                  REST based transport that gets data from an Azure storage account
    * @param m_factory Model factory.  The default model factory hydrates vw models
    *                  used for local inference.
-   * @param logger_factory Logger factory.  The default factory provides two loggers, one for
-   *                       interaction and the other for interaction which logs to Event Hub.
+   * @param sender_factory Sender factory.  The default factory provides two senders, one for
+   *                       interaction and the other for observations which logs to Event Hub.
    */
   template<typename ErrCntxt>
   live_model::live_model(
@@ -208,7 +208,7 @@ namespace reinforcement_learning {
     trace_logger_factory_t* trace_factory,
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
-    logger_factory_t* logger_factory)
-    : live_model(config, (error_fn)(fn), (void*)(err_context), trace_factory, t_factory, m_factory, logger_factory)
+    sender_factory_t* sender_factory)
+    : live_model(config, (error_fn)(fn), (void*)(err_context), trace_factory, t_factory, m_factory, sender_factory)
   {}
 }

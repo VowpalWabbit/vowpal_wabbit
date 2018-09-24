@@ -45,11 +45,11 @@ int vector_trace_create(r::i_trace** retval, const u::configuration&, r::i_trace
 }
 
 BOOST_AUTO_TEST_CASE(test_trace_logging) {
-  auto mock_logger = get_mock_logger();
+  auto mock_logger = get_mock_sender();
   auto mock_data_transport = get_mock_data_transport();
   auto mock_model = get_mock_model();
 
-  auto logger_factory = get_mock_logger_factory(mock_logger.get(), mock_logger.get());
+  auto logger_factory = get_mock_sender_factory(mock_logger.get(), mock_logger.get());
   auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
   auto model_factory = get_mock_model_factory(mock_model.get());
 
@@ -57,6 +57,8 @@ BOOST_AUTO_TEST_CASE(test_trace_logging) {
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
+
+
   config.set(r::name::TRACE_LOG_IMPLEMENTATION, "VectorTracer");
   r::trace_logger_factory.register_type("VectorTracer", vector_trace_create);
 

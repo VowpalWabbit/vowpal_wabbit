@@ -1,12 +1,11 @@
 #pragma once
-#include "logger.h"
+#include "sender.h"
+#include "logger/event_logger.h"
 #include "model_mgmt.h"
 #include "model_mgmt/data_callback_fn.h"
 #include "model_mgmt/model_downloader.h"
-#include "utility/object_pool.h"
 #include "utility/data_buffer.h"
 #include "utility/periodic_background_proc.h"
-#include "ranking_event.h"
 
 #include "factory_resolver.h"
 #include "utility/watchdog.h"
@@ -40,7 +39,7 @@ namespace reinforcement_learning
       trace_logger_factory_t* trace_factory,
       data_transport_factory_t* t_factory,
       model_factory_t* m_factory,
-      logger_factory_t* logger_factory);
+      sender_factory_t* sender_factory);
 
     live_model_impl(const live_model_impl&) = delete;
     live_model_impl(live_model_impl&&) = delete;
@@ -72,17 +71,16 @@ namespace reinforcement_learning
     trace_logger_factory_t* _trace_factory;
     data_transport_factory_t* _t_factory;
     model_factory_t* _m_factory;
-    logger_factory_t* _logger_factory;
+    sender_factory_t* _sender_factory;
 
     std::unique_ptr<model_management::i_data_transport> _transport{nullptr};
     std::unique_ptr<model_management::i_model> _model{nullptr};
-    std::unique_ptr<i_logger> _ranking_logger{nullptr};
-    std::unique_ptr<i_logger> _outcome_logger{nullptr};
+    std::unique_ptr<interaction_logger> _ranking_logger{nullptr};
+    std::unique_ptr<observation_logger> _outcome_logger{nullptr};
     std::unique_ptr<model_management::model_downloader> _model_download{nullptr};
     std::unique_ptr<i_trace> _trace_logger { nullptr };
 
     utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
-    utility::object_pool<utility::data_buffer, utility::buffer_factory> _buffer_pool;
     uint64_t _seed_shift;
   };
 
@@ -91,14 +89,8 @@ namespace reinforcement_learning
     // Clear previous errors if any
     api_status::try_clear(status);
 
-    // Serialize outcome
-    utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
-    buffer->reset();
-    outcome_event::serialize(*buffer.get(), event_id, outcome);
-    auto sbuf = buffer->str();
-
     // Send the outcome event to the backend
-    RETURN_IF_FAIL(_outcome_logger->append(sbuf, status));
+    RETURN_IF_FAIL(_outcome_logger->log(event_id, outcome, status));
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "api_status.h"
+#include "sender.h"
+
 #include <cpprest/http_client.h>
 
 namespace reinforcement_learning {
@@ -8,9 +10,9 @@ namespace reinforcement_learning {
 
   //the eventhub_client send string data in POST request to an http endpoint
   //it handles authorization headers specific for the azure event hubs
-  class eventhub_client {
-    public:
-    int init(api_status* status = nullptr);
+  class eventhub_client : public i_sender {
+  public:
+    virtual int init(api_status* status) override;
 
     //send a POST request
     int send(const std::string&, api_status* status = nullptr);
@@ -18,7 +20,10 @@ namespace reinforcement_learning {
     eventhub_client(const std::string&, const std::string&,
                     const std::string&, const std::string&, i_trace* trace, bool local_test = false);
 
-    private:
+  protected:
+    virtual int v_send(const std::string& data, api_status* status) override;
+
+  private:
     int authorization(api_status* status);
     web::http::client::http_client _client;
 

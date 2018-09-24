@@ -49,6 +49,6 @@ namespace reinforcement_learning {
   }
 
   bool status_builder::enable_logging() const {
-    return _status != nullptr || _trace == nullptr;
+    return _status != nullptr || _trace != nullptr;
   }
 }
