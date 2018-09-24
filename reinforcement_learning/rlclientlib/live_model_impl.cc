@@ -105,7 +105,7 @@ namespace reinforcement_learning {
     : _configuration(config),
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
-      _watchdog(nullptr, &_error_cb),
+      _watchdog(&_error_cb),
       _trace_factory(trace_factory),
       _t_factory{t_factory},
       _m_factory{m_factory},
@@ -123,6 +123,7 @@ namespace reinforcement_learning {
     RETURN_IF_FAIL(_trace_factory->create(&plogger, trace_impl,_configuration, nullptr, status));
     _trace_logger.reset(plogger);
     TRACE_LOG(_trace_logger, "API Tracing initialized");
+    _watchdog.set_trace_log(_trace_logger.get());
     return error_code::success;
   }
 

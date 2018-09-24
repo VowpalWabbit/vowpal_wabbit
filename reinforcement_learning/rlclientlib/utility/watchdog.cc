@@ -9,8 +9,8 @@
 using namespace reinforcement_learning;
 using namespace reinforcement_learning::utility;
 
-watchdog::watchdog(i_trace* trace_logger, error_callback_fn* error_callback)
-  : _error_callback(error_callback), _trace_logger(trace_logger) {}
+watchdog::watchdog(error_callback_fn* error_callback)
+  : _error_callback(error_callback), _trace_logger(nullptr) {}
 
 watchdog::~watchdog() {
   stop();
@@ -55,6 +55,8 @@ void watchdog::check_in(std::thread::id const& thread_id) {
   auto& thread_info = it->second;
   thread_info.last_check_in_time = clock_t::now();
 }
+
+int watchdog::set_trace_log(i_trace* trace_logger) { _trace_logger = trace_logger; }
 
 int watchdog::start(api_status* status) {
   auto expected_value = false;

@@ -16,13 +16,14 @@ namespace reinforcement_learning {
 
     class watchdog {
     public:
-      explicit watchdog(i_trace* trace_logger, error_callback_fn* error_callback = nullptr);
+      explicit watchdog(error_callback_fn* error_callback = nullptr);
       ~watchdog();
 
       void register_thread(std::thread::id const& thread_id, std::string const& thread_name, long long const timeout);
       void unregister_thread(std::thread::id const& thread_id);
       void check_in(std::thread::id const& thread_id);
 
+      int set_trace_log(i_trace* trace_logger);
       int start(api_status* status);
       void stop();
       void loop();

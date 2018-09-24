@@ -4,7 +4,7 @@
 #include <string>
 #include <cpprest/http_client.h>
 
-namespace reinforcement_learning { 
+namespace reinforcement_learning {
   class i_trace;
   namespace model_management {
   class restapi_data_tranport : public i_data_transport {
