@@ -23,7 +23,7 @@ namespace reinforcement_learning {
       void unregister_thread(std::thread::id const& thread_id);
       void check_in(std::thread::id const& thread_id);
 
-      int set_trace_log(i_trace* trace_logger);
+      void set_trace_log(i_trace* trace_logger);
       int start(api_status* status);
       void stop();
       void loop();

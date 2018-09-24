@@ -56,7 +56,7 @@ void watchdog::check_in(std::thread::id const& thread_id) {
   thread_info.last_check_in_time = clock_t::now();
 }
 
-int watchdog::set_trace_log(i_trace* trace_logger) { _trace_logger = trace_logger; }
+void watchdog::set_trace_log(i_trace* trace_logger) { _trace_logger = trace_logger; }
 
 int watchdog::start(api_status* status) {
   auto expected_value = false;

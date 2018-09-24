@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(watchdog_report_with_error_handler) {
 
   error_callback_fn err_func(error_fn, &atomic_counter);
 
-  utility::watchdog watchdog(nullptr,&err_func);
+  utility::watchdog watchdog(&err_func);
   watchdog.start(nullptr);
 
   watchdog.register_thread(std::this_thread::get_id(), "Test thread 1", timeout);
