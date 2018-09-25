@@ -12,6 +12,7 @@
 #include "model_mgmt.h"
 #include "api_status.h"
 #include "err_constants.h"
+#include "console_tracer.h"
 
 namespace r = reinforcement_learning;
 namespace u = reinforcement_learning::utility;
@@ -32,7 +33,7 @@ const auto JSON_CFG = R"(
 const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
 
 struct vector_tracer : r::i_trace {
-  void log(const std::string& msg) override {
+  void log(int log_level, const std::string& msg) override {
     data.emplace_back(msg);
   }
   std::vector<std::string> data;
@@ -68,4 +69,9 @@ BOOST_AUTO_TEST_CASE(test_trace_logging) {
   r::live_model ds(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), logger_factory.get());
   BOOST_CHECK_EQUAL(ds.init(&status), err::success);
   BOOST_CHECK_EQUAL(the_tracer->data[0], "API Tracing initialized");
+}
+
+BOOST_AUTO_TEST_CASE(test_console_logging) {
+  reinforcement_learning::console_tracer trace;
+  trace.log(0, "Test message");
 }

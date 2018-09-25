@@ -110,7 +110,7 @@ void watchdog::loop() {
     api_status status;
     for (auto const& failed_thread_name : failed_thread_names) {
       auto message = concat(error_code::thread_unresponsive_timeout, ", ", failed_thread_name, " is unresponsive.");
-      TRACE_LOG(_trace_logger, message);
+      TRACE_ERROR(_trace_logger, message);
       api_status::try_update(&status, error_code::thread_unresponsive_timeout, message.c_str());
       _error_callback->report_error(status);
     }

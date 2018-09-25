@@ -26,6 +26,7 @@
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="console_tracer.cc" />
+    <ClCompile Include="trace_logger.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />

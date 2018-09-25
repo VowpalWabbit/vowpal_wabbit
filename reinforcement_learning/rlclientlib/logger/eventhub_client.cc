@@ -93,7 +93,7 @@ namespace reinforcement_learning {
                 (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len)) {
         api_status::try_update(status, error_code::eventhub_generate_SAS_hash,
                                "Failed to generate SAS hash");
-        TRACE_LOG(_trace, "Failed to generate SAS hash");
+        TRACE_ERROR(_trace, "Failed to generate SAS hash");
         return error_code::eventhub_generate_SAS_hash;
       }
       digest.resize(digest_len);

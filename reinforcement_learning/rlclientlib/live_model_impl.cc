@@ -122,7 +122,7 @@ namespace reinforcement_learning {
     i_trace* plogger;
     RETURN_IF_FAIL(_trace_factory->create(&plogger, trace_impl,_configuration, nullptr, status));
     _trace_logger.reset(plogger);
-    TRACE_LOG(_trace_logger, "API Tracing initialized");
+    TRACE_INFO(_trace_logger, "API Tracing initialized");
     _watchdog.set_trace_log(_trace_logger.get());
     return error_code::success;
   }

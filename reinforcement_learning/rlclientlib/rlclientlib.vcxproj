@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\reinforcement_learning\ext_libs;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\reinforcement_learning\ext_libs;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -158,6 +158,7 @@
     <ClInclude Include="utility\object_pool.h" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="logger\event_logger.cc" />
+    <ClCompile Include="trace_logger.cc" />
     <ClCompile Include="utility\data_buffer.cc" />
     <ClCompile Include="utility\http_helper.h" />
     <ClInclude Include="model_mgmt\model_downloader.h" />

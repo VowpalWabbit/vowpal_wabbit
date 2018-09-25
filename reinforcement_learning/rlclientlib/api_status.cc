@@ -40,7 +40,7 @@ namespace reinforcement_learning {
       api_status::try_update(_status, _code, _os.str().c_str());
     }
     if (_trace != nullptr ) {
-      _trace->log(_os.str());
+      _trace->log(0, _os.str());
     }
   }
 
