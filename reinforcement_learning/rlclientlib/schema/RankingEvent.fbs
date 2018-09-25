@@ -1,0 +1,21 @@
+﻿// EventHubInteraction Schema used by FlatBuffer
+
+namespace VW.Events;
+
+// struct has better performace than table. But use table here in case format changes in future.
+table VWStateType {
+    m:string;        // model_id
+}
+
+table RankingEvent {
+    Version:short = 1; // TODO: refer to Version variable
+    EventId:string;
+    a:[uint64];
+    c:string;          // context
+    p:[float];
+    VWState:VWStateType;
+}
+
+table RankingEventBatch {
+	Events:[RankingEvent];
+}

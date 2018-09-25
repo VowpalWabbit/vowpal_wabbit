@@ -4,6 +4,7 @@
 
 #include "event_queue.h"
 #include "ranking_event.h"
+#include "event_batcher.h"
 #include "sender.h"
 #include "api_status.h"
 #include "../error_callback_fn.h"
@@ -45,6 +46,7 @@ namespace reinforcement_learning {
     std::unique_ptr<i_sender> _sender;
 
     event_queue<TEvent> _queue;       // A queue to accumulate batch of events.
+    utility::event_batcher<TEvent> _event_batcher;
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
     size_t _queue_max_size;
@@ -52,6 +54,7 @@ namespace reinforcement_learning {
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
     float _pass_prob;
+    int _initial_batches = 1000;
   };
 
   template<typename TEvent>
@@ -89,17 +92,8 @@ namespace reinforcement_learning {
   template<typename TEvent>
   size_t async_batcher<TEvent>::fill_buffer(size_t remaining)
   {
-    TEvent evt;
     _buffer.reset();
-
-    while (remaining > 0 && _buffer.size() < _send_high_water_mark) {
-      _queue.pop(&evt);
-      evt.serialize(_buffer);
-      _buffer << "\n";
-      --remaining;
-    }
-    _buffer.remove_last();
-
+    _event_batcher.batch_serialize(_buffer, remaining, _queue, _send_high_water_mark);
     return remaining;
   }
 

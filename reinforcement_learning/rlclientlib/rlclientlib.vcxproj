@@ -83,6 +83,12 @@
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate FlatBuffer</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -96,6 +102,12 @@
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate FlatBuffer</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -113,6 +125,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate FlatBuffer</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -130,11 +148,46 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate FlatBuffer</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\base.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\code_generators.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatbuffers.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatc.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flexbuffers.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\grpc.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\hash.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\idl.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\minireflect.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection_generated.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\registry.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\stl_emulation.h" />
+    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\util.h" />
+    <ClInclude Include="logger\event_batcher.h" />
+    <ClInclude Include="flatbuffers\base.h" />
+    <ClInclude Include="flatbuffers\code_generators.h" />
+    <ClInclude Include="flatbuffers\flatbuffers.h" />
+    <ClInclude Include="flatbuffers\flatc.h" />
+    <ClInclude Include="flatbuffers\flexbuffers.h" />
+    <ClInclude Include="flatbuffers\grpc.h" />
+    <ClInclude Include="flatbuffers\hash.h" />
+    <ClInclude Include="flatbuffers\idl.h" />
+    <ClInclude Include="flatbuffers\minireflect.h" />
+    <ClInclude Include="flatbuffers\reflection.h" />
+    <ClInclude Include="flatbuffers\reflection_generated.h" />
+    <ClInclude Include="flatbuffers\registry.h" />
+    <ClInclude Include="flatbuffers\stl_emulation.h" />
+    <ClInclude Include="flatbuffers\util.h" />
     <ClInclude Include="..\include\api_status.h" />
     <ClInclude Include="..\include\configuration.h" />
     <ClInclude Include="..\include\live_model.h" />
@@ -148,12 +201,15 @@
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
+    <ClInclude Include="generated\OutcomeEvent_generated.h" />
+    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="utility\context_helper.h" />
     <ClInclude Include="utility\data_buffer.h" />
     <ClInclude Include="utility\interruptable_sleeper.h" />
     <ClInclude Include="utility\periodic_background_proc.h" />
     <ClInclude Include="utility\object_pool.h" />
+    <ClCompile Include="logger\event_batcher.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\data_buffer.cc" />
     <ClCompile Include="utility\http_helper.h" />
@@ -201,6 +257,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="schema\OutcomeEvent.fbs" />
+    <None Include="schema\RankingEvent.fbs" />
+    <None Include="schema\tools\flatc.exe" />
+    <None Include="schema\tools\Readme.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -212,5 +272,8 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\vowpalwabbit\packages\boost.1.63.0.0\build\native\boost.targets'))" />
+  </Target>
+  <Target Name="AfterClean">
+    <RemoveDir Directories="$(SolutionDir)reinforcement_learning\rlclientlib\generated" />
   </Target>
 </Project>

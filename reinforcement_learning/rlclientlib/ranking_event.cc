@@ -1,5 +1,4 @@
 #include "ranking_event.h"
-#include "ranking_response.h"
 #include "utility/data_buffer.h"
 
 #include "explore_internal.h"
@@ -54,6 +53,12 @@ namespace reinforcement_learning {
     const ranking_response& response, float pass_prob)
     : event(event_id, pass_prob)
   {
+    _context = context;
+    for (auto const &r : response) {
+      _a_vector.push_back(r.action_id);
+      _p_vector.push_back(r.probability);
+    }
+    _model_id = response.get_model_id();
     serialize(oss, event_id, context, response, _pass_prob);
     _body = oss.str();
   }
@@ -79,31 +84,44 @@ namespace reinforcement_learning {
     oss << R"(})";
   }
 
+  flatbuffers::Offset<RankingEvent> ranking_event::serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder) {
+    short version = 1;
+    auto event_id_offset = builder.CreateString(_event_id);
+
+    auto a_vector_offset = builder.CreateVector(_a_vector);
+    auto p_vector_offset = builder.CreateVector(_p_vector);
+
+    auto context_offset = builder.CreateString(_context);
+
+    auto vw_state_offset = VW::Events::CreateVWStateType(builder, builder.CreateString(_model_id));
+
+    return VW::Events::CreateRankingEvent(builder, version, event_id_offset, a_vector_offset, context_offset, p_vector_offset, vw_state_offset);
+  }
+
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
     const ranking_response& resp, float pass_prob) {
-
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << event_id;
 
     //add action ids
     oss << R"(","a":[)";
-    if ( resp.size() > 0 ) {
-      for ( auto const &r : resp )
+    if (resp.size() > 0) {
+      for (auto const &r : resp)
         oss << r.action_id + 1 << ",";
       oss.remove_last();//remove trailing ,
     }
 
     //add probabilities
     oss << R"(],"c":)" << context << R"(,"p":[)";
-    if ( resp.size() > 0 ) {
-      for ( auto const &r : resp )
+    if (resp.size() > 0) {
+      for (auto const &r : resp)
         oss << r.probability << ",";
       oss.remove_last();//remove trailing ,
     }
 
     //add model id
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
-	}
+  }
 
   outcome_event::outcome_event()
   { }
@@ -111,6 +129,7 @@ namespace reinforcement_learning {
   outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob)
     : event(event_id, pass_prob)
   {
+    _outcome = outcome;
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
@@ -118,6 +137,8 @@ namespace reinforcement_learning {
   outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob)
     : event(event_id)
   {
+    // TODO: assign float
+    // _outcome = outcome;
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
@@ -137,6 +158,12 @@ namespace reinforcement_learning {
 
   void outcome_event::serialize(u::data_buffer& oss) {
     oss << _body;
+  }
+
+  flatbuffers::Offset<OutcomeEvent> outcome_event::serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder) {
+    auto event_id_offset = builder.CreateString(_event_id);
+    auto outcome_offset = builder.CreateString(_outcome);
+    return VW::Events::CreateOutcomeEvent(builder, event_id_offset, outcome_offset);
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {

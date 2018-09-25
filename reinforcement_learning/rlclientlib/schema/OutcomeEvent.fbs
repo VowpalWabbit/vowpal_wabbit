@@ -1,0 +1,12 @@
+﻿// EventHubInteraction Schema used by FlatBuffer
+
+namespace VW.Events;
+
+table OutcomeEvent {
+    EventId:string;
+    v:string;
+}
+
+table OutcomeEventBatch {
+	Events:[OutcomeEvent];
+}
