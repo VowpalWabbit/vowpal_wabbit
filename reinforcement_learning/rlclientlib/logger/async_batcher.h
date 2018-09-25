@@ -54,7 +54,6 @@ namespace reinforcement_learning {
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
     float _pass_prob;
-    int _initial_batches = 1000;
   };
 
   template<typename TEvent>

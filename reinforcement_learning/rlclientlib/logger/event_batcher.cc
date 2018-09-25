@@ -6,7 +6,7 @@ namespace reinforcement_learning {
     void event_batcher<TEvent>::batch_serialize(data_buffer& oss, size_t remaining, event_queue<TEvent>& queue, size_t _send_high_water_mark) {
       if (std::is_same<TEvent, ranking_event>) {
         // TODO: figure out how to determine the batch number
-        auto eventsOffset = Offset<RankingEvent>[100];
+        auto eventsOffset = Offset<RankingEvent>[1000];
         flatbuffers::FlatBufferBuilder builder(_send_high_water_mark);
         TEvent evt;
         for (int i = 0; remaining > 0 && oss.size() < _send_high_water_mark; i++) {
@@ -23,7 +23,7 @@ namespace reinforcement_learning {
       }
       else if (std::is_same<TEvent, outcome_event>) {
         // TODO: figure out how to determine the batch number
-        auto eventsOffset = Offset<OutcomeEvent>[100];
+        auto eventsOffset = Offset<OutcomeEvent>[1000];
         flatbuffers::FlatBufferBuilder builder(_send_high_water_mark);
         TEvent evt;
         for (int i = 0; remaining > 0 && oss.size() < _send_high_water_mark; i++) {
