@@ -1,0 +1,10 @@
+/*! \page error_codes API Error Codes
+
+All RL Inference API functions return error codes.
+
+Following is the list of all error codes:
+\snippet include/err_constants.h Error Codes
+
+Here are the corresponding error descriptions:
+\snippet include/err_constants.h Error Description
+*/

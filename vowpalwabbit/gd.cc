@@ -850,9 +850,12 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   bin_text_read_write_fixed(model_file, (char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump),
                             "", read, msg, text);
 
-  msg << "dump_interval " << all.sd->dump_interval << "\n";
-  bin_text_read_write_fixed(model_file, (char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval),
+  float dump_interval = all.sd->dump_interval;
+  msg << "dump_interval " << dump_interval << "\n";
+  bin_text_read_write_fixed(model_file, (char*)&dump_interval, sizeof(dump_interval),
                             "", read, msg, text);
+  if (!read || (all.training && all.preserve_performance_counters)) // update dump_interval from input model
+    all.sd->dump_interval = dump_interval;
 
   msg << "min_label " << all.sd->min_label << "\n";
   bin_text_read_write_fixed(model_file, (char*)&all.sd->min_label, sizeof(all.sd->min_label),
@@ -918,7 +921,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text, g
   {
     all.sd->sum_loss = 0;
     all.sd->sum_loss_since_last_dump = 0;
-    all.sd->dump_interval = 1.;
     all.sd->weighted_labeled_examples = 0.;
     all.sd->weighted_labels = 0.;
     all.sd->weighted_unlabeled_examples = 0.;
