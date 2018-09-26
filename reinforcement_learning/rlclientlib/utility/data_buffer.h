@@ -28,9 +28,13 @@ namespace reinforcement_learning { namespace utility {
     void remove_last();
 
     data_buffer& operator<<(const std::string& cs);
+    // TODO: refactor this. As here char* assumes string only
     data_buffer& operator<<(const char*);
     data_buffer& operator<<(size_t rhs);
     data_buffer& operator<<(float rhs);
+
+    // to process binary data
+    void append(const char* start, size_t len);
 
   private:
     std::vector<char> _buffer;

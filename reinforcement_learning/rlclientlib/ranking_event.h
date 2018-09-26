@@ -53,10 +53,10 @@ namespace reinforcement_learning {
 
   private:
     std::string _body;
-    const char* _context;
+    std::string _context;
     std::vector<uint64_t> _a_vector;
     std::vector<float> _p_vector;
-    const char* _model_id;
+    std::string _model_id;
   };
 
   //serializable outcome event
@@ -78,6 +78,6 @@ namespace reinforcement_learning {
 
   private:
     std::string _body;
-    const char* _outcome;
+    std::string _outcome;
   };
 }

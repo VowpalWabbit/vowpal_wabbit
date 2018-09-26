@@ -53,12 +53,12 @@ namespace reinforcement_learning {
     const ranking_response& response, float pass_prob)
     : event(event_id, pass_prob)
   {
-    _context = context;
+    _context = std::string(context);
     for (auto const &r : response) {
       _a_vector.push_back(r.action_id);
       _p_vector.push_back(r.probability);
     }
-    _model_id = response.get_model_id();
+    _model_id = std::string(response.get_model_id());
     serialize(oss, event_id, context, response, _pass_prob);
     _body = oss.str();
   }
@@ -66,12 +66,20 @@ namespace reinforcement_learning {
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
     , _body(std::move(other._body))
-  {}
+    , _context(std::move(other._context))
+    , _a_vector(std::move(other._a_vector))
+    , _p_vector(std::move(other._p_vector))
+    , _model_id(std::move(other._model_id))
+  { }
 
   ranking_event& ranking_event::operator=(ranking_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
       _body = std::move(other._body);
+      _context = std::move(other._context);
+      _a_vector = std::move(other._a_vector);
+      _p_vector = std::move(other._p_vector);
+      _model_id = std::move(other._model_id);
     }
     return *this;
   }
@@ -129,7 +137,7 @@ namespace reinforcement_learning {
   outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob)
     : event(event_id, pass_prob)
   {
-    _outcome = outcome;
+    _outcome = std::string(outcome);
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
@@ -139,6 +147,7 @@ namespace reinforcement_learning {
   {
     // TODO: assign float
     // _outcome = outcome;
+    _outcome = std::to_string(outcome);
     serialize(oss, event_id, outcome);
     _body = oss.str();
   }
@@ -146,12 +155,14 @@ namespace reinforcement_learning {
   outcome_event::outcome_event(outcome_event&& other)
     : event(std::move(other))
     , _body(std::move(other._body))
+    , _outcome(std::move(other._outcome))
   { }
 
   outcome_event& outcome_event::operator=(outcome_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
       _body = std::move(other._body);
+      _outcome = std::move(other._outcome);
     }
     return *this;
   }
