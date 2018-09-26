@@ -263,7 +263,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-    <Import Project="packages\VisualLeakDetector.2.4.2.4\build\native\VisualLeakDetector.targets" Condition="Exists('packages\VisualLeakDetector.2.4.2.4\build\native\VisualLeakDetector.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
