@@ -13,14 +13,11 @@ namespace reinforcement_learning {
   public:
     virtual int init(api_status* status) override;
 
-    //send a POST request
-    int send(const std::string&, api_status* status = nullptr);
-
     eventhub_client(const std::string&, const std::string&,
                     const std::string&, const std::string&, bool local_test = false);
 
   protected:
-    virtual int v_send(const std::string& data, api_status* status) override;
+    virtual int v_send(std::string&& data, api_status* status) override;
 
   private:
     int authorization(api_status* status);

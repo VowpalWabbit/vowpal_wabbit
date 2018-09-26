@@ -25,9 +25,7 @@ namespace reinforcement_learning {
 
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
-  int eventhub_client::send(const std::string& post_data, api_status* status) { return v_send(post_data, status); }
-
-  int eventhub_client::v_send(const std::string& post_data, api_status* status) {
+  int eventhub_client::v_send(std::string&& post_data, api_status* status) {
     http_request request(methods::POST);
     if (authorization(status) != error_code::success)
       return status->get_error_code();
@@ -39,7 +37,7 @@ namespace reinforcement_learning {
     }
     request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data.c_str());
+    request.set_body(post_data);
     auto request_task = _client.request(request).then([&](http_response response) {
       //expect http code 201
       if (response.status_code() == status_codes::Created)
