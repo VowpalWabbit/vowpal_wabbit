@@ -209,7 +209,6 @@
     <ClInclude Include="utility\interruptable_sleeper.h" />
     <ClInclude Include="utility\periodic_background_proc.h" />
     <ClInclude Include="utility\object_pool.h" />
-    <ClCompile Include="logger\event_batcher.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\data_buffer.cc" />
     <ClCompile Include="utility\http_helper.h" />
