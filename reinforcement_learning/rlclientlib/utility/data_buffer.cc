@@ -62,5 +62,9 @@ namespace reinforcement_learning {
         _buffer.push_back(translate(start[i]));
       }
     }
+
+    std::vector<char> data_buffer::buffer() {
+      return _buffer;
+    }
   }
 }

@@ -24,6 +24,7 @@ namespace reinforcement_learning { namespace utility {
 
     void reset();
     std::string str() const;
+    std::vector<char> buffer();
     size_t size() const;
     void remove_last();
 

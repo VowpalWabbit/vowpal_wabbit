@@ -173,6 +173,8 @@
     <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\registry.h" />
     <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\stl_emulation.h" />
     <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\util.h" />
+    <ClInclude Include="generated\OutcomeEvent_generated.h" />
+    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="logger\event_batcher.h" />
     <ClInclude Include="flatbuffers\base.h" />
     <ClInclude Include="flatbuffers\code_generators.h" />
@@ -201,8 +203,6 @@
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
-    <ClInclude Include="generated\OutcomeEvent_generated.h" />
-    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="utility\context_helper.h" />
     <ClInclude Include="utility\data_buffer.h" />

@@ -89,9 +89,9 @@
     <ClInclude Include="flatbuffers\util.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
+    <ClInclude Include="logger\event_batcher.h" />
     <ClInclude Include="generated\OutcomeEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
-    <ClInclude Include="logger\event_batcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -2,6 +2,7 @@
 
 #include "api_status.h"
 #include "sender.h"
+#include <vector>
 
 #include <cpprest/http_client.h>
 
@@ -14,13 +15,18 @@ namespace reinforcement_learning {
     virtual int init(api_status* status) override;
 
     //send a POST request
+    // TODO: Refactor this method assume string data, instead of binary format.
     int send(const std::string&, api_status* status = nullptr);
+
+    int send(std::vector<char>, api_status* status = nullptr);
 
     eventhub_client(const std::string&, const std::string&,
                     const std::string&, const std::string&, bool local_test = false);
 
   protected:
+    // TODO: Refactor this method assume string data, instead of binary format.
     virtual int v_send(const std::string& data, api_status* status) override;
+    virtual int v_send(std::vector<char> data, api_status* status);
 
   private:
     int authorization(api_status* status);
