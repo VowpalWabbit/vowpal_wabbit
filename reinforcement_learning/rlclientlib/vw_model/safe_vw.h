@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include "../../vowpalwabbit/vw.h"
+#include "model_mgmt.h"
 
 namespace reinforcement_learning {
 
@@ -28,10 +29,11 @@ namespace reinforcement_learning {
   };
 
   class safe_vw_factory {
-    std::shared_ptr<safe_vw> _master;
+    model_management::model_data _master_data;
 
   public:
-    safe_vw_factory(const std::shared_ptr<safe_vw>& master);
+    // model_data is copied and stored in the factory object.
+    safe_vw_factory(const model_management::model_data& master_data);
 
     safe_vw* operator()();
   };

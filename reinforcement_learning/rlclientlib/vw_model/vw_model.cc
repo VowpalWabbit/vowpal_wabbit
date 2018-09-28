@@ -6,14 +6,14 @@
 
 namespace e = exploration;
 namespace reinforcement_learning { namespace model_management {
-  
-  vw_model::vw_model() :_vw_pool(nullptr) 
+
+  vw_model::vw_model() :_vw_pool(nullptr)
   {}
 
   int vw_model::update(const model_data& data, api_status* status) {
     try {
-      const auto new_model = std::make_shared<safe_vw>(data.data(), data.data_sz());
-      _vw_pool.update_factory(new safe_vw_factory(new_model));
+      // safe_vw_factory will create a copy of the model data to use for vw object construction.
+      _vw_pool.update_factory(new safe_vw_factory(data));
     }
     catch(const std::exception& e) {
       RETURN_ERROR_LS(status, model_update_error) << e.what();
