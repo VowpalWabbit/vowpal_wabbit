@@ -1,9 +1,13 @@
 #pragma once
 
 #include "api_status.h"
+#include "moving_queue.h"
 #include "sender.h"
 
 #include <cpprest/http_client.h>
+#include <pplx/pplxtasks.h>
+
+#include <queue>
 
 namespace reinforcement_learning {
 
@@ -14,13 +18,44 @@ namespace reinforcement_learning {
     virtual int init(api_status* status) override;
 
     eventhub_client(const std::string&, const std::string&,
-                    const std::string&, const std::string&, bool local_test = false);
+                    const std::string&, const std::string&,
+                    size_t tasks_count, bool local_test = false);
+    ~eventhub_client();
 
   protected:
     virtual int v_send(std::string&& data, api_status* status) override;
 
   private:
+    class task_context {
+    public:
+      task_context();
+      task_context(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::string&& post_data);
+      task_context(task_context&& other);
+      task_context& operator=(task_context&& other);
+
+      web::http::status_code join();
+      std::string post_data() const;
+    private:
+      task_context(const task_context&) = delete;
+      task_context& operator=(const task_context&) = delete;
+
+    private:
+      std::string _post_data;
+      pplx::task<web::http::status_code> _task;
+    };
+
+  private:
     int authorization(api_status* status);
+    int submit_task(task_context&& task, api_status* status);
+    int pop_task(api_status* status);
+
+    // cannot be copied or assigned
+    eventhub_client(const eventhub_client&) = delete;
+    eventhub_client(eventhub_client&&) = delete;
+    eventhub_client& operator=(const eventhub_client&) = delete;
+    eventhub_client& operator=(eventhub_client&&) = delete;
+
+  private:
     web::http::client::http_client _client;
 
     const std::string _eventhub_host; //e.g. "ingest-x2bw4dlnkv63q.servicebus.windows.net"
@@ -32,11 +67,7 @@ namespace reinforcement_learning {
     std::string _authorization;
     long long _authorization_valid_until; //in seconds
     std::mutex _mutex;
-
-    // cannot be copied or assigned
-    eventhub_client(const eventhub_client&) = delete;
-    eventhub_client(eventhub_client&&) = delete;
-    eventhub_client& operator=(const eventhub_client&) = delete;
-    eventhub_client& operator=(eventhub_client&&) = delete;
+    moving_queue<task_context> _tasks;
+    const size_t _tasks_count;
   };
 }

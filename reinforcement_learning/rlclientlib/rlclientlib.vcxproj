@@ -149,6 +149,7 @@
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
     <ClInclude Include="logger\event_logger.h" />
+    <ClInclude Include="moving_queue.h" />
     <ClInclude Include="utility\context_helper.h" />
     <ClInclude Include="utility\data_buffer.h" />
     <ClInclude Include="utility\interruptable_sleeper.h" />
