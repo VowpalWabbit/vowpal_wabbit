@@ -59,8 +59,10 @@ namespace Rl.Net.Native
                 return false;
             }
 
-            // Here, we must obey all rules for constrained execution regions.
+            // TODO: Check nulls in Debug
             Debug.WriteLine($"Deleting object at at {localHandle.ToInt64():x}");
+
+            // Here, we must obey all rules for constrained execution regions.
             operatorDelete(localHandle);
             
             return true;

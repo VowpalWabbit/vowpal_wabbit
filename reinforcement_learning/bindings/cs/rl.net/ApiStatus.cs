@@ -20,7 +20,6 @@ namespace Rl.Net {
         [DllImport("rl.net.native.dll")]
         private static extern int GetApiStatusErrorCode(IntPtr status);
 
-        // TODO: Once we expose direct manipulation methods on configuration, this can go public
         public ApiStatus() : base(new New<ApiStatus>(CreateApiStatus), new Delete<ApiStatus>(DeleteApiStatus))
         {
         }

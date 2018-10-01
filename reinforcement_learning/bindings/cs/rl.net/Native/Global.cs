@@ -5,7 +5,8 @@ using System.Runtime.InteropServices;
 namespace Rl.Net.Native {
     internal static class NativeMethods
     {
-        public const UnmanagedType StringMarshalling = UnmanagedType.LPStr; // TODO - where did UTF marshalling go?
+        // TODO - UTF Marshalling (exists in NetCoreApp2.1 and Net[FrameworkApp]462, but not NetStandard2.0, and there is not yet a 2.1)
+        public const UnmanagedType StringMarshalling = UnmanagedType.LPStr;
         public const int SuccessStatus = 0; // See err_constants.h
 
         public static IntPtr ToNativeHandleOrNullptr<TObject>(this NativeObject<TObject> nativeObject) where TObject : NativeObject<TObject>

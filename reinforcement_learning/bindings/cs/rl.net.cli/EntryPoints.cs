@@ -21,7 +21,7 @@ namespace Rl.Net.Cli {
             WriteErrorAndExit(apiStatus.ErrorMessage);
         }
 
-        // TODO: Pull this out to a separate sample.
+        // TODO: Pull this out to a separate sample once we implement the simulator in this.
         public static void BasicUsageExample(string [] args)
         {
             const float outcome = 1.0f;

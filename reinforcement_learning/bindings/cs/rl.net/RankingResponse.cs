@@ -43,7 +43,6 @@ namespace Rl.Net {
         [DllImport("rl.net.native.dll")]
         private static extern int GetRankingChosenAction(IntPtr rankingResponse, out UIntPtr action_id, IntPtr status);
 
-        // TODO: Once we expose direct manipulation methods on configuration, this can go public
         public RankingResponse() : base(new New<RankingResponse>(CreateRankingResponse), new Delete<RankingResponse>(DeleteRankingResponse))
         {
         }
@@ -52,8 +51,6 @@ namespace Rl.Net {
 
         public string ModelId => GetRankingModelId(this.NativeHandle);
 
-        // TODO: Do we want to keep this consistent with .NET Collection idiom, or with the
-        // native RL Library naming (Size)?
         public long Count
         {
             get
