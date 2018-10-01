@@ -9,7 +9,7 @@
 
 /**
  * @brief Basic API usage example
- * 
+ *
  * @return int Error code 
  */
 int main() {
