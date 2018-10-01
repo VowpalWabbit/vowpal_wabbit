@@ -38,7 +38,7 @@ namespace reinforcement_learning {
   eventhub_client::task_context& eventhub_client::task_context::operator=(task_context&& other) {
     if (&other != this) {
       _post_data = std::move(other._post_data);
-      _task = other._task;
+      _task = std::move(other._task);
     }
     return *this;
   }
@@ -76,6 +76,7 @@ namespace reinforcement_learning {
         status_code, "eh_host", _eventhub_host, "eh_name", _eventhub_name,
         "\npost_data: ", oldest.post_data());
     }
+    return error_code::success;
   }
 
   int eventhub_client::submit_task(task_context&& task, api_status* status) {
@@ -95,14 +96,15 @@ namespace reinforcement_learning {
       std::lock_guard<std::mutex> lock(_mutex);
       auth_str = _authorization;
     }
-    task_context task(_client, _eventhub_host, auth_str, std::move(post_data));
 
     try {
+      auto task = task_context(_client, _eventhub_host, auth_str, std::move(post_data));
       RETURN_IF_FAIL(submit_task(std::move(task), status));
     }
     catch (const std::exception& e) {
       RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
+    return error_code::success;
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,

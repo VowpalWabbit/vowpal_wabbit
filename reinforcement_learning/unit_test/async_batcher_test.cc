@@ -22,7 +22,7 @@ public:
     return 0;
   }
 
-  virtual int v_send(const std::string& item, api_status* s = nullptr) override{
+  virtual int v_send(std::string&& item, api_status* s = nullptr) override{
     items.push_back(item);
     return error_code::success;
   };
