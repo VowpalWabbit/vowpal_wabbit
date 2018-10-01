@@ -92,7 +92,7 @@
     <ClCompile Include="event_queue_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="moving_queue_test.cpp">
+    <ClCompile Include="moving_queue_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
