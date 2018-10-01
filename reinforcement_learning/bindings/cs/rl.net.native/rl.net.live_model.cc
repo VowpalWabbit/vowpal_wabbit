@@ -10,7 +10,7 @@ API void DeleteLiveModel(reinforcement_learning::live_model* livemodel)
     delete livemodel;
 }
 
-API int InitLiveModel(reinforcement_learning::live_model* livemodel, reinforcement_learning::api_status* status)
+API int LiveModelInit(reinforcement_learning::live_model* livemodel, reinforcement_learning::api_status* status)
 {
     return livemodel->init(status);
 }

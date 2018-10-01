@@ -19,7 +19,7 @@ namespace Rl.Net {
         }
 
         [DllImport("rl.net.native.dll")]
-        private static extern int InitLiveModel(IntPtr liveModel, IntPtr apiStatus);
+        private static extern int LiveModelInit(IntPtr liveModel, IntPtr apiStatus);
 
         [DllImport("rl.net.native.dll")]
         private static extern int LiveModelChooseRank(IntPtr liveModel,  [MarshalAs(NativeMethods.StringMarshalling)] string eventId,  [MarshalAs(NativeMethods.StringMarshalling)] string contextJson, IntPtr rankingResponse, IntPtr apiStatus);
@@ -33,7 +33,7 @@ namespace Rl.Net {
 
         public bool TryInit(ApiStatus apiStatus = null)
         {
-            int result = InitLiveModel(this.NativeHandle, apiStatus.ToNativeHandleOrNullptr());
+            int result = LiveModelInit(this.NativeHandle, apiStatus.ToNativeHandleOrNullptr());
             return result == NativeMethods.SuccessStatus;
         }
 
