@@ -718,7 +718,7 @@ public:
 				label_index++;
 				if (label_index >= (int)ctx.examples->size())
 				{
-					ctx.error() << "_label_index out of bounds: " << (label_index - 1) << " examples available: " << ctx.examples->size() - 1;
+					ctx.error() << "Out of bounds error: _labelIndex must be smaller than number of examples! _labelIndex=" << (label_index - 1) << " Number of examples=" << ctx.examples->size() - 1 << " ";
 					return nullptr;
 				}
 
