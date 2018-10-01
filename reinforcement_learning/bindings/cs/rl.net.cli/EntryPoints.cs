@@ -26,9 +26,7 @@ namespace Rl.Net.Cli {
         {
             const float outcome = 1.0f;
             const string eventId = "event_id";
-            const string contextJson = @"({
-                                  ""GUser"":{""id"":""a"",""major"":""eng"",""hobby"":""hiking""},
-                                  ""_multi"":[ { ""TAction"":{""a1"":""f1""} },{""TAction"":{""a2"":""f2""}}]})";
+            const string contextJson = "{'GUser':{'id':'a','major':'eng','hobby':'hiking'},'_multi':[ { 'TAction':{'a1':'f1'} },{'TAction':{'a2':'f2'}}]}";
 
             if (args.Length != 1) 
             {
