@@ -26,18 +26,18 @@ namespace reinforcement_learning {
     virtual int v_send(std::string&& data, api_status* status) override;
 
   private:
-    class task_context {
+    class task {
     public:
-      task_context();
-      task_context(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::string&& post_data);
-      task_context(task_context&& other);
-      task_context& operator=(task_context&& other);
+      task();
+      task(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::string&& post_data);
+      task(task&& other);
+      task& operator=(task&& other);
 
       web::http::status_code join();
       std::string post_data() const;
     private:
-      task_context(const task_context&) = delete;
-      task_context& operator=(const task_context&) = delete;
+      task(const task&) = delete;
+      task& operator=(const task&) = delete;
 
     private:
       std::string _post_data;
@@ -46,7 +46,7 @@ namespace reinforcement_learning {
 
   private:
     int authorization(api_status* status);
-    int submit_task(task_context&& task, api_status* status);
+    int submit_task(task&& task, api_status* status);
     int pop_task(api_status* status);
 
     // cannot be copied or assigned
@@ -67,7 +67,7 @@ namespace reinforcement_learning {
     std::string _authorization;
     long long _authorization_valid_until; //in seconds
     std::mutex _mutex;
-    moving_queue<task_context> _tasks;
+    moving_queue<task> _tasks;
     const size_t _tasks_count;
   };
 }

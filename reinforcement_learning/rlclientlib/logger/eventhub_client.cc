@@ -11,10 +11,10 @@ using namespace web::http; // Common HTTP functionality
 namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning {
-  eventhub_client::task_context::task_context()
+  eventhub_client::task::task()
   {}
 
-  eventhub_client::task_context::task_context(web::http::client::http_client& client,
+  eventhub_client::task::task(web::http::client::http_client& client,
     const std::string& host,
     const std::string& auth,
     std::string&& post_data)
@@ -30,12 +30,12 @@ namespace reinforcement_learning {
     });
   }
 
-  eventhub_client::task_context::task_context(task_context&& other)
+  eventhub_client::task::task(task&& other)
     : _post_data(std::move(other._post_data))
     , _task(std::move(other._task))
   {}
 
-  eventhub_client::task_context& eventhub_client::task_context::operator=(task_context&& other) {
+  eventhub_client::task& eventhub_client::task::operator=(task&& other) {
     if (&other != this) {
       _post_data = std::move(other._post_data);
       _task = std::move(other._task);
@@ -43,11 +43,11 @@ namespace reinforcement_learning {
     return *this;
   }
 
-  std::string eventhub_client::task_context::post_data() const {
+  std::string eventhub_client::task::post_data() const {
     return _post_data;
   }
 
-  web::http::status_code eventhub_client::task_context::join() {
+  web::http::status_code eventhub_client::task::join() {
     _task.wait();
     return _task.get();
   }
@@ -67,7 +67,7 @@ namespace reinforcement_learning {
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
   int eventhub_client::pop_task(api_status* status) {
-    task_context oldest;
+    task oldest;
     _tasks.pop(&oldest);
     const auto status_code = oldest.join();
     if (status_code != status_codes::Created)
@@ -79,7 +79,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int eventhub_client::submit_task(task_context&& task, api_status* status) {
+  int eventhub_client::submit_task(task&& task, api_status* status) {
     if (_tasks.size() >= _tasks_count) {
       RETURN_IF_FAIL(pop_task(status));
     }
@@ -98,8 +98,8 @@ namespace reinforcement_learning {
     }
 
     try {
-      auto task = task_context(_client, _eventhub_host, auth_str, std::move(post_data));
-      RETURN_IF_FAIL(submit_task(std::move(task), status));
+      task request_task(_client, _eventhub_host, auth_str, std::move(post_data));
+      RETURN_IF_FAIL(submit_task(std::move(request_task), status));
     }
     catch (const std::exception& e) {
       RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
