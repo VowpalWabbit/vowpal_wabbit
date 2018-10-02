@@ -58,7 +58,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);_WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;$(SolutionDir)packages\python.3.6.0\tools\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);_WIN32</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -90,7 +90,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\vw_dynamic.vcxproj">
+    <ProjectReference Include="$(SolutionDir)\vw_core.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
   </ItemGroup>

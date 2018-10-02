@@ -1,4 +1,4 @@
-CXX = $(shell which g++)
+CXX ?= $(shell which g++)
 # -- if you want to test 32-bit use this instead,
 #    it sometimes reveals type portability issues
 # CXX = $(shell which g++) -m32
@@ -54,6 +54,14 @@ ifeq ($(UNAME), Darwin)
   NPROCS:=$(shell sysctl -n hw.ncpu)
 endif
 
+ifneq ($(USER_BOOST_INCLUDE),)
+  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
+endif
+ifneq ($(USER_BOOST_LIBRARY),)
+  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
+endif
+
+
 JSON_INCLUDE = -I ../rapidjson/include
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -71,30 +79,50 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
+FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC
 #CXX = g++
 
 # for valgrind / gdb debugging
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -g -O0  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -g -O0  -fPIC
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-#FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
+#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
 
-FLAGS += -I ../rapidjson/include
+FLAGS += -I ../rapidjson/include -I ../explore
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
 default:	vw
 
-all:	vw library_example java spanning_tree
+all:	vw library_example java spanning_tree rl_clientlib
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
 export
+
+rl_clientlib: vw
+	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
+
+# Devirtualization is an optimization that changes the vtable if the compiler decides a function
+# doesn't need to be virtual. This is incompatible with the mocking framework used in testing as it
+# makes the vtable structure unpredictable
+rl_clientlib_test: FLAGS += -fno-devirtualize
+rl_clientlib_test: vw rl_clientlib
+	cd reinforcement_learning/unit_test; $(MAKE) -j $(NPROCS) things
+	(cd reinforcement_learning/unit_test && ./rlclient-test.out)
+
+rl_example: vw rl_clientlib
+	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
+	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
+
+rl_python: vw rl_clientlib
+	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
 
 spanning_tree:
 	cd cluster; $(MAKE)
@@ -103,7 +131,7 @@ vw:
 	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-vw_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
+vw_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 vw_gcov: CXX = g++
 vw_gcov:
 	cd vowpalwabbit && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) -j $(NPROCS) things
@@ -115,7 +143,7 @@ library_example: vw
 	cd library; $(MAKE) -j $(NPROCS) things
 
 #Target-specific flags for a profiling build.  (Copied from line 70)
-library_example_gcov: FLAGS = -std=c++0x $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC #-DVW_LDA_NO_S
+library_example_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
 library_example_gcov: CXX = g++
 library_example_gcov: vw_gcov
 	cd library && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) things
@@ -128,10 +156,15 @@ java: vw
 
 .FORCE:
 
-test: .FORCE vw library_example
+test: .FORCE vw library_example unit_test
 	@echo "vw running test-suite..."
 	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
 	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
+	cd test && python save_resume_test.py --verbose_on_fail
+
+unit_test: vw
+	cd test/unit_test; $(MAKE) -j $(NPROCS) things
+	(cd test/unit_test && ./vw-unit-test.out)
 
 test_gcov: .FORCE vw_gcov library_example_gcov
 	@echo "vw running test-suite..."
@@ -152,5 +185,11 @@ clean:
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
 	cd java    && $(MAKE) clean
+	cd reinforcement_learning/rlclientlib    && $(MAKE) clean
+	cd reinforcement_learning/unit_test; $(MAKE) clean
+	cd reinforcement_learning/bindings/python; $(MAKE) clean
+	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) clean
+	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) clean
+	cd reinforcement_learning/examples/test_cpp; $(MAKE) clean
 
 .PHONY: all clean install doc

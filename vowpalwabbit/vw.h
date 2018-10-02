@@ -84,6 +84,8 @@ float get_prediction(example*ec);
 float get_cost_sensitive_prediction(example*ec);
 v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec);
 uint32_t* get_multilabel_predictions(example* ec, size_t& len);
+float get_action_score(example* ec, size_t i);
+size_t get_action_score_length(example* ec);
 size_t get_tag_length(example* ec);
 const char* get_tag(example* ec);
 size_t get_feature_number(example* ec);
@@ -95,7 +97,8 @@ void add_constant_feature(vw& all, example*ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 //notify VW that you are done with the example.
-void finish_example(vw& all, example* ec);
+void finish_example(vw& all, example& ec);
+void finish_example(vw& all, multi_ex& ec);
 void empty_example(vw& all, example& ec);
 
 void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*,void*));

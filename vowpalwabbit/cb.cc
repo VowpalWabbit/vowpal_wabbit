@@ -15,20 +15,10 @@ using namespace std;
 
 namespace CB
 {
-bool is_test_label(CB::label& ld)
-{
-  if (ld.costs.size() == 0)
-    return true;
-  for (size_t i=0; i<ld.costs.size(); i++)
-    if (FLT_MAX != ld.costs[i].cost && ld.costs[i].probability > 0.)
-      return false;
-  return true;
-}
-
 char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 {
   size_t num = *(size_t *)c;
-  ld->costs.erase();
+  ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(cb_class)*num;
   if (buf_read(cache, c, total) < total)
@@ -49,7 +39,7 @@ char* bufread_label(CB::label* ld, char* c, io_buf& cache)
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
   if (buf_read(cache, c, total) < total)
@@ -87,8 +77,19 @@ void cache_label(void* v, io_buf& cache)
 void default_label(void* v)
 {
   CB::label* ld = (CB::label*) v;
-  ld->costs.erase();
+  ld->costs.clear();
 }
+
+  bool test_label(void* v)
+  {
+    CB::label* ld = (CB::label*)v;
+    if (ld->costs.size() == 0)
+      return true;
+    for (size_t i=0; i<ld->costs.size(); i++)
+      if (FLT_MAX != ld->costs[i].cost && ld->costs[i].probability > 0.)
+        return false;
+    return true;
+  }
 
 void delete_label(void* v)
 {
@@ -167,17 +168,9 @@ label_parser cb_label = {default_label, parse_label,
                          cache_label, read_cached_label,
                          delete_label, weight,
                          copy_label,
+                         test_label,
                          sizeof(label)
                         };
-
-bool example_is_test(example& ec)
-{
-  v_array<CB::cb_class> costs = ec.l.cb.costs;
-  if (costs.size() == 0) return true;
-  for (size_t j=0; j<costs.size(); j++)
-    if (costs[j].cost != FLT_MAX) return false;
-  return true;
-}
 
 bool ec_is_example_header(example& ec)  // example headers just have "shared"
 {
@@ -187,7 +180,7 @@ bool ec_is_example_header(example& ec)  // example headers just have "shared"
   return false;
 }
 
-void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq, bool action_scores)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -217,7 +210,7 @@ void print_update(vw& all, bool is_test, example& ec, v_array<example*>* ec_seq,
       else
         pred_buf << "no action";
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                           num_features, all.progress_add, all.progress_arg);;
+                           num_features, all.progress_add, all.progress_arg);
     }
     else
       all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, (uint32_t)pred,
@@ -257,6 +250,13 @@ void default_label(void* v)
   ld->action = 0;
 }
 
+    bool test_label(void* v)
+  {
+    CB_EVAL::label* ld = (CB_EVAL::label*)v;
+    return CB::test_label(&ld->event);
+  }
+
+
 void delete_label(void* v)
 {
   CB_EVAL::label* ld = (CB_EVAL::label*)v;
@@ -291,6 +291,7 @@ label_parser cb_eval = {default_label, parse_label,
                         cache_label, read_cached_label,
                         delete_label, CB::weight,
                         copy_label,
+                        test_label,
                         sizeof(CB_EVAL::label)
                        };
 }

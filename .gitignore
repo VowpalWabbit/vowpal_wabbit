@@ -21,7 +21,6 @@ config.h
 *.la
 *.lo
 vowpalwabbit/stamp-*
-Makefile
 config.status
 test/*.predict
 test/*.cmp
@@ -121,3 +120,11 @@ vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /python/pylibvw.pyd
 /python/pylibvw.cp35-win_amd64.pyd
+reinforcement_learning/ds.VC.VC.opendb
+reinforcement_learning/ds.VC.db
+reinforcement_learning/rl.VC.VC.opendb
+reinforcement_learning/rl.VC.db
+index.html
+packages-microsoft-prod.deb
+reinforcement_learning/unit_test/rlclient-test.out
+cs/azure_service/azure_service.ccproj.user

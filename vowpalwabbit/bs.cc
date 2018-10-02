@@ -157,7 +157,7 @@ void output_example(vw& all, bs& d, example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
+    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
   {
@@ -179,7 +179,7 @@ void output_example(vw& all, bs& d, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(bs& d, base_learner& base, example& ec)
+void predict_or_learn(bs& d, single_learner& base, example& ec)
 {
   vw& all = *d.all;
   bool shouldOutput = all.raw_prediction > 0;
@@ -228,7 +228,7 @@ void predict_or_learn(bs& d, base_learner& base, example& ec)
 void finish_example(vw& all, bs& d, example& ec)
 {
   output_example(all, d, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(bs& d)
@@ -265,7 +265,7 @@ base_learner* bs_setup(arguments& arg)
   data->pred_vec->reserve(data->B);
   data->all = arg.all;
 
-  learner<bs>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
+  learner<bs,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                                 predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

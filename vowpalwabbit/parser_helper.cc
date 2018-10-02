@@ -1,6 +1,7 @@
-#include<boost/foreach.hpp>
+#include <boost/foreach.hpp>
 #include "parser_helper.h"
-#include<iostream>
+#include <iostream>
+#include "stable_unique.h"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
               if (it.second.value().type() == typeid(vector<string>))
                 {
                   auto& values = it.second.as<vector<string>>();
-                  auto end = unique(values.begin(), values.end());
+                  auto end = stable_unique(values.begin(), values.end());
                   values.erase(end, values.end());
                 }
             }
@@ -73,10 +74,6 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
       catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
         { }
 
-      cout << "args = ";
-      for(auto i: args)
-        cout << " " << i;
-      cout << endl;
       dup_args.clear();
       bool previous_option_needs_argument = false;
       for (auto&& arg : args)
@@ -90,12 +87,9 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                 options(opts).allow_unregistered().run();
               po::store(parsed, new_vm);
 
-              if (do_notify)
-                  po::notify(new_vm);
-
               previous_option_needs_argument = false;
             }
-          catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>&)
+          catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::multiple_occurrences>>& multi_occ)
             {
               auto ignored = arg;
 
@@ -129,8 +123,9 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
 
                   // we need to compare the parsed actions to overcome different representation of the same value
                   // e.g. --epsilon 0.1 vs --epsilon 0.10000
-                  auto duplicate_option = sub_vm.begin();
-                  auto first_option_occurrence = new_vm.find(duplicate_option->first);
+                  string opt_name = multi_occ.get_option_name().substr(2);
+                  auto duplicate_option = sub_vm.find(opt_name);
+                  auto first_option_occurrence = new_vm.find(opt_name);
 
                   if (first_option_occurrence == new_vm.end() || duplicate_option == sub_vm.end())
                     THROW("unable to find duplicate option");
@@ -148,6 +143,10 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                     found_disagreement = duplicate_option->second.as<size_t>() != first_option_occurrence->second.as<size_t>();
                   else if (duplicate_option->second.value().type() == typeid(uint32_t))
                     found_disagreement = duplicate_option->second.as<uint32_t>() != first_option_occurrence->second.as<uint32_t>();
+                  else if (duplicate_option->second.value().type() == typeid(uint64_t))
+                    found_disagreement = duplicate_option->second.as<uint64_t>() != first_option_occurrence->second.as<uint64_t>();
+                  else if (duplicate_option->second.value().type() == typeid(bool))
+                    found_disagreement = duplicate_option->second.as<bool>() != first_option_occurrence->second.as<bool>();
                   else
                     THROW("Unsupported type for option '" << duplicate_option->first << "'");
 

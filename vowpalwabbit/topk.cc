@@ -61,7 +61,7 @@ void output_example(vw& all, topk& d, example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
-    all.sd->weighted_labels += ld.label * ec.weight;
+    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   if (example_is_newline(ec))
     for (int sink : all.final_prediction_sink)
@@ -71,7 +71,7 @@ void output_example(vw& all, topk& d, example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(topk& d, LEARNER::single_learner& base, example& ec)
 {
   if (example_is_newline(ec)) return;//do not predict newline
 
@@ -93,7 +93,7 @@ void predict_or_learn(topk& d, LEARNER::base_learner& base, example& ec)
 void finish_example(vw& all, topk& d, example& ec)
 {
   output_example(all, d, ec);
-  VW::finish_example(all, &ec);
+  VW::finish_example(all, ec);
 }
 
 void finish(topk& d)
@@ -107,7 +107,7 @@ LEARNER::base_learner* topk_setup(arguments& arg)
   if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())
     return nullptr;
 
-  LEARNER::learner<topk>& l = init_learner(data, setup_base(arg), predict_or_learn<true>,
+  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

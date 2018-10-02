@@ -95,13 +95,13 @@ struct OjaNewton
         double tmp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-          tmp += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[k];
+          tmp += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[k];
         for (uint32_t i = 0; i < length; i++)
           (&(weights.strided_index(i)))[j] -= (float)tmp *(&(weights.strided_index(i)))[k];
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-        norm += (&(weights.strided_index(i)))[j] * (&(weights.strided_index(i)))[j];
+        norm += ((double)(&(weights.strided_index(i)))[j]) * (&(weights.strided_index(i)))[j];
       norm = sqrt(norm);
       for (uint32_t i = 0; i < length; i++)
         (&(weights.strided_index(i)))[j] /= (float)norm;
@@ -499,7 +499,7 @@ void learn(OjaNewton& ON, base_learner& base, example& ec)
     ON.cnt = 0;
     for (int k = 0; k < ON.epoch_size; k++)
     {
-      VW::finish_example(*ON.all, ON.buffer[k]);
+      VW::finish_example(*ON.all, *ON.buffer[k]);
     }
   }
 }
@@ -578,7 +578,7 @@ base_learner* OjaNewton_setup(arguments& arg)
 
   arg.all->weights.stride_shift((uint32_t)ceil(log2(ON->m + 2)));
 
-  learner<OjaNewton>& l = init_learner(ON, learn, predict, arg.all->weights.stride());
+  learner<OjaNewton, example>& l = init_learner(ON, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_finish_example(keep_example);
   l.set_finish(finish);

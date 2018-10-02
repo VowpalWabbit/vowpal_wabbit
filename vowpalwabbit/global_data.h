@@ -48,7 +48,13 @@ struct version_struct
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char* v_str)
+    version_struct(const version_struct& v)
+  {
+    major = v.major;
+    minor = v.minor;
+    rev = v.rev;
+  }
+    void operator=(const char* v_str)
   { from_string(v_str);
   }
   bool operator==(version_struct v)
@@ -154,7 +160,7 @@ public:
 
     K = (uint32_t)id2name.size();
     name2id.delete_v();//delete automatically allocated vector.
-    name2id.init(4 * K + 1, 0, substring_equal);
+    name2id.init(4*K+1, 0, substring_equal);
     for (size_t k=0; k<K; k++)
     { substring& l = id2name[k];
       uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end-l.begin, 378401);
@@ -165,7 +171,7 @@ public:
       substring l_copy = { calloc_or_throw<char>(len), nullptr };
       memcpy(l_copy.begin, l.begin, len * sizeof(char));
       l_copy.end = l_copy.begin + len;
-      name2id.put(l_copy, hash, (uint32_t)(k+1));
+      name2id.put(l_copy, hash, k+1);
     }
   }
 
@@ -259,7 +265,7 @@ struct shared_data
 
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
   { t += weight;
-    if(test_example)
+    if(test_example && labeled_example)
     { weighted_holdout_examples += weight;//test weight seen
       weighted_holdout_examples_since_last_dump += weight;
       weighted_holdout_examples_since_last_pass += weight;
@@ -437,10 +443,15 @@ struct vw
   AllReduce* all_reduce;
 
   LEARNER::base_learner* l;//the top level learner
-  LEARNER::base_learner* scorer;//a scoring function
-  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.
+  LEARNER::single_learner* scorer;//a scoring function
+  LEARNER::base_learner* cost_sensitive;//a cost sensitive learning algorithm.  can be single or multi line learner
 
-  void learn(example*);
+  void learn(example&);
+  void learn(multi_ex&);
+  void predict(example&);
+  void predict(multi_ex&);
+  void finish_example(example&);
+  void finish_example(multi_ex&);
 
   void (*set_minmax)(shared_data* sd, float label);
 
@@ -494,7 +505,7 @@ struct vw
   size_t passes_complete;
   uint64_t parse_mask; // 1 << num_bits -1
   bool permutations; // if true - permutations of features generated instead of simple combinations. false by default
-  v_array<v_string> interactions; // interactions of namespaces to cross.
+  std::vector<std::string> interactions;
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;

@@ -174,7 +174,7 @@ float dot_with_direction(vw& all, example& ec)
 }
 
 template<class T>
-double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& weights)
+double regularizer_direction_magnitude(vw& all, bfgs& b, double regularizer, T& weights)
 {
   double ret = 0.;
   if (b.regularizers == nullptr)
@@ -184,7 +184,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer, T& w
   else
   {
     for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-      ret += b.regularizers[2 * (iter.index() >> weights.stride_shift())] * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+      ret += ((double)b.regularizers[2 * (iter.index() >> weights.stride_shift())]) * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
   }
   return ret;
 }
@@ -209,7 +209,7 @@ float direction_magnitude(vw& all, T& weights)
   //compute direction magnitude
   double ret = 0.;
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    ret += (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+    ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR];
 
   return (float)ret;
 }
@@ -236,8 +236,8 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
     if (b.m>0)
       mem1[(MEM_XT + origin) % b.mem_stride] = (&(*w))[W_XT];
     mem1[(MEM_GT + origin) % b.mem_stride] = (&(*w))[W_GT];
-    g1_Hg1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
-    g1_g1 += ((&(*w))[W_GT]) * ((&(*w))[W_GT]);
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * ((&(*w))[W_GT]) * ((&(*w))[W_COND]);
+    g1_g1 += ((double)((&(*w))[W_GT])) * ((&(*w))[W_GT]);
     (&(*w))[W_DIR] = -(&(*w))[W_COND] * ((&(*w))[W_GT]);
     ((&(*w))[W_GT]) = 0;
   }
@@ -273,8 +273,8 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       y = (&(*w))[W_GT] - mem[(MEM_GT + origin) % b.mem_stride];
-      g_Hy += ((&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
-      g_Hg += mem[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_COND]) * mem[(MEM_GT + origin) % b.mem_stride];
+      g_Hy += ((double)(&(*w))[W_GT]) * ((&(*w))[W_COND]) * y;
+      g_Hg += ((double)mem[(MEM_GT + origin) % b.mem_stride]) * ((&(*w))[W_COND]) * mem[(MEM_GT + origin) % b.mem_stride];
     }
 
     float beta = (float)(g_Hy / g_Hg);
@@ -314,9 +314,9 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     mem1[(MEM_YT + origin) % b.mem_stride] = (&(*w))[W_GT] - mem1[(MEM_GT + origin) % b.mem_stride];
     mem1[(MEM_ST + origin) % b.mem_stride] = (&(*w))[W_XT] - mem1[(MEM_XT + origin) % b.mem_stride];
     (&(*w))[W_DIR] = (&(*w))[W_GT];
-    y_s += mem1[(MEM_YT + origin) % b.mem_stride] * mem1[(MEM_ST + origin) % b.mem_stride];
-    y_Hy += mem1[(MEM_YT + origin) % b.mem_stride] * mem1[(MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_COND]);
-    s_q += mem1[(MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_GT]);
+    y_s += ((double)mem1[(MEM_YT + origin) % b.mem_stride]) * mem1[(MEM_ST + origin) % b.mem_stride];
+    y_Hy += ((double)mem1[(MEM_YT + origin) % b.mem_stride]) * mem1[(MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_COND]);
+    s_q += ((double)mem1[(MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_GT]);
   }
 
   if (y_s <= 0. || y_Hy <= 0.)
@@ -333,7 +333,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       (&(*w))[W_DIR] -= (float)alpha[j] * mem[(2 * j + MEM_YT + origin) % b.mem_stride];
-      s_q += mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
+      s_q += ((double)mem[(2 * j + 2 + MEM_ST + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -345,7 +345,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
     (&(*w))[W_DIR] -= (float)alpha[lastj] * mem[(2 * lastj + MEM_YT + origin) % b.mem_stride];
     (&(*w))[W_DIR] *= gamma*((&(*w))[W_COND]);
-    y_r += mem[(2 * lastj + MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
+    y_r += ((double)mem[(2 * lastj + MEM_YT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
   }
 
   double coef_j;
@@ -358,7 +358,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     {
       mem = mem0 + (w.index() >> weights.stride_shift()) * b.mem_stride;
       (&(*w))[W_DIR] += (float)coef_j*mem[(2 * j + MEM_ST + origin) % b.mem_stride];
-      y_r += mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
+      y_r += ((double)mem[(2 * j - 2 + MEM_YT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
     }
   }
 
@@ -408,10 +408,10 @@ double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    g0_d += mem1[(MEM_GT + origin) % b.mem_stride] * ((&(*w))[W_DIR]);
-    g1_d += (&(*w))[W_GT] * (&(*w))[W_DIR];
-    g1_Hg1 += (&(*w))[W_GT] * (&(*w))[W_GT] * ((&(*w))[W_COND]);
-    g1_g1 += (&(*w))[W_GT] * (&(*w))[W_GT];
+    g0_d += ((double)mem1[(MEM_GT + origin) % b.mem_stride]) * ((&(*w))[W_DIR]);
+    g1_d += ((double)(&(*w))[W_GT]) * (&(*w))[W_DIR];
+    g1_Hg1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT] * ((&(*w))[W_COND]);
+    g1_g1 += ((double)(&(*w))[W_GT]) * (&(*w))[W_GT];
   }
 
   wolfe1 = (loss_sum - previous_loss_sum) / (step_size*g0_d);
@@ -593,7 +593,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& wei
   for (typename T::iterator w = weights.begin(); w != weights.end();  ++w)
   {
     float* mem1 = mem + (w.index() >> weights.stride_shift()) * b.mem_stride;
-    ret += mem1[(MEM_GT + origin) % b.mem_stride] * (&(*w))[W_DIR];
+    ret += ((double)mem1[(MEM_GT + origin) % b.mem_stride]) * (&(*w))[W_DIR];
   }
   return ret;
 }
@@ -668,7 +668,7 @@ int process_pass(vw& all, bfgs& b)
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
       if (!all.quiet)
         fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
     }
   }
@@ -727,7 +727,7 @@ int process_pass(vw& all, bfgs& b)
           fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n",
                   "","",ratio,
                   new_step);
-        b.predictions.erase();
+        b.predictions.clear();
         update_weight(all, (float)(-b.step_size+new_step));
         b.step_size = (float)new_step;
         zero_derivative(all);
@@ -757,7 +757,7 @@ int process_pass(vw& all, bfgs& b)
         {
           bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
         }
-        catch (curv_exception e)
+        catch (const curv_exception&)
         {
           fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
           b.step_size=0.0;
@@ -775,7 +775,7 @@ int process_pass(vw& all, bfgs& b)
           b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
           if (!all.quiet)
             fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size);
-          b.predictions.erase();
+          b.predictions.clear();
           update_weight(all, b.step_size);
         }
       }
@@ -811,7 +811,7 @@ int process_pass(vw& all, bfgs& b)
 
       float d_mag = direction_magnitude(all);
 
-      b.predictions.erase();
+      b.predictions.clear();
       update_weight(all, b.step_size);
       ftime(&b.t_end_global);
       b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm));
@@ -866,7 +866,7 @@ void process_example(vw& all, bfgs& b, example& ec)
     ec.partial_prediction = b.predictions[b.example_number];
     ec.loss = all.loss->getLoss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
     float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld.label);
-    b.curvature += d_dot_x*d_dot_x*sd*ec.weight;
+    b.curvature += ((double)d_dot_x)*d_dot_x*sd*ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
 
@@ -981,8 +981,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
       {
         assert (i< length);
         v = &(b.regularizers[i]);
-        if (brw > 0)
-          brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
       }
     }
     else // write binary or text
@@ -1125,7 +1124,7 @@ base_learner* bfgs_setup(arguments& arg)
   arg.all->bfgs = true;
   arg.all->weights.stride_shift(2);
 
-  learner<bfgs>& l = init_learner(b, learn, predict, arg.all->weights.stride());
+  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

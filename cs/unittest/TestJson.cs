@@ -648,6 +648,60 @@ namespace cs_unittest
             }
         }
 
+        private void TestDecisionServiceJson(string json, bool expectException = true)
+        {
+            using (var vw = new VowpalWabbit("--cb_adf"))
+            {
+                var bytes = Encoding.UTF8.GetBytes(json);
+                VowpalWabbitDecisionServiceInteractionHeader header;
+                List<VowpalWabbitExample> examples = null;
+
+                try
+                {
+                    examples = vw.ParseDecisionServiceJson(bytes, 0, bytes.Length, copyJson: false, header: out header);
+
+                    if (expectException)
+                        Assert.Fail("Excepted exception");
+                }
+                catch (Exception)
+                {
+                    if (!expectException)
+                        throw;
+                }
+                finally
+                {
+                    if (examples != null)
+                        foreach (var ex in examples)
+                            if (ex != null)
+                                ex.Dispose();
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit/JSON")]
+        public void TestDecisionServiceJsonOutOfBounds()
+        {
+            var json = @"{""EventId"":""abc"",""a"":[1,2,3],""Version"":""1"",""c"":{""u"":{""loc"":""New York""},""_multi"":[]},""p"":[0.8,0.1,0.1]}";
+            TestDecisionServiceJson(json);
+            for (int i = json.Length; i >= 0; i--)
+            {
+                var jsonSub = json.Substring(0, i);
+                Console.WriteLine(jsonSub);
+                Console.Out.Flush();
+
+                TestDecisionServiceJson(jsonSub, true);
+            }
+
+            for (int i = 1; i < json.Length; i++)
+            {
+                var jsonSub = json.Substring(i, json.Length - i);
+                Console.WriteLine(jsonSub);
+                Console.Out.Flush();
+
+                TestDecisionServiceJson(jsonSub, true);
+            }
+        }
         public class MyContext
         {
             [Feature]

@@ -100,12 +100,12 @@ public class VWActionProbsLearnerTest extends VWTestHelper {
         }
         ActionProbs[] expectedTrainPreds = new ActionProbs[]{
                 actionProbs(
-                    actionProb(0, 0.97499996f),
-                    actionProb(1, 0.025f)
+                    actionProb(0, 0.5f),
+                    actionProb(1, 0.5f)
                 ),
                 actionProbs(
-                    actionProb(0, 0.97499996f),
-                    actionProb(1, 0.025f)
+                    actionProb(0, 0.5f),
+                    actionProb(1, 0.5f)
                 ),
                 actionProbs(
                     actionProb(0, 0.97499996f),

@@ -24,7 +24,7 @@ struct active_cover
   LEARNER::base_learner* l;
 };
 
-bool dis_test(vw& all, example& ec, base_learner& base, float prediction, float threshold)
+bool dis_test(vw& all, example& ec, single_learner& base, float prediction, float threshold)
 {
   if(all.sd->t + ec.weight <= 3)
   {
@@ -70,7 +70,7 @@ float get_pmin(float sum_loss, float t)
   return pmin; // treating n*eps_n = 1
 }
 
-float query_decision(active_cover& a, base_learner& l, example& ec, float prediction, float pmin, bool in_dis)
+float query_decision(active_cover& a, single_learner& l, example& ec, float prediction, float pmin, bool in_dis)
 {
 
   if(a.all->sd->t + ec.weight <= 3)
@@ -115,7 +115,7 @@ float query_decision(active_cover& a, base_learner& l, example& ec, float predic
 
 
 template <bool is_learn>
-void predict_or_learn_active_cover(active_cover& a, base_learner& base, example& ec)
+void predict_or_learn_active_cover(active_cover& a, single_learner& base, example& ec)
 {
   base.predict(ec, 0);
 
@@ -245,7 +245,7 @@ base_learner* active_cover_setup(arguments& arg)
   if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
     THROW("error: you can't use --active_cover and --active at the same time");
 
-  base_learner* base = setup_base(arg);
+  auto base = as_singleline(setup_base(arg));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];
@@ -257,7 +257,7 @@ base_learner* active_cover_setup(arguments& arg)
   }
 
   //Create new learner
-  learner<active_cover>& l = init_learner(data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
+  learner<active_cover,example>& l = init_learner(data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
   l.set_finish(finish);
 
   return make_base(l);

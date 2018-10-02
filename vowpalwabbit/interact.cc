@@ -41,7 +41,7 @@ bool contains_valid_namespaces(vw& all, features& f_src1, features& f_src2, inte
 
 void multiply(features& f_dest, features& f_src2, interact& in)
 {
-  f_dest.erase();
+  f_dest.clear();
   features& f_src1 = in.feat_store;
   vw* all = in.all;
   uint64_t weight_mask = all->weights.mask();
@@ -62,13 +62,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
     // checking for sorting requirement
     if (cur_id1 < prev_id1)
     {
-      cout << "interact features are out of order: " << cur_id1 << " > " << prev_id1 << ". Skipping features." << endl;
+      cout << "interact features are out of order: " << cur_id1 << " < " << prev_id1 << ". Skipping features." << endl;
       return;
     }
 
     if (cur_id2 < prev_id2)
     {
-      cout << "interact features are out of order: " << cur_id2 << " > " << prev_id2 << ". Skipping features." << endl;
+      cout << "interact features are out of order: " << cur_id2 << " < " << prev_id2 << ". Skipping features." << endl;
       return;
     }
 
@@ -82,11 +82,13 @@ void multiply(features& f_dest, features& f_src2, interact& in)
       i1++;
     else
       i2++;
+    prev_id1 = cur_id1;
+    prev_id2 = cur_id2;
   }
 }
 
 template <bool is_learn, bool print_all>
-void predict_or_learn(interact& in, LEARNER::base_learner& base, example& ec)
+void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 {
   features& f1 = ec.feature_space[in.n1];
   features& f2 = ec.feature_space[in.n2];
@@ -168,8 +170,8 @@ LEARNER::base_learner* interact_setup(arguments& arg)
     cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
   data->all = arg.all;
 
-  LEARNER::learner<interact>* l;
-  l = &LEARNER::init_learner(data, setup_base(arg), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  LEARNER::learner<interact,example>* l;
+  l = &LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

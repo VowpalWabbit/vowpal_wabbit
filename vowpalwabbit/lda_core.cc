@@ -28,6 +28,7 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "no_label.h"
 #include "gd.h"
 #include "rand48.h"
 #include "reductions.h"
@@ -598,7 +599,7 @@ static inline float average_diff(vw &all, float *oldgamma, float *newgamma)
 float theta_kl(lda &l, v_array<float> &Elogtheta, float *gamma)
 {
   float gammasum = 0;
-  Elogtheta.erase();
+  Elogtheta.clear();
   for (size_t k = 0; k < l.topics; k++)
   {
     Elogtheta.push_back(l.digamma(gamma[k]));
@@ -636,8 +637,8 @@ v_array<float> old_gamma = v_init<float>();
 float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
 {
   parameters& weights = l.all->weights;
-  new_gamma.erase();
-  old_gamma.erase();
+  new_gamma.clear();
+  old_gamma.clear();
 
   for (size_t i = 0; i < l.topics; i++)
   {
@@ -682,7 +683,7 @@ float lda_loop(lda &l, v_array<float> &Elogtheta, float *v, example *ec, float)
   }
   while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
-  ec->pred.scalars.erase();
+  ec->pred.scalars.clear();
   ec->pred.scalars.resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
   ec->pred.scalars.end() = ec->pred.scalars.begin() + l.topics;
@@ -794,18 +795,14 @@ void save_load(lda &l, io_buf &model_file, bool read, bool text)
 
 void return_example(vw& all, example& ec)
 {
-  label_data ld = ec.l.simple;
-
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.num_features);
-  if (ld.label != FLT_MAX && !ec.test_only)
-    all.sd->weighted_labels += ld.label * ec.weight;
   for (int f: all.final_prediction_sink)
     MWT::print_scalars(f, ec.pred.scalars, ec.tag);
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, 0.f,
+    all.sd->print_update(all.holdout_set_off, all.current_pass, "none", 0,
                          ec.num_features, all.progress_add, all.progress_arg);
-  VW::finish_example(all,&ec);
+  VW::finish_example(all,ec);
 }
 
 void learn_batch(lda &l)
@@ -820,15 +817,15 @@ void learn_batch(lda &l)
     // do in this case, we just return.
     for (size_t d = 0; d < l.examples.size(); d++)
     {
-      l.examples[d]->pred.scalars.erase();
+      l.examples[d]->pred.scalars.clear();
       l.examples[d]->pred.scalars.resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
       l.examples[d]->pred.scalars.end() = l.examples[d]->pred.scalars.begin() + l.topics;
 
-      l.examples[d]->pred.scalars.erase();
+      l.examples[d]->pred.scalars.clear();
       return_example(*l.all, *l.examples[d]);
     }
-    l.examples.erase();
+    l.examples.clear();
     return;
   }
 
@@ -850,7 +847,7 @@ void learn_batch(lda &l)
   }
 
   l.example_t++;
-  l.total_new.erase();
+  l.total_new.clear();
   for (size_t k = 0; k < l.all->lda; k++)
     l.total_new.push_back(0.f);
 
@@ -863,7 +860,7 @@ void learn_batch(lda &l)
   eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.last() + log(minuseta));
 
-  l.digammas.erase();
+  l.digammas.clear();
   float additional = (float)(l.all->length()) * l.lda_rho;
   for (size_t i = 0; i < l.all->lda; i++)
     l.digammas.push_back(l.digamma(l.total_lambda[i] + additional));
@@ -944,11 +941,11 @@ void learn_batch(lda &l)
   }
   l.sorted_features.resize(0);
 
-  l.examples.erase();
-  l.doc_lengths.erase();
+  l.examples.clear();
+  l.doc_lengths.clear();
 }
 
-void learn(lda &l, LEARNER::base_learner &, example &ec)
+void learn(lda &l, LEARNER::single_learner &, example &ec)
 {
   uint32_t num_ex = (uint32_t)l.examples.size();
   l.examples.push_back(&ec);
@@ -966,7 +963,7 @@ void learn(lda &l, LEARNER::base_learner &, example &ec)
     learn_batch(l);
 }
 
-void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
+void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -989,8 +986,8 @@ void learn_with_metrics(lda &l, LEARNER::base_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::base_learner &base, example &ec) { learn(l, base, ec); }
-void predict_with_metrics(lda &l, LEARNER::base_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
+void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {
@@ -1194,6 +1191,7 @@ void compute_coherence_metrics(lda &l)
     compute_coherence_metrics(l, l.all->weights.dense_weights);
 
 }
+
 void end_pass(lda &l)
 {
   if (l.examples.size())
@@ -1275,7 +1273,7 @@ LEARNER::base_learner *lda_setup(arguments& arg)
       ("metrics", ld->compute_coherence_metrics, false, "Compute metrics").missing())
     return nullptr;
 
-  arg.all->lda = ld->topics;
+  arg.all->lda = (uint32_t)ld->topics;
   arg.all->delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = 0;
@@ -1306,9 +1304,14 @@ LEARNER::base_learner *lda_setup(arguments& arg)
 
   ld->decay_levels.push_back(0.f);
 
-  LEARNER::learner<lda> &l = init_learner(ld, ld->compute_coherence_metrics ? learn_with_metrics : learn,
-                                          ld->compute_coherence_metrics ? predict_with_metrics : predict,
-                                          UINT64_ONE << arg.all->weights.stride_shift(), prediction_type::scalars);
+  arg.all->p->lp = no_label::no_label_parser;
+
+  LEARNER::learner<lda,example> &l = init_learner(
+                    ld,
+                    ld->compute_coherence_metrics ? learn_with_metrics : learn,
+                    ld->compute_coherence_metrics ? predict_with_metrics : predict,
+                    UINT64_ONE << arg.all->weights.stride_shift(),
+                    prediction_type::scalars);
 
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

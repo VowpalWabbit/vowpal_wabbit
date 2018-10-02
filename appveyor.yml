@@ -7,6 +7,10 @@ shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
+# Temporary workaround: https://github.com/Microsoft/vcpkg/issues/4189#issuecomment-417462822
+- rd /s /q C:\OpenSSL-v11-Win32
+- rd /s /q C:\OpenSSL-v11-Win64
+- vcpkg install cpprestsdk:x64-windows
 - cd c:\vowpal_wabbit
 - '"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MsBuild.exe" "C:\vowpal_wabbit\cs\explore\ds_explore_cs.sln" /m /verbosity:normal "/p:Configuration=Release;Platform=Any CPU"'
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config

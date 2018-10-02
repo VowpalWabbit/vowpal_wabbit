@@ -103,9 +103,17 @@ For Mac OSX
     # or for python3 (you may have to uninstall boost and reinstall to build python3 libs)
     $ brew install boost-python3
 
-Also, having Anaconda in your path can cause segmentation faults when importing the pyvw module. Providing Conda support
-is an open issue and efforts are welcome, but in the meantime it is suggested to remove any conda bin directory from your path
-prior to installing the vowpalwabbit package.
+Installing Vowpal Wabbit under an Anaconda environment (on OSX or Linux) can be done using the following steps:
+
+.. code-block:: bash
+
+    git clone https://github.com/JohnLangford/vowpal_wabbit.git
+    # create conda environment if necessary
+    conda create -n vowpalwabbit
+    source activate vowpalwabbit
+    # install necessary boost dependencies
+    conda install -y -c anaconda boost
+    pip install -e vowpal_wabbit/python
 
 Development
 -----------
