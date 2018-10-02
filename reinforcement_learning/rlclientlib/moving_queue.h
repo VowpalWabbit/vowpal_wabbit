@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <queue>
 
 namespace reinforcement_learning {

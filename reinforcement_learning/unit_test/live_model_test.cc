@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), r::error_code::success);
   //wait until the timeout triggers and error callback is fired
   std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-  BOOST_CHECK_GT(the_server._err_count, 1);
+  BOOST_CHECK_GT(the_server._err_count, 0);
 }
 
 BOOST_AUTO_TEST_CASE(live_model_mocks) {
