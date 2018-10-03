@@ -25,6 +25,14 @@ during building and installation.
 If you need to make local changes to the code and rebuild the python binding be sure to pip uninstall vowpalwabbit then rebuild
 using the local repo installation instructions below.
 
+Vowpal Wabbit internally requires `boost-python` to be installed prior to installation.
+Install boost dependencies as below if they are not already installed.
+
+.. code-block:: bash
+
+    $ sudo apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev
+
+
 Installation
 ------------
 
