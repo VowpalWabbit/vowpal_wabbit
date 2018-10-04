@@ -21,7 +21,7 @@ namespace reinforcement_learning { namespace utility {
    * \return  error_code::success if there are no errors.  If there are errors then the error code is
    *          returned.
    */
-  int get_action_count(size_t& count, const char *context, api_status* status) {
+  int get_action_count(size_t& count, const char *context, i_trace* trace, api_status* status) {
     try {
       const auto scontext = sutil::to_string_t(std::string(context));
       auto json_obj = web::json::value::parse(scontext);
@@ -30,15 +30,15 @@ namespace reinforcement_learning { namespace utility {
         count = arr.size();
         if ( count > 0 )
           return reinforcement_learning::error_code::success;
-        RETURN_ERROR_LS(status, json_no_actions_found);
+        RETURN_ERROR_LS(trace, status, json_no_actions_found);
       }
-      RETURN_ERROR_LS(status, json_no_actions_found);
+      RETURN_ERROR_LS(trace, status, json_no_actions_found);
     }
     catch ( const std::exception& e ) {
-      RETURN_ERROR_LS(status, json_parse_error) << e.what();
+      RETURN_ERROR_LS(trace, status, json_parse_error) << e.what();
     }
     catch ( ... ) {
-      RETURN_ERROR_LS(status, json_parse_error) << error_code::unknown_s;
+      RETURN_ERROR_LS(trace, status, json_parse_error) << error_code::unknown_s;
     }
   }
 
