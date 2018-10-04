@@ -15,5 +15,5 @@ API int LoadConfigurationFromJson(const int length, const char* json, reinforcem
     // This is a deep copy, so it is safe to push a pinned-managed string here.
     const std::string json_str(json, length);
 
-    return reinforcement_learning::utility::config::create_from_json(json_str, *config, status);
+    return reinforcement_learning::utility::config::create_from_json(json_str, *config, /* i_trace */ nullptr, status);
 }
