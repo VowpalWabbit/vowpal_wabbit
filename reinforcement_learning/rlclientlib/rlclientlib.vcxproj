@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\reinforcement_learning\ext_libs;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\reinforcement_learning\ext_libs;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\reinforcement_learning\rlclientlib;$(SolutionDir)..\reinforcement_learning\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,13 +148,17 @@
     <ClInclude Include="..\include\factory_resolver.h" />
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
+    <ClInclude Include="..\include\trace_logger.h" />
+    <ClInclude Include="console_tracer.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="utility\context_helper.h" />
     <ClInclude Include="utility\data_buffer.h" />
     <ClInclude Include="utility\interruptable_sleeper.h" />
     <ClInclude Include="utility\periodic_background_proc.h" />
     <ClInclude Include="utility\object_pool.h" />
+    <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="logger\event_logger.cc" />
+    <ClCompile Include="trace_logger.cc" />
     <ClCompile Include="utility\data_buffer.cc" />
     <ClCompile Include="utility\http_helper.h" />
     <ClInclude Include="model_mgmt\model_downloader.h" />
