@@ -1,4 +1,5 @@
 #include "api_status.h"
+#include "trace_logger.h"
 
 namespace reinforcement_learning {
 
@@ -28,9 +29,9 @@ namespace reinforcement_learning {
     }
   }
 
-  status_builder::status_builder(api_status* status, const int code)
-    : _code {code}, _status {status} {
-    if (status != nullptr)
+  status_builder::status_builder(i_trace* trace, api_status* status, const int code)
+    : _code { code }, _status { status }, _trace {trace} {
+    if ( enable_logging() )
       _os << "(ERR:" << _code << ")";
   }
 
@@ -38,9 +39,16 @@ namespace reinforcement_learning {
     if (_status != nullptr) {
       api_status::try_update(_status, _code, _os.str().c_str());
     }
+    if (_trace != nullptr ) {
+      _trace->log(0, _os.str());
+    }
   }
 
   status_builder::operator int() const {
     return _code;
+  }
+
+  bool status_builder::enable_logging() const {
+    return _status != nullptr || _trace != nullptr;
   }
 }
