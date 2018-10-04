@@ -24,12 +24,12 @@ namespace Rl.Net.Cli {
 
         private static LiveModel CreateLiveModelOrExit(string clientJsonPath)
         {
-            if (!File.Exists(args[0]))
+            if (!File.Exists(clientJsonPath))
             {
-                WriteErrorAndExit($"Could not find file with path '{args[0]}'.");
+                WriteErrorAndExit($"Could not find file with path '{clientJsonPath}'.");
             }
 
-            string json = File.ReadAllText(args[0]);
+            string json = File.ReadAllText(clientJsonPath);
 
             ApiStatus apiStatus = new ApiStatus();
 
@@ -44,6 +44,8 @@ namespace Rl.Net.Cli {
             {
                 WriteStatusAndExit(apiStatus);
             }
+
+            return liveModel;
         }
 
         // TODO: Pull this out to a separate sample once we implement the simulator in this.
@@ -59,6 +61,8 @@ namespace Rl.Net.Cli {
             }
 
             LiveModel liveModel = CreateLiveModelOrExit(args[0]);
+
+            ApiStatus apiStatus = new ApiStatus();
 
             RankingResponse rankingResponse = new RankingResponse();
             if (!liveModel.TryChooseRank(eventId, contextJson, rankingResponse, apiStatus))
@@ -89,7 +93,7 @@ namespace Rl.Net.Cli {
 
             LiveModel liveModel = CreateLiveModelOrExit(args[0]);
 
-            RLSimulator rlSim = new RLSimulator();
+            RLSimulator rlSim = new RLSimulator(liveModel);
             rlSim.Run();
         }
     }

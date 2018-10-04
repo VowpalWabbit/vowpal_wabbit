@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Rl.Net;
 
 namespace Rl.Net.Cli {
@@ -17,17 +19,26 @@ namespace Rl.Net.Cli {
         private RankingResponse responseContainer;
         private ApiStatus apiStatusContainer;
 
+        private StatisticsCalculator stats;
+
         public RLSimulator(LiveModel liveModel)
         {
             this.liveModel = liveModel;
         }
 
+        public TimeSpan StepInterval
+        {
+            get;
+            set;
+        } = TimeSpan.FromSeconds(2);
+
         public void Run(int steps = -1)
         {
             this.responseContainer = new RankingResponse();
             this.apiStatusContainer = new ApiStatus();
+            this.stats = new StatisticsCalculator();
 
-            int stepsSoFar;
+            int stepsSoFar = 0;
             while (steps < 0 || (stepsSoFar++ < steps))
             {
                 this.Step();
@@ -36,7 +47,7 @@ namespace Rl.Net.Cli {
 
         public event EventHandler<ApiStatus> OnError;
 
-        public void Step()
+        private void Step()
         {
             Person person = GetRandomPerson();
             string decisionContext = CreateDecisionContext(person);
@@ -48,12 +59,12 @@ namespace Rl.Net.Cli {
             }
 
             long actionId = -1;
-            if (!responseContainer.TryGetChosenAction(out actionId, apiStatus))
+            if (!responseContainer.TryGetChosenAction(out actionId, this.apiStatusContainer))
             {
                 this.SafeRaiseError(this.apiStatusContainer);
             }
 
-            string actionTopic = ((Topic)actionId).ToString();
+            Topic actionTopic = (Topic)actionId;
             float outcome = person.GenerateOutcome(actionTopic);
 
             if (!liveModel.TryReportOutcome(eventId.ToString(), outcome, this.apiStatusContainer))
@@ -62,7 +73,9 @@ namespace Rl.Net.Cli {
             }
 
             // TODO: Record stats
+            this.stats.Record(person, actionTopic, outcome);
 
+            Console.WriteLine($" {this.stats.TotalActions}, ctxt, {person.Id}, action, {actionTopic}, outcome, {outcome}, dist, {"" /*todo*/}, {this.stats.GetStats(person, actionTopic)}");
         }
 
         private void SafeRaiseError(ApiStatus errorStatus)
@@ -70,28 +83,28 @@ namespace Rl.Net.Cli {
             EventHandler<ApiStatus> localHandler = this.OnError;
             if (localHandler != null)
             {
-                localHandler(errorStatus);
+                localHandler(this, errorStatus);
             }
         }
 
-        private Func<Topic, float> GenerateRewardDistribution(float herbGardenProbability, float machineLearningProbability)
+        private static Func<Topic, float> GenerateRewardDistribution(float herbGardenProbability, float machineLearningProbability)
         {
             Dictionary<Topic, float> topicProbabilities = new Dictionary<Topic, float> 
             { 
-                { Topic.HerbGarden.ToString(), 0.03f }, 
-                { Topic.MachineLearning.ToString(), 0.1f }
+                { Topic.HerbGarden, herbGardenProbability }, 
+                { Topic.MachineLearning, machineLearningProbability }
             };
 
             return (topic) => topicProbabilities[topic];
         }
 
-        private static Person[] People = new []
+        internal static Person[] People = new []
         {
             new Person("rnc", "engineering", "hiking", "spock", GenerateRewardDistribution(0.03f, 0.1f)),
             new Person("mk", "psychology", "kids", "7of9", GenerateRewardDistribution(0.3f, 0.1f))
         };
 
-        private static readonly Topic[] ActionSet = new [] { Topic.HerbGarden, Topic.MachineLearning };
+        internal static readonly Topic[] ActionSet = new [] { Topic.HerbGarden, Topic.MachineLearning };
 
         private static readonly string ActionsJson = String.Join(",", ActionSet.Select(topic => $"{{ 'TAction': {{ 'topic': '{topic}' }} }}"));
 
