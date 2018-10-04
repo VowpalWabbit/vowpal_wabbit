@@ -10,10 +10,10 @@ addons:
       - cmake-data
 before_install:
   # Remove cmake ppa
-  - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports" 
+  - sudo add-apt-repository -y --remove "ppa:george-edison55/precise-backports"
   #### begin g++ 4.9
   # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test                         
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update
   - sudo apt-get install gcc-4.9 g++-4.9
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
@@ -25,7 +25,10 @@ before_install:
   #### begin cpprest
   - sudo apt-get install g++ git make zlib1g-dev libboost-all-dev libssl-dev
   - git clone https://github.com/Microsoft/cpprestsdk.git casablanca
-  - cd casablanca/Release
+  - cd casablanca
+  # Checkout 2.10.1 version of cpprestsdk
+  - git checkout e8dda215426172cd348e4d6d455141f40768bf47
+  - cd Release
   - mkdir build
   - cd build
   - cmake ..
