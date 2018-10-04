@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <stdint.h>
 
+#include <utility>
+
 // Declare const pointer for internal linkage
 namespace reinforcement_learning {
   class ranking_response;
@@ -36,9 +38,9 @@ namespace reinforcement_learning { namespace model_management {
 
         model_data& operator=(model_data&& other) noexcept {
           if (this != &other) {
-            _data = other._data;
-            _data_sz = other._data_sz;
-            _refresh_count = other._refresh_count;
+            std::swap(_data, other._data);
+            std::swap(_data_sz, other._data_sz);
+            std::swap(_refresh_count, other._refresh_count);
           }
 
           return *this;

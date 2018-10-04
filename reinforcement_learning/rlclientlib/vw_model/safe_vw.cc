@@ -152,6 +152,10 @@ safe_vw_factory::safe_vw_factory(const model_management::model_data& master_data
   : _master_data(master_data)
   {}
 
+safe_vw_factory::safe_vw_factory(const model_management::model_data&& master_data)
+  : _master_data(master_data)
+  {}
+
   safe_vw* safe_vw_factory::operator()()
   {
     // Construct new vw object from raw model data.

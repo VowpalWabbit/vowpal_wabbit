@@ -34,6 +34,7 @@ namespace reinforcement_learning {
   public:
     // model_data is copied and stored in the factory object.
     safe_vw_factory(const model_management::model_data& master_data);
+    safe_vw_factory(const model_management::model_data&& master_data);
 
     safe_vw* operator()();
   };

@@ -13,7 +13,7 @@ namespace reinforcement_learning { namespace model_management {
   int vw_model::update(const model_data& data, api_status* status) {
     try {
       // safe_vw_factory will create a copy of the model data to use for vw object construction.
-      _vw_pool.update_factory(new safe_vw_factory(data));
+      _vw_pool.update_factory(new safe_vw_factory(std::move(data)));
     }
     catch(const std::exception& e) {
       RETURN_ERROR_LS(status, model_update_error) << e.what();
