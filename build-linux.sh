@@ -1,7 +1,7 @@
 #!/bin/bash
-export
-
 set -e
+
+export PATH="$HOME/miniconda/bin:$PATH"
 
 make all
 make python
