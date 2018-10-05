@@ -18,8 +18,6 @@ RUN apt-get install -y \
 	rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 
-RUN echo g++ -v
-
 # Install cpprestsdk
 RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
   cd casablanca/Release && \

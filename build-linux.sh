@@ -1,5 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+
+set -e
 
 make all
 make python
@@ -18,4 +20,3 @@ python setup.py install
 py.test tests
 source deactivate
 cd ..
-
