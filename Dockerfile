@@ -31,7 +31,7 @@ RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
   cd ../../../ && \
   rm -rf casablanca
 
-# install python tools
+# Install python tools
 RUN easy_install pip && \
     pip install cpp-coveralls wheel virtualenv pytest readme_renderer pandas && \
     wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh && \
@@ -41,16 +41,17 @@ RUN easy_install pip && \
     $HOME/miniconda/bin/conda update -q conda && \
     $HOME/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 
-# download maven dependencies
+# Download maven dependencies
 RUN wget https://raw.githubusercontent.com/JohnLangford/vowpal_wabbit/master/java/pom.xml && \
   mvn dependency:resolve -f pom.xml && \
   rm pom.xml
 
-# cleanup
+# Cleanup
 RUN apt-get clean autoclean && \
     apt-get autoremove -y && \
     rm -rf /var/lib/{apt,dpkg,cache,log}
 
+# Set environment variables used by build
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
 ENV PATH="${HOME}/miniconda/bin:${PATH}"
 ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"

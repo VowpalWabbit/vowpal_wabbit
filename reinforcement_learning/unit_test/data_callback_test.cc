@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(data_callback) {
   md.increment_refresh_count();
   memcpy(md.data(), str, strlen(str)+1);
   
-  fn.report_data(md);
+  fn.report_data(md, nullptr);
   md.free();
   BOOST_ASSERT(i == -1);
 }
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(null_data_callback) {
   md.increment_refresh_count();
   memcpy(md.data(), str, strlen(str)+1);
 
-  fn.report_data(md); // should not crash
+  fn.report_data(md, nullptr); // should not crash
   md.free();
   BOOST_ASSERT(i == -1);
 }
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(exception_in_data_callback) {
   md.increment_refresh_count();
   memcpy(md.data(), str, strlen(str)+1);
 
-  fn.report_data(md); // should not crash
+  fn.report_data(md, nullptr); // should not crash
   md.free();
   BOOST_ASSERT(i == -2);
 }
