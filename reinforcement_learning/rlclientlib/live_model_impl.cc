@@ -12,10 +12,9 @@
 #include "err_constants.h"
 #include "constants.h"
 #include "vw_model/safe_vw.h"
-
+#include "trace_logger.h"
 #include "explore_internal.h"
 #include "hash.h"
-
 #include "factory_resolver.h"
 
 // Some namespace changes for more concise code
@@ -40,6 +39,7 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::init(api_status* status) {
+    RETURN_IF_FAIL(init_trace(status));
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
     RETURN_IF_FAIL(init_loggers(status));
@@ -69,7 +69,7 @@ namespace reinforcement_learning {
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {
-      RETURN_ERROR_LS(status, unhandled_background_error_occurred);
+      RETURN_ERROR_LS(_trace_logger.get(), status, unhandled_background_error_occurred);
     }
 
     return error_code::success;
@@ -97,6 +97,7 @@ namespace reinforcement_learning {
     const utility::configuration& config,
     const error_fn fn,
     void* err_context,
+    trace_logger_factory_t* trace_factory,
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
     sender_factory_t* sender_factory
@@ -105,6 +106,7 @@ namespace reinforcement_learning {
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
       _watchdog(&_error_cb),
+      _trace_factory(trace_factory),
       _t_factory{t_factory},
       _m_factory{m_factory},
       _sender_factory{sender_factory},
@@ -115,10 +117,20 @@ namespace reinforcement_learning {
     }
   }
 
+  int live_model_impl::init_trace(api_status* status) {
+    const auto trace_impl = _configuration.get(name::TRACE_LOG_IMPLEMENTATION, value::NULL_TRACE_LOGGER);
+    i_trace* plogger;
+    RETURN_IF_FAIL(_trace_factory->create(&plogger, trace_impl,_configuration, nullptr, status));
+    _trace_logger.reset(plogger);
+    TRACE_INFO(_trace_logger, "API Tracing initialized");
+    _watchdog.set_trace_log(_trace_logger.get());
+    return error_code::success;
+  }
+
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
     m::i_model* pmodel;
-    RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration,status));
+    RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration, _trace_logger.get(), status));
     _model.reset(pmodel);
     return error_code::success;
   }
@@ -156,13 +168,13 @@ namespace reinforcement_learning {
     api_status* status) const {
     // Generate egreedy pdf
     size_t action_count = 0;
-    RETURN_IF_FAIL(utility::get_action_count(action_count, context, status));
+    RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
     vector<float> pdf(action_count);
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
     if (S_EXPLORATION_OK != scode) {
-      RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
+      RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
     // Pick using the pdf
     uint32_t chosen_action_id;
@@ -170,7 +182,7 @@ namespace reinforcement_learning {
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
     scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
     if (S_EXPLORATION_OK != scode) {
-      RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
+      RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
     response.push_back(chosen_action_id, pdf[chosen_action_id]);
     // Setup response with pdf from prediction and chosen action
@@ -197,7 +209,7 @@ namespace reinforcement_learning {
     // This class manages lifetime of transport
     this->_transport.reset(ptransport);
     // Initialize background process and start downloading models
-    this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb));
+    this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb, _trace_logger.get()));
     return _bg_model_proc.init(_model_download.get(), status);
   }
 

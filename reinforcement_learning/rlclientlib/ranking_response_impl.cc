@@ -49,7 +49,7 @@ namespace reinforcement_learning {
 
   int ranking_response_impl::set_chosen_action_id(size_t action_id, api_status* status) {
     if (action_id >= _ranking.size()) {
-      RETURN_ERROR_LS(status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
+      RETURN_ERROR_LS(nullptr, status, action_out_of_bounds) << " id:" << action_id << ", size:" << _ranking.size();
     }
 
     _chosen_action_id = action_id;
