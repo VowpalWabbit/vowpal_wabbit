@@ -73,7 +73,7 @@ namespace reinforcement_learning {
     const auto status_code = oldest.join();
     if (status_code != status_codes::Created)
     {
-      RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
+      RETURN_ERROR_ARG(_trace, status, http_bad_status_code, "(expected 201): Found ",
         status_code, "eh_host", _eventhub_host, "eh_name", _eventhub_name,
         "\npost_data: ", oldest.post_data());
     }

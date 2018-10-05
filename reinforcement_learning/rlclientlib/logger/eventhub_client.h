@@ -69,6 +69,6 @@ namespace reinforcement_learning {
     std::mutex _mutex;
     moving_queue<http_request_task> _tasks;
     const size_t _max_tasks_count;
-    i_trace* trace;
+    i_trace* _trace;
   };
 }
