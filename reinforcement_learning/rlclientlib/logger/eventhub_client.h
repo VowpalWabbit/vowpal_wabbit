@@ -17,8 +17,8 @@ namespace reinforcement_learning {
   public:
     virtual int init(api_status* status) override;
 
-    eventhub_client(const std::string&, const std::string&,
-                    const std::string&, const std::string&,
+    eventhub_client(const std::string& host, const std::string& key_name,
+                    const std::string& key, const std::string& name,
                     size_t tasks_count, bool local_test = false);
     ~eventhub_client();
 
@@ -26,18 +26,18 @@ namespace reinforcement_learning {
     virtual int v_send(std::string&& data, api_status* status) override;
 
   private:
-    class task {
+    class http_request_task {
     public:
-      task();
-      task(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::string&& post_data);
-      task(task&& other);
-      task& operator=(task&& other);
+      http_request_task();
+      http_request_task(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::string&& post_data);
+      http_request_task(http_request_task&& other);
+      http_request_task& operator=(http_request_task&& other);
 
       web::http::status_code join();
       std::string post_data() const;
     private:
-      task(const task&) = delete;
-      task& operator=(const task&) = delete;
+      http_request_task(const http_request_task&) = delete;
+      http_request_task& operator=(const http_request_task&) = delete;
 
     private:
       std::string _post_data;
@@ -46,7 +46,7 @@ namespace reinforcement_learning {
 
   private:
     int authorization(api_status* status);
-    int submit_task(task&& task, api_status* status);
+    int submit_task(http_request_task&& task, api_status* status);
     int pop_task(api_status* status);
 
     // cannot be copied or assigned
@@ -67,7 +67,7 @@ namespace reinforcement_learning {
     std::string _authorization;
     long long _authorization_valid_until; //in seconds
     std::mutex _mutex;
-    moving_queue<task> _tasks;
-    const size_t _tasks_count;
+    moving_queue<http_request_task> _tasks;
+    const size_t _max_tasks_count;
   };
 }
