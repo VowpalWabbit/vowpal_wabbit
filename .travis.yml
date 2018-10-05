@@ -6,7 +6,7 @@ services:
 before_install:
   - docker pull vowpalwabbit/travis-base:travis-ci-test
 script:
-  - docker run -a STDOUT -v $TRAVIS_BUILD_DIR/vowpal_wabbit:/vw -t vowpalwabbit/travis-base /bin/bash -c "cd /vw && ./build-linux.sh"
+  - docker run -a STDOUT -v $TRAVIS_BUILD_DIR/vowpal_wabbit:/vw -t vowpalwabbit/travis-base:travis-ci-test /bin/bash -c "cd /vw && ./build-linux.sh"
 
 # after_success:
 #   - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
