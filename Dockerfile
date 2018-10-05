@@ -33,7 +33,7 @@ RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
 
 # install python tools
 RUN easy_install pip && \
-    pip install cpp-coveralls wheel virtualenv pytest readme_renderer && \
+    pip install cpp-coveralls wheel virtualenv pytest readme_renderer pandas && \
     wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh && \
     bash miniconda.sh -b -p $HOME/miniconda && \
     hash -r && \
@@ -51,3 +51,6 @@ RUN apt-get clean autoclean && \
     apt-get autoremove -y && \
     rm -rf /var/lib/{apt,dpkg,cache,log}
 
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
+ENV PATH="${HOME}/miniconda/bin:${PATH}"
+ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"
