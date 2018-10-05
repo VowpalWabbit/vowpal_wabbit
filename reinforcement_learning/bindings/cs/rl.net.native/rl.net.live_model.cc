@@ -24,3 +24,8 @@ API int LiveModelReportOutcome(reinforcement_learning::live_model* livemodel, co
 {
     return livemodel->report_outcome(event_id, outcome, status);
 }
+
+API int LiveModelReportOutcome(reinforcement_learning::live_model* livemodel, const char * event_id, const char *  outcome, reinforcement_learning::api_status* status)
+{
+  return livemodel->report_outcome(event_id, outcome, status);
+}
