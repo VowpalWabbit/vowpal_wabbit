@@ -106,11 +106,11 @@ namespace Rl.Net.Cli {
 
         internal static readonly Topic[] ActionSet = new [] { Topic.HerbGarden, Topic.MachineLearning };
 
-        private static readonly string ActionsJson = String.Join(",", ActionSet.Select(topic => $"{{ 'TAction': {{ 'topic': '{topic}' }} }}"));
+        private static readonly string ActionsJson = String.Join(",", ActionSet.Select(topic => $"{{ \"TAction\": {{ \"topic\": \"{topic}\" }} }}"));
 
         private string CreateDecisionContext(Person p, params Topic[] topics)
         {
-            return $"{{ {p.FeaturesJson}, { ActionsJson } }}";
+            return $"{{ {p.FeaturesJson}, \"_multi\": [{ ActionsJson }] }}";
         }
 
         private Person GetRandomPerson()

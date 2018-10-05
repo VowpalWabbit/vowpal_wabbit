@@ -62,7 +62,7 @@ namespace Rl.Net.Cli {
         {
             get
             {
-                return $"'GUser':{{'id':'{this.Id}', 'major': '{this.Major}', 'hobby': '{this.Hobby}', 'favorite_character':'{this.FavoriteCharacter}'}}";
+                return $"\"GUser\":{{\"id\":\"{this.Id}\", \"major\": \"{this.Major}\", \"hobby\": \"{this.Hobby}\", \"favorite_character\":\"{this.FavoriteCharacter}\"}}";
             }
         }
 
