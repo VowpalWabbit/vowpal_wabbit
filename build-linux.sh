@@ -14,6 +14,7 @@ cd ..
 make test_gcov --always-make
 cd python
 source activate test-python27
+pip install pytest readme_renderer pandas
 python setup.py check -mrs
 python setup.py install
 py.test tests
