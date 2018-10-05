@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
 
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   auto s = new sender(items);
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
   batcher->init(nullptr);
 
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
   std::vector<std::string> items;
   auto s = new sender(items);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
 
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   size_t timeout_ms = 100;
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
 
   BOOST_CHECK_EQUAL(batcher->append(test_event("1")), error_code::success);
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   auto s = new sender(items);
   size_t queue_max_size = 2;
   error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
+  utility::watchdog watchdog(nullptr);
   async_batcher<test_event> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
 
   //pass the status to each call, then check its content

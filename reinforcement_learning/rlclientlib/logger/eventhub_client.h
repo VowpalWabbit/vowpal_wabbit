@@ -10,6 +10,7 @@
 #include <queue>
 
 namespace reinforcement_learning {
+  class i_trace;
 
   //the eventhub_client send string data in POST request to an http endpoint
   //it handles authorization headers specific for the azure event hubs
@@ -19,9 +20,8 @@ namespace reinforcement_learning {
 
     eventhub_client(const std::string& host, const std::string& key_name,
                     const std::string& key, const std::string& name,
-                    size_t tasks_count, bool local_test = false);
+                    size_t tasks_count, i_trace* trace, bool local_test = false);
     ~eventhub_client();
-
   protected:
     virtual int v_send(std::string&& data, api_status* status) override;
 
@@ -69,5 +69,6 @@ namespace reinforcement_learning {
     std::mutex _mutex;
     moving_queue<http_request_task> _tasks;
     const size_t _max_tasks_count;
+    i_trace* trace;
   };
 }

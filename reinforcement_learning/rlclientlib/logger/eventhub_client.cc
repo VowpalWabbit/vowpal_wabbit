@@ -3,6 +3,7 @@
 #include "eventhub_client.h"
 #include "err_constants.h"
 #include "utility/http_helper.h"
+#include "trace_logger.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
@@ -102,17 +103,19 @@ namespace reinforcement_learning {
       RETURN_IF_FAIL(submit_task(std::move(request_task), status));
     }
     catch (const std::exception& e) {
-      RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
+      RETURN_ERROR_LS(_trace, status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
     return error_code::success;
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
-                                   const std::string& key, const std::string& name, size_t max_tasks_count, const bool local_test)
+                                   const std::string& key, const std::string& name, size_t max_tasks_count, i_trace* trace, const bool local_test)
     : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
-      _authorization_valid_until(0), _max_tasks_count(max_tasks_count) { }
+      _authorization_valid_until(0), _max_tasks_count(max_tasks_count),
+      _trace(trace)
+  { }
 
   eventhub_client::~eventhub_client() {
     while (_tasks.size() != 0) {
@@ -144,6 +147,7 @@ namespace reinforcement_learning {
                 (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len)) {
         api_status::try_update(status, error_code::eventhub_generate_SAS_hash,
                                "Failed to generate SAS hash");
+        TRACE_ERROR(_trace, "Failed to generate SAS hash");
         return error_code::eventhub_generate_SAS_hash;
       }
       digest.resize(digest_len);

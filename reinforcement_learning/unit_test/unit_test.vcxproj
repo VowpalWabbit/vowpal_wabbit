@@ -183,6 +183,7 @@
     <ClCompile Include="sleeper_test.cc" />
     <ClCompile Include="status_builder_test.cc" />
     <ClCompile Include="str_util_test.cc" />
+    <ClCompile Include="trace_logger_test.cc" />
     <ClCompile Include="watchdog_test.cc" />
   </ItemGroup>
   <ItemGroup>
