@@ -10,6 +10,7 @@
 #include "interruptable_sleeper.h"
 
 namespace reinforcement_learning {
+  class i_trace;
   namespace utility {
 
 
@@ -22,6 +23,7 @@ namespace reinforcement_learning {
       void unregister_thread(std::thread::id const& thread_id);
       void check_in(std::thread::id const& thread_id);
 
+      void set_trace_log(i_trace* trace_logger);
       int start(api_status* status);
       void stop();
       void loop();
@@ -56,6 +58,7 @@ namespace reinforcement_learning {
 
       error_callback_fn* _error_callback;
       std::atomic<bool> _unhandled_background_error_occurred{false};
+      i_trace* _trace_logger;
     };
   }
 }

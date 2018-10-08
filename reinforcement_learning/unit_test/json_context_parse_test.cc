@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(basic_json_test) {
     ]
   })";
   size_t count = 0;
-  const auto scode = rlutil::get_action_count(count, context);
+  const auto scode = rlutil::get_action_count(count, context, nullptr);
   BOOST_CHECK_EQUAL(scode, error_code::success);
   BOOST_CHECK_EQUAL(count, 2);
 }
@@ -34,11 +34,11 @@ BOOST_AUTO_TEST_CASE(json_no_multi) {
     ]
   })";
   size_t count = 0;
-  auto scode = rlutil::get_action_count(count, context);
+  auto scode = rlutil::get_action_count(count, context, nullptr);
   BOOST_CHECK_EQUAL(scode, error_code::json_no_actions_found);
 
   context = R"({"UserAge":15})";
-  scode = rlutil::get_action_count(count, context);
+  scode = rlutil::get_action_count(count, context, nullptr);
   BOOST_CHECK_EQUAL(scode, error_code::json_no_actions_found);
 }
 
@@ -46,6 +46,6 @@ BOOST_AUTO_TEST_CASE(json_no_multi) {
 BOOST_AUTO_TEST_CASE(json_malformed) {
   const auto context = R"({"UserAgeq09898u)(**&^(*&^*^* })";
   size_t count = 0;
-  const auto scode = rlutil::get_action_count(count, context);
+  const auto scode = rlutil::get_action_count(count, context, nullptr);
   BOOST_CHECK_EQUAL(scode, error_code::json_parse_error);
 }
