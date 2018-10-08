@@ -1,14 +1,15 @@
-FROM travisci/ci-garnet:packer-1515445631-7dfb2e1 AS build
+FROM ubuntu:14.04 AS build
 
 # Upgrade cmake to 3.2
-RUN apt-get install software-properties-common
-RUN add-apt-repository ppa:george-edison55/cmake-3.x
+RUN apt-get update
+RUN apt-get install -y software-properties-common python-software-properties
+RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
 # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
 RUN apt-get update
-RUN apt-get install gcc-4.9 g++-4.9
+RUN apt-get install -y gcc-4.9 g++-4.9
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 RUN add-apt-repository -y --remove "ubuntu-toolchain-r-test"
 
