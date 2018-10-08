@@ -58,7 +58,7 @@ int test_loop::load_config_from_json(const std::string& file_name,
   r::api_status* status) const {
   std::string config_str;
   RETURN_IF_FAIL(load_file(file_name, config_str));
-  return cfg::create_from_json(config_str, config, status);
+  return cfg::create_from_json(config_str, config, nullptr, status);
 }
 
 int test_loop::load_file(const std::string& file_name, std::string& config_str) const {
