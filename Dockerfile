@@ -6,13 +6,6 @@ RUN apt-get install -y software-properties-common python-software-properties
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
-# ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
-RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
-RUN apt-get update
-RUN apt-get install -y gcc-4.9 g++-4.9
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
-RUN add-apt-repository -y --remove "ubuntu-toolchain-r-test"
-
 # Add Oracle JDK repo (including license agreement)
 RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | \
   debconf-set-selections && \
@@ -27,6 +20,13 @@ RUN apt-get install -y \
   wget git vim netcat pkg-config && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
+
+# ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
+RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
+RUN apt-get update
+RUN apt-get install -y gcc-4.9 g++-4.9
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
+RUN add-apt-repository -y --remove "ubuntu-toolchain-r-test"
 
 # Install cpprestsdk
 RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
