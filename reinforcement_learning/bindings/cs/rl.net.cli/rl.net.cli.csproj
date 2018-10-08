@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <OutputPath>$(SolutionDir)$(Platform)\$(Configuration)</OutputPath>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\rl.net\rl.net.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Copy Include="$(SolutionDir)examples\basic_usage_app\client.json" />
+  </ItemGroup>
+</Project>
