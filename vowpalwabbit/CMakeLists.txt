@@ -2,13 +2,55 @@ configure_file(config.h.in config.h)
 
 add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(allreduce PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Winsock32 should be available on Windows
 if(WIN32)
   target_link_libraries(allreduce wsock32 ws2_32)
 endif()
 
-add_library(vw
+add_library(vw_common INTERFACE)
+target_compile_definitions(vw_common INTERFACE _FILE_OFFSET_BITS=64)
+# Only define if Clang is used
+if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_definitions(vw_common INTERFACE __extern_always_inline=inline)
+endif()
+
+# Turn on warnings
+# TODO dont force this as an interface
+# These warnings are too much to have on by default until they are fixed
+if(MSVC)
+  # target_compile_options(vw_common INTERFACE /W4)
+else()
+  # target_compile_options(vw_common INTERFACE -Wall -Wextra -Wpedantic)
+endif()
+
+target_include_directories(vw_common INTERFACE ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(vw_common INTERFACE rapidjson Boost::program_options Threads::Threads zlib allreduce ${CMAKE_DL_LIBS})
+
+add_library(standard_config INTERFACE)
+target_compile_definitions(standard_config INTERFACE NDEBUG)
+
+# Add -ffast-math for speed, remove for testability.
+target_compile_options(standard_config INTERFACE -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+
+# for profiling -- note that it needs to be gcc
+add_library(profile_config INTERFACE)
+target_compile_options(profile_config INTERFACE -fno-strict-aliasing -pg)
+
+# Valgrind / gdb debugging
+add_library(debug_config INTERFACE)
+target_compile_options(debug_config INTERFACE  -g -O0)
+
+# for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
+add_library(valgrind_profile_config INTERFACE)
+target_compile_options(valgrind_profile_config INTERFACE -ffast-math -g -fomit-frame-pointer -fno-strict-aliasing)
+
+# gcov configuration
+add_library(gcov_config INTERFACE)
+target_compile_options(profile_config INTERFACE -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov)
+
+set(vw_sources
   global_data.cc io_buf.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc
   multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc binary.cc lrq.cc cost_sensitive.cc multilabel.cc
   label_dictionary.cc csoaa.cc cb.cc cb_adf.cc cb_algs.cc search.cc search_meta.cc search_sequencetask.cc search_dep_parser.cc
@@ -20,29 +62,11 @@ add_library(vw
   OjaNewton.cc parse_example_json.cc baseline.cc classweight.cc vw_exception.cc parser_helper.cc no_label.cc
 )
 
-target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
-target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 NDEBUG __extern_always_inline=inline)
+# Replace standard_config with one of the following options: standard_config, profile_config, debug_config, valgrind_profile_config, gcov_config
+add_library(vw ${vw_sources})
+target_link_libraries(vw PUBLIC vw_common standard_config)
 set_target_properties(vw PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_compile_definitions(allreduce PUBLIC _FILE_OFFSET_BITS=64 NDEBUG __extern_always_inline=inline)
-set_target_properties(allreduce PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_link_libraries(vw PUBLIC rapidjson Boost::program_options Threads::Threads zlib allreduce ${CMAKE_DL_LIBS})
-
-if(MSVC)
-  target_compile_options(vw PRIVATE /W4)
-  target_compile_options(vw PUBLIC /MP -D__SSE2__)
-
-  target_compile_options(allreduce PRIVATE /W4)
-  target_compile_options(allreduce PUBLIC /MP -D__SSE2__)
-else()
-  target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
-  target_compile_options(vw PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
-
-  target_compile_options(allreduce PRIVATE -Wall -Wextra -Wpedantic)
-  target_compile_options(allreduce PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
-endif()
 
 # TODO complete help2man
 # if(NOT WIN32)
