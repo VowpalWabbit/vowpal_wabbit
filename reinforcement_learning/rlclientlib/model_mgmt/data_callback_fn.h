@@ -1,11 +1,13 @@
 #pragma once
 #include "model_mgmt.h"
-namespace reinforcement_learning { namespace model_management {
+namespace reinforcement_learning { 
+  class i_trace;
+  namespace model_management {
 
   class data_callback_fn {
   public:
     using data_fn = void(*)(const model_data& data, void*);
-    int report_data(const model_data& data, api_status* status = nullptr);
+    int report_data(const model_data& data, i_trace* trace, api_status* status = nullptr);
 
     // Typed constructor
     template<typename DataCntxt>
