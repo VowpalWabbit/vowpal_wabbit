@@ -23,6 +23,10 @@ namespace Rl.Net {
         {
         }
 
+        internal ApiStatus(IntPtr sharedApiStatusHandle) : base(sharedApiStatusHandle, ownsHandle: false)
+        {
+        }
+
         public int ErrorCode => GetApiStatusErrorCode(this.handle);
 
         public string ErrorMessage

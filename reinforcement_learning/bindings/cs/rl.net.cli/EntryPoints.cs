@@ -45,7 +45,14 @@ namespace Rl.Net.Cli {
                 WriteStatusAndExit(apiStatus);
             }
 
+            liveModel.BackgroundError += LiveModel_BackgroundError;
+
             return liveModel;
+        }
+
+        private static void LiveModel_BackgroundError(object sender, ApiStatus e)
+        {
+            Console.Error.WriteLine(e.ErrorMessage);
         }
 
         // TODO: Pull this out to a separate sample once we implement the simulator in this.
