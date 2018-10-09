@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.2)
 
 set(PACKAGE_VERSION 8.6.1)
 
@@ -12,6 +12,8 @@ set_target_properties(zlib PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIRS}"
 )
 
+set (CMAKE_CXX_STANDARD 11)
+
 set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore")
 
 # TODO: gcov, unclear how to implement
@@ -24,11 +26,14 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Threads REQUIRED)
+find_package(ZLIB REQUIRED)
+
 add_subdirectory(vowpalwabbit)
 
 # add_subdirectory(cluster)
 # add_subdirectory(library)
-# add_subdirectory(decision_service)
 # TODO: rapidjson source generates too many warnings
 add_subdirectory(doc)
 # if(WIN32)

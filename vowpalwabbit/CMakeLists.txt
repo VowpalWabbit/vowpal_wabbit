@@ -1,9 +1,3 @@
-cmake_minimum_required (VERSION 3.7)
-
-find_package(Boost REQUIRED COMPONENTS program_options)
-find_package(Threads REQUIRED)
-find_package(ZLIB REQUIRED)
-
 configure_file(config.h.in config.h)
 
 add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
@@ -28,11 +22,9 @@ add_library(vw
 
 target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-target_compile_features(vw PUBLIC cxx_std_11)
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 NDEBUG __extern_always_inline=inline)
 set_target_properties(vw PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_compile_features(allreduce PUBLIC cxx_std_11)
 target_compile_definitions(allreduce PUBLIC _FILE_OFFSET_BITS=64 NDEBUG __extern_always_inline=inline)
 set_target_properties(allreduce PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -52,6 +44,7 @@ else()
   target_compile_options(allreduce PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
 endif()
 
+# TODO complete help2man
 # if(NOT WIN32)
 #   add_executable(active_interactor active_interactor.cc)
 
