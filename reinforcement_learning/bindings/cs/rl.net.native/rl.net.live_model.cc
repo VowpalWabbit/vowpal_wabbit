@@ -40,9 +40,14 @@ API int LiveModelChooseRank(livemodel_context_t* context, const char * event_id,
     return context->livemodel->choose_rank(event_id, context_json, *resp, status);
 }
 
-API int LiveModelReportOutcome(livemodel_context_t* context, const char * event_id, float outcome, reinforcement_learning::api_status* status)
+API int LiveModelReportOutcomeF(livemodel_context_t* context, const char * event_id, float outcome, reinforcement_learning::api_status* status)
 {
     return context->livemodel->report_outcome(event_id, outcome, status);
+}
+
+API int LiveModelReportOutcomeJson(livemodel_context_t* context, const char * event_id, const char * outcomeJson, reinforcement_learning::api_status* status)
+{
+    return context->livemodel->report_outcome(event_id, outcomeJson, status);
 }
 
 API void LiveModelSetCallback(livemodel_context_t* livemodel, managed_callback_t callback)

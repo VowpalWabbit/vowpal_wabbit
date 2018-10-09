@@ -22,10 +22,13 @@ namespace Rl.Net {
         private static extern int LiveModelInit(IntPtr liveModel, IntPtr apiStatus);
 
         [DllImport("rl.net.native.dll")]
-        private static extern int LiveModelChooseRank(IntPtr liveModel,  [MarshalAs(NativeMethods.StringMarshalling)] string eventId,  [MarshalAs(NativeMethods.StringMarshalling)] string contextJson, IntPtr rankingResponse, IntPtr apiStatus);
+        private static extern int LiveModelChooseRank(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, [MarshalAs(NativeMethods.StringMarshalling)] string contextJson, IntPtr rankingResponse, IntPtr apiStatus);
 
         [DllImport("rl.net.native.dll")]
-        private static extern int LiveModelReportOutcome(IntPtr liveModel,  [MarshalAs(NativeMethods.StringMarshalling)] string eventId,  float outcome, IntPtr apiStatus);
+        private static extern int LiveModelReportOutcomeF(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, float outcome, IntPtr apiStatus);
+
+        [DllImport("rl.net.native.dll")]
+        private static extern int LiveModelReportOutcomeJson(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, [MarshalAs(NativeMethods.StringMarshalling)] string outcomeJson, IntPtr apiStatus);
 
         private delegate void managed_callback_t(IntPtr apiStatus);
 
@@ -70,7 +73,13 @@ namespace Rl.Net {
 
         public bool TryReportOutcome(string actionId, float outcome, ApiStatus apiStatus = null)
         {
-            int result = LiveModelReportOutcome(this.NativeHandle, actionId, outcome, apiStatus.ToNativeHandleOrNullptr());
+            int result = LiveModelReportOutcomeF(this.NativeHandle, actionId, outcome, apiStatus.ToNativeHandleOrNullptr());
+            return result == NativeMethods.SuccessStatus;
+        }
+
+        public bool TryReportOutcome(string actionId, string outcomeJson, ApiStatus apiStatus = null)
+        {
+            int result = LiveModelReportOutcomeJson(this.NativeHandle, actionId, outcomeJson, apiStatus.ToNativeHandleOrNullptr());
             return result == NativeMethods.SuccessStatus;
         }
 
