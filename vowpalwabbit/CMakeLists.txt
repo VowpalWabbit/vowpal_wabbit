@@ -1,6 +1,5 @@
 cmake_minimum_required (VERSION 3.7)
 
-# TODO: add filesystem once the windows build works
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -39,19 +38,19 @@ set_target_properties(allreduce PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(vw PUBLIC rapidjson Boost::program_options Threads::Threads zlib allreduce ${CMAKE_DL_LIBS})
 
-# if(MSVC)
-#   target_compile_options(vw PRIVATE /W4)
-#   target_compile_options(vw PUBLIC /MP -D__SSE2__)
+if(MSVC)
+  target_compile_options(vw PRIVATE /W4)
+  target_compile_options(vw PUBLIC /MP -D__SSE2__)
 
-#   target_compile_options(allreduce PRIVATE /W4)
-#   target_compile_options(allreduce PUBLIC /MP -D__SSE2__)
-# else()
-#   target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
-#   target_compile_options(vw PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+  target_compile_options(allreduce PRIVATE /W4)
+  target_compile_options(allreduce PUBLIC /MP -D__SSE2__)
+else()
+  target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(vw PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
 
-#   target_compile_options(allreduce PRIVATE -Wall -Wextra -Wpedantic)
-#   target_compile_options(allreduce PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
-# endif()
+  target_compile_options(allreduce PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(allreduce PUBLIC -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+endif()
 
 # if(NOT WIN32)
 #   add_executable(active_interactor active_interactor.cc)
@@ -80,5 +79,5 @@ if(WIN32)
   set_target_properties(vwdll PROPERTIES OUTPUT_NAME libvw)
 endif()
 
-# install(TARGETS vw-bin RUNTIME DESTINATION bin)
-# Install_Dependencies("${CMAKE_INSTALL_PREFIX}/bin/vw.exe")
+# TODO do other dependencies need to be installed here too?
+install(TARGETS vw-bin RUNTIME DESTINATION bin)

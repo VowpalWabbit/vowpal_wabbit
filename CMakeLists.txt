@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.7)
+cmake_minimum_required(VERSION 3.7)
 
 set(PACKAGE_VERSION 8.6.1)
 
@@ -15,14 +15,14 @@ set_target_properties(zlib PROPERTIES
 set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore")
 
 # TODO: gcov, unclear how to implement
-# option(VW_SSE2 "Enable SSE2 optimization" ON)
+
 # include(DiscoverPythonUnittest)
 
-# set(Boost_USE_STATIC_LIBS OFF)
-# set(Boost_USE_MULTITHREADED ON)
-# set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
 
-# set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 add_subdirectory(vowpalwabbit)
 
@@ -30,7 +30,7 @@ add_subdirectory(vowpalwabbit)
 # add_subdirectory(library)
 # add_subdirectory(decision_service)
 # TODO: rapidjson source generates too many warnings
-# add_subdirectory(doc)
+add_subdirectory(doc)
 # if(WIN32)
 # #add_subdirectory(c_test)
 # #add_subdirectory(cs)
