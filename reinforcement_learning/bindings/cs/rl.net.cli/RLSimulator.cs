@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Rl.Net;
 
 namespace Rl.Net.Cli {
@@ -9,6 +10,23 @@ namespace Rl.Net.Cli {
     {
         HerbGarden,
         MachineLearning
+    }
+
+    internal static class RankingResponseExtensions
+    {
+        public static string ToDistributionString(this RankingResponse response)
+        {
+            StringBuilder stringBuilder = new StringBuilder("(");
+
+            foreach (ActionProbability actionProbability in response)
+            {
+                stringBuilder.Append($"[{actionProbability.ActionIndex}, {actionProbability.Probability}]");
+            }
+
+            stringBuilder.Append(')');
+
+            return stringBuilder.ToString();
+        }
     }
 
     internal class RLSimulator
@@ -75,7 +93,7 @@ namespace Rl.Net.Cli {
             // TODO: Record stats
             this.stats.Record(person, actionTopic, outcome);
 
-            Console.WriteLine($" {this.stats.TotalActions}, ctxt, {person.Id}, action, {actionTopic}, outcome, {outcome}, dist, {"" /*todo*/}, {this.stats.GetStats(person, actionTopic)}");
+            Console.WriteLine($" {this.stats.TotalActions}, ctxt, {person.Id}, action, {actionTopic}, outcome, {outcome}, dist, {responseContainer.ToDistributionString()}, {this.stats.GetStats(person, actionTopic)}");
         }
 
         private void SafeRaiseError(ApiStatus errorStatus)
