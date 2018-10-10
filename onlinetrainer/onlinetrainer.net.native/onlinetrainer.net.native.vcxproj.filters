@@ -15,8 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="online_trainer.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="onlinetrainer.net.native.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="onlinetrainer.net.vw_online_trainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="onlinetrainer.net.api_status.h">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="onlinetrainer.net.vw_online_trainer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

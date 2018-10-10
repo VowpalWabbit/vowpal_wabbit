@@ -40,7 +40,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -116,7 +116,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="online_trainer.h" />
+    <ProjectReference Include="..\vwlib\vwlib\vwlib.vcxproj">
+      <Project>{7bbc3be8-b853-41f9-a6d7-6c5e518e04bb}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="onlinetrainer.net.vw_online_trainer.h" />
+    <ClInclude Include="onlinetrainer.net.native.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="onlinetrainer.net.vw_online_trainer.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="onlinetrainer.net.api_status.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
