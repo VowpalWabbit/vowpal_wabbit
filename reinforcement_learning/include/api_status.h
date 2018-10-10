@@ -12,6 +12,7 @@
 #include "err_constants.h"
 
 namespace reinforcement_learning {
+  class i_trace;
   /**
    * @brief Report status of all API calls
    */
@@ -63,10 +64,11 @@ namespace reinforcement_learning {
     /**
      * @brief Construct a new status builder object
      *
+     * @param trace i_trace object which can be null
      * @param status api_status object which can be null
      * @param code Error code
      */
-    status_builder(api_status* status, int code);
+    status_builder(i_trace* trace, api_status* status, int code);
     ~status_builder();
 
     //! return the status when cast to an int
@@ -83,6 +85,12 @@ namespace reinforcement_learning {
     status_builder(const status_builder&) = delete;
     status_builder& operator=(const status_builder&) = delete;
     status_builder& operator=(status_builder&&) = delete;
+
+  private:
+    //! Trace logger
+    i_trace* _trace;
+    //! Is logging needed
+    bool enable_logging() const;
   };
 
   /**
@@ -192,9 +200,9 @@ namespace reinforcement_learning {
 /**
  * @brief Error reporting macro that takes a list of parameters
  */
-#define RETURN_ERROR_ARG(status, code, ... ) do {                                                 \
-  if(status != nullptr) {                                                                         \
-    reinforcement_learning::status_builder sb(status, reinforcement_learning::error_code::code);  \
+#define RETURN_ERROR_ARG(trace, status, code, ... ) do {                                                  \
+  if(status != nullptr) {                                                                                 \
+    reinforcement_learning::status_builder sb(trace, status, reinforcement_learning::error_code::code);   \
     sb << reinforcement_learning::error_code::code ## _s;                                         \
     return report_error(sb, __VA_ARGS__ );                                                        \
   }                                                                                               \
@@ -204,11 +212,11 @@ namespace reinforcement_learning {
 /**
  * @brief Error reporting macro used with left shift operator
  */
-#define RETURN_ERROR_LS(status, code)                                                             \
-reinforcement_learning::status_builder sb(status, reinforcement_learning::error_code::code);      \
-return sb << reinforcement_learning::error_code::code ## _s                                       \
+#define RETURN_ERROR_LS(trace, status, code)                                                          \
+reinforcement_learning::status_builder sb(trace, status, reinforcement_learning::error_code::code);   \
+return sb << reinforcement_learning::error_code::code ## _s                                           \
 
-/**
+ /**
  * @brief Error reporting macro to test and return on error
  */
 #define RETURN_IF_FAIL(x) do {    \

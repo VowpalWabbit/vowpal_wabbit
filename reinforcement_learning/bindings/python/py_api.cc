@@ -36,18 +36,18 @@ namespace reinforcement_learning {
     reinforcement_learning::utility::configuration create_config_from_json(const std::string& config_json) {
       reinforcement_learning::utility::configuration config;
       reinforcement_learning::api_status status;
-      reinforcement_learning::utility::config::create_from_json(config_json, config, &status);
+      reinforcement_learning::utility::config::create_from_json(config_json, config, nullptr, &status);
       check_api_status(status);
 
       return config;
     }
 
     live_model::live_model(const reinforcement_learning::utility::configuration config, error_callback& callback)
-      : _impl(config, &dispatch_error_internal, &callback, &data_transport_factory, &model_factory)
+      : _impl(config, &dispatch_error_internal, &callback, &trace_logger_factory, &data_transport_factory, &model_factory)
     {}
 
     live_model::live_model(const reinforcement_learning::utility::configuration config)
-      : _impl(config, nullptr, nullptr, &data_transport_factory, &model_factory)
+      : _impl(config, nullptr, nullptr, &trace_logger_factory, &data_transport_factory, &model_factory)
     {}
 
     void live_model::init() {
