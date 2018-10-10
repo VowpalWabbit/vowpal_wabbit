@@ -226,3 +226,39 @@ To browse the code more easily, do
 and then point your browser to `doc/html/index.html`.
 
 Note that documentation generates class diagrams using [Graphviz](https://www.graphviz.org). For best results, ensure that it is installed beforehand.
+
+
+## Experimental: CMake build system
+Note: The CSharp projects are not yet converted to CMake for Windows. So the CMake generated solution is only for C++ projects for the time being. For this reason the existing solution can not yet be deprecated.
+### Dependencies
+```
+vcpkg install rapidjson:x64-linux
+vcpkg install cpprestsdk:x64-linux
+vcpkg install zlib:x64-linux
+vcpkg install boost-system:x64-linux
+vcpkg install boost-program-options:x64-linux
+vcpkg install boost-test:x64-linux
+vcpkg install boost-align:x64-windows
+vcpkg install boost-foreach:x64-windows
+```
+
+### Build
+#### Windows
+1. Open CMake GUI
+2. Add two entries
+    1. `CMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake`
+    2. `VCPKG_TARGET_TRIPLET=x64-windows`
+    3. `CMAKE_BUILD_TYPE=DEBUG`
+3. Configure
+    1. Choose `Visual Studio 15 2017 Win64`
+4. Generate
+5. Open Project
+
+#### Linux
+Note: not yet tested
+```
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=DEBUG
+make -j
+```
