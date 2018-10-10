@@ -13,4 +13,5 @@ endif()
 target_include_directories(spanning_tree PRIVATE ${vowpal_wabbit_dir})
 target_link_libraries(spanning_tree PRIVATE Threads::Threads)
 
-install(TARGETS spanning_tree RUNTIME DESTINATION bin)
+install(TARGETS spanning_tree
+  RUNTIME DESTINATION bin)

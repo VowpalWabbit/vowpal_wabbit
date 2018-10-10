@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
-set(PACKAGE_VERSION 8.6.1)
 project(vowpal_wabbit)
+set(PACKAGE_VERSION 8.6.1)
 
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
@@ -34,14 +34,22 @@ add_subdirectory(vowpalwabbit)
 add_subdirectory(test)
 
 # make bigtests BIG_TEST_ARGS="<args here>"
-add_custom_target(bigtests DEPENDS vw
+add_custom_target(bigtests
+  DEPENDS vw
   COMMAND make \${BIG_TEST_ARGS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
 
-add_custom_target(python COMMAND make things WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)
-add_custom_target(java COMMAND make things WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java)
+add_custom_target(python
+  DEPENDS vw
+  COMMAND make things
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)
 
-# TODO cs
-# TODO c_test
+# TODO include java in cmake definition. Must be called manually currently.
+# Could be done by making this a custom command instead so that outputs are specified.
+add_custom_target(java
+  DEPENDS vw
+  COMMAND make things
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java)
 
-# TODO workout install
+# TODO convert cs directory to cmake
+# TODO convert c_test directory to cmake

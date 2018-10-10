@@ -17,13 +17,12 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Turn on warnings
-# TODO dont force this as an interface
 # These warnings are too much to have on by default until they are fixed
-if(MSVC)
-  # target_compile_options(vw_common INTERFACE /W4)
-else()
-  # target_compile_options(vw_common INTERFACE -Wall -Wextra -Wpedantic)
-endif()
+# if(MSVC)
+#   target_compile_options(vw_common INTERFACE /W4)
+# else()
+#   target_compile_options(vw_common INTERFACE -Wall -Wextra -Wpedantic)
+# endif()
 
 target_include_directories(vw_common INTERFACE ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(vw_common INTERFACE rapidjson Boost::program_options Threads::Threads zlib allreduce ${CMAKE_DL_LIBS})
@@ -67,22 +66,28 @@ add_library(vw ${vw_sources})
 target_link_libraries(vw PUBLIC vw_common standard_config)
 set_target_properties(vw PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+if(NOT WIN32)
+  add_executable(active_interactor active_interactor.cc)
+  target_link_libraries(active_interactor PUBLIC vw_common standard_config)
+  set_target_properties(active_interactor PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  install(TARGETS active_interactor
+    RUNTIME DESTINATION bin
+  )
 
-# TODO complete help2man
-# if(NOT WIN32)
-#   add_executable(active_interactor active_interactor.cc)
+  find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
+  if (HELP2MAN_EXECUTABLE)
+    add_custom_target(manpage ALL
+      COMMAND ${HELP2MAN_EXECUTABLE}
+        --no-info
+        --name="Vowpal Wabbit -- fast online learning tool" $<TARGET_FILE:vw-bin>
+        --output=$<TARGET_FILE:vw-bin>.1
+      DEPENDS vw-bin)
+    install(FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
+  else()
+    message(STATUS "help2man not found, please install it to generate manpages")
+  endif()
+endif()
 
-#   find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
-#   if (HELP2MAN_EXECUTABLE)
-#     add_custom_target(manpage ALL
-#       COMMAND ${HELP2MAN_EXECUTABLE}
-#         --no-info
-#         --name="Vowpal Wabbit -- fast online learning tool" $<TARGET_FILE:vw-bin>
-#         --output=$<TARGET_FILE:vw-bin>.1
-#       DEPENDS vw-bin)
-#     INSTALL (FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
-#   endif()
-# endif()
 
 # build main executable
 add_executable(vw-bin main.cc)
@@ -94,7 +99,14 @@ if(WIN32)
   target_compile_definitions(vw PRIVATE VWDLL_EXPORTS)
   target_link_libraries(vwdll PRIVATE vw)
   set_target_properties(vwdll PROPERTIES OUTPUT_NAME libvw)
+
+  install(TARGETS vwdll
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib)
 endif()
 
 # TODO do other dependencies need to be installed here too?
-install(TARGETS vw-bin RUNTIME DESTINATION bin)
+# TODO install libs and includes
+install(TARGETS vw-bin active_interactor
+  RUNTIME DESTINATION bin
+)
