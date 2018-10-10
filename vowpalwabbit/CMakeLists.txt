@@ -1,15 +1,15 @@
 configure_file(config.h.in config.h)
 
 # Add -ffast-math for speed, remove for testability.
-set(linux_standard_config "-O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse")
+set(linux_standard_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
 # for profiling -- note that it needs to be gcc
-set(linux_profile_config "-fno-strict-aliasing -pg")
+set(linux_profile_config -fno-strict-aliasing -pg)
 # Valgrind / gdb debugging
-set(linux_debug_config "-g -O0")
+set(linux_debug_config -g -O0)
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-set(linux_valgrind_profile_config "-ffast-math -g -fomit-frame-pointer -fno-strict-aliasing")
+set(linux_valgrind_profile_config -ffast-math -g -fomit-frame-pointer -fno-strict-aliasing)
 # gcov configuration
-set(linux_profile_config "-g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov")
+set(linux_profile_config -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov)
 
 add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
 target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

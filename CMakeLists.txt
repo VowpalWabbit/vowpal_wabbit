@@ -10,6 +10,7 @@ set(PACKAGE_VERSION 8.6.1)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug" "Release" CACHE STRING "" FORCE)
 
+# TODO move to consuming vcpkg of this dependency
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
 
@@ -53,6 +54,7 @@ if(NOT WIN32)
 
   # TODO include java in cmake definition. Must be called manually currently.
   # Could be done by making this a custom command instead so that outputs are specified.
+  # TODO fix java install command not being run by make install
   add_custom_target(java
     DEPENDS vw
     COMMAND make things
