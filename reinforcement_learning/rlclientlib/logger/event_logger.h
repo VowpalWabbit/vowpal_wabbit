@@ -96,7 +96,7 @@ namespace reinforcement_learning {
         perror_cb)
     {}
 
-    int log(const char* event_id, const char* context, const ranking_response& response, api_status* status);
+    int log(const char* event_id, const char* context, unsigned int flags, const ranking_response& response, api_status* status);
   };
 
   class observation_logger : public event_logger<outcome_event> {
@@ -118,5 +118,7 @@ namespace reinforcement_learning {
       buffer->reset();
       return append(std::move(outcome_event(*buffer.get(), event_id, outcome)), status);
     }
+
+    int report_action_taken(const char* event_id, api_status* status);
   };
 }
