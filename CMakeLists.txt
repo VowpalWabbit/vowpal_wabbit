@@ -5,10 +5,18 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
 
-project(vowpal_wabbit)
+project(vowpal_wabbit C CXX)
+
 set(PACKAGE_VERSION 8.6.1)
 
-set(CMAKE_CONFIGURATION_TYPES "Debug" "Release" CACHE STRING "" FORCE)
+# Only allow two configurations
+set(CMAKE_CONFIGURATION_TYPES "Debug" "Release" STRING)
+
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug Release" FORCE)
+
+option(PROFILE "Turn on flags required for profiling" OFF)
+option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
+option(GCOV "Turn on flags required for gcov" OFF)
 
 # TODO move to consuming vcpkg of this dependency
 add_library(rapidjson INTERFACE)
@@ -19,7 +27,7 @@ set(CMAKE_CXX_STANDARD 11)
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore")
+set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore/")
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -63,3 +71,7 @@ endif()
 
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
+
+configure_file(libvw.pc.in libvw.pc)
+configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
