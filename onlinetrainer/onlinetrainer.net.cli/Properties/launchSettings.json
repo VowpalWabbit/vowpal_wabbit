@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "onlinetrainer.net.cli": {
+      "commandName": "Project",
+      "commandLineArgs": "hello"
+    }
+  }
+}
