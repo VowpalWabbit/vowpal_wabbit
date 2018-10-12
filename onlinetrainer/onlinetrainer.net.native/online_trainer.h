@@ -5,7 +5,7 @@
 */
 #pragma once
 
-// #include "../../vowpalwabbit/vw.h"
+#include "../../vowpalwabbit/vw.h"
 #include "vw_settings.h"
 
 namespace online_trainer {
