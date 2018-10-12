@@ -17,7 +17,9 @@ BOOST_AUTO_TEST_CASE(serialize_outcome)
   const auto outcome = 1.0f;
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, event_id, outcome);
+  outcome_event evt = outcome_event::report_outcome(oss, event_id, outcome);
+  oss.reset();
+  evt.serialize(oss);
   const auto serialized_str = oss.str();
   const char * expected = R"({"EventId":"event_id","v":1.000000})";
 
@@ -30,7 +32,10 @@ BOOST_AUTO_TEST_CASE(serialize_empty_outcome)
   const auto outcome = "{}";
 
   utility::data_buffer oss;
-  outcome_event::serialize(oss, event_id, outcome);
+  outcome_event evt = outcome_event::report_outcome(oss, event_id, outcome);
+  oss.reset();
+  evt.serialize(oss);
+
   const auto serialized = oss.str();
   const auto expected = R"({"EventId":"","v":{}})";
 
@@ -48,7 +53,7 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
 
   utility::data_buffer oss;
 
-  ranking_event evt(oss, event_id, context, resp);
+  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, resp);
   oss.reset();
   evt.serialize(oss);
 
@@ -65,7 +70,7 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
   ranking.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event evt(oss, event_id, context, ranking);
+  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, ranking);
   oss.reset();
   evt.serialize(oss);
 
@@ -82,9 +87,9 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
   resp.push_back(2, 0.2);
   resp.set_chosen_action_id(1);
 
-  ranking_event evt(buffer, "interaction_id", "interaction_context", resp);
+  ranking_event evt = ranking_event::choose_rank(buffer, "interaction_id", "interaction_context", resp);
 
-  ranking_event expected(expected_buffer, "interaction_id", "interaction_context", resp, 0.25);
+  ranking_event expected = ranking_event::choose_rank(expected_buffer, "interaction_id", "interaction_context", resp, 0.25);
 
   evt.try_drop(0.5, 1);
   evt.try_drop(0.5, 1);

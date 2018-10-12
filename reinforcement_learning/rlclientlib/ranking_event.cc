@@ -50,13 +50,10 @@ namespace reinforcement_learning {
   ranking_event::ranking_event()
   { }
 
-  ranking_event::ranking_event(u::data_buffer& oss, const char* event_id, const char* context,
-    const ranking_response& response, float pass_prob)
+  ranking_event::ranking_event(const char* event_id, float pass_prob, const std::string& body)
     : event(event_id, pass_prob)
-  {
-    serialize(oss, event_id, context, response, _pass_prob);
-    _body = oss.str();
-  }
+    , _body(body)
+  { }
 
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
@@ -79,7 +76,7 @@ namespace reinforcement_learning {
     oss << R"(})";
   }
 
-  void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
+  ranking_event ranking_event::choose_rank(u::data_buffer& oss, const char* event_id, const char* context,
     const ranking_response& resp, float pass_prob) {
 
     //add version and eventId
@@ -103,24 +100,18 @@ namespace reinforcement_learning {
 
     //add model id
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
+
+    return ranking_event(event_id, pass_prob, oss.str());
 	}
 
   outcome_event::outcome_event()
   { }
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob)
+  outcome_event::outcome_event(const char* event_id, float pass_prob, const std::string& body)
     : event(event_id, pass_prob)
-  {
-    serialize(oss, event_id, outcome);
-    _body = oss.str();
-  }
+    , _body(body)
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob)
-    : event(event_id)
-  {
-    serialize(oss, event_id, outcome);
-    _body = oss.str();
-  }
+  { }
 
   outcome_event::outcome_event(outcome_event&& other)
     : event(std::move(other))
@@ -139,11 +130,13 @@ namespace reinforcement_learning {
     oss << _body;
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {
+  outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+    return outcome_event(event_id, pass_prob, oss.str());
   }
 
-  void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
+  outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+    return outcome_event(event_id, pass_prob, oss.str());
   }
 }

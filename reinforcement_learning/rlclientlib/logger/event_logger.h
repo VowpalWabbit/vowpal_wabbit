@@ -116,7 +116,7 @@ namespace reinforcement_learning {
       // Serialize outcome
       utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
       buffer->reset();
-      return append(std::move(outcome_event(*buffer.get(), event_id, outcome)), status);
+      return append(std::move(outcome_event::report_outcome(*buffer.get(), event_id, outcome)), status);
     }
 
     int report_action_taken(const char* event_id, api_status* status);
