@@ -1,3 +1,4 @@
+#include "action_flags.h"
 #include "ranking_event.h"
 #include "ranking_response.h"
 #include "utility/data_buffer.h"
@@ -77,11 +78,13 @@ namespace reinforcement_learning {
   }
 
   ranking_event ranking_event::choose_rank(u::data_buffer& oss, const char* event_id, const char* context,
-    const ranking_response& resp, float pass_prob) {
+    unsigned int flags, const ranking_response& resp, float pass_prob) {
 
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << event_id;
-
+    if (flags | action_flags::DEFERRED) {
+      oss << R"(,"DeferredAction":true)";
+    }
     //add action ids
     oss << R"(","a":[)";
     if ( resp.size() > 0 ) {
@@ -137,6 +140,11 @@ namespace reinforcement_learning {
 
   outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+    return outcome_event(event_id, pass_prob, oss.str());
+  }
+
+  outcome_event outcome_event::report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob) {
+    oss << R"({"EventId":")" << event_id << R"(","DeferredAction":false})";
     return outcome_event(event_id, pass_prob, oss.str());
   }
 }

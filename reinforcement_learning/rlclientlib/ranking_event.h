@@ -37,7 +37,7 @@ namespace reinforcement_learning {
   
   public:
     static ranking_event choose_rank(utility::data_buffer& oss, const char* event_id, const char* context,
-      const ranking_response& resp, float pass_prob = 1);
+      unsigned int flags, const ranking_response& resp, float pass_prob = 1);
 
   private:
     ranking_event(const char* event_id, float pass_prob, const std::string& body);
@@ -56,6 +56,8 @@ namespace reinforcement_learning {
     virtual void serialize(utility::data_buffer& buffer) override;
 
   public:
+    static outcome_event report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob = 1);
+
     static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
     static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
 
