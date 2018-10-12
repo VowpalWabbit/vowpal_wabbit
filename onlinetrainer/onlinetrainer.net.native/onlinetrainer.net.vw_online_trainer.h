@@ -12,4 +12,6 @@ typedef struct vw_online_trainer_context {
 extern "C" {
   API vw_online_trainer_context_t* CreateVWOnlineTrainer(const char* arg);
   API void DeleteVWOnlineTrainer(vw_online_trainer_context_t* vw_online_trainer);
+
+  API void VWOnlineTrainerSetCallback(vw_online_trainer_context_t* vw_online_trainer, managed_callback_t callback = nullptr);
 }

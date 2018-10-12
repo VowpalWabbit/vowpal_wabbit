@@ -19,8 +19,8 @@ namespace OnlineTrainer.Net
 
         private delegate void managed_callback_t(IntPtr apiStatus);
 
-        [DllImport("rl.net.native.dll")]
-        private static extern void LiveModelSetCallback(IntPtr liveModel, [MarshalAs(UnmanagedType.FunctionPtr)] managed_callback_t callback = null);
+        [DllImport("onlinetrainer.net.native.dll")]
+        private static extern void VWOnlineTrainerSetCallback(IntPtr vwOnlineTrainer, [MarshalAs(UnmanagedType.FunctionPtr)] managed_callback_t callback = null);
 
         private readonly managed_callback_t managedCallback;
 

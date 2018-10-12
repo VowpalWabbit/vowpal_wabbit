@@ -8,8 +8,6 @@
 // #include "../../vowpalwabbit/vw.h"
 #include "vw_settings.h"
 
-
-
 namespace online_trainer {
 
   class online_trainer {
