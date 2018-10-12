@@ -10,6 +10,7 @@
 #include "factory_resolver.h"
 #include "utility/watchdog.h"
 
+#include <atomic>
 #include <memory>
 
 namespace reinforcement_learning
@@ -61,7 +62,7 @@ namespace reinforcement_learning
 
   private:
     // Internal implementation state
-    bool _model_data_received = false;
+    std::atomic_bool _model_data_received = false;
     float _initial_epsilon = 0.2f;
     utility::configuration _configuration;
     error_callback_fn _error_cb;
