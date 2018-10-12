@@ -81,9 +81,9 @@ namespace reinforcement_learning {
     unsigned int flags, const ranking_response& resp, float pass_prob) {
 
     //add version and eventId
-    oss << R"({"Version":"1","EventId":")" << event_id;
+    oss << R"({"Version":"1","EventId":")" << event_id << R"(")";
     if (flags & action_flags::DEFERRED) {
-      oss << R"(","DeferredAction":true)";
+      oss << R"(,"DeferredAction":true)";
     }
     //add action ids
     oss << R"(,"a":[)";
