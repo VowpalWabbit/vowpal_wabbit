@@ -153,6 +153,10 @@ endif()
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
 
+  install(TARGETS active_interactor
+    RUNTIME DESTINATION bin
+  )
+
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
   target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)
   target_compile_options(active_interactor PUBLIC ${linux_standard_config})
@@ -197,10 +201,6 @@ endif()
 
 # Install executables
 install(TARGETS vw-bin
-  RUNTIME DESTINATION bin
-)
-
-install(TARGETS active_interactor
   RUNTIME DESTINATION bin
 )
 

@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.2)
+project(vowpal_wabbit)
 
 # VW targets Windows 8.1 SDK
 if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
-
-project(vowpal_wabbit C CXX)
 
 set(PACKAGE_VERSION 8.6.1)
 
