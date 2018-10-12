@@ -7,7 +7,7 @@
 */
 #pragma once
 
-namespace vw_lib {
+namespace online_trainer {
   namespace error_code {
     //! [Error Codes]
     const int success = 0;
@@ -15,7 +15,7 @@ namespace vw_lib {
   }
 }
 
-namespace vw_lib {
+namespace online_trainer {
   namespace error_code {
     //! [Error Description]
     char const * const unknown_s = "Unexpected error.";

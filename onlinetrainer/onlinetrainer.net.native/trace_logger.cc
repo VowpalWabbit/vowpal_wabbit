@@ -2,14 +2,14 @@
 
 const char* get_log_level_string(int log_level) {
   switch ( log_level ) {
-  case vw_lib::LEVEL_DEBUG:
-    return vw_lib::STR_LEVEL_DEBUG;
-  case vw_lib::LEVEL_INFO:
-    return vw_lib::STR_LEVEL_INFO;
-  case vw_lib::LEVEL_WARN:
-    return vw_lib::STR_LEVEL_WARN;
-  case vw_lib::LEVEL_ERROR:
-    return vw_lib::STR_LEVEL_ERROR;
+  case online_trainer::LEVEL_DEBUG:
+    return online_trainer::STR_LEVEL_DEBUG;
+  case online_trainer::LEVEL_INFO:
+    return online_trainer::STR_LEVEL_INFO;
+  case online_trainer::LEVEL_WARN:
+    return online_trainer::STR_LEVEL_WARN;
+  case online_trainer::LEVEL_ERROR:
+    return online_trainer::STR_LEVEL_ERROR;
   default:
     return "LOG";
   }

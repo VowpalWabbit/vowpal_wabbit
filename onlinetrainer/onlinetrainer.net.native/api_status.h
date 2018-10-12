@@ -11,7 +11,7 @@
 #include <sstream>
 #include "err_constants.h"
 
-namespace vw_lib {
+namespace online_trainer {
   class i_trace;
   /**
   * @brief Report status of all API calls
@@ -146,17 +146,17 @@ namespace vw_lib {
 * @tparam T Type to serialize
 * @param sb Status builder that holds serialized error message
 * @param val Error code
-* @return vw_lib::status_builder& Passed in status builder so left shift operators can be chained together.
+* @return online_trainer::status_builder& Passed in status builder so left shift operators can be chained together.
 */
 template <typename T>
-vw_lib::status_builder& operator <<(vw_lib::status_builder& sb, const T& val) {
+online_trainer::status_builder& operator <<(online_trainer::status_builder& sb, const T& val) {
   if (sb._status != nullptr) {
     sb._os << ", " << val;
   }
   return sb;
 }
 
-namespace vw_lib {
+namespace online_trainer {
   /**
   * @brief Terminates recursion of report_error
   *
@@ -202,19 +202,19 @@ namespace vw_lib {
 */
 #define RETURN_ERROR_ARG(trace, status, code, ... ) do {                  \
   if(status != nullptr) {                                                 \
-    vw_lib::status_builder sb(trace, status, vw_lib::error_code::code);   \
-    sb << vw_lib::error_code::code ## _s;                                 \
+    online_trainer::status_builder sb(trace, status, online_trainer::error_code::code);   \
+    sb << online_trainer::error_code::code ## _s;                                 \
     return report_error(sb, __VA_ARGS__ );                                \
   }                                                                       \
-  return vw_lib::error_code::code;                                        \
+  return online_trainer::error_code::code;                                        \
 } while(0);                                                               \
 
 /**
 * @brief Error reporting macro used with left shift operator
 */
 #define RETURN_ERROR_LS(trace, status, code)                          \
-vw_lib::status_builder sb(trace, status, vw_lib::error_code::code);   \
-return sb << vw_lib::error_code::code ## _s                           \
+online_trainer::status_builder sb(trace, status, online_trainer::error_code::code);   \
+return sb << online_trainer::error_code::code ## _s                           \
 
 /**
 * @brief Error reporting macro to test and return on error

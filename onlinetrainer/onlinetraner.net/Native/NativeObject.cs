@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Threading;
 
-namespace OnlineTrainer.Net
+namespace OnlineTrainer.Net.Native
 {
     public delegate IntPtr New<THandle>() where THandle : NativeObject<THandle>;
     public delegate void Delete<THandle>(IntPtr pointer) where THandle : NativeObject<THandle>;
@@ -18,12 +18,17 @@ namespace OnlineTrainer.Net
         private readonly Delete<THandle> operatorDelete;
 
         protected NativeObject(New<THandle> operatorNew, Delete<THandle> operatorDelete)
-            : base(operatorNew(), ownsHandle: true)
+             : this(operatorNew(), ownsHandle: true)
         {
             this.operatorDelete = operatorDelete;
 
             // TODO: Check nulls in Debug
             Debug.WriteLine($"New object at at {this.handle.ToInt64():x}");
+        }
+
+        protected NativeObject(IntPtr sharedHandle, bool ownsHandle) : base(IntPtr.Zero, ownsHandle)
+        {
+            this.SetHandle(sharedHandle);
         }
 
         internal IntPtr NativeHandle

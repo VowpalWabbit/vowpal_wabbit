@@ -1,7 +1,7 @@
 #include "api_status.h"
 #include "trace_logger.h"
 
-namespace vw_lib {
+namespace online_trainer {
 
   int api_status::get_error_code() const {
     return _error_code;

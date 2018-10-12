@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "vw_online_trainer.h"
+#include "online_trainer.h"
+#include "api_status.h"
 
 #define API __declspec(dllexport)

@@ -15,7 +15,48 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="onlinetrainer.net.vw_online_trainer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="api_status.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="online_trainer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trace_logger.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_model.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vw_settings.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="api_status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="err_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="onlinetrainer.net.api_status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="onlinetrainer.net.native.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="online_trainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trace_logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="onlinetrainer.net.vw_online_trainer.h">
@@ -23,13 +64,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="onlinetrainer.net.api_status.h">
-      <Filter>Header Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="onlinetrainer.net.vw_online_trainer.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
