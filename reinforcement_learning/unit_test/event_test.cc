@@ -3,6 +3,7 @@
 #   define BOOST_TEST_MODULE Main
 #endif
 
+#include "action_flags.h"
 #include "ranking_event.h"
 #include <boost/test/unit_test.hpp>
 #include "ranking_response.h"
@@ -53,7 +54,7 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
 
   utility::data_buffer oss;
 
-  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, resp);
+  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, action_flags::DEFAULT, resp);
   oss.reset();
   evt.serialize(oss);
 
@@ -70,7 +71,7 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
   ranking.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, ranking);
+  ranking_event evt = ranking_event::choose_rank(oss, event_id, context, action_flags::DEFAULT, ranking);
   oss.reset();
   evt.serialize(oss);
 
@@ -87,9 +88,9 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
   resp.push_back(2, 0.2);
   resp.set_chosen_action_id(1);
 
-  ranking_event evt = ranking_event::choose_rank(buffer, "interaction_id", "interaction_context", resp);
+  ranking_event evt = ranking_event::choose_rank(buffer, "interaction_id", "interaction_context", action_flags::DEFAULT, resp);
 
-  ranking_event expected = ranking_event::choose_rank(expected_buffer, "interaction_id", "interaction_context", resp, 0.25);
+  ranking_event expected = ranking_event::choose_rank(expected_buffer, "interaction_id", "interaction_context", action_flags::DEFAULT, resp, 0.25);
 
   evt.try_drop(0.5, 1);
   evt.try_drop(0.5, 1);
