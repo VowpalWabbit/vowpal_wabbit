@@ -52,6 +52,27 @@ namespace reinforcement_learning
     return _pimpl->choose_rank(context_json, response, status);
   }
 
+  //not implemented yet
+  int live_model::choose_rank(const char* event_id, const char* context_json, unsigned int flags, ranking_response& response,
+    api_status* status)
+  {
+    INIT_CHECK();
+    return _pimpl->choose_rank(event_id, context_json, response, status);
+  }
+
+  //not implemented yet
+  int live_model::choose_rank(const char* context_json, unsigned int flags, ranking_response& response, api_status* status)
+  {
+    INIT_CHECK();
+    return _pimpl->choose_rank(context_json, response, status);
+  }
+
+  //not implemented yet
+  int live_model::report_action_taken(const char* event_id, api_status* status) {
+    INIT_CHECK();
+    return error_code::success;
+  }
+
   int live_model::report_outcome(const char* event_id, const char* outcome, api_status* status)
   {
     INIT_CHECK();
