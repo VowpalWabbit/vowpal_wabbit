@@ -8,7 +8,7 @@
 
 namespace e = exploration;
 namespace reinforcement_learning { namespace model_management {
-  
+
   vw_model::vw_model(i_trace* trace_logger) :
     _vw_pool(nullptr) , _trace_logger(trace_logger) {
   }
@@ -16,8 +16,9 @@ namespace reinforcement_learning { namespace model_management {
   int vw_model::update(const model_data& data, api_status* status) {
     try {
       TRACE_INFO(_trace_logger, utility::concat("Recieved new model data. With size ", data.data_sz()));
-      const auto new_model = std::make_shared<safe_vw>(data.data(), data.data_sz());
-      _vw_pool.update_factory(new safe_vw_factory(new_model));
+      
+      // safe_vw_factory will create a copy of the model data to use for vw object construction.
+      _vw_pool.update_factory(new safe_vw_factory(std::move(data)));
     }
     catch(const std::exception& e) {
       RETURN_ERROR_LS(_trace_logger, status, model_update_error) << e.what();
