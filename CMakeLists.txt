@@ -16,6 +16,7 @@ set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
+option(WARNINGS "Turn on warning flags. ON by default." ON)
 
 # TODO move to consuming vcpkg of this dependency
 add_library(rapidjson INTERFACE)

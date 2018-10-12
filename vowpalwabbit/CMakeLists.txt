@@ -74,11 +74,6 @@ set(explore_all_headers
 source_group(explore ${explore_all_headers})
 add_library(vw_obj OBJECT ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
-# target_sources(vw_obj
-#     PRIVATE
-#     ${vw_all_sources} ${vw_all_headers} ${explore_all_headers}
-# )
-
 # Create both shared and static libs
 add_library(vw_shared SHARED $<TARGET_OBJECTS:vw_obj>)
 add_library(vw_static STATIC $<TARGET_OBJECTS:vw_obj>)
@@ -143,12 +138,13 @@ else()
 endif()
 
 # Turn on warnings
-# These warnings are too much to have on by default until they are fixed
-# if(MSVC)
-#   target_compile_options(vw_obj PRIVATE /W4)
-# else()
-#   target_compile_options(vw_obj PRIVATE -Wall -Wextra -Wpedantic)
-# endif()
+if(WARNINGS)
+  if(MSVC)
+    target_compile_options(vw_obj PRIVATE /W4)
+  else(MSVC)
+    target_compile_options(vw_obj PRIVATE -Wall -Wextra -Wpedantic)
+  endif(MSVC)
+endif(WARNINGS)
 
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
