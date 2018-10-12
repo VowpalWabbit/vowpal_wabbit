@@ -82,11 +82,11 @@ namespace reinforcement_learning {
 
     //add version and eventId
     oss << R"({"Version":"1","EventId":")" << event_id;
-    if (flags | action_flags::DEFERRED) {
-      oss << R"(,"DeferredAction":true)";
+    if (flags & action_flags::DEFERRED) {
+      oss << R"(","DeferredAction":true)";
     }
     //add action ids
-    oss << R"(","a":[)";
+    oss << R"(,"a":[)";
     if ( resp.size() > 0 ) {
       for ( auto const &r : resp )
         oss << r.action_id + 1 << ",";
