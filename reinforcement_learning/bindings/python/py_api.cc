@@ -13,6 +13,15 @@
 
 namespace reinforcement_learning {
   namespace python {
+
+    // PyEval_InitThreads must be called before any threads are created, and definitely before we try to take the GIL.
+    // https://stackoverflow.com/questions/5140998/why-does-pygilstate-release-segfault-in-this-case
+    struct InitializeGILOnStartup {
+      InitializeGILOnStartup(){
+        PyEval_InitThreads();
+      }
+    } ensureGILIsReadyBeforeCreatingThreads;
+
     void dispatch_error_internal(const reinforcement_learning::api_status& status, error_callback* context) {
       // Obtain global interpreter lock to execute Python.
       PyGILState_STATE gstate;
