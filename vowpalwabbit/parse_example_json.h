@@ -881,7 +881,7 @@ struct DecisionServiceInteraction
 
 	float probabilityOfDrop;
 
-	bool useForLearning { true } ;
+	bool deferred { false } ;
 
 	DecisionServiceInteraction() : probabilityOfDrop(0.f)
 	{ }
@@ -951,9 +951,9 @@ public:
 			else if (length == 11 && !_stricmp(str, "_labelIndex"))
 				return &ctx.label_index_state;
 		}
-		else if (length == 17 && !strcmp(str, "_use_for_learning"))
+		else if (length == 9 && !strcmp(str, "_deferred"))
 		{
-			ctx.bool_state.output_bool = &data->useForLearning;
+			ctx.bool_state.output_bool = &data->deferred;
 			return &ctx.bool_state;
 		}
 	}

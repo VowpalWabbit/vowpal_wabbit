@@ -36,6 +36,6 @@ namespace VW
         /// <summary>
         /// Flag if this example is used for learning.
         /// </summary>
-        public bool UseForLearning { get; set; }
+        public bool Deferred { get; set; }
     }
 }

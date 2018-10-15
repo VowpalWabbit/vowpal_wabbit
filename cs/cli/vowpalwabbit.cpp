@@ -343,7 +343,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 				header->Probabilities[index++] = p;
 
 			header->ProbabilityOfDrop = interaction.probabilityOfDrop;
-			header->UseForLearning = interaction.useForLearning;
+			header->Deferred = interaction.deferred;
 
 			return state->examples;
 		}
