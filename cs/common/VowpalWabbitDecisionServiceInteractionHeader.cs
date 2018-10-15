@@ -32,5 +32,10 @@ namespace VW
         /// Probability of drop extracted from Decision Service Interaction JSON data.
         /// </summary>
         public float ProbabilityOfDrop { get; set; }
+
+        /// <summary>
+        /// Flag if this example is used for learning.
+        /// </summary>
+        public bool UseForLearning { get; set; }
     }
 }

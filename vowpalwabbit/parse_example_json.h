@@ -852,6 +852,24 @@ public:
   }
 };
 
+template<bool audit>
+class BoolToBoolState : public BaseState<audit>
+{
+public:
+  BoolToBoolState() : BaseState<audit>("BoolToBoolState")
+  { }
+
+  bool* output_bool;
+
+  BaseState<audit>* Bool(Context<audit>& ctx, bool b)
+  {
+    *output_bool = b;
+
+    // TODO: introduce return_state
+    return &ctx.decision_service_state;
+  }
+};
+
 // Decision Service JSON header information - required to construct final label
 struct DecisionServiceInteraction
 {
@@ -862,6 +880,8 @@ struct DecisionServiceInteraction
 	std::vector<float> probabilities;
 
 	float probabilityOfDrop;
+
+	bool useForLearning { true } ;
 
 	DecisionServiceInteraction() : probabilityOfDrop(0.f)
 	{ }
@@ -931,6 +951,11 @@ public:
 			else if (length == 11 && !_stricmp(str, "_labelIndex"))
 				return &ctx.label_index_state;
 		}
+		else if (length == 17 && !strcmp(str, "_use_for_learning"))
+		{
+			ctx.bool_state.output_bool = &data->useForLearning;
+			return &ctx.bool_state;
+		}
 	}
 
 	// ignore unknown properties
@@ -979,6 +1004,7 @@ struct Context
     ArrayToVectorState<audit, unsigned> array_uint_state;
     StringToStringState<audit> string_state;
     FloatToFloatState<audit> float_state;
+    BoolToBoolState<audit> bool_state;
 
 	BaseState<audit>* root_state;
 
