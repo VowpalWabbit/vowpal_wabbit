@@ -7,7 +7,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "onlinetrainer.net.native", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "onlinetrainer.net", "onlinetraner.net\onlinetrainer.net.csproj", "{2A3CDCF4-B80A-41DF-84BC-6AA73D857388}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "onlinetrainer.net.cli", "onlinetrainer.net.cli\onlinetrainer.net.cli.csproj", "{09AB9806-B0B7-4C11-BAEA-FCD5BEF1C44B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "onlinetrainer.net.cli", "onlinetrainer.net.cli\onlinetrainer.net.cli.csproj", "{09AB9806-B0B7-4C11-BAEA-FCD5BEF1C44B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_core", "..\vowpalwabbit\vw_core.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3593}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,16 @@ Global
 		{09AB9806-B0B7-4C11-BAEA-FCD5BEF1C44B}.Release|x64.ActiveCfg = Release|x64
 		{09AB9806-B0B7-4C11-BAEA-FCD5BEF1C44B}.Release|x64.Build.0 = Release|x64
 		{09AB9806-B0B7-4C11-BAEA-FCD5BEF1C44B}.Release|x86.ActiveCfg = Release|x64
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x64.ActiveCfg = Debug|x64
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x64.Build.0 = Debug|x64
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x86.ActiveCfg = Debug|Win32
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x86.Build.0 = Debug|Win32
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|Any CPU.ActiveCfg = Release|Win32
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.ActiveCfg = Release|x64
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.Build.0 = Release|x64
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x86.ActiveCfg = Release|Win32
+		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
