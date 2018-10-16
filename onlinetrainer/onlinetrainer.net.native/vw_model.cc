@@ -2,7 +2,7 @@
 #include "vw_model.h"
 
 namespace online_trainer {
-	vw_model::vw_model(vw_settings * settings)
+	vw_model::vw_model(vw_settings * settings) : vw_base(settings)
 	{
 		if (settings == nullptr)
 			throw "settings is null";

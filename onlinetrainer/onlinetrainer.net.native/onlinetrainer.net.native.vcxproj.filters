@@ -30,7 +30,7 @@
     <ClCompile Include="vw_model.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vw_settings.cc">
+    <ClCompile Include="vw_base.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,7 +62,13 @@
     <ClInclude Include="onlinetrainer.net.vw_online_trainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vowpalwabbit_settings.h">
+    <ClInclude Include="vw_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_arguments.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vw_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

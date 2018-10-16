@@ -10,8 +10,8 @@ typedef struct vw_online_trainer_context {
 
 // Global exports
 extern "C" {
-  API vw_online_trainer_context_t* CreateVWOnlineTrainer(const char* arg);
-  API void DeleteVWOnlineTrainer(vw_online_trainer_context_t* vw_online_trainer);
+  API vw_online_trainer_context_t* CreateVWOnlineTrainer(const char* arg, uint8_t * model, size_t l);
+  API void DeleteVWOnlineTrainer(vw_online_trainer_context_t* context);
 
-  API void VWOnlineTrainerSetCallback(vw_online_trainer_context_t* vw_online_trainer, managed_callback_t callback = nullptr);
+  API void VWOnlineTrainerSetCallback(vw_online_trainer_context_t* context, managed_callback_t callback = nullptr);
 }

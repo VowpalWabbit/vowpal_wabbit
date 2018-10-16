@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\reinforcement_learning\ext_libs;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\vowpalwabbit;$(SolutionDir)..\rapidjson\include;$(SolutionDir)..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -136,8 +136,8 @@
     <ClCompile Include="onlinetrainer.net.vw_online_trainer.cc" />
     <ClCompile Include="online_trainer.cc" />
     <ClCompile Include="trace_logger.cc" />
+    <ClCompile Include="vw_base.cc" />
     <ClCompile Include="vw_model.cc" />
-    <ClCompile Include="vw_settings.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api_status.h" />
@@ -147,7 +147,9 @@
     <ClInclude Include="onlinetrainer.net.vw_online_trainer.h" />
     <ClInclude Include="online_trainer.h" />
     <ClInclude Include="trace_logger.h" />
-    <ClInclude Include="vowpalwabbit_settings.h" />
+    <ClInclude Include="vw_arguments.h" />
+    <ClInclude Include="vw_base.h" />
+    <ClInclude Include="vw_io.h" />
     <ClInclude Include="vw_model.h" />
     <ClInclude Include="vw_settings.h" />
   </ItemGroup>
