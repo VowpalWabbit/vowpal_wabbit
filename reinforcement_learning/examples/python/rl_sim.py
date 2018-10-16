@@ -1,6 +1,5 @@
 import argparse
 import random
-import sys
 import time
 
 import rl_client
@@ -51,40 +50,45 @@ class rl_sim:
 
     def loop(self):
         round = 0
-        while (True):
+        stats = {person._id : [[0,0] for _ in self._actions] for person in self._people}
+        ctr = [0,0]
+        while round != self._options.num_rounds:
             try:
+                round += 1
+
                 # random.sample() returns a list
                 person = random.sample(self._people, 1)[0]
                 
                 # create context
                 shared_features = person.get_features()
-                action_features = '"_multi": [ {"topic":"HerbGarden"}, {"topic":"MachineLearning"} ]'
-                context = '{{ {}, {} }}'.format(shared_features, action_features)
+                action_features = '"_multi":[' + ','.join('{"a":{"topic":"'+action+'"}}' for action in self._actions) + ']'
+                context = '{' + shared_features + ',' + action_features + '}'
 
                 model_id, chosen_action_id, actions_probabilities, event_id = self._rl_client.choose_rank(context)
-                
+
+                stats[person._id][chosen_action_id][1] += 1
+                ctr[1] += 1
+
                 outcome = person.get_outcome(self._actions[chosen_action_id])
-                self._rl_client.report_outcome(event_id, outcome)
+                if outcome != 0:
+                    self._rl_client.report_outcome(event_id, outcome)
+                    ctr[0] += 1
+                    stats[person._id][chosen_action_id][0] += 1
 
-                print('Round: {}, Person: {}, Action: {}, Outcome: {}'
-                    .format(round, person._id, chosen_action_id, outcome))
+                print('Round: {}, ctr: {:.1%}'.format(round, ctr[0]/ctr[1]), stats)
 
-                round += 1
                 time.sleep(0.1)
             except Exception as e:
                 print(e)
                 time.sleep(2)
                 continue
 
-def process_cmd_line(args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--json_config', help='client json config', required=True)
-    return parser.parse_args(args)
-
-def main(args):
-    vm = process_cmd_line(args)
-    sim = rl_sim(vm)
-    sim.loop()
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--json_config', help='client json config', required=True)
+    parser.add_argument('--num_rounds', help='number of rounds (default: infinity)', type=int, default=-1)
+
+    vm = parser.parse_args()
+    sim = rl_sim(vm)
+    sim.loop()
