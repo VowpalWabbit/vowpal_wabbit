@@ -9,9 +9,9 @@ person::person(std::string id, std::string major,
   _favorite_character{std::move(fav_char)},_topic_click_probability{p}
 {}
 
-person::~person() {}
+person::~person() = default;
 
-std::string person::get_features() {
+std::string person::get_features() const {
   std::ostringstream oss;
   oss << R"("GUser":{)";
   oss << R"("id":")" << _id << R"(",)";
@@ -22,16 +22,16 @@ std::string person::get_features() {
   return oss.str();
 }
 
-float person::get_reward(const std::string& choosen_action) {
-  int draw_uniform = rand() % 10000;
-  float norm_draw_val = (float)draw_uniform / 10000.0;
-  float click_prob = _topic_click_probability[choosen_action];
+float person::get_outcome(const std::string& chosen_action) {
+  int const draw_uniform = rand() % 10000;
+  float const norm_draw_val = static_cast<float>(draw_uniform) / 10000.0f;
+  float const click_prob = _topic_click_probability[chosen_action];
   if ( norm_draw_val <= click_prob )
     return 1.0f;
   else
     return 0.0f;
 }
 
-std::string person::id() {
+std::string person::id() const {
   return _id;
 }

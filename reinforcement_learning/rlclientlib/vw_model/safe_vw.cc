@@ -62,7 +62,7 @@ namespace reinforcement_learning {
 
 
   safe_vw::safe_vw(const std::shared_ptr<safe_vw>& master) : _master(master)
-  { 
+  {
     _vw = VW::seed_vw_model(_master->_vw, "", nullptr, nullptr);
   }
 
@@ -110,7 +110,7 @@ namespace reinforcement_learning {
 
   example& safe_vw::get_or_create_example_f(void* vw) { return *(((safe_vw*)vw)->get_or_create_example()); }
 
-  std::vector<float> safe_vw::rank(const char* context)
+  void safe_vw::rank(const char* context, std::vector<int>& actions, std::vector<float>& scores)
   {
     auto examples = v_init<example*>();
     examples.push_back(get_or_create_example());
@@ -128,10 +128,13 @@ namespace reinforcement_learning {
     _vw->predict(examples2);
 
     // prediction are in the first-example
-    std::vector<float> ranking;
-    ranking.resize(examples2[0]->pred.a_s.size());
-    for (auto&& a_s : examples2[0]->pred.a_s)
-      ranking[a_s.action] = a_s.score;
+    const auto& predictions = examples2[0]->pred.a_s;
+    actions.resize(predictions.size());
+    scores.resize(predictions.size());
+    for (size_t i = 0; i < predictions.size(); ++i) {
+      actions[i] = predictions[i].action;
+      scores[i] = predictions[i].score;
+    }
 
     // push examples back into pool for re-use
     for (auto&& ex : examples)
@@ -139,19 +142,23 @@ namespace reinforcement_learning {
 
     // cleanup
     examples.delete_v();
-
-    return ranking;
   }
 
 const char* safe_vw::id() const {
   return _vw->id.c_str();
 }
 
-safe_vw_factory::safe_vw_factory(const std::shared_ptr<safe_vw>& master) : _master(master)
-  { }
+safe_vw_factory::safe_vw_factory(const model_management::model_data& master_data)
+  : _master_data(master_data)
+  {}
+
+safe_vw_factory::safe_vw_factory(const model_management::model_data&& master_data)
+  : _master_data(master_data)
+  {}
 
   safe_vw* safe_vw_factory::operator()()
   {
-    return new safe_vw(_master);
+    // Construct new vw object from raw model data.
+    return new safe_vw(_master_data.data(), _master_data.data_sz());
   }
 }

@@ -17,14 +17,14 @@ BOOST_AUTO_TEST_CASE(factory_tempate_usage) {
   struct impl_B : public an_interface { explicit impl_B(int b) {} void do_something() override {} };
 
   auto b = 5;  // arbitrary variable to illustrate a point
-  u::object_factory<an_interface> factory;
+  u::object_factory<an_interface, const u::configuration&> factory;
 
-  auto create_A_fn = [](an_interface** pret, const u::config_collection&, r::api_status*) -> int {
+  auto create_A_fn = [](an_interface** pret, const u::configuration&, r::i_trace* trace, r::api_status*) -> int {
     *pret = new impl_A();
     return r::error_code::success;
   };
 
-  auto create_B_fn = [b](an_interface** pret, const u::config_collection&, r::api_status*) -> int {
+  auto create_B_fn = [b](an_interface** pret, const u::configuration&, r::i_trace* trace, r::api_status*) -> int {
     *pret = new impl_B(b);
     return r::error_code::success;
   };
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(factory_tempate_usage) {
   factory.register_type("A", create_A_fn);
   factory.register_type("B", create_B_fn);
 
-  u::config_collection cc;
+  u::configuration cc;
   cc.set(r::name::MODEL_SRC, r::value::AZURE_STORAGE_BLOB);
 
   an_interface* p_impl;

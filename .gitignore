@@ -120,12 +120,11 @@ vowpalwabbit/vw.VC.db
 /cs/cs/Serializer/VowpalWabbitDefaultMarshallerExt.cs
 /python/pylibvw.pyd
 /python/pylibvw.cp35-win_amd64.pyd
-decision_service/ds.VC.VC.opendb
-decision_service/ds.VC.db
-decision_service/unit_test/dsclient-test.out
-decision_service/rl.VC.VC.opendb
-decision_service/rl.VC.db
+reinforcement_learning/ds.VC.VC.opendb
+reinforcement_learning/ds.VC.db
+reinforcement_learning/rl.VC.VC.opendb
+reinforcement_learning/rl.VC.db
 index.html
 packages-microsoft-prod.deb
-decision_service/unit_test/rlclient-test.out
+reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user

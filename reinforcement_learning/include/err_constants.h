@@ -1,6 +1,6 @@
 /**
- * @brief Definition of all API error return codes and descriptions 
- * 
+ * @brief Definition of all API error return codes and descriptions
+ *
  * @file err_constants.h
  * @author Rajan Chari et al
  * @date 2018-07-18
@@ -39,15 +39,17 @@ namespace reinforcement_learning { namespace error_code {
   const int model_rank_error            = 25;
   const int pdf_sampling_error          = 26;
   const int eh_connstr_parse_error      = 27;
+  const int unhandled_background_error_occurred = 28;
+  const int thread_unresponsive_timeout = 29;
   //! [Error Codes]
 }}
 
 namespace reinforcement_learning { namespace error_code {
-  char const * const unkown_s                   = "Unexpected error.";
+  char const * const unknown_s                   = "Unexpected error.";
   //! [Error Description]
   char const * const create_fn_exception_s      = "Create function failed.";
   char const * const type_not_registered_s      = "Type not registered with class factory";
-  char const * const http_uri_not_provided_s    = "URL parameter was not passed in via config_collection";
+  char const * const http_uri_not_provided_s    = "URL parameter was not passed in via configuration";
   char const * const http_bad_status_code_s     = "http request returned a bad status code";
   char const * const last_modified_not_found_s  = "Last-Modified http header not found in response";
   char const * const last_modified_invalid_s    = "Unable to parse Last-Modified http header as date-time";
@@ -67,7 +69,9 @@ namespace reinforcement_learning { namespace error_code {
   char const * const eventhub_http_generic_s    = "http error while connecting to event hub. ";
   char const * const json_parse_error_s         = "Unable to parse JSON. ";
   char const * const invalid_argument_s         = "Invalid Argument: ";
-  char const * const exception_during_http_req_s = "http request excepton. ";
-  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection connection string.";
+  char const * const exception_during_http_req_s = "http request exception. ";
+  char const * const eh_connstr_parse_error_s = "Unable to parse event hub connection string.";
+  char const * const unhandled_background_error_occurred_s = "A background thread encountered an error but there was no error handler registered. Register an error handler to see the error code and message.";
+  char const * const thread_unresponsive_timeout_s = "A background thread exceeded the watchdog timer.";
   //! [Error Description]
 }}

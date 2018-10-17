@@ -13,8 +13,8 @@
 /**
  * @brief Reinforcement Learning Simulator
  * This class simulates a user interacting with a reinforcement learning loop where
- * a person is chosen in random then an action is chosen and the reward generated.
- * The generated reward is reported back to the reinforcement learning loop.
+ * a person is chosen in random then an action is chosen and the outcome generated.
+ * The generated outcome is reported back to the reinforcement learning loop.
  */
 class rl_sim {
 public:
@@ -50,11 +50,11 @@ public:
     std::string create_context_json(const std::string& cntxt, const std::string& action);
 
     /**
-     * @brief Create a uuid used to match choose_rank and report_outcome() 
+     * @brief Create a event_id used to match choose_rank and report_outcome() 
      * 
      * @return std::string 
      */
-    std::string create_uuid();
+    std::string create_event_id();
 
     /**
      * @brief Pick a person from the list of people.  Use uniform random.
@@ -73,7 +73,7 @@ public:
      */
     int load_config_from_json(
       const std::string& str, 
-      reinforcement_learning::utility::config_collection& config,
+      reinforcement_learning::utility::configuration& config,
       reinforcement_learning::api_status* status);
 
     /**
@@ -115,6 +115,7 @@ public:
      */
     std::string get_action_features();
 
+  
   private:
     boost::program_options::variables_map _options;
     std::unique_ptr<reinforcement_learning::live_model> _rl;

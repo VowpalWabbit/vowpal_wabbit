@@ -21,6 +21,9 @@
     <ClInclude Include="http_server\http_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mock_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cc">
@@ -30,9 +33,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="async_batcher_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="concurrent_queue_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="live_model_test.cc">
@@ -78,6 +78,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="status_builder_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="data_buffer_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="watchdog_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mock_util.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trace_logger_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="event_queue_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="moving_queue_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

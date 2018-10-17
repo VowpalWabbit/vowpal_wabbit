@@ -1,6 +1,6 @@
 /**
  * @brief Simple RL Inference API sample implementation 
- * 
+ *
  * @file basic_usage_cpp.cc
  * @author Rajan Chari et al
  * @date 2018-07-15
@@ -9,12 +9,12 @@
 
 /**
  * @brief Basic API usage example
- * 
+ *
  * @return int Error code 
  */
 int main() {
   //! name, value based config object used to initialise the API
-  u::config_collection config;
+  u::configuration config;
 
   //! Helper method to initialize config from a json file
   if( load_config_from_json("client.json", config) != err::success ) {
@@ -42,25 +42,25 @@ int main() {
   // Response class
   r::ranking_response response;
 
-  if( rl.choose_rank(uuid, context, response, &status) != err::success ) {
+  if( rl.choose_rank(event_id, context, response, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
   //! [(3) Choose an action]
 
   //! [(4) Use the response]
-  size_t choosen_action;
-  if( response.get_choosen_action_id(choosen_action, &status) != err::success ) {
+  size_t chosen_action;
+  if( response.get_chosen_action_id(chosen_action, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
-  std::cout << "Chosen action id is: " << choosen_action << std::endl;
+  std::cout << "Chosen action id is: " << chosen_action << std::endl;
   //! [(4) Use the response]
 
   //! [(5) Report outcome]
-  //     Report recieved reward (Optional: if this call is not made, default missing reward is applied)
-  //     Missing reward can be thought of as negative reinforcement
-  if( rl.report_outcome(uuid, reward, &status) != err::success ) {
+  //     Report received outcome (Optional: if this call is not made, default missing outcome is applied)
+  //     Missing outcome can be thought of as negative reinforcement
+  if( rl.report_outcome(event_id, outcome, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
@@ -72,18 +72,18 @@ int main() {
 // Helper methods
 
 //! Load config from json file
-int load_config_from_json(const std::string& file_name, u::config_collection& cfgcoll) {
+int load_config_from_json(const std::string& file_name, u::configuration& config) {
   std::string config_str;
   // Load contents of config file into a string
   const auto scode = load_file(file_name, config_str);
   if ( scode != 0 ) return scode;
 
-  //! [Create a config_collection from json string]
-  // Use library supplied convinence method to parse json and build config object
+  //! [Create a configuration from json string]
+  // Use library supplied convenience method to parse json and build config object
   // namespace cfg=reinforcement_learning::utility::config;
   
-  return cfg::create_from_json(config_str, cfgcoll);
-  //! [Create a config_collection from json string]
+  return cfg::create_from_json(config_str, config);
+  //! [Create a configuration from json string]
 }
 
 //! Load contents of file into a string

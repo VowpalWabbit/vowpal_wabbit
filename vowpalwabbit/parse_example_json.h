@@ -718,7 +718,7 @@ public:
 				label_index++;
 				if (label_index >= (int)ctx.examples->size())
 				{
-					ctx.error() << "_label_index out of bounds: " << (label_index - 1) << " examples available: " << ctx.examples->size() - 1;
+					ctx.error() << "Out of bounds error: _labelIndex must be smaller than number of actions! _labelIndex=" << (label_index - 1) << " Number of actions=" << ctx.examples->size() - 1 << " ";
 					return nullptr;
 				}
 
@@ -1190,6 +1190,13 @@ int read_features_json(vw* all, v_array<example*>& examples)
     line[num_chars] = '\0';
     if (all->p->decision_service_json)
     {
+      // Skip lines that do not start with "{"
+      if (line[0] != '{')
+      {
+        reread = true;
+        continue;
+      }
+
       DecisionServiceInteraction interaction;
       VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 

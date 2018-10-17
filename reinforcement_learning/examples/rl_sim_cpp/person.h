@@ -6,7 +6,7 @@
  */
 class person {
   public:
-    //! Collection type of reward probability for given action
+    //! Collection type of outcome probability for given action
     using topic_prob = std::unordered_map<std::string, float>; 
     /**
      * @brief Construct a new person
@@ -15,7 +15,7 @@ class person {
      * @param major Person feature (major)
      * @param hobby Person feature (hobby)
      * @param fav_char Person feature (fav_char)
-     * @param topicprob Probability of reward for a given topic
+     * @param topicprob Probability of outcome for a given topic
      **/
     person(std::string id, std::string major,
             std::string hobby, std::string fav_char, 
@@ -23,11 +23,11 @@ class person {
     ~person();
 
     //! Get person features as a json string
-    std::string get_features(); 
-    //! Get the reward for a topic.  Use probability to randomly assign a reward
-    float get_reward(const std::string& topic); 
+    std::string get_features() const; 
+    //! Get the outcome for a topic.  Use probability to randomly assign a outcome
+    float get_outcome(const std::string& topic); 
     //! Get the person's id
-    std::string id(); 
+    std::string id() const; 
   private:
     const std::string _id;
     const std::string _major;

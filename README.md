@@ -8,8 +8,9 @@ license as described in the file LICENSE.
 
 <img src="/logo_assets/vowpal-wabbits-github-logo@3x.png" height="auto" width="100%" alt="Vowpal Wabbit">
 
-[![Build Status](https://travis-ci.org/JohnLangford/vowpal_wabbit.png)](https://travis-ci.org/JohnLangford/vowpal_wabbit)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/JohnLangford/vowpal_wabbit?branch=master&svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit)
+[![Build Status](https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master)](https://travis-ci.org/VowpalWabbit/vowpal_wabbit)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true)](https://ci.appveyor.com/project/JohnLangford/vowpal-wabbit/branch/master)
+
 [![Coverage Status](https://coveralls.io/repos/JohnLangford/vowpal_wabbit/badge.svg)](https://coveralls.io/r/JohnLangford/vowpal_wabbit)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
 
@@ -20,7 +21,7 @@ This is the *vowpal wabbit* fast online learning code.  For Windows, look at [RE
 These prerequisites are usually pre-installed on many platforms. However, you may need to consult your favorite package
 manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
-- [Boost](http://www.boost.org) library, with the `Boost::Program_Options` library option enabled.
+- [Boost](http://www.boost.org) library, (for `Boost::Program_Options` and a few others).
 - The zlib compression library + headers. In linux distros: package `zlib-devel` (Red Hat/CentOS), or `zlib1g-dev` (Ubuntu/Debian)
 - lsb-release  (RedHat/CentOS: redhat-lsb-core, Debian: lsb-release, Ubuntu: you're all set, OSX: not required)
 - GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
@@ -97,8 +98,8 @@ On Ubuntu/Debian/Mint and similar the following sequence should work
 for building the latest from github:
 
 ```
-# -- Get libboost program-options and zlib:
-apt-get install libboost-program-options-dev zlib1g-dev
+# -- Get libboost and zlib:
+apt-get install libboost-dev zlib1g-dev
 
 # -- Get the python libboost bindings (python subdir) - optional:
 apt-get install libboost-python-dev
@@ -137,7 +138,7 @@ make CXX='clang++ -static' clean vw test     # ignore warnings
 
 Ensure boost-library and c-compiler are installed:
 ```
-apt-get install libboost-program-options-dev zlib1g-dev libboost-python-dev clang make automake
+apt-get install libboost-dev zlib1g-dev libboost-python-dev clang make automake
 ```
 
 Set Python 3.x and its boost-library as default:
