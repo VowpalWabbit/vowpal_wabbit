@@ -2,7 +2,6 @@
 #include "vw.h"
 #include "vw_settings.h"
 #include "vw_arguments.h"
-#include "vw_io.h"
 
 namespace online_trainer {
 
@@ -34,7 +33,6 @@ namespace online_trainer {
     vw* m_vw;
   public:
     vw_base(vw_settings* vw_settings);
-    virtual ~vw_base();
     /// <summary>
     /// The read/writable model id.
     /// </summary>

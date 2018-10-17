@@ -29,12 +29,12 @@ namespace online_trainer {
         }
         else
         {
-          vw_io_buf model(settings->ModelStream);
-          if (strstr(settings->Arguments, "--no_stdin") == nullptr)
-            string += " --no_stdin";
-          m_vw = VW::initialize(string, &model, false);
-          delete settings->ModelStream;
-          settings->ModelStream = nullptr;
+          //vw_io_buf model(settings->ModelStream);
+          //if (strstr(settings->Arguments, "--no_stdin") == nullptr)
+          //  string += " --no_stdin";
+          //m_vw = VW::initialize(string, &model, false);
+          //delete settings->ModelStream;
+          //settings->ModelStream = nullptr;
         }
       }
     }

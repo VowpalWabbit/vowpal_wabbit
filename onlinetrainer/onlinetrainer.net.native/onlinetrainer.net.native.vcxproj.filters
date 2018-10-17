@@ -33,6 +33,9 @@
     <ClCompile Include="vw_base.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="onlinetrainer.net.api_status.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api_status.h">
@@ -66,9 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vw_arguments.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vw_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
