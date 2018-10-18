@@ -166,31 +166,50 @@ namespace reinforcement_learning {
 
   int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
     api_status* status) const {
+
     // Generate egreedy pdf
     size_t action_count = 0;
     RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
+    
     vector<float> pdf(action_count);
+    // Generate a pdf with epsilon distributed between all action.  The top action 
+    // gets the remaining (1 - epsilon)
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    // Pick using the pdf
-    uint32_t chosen_action_id;
+
     // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
-    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
+
+    // Pick a slot using the pdf. NOTE: sample_after_normalizing() can change the pdf
+    uint32_t chosen_index;
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_index);
+
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(chosen_action_id, pdf[chosen_action_id]);
+
+    // NOTE: When there is no model, the rank
+    // step was done by the user.  i.e. Actions are already in ranked order
+    // If there were an action list it would be [0,1,2,3,4..].  The index
+    // of the list matches the action_id.  There is no need to generate this
+    // list of actions we can use the index into this list as a proxy for the
+    // actual action_id.
+    // i.e  chosen_index == action[chosen_index]
+    // Why is this documented?  Because explore_exploit uses a model and we
+    // cannot make the same assumption there.  (Bug was fixed)
+
     // Setup response with pdf from prediction and chosen action
+    // Chosen action goes first.  First action gets swapped with chosen action
+    response.push_back(chosen_index, pdf[chosen_index]);
     for (size_t idx = 1; idx < pdf.size(); ++idx) {
-      const auto cur_idx = chosen_action_id != idx ? idx : 0;
+      const auto cur_idx = chosen_index != idx ? idx : 0;
       response.push_back(cur_idx, pdf[cur_idx]);
     }
-    response.set_chosen_action_id(chosen_action_id);
+    response.set_chosen_action_id(chosen_index);
     return error_code::success;
   }
 
