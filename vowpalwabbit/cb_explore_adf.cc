@@ -219,6 +219,8 @@ void get_cost_ranges(std::vector<float> &min_costs,
 
 size_t fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
 {
+  if (preds.size() == 0 )
+    return 0;
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
     if (preds[i].score == preds[0].score)
