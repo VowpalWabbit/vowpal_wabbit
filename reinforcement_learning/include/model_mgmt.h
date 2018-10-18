@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <stdint.h>
 
+#include <utility>
+
 // Declare const pointer for internal linkage
 namespace reinforcement_learning {
   class ranking_response;
@@ -26,8 +28,8 @@ namespace reinforcement_learning { namespace model_management {
         model_data();
         ~model_data();
 
-        model_data(model_data const& other) = delete;
-        model_data& operator=(model_data const& other) = delete;
+        model_data(model_data const& other);
+        model_data& operator=(model_data const& other);
 
         model_data(model_data&& other) noexcept
           : _data(other._data),
@@ -35,11 +37,12 @@ namespace reinforcement_learning { namespace model_management {
             _refresh_count(other._refresh_count) {}
 
         model_data& operator=(model_data&& other) noexcept {
-          if (this == &other)
-            return *this;
-          _data = other._data;
-          _data_sz = other._data_sz;
-          _refresh_count = other._refresh_count;
+          if (this != &other) {
+            std::swap(_data, other._data);
+            std::swap(_data_sz, other._data_sz);
+            std::swap(_refresh_count, other._refresh_count);
+          }
+
           return *this;
         }
 
