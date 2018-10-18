@@ -951,7 +951,7 @@ public:
 			else if (length == 11 && !_stricmp(str, "_labelIndex"))
 				return &ctx.label_index_state;
 		}
-		else if (length == 9 && !strcmp(str, "_deferred"))
+		else if (length == 9 && !strncmp(str, "_deferred", 9))
 		{
 			ctx.bool_state.output_bool = &data->deferred;
 			return &ctx.bool_state;
