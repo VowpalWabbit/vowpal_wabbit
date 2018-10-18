@@ -19,6 +19,7 @@ test_loop::test_loop(const boost::program_options::variables_map& vm)
   , json_config(vm["json_config"].as<std::string>())
   , test_inputs(experiment_name, threads, examples, vm["features"].as<size_t>(), vm["actions"].as<size_t>(), vm.count("float_outcome") > 0)
   , is_perf(vm.count("perf") > 0)
+  , sleep_interval(vm["sleep"].as<size_t>())
 {
   for (size_t i = 0; i < threads; ++i) {
     loggers.push_back(std::ofstream(experiment_name + "." + std::to_string(i), std::ofstream::out));
@@ -99,6 +100,10 @@ void test_loop::validity_loop(size_t thread_id)
     }
 
     test_inputs.log(thread_id, i, response, loggers[thread_id]);
+    
+    if (sleep_interval) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(sleep_interval));
+    }
   }
   std::cout << std::endl;
 }
