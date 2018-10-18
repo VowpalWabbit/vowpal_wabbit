@@ -6,6 +6,8 @@
     <Platforms>AnyCPU;x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>Rl.Net</AssemblyName>
+    <RootNamespace>Rl.Net</RootNamespace>
   </PropertyGroup>
 
 </Project>

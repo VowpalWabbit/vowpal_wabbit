@@ -18,7 +18,7 @@ namespace Rl.Net.Cli {
         }
 
         public Person(string id, string major, string hobby, string favoriteCharacter, Func<Topic, float> rewardProbabilityDistribution)
-            : this(id, major, hobby, favoriteCharacter, rewardProbabilityDistribution, () => (float)RLSimulator.RandomSource.NextDouble())
+            : this(id, major, hobby, favoriteCharacter, rewardProbabilityDistribution, () => (float)SimulatorStepProvider.RandomSource.NextDouble())
         {}
 
         public string Id

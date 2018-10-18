@@ -10,7 +10,7 @@ namespace Rl.Net.Cli {
         {
             get;
             private set;
-        } = new int[RLSimulator.ActionSet.Length, 2];
+        } = new int[SimulatorStepProvider.SimulatorStep.ActionSet.Length, 2];
 
         public int TotalActions
         {
