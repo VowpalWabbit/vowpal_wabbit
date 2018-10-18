@@ -101,7 +101,7 @@ void test_loop::validity_loop(size_t thread_id)
 
     test_inputs.log(thread_id, i, response, loggers[thread_id]);
     
-    if (sleep_interval) {
+    if (sleep_interval > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(sleep_interval));
     }
   }
