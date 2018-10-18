@@ -461,7 +461,7 @@ namespace cs_unittest
                     CollectionAssert.AreEqual(new[] { 1, 2, 3 }, header.Actions, "Actions mismatch");
                     CollectionAssert.AreEqual(new[] { .8f, .1f, .1f }, header.Probabilities, "Probabilities mismatch");
                     Assert.AreEqual(0, header.ProbabilityOfDrop);
-                    Assert.AreEqual(false, header.Deferred);
+                    Assert.AreEqual(false, header.DeferredAction);
                     using (var validator = new VowpalWabbitExampleJsonValidator(new VowpalWabbitSettings("--cb_adf")))
                     {
                         var expected = new[] {
@@ -507,7 +507,7 @@ namespace cs_unittest
                     CollectionAssert.AreEqual(new[] { 9, 11, 13, 6, 4, 5, 12, 1, 2, 10, 8, 3, 7 }, header.Actions, "Actions mismatch");
                     CollectionAssert.AreEqual(new[] { 0.8153846f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f, 0.0153846154f }, header.Probabilities, "Probabilities mismatch");
                     Assert.AreEqual(0, header.ProbabilityOfDrop);
-                    Assert.AreEqual(true, header.Deferred);
+                    Assert.AreEqual(true, header.DeferredAction);
                     Assert.AreEqual(14, examples.Count);
 
                     // check if copyJson: false was actually used
