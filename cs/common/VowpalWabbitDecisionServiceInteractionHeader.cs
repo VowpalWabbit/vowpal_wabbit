@@ -34,7 +34,7 @@ namespace VW
         public float ProbabilityOfDrop { get; set; }
 
         /// <summary>
-        /// Flag if this example is used for learning.
+        /// Flag if the action is deferred and was not activated - do not train on them
         /// </summary>
         public bool DeferredAction { get; set; }
     }
