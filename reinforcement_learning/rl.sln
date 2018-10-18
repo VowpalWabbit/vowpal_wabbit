@@ -5,6 +5,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rlclientlib", "rlclientlib\rlclientlib.vcxproj", "{C40E3263-B6FF-46D5-92F7-D67E6F9FCEDD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_core", "..\vowpalwabbit\vw_core.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3593}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit_test", "unit_test\unit_test.vcxproj", "{18A3556E-493E-4DD5-8C33-760185B764D4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_cpp", "examples\test_cpp\test_cpp.vcxproj", "{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_usage_cpp", "examples\basic_usage_cpp\basic_usage_cpp.vcxproj", "{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}"
 EndProject
@@ -30,6 +33,18 @@ Global
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Debug|x64.Build.0 = Debug|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.ActiveCfg = Release|x64
 		{1E205806-7F80-47DD-A38D-FC08083F3593}.Release|x64.Build.0 = Release|x64
+		{18A3556E-493E-4DD5-8C33-760185B764D4}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{18A3556E-493E-4DD5-8C33-760185B764D4}.Debug|x64.ActiveCfg = Debug|x64
+		{18A3556E-493E-4DD5-8C33-760185B764D4}.Debug|x64.Build.0 = Debug|x64
+		{18A3556E-493E-4DD5-8C33-760185B764D4}.Release|Any CPU.ActiveCfg = Release|Win32
+		{18A3556E-493E-4DD5-8C33-760185B764D4}.Release|x64.ActiveCfg = Release|x64
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.ActiveCfg = Debug|x64
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.Build.0 = Debug|x64
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Release|Any CPU.ActiveCfg = Release|Win32
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Release|x64.ActiveCfg = Release|x64
+		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Release|x64.Build.0 = Release|x64
+		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|x64.ActiveCfg = Debug|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Debug|x64.Build.0 = Debug|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x64.ActiveCfg = Release|x64
