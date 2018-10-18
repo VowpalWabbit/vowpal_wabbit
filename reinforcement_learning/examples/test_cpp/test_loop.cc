@@ -26,6 +26,10 @@ test_loop::test_loop(const boost::program_options::variables_map& vm)
   }
 }
 
+void _on_error(const reinforcement_learning::api_status& status, void* nothing) {
+  std::cerr << status.get_error_msg() << std::endl;
+}
+
 bool test_loop::init() {
   r::api_status status;
   u::configuration config;
@@ -35,7 +39,7 @@ bool test_loop::init() {
     return false;
   }
 
-  rl = std::unique_ptr<r::live_model>(new r::live_model(config));
+  rl = std::unique_ptr<r::live_model>(new r::live_model(config, _on_error, nullptr));
   if (rl->init(&status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
     return false;
