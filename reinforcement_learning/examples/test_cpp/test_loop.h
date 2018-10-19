@@ -24,6 +24,7 @@ private:
 private:
   const size_t threads;
   const size_t examples;
+  const size_t sleep_interval;
   const std::string experiment_name;
   const std::string json_config;
   test_data_provider test_inputs;
