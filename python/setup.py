@@ -38,10 +38,10 @@ def find_boost():
     elif system == 'Cygwin':
         boost_lib = 'boost_python-mt' if sys.version_info[0] == 2 else 'boost_python3-mt'
     else:
-        raise Exception('Building on this system is not currently supported')
+        print('Building on this system is not currently supported')
 
     if not find_library(boost_lib):
-        raise Exception('Could not find boost python library')
+      print'Could not find boost python library')
 
     return boost_lib
 
