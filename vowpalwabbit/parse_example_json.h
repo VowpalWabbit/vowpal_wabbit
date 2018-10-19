@@ -1216,8 +1216,9 @@ int read_features_json(vw* all, v_array<example*>& examples)
     line[num_chars] = '\0';
     if (all->p->decision_service_json)
     {
-      // Skip lines that do not start with "{"
-      if (line[0] != '{')
+      // Skip lines that do not start with "{" or for which the learning was not activated (i.e., "_deferred":true)
+      // TODO: strstr(line, "\"_deferred\":true") is a temporary fix to enable offline experimentation on Activation/Deactivation logs - full functionality is to skip learning in the learner thread
+      if (line[0] != '{' || strstr(line, "\"_deferred\":true") != nullptr)
       {
         reread = true;
         continue;
