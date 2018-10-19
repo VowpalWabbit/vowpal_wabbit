@@ -14,12 +14,9 @@ using namespace reinforcement_learning::utility;
 
 using pooled_vw = pooled_object_guard<safe_vw, safe_vw_factory>;
 
-model_management::model_data get_model_data_from_raw(unsigned char* data, unsigned int len) {
-  model_management::model_data model_data;
-  const auto buff = model_data.alloc(cb_data_5_model_len);
-  std::memcpy(buff, cb_data_5_model, cb_data_5_model_len);
-
-  return model_data;
+void get_model_data_from_raw(const char* data, unsigned int len, model_management::model_data* model_data) {
+  const auto buff = model_data->alloc(len);
+  std::memcpy(buff, data, len);
 }
 
 BOOST_AUTO_TEST_CASE(safe_vw_1)
@@ -43,7 +40,8 @@ BOOST_AUTO_TEST_CASE(factory_with_initial_model)
   std::vector<float> ranking_expected = { .8f, .1f, .1f };
 
   // Start with an initial model
-  const auto model_data = get_model_data_from_raw(cb_data_5_model, cb_data_5_model_len);
+  model_management::model_data model_data;
+  get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &model_data);
 
   const auto factory = new safe_vw_factory(model_data);
   object_pool<safe_vw, safe_vw_factory> pool(factory);
@@ -52,8 +50,8 @@ BOOST_AUTO_TEST_CASE(factory_with_initial_model)
     pooled_vw guard(pool, pool.get_or_create());
 
     // Update factory while an object is floating around
-    const auto updated_model = get_model_data_from_raw(cb_data_5_model, cb_data_5_model_len);
-
+    model_management::model_data updated_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &updated_model);
     pool.update_factory(new safe_vw_factory(updated_model));
 
     std::vector<int> actions;
@@ -86,7 +84,8 @@ BOOST_AUTO_TEST_CASE(factory_with_empty_model) {
 
   // Initial model & rank call
   {
-    const auto new_model = get_model_data_from_raw(cb_data_5_model, cb_data_5_model_len);
+    model_management::model_data new_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &new_model);
     pool.update_factory(new safe_vw_factory(new_model));
     pooled_vw vw(pool, pool.get_or_create());
 
@@ -99,7 +98,8 @@ BOOST_AUTO_TEST_CASE(factory_with_empty_model) {
 
   // Update model & rank call
   {
-    const auto new_model = get_model_data_from_raw(cb_data_5_model, cb_data_5_model_len);
+    model_management::model_data new_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &new_model);
     pool.update_factory(new safe_vw_factory(new_model));
     pooled_vw vw(pool, pool.get_or_create());
 
