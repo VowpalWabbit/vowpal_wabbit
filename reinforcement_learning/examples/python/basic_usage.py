@@ -26,8 +26,8 @@ def main():
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(actions_probabilities))
 
-    model_id, chosen_action_id, actions_probabilities, event_id = model.choose_rank(context)
-
+    model_id, chosen_action_id, actions_probabilities, event_id = model.choose_rank(context, deferred = True)
+    model.report_action_taken(event_id)
     print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
