@@ -47,16 +47,18 @@ namespace reinforcement_learning {
       void init();
 
       %rename(choose_rank_impl) choose_rank;
-      reinforcement_learning::python::ranking_response choose_rank(const char* event_id, const char* context_json);
+      reinforcement_learning::python::ranking_response choose_rank(const char* event_id, const char* context_json, bool deferred);
       // event_id is auto-generated.
-      reinforcement_learning::python::ranking_response choose_rank(const char* context_json);
+      reinforcement_learning::python::ranking_response choose_rank(const char* context_json, bool deferred);
+
+      void report_action_taken(const char* event_id);
 
       void report_outcome(const char* event_id, const char* outcome);
       void report_outcome(const char* event_id, float outcome);
 
       %pythoncode %{
-        def choose_rank(self, *args):
-            ranking_response = self.choose_rank_impl(*args)
+        def choose_rank(self, *args, deferred = False):
+            ranking_response = self.choose_rank_impl(*args, deferred)
             if len(args) == 1:
                 return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities)), ranking_response.event_id
             return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
