@@ -198,7 +198,6 @@
     <ClCompile Include="ranking_event.cc" />
     <ClCompile Include="ranking_response.cc" />
     <ClCompile Include="ranking_response_impl.cc" />
-    <ClCompile Include="main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\vowpalwabbit\vw_core.vcxproj">
