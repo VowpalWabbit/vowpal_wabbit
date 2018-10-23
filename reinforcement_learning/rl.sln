@@ -24,6 +24,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "override_interface", "examp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{BAD6BDCA-4370-47C9-8BBC-FBCB5B2F8364}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sender_test", "test_tools\sender_test\sender_test.vcxproj", "{B1A9F681-56A9-4640-9699-EA3B32EE423A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -103,12 +105,19 @@ Global
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF}.Release|x64.Build.0 = Release|x64
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF}.Release|x86.ActiveCfg = Release|Win32
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF}.Release|x86.Build.0 = Release|Win32
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Debug|x64.ActiveCfg = Debug|x64
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Debug|x64.Build.0 = Debug|x64
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Debug|x86.ActiveCfg = Debug|Win32
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Debug|x86.Build.0 = Debug|Win32
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Release|x64.ActiveCfg = Release|x64
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Release|x64.Build.0 = Release|x64
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Release|x86.ActiveCfg = Release|Win32
+		{B1A9F681-56A9-4640-9699-EA3B32EE423A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE} = {BAD6BDCA-4370-47C9-8BBC-FBCB5B2F8364}
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0} = {BAD6BDCA-4370-47C9-8BBC-FBCB5B2F8364}
 		{E86A833A-514D-424D-9FE7-154225031662} = {BAD6BDCA-4370-47C9-8BBC-FBCB5B2F8364}
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF} = {BAD6BDCA-4370-47C9-8BBC-FBCB5B2F8364}

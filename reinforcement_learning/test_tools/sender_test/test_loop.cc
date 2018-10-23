@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "config_utility.h"
 #include "factory_resolver.h"
+#include "error_callback_fn.h"
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -14,7 +15,7 @@ namespace err = r::error_code;
 namespace po = boost::program_options;
 namespace chrono = std::chrono;
 
-test_loop::test_loop(const boost::program_options::variables_map& vm) 
+test_loop::test_loop(const boost::program_options::variables_map& vm)
   : _message_size(vm["message_size"].as<size_t>())
   , _message_count(vm["message_count"].as<size_t>())
   , _threads(vm["threads"].as<size_t>())
@@ -22,10 +23,16 @@ test_loop::test_loop(const boost::program_options::variables_map& vm)
 {
 }
 
+void on_error(const r::api_status& status, void*) {
+  std::cerr << status.get_error_msg() << std::endl;
+}
+
 bool test_loop::init() {
   std::cout << "Initializing...." << std::endl;
   r::api_status status;
   u::configuration config;
+
+  r::error_callback_fn error_callback(&on_error, nullptr);
 
   if (load_config_from_json(_json_config, config, &status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;
@@ -34,7 +41,7 @@ bool test_loop::init() {
   config.set(r::name::INTERACTION_EH_TASKS_LIMIT, std::to_string(_threads).c_str());
   const auto sender_impl = config.get(r::name::INTERACTION_SENDER_IMPLEMENTATION, r::value::INTERACTION_EH_SENDER);
   r::i_sender* sender;
-  if (r::sender_factory.create(&sender, sender_impl, config, &status) != r::error_code::success) {
+  if (r::sender_factory.create(&sender, sender_impl, config, &error_callback, &status) != r::error_code::success) {
     std::cout << status.get_error_msg() << std::endl;
     return false;
   }
