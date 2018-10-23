@@ -174,6 +174,8 @@ endif()
 
 # build main executable
 add_executable(vw-bin main.cc)
+# TODO https://stackoverflow.com/questions/24648357/compiling-a-static-executable-with-cmake
+# Static exe
 target_link_libraries(vw-bin PRIVATE vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 

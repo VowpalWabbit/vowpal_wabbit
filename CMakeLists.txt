@@ -35,7 +35,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-# Align and foreach are also required
+# Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -72,6 +72,7 @@ endif()
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
 
+# PkgConfig
 configure_file(libvw.pc.in libvw.pc)
 configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
