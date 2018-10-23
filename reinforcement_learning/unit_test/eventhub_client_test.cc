@@ -14,9 +14,7 @@ using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
 
-
 using namespace reinforcement_learning;
-
 
 BOOST_AUTO_TEST_CASE(send_something)
 {
@@ -25,10 +23,25 @@ BOOST_AUTO_TEST_CASE(send_something)
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
 
   //create a client
-  eventhub_client eh("localhost:8080", "", "", "", 1, nullptr, nullptr, true);
+  eventhub_client eh("localhost:8080", "", "", "", 1, 1, nullptr, nullptr, true);
 
   api_status ret;
   //send events
   BOOST_CHECK_EQUAL(eh.send("message 1", &ret),error_code::success);
   BOOST_CHECK_EQUAL(eh.send("message 2", &ret), error_code::success);
+}
+
+BOOST_AUTO_TEST_CASE(retry_http_send_success)
+{
+
+}
+
+BOOST_AUTO_TEST_CASE(retry_http_send_fail)
+{
+
+}
+
+BOOST_AUTO_TEST_CASE(move_assign_http_request_task)
+{
+
 }

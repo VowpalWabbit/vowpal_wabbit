@@ -96,6 +96,7 @@ namespace reinforcement_learning {
       cfg.get(name::OBSERVATION_EH_KEY, ""),
       cfg.get(name::OBSERVATION_EH_NAME, "observation"),
       cfg.get_int(name::OBSERVATION_EH_TASKS_LIMIT, 16),
+      cfg.get_int(name::OBSERVATION_EH_MAX_HTTP_RETRIES, 4),
       trace_logger,
       _error_cb,
       cfg.get_bool(name::EH_TEST, false));
@@ -109,6 +110,7 @@ namespace reinforcement_learning {
       cfg.get(name::INTERACTION_EH_KEY, ""),
       cfg.get(name::INTERACTION_EH_NAME, "interaction"),
       cfg.get_int(name::INTERACTION_EH_TASKS_LIMIT, 16),
+      cfg.get_int(name::INTERACTION_EH_MAX_HTTP_RETRIES, 4),
       trace_logger,
       _error_cb,
       cfg.get_bool(name::EH_TEST, false));
