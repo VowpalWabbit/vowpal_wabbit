@@ -10,7 +10,7 @@ namespace Rl.Net.Cli.Test
     {
         private static string PrepareJson(string raw)
         {
-            return JObject.Parse(raw).ToString(Formatting.None);
+            return JToken.Parse(raw).ToString(Formatting.None);
         }
 
         [TestMethod]
@@ -19,7 +19,7 @@ namespace Rl.Net.Cli.Test
             // Arrange
             string expectedEventId = "my_experiment-t1-n10-f2-a4-0-0";
             string expectedContext = PrepareJson("{ \"GUser\":{\"f_int\":0,\"f_float\":0.5,\"f_str_0\":\"value_0\",\"f_str_1\":\"value_1\"}, \"_multi\": [ { \"TAction\":{\"a_f_0\":\"value_0\",\"a_f_1\":\"value_1\"}},{ \"TAction\":{\"a_f_0\":\"value_1\",\"a_f_1\":\"value_2\"}},{ \"TAction\":{\"a_f_0\":\"value_2\",\"a_f_1\":\"value_3\"}},{ \"TAction\":{\"a_f_0\":\"value_3\",\"a_f_1\":\"value_4\"}}] }");
-            string expectedObservation = PrepareJson("{\"EventId\":\"my_experiment-t1-n10-f2-a4-0-0\",\"v\":0.000000}");
+            string expectedObservation = PrepareJson("0.000000");
 
             const string dsJsonWithObservation = "{\"_label_cost\":-0,\"_label_probability\":0.25,\"_label_Action\":1,\"_labelIndex\":0,\"o\":[{\"EventId\":\"my_experiment-t1-n10-f2-a4-0-0\",\"v\":0.000000}],\"Version\":\"1\",\"EventId\":\"my_experiment-t1-n10-f2-a4-0-0\",\"a\":[1,2,3,4],\"c\":{ \"GUser\":{\"f_int\":0,\"f_float\":0.5,\"f_str_0\":\"value_0\",\"f_str_1\":\"value_1\"}, \"_multi\": [ { \"TAction\":{\"a_f_0\":\"value_0\",\"a_f_1\":\"value_1\"}},{ \"TAction\":{\"a_f_0\":\"value_1\",\"a_f_1\":\"value_2\"}},{ \"TAction\":{\"a_f_0\":\"value_2\",\"a_f_1\":\"value_3\"}},{ \"TAction\":{\"a_f_0\":\"value_3\",\"a_f_1\":\"value_4\"}}] },\"p\":[0.250000,0.250000,0.250000,0.250000],\"VWState\":{\"m\":\"N/A\"}}";
 
