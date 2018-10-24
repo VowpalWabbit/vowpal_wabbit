@@ -12,10 +12,9 @@
 #include "err_constants.h"
 #include "constants.h"
 #include "vw_model/safe_vw.h"
-
+#include "trace_logger.h"
 #include "explore_internal.h"
 #include "hash.h"
-
 #include "factory_resolver.h"
 
 // Some namespace changes for more concise code
@@ -40,6 +39,7 @@ namespace reinforcement_learning {
   }
 
   int live_model_impl::init(api_status* status) {
+    RETURN_IF_FAIL(init_trace(status));
     RETURN_IF_FAIL(init_model(status));
     RETURN_IF_FAIL(init_model_mgmt(status));
     RETURN_IF_FAIL(init_loggers(status));
@@ -49,7 +49,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
+  int live_model_impl::choose_rank(const char* event_id, const char* context, unsigned int flags, ranking_response& response,
     api_status* status) {
     response.clear();
     //clear previous errors if any
@@ -65,20 +65,27 @@ namespace reinforcement_learning {
       RETURN_IF_FAIL(explore_exploit(event_id, context, response, status));
     }
     response.set_event_id(event_id);
-    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, response, status));
+    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, flags, response, status));
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {
-      RETURN_ERROR_LS(status, unhandled_background_error_occurred);
+      RETURN_ERROR_LS(_trace_logger.get(), status, unhandled_background_error_occurred);
     }
 
     return error_code::success;
   }
 
   //here the event_id is auto-generated
-  int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
-    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
+  int live_model_impl::choose_rank(const char* context, unsigned int flags, ranking_response& response, api_status* status) {
+    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, flags, response,
       status);
+  }
+
+  int live_model_impl::report_action_taken(const char* event_id, api_status* status) {
+    // Clear previous errors if any
+    api_status::try_clear(status);
+    // Send the outcome event to the backend
+    return _outcome_logger->report_action_taken(event_id, status);
   }
 
   int live_model_impl::report_outcome(const char* event_id, const char* outcome, api_status* status) {
@@ -97,6 +104,7 @@ namespace reinforcement_learning {
     const utility::configuration& config,
     const error_fn fn,
     void* err_context,
+    trace_logger_factory_t* trace_factory,
     data_transport_factory_t* t_factory,
     model_factory_t* m_factory,
     sender_factory_t* sender_factory
@@ -105,6 +113,7 @@ namespace reinforcement_learning {
       _error_cb(fn, err_context),
       _data_cb(_handle_model_update, this),
       _watchdog(&_error_cb),
+      _trace_factory(trace_factory),
       _t_factory{t_factory},
       _m_factory{m_factory},
       _sender_factory{sender_factory},
@@ -115,10 +124,20 @@ namespace reinforcement_learning {
     }
   }
 
+  int live_model_impl::init_trace(api_status* status) {
+    const auto trace_impl = _configuration.get(name::TRACE_LOG_IMPLEMENTATION, value::NULL_TRACE_LOGGER);
+    i_trace* plogger;
+    RETURN_IF_FAIL(_trace_factory->create(&plogger, trace_impl,_configuration, nullptr, status));
+    _trace_logger.reset(plogger);
+    TRACE_INFO(_trace_logger, "API Tracing initialized");
+    _watchdog.set_trace_log(_trace_logger.get());
+    return error_code::success;
+  }
+
   int live_model_impl::init_model(api_status* status) {
     const auto model_impl = _configuration.get(name::MODEL_IMPLEMENTATION, value::VW);
     m::i_model* pmodel;
-    RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration,status));
+    RETURN_IF_FAIL(_m_factory->create(&pmodel, model_impl, _configuration, _trace_logger.get(), status));
     _model.reset(pmodel);
     return error_code::success;
   }
@@ -154,31 +173,50 @@ namespace reinforcement_learning {
 
   int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
     api_status* status) const {
+
     // Generate egreedy pdf
     size_t action_count = 0;
-    RETURN_IF_FAIL(utility::get_action_count(action_count, context, status));
+    RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
+    
     vector<float> pdf(action_count);
+    // Generate a pdf with epsilon distributed between all action.  The top action 
+    // gets the remaining (1 - epsilon)
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
     if (S_EXPLORATION_OK != scode) {
-      RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
+      RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    // Pick using the pdf
-    uint32_t chosen_action_id;
+
     // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
-    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
+
+    // Pick a slot using the pdf. NOTE: sample_after_normalizing() can change the pdf
+    uint32_t chosen_index;
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_index);
+
     if (S_EXPLORATION_OK != scode) {
-      RETURN_ERROR_LS(status, exploration_error) << "Exploration error code: " << scode;
+      RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(chosen_action_id, pdf[chosen_action_id]);
+
+    // NOTE: When there is no model, the rank
+    // step was done by the user.  i.e. Actions are already in ranked order
+    // If there were an action list it would be [0,1,2,3,4..].  The index
+    // of the list matches the action_id.  There is no need to generate this
+    // list of actions we can use the index into this list as a proxy for the
+    // actual action_id.
+    // i.e  chosen_index == action[chosen_index]
+    // Why is this documented?  Because explore_exploit uses a model and we
+    // cannot make the same assumption there.  (Bug was fixed)
+
     // Setup response with pdf from prediction and chosen action
+    // Chosen action goes first.  First action gets swapped with chosen action
+    response.push_back(chosen_index, pdf[chosen_index]);
     for (size_t idx = 1; idx < pdf.size(); ++idx) {
-      const auto cur_idx = chosen_action_id != idx ? idx : 0;
+      const auto cur_idx = chosen_index != idx ? idx : 0;
       response.push_back(cur_idx, pdf[cur_idx]);
     }
-    response.set_chosen_action_id(chosen_action_id);
+    response.set_chosen_action_id(chosen_index);
     return error_code::success;
   }
 
@@ -197,7 +235,7 @@ namespace reinforcement_learning {
     // This class manages lifetime of transport
     this->_transport.reset(ptransport);
     // Initialize background process and start downloading models
-    this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb));
+    this->_model_download.reset(new m::model_downloader(ptransport, &_data_cb, _trace_logger.get()));
     return _bg_model_proc.init(_model_download.get(), status);
   }
 

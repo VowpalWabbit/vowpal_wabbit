@@ -32,7 +32,7 @@ public:
   }
 
 protected:
-  virtual int v_send(const std::string data, r::api_status* status) override {
+  virtual int v_send(const std::string& data, r::api_status* status) override {
     std::lock_guard<std::mutex> lock(_mutex);
     _stream << data << std::endl;
     return err::success;
@@ -76,7 +76,7 @@ int main() {
 
   // Define a create function to be used in the factory.
   auto const create_ostream_sender_fn =
-    [&](r::i_sender** retval, const u::configuration&, r::api_status*) {
+    [&](r::i_sender** retval, const u::configuration&, r::i_trace* trace, r::api_status*) {
     *retval = new ostream_sender(std::cout, cout_mutex);
     return err::success;
   };
@@ -87,7 +87,7 @@ int main() {
   stdout_logger_factory.register_type(r::value::INTERACTION_EH_SENDER, create_ostream_sender_fn);
 
   // Default factories defined in factory_resolver.h are passed as well as the custom stdout logger.
-  r::live_model model(config, nullptr, nullptr, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
+  r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, &r::data_transport_factory, &r::model_factory, &stdout_logger_factory);
 
   if (model.init(&status) != err::success) {
     std::cout << status.get_error_msg() << std::endl;

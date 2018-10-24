@@ -15,7 +15,7 @@ namespace reinforcement_learning {
 
     void data_buffer::remove_last() { _buffer.pop_back(); }
 
-    buffer_factory::buffer_factory(){}
+    buffer_factory::buffer_factory() {}
 
     data_buffer* buffer_factory::operator()() const { return new data_buffer(); }
 
@@ -34,5 +34,31 @@ namespace reinforcement_learning {
     std::vector<unsigned char> data_buffer::buffer() {
       return _buffer;
     }
+
+    std::string data_buffer::str() const {
+      std::string str;
+      for (auto ch : _buffer) {
+        str.push_back(ch);
+      }
+      return str;
+    }
+
+    data_buffer& data_buffer::operator<<(const std::string& cs) {
+      const auto data_len = cs.length();
+      const auto buff_sz = _buffer.size();
+
+      if (_buffer.capacity() < buff_sz + data_len)
+        _buffer.reserve(buff_sz + data_len);
+
+      const char* data = cs.c_str();
+      for (int i = 0; i < data_len; i++) {
+        _buffer.push_back(*((unsigned char*)(data++)));
+      }
+      return *this;
+    }
+
+    data_buffer& data_buffer::operator<<(const char* data) { return operator<<(std::string(data)); }
+    data_buffer& data_buffer::operator<<(size_t rhs) { return operator<<(std::to_string(rhs)); }
+    data_buffer& data_buffer::operator<<(float rhs) { return operator<<(std::to_string(rhs)); }
   }
 }

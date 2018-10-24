@@ -62,7 +62,7 @@ namespace reinforcement_learning {
 
 
   safe_vw::safe_vw(const std::shared_ptr<safe_vw>& master) : _master(master)
-  { 
+  {
     _vw = VW::seed_vw_model(_master->_vw, "", nullptr, nullptr);
   }
 
@@ -148,11 +148,17 @@ const char* safe_vw::id() const {
   return _vw->id.c_str();
 }
 
-safe_vw_factory::safe_vw_factory(const std::shared_ptr<safe_vw>& master) : _master(master)
-  { }
+safe_vw_factory::safe_vw_factory(const model_management::model_data& master_data)
+  : _master_data(master_data)
+  {}
+
+safe_vw_factory::safe_vw_factory(const model_management::model_data&& master_data)
+  : _master_data(master_data)
+  {}
 
   safe_vw* safe_vw_factory::operator()()
   {
-    return new safe_vw(_master);
+    // Construct new vw object from raw model data.
+    return new safe_vw(_master_data.data(), _master_data.data_sz());
   }
 }

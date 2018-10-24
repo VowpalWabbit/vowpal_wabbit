@@ -26,6 +26,8 @@ public:
     return _event_id.substr(0, 4) == "drop";
   }
 
+  void serialize(utility::data_buffer& buffer) {}
+  
   std::string get_event_id() {
     return _event_id;
   }

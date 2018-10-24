@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(send_string)
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
 
   //create a client
-  eventhub_client eh("localhost:8080", "", "", "", true);
+  eventhub_client eh("localhost:8080", "", "", "", 1, nullptr, true);
 
   api_status ret;
   //send events
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(send_bytes)
   BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
 
   //create a client
-  eventhub_client eh("localhost:8080", "", "", "", true);
+  eventhub_client eh("localhost:8080", "", "", "", 1, nullptr, true);
 
   api_status ret;
   std::vector<unsigned char> messages;

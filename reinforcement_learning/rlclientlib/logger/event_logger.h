@@ -23,6 +23,7 @@ namespace reinforcement_learning {
       int send_high_watermark,
       int send_batch_interval_ms,
       int send_queue_maxsize,
+      const char* queue_mode,
       utility::watchdog& watchdog,
       error_callback_fn* perror_cb = nullptr);
 
@@ -47,6 +48,7 @@ namespace reinforcement_learning {
     int send_high_watermark,
     int send_batch_interval_ms,
     int send_queue_maxsize,
+    const char* queue_mode,
     utility::watchdog& watchdog,
     error_callback_fn* perror_cb
   )
@@ -56,7 +58,8 @@ namespace reinforcement_learning {
       perror_cb,
       send_high_watermark,
       send_batch_interval_ms,
-      send_queue_maxsize),
+      send_queue_maxsize,
+      to_queue_mode_enum(queue_mode)),
     _buffer_pool(new utility::buffer_factory())
   {}
 
@@ -92,11 +95,12 @@ namespace reinforcement_learning {
         c.get_int(name::INTERACTION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::INTERACTION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::INTERACTION_SEND_QUEUE_MAXSIZE, 100000 * 2),
+        c.get(name::QUEUE_MODE, "DROP"),
         watchdog,
         perror_cb)
     {}
 
-    int log(const char* event_id, const char* context, const ranking_response& response, api_status* status);
+    int log(const char* event_id, const char* context, unsigned int flags, const ranking_response& response, api_status* status);
   };
 
   class observation_logger : public event_logger<outcome_event> {
@@ -107,6 +111,7 @@ namespace reinforcement_learning {
         c.get_int(name::OBSERVATION_SEND_HIGH_WATER_MARK, 198 * 1024),
         c.get_int(name::OBSERVATION_SEND_BATCH_INTERVAL_MS, 1000),
         c.get_int(name::OBSERVATION_SEND_QUEUE_MAXSIZE, 100000 * 2),
+        c.get(name::QUEUE_MODE, "DROP"),
         watchdog,
         perror_cb)
     {}
@@ -116,7 +121,9 @@ namespace reinforcement_learning {
       // Serialize outcome
       utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
       buffer->reset();
-      return append(std::move(outcome_event(*buffer.get(), event_id, outcome)), status);
+      return append(std::move(outcome_event::report_outcome(*buffer.get(), event_id, outcome)), status);
     }
+
+    int report_action_taken(const char* event_id, api_status* status);
   };
 }

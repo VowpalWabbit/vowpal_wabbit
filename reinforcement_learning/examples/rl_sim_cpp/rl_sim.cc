@@ -6,6 +6,7 @@
 #include "rl_sim_cpp.h"
 #include "person.h"
 #include "simulation_stats.h"
+#include "constants.h"
 
 using namespace std;
 
@@ -71,7 +72,7 @@ int rl_sim::load_config_from_json(  const std::string& file_name,
   RETURN_IF_FAIL(load_file(file_name, config_str));
 
   // Use library supplied convenience method to parse json and build config object
-  return cfg::create_from_json(config_str, config, status);
+  return cfg::create_from_json(config_str, config, nullptr, status);
 }
 
 int rl_sim::load_file(const std::string& file_name, std::string& config_str) {
@@ -92,12 +93,17 @@ int rl_sim::init_rl() {
   r::api_status status;
   u::configuration config;
 
+  // Load configuration from json config file
   const auto config_file = _options["json_config"].as<std::string>();
   if ( load_config_from_json(config_file, config, &status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;
     return -1;
   }
 
+  // Trace log API calls to the console
+  config.set(r::name::TRACE_LOG_IMPLEMENTATION, r::value::CONSOLE_TRACE_LOGGER);
+
+  // Initialize the API
   _rl = std::unique_ptr<r::live_model>(new r::live_model(config,_on_error,this));
   if ( _rl->init(&status) != err::success ) {
     std::cout << status.get_error_msg() << std::endl;

@@ -17,7 +17,7 @@ namespace reinforcement_learning {
 
     int send_string(const std::string &data, api_status* status = nullptr)
     {
-      return v_send(data, status);
+      return v_send(std::move(data), status);
     }
 
     virtual ~i_sender() = default;

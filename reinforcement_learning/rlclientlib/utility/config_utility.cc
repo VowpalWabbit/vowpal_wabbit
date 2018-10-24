@@ -52,12 +52,12 @@ namespace reinforcement_learning { namespace utility { namespace config {
     }
   }
 
-  int parse_eventhub_conn_str(const std::string& conn_str, std::string& host, std::string& name, std::string& access_key_name, std::string& access_key, api_status* status) {
+  int parse_eventhub_conn_str(const std::string& conn_str, std::string& host, std::string& name, std::string& access_key_name, std::string& access_key, i_trace* trace, api_status* status) {
     try {
       const std::regex regex_eh_connstr("Endpoint=sb://([^/]+)[^;]+;SharedAccessKeyName=([^;]+);SharedAccessKey=([^;]+);EntityPath=([^;^\\s]+)");
       std::smatch match;
       if ( !std::regex_match(conn_str, match, regex_eh_connstr) && !( match.size() == 5 ) ) {
-        RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str;
+        RETURN_ERROR_LS(trace, status, eh_connstr_parse_error) << conn_str;
       }
       host = match[1].str();
       access_key_name = match[2].str();
@@ -67,16 +67,16 @@ namespace reinforcement_learning { namespace utility { namespace config {
 
     }
     catch ( const std::regex_error& e) {
-      RETURN_ERROR_LS(status, eh_connstr_parse_error) << conn_str << ", regex_error: " << regex_code_str(e.code()) << ", details: " << e.what();
+      RETURN_ERROR_LS(trace, status, eh_connstr_parse_error) << conn_str << ", regex_error: " << regex_code_str(e.code()) << ", details: " << e.what();
     }
   }
 
-  int set_eventhub_config(const std::string& conn_str, const std::string& cfg_root, configuration& cc, api_status* status) {
+  int set_eventhub_config(const std::string& conn_str, const std::string& cfg_root, configuration& cc, i_trace* trace,  api_status* status) {
     std::string host;
     std::string name;
     std::string access_key_name;
     std::string access_key;
-    RETURN_IF_FAIL(parse_eventhub_conn_str(conn_str, host, name, access_key_name, access_key, status));
+    RETURN_IF_FAIL(parse_eventhub_conn_str(conn_str, host, name, access_key_name, access_key, trace, status));
     const auto topic = ".eventhub.";
     cc.set(concat(cfg_root, topic, "host").c_str(),     host.c_str());
     cc.set(concat(cfg_root, topic, "name").c_str(),     name.c_str());
@@ -92,7 +92,7 @@ namespace reinforcement_learning { namespace utility { namespace config {
     return from;
   }
 
-  int create_from_json(const std::string& config_json, configuration& cc, api_status* status) {
+  int create_from_json(const std::string& config_json, configuration& cc, i_trace* trace, api_status* status) {
     const char* json_names[] = {
       "ApplicationID",
       "ModelBlobUri",
@@ -100,7 +100,8 @@ namespace reinforcement_learning { namespace utility { namespace config {
       "ModelRefreshIntervalMs",
       "SendHighMaterMark",
       "QueueMaxSize",
-      "BatchTimeoutMs"
+      "BatchTimeoutMs",
+      "QueueMode"
     };
 
     const std::map<std::string, std::string> from_to = {
@@ -110,7 +111,8 @@ namespace reinforcement_learning { namespace utility { namespace config {
       { "QueueMaxSize"              , name::INTERACTION_SEND_QUEUE_MAXSIZE },
       { "SendBatchIntervalMs"       , name::INTERACTION_SEND_BATCH_INTERVAL_MS },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
-      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS }
+      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS },
+      { "QueueMode"                 , name::QUEUE_MODE } // expect either DROP or BLOCK, default is DROP
     };
 
     auto obj = json::value::parse(to_string_t(config_json));
@@ -129,13 +131,13 @@ namespace reinforcement_learning { namespace utility { namespace config {
     auto wname = to_string_t("EventHubInteractionConnectionString");
     if ( obj.has_field(to_string_t(wname)) ) {
       const auto value = to_utf8string(obj.at(wname).as_string());
-      RETURN_IF_FAIL(set_eventhub_config(value, "interaction", cc, status));
+      RETURN_IF_FAIL(set_eventhub_config(value, "interaction", cc, trace, status));
     }
 
     wname = to_string_t("EventHubObservationConnectionString");
     if ( obj.has_field(to_string_t(wname)) ) {
       const auto value = to_utf8string(obj.at(wname).as_string());
-      RETURN_IF_FAIL(set_eventhub_config(value, "observation", cc, status));
+      RETURN_IF_FAIL(set_eventhub_config(value, "observation", cc, trace, status));
     }
 
     return error_code::success;

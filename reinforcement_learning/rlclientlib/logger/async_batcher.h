@@ -13,6 +13,17 @@
 #include "utility/periodic_background_proc.h"
 
 namespace reinforcement_learning {
+  //this enum sets the behavior of the queue managed by the async_batcher
+  enum queue_mode_enum {
+    DROP,//queue drops events if it is full (default)
+    BLOCK//queue block if it is full
+  };
+
+  //convert a string to an enum value
+  queue_mode_enum to_queue_mode_enum(const char* queue_mode);
+};
+
+namespace reinforcement_learning {
   class error_callback_fn;
 
   // This class takes uses a queue and a background thread to accumulate events, and send them by batch asynchronously.
@@ -29,7 +40,6 @@ namespace reinforcement_learning {
 
   private:
     size_t fill_buffer(size_t remaining);
-    void prune_if_needed();
     void flush(); //flush all batches
 
   public:
@@ -38,8 +48,8 @@ namespace reinforcement_learning {
                   error_callback_fn* perror_cb = nullptr,
                   size_t send_high_water_mark = (1024 * 1024 * 4),
                   size_t batch_timeout_ms = 1000,
-                  size_t queue_max_size = (8 * 1024));
-
+                  size_t queue_max_size = (8 * 1024),
+                  queue_mode_enum queue_mode = DROP);
     ~async_batcher();
 
   private:
@@ -55,6 +65,9 @@ namespace reinforcement_learning {
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
     float _pass_prob;
+    queue_mode_enum _queue_mode;
+    std::condition_variable _cv;
+    std::mutex _m;
   };
 
   template<typename TEvent>
@@ -67,20 +80,24 @@ namespace reinforcement_learning {
   template<typename TEvent>
   int async_batcher<TEvent>::append(TEvent&& evt, api_status* status) {
     _queue.push(std::move(evt));
-    prune_if_needed();
+
+    //block or drop events if the queue if full
+    if (_queue.size() >= _queue_max_size) {
+      if (BLOCK == _queue_mode) {
+        std::unique_lock<std::mutex> lk(_m);
+        _cv.wait(lk, [this] { return _queue.size() < _queue_max_size; });
+      }
+      else if (DROP == _queue_mode) {
+        _queue.prune(_pass_prob);
+      }
+    }
+
     return error_code::success;
   }
 
   template<typename TEvent>
   int async_batcher<TEvent>::append(TEvent& evt, api_status* status) {
     return append(std::move(evt), status);
-  }
-
-  template<typename TEvent>
-  void async_batcher<TEvent>::prune_if_needed() {
-    if (_queue.size() > _queue_max_size) {
-      _queue.prune(_pass_prob);
-    }
   }
 
   template<typename TEvent>
@@ -94,6 +111,9 @@ namespace reinforcement_learning {
   {
     _buffer.reset();
     _event_batcher.batch_serialize(_buffer, remaining, _queue, _send_high_water_mark, _batch_size);
+    if (BLOCK == _queue_mode) {
+      _cv.notify_one();
+    }
     return remaining;
   }
 
@@ -119,13 +139,14 @@ namespace reinforcement_learning {
 
   template<typename TEvent>
   async_batcher<TEvent>::async_batcher(i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb, const size_t send_high_water_mark,
-    const size_t batch_timeout_ms, const size_t queue_max_size)
+    const size_t batch_timeout_ms, const size_t queue_max_size, queue_mode_enum queue_mode)
     : _sender(sender),
     _send_high_water_mark(send_high_water_mark),
     _queue_max_size(queue_max_size),
     _perror_cb(perror_cb),
     _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb),
-    _pass_prob(0.5)
+    _pass_prob(0.5),
+    _queue_mode(queue_mode)
   {}
 
   template<typename TEvent>

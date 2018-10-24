@@ -20,13 +20,14 @@ namespace reinforcement_learning {
     }
 
     event& operator=(event&& other);
-
     virtual ~event();
 
     virtual bool try_drop(float pass_prob, int drop_pass);
+    virtual void serialize(utility::data_buffer& buffer) = 0;
 
   protected:
     float prg(int drop_pass) const;
+
   protected:
     std::string _event_id;
     float _pass_prob;
@@ -38,20 +39,21 @@ namespace reinforcement_learning {
   class ranking_event : public event {
   public:
     ranking_event();
-
+    ranking_event(ranking_event&& other);
+    ranking_event& operator=(ranking_event&& other);
     ranking_event(utility::data_buffer& oss, const char* event_id, const char* context,
       const ranking_response& resp, float pass_prob = 1);
 
-    ranking_event(ranking_event&& other);
-
-    ranking_event& operator=(ranking_event&& other);
-
     virtual flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    virtual void serialize(utility::data_buffer& oss) override;
+
   public:
-    static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
-      const ranking_response& resp, float pass_prob = 1);
+    static ranking_event choose_rank(utility::data_buffer& oss, const char* event_id, const char* context,
+      unsigned int flags, const ranking_response& resp, float pass_prob = 1);
 
   private:
+    ranking_event(const char* event_id, float pass_prob, const std::string& body);
+
     std::string _body;
     std::string _context;
     std::vector<uint64_t> _a_vector;
@@ -71,9 +73,16 @@ namespace reinforcement_learning {
     outcome_event& operator=(outcome_event&& other);
 
     virtual flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    virtual void serialize(utility::data_buffer& oss) override;
+
   public:
-    static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
-    static void serialize(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
+    static outcome_event report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob = 1);
+
+    static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
+    static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
+
+  private:
+    outcome_event(const char* event_id, float pass_prob, const std::string& body);
 
   private:
     std::string _body;

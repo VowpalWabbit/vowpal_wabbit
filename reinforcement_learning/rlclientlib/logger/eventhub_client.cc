@@ -3,6 +3,7 @@
 #include "eventhub_client.h"
 #include "err_constants.h"
 #include "utility/http_helper.h"
+#include "trace_logger.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
@@ -11,6 +12,47 @@ using namespace web::http; // Common HTTP functionality
 namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning {
+  eventhub_client::http_request_task::http_request_task()
+  {}
+
+  eventhub_client::http_request_task::http_request_task(web::http::client::http_client& client,
+    const std::string& host,
+    const std::string& auth,
+    const std::vector<unsigned char>& post_data)
+    : _post_data(std::move(post_data))
+  {
+    http_request request(methods::POST);
+    request.headers().add(_XPLATSTR("Authorization"), auth.c_str());
+    request.headers().add(_XPLATSTR("Host"), host.c_str());
+    request.set_body(_post_data);
+
+    _task = client.request(request).then([&](http_response response) {
+      return response.status_code();
+    });
+  }
+
+  eventhub_client::http_request_task::http_request_task(http_request_task&& other)
+    : _post_data(std::move(other._post_data))
+    , _task(std::move(other._task))
+  {}
+
+  eventhub_client::http_request_task& eventhub_client::http_request_task::operator=(http_request_task&& other) {
+    if (&other != this) {
+      _post_data = std::move(other._post_data);
+      _task = std::move(other._task);
+    }
+    return *this;
+  }
+
+  std::vector<unsigned char> eventhub_client::http_request_task::post_data() const {
+    return _post_data;
+  }
+
+  web::http::status_code eventhub_client::http_request_task::join() {
+    _task.wait();
+    return _task.get();
+  }
+
   //private helper
   string_t build_url(const std::string& host, const std::string& name, const bool local_test) {
     const std::string proto = local_test ? "http://" : "https://";
@@ -25,8 +67,28 @@ namespace reinforcement_learning {
 
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
+  int eventhub_client::pop_task(api_status* status) {
+    http_request_task oldest;
+    _tasks.pop(&oldest);
+    const auto status_code = oldest.join();
+    if (status_code != status_codes::Created)
+    {
+      RETURN_ERROR_ARG(_trace, status, http_bad_status_code, "(expected 201): Found ",
+        status_code, "eh_host", _eventhub_host, "eh_name", _eventhub_name,
+        "\n");
+    }
+    return error_code::success;
+  }
+
+  int eventhub_client::submit_task(http_request_task&& task, api_status* status) {
+    if (_tasks.size() >= _max_tasks_count) {
+      RETURN_IF_FAIL(pop_task(status));
+    }
+    _tasks.push(std::move(task));
+    return error_code::success;;
+  }
+
   int eventhub_client::v_send(const std::vector<unsigned char> &post_data, api_status* status) {
-    http_request request(methods::POST);
     if (authorization(status) != error_code::success)
       return status->get_error_code();
     std::string auth_str;
@@ -35,37 +97,31 @@ namespace reinforcement_learning {
       std::lock_guard<std::mutex> lock(_mutex);
       auth_str = _authorization;
     }
-    request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
-    request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data);
 
-    auto request_task = _client.request(request).then([&](http_response response) {
-      //expect http code 201
-      if (response.status_code() == status_codes::Created)
-        return error_code::success;
-
-      // TODO: fix this. it only applies to string.
-      //report error (cannot use the macro here since return type is auto deduced)
-      RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
-        response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
-        "\npost_data: ", "dummy");
-    });
     try {
-      request_task.wait();
-      return request_task.get();
+      http_request_task request_task(_client, _eventhub_host, auth_str, std::move(post_data));
+      RETURN_IF_FAIL(submit_task(std::move(request_task), status));
     }
     catch (const std::exception& e) {
-      // TODO: fix this. it only applies to string.
-      RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << "dummy";
+      RETURN_ERROR_LS(_trace, status, eventhub_http_generic) << e.what();
     }
+    return error_code::success;
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
-                                   const std::string& key, const std::string& name, const bool local_test)
+                                   const std::string& key, const std::string& name, size_t max_tasks_count, i_trace* trace, const bool local_test)
     : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
-      _authorization_valid_until(0) { }
+      _authorization_valid_until(0), _max_tasks_count(max_tasks_count),
+      _trace(trace)
+  { }
+
+  eventhub_client::~eventhub_client() {
+    while (_tasks.size() != 0) {
+      pop_task(nullptr);
+    }
+  }
 
   int eventhub_client::authorization(api_status* status) {
     const auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();
@@ -91,6 +147,7 @@ namespace reinforcement_learning {
                 (const unsigned char*)data.c_str(), (int)data.length(), &digest[0], &digest_len)) {
         api_status::try_update(status, error_code::eventhub_generate_SAS_hash,
                                "Failed to generate SAS hash");
+        TRACE_ERROR(_trace, "Failed to generate SAS hash");
         return error_code::eventhub_generate_SAS_hash;
       }
       digest.resize(digest_len);
