@@ -10,6 +10,7 @@
 
 #include <queue>
 #include <chrono>
+#include <memory>
 
 namespace reinforcement_learning {
   class i_trace;
@@ -39,8 +40,11 @@ namespace reinforcement_learning {
         size_t max_retries = 1, // If MAX_RETRIES is set to 1, only the initial request will be attempted.
         error_callback_fn* error_callback = nullptr,
         i_trace* trace = nullptr);
-      http_request_task(http_request_task&& other);
-      http_request_task& operator=(http_request_task&& other);
+
+      // The constructor kicks off an async request which captures the this variable. If this object is moved then the
+      // this pointer is invalidated and causes tricky bugs.
+      http_request_task(http_request_task&& other) = delete;
+      http_request_task& operator=(http_request_task&& other) = delete;
       http_request_task(const http_request_task&) = delete;
       http_request_task& operator=(const http_request_task&) = delete;
 
@@ -78,7 +82,6 @@ namespace reinforcement_learning {
       api_status* status,
       i_trace* trace);
 
-    int submit_task(http_request_task&& task, api_status* status);
     int pop_task(api_status* status);
 
     // cannot be copied or assigned
@@ -99,7 +102,8 @@ namespace reinforcement_learning {
     std::string _authorization;
     long long _authorization_valid_until; //in seconds
     std::mutex _mutex;
-    moving_queue<http_request_task> _tasks;
+    std::mutex _mutex_http_tasks;
+    moving_queue<std::unique_ptr<http_request_task>> _tasks;
     const size_t _max_tasks_count;
     const size_t _max_retries;
     i_trace* _trace;

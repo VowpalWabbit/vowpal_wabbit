@@ -45,25 +45,6 @@ namespace reinforcement_learning {
       _task = send_request(0 /* inital try */);
     }
 
-  eventhub_client::http_request_task::http_request_task(http_request_task&& other) {
-    *this = std::move(other);
-  }
-
-  eventhub_client::http_request_task& eventhub_client::http_request_task::operator=(http_request_task&& other) {
-    if (&other != this) {
-      _client = other._client;
-      _host = std::move(other._host);
-      _auth = std::move(other._auth);
-      _post_data = std::move(other._post_data);
-      _task = std::move(other._task);
-      _max_retries = std::move(other._max_retries);
-      _error_callback = std::move(other._error_callback);
-      _trace = std::move(other._trace);
-    }
-
-    return *this;
-  }
-
   pplx::task<web::http::status_code> eventhub_client::http_request_task::send_request(size_t try_count) {
     http_request request(methods::POST);
     request.headers().add(_XPLATSTR("Authorization"), _auth.c_str());
@@ -71,7 +52,6 @@ namespace reinforcement_learning {
     request.set_body(_post_data.c_str());
 
     return _client->request(request).then([this, try_count](pplx::task<http_response> response) {
-
       web::http::status_code code = status_codes::InternalError;
       api_status status;
 
@@ -85,14 +65,13 @@ namespace reinforcement_learning {
       // If the response is not the expected code then it has failed. Retry if possible otherwise report background error.
       if(code != status_codes::Created) {
         // Stop condition of recurison.
-        if(try_count >= _max_retries){
+        if(try_count < _max_retries){
           TRACE_ERROR(_trace, "HTTP request failed, retrying...");
 
           // Yes, recursively send another request inside this one. If a subsequent request returns success we are good, otherwise the failure will propagate.
           return send_request(try_count + 1).get();
         }
         else {
-          api_status status;
           auto msg = utility::concat("(expected 201): Found ", code, ", failed after ", try_count, " retries.");
           api_status::try_update(&status, error_code::http_bad_status_code, msg.c_str());
           ERROR_CALLBACK(_error_callback, status);
@@ -124,26 +103,21 @@ namespace reinforcement_learning {
   }
 
   int eventhub_client::pop_task(api_status* status) {
-    http_request_task oldest;
+    // This function must be under a lock as there is a delay between popping from the queue and joining the task, but it should essentially be atomic.
+    std::lock_guard<std::mutex> lock(_mutex_http_tasks);
+
+    std::unique_ptr<http_request_task> oldest;
     _tasks.pop(&oldest);
 
     try {
       // This will block if the task is not complete yet.
-      RETURN_IF_FAIL(oldest.join());
+      RETURN_IF_FAIL(oldest->join());
     }
     catch (...) {
       // Ignore if there is an exception surfaced as this should have been handled in the continuation.
       TRACE_WARN(_trace, "There should not be an exception raised in pop_task function.");
     }
 
-    return error_code::success;
-  }
-
-  int eventhub_client::submit_task(http_request_task&& task, api_status* status) {
-    if (_tasks.size() >= _max_tasks_count) {
-      RETURN_IF_FAIL(pop_task(status));
-    }
-    _tasks.push(std::move(task));
     return error_code::success;
   }
 
@@ -158,8 +132,13 @@ namespace reinforcement_learning {
     }
 
     try {
-      http_request_task request_task(&_client, _eventhub_host, auth_str, std::move(post_data), _max_retries, _error_callback, _trace);
-      RETURN_IF_FAIL(submit_task(std::move(request_task), status));
+      // Before creating the task, ensure that it is allowed to be created.
+      if (_tasks.size() >= _max_tasks_count) {
+        RETURN_IF_FAIL(pop_task(status));
+      }
+
+      std::unique_ptr<http_request_task> request_task(new http_request_task(&_client, _eventhub_host, auth_str, std::move(post_data), _max_retries, _error_callback, _trace));
+      _tasks.push(std::move(request_task));
     }
     catch (const std::exception& e) {
       RETURN_ERROR_LS(_trace, status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
