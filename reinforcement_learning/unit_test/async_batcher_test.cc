@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
   BOOST_REQUIRE(items.size()>0);
 
   for (int i = 0; i < items.size(); i++) {
-    BOOST_CHECK_EQUAL(expected_output[i], items[i]);
+    BOOST_CHECK_EQUAL(expected_output[i] + '0', items[i]);
   }
 }
 
