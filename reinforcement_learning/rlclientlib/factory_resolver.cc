@@ -89,7 +89,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int observation_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* _error_cb, i_trace* trace_logger, api_status* status) {
+  int observation_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* error_cb, i_trace* trace_logger, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
       cfg.get(name::OBSERVATION_EH_KEY_NAME, ""),
@@ -98,12 +98,12 @@ namespace reinforcement_learning {
       cfg.get_int(name::OBSERVATION_EH_TASKS_LIMIT, 16),
       cfg.get_int(name::OBSERVATION_EH_MAX_HTTP_RETRIES, 4),
       trace_logger,
-      _error_cb,
+      error_cb,
       cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
 
-  int interaction_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* _error_cb, i_trace* trace_logger, api_status* status) {
+  int interaction_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* error_cb, i_trace* trace_logger, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::INTERACTION_EH_HOST, "localhost:8080"),
       cfg.get(name::INTERACTION_EH_KEY_NAME, ""),
@@ -112,7 +112,7 @@ namespace reinforcement_learning {
       cfg.get_int(name::INTERACTION_EH_TASKS_LIMIT, 16),
       cfg.get_int(name::INTERACTION_EH_MAX_HTTP_RETRIES, 4),
       trace_logger,
-      _error_cb,
+      error_cb,
       cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
