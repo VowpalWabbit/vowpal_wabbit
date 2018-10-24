@@ -2,8 +2,8 @@
 
 #include "constants.h"
 #include "config_utility.h"
-#include "factory_resolver.h"
 #include "error_callback_fn.h"
+#include "factory_resolver.h"
 #include <fstream>
 #include <iostream>
 #include <thread>

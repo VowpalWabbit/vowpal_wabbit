@@ -179,8 +179,8 @@ namespace reinforcement_learning {
     RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
 
     vector<float> pdf(action_count);
-    // Generate a pdf with epsilon distributed between all action.  The top action
-    // gets the remaining (1 - epsilon)
+    // Generate a pdf with epsilon distributed between all action.
+    // The top action gets the remaining (1 - epsilon)
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
