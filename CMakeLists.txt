@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.2)
-project(vowpal_wabbit)
+cmake_minimum_required(VERSION 3.5)
+
+project(vowpal_wabbit C CXX)
+set(CMAKE_CXX_STANDARD 11)
 
 # VW targets Windows 8.1 SDK
 if(WIN32)
@@ -18,11 +20,33 @@ option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 
+# Add -ffast-math for speed, remove for testability.
+set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+set(linux_debug_config -g -O0)
+set(linux_flags $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+
+# for profiling -- note that it needs to be gcc
+if(PROFILE)
+  set(linux_flags ${linux_flags} -fno-strict-aliasing -pg)
+endif()
+
+# for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
+if(VALGRIND_PROFILE)
+  set(linux_flags ${linux_flags} -ffast-math -g -fomit-frame-pointer -fno-strict-aliasing)
+endif()
+
+# gcov configuration
+if(GCOV)
+  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov)
+endif()
+
+set(windows_release_config /GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD)
+set(windows_debug_config /INCREMENTAL /Od /Zi /analyze-)
+set(windows_flags $<$<CONFIG:DEBUG>:${windows_debug_config}> $<$<CONFIG:RELEASE>:${windows_release_config}>)
+
 # TODO move to consuming vcpkg of this dependency
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include)
-
-set(CMAKE_CXX_STANDARD 11)
 
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -44,11 +68,12 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(doc)
 add_subdirectory(vowpalwabbit)
+
+enable_testing()
 add_subdirectory(test)
 
 # Don't offer these make dependent targets on Windows
 if(NOT WIN32)
-
   # make bigtests BIG_TEST_ARGS="<args here>"
   add_custom_target(bigtests
     DEPENDS vw

@@ -3,24 +3,14 @@ configure_file(config.h.in config.h)
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(allreduce_obj OBJECT allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
-target_include_directories(allreduce_obj PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(allreduce allreduce_sockets.cc allreduce_threads.cc vw_exception.cc)
+target_include_directories(allreduce PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Winsock32 should be available on Windows
 if(WIN32)
-  target_link_libraries(allreduce_obj PUBLIC wsock32 ws2_32)
-endif()
-
-add_library(allreduce_shared SHARED $<TARGET_OBJECTS:allreduce_obj>)
-add_library(allreduce_static STATIC $<TARGET_OBJECTS:allreduce_obj>)
-
-set_target_properties(allreduce_shared PROPERTIES OUTPUT_NAME "allreduce")
-set_target_properties(allreduce_static PROPERTIES OUTPUT_NAME "allreduce")
-
-# Expose the allreduce target as static or shared basen on if BUILD_SHARED_LIBS is set.
-if(BUILD_SHARED_LIBS)
-  add_library(allreduce ALIAS allreduce_shared)
+  target_link_libraries(allreduce PUBLIC wsock32 ws2_32)
+  target_compile_options(allreduce PUBLIC ${windows_flags})
 else()
-  add_library(allreduce ALIAS allreduce_static)
+  target_compile_options(allreduce PUBLIC ${linux_flags})
 endif()
 
 set(vw_install_headers
@@ -72,77 +62,34 @@ set(explore_all_headers
 
 # Place the explore headers in their own folder in VS
 source_group(explore ${explore_all_headers})
-add_library(vw_obj OBJECT ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
-# Create both shared and static libs
-add_library(vw_shared SHARED $<TARGET_OBJECTS:vw_obj>)
-add_library(vw_static STATIC $<TARGET_OBJECTS:vw_obj>)
+add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
-target_link_libraries(vw_shared PUBLIC vw_obj)
-target_link_libraries(vw_static PUBLIC vw_obj)
+target_link_libraries(vw PUBLIC rapidjson Boost::program_options Threads::Threads ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
+target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-set_target_properties(vw_shared PROPERTIES OUTPUT_NAME "vw")
-set_target_properties(vw_static PROPERTIES OUTPUT_NAME "vw")
-
-# Expose the vw target as static or shared basen on if BUILD_SHARED_LIBS is set.
-if(BUILD_SHARED_LIBS)
-  add_library(vw ALIAS vw_shared)
-else()
-  add_library(vw ALIAS vw_static)
-endif()
-
-# Add -ffast-math for speed, remove for testability.
-set(linux_standard_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
-# Valgrind / gdb debugging
-set(linux_debug_config -g -O0)
-
-# Set base flags per configuration
-set(linux_flags $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_standard_config}>)
-
-if(PROFILE)
-  # for profiling -- note that it needs to be gcc
-  set(linux_flags ${linux_flags} -fno-strict-aliasing -pg)
-endif()
-
-if(VALGRIND_PROFILE)
-  # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-  set(linux_flags ${linux_flags} -ffast-math -g -fomit-frame-pointer -fno-strict-aliasing)
-endif()
-
-if(GCOV)
-  # gcov configuration
-  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov)
-endif()
-
-target_link_libraries(vw_obj PUBLIC rapidjson Boost::program_options Threads::Threads ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
-target_include_directories(vw_obj PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
-# Change the below varible to choose a different debug config.
-set(linux_selected_debug_config ${linux_debug_config})
-
-target_compile_definitions(vw_obj PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
+target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
 # Only define if Clang is not used
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_definitions(vw_obj PUBLIC __extern_always_inline=inline)
+  target_compile_definitions(vw PUBLIC __extern_always_inline=inline)
 endif()
 
 # TODO code analysis
 if(WIN32)
-  target_compile_definitions(vw_obj PUBLIC __SSE2__)
-  target_compile_options(vw_obj PUBLIC /MP)
+  target_compile_definitions(vw PUBLIC __SSE2__)
+  target_compile_options(vw PUBLIC /MP)
 
-  target_compile_options(vw_obj PUBLIC $<$<CONFIG:DEBUG>:/INCREMENTAL /Od /Zi /analyze->)
-  target_compile_options(vw_obj PUBLIC $<$<CONFIG:RELEASE>:/GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD>)
+  target_compile_options(vw PUBLIC ${windows_flags})
 else()
-  target_compile_options(vw_obj PUBLIC ${linux_flags})
+  target_compile_options(vw PUBLIC ${linux_flags})
 endif()
 
 # Turn on warnings
 if(WARNINGS)
   if(MSVC)
-    target_compile_options(vw_obj PRIVATE /W4)
+    target_compile_options(vw PRIVATE /W4)
   else(MSVC)
-    target_compile_options(vw_obj PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(vw PRIVATE -Wall -Wextra -Wpedantic)
   endif(MSVC)
 endif(WARNINGS)
 
@@ -155,7 +102,7 @@ if(NOT WIN32)
 
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
   target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)
-  target_compile_options(active_interactor PUBLIC ${linux_standard_config})
+  target_compile_options(active_interactor PUBLIC ${linux_flags})
 
   find_file(HELP2MAN_EXECUTABLE help2man HINTS /bin /usr/bin /usr/local/bin)
   if (HELP2MAN_EXECUTABLE)
@@ -179,23 +126,9 @@ add_executable(vw-bin main.cc)
 target_link_libraries(vw-bin PRIVATE vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
-add_library(vw_c_wrapper_obj OBJECT vwdll.cpp)
-target_compile_definitions(vw_c_wrapper_obj PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
-target_link_libraries(vw_c_wrapper_obj PUBLIC vw)
-
-add_library(vw_c_wrapper_shared SHARED $<TARGET_OBJECTS:vw_c_wrapper_obj>)
-add_library(vw_c_wrapper_static STATIC $<TARGET_OBJECTS:vw_c_wrapper_obj>)
-
-set_target_properties(vw_c_wrapper_shared PROPERTIES OUTPUT_NAME "vw_c_wrapper")
-set_target_properties(vw_c_wrapper_static PROPERTIES OUTPUT_NAME "vw_c_wrapper")
-
-# Expose the vw_c_wrapper target as static or shared basen on if BUILD_SHARED_LIBS is set.
-if(BUILD_SHARED_LIBS)
-  add_library(vw_c_wrapper ALIAS vw_shared)
-else()
-  add_library(vw_c_wrapper ALIAS vw_static)
-endif()
-
+add_library(vw_c_wrapper vwdll.cpp)
+target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
+target_link_libraries(vw_c_wrapper PUBLIC vw)
 
 # Install executables
 install(TARGETS vw-bin
@@ -207,12 +140,7 @@ install(FILES ${vw_install_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINA
 install(FILES ${explore_all_headers} DESTINATION include/vowpalwabbit/vowpalwabbit/explore)
 
 # Install libs
-install(TARGETS allreduce_shared allreduce_static vw_shared vw_static
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
-install(TARGETS vw_c_wrapper_shared vw_c_wrapper_static
+install(TARGETS allreduce vw vw_c_wrapper
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
