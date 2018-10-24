@@ -1,1 +1,0 @@
-﻿Note: Not official source of Flatc.exe is used here. Todo: Build and release FlatBuffers from googld source to Personizr.
