@@ -15,15 +15,24 @@ using namespace reinforcement_learning;
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
 class sender : public i_sender {
 public:
-  std::vector<std::string>& items;
-  sender(std::vector<std::string>& _items) : items(_items) {}
+  std::vector<unsigned char>& items;
+  sender(std::vector<unsigned char>& _items) : items(_items) {}
 
   virtual int init(api_status* s) override {
     return 0;
   }
 
-  virtual int v_send(const std::string& item, api_status* s = nullptr) override{
-    items.push_back(item);
+  virtual int v_send(const std::string &item, api_status* s = nullptr) override{
+    for (auto ch : item) {
+      items.push_back(ch);
+    }
+    return error_code::success;
+  };
+
+  virtual int v_send(const std::vector<unsigned char> &data, api_status* status) override {
+    for (auto ch : data) {
+      items.push_back(ch);
+    }
     return error_code::success;
   };
 };
@@ -43,15 +52,9 @@ public:
   bool try_drop(float drop_prob, int _drop_pass) override {
     return false;
   }
-
-  void serialize(utility::data_buffer& buf) override {
-    buf << _event_id;
-  }
-
-  std::string str() {
-    utility::data_buffer buf;
-    serialize(buf);
-    return buf.str();
+  
+  std::string get_event_id() {
+    return _event_id;
   }
 };
 
@@ -64,7 +67,7 @@ void expect_no_error(const api_status& s, void* cntxt)
 //test the flush mecanism based on a timer
 BOOST_AUTO_TEST_CASE(flush_timeout)
 {
-  std::vector<std::string> items;
+  std::vector<unsigned char> items;
   auto s = new sender(items);
 
   size_t timeout_ms = 100;//set a short timeout
@@ -78,50 +81,22 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   batcher.append(test_undroppable_event("bar"));
 
   //wait until the timeout triggers
-  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
+  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 30));
 
   //check the batch was sent
-  std::string expected = "foo\nbar";
-  BOOST_REQUIRE_EQUAL(items.size(), 1);
-  BOOST_CHECK_EQUAL(items.front(), expected);
-}
-
-//test that the batcher split batches as expected
-BOOST_AUTO_TEST_CASE(flush_batches)
-{
-  std::vector<std::string> items;
-  auto s = new sender(items);
-  size_t send_high_water_mark = 10;//bytes
-  error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog;
-  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
-  batcher->init(nullptr);
-
-  //add 2 items in the current batch
-  batcher->append(test_undroppable_event("foo"));    //3 bytes
-  batcher->append(test_undroppable_event("bar-yyy"));//7 bytes
-
-  //'send_high_water_mark' will be triggered by previous 2 items.
-  //next item will be added in a new batch
-  batcher->append(test_undroppable_event("hello"));
-
-  std::string expected_batch_0 = "foo\nbar-yyy";
-  std::string expected_batch_1 = "hello";
-
-  delete batcher;//flush force
-
-  BOOST_REQUIRE_EQUAL(items.size(), 2);
-  auto batch_0 = items[0];
-  auto batch_1 = items[1];
-
-  BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
-  BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
+  std::string expected = "foobar";
+  BOOST_REQUIRE_EQUAL(items.size(), 6);
+  std::string result;
+  for (auto ch : items) {
+    result.push_back((char)ch);
+  }
+  BOOST_CHECK_EQUAL(result, expected);
 }
 
 //test that the batcher flushes everything before deletion
 BOOST_AUTO_TEST_CASE(flush_after_deletion)
 {
-  std::vector<std::string> items;
+  std::vector<unsigned char> items;
   auto s = new sender(items);
   utility::watchdog watchdog;
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
@@ -135,11 +110,14 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
 
   //batch flush is triggered on delete
   delete batcher;
-
-  std::string expected = "foo\nbar";
-
-  BOOST_REQUIRE_EQUAL(items.size(), 1);
-  BOOST_CHECK_EQUAL(items.front(), expected);
+  //check the batch was sent
+  std::string expected = "foobar";
+  BOOST_REQUIRE_EQUAL(items.size(), 6);
+  std::string result;
+  for (auto ch : items) {
+    result.push_back((char)ch);
+  }
+  BOOST_CHECK_EQUAL(result, expected);
 }
 
 //test that events are dropped if the queue max capacity is reached

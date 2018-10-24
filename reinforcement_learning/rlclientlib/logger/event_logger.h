@@ -57,7 +57,7 @@ namespace reinforcement_learning {
       send_high_watermark,
       send_batch_interval_ms,
       send_queue_maxsize),
-    _buffer_pool(new utility::buffer_factory(utility::translate_func('\n', ' ')))
+    _buffer_pool(new utility::buffer_factory())
   {}
 
   template<typename TEvent>

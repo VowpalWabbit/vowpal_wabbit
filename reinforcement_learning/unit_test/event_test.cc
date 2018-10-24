@@ -47,11 +47,10 @@ BOOST_AUTO_TEST_CASE(serialize_ranking)
   resp.set_model_id("model_id");
 
   utility::data_buffer oss;
-
-  ranking_event evt(oss, event_id, context, resp);
   oss.reset();
-  evt.serialize(oss);
+  ranking_event::serialize(oss, event_id, context, resp);
 
+  // TODO: check
   const auto expected = R"({"Version":"1","EventId":"event_id","a":[2,1],"c":{context},"p":[0.800000,0.200000],"VWState":{"m":"model_id"}})";
 
   BOOST_CHECK_EQUAL(oss.str(), expected);
@@ -65,10 +64,10 @@ BOOST_AUTO_TEST_CASE(serialize_empty_ranking)
   ranking.set_model_id("model_id");
 
   utility::data_buffer oss;
-  ranking_event evt(oss, event_id, context, ranking);
   oss.reset();
-  evt.serialize(oss);
+  ranking_event::serialize(oss, event_id, context, ranking);
 
+  // TODO: check
   const auto expected = R"({"Version":"1","EventId":"event_id","a":[],"c":{context},"p":[],"VWState":{"m":"model_id"}})";
 
   BOOST_CHECK_EQUAL(oss.str(), expected);
@@ -82,8 +81,6 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
   resp.push_back(2, 0.2);
   resp.set_chosen_action_id(1);
 
-  ranking_event evt(buffer, "interaction_id", "interaction_context", resp);
-
   ranking_event expected(expected_buffer, "interaction_id", "interaction_context", resp, 0.25);
 
   evt.try_drop(0.5, 1);
@@ -91,6 +88,7 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
 
   buffer.reset();
   expected_buffer.reset();
+  ranking_event::serialize(buffer, "interaction_id", "interaction_context", resp);
   evt.serialize(buffer);
   expected.serialize(expected_buffer);
 

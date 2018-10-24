@@ -59,8 +59,6 @@ namespace reinforcement_learning {
       _p_vector.push_back(r.probability);
     }
     _model_id = std::string(response.get_model_id());
-    serialize(oss, event_id, context, response, _pass_prob);
-    _body = oss.str();
   }
 
   ranking_event::ranking_event(ranking_event&& other)
@@ -84,14 +82,6 @@ namespace reinforcement_learning {
     return *this;
   }
 
-  void ranking_event::serialize(u::data_buffer& oss) {
-    oss << _body;
-    if (_pass_prob < 1) {
-      oss << R"(,"pdrop":)" << (1 - _pass_prob);
-    }
-    oss << R"(})";
-  }
-
   flatbuffers::Offset<RankingEvent> ranking_event::serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder) {
     short version = 1;
     auto event_id_offset = builder.CreateString(_event_id);
@@ -108,27 +98,7 @@ namespace reinforcement_learning {
 
   void ranking_event::serialize(u::data_buffer& oss, const char* event_id, const char* context,
     const ranking_response& resp, float pass_prob) {
-    //add version and eventId
-    oss << R"({"Version":"1","EventId":")" << event_id;
-
-    //add action ids
-    oss << R"(","a":[)";
-    if (resp.size() > 0) {
-      for (auto const &r : resp)
-        oss << r.action_id + 1 << ",";
-      oss.remove_last();//remove trailing ,
-    }
-
-    //add probabilities
-    oss << R"(],"c":)" << context << R"(,"p":[)";
-    if (resp.size() > 0) {
-      for (auto const &r : resp)
-        oss << r.probability << ",";
-      oss.remove_last();//remove trailing ,
-    }
-
-    //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
+    // TODO: fix test
   }
 
   outcome_event::outcome_event()
@@ -138,18 +108,12 @@ namespace reinforcement_learning {
     : event(event_id, pass_prob)
   {
     _outcome = std::string(outcome);
-    serialize(oss, event_id, outcome);
-    _body = oss.str();
   }
 
   outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob)
     : event(event_id)
   {
-    // TODO: assign float
-    // _outcome = outcome;
     _outcome = std::to_string(outcome);
-    serialize(oss, event_id, outcome);
-    _body = oss.str();
   }
 
   outcome_event::outcome_event(outcome_event&& other)
@@ -167,10 +131,6 @@ namespace reinforcement_learning {
     return *this;
   }
 
-  void outcome_event::serialize(u::data_buffer& oss) {
-    oss << _body;
-  }
-
   flatbuffers::Offset<OutcomeEvent> outcome_event::serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder) {
     auto event_id_offset = builder.CreateString(_event_id);
     auto outcome_offset = builder.CreateString(_outcome);
@@ -178,10 +138,10 @@ namespace reinforcement_learning {
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+    // TODO: fix test
   }
 
   void outcome_event::serialize(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+    // TODO: fix test
   }
 }

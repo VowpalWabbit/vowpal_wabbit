@@ -25,11 +25,7 @@ namespace reinforcement_learning {
 
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
-  int eventhub_client::send(const std::string& post_data, api_status* status) { return v_send(post_data, status); }
-  int eventhub_client::send(std::vector<char> data, api_status* status) { return v_send(data, status); }
-
-  //TODO: refactor
-  int eventhub_client::v_send(std::vector<char> post_data, api_status* status) {
+  int eventhub_client::v_send(const std::vector<unsigned char> &post_data, api_status* status) {
     http_request request(methods::POST);
     if (authorization(status) != error_code::success)
       return status->get_error_code();
@@ -41,18 +37,8 @@ namespace reinforcement_learning {
     }
     request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
     request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
+    request.set_body(post_data);
 
-    // convert from vector<char> to vector<unsigned char>. how?
-    std::vector<unsigned char> data;
-    for (std::vector<char>::iterator iterator = post_data.begin();
-      iterator != post_data.end();
-      iterator++)
-    {
-      // safe?
-      data.push_back((unsigned char)*iterator);
-    }
-
-    request.set_body(data);
     auto request_task = _client.request(request).then([&](http_response response) {
       //expect http code 201
       if (response.status_code() == status_codes::Created)
@@ -71,39 +57,6 @@ namespace reinforcement_learning {
     catch (const std::exception& e) {
       // TODO: fix this. it only applies to string.
       RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << "dummy";
-    }
-  }
-
-  // TODO: refactor
-  int eventhub_client::v_send(const std::string& post_data, api_status* status) {
-    http_request request(methods::POST);
-    if (authorization(status) != error_code::success)
-      return status->get_error_code();
-    std::string auth_str;
-    {
-      // protected access for _authorization
-      std::lock_guard<std::mutex> lock(_mutex);
-      auth_str = _authorization;
-    }
-    request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
-    request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data.c_str());
-    auto request_task = _client.request(request).then([&](http_response response) {
-      //expect http code 201
-      if (response.status_code() == status_codes::Created)
-        return error_code::success;
-
-      //report error (cannot use the macro here since return type is auto deduced)
-      RETURN_ERROR_ARG(status, http_bad_status_code, "(expected 201): Found ",
-        response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
-        "\npost_data: ", post_data);
-    });
-    try {
-      request_task.wait();
-      return request_task.get();
-    }
-    catch (const std::exception& e) {
-      RETURN_ERROR_LS(status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
   }
 

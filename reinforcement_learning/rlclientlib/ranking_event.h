@@ -15,14 +15,15 @@ namespace reinforcement_learning {
     event();
     event(const char* event_id, float pass_prob = 1);
     event(event&& other);
+    std::string get_event_id() {
+      return _event_id;
+    }
 
     event& operator=(event&& other);
 
     virtual ~event();
 
     virtual bool try_drop(float pass_prob, int drop_pass);
-
-    virtual void serialize(utility::data_buffer& buffer) = 0;
 
   protected:
     float prg(int drop_pass) const;
@@ -45,7 +46,6 @@ namespace reinforcement_learning {
 
     ranking_event& operator=(ranking_event&& other);
 
-    virtual void serialize(utility::data_buffer& buffer) override;
     virtual flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* context,
@@ -70,7 +70,6 @@ namespace reinforcement_learning {
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
 
-    virtual void serialize(utility::data_buffer& buffer) override;
     virtual flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
   public:
     static void serialize(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);

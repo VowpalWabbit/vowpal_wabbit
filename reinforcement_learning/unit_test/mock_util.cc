@@ -18,7 +18,8 @@ std::unique_ptr<fakeit::Mock<r::i_sender>> get_mock_sender() {
     new fakeit::Mock<r::i_sender>());
 
   When(Method((*mock), init)).AlwaysReturn(r::error_code::success);
-  When(Method((*mock), send)).AlwaysReturn(r::error_code::success);
+  When(Method((*mock), send_byte)).AlwaysReturn(r::error_code::success);
+  When(Method((*mock), send_string)).AlwaysReturn(r::error_code::success);
   Fake(Dtor((*mock)));
 
   return mock;
@@ -29,9 +30,26 @@ std::unique_ptr<fakeit::Mock<r::i_sender>> get_mock_sender(std::vector<std::stri
     new fakeit::Mock<r::i_sender>());
 
   When(Method((*mock), init)).AlwaysReturn(r::error_code::success);
-  When(Method((*mock), send)).AlwaysDo(
+  When(Method((*mock), send_string)).AlwaysDo(
     [&recorded_messages](const std::string& message, reinforcement_learning::api_status* status) {
     recorded_messages.push_back(message); return r::error_code::success;
+  });
+  Fake(Dtor((*mock)));
+
+  return mock;
+}
+
+std::unique_ptr<fakeit::Mock<r::i_sender>> get_mock_sender(std::vector<unsigned char>& recorded_messages) {
+  auto mock = std::unique_ptr<fakeit::Mock<r::i_sender>>(
+    new fakeit::Mock<r::i_sender>());
+
+  When(Method((*mock), init)).AlwaysReturn(r::error_code::success);
+  When(Method((*mock), send_byte)).AlwaysDo(
+    [&recorded_messages](std::vector<unsigned char> message, reinforcement_learning::api_status* status) {
+    for (auto ch : message) {
+      recorded_messages.push_back(ch);
+    }
+    return r::error_code::success;
   });
   Fake(Dtor((*mock)));
 
