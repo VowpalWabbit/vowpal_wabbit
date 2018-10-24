@@ -40,7 +40,9 @@ namespace Rl.Net.Cli
 
             public string GetOutcome(long actionIndex, IEnumerable<ActionProbability> actionDistribution)
             {
-                return this.Observations?.First()?.ToString(Formatting.None);
+                JToken observationValue = this.Observations?.First()?.SelectToken("v");
+
+                return observationValue?.ToString(Formatting.None);
             }
         }
 

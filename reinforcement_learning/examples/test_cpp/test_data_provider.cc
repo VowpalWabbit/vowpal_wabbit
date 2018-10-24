@@ -119,7 +119,7 @@ void test_data_provider::log(size_t thread_id, size_t example_id, const reinforc
   buffer.reset();
   ranking_evt.serialize(buffer);
   const std::string buffer_str = buffer.str();
-  logger << buffer_str.substr(1, buffer_str.length() - 1) << "}" << std::endl;
+  logger << buffer_str.substr(1, buffer_str.length() - 1) << std::endl;
 }
 
 int test_data_provider::report_outcome(reinforcement_learning::live_model* rl, size_t thread_id, size_t example_id, reinforcement_learning::api_status* status) const {

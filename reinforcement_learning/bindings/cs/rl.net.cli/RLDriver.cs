@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rl.Net.Cli
@@ -68,10 +69,19 @@ namespace Rl.Net.Cli
                 throw new ArgumentException($"Invalid type argument {typeof(TOutcome).Name}", nameof(TOutcome));
             }
 
+            int stepsCount = 0;
             RunContext runContext = new RunContext();
             foreach (IStepContext<TOutcome> step in stepProvider)
             {
                 this.Step(runContext, outcomeReporter, step);
+
+                // TODO: Change this to be a command-line arg
+                Thread.Sleep(25);
+
+                if (++stepsCount % 1000 == 0)
+                {
+                    Console.Out.WriteLine($"Processed {stepsCount} steps.");
+                }
             }
         }
 
