@@ -11,6 +11,16 @@ public:
     {}
 
 public:
+    inline int check_current()
+    {
+        if (this->current != this->end)
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
     inline int move_next()
     {
         if ((this->current != this->end) &&
@@ -68,9 +78,14 @@ API void DeleteRankingEnumeratorAdapter(ranking_enumerator_adapter* adapter)
     delete adapter;
 }
 
+API int RankingEnumeratorInit(ranking_enumerator_adapter* adapter)
+{
+    return adapter->check_current();
+}
+
 API int RankingEnumeratorMoveNext(ranking_enumerator_adapter* adapter)
 {
-    return adapter->move_next();
+  return adapter->move_next();
 }
 
 API reinforcement_learning::action_prob GetRankingEnumeratorCurrent(ranking_enumerator_adapter* adapter)

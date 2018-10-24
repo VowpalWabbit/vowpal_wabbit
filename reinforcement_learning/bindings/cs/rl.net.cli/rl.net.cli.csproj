@@ -9,6 +9,8 @@
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
+    <AssemblyName>Rl.Net.Cli</AssemblyName>
+    <RootNamespace>Rl.Net.Cli</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Copy Include="$(SolutionDir)examples\basic_usage_app\client.json" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 </Project>

@@ -22,13 +22,35 @@ namespace Rl.Net {
         private static extern int LiveModelInit(IntPtr liveModel, IntPtr apiStatus);
 
         [DllImport("rl.net.native.dll")]
-        private static extern int LiveModelChooseRank(IntPtr liveModel,  [MarshalAs(NativeMethods.StringMarshalling)] string eventId,  [MarshalAs(NativeMethods.StringMarshalling)] string contextJson, IntPtr rankingResponse, IntPtr apiStatus);
+        private static extern int LiveModelChooseRank(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, [MarshalAs(NativeMethods.StringMarshalling)] string contextJson, IntPtr rankingResponse, IntPtr apiStatus);
 
         [DllImport("rl.net.native.dll")]
-        private static extern int LiveModelReportOutcome(IntPtr liveModel,  [MarshalAs(NativeMethods.StringMarshalling)] string eventId,  float outcome, IntPtr apiStatus);
+        private static extern int LiveModelReportOutcomeF(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, float outcome, IntPtr apiStatus);
+
+        [DllImport("rl.net.native.dll")]
+        private static extern int LiveModelReportOutcomeJson(IntPtr liveModel, [MarshalAs(NativeMethods.StringMarshalling)] string eventId, [MarshalAs(NativeMethods.StringMarshalling)] string outcomeJson, IntPtr apiStatus);
+
+        private delegate void managed_callback_t(IntPtr apiStatus);
+
+        [DllImport("rl.net.native.dll")]
+        private static extern void LiveModelSetCallback(IntPtr liveModel, [MarshalAs(UnmanagedType.FunctionPtr)] managed_callback_t callback = null);
+
+        private readonly managed_callback_t managedCallback;
 
         public LiveModel(Configuration config) : base(BindConstructorArguments(config), new Delete<LiveModel>(DeleteLiveModel))
         {
+            this.managedCallback = new managed_callback_t(this.WrapStatusAndRaiseBackgroundError);
+        }
+
+        private void WrapStatusAndRaiseBackgroundError(IntPtr apiStatusHandle)
+        {
+            ApiStatus status = new ApiStatus(apiStatusHandle);
+
+            EventHandler<ApiStatus> localEvent = this.BackgroundErrorInternal;
+            if (localEvent != null)
+            {
+                localEvent(this, status);
+            }
         }
 
         public bool TryInit(ApiStatus apiStatus = null)
@@ -51,8 +73,39 @@ namespace Rl.Net {
 
         public bool TryReportOutcome(string actionId, float outcome, ApiStatus apiStatus = null)
         {
-            int result = LiveModelReportOutcome(this.NativeHandle, actionId, outcome, apiStatus.ToNativeHandleOrNullptr());
+            int result = LiveModelReportOutcomeF(this.NativeHandle, actionId, outcome, apiStatus.ToNativeHandleOrNullptr());
             return result == NativeMethods.SuccessStatus;
+        }
+
+        public bool TryReportOutcome(string actionId, string outcomeJson, ApiStatus apiStatus = null)
+        {
+            int result = LiveModelReportOutcomeJson(this.NativeHandle, actionId, outcomeJson, apiStatus.ToNativeHandleOrNullptr());
+            return result == NativeMethods.SuccessStatus;
+        }
+
+        private event EventHandler<ApiStatus> BackgroundErrorInternal;
+
+        // TODO: This class need a pass to ensure thread-safety (or explicit declaration of non-thread-safe)
+        public event EventHandler<ApiStatus> BackgroundError
+        {
+            add
+            {
+                if (this.BackgroundErrorInternal == null)
+                {
+                    LiveModelSetCallback(this.NativeHandle, this.managedCallback);
+                }
+
+                this.BackgroundErrorInternal += value;
+            }
+            remove
+            {
+                this.BackgroundErrorInternal -= value;
+
+                if (this.BackgroundErrorInternal == null)
+                {
+                    LiveModelSetCallback(this.NativeHandle, null);
+                }
+            }
         }
     }
 }
