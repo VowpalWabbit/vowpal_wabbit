@@ -145,13 +145,13 @@ namespace reinforcement_learning {
   int live_model_impl::init_loggers(api_status* status) {
     const auto ranking_sender_impl = _configuration.get(name::INTERACTION_SENDER_IMPLEMENTATION, value::INTERACTION_EH_SENDER);
     i_sender* ranking_sender;
-    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, status));
+    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, &_error_cb, _trace_logger.get(), status));
     _ranking_logger.reset(new interaction_logger(_configuration, ranking_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
     const auto outcome_sender_impl = _configuration.get(name::OBSERVATION_SENDER_IMPLEMENTATION, value::OBSERVATION_EH_SENDER);
     i_sender* outcome_sender;
-    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, status));
+    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, &_error_cb, _trace_logger.get(), status));
     _outcome_logger.reset(new observation_logger(_configuration, outcome_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_outcome_logger->init(status));
 
@@ -177,10 +177,10 @@ namespace reinforcement_learning {
     // Generate egreedy pdf
     size_t action_count = 0;
     RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
-    
+
     vector<float> pdf(action_count);
-    // Generate a pdf with epsilon distributed between all action.  The top action 
-    // gets the remaining (1 - epsilon)
+    // Generate a pdf with epsilon distributed between all action.
+    // The top action gets the remaining (1 - epsilon)
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));

@@ -4,6 +4,8 @@
 #include "err_constants.h"
 #include "utility/http_helper.h"
 #include "trace_logger.h"
+#include "error_callback_fn.h"
+#include "str_util.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
@@ -18,7 +20,8 @@ namespace reinforcement_learning {
   eventhub_client::http_request_task::http_request_task(web::http::client::http_client& client,
     const std::string& host,
     const std::string& auth,
-    std::string&& post_data)
+    std::string&& post_data,
+    error_callback_fn* _error_callback)
     : _post_data(std::move(post_data))
   {
     http_request request(methods::POST);
@@ -26,8 +29,25 @@ namespace reinforcement_learning {
     request.headers().add(_XPLATSTR("Host"), host.c_str());
     request.set_body(_post_data.c_str());
 
-    _task = client.request(request).then([&](http_response response) {
-      return response.status_code();
+    _task = client.request(request).then([this, _error_callback](pplx::task<http_response> response) {
+      web::http::status_code code = status_codes::InternalError;
+      api_status status;
+
+      try {
+        code = response.get().status_code();
+
+        if (code != status_codes::Created) {
+          auto msg = utility::concat("(expected 201): Found ", code, "\npost_data: ", _post_data);
+          api_status::try_update(&status, error_code::http_bad_status_code, msg.c_str());
+          ERROR_CALLBACK(_error_callback, status);
+        };
+      }
+      catch (const std::exception& e) {
+        api_status::try_update(&status, error_code::exception_during_http_req, e.what());
+        ERROR_CALLBACK(_error_callback, status);
+      }
+
+      return code;
     });
   }
 
@@ -70,13 +90,15 @@ namespace reinforcement_learning {
   int eventhub_client::pop_task(api_status* status) {
     http_request_task oldest;
     _tasks.pop(&oldest);
-    const auto status_code = oldest.join();
-    if (status_code != status_codes::Created)
-    {
-      RETURN_ERROR_ARG(_trace, status, http_bad_status_code, "(expected 201): Found ",
-        status_code, "eh_host", _eventhub_host, "eh_name", _eventhub_name,
-        "\npost_data: ", oldest.post_data());
+
+    try {
+      // This will block if the task is not complete yet.
+      oldest.join();
     }
+    catch (...) {
+      // Ignore as previous task based continuation should have handled and reported background error.
+    }
+
     return error_code::success;
   }
 
@@ -99,7 +121,7 @@ namespace reinforcement_learning {
     }
 
     try {
-      http_request_task request_task(_client, _eventhub_host, auth_str, std::move(post_data));
+      http_request_task request_task(_client, _eventhub_host, auth_str, std::move(post_data), _error_callback);
       RETURN_IF_FAIL(submit_task(std::move(request_task), status));
     }
     catch (const std::exception& e) {
@@ -109,11 +131,14 @@ namespace reinforcement_learning {
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
-                                   const std::string& key, const std::string& name, size_t max_tasks_count, i_trace* trace, const bool local_test)
+                                   const std::string& key, const std::string& name,
+                                   size_t max_tasks_count, i_trace* trace,
+                                   error_callback_fn* error_callback, const bool local_test)
     : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
       _authorization_valid_until(0), _max_tasks_count(max_tasks_count),
+      _error_callback(error_callback),
       _trace(trace)
   { }
 
