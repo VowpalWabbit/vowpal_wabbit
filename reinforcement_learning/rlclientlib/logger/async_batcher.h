@@ -56,11 +56,10 @@ namespace reinforcement_learning {
     std::unique_ptr<i_sender> _sender;
 
     event_queue<TEvent> _queue;       // A queue to accumulate batch of events.
-    utility::event_batcher<TEvent> _event_batcher;
+    utility::event_batcher _event_batcher;
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
     size_t _queue_max_size;
-    size_t _batch_size = 400;        // initial batch size used by flatterbuffers
     error_callback_fn* _perror_cb;
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
@@ -110,7 +109,7 @@ namespace reinforcement_learning {
   size_t async_batcher<TEvent>::fill_buffer(size_t remaining)
   {
     _buffer.reset();
-    _event_batcher.batch_serialize(_buffer, remaining, _queue, _send_high_water_mark, _batch_size);
+    _event_batcher.batch_serialize(_buffer, remaining, _queue, _send_high_water_mark);
     if (BLOCK == _queue_mode) {
       _cv.notify_one();
     }
@@ -131,7 +130,7 @@ namespace reinforcement_learning {
     while (remaining > 0) {
       remaining = fill_buffer(remaining);
       api_status status;
-      if (_sender->send_byte(_buffer.buffer(), &status) != error_code::success) {
+      if (_sender->send(_buffer.buffer(), &status) != error_code::success) {
         ERROR_CALLBACK(_perror_cb, status);
       }
     }

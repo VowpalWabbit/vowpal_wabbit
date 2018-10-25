@@ -17,22 +17,6 @@ using namespace http::experimental::listener;
 
 using namespace reinforcement_learning;
 
-//send string
-BOOST_AUTO_TEST_CASE(send_string)
-{
-  //start a http server that will receive events sent from the eventhub_client
-  http_helper http_server;
-  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080")));
-
-  //create a client
-  eventhub_client eh("localhost:8080", "", "", "", 1, nullptr, true);
-
-  api_status ret;
-  //send events
-  BOOST_CHECK_EQUAL(eh.send_string("message 1", &ret),error_code::success);
-  BOOST_CHECK_EQUAL(eh.send_string("message 2", &ret), error_code::success);
-}
-
 //send bytes
 BOOST_AUTO_TEST_CASE(send_bytes)
 {
@@ -50,5 +34,5 @@ BOOST_AUTO_TEST_CASE(send_bytes)
   messages.push_back('\13');
 
   //send events
-  BOOST_CHECK_EQUAL(eh.send_byte(messages, &ret), error_code::success);
+  BOOST_CHECK_EQUAL(eh.send(std::move(messages), &ret), error_code::success);
 }

@@ -15,21 +15,14 @@ using namespace reinforcement_learning;
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
 class sender : public i_sender {
 public:
-  std::vector<unsigned char>& items;
+  std::vector<unsigned char> items;
   sender(std::vector<unsigned char>& _items) : items(_items) {}
 
   virtual int init(api_status* s) override {
     return 0;
   }
 
-  virtual int v_send(std::string &&item, api_status* s = nullptr) override{
-    for (auto ch : item) {
-      items.push_back(ch);
-    }
-    return error_code::success;
-  };
-
-  virtual int v_send(std::vector<unsigned char> &data, api_status* status) override {
+  virtual int v_send(std::vector<unsigned char> &&data, api_status* status) override {
     for (auto ch : data) {
       items.push_back(ch);
     }

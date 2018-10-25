@@ -8,7 +8,7 @@ table VWStateType {
 }
 
 table RankingEvent {
-    Version:short = 1; // TODO: refer to Version variable
+    Version:short = 1;
     EventId:string;
     a:[uint64];
     c:string;          // context

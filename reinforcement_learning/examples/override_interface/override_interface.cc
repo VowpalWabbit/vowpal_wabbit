@@ -32,9 +32,12 @@ public:
   }
 
 protected:
-  virtual int v_send(std::string&& data, r::api_status* status) override {
+  int v_send(std::vector<unsigned char>&& data, r::api_status* status) { 
     std::lock_guard<std::mutex> lock(_mutex);
-    _stream << data << std::endl;
+    for (auto ch : data) {
+      _stream << ch;
+    }
+    _stream << std::endl;
     return err::success;
   }
 

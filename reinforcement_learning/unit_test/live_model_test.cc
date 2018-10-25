@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_mocks) {
-  std::vector<std::string> recorded;
+  std::vector<unsigned char> recorded;
   auto mock_sender = get_mock_sender(recorded);
   auto mock_data_transport = get_mock_data_transport();
   auto mock_model = get_mock_model();
@@ -226,10 +226,11 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
-  std::vector<std::string> recorded_observations;
+  std::vector<unsigned char> recorded_observations;
   auto mock_observation_sender = get_mock_sender(recorded_observations);
+  auto test = get_mock_sender();
 
-  std::vector<std::string> recorded_interactions;
+  std::vector<unsigned char> recorded_interactions;
   auto mock_interaction_sender = get_mock_sender(recorded_interactions);
 
   auto mock_data_transport = get_mock_data_transport();

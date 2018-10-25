@@ -27,6 +27,7 @@
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="trace_logger.cc" />
     <ClCompile Include="async_batcher.cc" />
+    <ClCompile Include="logger\event_batcher.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -67,6 +68,7 @@
     <ClInclude Include="moving_queue.h" />
     <ClInclude Include="..\include\trace_logger.h" />
     <ClInclude Include="console_tracer.h" />
+    <ClInclude Include="generated\OutcomeEvent_generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

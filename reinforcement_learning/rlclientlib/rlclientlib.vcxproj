@@ -174,7 +174,7 @@
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
     <ClInclude Include="..\include\trace_logger.h" />
-	<ClInclude Include="generated\OutcomeEvent_generated.h" />
+    <ClInclude Include="generated\OutcomeEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="console_tracer.h" />
     <ClInclude Include="logger\event_logger.h" />
@@ -186,6 +186,7 @@
     <ClInclude Include="utility\object_pool.h" />
     <ClCompile Include="async_batcher.cc" />
     <ClCompile Include="console_tracer.cc" />
+    <ClCompile Include="logger\event_batcher.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="trace_logger.cc" />
     <ClCompile Include="utility\data_buffer.cc" />
