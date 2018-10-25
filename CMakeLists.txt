@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
+# Only allow Release and Debug configurations
+set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+
 project(vowpal_wabbit C CXX)
 set(CMAKE_CXX_STANDARD 11)
 
@@ -8,12 +11,12 @@ if(WIN32)
   set(CMAKE_SYSTEM_VERSION 8.1 CACHE TYPE INTERNAL FORCE)
 endif()
 
-set(PACKAGE_VERSION 8.6.1)
+# Read version into variable
+file(READ version.txt PACKAGE_VERSION)
+string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
+message("Version: ${PACKAGE_VERSION}")
 
-# Only allow two configurations
-set(CMAKE_CONFIGURATION_TYPES "Debug" "Release" STRING)
-
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug Release" FORCE)
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
 
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)

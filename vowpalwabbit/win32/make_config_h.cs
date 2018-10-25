@@ -7,22 +7,21 @@ public class Program
     {
         try
         {
-            string[] lines = File.ReadAllLines("..\\configure.ac");
-            foreach (var line in lines)
+            string[] lines = File.ReadAllLines("..\\version.txt");
+
+            if(lines.Length < 1)
             {
-                if (line.Contains("AC_INIT"))
-                {
-                    string version = line.Split('[')[2].Split(']')[0];
-                    string config = "#define PACKAGE_VERSION \"" + version + "\"\n";
-                    if (!File.Exists("config.h") ||
-                        string.CompareOrdinal(File.ReadAllText("config.h"), config) != 0)
-                    {
-                        File.WriteAllText("config.h", config);
-                    }
-                    return;
-                }
+                throw new Exception("version.txt first line should contain the version number.");
             }
-            throw new Exception("can't find AC_INIT line");
+
+            string version = lines[0].Trim();
+
+             string config = "#define PACKAGE_VERSION \"" + version + "\"\n";
+            if (!File.Exists("config.h") ||
+                string.CompareOrdinal(File.ReadAllText("config.h"), config) != 0)
+            {
+                File.WriteAllText("config.h", config);
+            }
         }
         catch (Exception e)
         {
@@ -31,5 +30,3 @@ public class Program
         }
     }
 }
-
-// vim:sw=4:ts=4:et:ai:cindent
