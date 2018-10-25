@@ -26,6 +26,7 @@
     <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="trace_logger.cc" />
+    <ClCompile Include="async_batcher.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -60,38 +61,8 @@
     <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\base.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\code_generators.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatbuffers.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatc.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flexbuffers.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\grpc.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\hash.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\idl.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\minireflect.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection_generated.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\registry.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\stl_emulation.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\util.h" />
-    <ClInclude Include="flatbuffers\base.h" />
-    <ClInclude Include="flatbuffers\code_generators.h" />
-    <ClInclude Include="flatbuffers\flatbuffers.h" />
-    <ClInclude Include="flatbuffers\flatc.h" />
-    <ClInclude Include="flatbuffers\flexbuffers.h" />
-    <ClInclude Include="flatbuffers\grpc.h" />
-    <ClInclude Include="flatbuffers\hash.h" />
-    <ClInclude Include="flatbuffers\idl.h" />
-    <ClInclude Include="flatbuffers\minireflect.h" />
-    <ClInclude Include="flatbuffers\reflection.h" />
-    <ClInclude Include="flatbuffers\reflection_generated.h" />
-    <ClInclude Include="flatbuffers\registry.h" />
-    <ClInclude Include="flatbuffers\stl_emulation.h" />
-    <ClInclude Include="flatbuffers\util.h" />
-    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="logger\event_batcher.h" />
-    <ClInclude Include="generated\OutcomeEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="moving_queue.h" />
     <ClInclude Include="..\include\trace_logger.h" />
@@ -99,7 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="schema\tools\flatc.exe" />
     <None Include="schema\tools\Readme.md" />
     <None Include="schema\OutcomeEvent.fbs" />
     <None Include="schema\RankingEvent.fbs" />

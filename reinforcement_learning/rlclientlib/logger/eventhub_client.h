@@ -24,7 +24,7 @@ namespace reinforcement_learning {
                     size_t tasks_count, i_trace* trace, bool local_test = false);
     ~eventhub_client();
   protected:
-    virtual int v_send(const std::vector<unsigned char> &data, api_status* status) override;
+    virtual int v_send(std::vector<unsigned char> &data, api_status* status) override;
 
   private:
     class http_request_task {

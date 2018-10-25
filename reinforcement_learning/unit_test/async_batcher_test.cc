@@ -22,14 +22,14 @@ public:
     return 0;
   }
 
-  virtual int v_send(const std::string &item, api_status* s = nullptr) override{
+  virtual int v_send(std::string &&item, api_status* s = nullptr) override{
     for (auto ch : item) {
       items.push_back(ch);
     }
     return error_code::success;
   };
 
-  virtual int v_send(const std::vector<unsigned char> &data, api_status* status) override {
+  virtual int v_send(std::vector<unsigned char> &data, api_status* status) override {
     for (auto ch : data) {
       items.push_back(ch);
     }

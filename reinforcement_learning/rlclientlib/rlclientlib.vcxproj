@@ -84,7 +84,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+      <Command>flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
@@ -103,7 +103,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+      <Command>flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
@@ -126,7 +126,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+      <Command>flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
@@ -149,7 +149,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)..\reinforcement_learning\rlclientlib\schema\tools\flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
+      <Command>flatc.exe -o $(SolutionDir)..\reinforcement_learning\rlclientlib\generated\ --cpp $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\OutcomeEvent.fbs $(SolutionDir)..\reinforcement_learning\rlclientlib\schema\RankingEvent.fbs</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Generate FlatBuffer</Message>
@@ -159,37 +159,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\base.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\code_generators.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatbuffers.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flatc.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\flexbuffers.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\grpc.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\hash.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\idl.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\minireflect.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\reflection_generated.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\registry.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\stl_emulation.h" />
-    <ClInclude Include="..\..\..\flatbuffers\include\flatbuffers\util.h" />
-    <ClInclude Include="generated\OutcomeEvent_generated.h" />
-    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="logger\event_batcher.h" />
-    <ClInclude Include="flatbuffers\base.h" />
-    <ClInclude Include="flatbuffers\code_generators.h" />
-    <ClInclude Include="flatbuffers\flatbuffers.h" />
-    <ClInclude Include="flatbuffers\flatc.h" />
-    <ClInclude Include="flatbuffers\flexbuffers.h" />
-    <ClInclude Include="flatbuffers\grpc.h" />
-    <ClInclude Include="flatbuffers\hash.h" />
-    <ClInclude Include="flatbuffers\idl.h" />
-    <ClInclude Include="flatbuffers\minireflect.h" />
-    <ClInclude Include="flatbuffers\reflection.h" />
-    <ClInclude Include="flatbuffers\reflection_generated.h" />
-    <ClInclude Include="flatbuffers\registry.h" />
-    <ClInclude Include="flatbuffers\stl_emulation.h" />
-    <ClInclude Include="flatbuffers\util.h" />
     <ClInclude Include="..\include\api_status.h" />
     <ClInclude Include="..\include\configuration.h" />
     <ClInclude Include="..\include\live_model.h" />
@@ -204,6 +174,8 @@
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
     <ClInclude Include="..\include\trace_logger.h" />
+	<ClInclude Include="generated\OutcomeEvent_generated.h" />
+    <ClInclude Include="generated\RankingEvent_generated.h" />
     <ClInclude Include="console_tracer.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="moving_queue.h" />
@@ -263,7 +235,6 @@
     <None Include="packages.config" />
     <None Include="schema\OutcomeEvent.fbs" />
     <None Include="schema\RankingEvent.fbs" />
-    <None Include="schema\tools\flatc.exe" />
     <None Include="schema\tools\Readme.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

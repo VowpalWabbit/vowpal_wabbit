@@ -88,7 +88,7 @@ namespace reinforcement_learning {
     return error_code::success;;
   }
 
-  int eventhub_client::v_send(const std::vector<unsigned char> &post_data, api_status* status) {
+  int eventhub_client::v_send(std::vector<unsigned char> &post_data, api_status* status) {
     if (authorization(status) != error_code::success)
       return status->get_error_code();
     std::string auth_str;
