@@ -123,7 +123,7 @@ namespace reinforcement_learning {
     }
 
     if (_configuration.get_bool(name::MODEL_BACKGROUND_REFRESH, value::MODEL_BACKGROUND_REFRESH)) {
-      _bg_model_proc = std::make_unique<utility::periodic_background_proc<model_management::model_downloader>>(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb);
+      _bg_model_proc.reset(new utility::periodic_background_proc<model_management::model_downloader>(config.get_int(name::MODEL_REFRESH_INTERVAL_MS, 60 * 1000), _watchdog, "Model downloader", &_error_cb));
     }
   }
 
@@ -240,7 +240,7 @@ namespace reinforcement_learning {
 
     if (_bg_model_proc) {
       // Initialize background process and start downloading models
-      _model_download = std::make_unique<m::model_downloader>(ptransport, &_data_cb, _trace_logger.get());
+      _model_download.reset(new m::model_downloader(ptransport, &_data_cb, _trace_logger.get()));
       return _bg_model_proc->init(_model_download.get(), status);
     }
     else {
