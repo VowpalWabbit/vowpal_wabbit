@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   batcher.append(test_undroppable_event("bar"));
 
   //wait until the timeout triggers
-  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 30));
+  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
 
   //check the batch was sent
   std::string expected = "foobar";
