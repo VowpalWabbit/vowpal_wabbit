@@ -88,13 +88,24 @@ if(NOT WIN32)
     COMMAND make things
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)
 
-  # TODO include java in cmake definition. Must be called manually currently.
-  # Could be done by making this a custom command instead so that outputs are specified.
-  # TODO fix java install command not being run by make install
   add_custom_target(java
     DEPENDS vw
     COMMAND make things
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java)
+
+
+  # Installation for Java
+  set(JAVA_LIBRARY_NAME vw_jni)
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      set(JAVA_SHARED_LIBRARY lib${JAVA_LIBRARY_NAME}.dylib)
+      set(JAVA_INSTALL_PATH /usr/lib)
+  else()
+      set(JAVA_SHARED_LIBRARY lib${JAVA_LIBRARY_NAME}.so)
+      set(JAVA_INSTALL_PATH /Library/Java/Extensions)
+  endif()
+
+  set(JAVA_LOCAL_LIBRARY target/${JAVA_SHARED_LIBRARY})
+  install(FILES ${JAVA_LOCAL_LIBRARY} DESTINATION ${JAVA_INSTALL_PATH})
 endif()
 
 # TODO convert cs directory to cmake

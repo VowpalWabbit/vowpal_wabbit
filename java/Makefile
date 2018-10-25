@@ -37,7 +37,7 @@ test:
 things: pom_version $(LOCAL_LIBRARY)
 
 pom_version: pom.xml
-	ver=$$(grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1) && \
+	ver=$$(head -n 1 ../version.txt | tr -d '\r\n') && \
 	newVer=$$(perl -e "@a=split('\.', '$$ver'); \$$a[2]++; print(join('.', @a))") && \
 	perl -pi -e "s/(\s*)<version>.*-SNAPSHOT/\1<version>$$newVer-SNAPSHOT/" pom.xml
 
