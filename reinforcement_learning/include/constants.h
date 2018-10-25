@@ -6,6 +6,7 @@ namespace reinforcement_learning {  namespace name {
       const char *const  MODEL_BLOB_URI          = "model.blob.uri";
       const char *const  MODEL_REFRESH_INTERVAL_MS  = "model.refreshintervalms";
       const char *const  MODEL_IMPLEMENTATION    = "model.implementation";       // VW vs other ML
+      const char *const  MODEL_BACKGROUND_REFRESH = "model.backgroundrefresh";
       const char *const  VW_CMDLINE              = "vw.commandline";
       const char *const  INITIAL_EPSILON         = "initial_exploration.epsilon";
       const char *const  INTERACTION_EH_HOST     = "interaction.eventhub.host";
@@ -38,5 +39,6 @@ namespace reinforcement_learning {  namespace value {
       const char *const INTERACTION_EH_SENDER = "INTERACTION_EH_SENDER";
       const char *const NULL_TRACE_LOGGER = "NULL_TRACE_LOGGER";
       const char *const CONSOLE_TRACE_LOGGER = "CONSOLE_TRACE_LOGGER";
+      const bool MODEL_BACKGROUND_REFRESH = true;
 }}
 

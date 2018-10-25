@@ -30,7 +30,8 @@ namespace cfg = reinforcement_learning::utility::config;
 
 using namespace fakeit;
 
-const auto JSON_CFG = R"(
+namespace {
+  const auto JSON_CFG = R"(
   {
     "ApplicationID": "rnc-123456-a",
     "EventHubInteractionConnectionString": "Endpoint=sb://localhost:8080/;SharedAccessKeyName=RMSAKey;SharedAccessKey=<ASharedAccessKey>=;EntityPath=interaction",
@@ -40,17 +41,42 @@ const auto JSON_CFG = R"(
     "InitialExplorationEpsilon": 1.0
   }
   )";
-const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
+  const auto JSON_CONTEXT = R"({"_multi":[{},{}]})";
+
+  r::live_model create_mock_live_model(
+    const u::configuration& config,
+    r::data_transport_factory_t* data_transport_factory = nullptr,
+    r::model_factory_t* model_factory = nullptr,
+    r::sender_factory_t* sender_factory = nullptr) {
+
+    static auto mock_sender = get_mock_sender();
+    static auto mock_data_transport = get_mock_data_transport();
+    static auto mock_model = get_mock_model();
+
+    static auto default_sender_factory = get_mock_sender_factory(mock_sender.get(), mock_sender.get());
+    static auto default_data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
+    static auto default_model_factory = get_mock_model_factory(mock_model.get());
+
+    if (!data_transport_factory) {
+      data_transport_factory = default_data_transport_factory.get();
+    }
+
+    if (!model_factory) {
+      model_factory = default_model_factory.get();
+    }
+
+    if (!sender_factory) {
+      sender_factory = default_sender_factory.get();
+    }
+
+
+    r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory, model_factory, sender_factory);
+    return model;
+  }
+}
+
 
 BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
-  auto mock_sender = get_mock_sender();
-  auto mock_data_transport = get_mock_data_transport();
-  auto mock_model = get_mock_model();
-
-  auto sender_factory = get_mock_sender_factory(mock_sender.get(), mock_sender.get());
-  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
-  auto model_factory = get_mock_model_factory(mock_model.get());
-
   //create a simple ds configuration
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
@@ -59,7 +85,7 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
   r::api_status status;
 
   //create the ds live_model, and initialize it with the config
-  r::live_model ds(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), sender_factory.get());
+  auto ds = create_mock_live_model(config);
   BOOST_CHECK_EQUAL(ds.init(&status), err::success);
 
   const auto event_id = "event_id";
@@ -91,21 +117,13 @@ BOOST_AUTO_TEST_CASE(live_model_ranking_request) {
 }
 
 BOOST_AUTO_TEST_CASE(live_model_outcome) {
-  auto mock_sender = get_mock_sender();
-  auto mock_data_transport = get_mock_data_transport();
-  auto mock_model = get_mock_model();
-
-  auto sender_factory = get_mock_sender_factory(mock_sender.get(), mock_sender.get());
-  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
-  auto model_factory = get_mock_model_factory(mock_model.get());
-
   //create a simple ds configuration
   u::configuration config;
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
 
   //create a ds live_model, and initialize with configuration
-  r::live_model ds(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), sender_factory.get());
+  r::live_model ds = create_mock_live_model(config);
 
   //check api_status content when errors are returned
   r::api_status status;
@@ -213,7 +231,7 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
   cfg::create_from_json(JSON_CFG, config);
   config.set(r::name::EH_TEST, "true");
   {
-    r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), sender_factory.get());
+    r::live_model model = create_mock_live_model(config, data_transport_factory.get(), model_factory.get(), sender_factory.get());
 
     r::api_status status;
     BOOST_CHECK_EQUAL(model.init(&status), err::success);
@@ -227,6 +245,35 @@ BOOST_AUTO_TEST_CASE(live_model_mocks) {
     Verify(Method((*mock_sender), init)).Exactly(2);
   }
   BOOST_CHECK_EQUAL(recorded.size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(live_model_no_background_refresh) {
+  u::configuration config;
+  cfg::create_from_json(JSON_CFG, config);
+
+  config.set(r::name::EH_TEST, "true");
+  config.set(r::name::MODEL_BACKGROUND_REFRESH, "false");
+
+  r::live_model model = create_mock_live_model(config);
+
+  r::api_status status;
+  BOOST_CHECK_EQUAL(model.init(&status), err::success);
+}
+
+BOOST_AUTO_TEST_CASE(live_model_no_background_refresh_failure) {
+  u::configuration config;
+  cfg::create_from_json(JSON_CFG, config);
+
+  config.set(r::name::EH_TEST, "true");
+  config.set(r::name::MODEL_BACKGROUND_REFRESH, "false");
+
+  auto mock_data_transport = get_mock_failing_data_transport();
+  auto data_transport_factory = get_mock_data_transport_factory(mock_data_transport.get());
+
+  r::live_model model = create_mock_live_model(config, data_transport_factory.get());
+
+  r::api_status status;
+  BOOST_CHECK_NE(model.init(&status), err::success);
 }
 
 BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
@@ -262,7 +309,7 @@ BOOST_AUTO_TEST_CASE(live_model_logger_receive_data) {
   std::string expected_interactions;
   std::string expected_observations;
   {
-    r::live_model model(config, nullptr, nullptr, &r::trace_logger_factory, data_transport_factory.get(), model_factory.get(), logger_factory.get());
+    r::live_model model = create_mock_live_model(config, data_transport_factory.get(), model_factory.get(), logger_factory.get());
 
     r::api_status status;
     BOOST_CHECK_EQUAL(model.init(&status), err::success);

@@ -48,6 +48,16 @@ std::unique_ptr<fakeit::Mock<m::i_data_transport>> get_mock_data_transport() {
   return mock;
 }
 
+std::unique_ptr<fakeit::Mock<m::i_data_transport>> get_mock_failing_data_transport() {
+  auto mock = std::unique_ptr<fakeit::Mock<m::i_data_transport>>(
+    new fakeit::Mock<m::i_data_transport>());
+
+  When(Method((*mock), get_data)).AlwaysReturn(r::error_code::exception_during_http_req);
+  Fake(Dtor((*mock)));
+
+  return mock;
+}
+
 std::unique_ptr<fakeit::Mock<m::i_model>> get_mock_model() {
   auto mock = std::unique_ptr<fakeit::Mock<m::i_model>>(
     new fakeit::Mock<m::i_model>());

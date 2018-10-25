@@ -83,7 +83,7 @@ namespace reinforcement_learning
     std::unique_ptr<model_management::model_downloader> _model_download{nullptr};
     std::unique_ptr<i_trace> _trace_logger{nullptr};
 
-    utility::periodic_background_proc<model_management::model_downloader> _bg_model_proc;
+    std::unique_ptr<utility::periodic_background_proc<model_management::model_downloader>> _bg_model_proc;
     uint64_t _seed_shift;
   };
 

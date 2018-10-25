@@ -26,6 +26,11 @@ namespace reinforcement_learning
     new live_model_impl(config, fn, err_context, trace_factory, t_factory, m_factory, sender_factory));
   }
 
+  live_model::live_model(live_model&& model) {
+    _pimpl = std::move(model._pimpl);
+    _initialized = model._initialized;
+  }
+
   live_model::~live_model() = default;
 
   int live_model::init(api_status* status) {

@@ -208,7 +208,7 @@ namespace reinforcement_learning {
     /**
      * @brief Default move constructor for live model object.
      */
-    live_model(live_model&&) = default;
+    live_model(live_model&&);
 
     /**
      * @brief Default move assignment operator swaps implementation.
