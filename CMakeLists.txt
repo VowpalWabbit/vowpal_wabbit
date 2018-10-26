@@ -16,6 +16,11 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message("Version: ${PACKAGE_VERSION}")
 
+include(ProcessorCount)
+ProcessorCount(NumProcessors)
+message("Number of processors: ${NumProcessors}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
+
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
 
 option(PROFILE "Turn on flags required for profiling" OFF)
@@ -71,6 +76,8 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(doc)
 add_subdirectory(vowpalwabbit)
+add_subdirectory(java)
+add_subdirectory(python)
 
 enable_testing()
 add_subdirectory(test)
@@ -82,30 +89,6 @@ if(NOT WIN32)
     DEPENDS vw
     COMMAND make \${BIG_TEST_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
-
-  add_custom_target(python
-    DEPENDS vw
-    COMMAND make things
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)
-
-  add_custom_target(java
-    DEPENDS vw
-    COMMAND make things
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java)
-
-
-  # Installation for Java
-  set(JAVA_LIBRARY_NAME vw_jni)
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      set(JAVA_SHARED_LIBRARY lib${JAVA_LIBRARY_NAME}.dylib)
-      set(JAVA_INSTALL_PATH /usr/lib)
-  else()
-      set(JAVA_SHARED_LIBRARY lib${JAVA_LIBRARY_NAME}.so)
-      set(JAVA_INSTALL_PATH /Library/Java/Extensions)
-  endif()
-
-  set(JAVA_LOCAL_LIBRARY target/${JAVA_SHARED_LIBRARY})
-  install(FILES ${JAVA_LOCAL_LIBRARY} DESTINATION ${JAVA_INSTALL_PATH})
 endif()
 
 # TODO convert cs directory to cmake

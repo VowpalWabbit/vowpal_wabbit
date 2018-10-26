@@ -3,15 +3,18 @@ set -e
 
 export PATH="$HOME/miniconda/bin:$PATH"
 
-make all
-make python
-mvn clean test -f java/pom.xml
-make test
-make rl_clientlib_test
-cd test
-./test_race_condition.sh
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DWARNINGS=OFF
+NUM_PROCESSORS=$(cat nprocs.txt)
+make all -j ${NUM_PROCESSORS}
+make test_with_output
 cd ..
-make test_gcov --always-make
+
+# Run Java build and test
+mvn clean test -f java/pom.xml
+
+# Run python build and tests
 cd python
 source activate test-python27
 pip install pytest readme_renderer pandas
@@ -20,3 +23,11 @@ python setup.py install
 py.test tests
 source deactivate
 cd ..
+
+# Clear out build directory then build using GCov and run one set of tests again
+rm -rf build
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DGCOV=ON -DWARNINGS=OFF
+make vw-bin -j ${NUM_PROCESSORS}
+ctest -R RunTests_pass_2
