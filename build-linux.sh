@@ -14,12 +14,9 @@ cd ..
 git clone git@github.com:google/flatbuffers.git
 cd ./flatbuffers
 git checkout 925c1d77fcc72636924c3c13428a34180c30f96f  # release commit
-mkdir out
-cd out
-cmake .. -j 8
+make
 sudo make install
 sudo cp ./flatc /usr/local/bin/
-cd ..  # to flatbuffers
 cd ..  # to ../
 cd ./vovowpal_wabbit
 #
