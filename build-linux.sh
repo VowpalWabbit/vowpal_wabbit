@@ -8,11 +8,11 @@ cd ..
 git clone https://github.com/google/flatbuffers.git
 cd ./flatbuffers
 git checkout 925c1d77fcc72636924c3c13428a34180c30f96f  # release commit
-cmake 
+cmake .
 make
 sudo make install
 sudo cp ./flatc /usr/local/bin/
-cd ../vowpal_wabbit
+cd ../vw
 #
 
 make all
