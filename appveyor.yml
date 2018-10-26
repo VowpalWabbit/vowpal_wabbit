@@ -14,7 +14,7 @@ build_script:
 - vcpkg install cpprestsdk:x64-windows
 - vcpkg install flatbuffers:x64-windows
 - cd c:\vowpal_wabbit
-- SET PATH=%PATH%;c:\tools\vcpkg\installed\x64-windows\tools\flatbuffers\flatc.exe
+- SET PATH=%PATH%;c:\tools\vcpkg\installed\x64-windows\tools\flatbuffers
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\cs\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure\packages.config
 - vowpalwabbit\.nuget\nuget install -o vowpalwabbit\packages cs\azure_worker\packages.config

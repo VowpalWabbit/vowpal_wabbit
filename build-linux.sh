@@ -18,7 +18,7 @@ mkdir out
 cd out
 cmake .. -j 8
 sudo make install
-sudo cp ./flatc usr/local/bin/
+sudo cp ./flatc /usr/local/bin/
 cd ..  # to flatbuffers
 cd ..  # to ../
 cd ./vovowpal_wabbit
