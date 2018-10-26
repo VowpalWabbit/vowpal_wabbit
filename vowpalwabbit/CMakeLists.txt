@@ -61,7 +61,7 @@ set(explore_all_headers
 )
 
 # Place the explore headers in their own folder in VS
-source_group(explore ${explore_all_headers})
+source_group(explore FILES ${explore_all_headers})
 
 add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
