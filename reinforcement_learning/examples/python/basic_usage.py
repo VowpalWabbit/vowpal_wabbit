@@ -27,16 +27,14 @@ def main():
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(actions_probabilities))
 
-    model_id, chosen_action_id, actions_probabilities, event_id = model.choose_rank(context, deferred = False)
-    model.report_action_taken(event_id)
+    model_id, chosen_action_id, actions_probabilities, event_id = model.choose_rank(context)
     print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
     print("actions probabilities list: " + str(actions_probabilities))
 
     event_id = str(uuid.uuid4())
-    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, deferred=True, event_id=event_id)
-    model.report_action_taken(event_id)
+    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, event_id=event_id)
     print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
