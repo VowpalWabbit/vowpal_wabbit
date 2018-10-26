@@ -5,7 +5,7 @@ export PATH="$HOME/miniconda/bin:$PATH"
 
 # add flat buffers
 cd ..
-git clone git@github.com:google/flatbuffers.git
+git clone https://github.com/google/flatbuffers.git
 cd ./flatbuffers
 git checkout 925c1d77fcc72636924c3c13428a34180c30f96f  # release commit
 cmake 
