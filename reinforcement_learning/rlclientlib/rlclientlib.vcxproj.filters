@@ -26,6 +26,7 @@
     <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="trace_logger.cc" />
+    <ClCompile Include="azure_factories.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -63,6 +64,7 @@
     <ClInclude Include="moving_queue.h" />
     <ClInclude Include="..\include\trace_logger.h" />
     <ClInclude Include="console_tracer.h" />
+    <ClInclude Include="azure_factories.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

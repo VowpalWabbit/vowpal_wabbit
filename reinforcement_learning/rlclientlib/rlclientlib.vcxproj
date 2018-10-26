@@ -149,6 +149,7 @@
     <ClInclude Include="..\include\model_mgmt.h" />
     <ClInclude Include="..\include\str_util.h" />
     <ClInclude Include="..\include\trace_logger.h" />
+    <ClInclude Include="azure_factories.h" />
     <ClInclude Include="console_tracer.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="moving_queue.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="utility\periodic_background_proc.h" />
     <ClInclude Include="utility\object_pool.h" />
     <ClCompile Include="async_batcher.cc" />
+    <ClCompile Include="azure_factories.cc" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="trace_logger.cc" />
