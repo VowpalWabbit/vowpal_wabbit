@@ -12,8 +12,7 @@ cmake
 make
 sudo make install
 sudo cp ./flatc /usr/local/bin/
-cd ..  # to ../
-cd ./vovowpal_wabbit
+cd ../vowpal_wabbit
 #
 
 make all

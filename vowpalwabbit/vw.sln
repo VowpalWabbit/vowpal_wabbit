@@ -273,14 +273,16 @@ Global
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x64.Build.0 = Release|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.ActiveCfg = Release|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.Build.0 = Release|Win32
-		{E86A833A-514D-424D-9FE7-154225031662}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.ActiveCfg = Debug|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.Build.0 = Debug|x64
-		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.ActiveCfg = Debug|x64
-		{E86A833A-514D-424D-9FE7-154225031662}.Release|Any CPU.ActiveCfg = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.ActiveCfg = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.Build.0 = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|Any CPU.ActiveCfg = Release|Win32
 		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.ActiveCfg = Release|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.Build.0 = Release|x64
-		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.ActiveCfg = Release|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.ActiveCfg = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.Build.0 = Release|Win32
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.ActiveCfg = Debug|x64
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.Build.0 = Debug|x64
@@ -338,7 +340,7 @@ Global
 		{B1A9F681-56A9-4640-9699-EA3B32EE423A} = {4225B9D3-0023-42BA-A8EC-2EE96C3D061E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
+		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 	EndGlobalSection
 EndGlobal

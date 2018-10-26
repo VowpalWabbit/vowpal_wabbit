@@ -8,5 +8,5 @@ table OutcomeEvent {
 }
 
 table OutcomeEventBatch {
-	Events:[OutcomeEvent];
+    Events:[OutcomeEvent];
 }
