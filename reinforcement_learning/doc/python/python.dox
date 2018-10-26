@@ -58,27 +58,36 @@ Note: `https://aka.ms/rl_client_python` points to a binary targeting x64 Linux P
 \exception RuntimeError Thrown if initialization fails
 \return void
 
-\fn rl_client::live_model::choose_rank(event_id, context_json)
+\fn rl_client::live_model::choose_rank(event_id, context_json, deferred = False)
 \memberof rl_client::live_model
 \brief Choose an action, given a list of actions, action features and context features. The inference library chooses an action by creating a probability distribution over the actions and then sampling from it.
 \param event_id The unique identifier for this interaction. This event_id must be used when reporting the outcome for this action
 \param context_json Contains action, action features and context features in JSON format
+\param deferred Identifies if action is deferred or not. Deferred one requires additional call of report_action_taken to be invovled in training.
 \exception RuntimeError Thrown if an internal error occurs
 \return model_id, chosen_action_id, actions_probabilities
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model
 \return actions_probabilities - List of pairs (action_id, probability) ranked by the model's prediction
 
-\fn rl_client::live_model::choose_rank(context_json)
+\fn rl_client::live_model::choose_rank(context_json, deffered = False)
 \memberof rl_client::live_model
 \brief Choose an action, given a list of actions, action features and context features. The inference library chooses an action by creating a probability distribution over the actions and then sampling from it.
 \param context_json Contains action, action features and context features in JSON format
+\param deferred Identifies if action is deferred or not. Deferred one requires additional call of report_action_taken to be invovled in training.
 \exception RuntimeError Thrown if an internal error occurs
 \return model_id, chosen_action_id, actions_probabilities, event_id
 \return model_id - Get the model id. Every call to choose action is associated with a unique model used to predict. A unique model id is associated with each unique model. (This is set internally by the API)
 \return chosen_action_id - ID of action chosen by model
 \return actions_probabilities - List of pairs (action_id, probability) ranked by the model's prediction
 \return event_id - 	Unique id for this ranking request. This event_id must be used when calling report_outcome so it can be joined with the chosen action
+
+\fn rl_client::live_model::report_action_taken(event_id)
+\memberof rl_client::live_model
+\brief Make certain event available for training. Has no effect if choose_rank was called with deferred=False
+\param event_id The unique identifier used when choosing an action should be presented here. This is so that the action taken can be matched with feedback received
+\exception RuntimeError Thrown if an internal error occurs
+\return void
 
 \fn rl_client::live_model::report_outcome(event_id, outcome)
 \memberof rl_client::live_model
