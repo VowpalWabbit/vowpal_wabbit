@@ -1,3 +1,4 @@
+import uuid
 import rl_client
 
 class my_error_callback(rl_client.error_callback):
@@ -16,12 +17,12 @@ def main():
     model = rl_client.live_model(config, test_cb)
     model.init()
 
-    uuid = "event_id"
+    event_id = str(uuid.uuid4())
     context = '{"User":{"id":"a","major":"eng","hobby":"hiking"},"_multi":[{"N1":{"F1":"V1"},"N2":{"F2":"V2"}},{"N3":{"F1":"V3"}}]}'
 
-    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, event_id=uuid)
+    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, event_id=event_id)
 
-    print("event_id: " + uuid)
+    print("event_id: " + event_id)
     print("model_id: " + model_id)
     print("chosen action id: " + str(chosen_action_id))
     print("all action probabilities " + str(actions_probabilities))
@@ -33,7 +34,8 @@ def main():
     print("chosen action id: " + str(chosen_action_id))
     print("actions probabilities list: " + str(actions_probabilities))
 
-    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, deferred=True, event_id='asd')
+    event_id = str(uuid.uuid4())
+    model_id, chosen_action_id, actions_probabilities = model.choose_rank(context, deferred=True, event_id=event_id)
     model.report_action_taken(event_id)
     print("event_id: " + event_id)
     print("model_id: " + model_id)
