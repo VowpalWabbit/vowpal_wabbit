@@ -4,6 +4,7 @@
 #include "moving_queue.h"
 #include "sender.h"
 #include <vector>
+#include "error_callback_fn.h"
 
 #include <cpprest/http_client.h>
 #include <pplx/pplxtasks.h>
@@ -21,7 +22,7 @@ namespace reinforcement_learning {
 
     eventhub_client(const std::string& host, const std::string& key_name,
                     const std::string& key, const std::string& name,
-                    size_t tasks_count, i_trace* trace, bool local_test = false);
+                    size_t tasks_count, i_trace* trace, error_callback_fn* _error_cb, bool local_test = false);
     ~eventhub_client();
   protected:
     virtual int v_send(std::vector<unsigned char> &&data, api_status* status) override;
@@ -30,7 +31,7 @@ namespace reinforcement_learning {
     class http_request_task {
     public:
       http_request_task();
-      http_request_task(web::http::client::http_client& client, const std::string& host, const std::string& auth, const std::vector<unsigned char> &data);
+      http_request_task(web::http::client::http_client& client, const std::string& host, const std::string& auth, const std::vector<unsigned char> &&data, error_callback_fn* _error_cb);
       http_request_task(http_request_task&& other);
       http_request_task& operator=(http_request_task&& other);
 
@@ -71,5 +72,6 @@ namespace reinforcement_learning {
     moving_queue<http_request_task> _tasks;
     const size_t _max_tasks_count;
     i_trace* _trace;
+    error_callback_fn* _error_callback;
   };
 }

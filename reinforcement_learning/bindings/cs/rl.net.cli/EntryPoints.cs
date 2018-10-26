@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Rl.Net;
 
@@ -7,7 +8,9 @@ namespace Rl.Net.Cli {
     {
         public static void Main(string [] args)
         {
-            BasicUsageExample(args);
+            //BasicUsageExample(args);
+            //RunSimulator(args);
+            RunReplay(args);
         }
 
         private static void WriteErrorAndExit(string errorMessage, int exitCode = -1)
@@ -21,24 +24,14 @@ namespace Rl.Net.Cli {
             WriteErrorAndExit(apiStatus.ErrorMessage);
         }
 
-        // TODO: Pull this out to a separate sample once we implement the simulator in this.
-        public static void BasicUsageExample(string [] args)
+        private static LiveModel CreateLiveModelOrExit(string clientJsonPath)
         {
-            const float outcome = 1.0f;
-            const string eventId = "event_id";
-            const string contextJson = "{'GUser':{'id':'a','major':'eng','hobby':'hiking'},'_multi':[ { 'TAction':{'a1':'f1'} },{'TAction':{'a2':'f2'}}]}";
-
-            if (args.Length != 1) 
+            if (!File.Exists(clientJsonPath))
             {
-                WriteErrorAndExit("Missing path to client configuration json");
+                WriteErrorAndExit($"Could not find file with path '{clientJsonPath}'.");
             }
 
-            if (!File.Exists(args[0]))
-            {
-                WriteErrorAndExit($"Could not find file with path '{args[0]}'.");
-            }
-
-            string json = File.ReadAllText(args[0]);
+            string json = File.ReadAllText(clientJsonPath);
 
             ApiStatus apiStatus = new ApiStatus();
 
@@ -53,6 +46,32 @@ namespace Rl.Net.Cli {
             {
                 WriteStatusAndExit(apiStatus);
             }
+
+            liveModel.BackgroundError += LiveModel_BackgroundError;
+
+            return liveModel;
+        }
+
+        private static void LiveModel_BackgroundError(object sender, ApiStatus e)
+        {
+            Console.Error.WriteLine(e.ErrorMessage);
+        }
+
+        // TODO: Pull this out to a separate sample.
+        public static void BasicUsageExample(string [] args)
+        {
+            const float outcome = 1.0f;
+            const string eventId = "event_id";
+            const string contextJson = "{\"GUser\":{\"id\":\"a\",\"major\":\"eng\",\"hobby\":\"hiking\"},\"_multi\":[ { \"TAction\":{\"a1\":\"f1\"} },{\"TAction\":{\"a2\":\"f2\"}}]}";
+
+            if (args.Length != 1) 
+            {
+                WriteErrorAndExit("Missing path to client configuration json");
+            }
+
+            LiveModel liveModel = CreateLiveModelOrExit(args[0]);
+
+            ApiStatus apiStatus = new ApiStatus();
 
             RankingResponse rankingResponse = new RankingResponse();
             if (!liveModel.TryChooseRank(eventId, contextJson, rankingResponse, apiStatus))
@@ -71,6 +90,55 @@ namespace Rl.Net.Cli {
             if (!liveModel.TryReportOutcome(eventId, outcome, apiStatus))
             {
                 WriteStatusAndExit(apiStatus);
+            }
+        }
+
+        public static void RunSimulator(string [] args)
+        {
+            if (args.Length != 1)
+            {
+                // TODO: Better usage
+                WriteErrorAndExit("Missing path to client configuration json");
+            }
+
+            LiveModel liveModel = CreateLiveModelOrExit(args[0]);
+
+            RLSimulator rlSim = new RLSimulator(liveModel);
+            rlSim.OnError += (sender, apiStatus) => WriteStatusAndExit(apiStatus);
+            rlSim.Run();
+        }
+
+        public static void RunReplay(string [] args)
+        {
+            if (args.Length != 2)
+            {
+                // TODO: Better usage
+                WriteErrorAndExit("Missing path to client configuration json and dsjson log");
+            }
+
+            LiveModel liveModel = CreateLiveModelOrExit(args[0]);
+            RLDriver rlDriver = new RLDriver(liveModel);
+
+            using (TextReader textReader = File.OpenText(args[1]))
+            {
+                IEnumerable<string> dsJsonLines = textReader.LazyReadLines();
+                ReplayStepProvider stepProvider = new ReplayStepProvider(dsJsonLines);
+
+                rlDriver.Run(stepProvider);
+            }
+        }
+
+        public static IEnumerable<string> LazyReadLines(this TextReader textReader)
+        {
+            string line;
+            while ((line = textReader.ReadLine()) != null)
+            {
+                if (string.Empty == line.Trim())
+                {
+                    continue;
+                }
+
+                yield return line;
             }
         }
     }

@@ -79,7 +79,7 @@ int main() {
 
   // Define a create function to be used in the factory.
   auto const create_ostream_sender_fn =
-    [&](r::i_sender** retval, const u::configuration&, r::i_trace* trace, r::api_status*) {
+    [&](r::i_sender** retval, const u::configuration&, r::error_callback_fn* error_callback, r::i_trace* trace, r::api_status*) {
     *retval = new ostream_sender(std::cout, cout_mutex);
     return err::success;
   };
