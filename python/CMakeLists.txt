@@ -2,10 +2,17 @@ if(NOT DEFINED PY_VERSION)
   set(PY_VERSION 2.7)
 endif()
 string(REPLACE . "" PY_VERSION_STRIPPED ${PY_VERSION})
+string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
+
+if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
+  set(BOOST_PY_VERSION_SUFFIX "")
+elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
+  set(BOOST_PY_VERSION_SUFFIX "3")
+endif()
 
 message("Building Python module for Python version ${PY_VERSION}")
 find_package(PythonLibs ${PY_VERSION} REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system python${PY_VERSION_STRIPPED})
+find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
 
 # Use position independent code for all targets in this directory
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -19,6 +26,6 @@ endif()
 # create the lib
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
-target_link_libraries(pylibvw PUBLIC Boost::system Boost::python${PY_VERSION_STRIPPED} vw allreduce)
+target_link_libraries(pylibvw PUBLIC Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
 target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
