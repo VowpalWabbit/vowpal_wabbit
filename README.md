@@ -29,24 +29,27 @@ manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 
 ## Getting the code
 
-You can download the latest version from [here](https://github.com/JohnLangford/vowpal_wabbit/wiki/Download).
+You can download the latest version from [here](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Download).
 The very latest version is always available via 'github' by invoking one of the following:
 
 ```
 ## For the traditional ssh-based Git interaction:
-$ git clone git://github.com/JohnLangford/vowpal_wabbit.git
+$ git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 
 ## You can also try the following SSH URL:
-$ git clone git@github.com:JohnLangford/vowpal_wabbit.git
+$ git clone git@github.com:VowpalWabbit/vowpal_wabbit.git
 
 ## For HTTP-based Git interaction
-$ git clone https://github.com/JohnLangford/vowpal_wabbit.git
+$ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 ```
 
 ## Compiling
 
 You should be able to build the *vowpal wabbit* on most systems with:
 ```
+$ mkdir build
+$ cd build
+$ cmake ..
 $ make
 $ make test    # (optional)
 ```
@@ -70,7 +73,7 @@ keeping a copy of the `Makefile`s may be a good idea before running `autogen.sh`
 git checkout Makefile */Makefile
 ```
 
-Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
+Be sure to read the wiki: https://github.com/VowpalWabbit/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.
 
 The 'cluster' directory has it's own documentation for cluster
@@ -104,7 +107,7 @@ apt-get install libboost-dev zlib1g-dev
 apt-get install libboost-python-dev
 
 # -- Get the vw source:
-git clone git://github.com/JohnLangford/vowpal_wabbit.git
+git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 
 # -- Build:
 cd vowpal_wabbit
@@ -209,7 +212,7 @@ When using Anaconda as the source for Python the default Boost libraries used in
 # create anaconda environment with boost
 conda create --name vw boost
 source activate vw
-git clone https://github.com/JohnLangford/vowpal_wabbit.git
+git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 cd vowpal_wabbit
 # edit Makefile
 # change BOOST_INCLUDE to use anaconda env dir: /anaconda/envs/vw/include
