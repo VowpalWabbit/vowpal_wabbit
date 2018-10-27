@@ -3,6 +3,19 @@ set -e
 
 export PATH="$HOME/miniconda/bin:$PATH"
 
+sudo apt remove cmake
+sudo apt purge --auto-remove cmake
+
+# Upgrade CMake
+version=3.5
+build=2
+mkdir ~/temp
+cd ~/temp
+wget https://cmake.org/files/v$version/cmake-$version.$build-Linux-x86_64.sh
+sudo mkdir /opt/cmake
+sudo sh cmake-$version.$build-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
+sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DWARNINGS=OFF
