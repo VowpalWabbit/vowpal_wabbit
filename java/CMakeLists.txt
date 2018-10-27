@@ -33,6 +33,8 @@ if(JNI_FOUND)
   target_link_libraries(vw_jni PUBLIC vw)
   target_include_directories(vw_jni PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${JNI_INCLUDE_DIRS})
 
+  # Ensure target directory exists
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/)
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/
   )
