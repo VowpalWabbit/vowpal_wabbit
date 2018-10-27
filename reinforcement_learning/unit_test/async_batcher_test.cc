@@ -15,7 +15,7 @@ using namespace reinforcement_learning;
 //this class simply implement a 'send' method, in order to be used as a template in the async_batcher
 class sender : public i_sender {
 public:
-  std::vector<unsigned char> items;
+  std::vector<unsigned char>& items;
   sender(std::vector<unsigned char>& _items) : items(_items) {}
 
   virtual int init(api_status* s) override {
@@ -23,9 +23,7 @@ public:
   }
 
   virtual int v_send(std::vector<unsigned char> &&data, api_status* status) override {
-    for (auto ch : data) {
-      items.push_back(ch);
-    }
+    items.insert(items.end(), data.begin(), data.end());
     return error_code::success;
   };
 };
@@ -45,7 +43,7 @@ public:
   bool try_drop(float drop_prob, int _drop_pass) override {
     return false;
   }
-  
+
   std::string get_event_id() {
     return _event_id;
   }
@@ -55,19 +53,19 @@ public:
 
 class test_droppable_event : public event {
 public:
-	test_droppable_event() {}
-	test_droppable_event(const std::string& id) : event(id.c_str()) {}
+  test_droppable_event() {}
+  test_droppable_event(const std::string& id) : event(id.c_str()) {}
 
-	test_droppable_event(test_droppable_event&& other) : event(std::move(other)) {}
-	test_droppable_event& operator=(test_droppable_event&& other)
-	{
-		if (&other != this) event::operator=(std::move(other));
-		return *this;
-	}
+  test_droppable_event(test_droppable_event&& other) : event(std::move(other)) {}
+  test_droppable_event& operator=(test_droppable_event&& other)
+  {
+    if (&other != this) event::operator=(std::move(other));
+    return *this;
+  }
 
-	bool try_drop(float drop_prob, int _drop_pass) override {
-		return true;
-	}
+  bool try_drop(float drop_prob, int _drop_pass) override {
+    return true;
+  }
 
   void serialize(utility::data_buffer& buffer) {}
 };
@@ -87,19 +85,21 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   size_t timeout_ms = 100;//set a short timeout
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog(nullptr);
-  async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
+  async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn, 262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
   //add 2 items in the current batch
-  batcher.append(test_undroppable_event("foo"));
-  batcher.append(test_undroppable_event("bar"));
+  std::string foo("foo");
+  std::string bar("bar");
+  batcher.append(test_undroppable_event(foo));
+  batcher.append(test_undroppable_event(bar));
 
   //wait until the timeout triggers
   std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
 
-  //check the batch was sent
-  std::string expected = "foobar";
-  BOOST_REQUIRE_EQUAL(items.size(), 6);
+  //check the buffer was sent
+  BOOST_REQUIRE_EQUAL(items.size(), foo.length() + bar.length());
+  std::string expected = foo + bar;
   std::string result;
   for (auto ch : items) {
     result.push_back((char)ch);
@@ -116,17 +116,20 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
 
-  batcher->append(test_undroppable_event("foo"));
-  batcher->append(test_undroppable_event("bar"));
+  std::string foo("foo");
+  std::string bar("bar");
+  batcher->append(test_undroppable_event(foo));
+  batcher->append(test_undroppable_event(bar));
 
   //batch was not sent yet
   BOOST_CHECK_EQUAL(items.size(), 0);
 
   //batch flush is triggered on delete
   delete batcher;
-  //check the batch was sent
-  std::string expected = "foobar";
-  BOOST_REQUIRE_EQUAL(items.size(), 6);
+  //check the buffer was sent
+  BOOST_REQUIRE_EQUAL(items.size(), foo.length() + bar.length());
+
+  std::string expected = foo + bar;
   std::string result;
   for (auto ch : items) {
     result.push_back((char)ch);
@@ -144,27 +147,26 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
   queue_mode_enum queue_mode = BLOCK;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog(nullptr);
-  async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size, queue_mode);
+  async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn, 262143, timeout_ms, queue_max_size, queue_mode);
   batcher->init(nullptr);
 
   int n = 10;
   for (int i = 0; i < n; ++i) {
-	  batcher->append(test_droppable_event(std::to_string(i)));
+    batcher->append(test_droppable_event(std::to_string(i)));
   }
 
   //triggers a final flush
   delete batcher;
 
   //all batches were sent. Check that no event was dropped
-  std::vector<unsigned char> expected_output;
-  for (int i = 0; i < n; i++) {
-    expected_output.push_back(i);
-  }
-  BOOST_REQUIRE(items.size()>0);
+  std::string expected = "0123456789";
+  BOOST_REQUIRE(items.size() > 0);
 
+  std::string actual;
   for (int i = 0; i < items.size(); i++) {
-    BOOST_CHECK_EQUAL(expected_output[i] + '0', items[i]);
+    actual.push_back(items[i]);
   }
+  BOOST_CHECK_EQUAL(expected, actual);
 }
 
 BOOST_AUTO_TEST_CASE(convert_to_queue_mode_enum) {
