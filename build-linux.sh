@@ -44,4 +44,6 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DGCOV=ON -DWARNINGS=OFF
 make vw-bin -j ${NUM_PROCESSORS}
-ctest -R RunTests_pass_2
+cd ..
+cd test
+export PATH=../build/vowpalwabbit/:$PATH && ./RunTests -d -fe -E 0.001
