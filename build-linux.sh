@@ -3,8 +3,7 @@ set -e
 
 export PATH="$HOME/miniconda/bin:$PATH"
 
-sudo apt remove cmake
-sudo apt purge --auto-remove cmake
+sudo apt remove --yes --force-yes cmake
 
 # Upgrade CMake
 version=3.5
