@@ -45,7 +45,7 @@ endif()
 
 # gcov configuration
 if(GCOV)
-  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg -lgcov)
+  set(linux_flags ${linux_flags} -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -pg)
 endif()
 
 set(windows_release_config /GL /O2 /Gy /Oi /Ob2 /Ot /Oy /GT /MD)

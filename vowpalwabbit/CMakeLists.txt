@@ -66,6 +66,11 @@ source_group(explore FILES ${explore_all_headers})
 add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
 target_link_libraries(vw PUBLIC rapidjson Boost::program_options Threads::Threads ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
+
+if(GCOV)
+  target_link_libraries(vw PUBLIC gcov)
+endif()
+
 target_include_directories(vw PUBLIC ${explore_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 target_compile_definitions(vw PUBLIC _FILE_OFFSET_BITS=64 $<$<CONFIG:RELEASE>:NDEBUG>)
