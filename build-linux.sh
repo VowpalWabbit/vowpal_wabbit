@@ -19,7 +19,7 @@ sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 cd /vw
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DWARNINGS=OFF
+cmake .. -DCMAKE_BUILD_TYPE=Release -DWARNINGS=Off -DDO_NOT_BUILD_VW_C_WRAPPER=On
 NUM_PROCESSORS=$(cat nprocs.txt)
 make all -j ${NUM_PROCESSORS}
 make test_with_output

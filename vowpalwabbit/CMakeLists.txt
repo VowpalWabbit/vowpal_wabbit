@@ -126,9 +126,17 @@ add_executable(vw-bin main.cc)
 target_link_libraries(vw-bin PRIVATE vw)
 set_target_properties(vw-bin PROPERTIES OUTPUT_NAME vw)
 
-add_library(vw_c_wrapper vwdll.cpp)
-target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
-target_link_libraries(vw_c_wrapper PUBLIC vw)
+# This is used by Travis to not build vw_c_wrapper, this required <codecvt> which became available in GCC 5.1
+if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
+  add_library(vw_c_wrapper vwdll.cpp)
+  target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
+  target_link_libraries(vw_c_wrapper PUBLIC vw)
+
+  install(TARGETS vw_c_wrapper
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+  )
+endif()
 
 # Install executables
 install(TARGETS vw-bin
@@ -140,7 +148,7 @@ install(FILES ${vw_install_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINA
 install(FILES ${explore_all_headers} DESTINATION include/vowpalwabbit/vowpalwabbit/explore)
 
 # Install libs
-install(TARGETS allreduce vw vw_c_wrapper
+install(TARGETS allreduce vw
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
