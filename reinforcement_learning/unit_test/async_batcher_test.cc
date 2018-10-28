@@ -110,31 +110,36 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
 //test that the batcher split batches as expected
 BOOST_AUTO_TEST_CASE(flush_batches)
 {
-    std::vector<std::vector<unsigned char>> items;
-    auto s = new sender(items);
-    size_t send_high_water_mark = 10;//bytes	
-    error_callback_fn error_fn(expect_no_error, nullptr);
-    utility::watchdog watchdog(nullptr);
-    async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
-    batcher->init(nullptr);
-    //add 2 items in the current batch	
-    std::string foo("foo");
-    std::string bar("bar-yyy");
-    batcher->append(test_undroppable_event(foo));   //3 bytes	
-    batcher->append(test_undroppable_event(bar));   //7 bytes	
-                                                       //'send_high_water_mark' will be triggered by previous 2 items.	
-                                                       //next item will be added in a new batch	
+  std::vector<std::vector<unsigned char>> items;
+  auto s = new sender(items);
+  size_t send_high_water_mark = 10;//bytes	
+  error_callback_fn error_fn(expect_no_error, nullptr);
+  utility::watchdog watchdog(nullptr);
+  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
+  batcher->init(nullptr);
+  
+  //add 2 items in the current batch	
+  std::string foo("foo");
+  std::string bar("bar-yyy");
+  batcher->append(test_undroppable_event(foo));   //3 bytes	
+  batcher->append(test_undroppable_event(bar));   //7 bytes	
+  
+  //'send_high_water_mark' will be triggered by previous 2 items.	
+  //next item will be added in a new batch	
+  std::string hello("hello");
+  batcher->append(test_undroppable_event(hello));
 
-    std::string hello("hello");
-    batcher->append(test_undroppable_event(hello));
-    std::string expected_batch_0 = foo + bar;
-    std::string expected_batch_1 = hello;
-    delete batcher;//flush force	
-    BOOST_REQUIRE_EQUAL(items.size(), 2);
-    std::string batch_0(items[0].begin(), items[0].end());
-    std::string batch_1(items[1].begin(), items[1].end());
-    BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
-    BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
+  std::string expected_batch_0 = foo + bar;
+  std::string expected_batch_1 = hello;
+
+  delete batcher;//flush force	
+  
+  BOOST_REQUIRE_EQUAL(items.size(), 2);
+  std::string batch_0(items[0].begin(), items[0].end());
+  std::string batch_1(items[1].begin(), items[1].end());
+  
+  BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
+  BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
 }
 
 //test that the batcher flushes everything before deletion
@@ -159,7 +164,7 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   //check the batch was sent
   BOOST_REQUIRE_EQUAL(items.size(), 1);
 
-  std::string expected = "foobar";
+  std::string expected = foo + bar;
   std::string result(items[0].begin(), items[0].end());
   BOOST_CHECK_EQUAL(result, expected);
 }

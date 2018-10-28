@@ -39,7 +39,6 @@ std::unique_ptr<fakeit::Mock<r::i_sender>> get_mock_sender(std::vector<std::vect
   return mock;
 }
 
-
 std::unique_ptr<fakeit::Mock<m::i_data_transport>> get_mock_data_transport() {
   auto mock = std::unique_ptr<fakeit::Mock<m::i_data_transport>>(
     new fakeit::Mock<m::i_data_transport>());

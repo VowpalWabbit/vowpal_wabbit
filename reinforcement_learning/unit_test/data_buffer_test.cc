@@ -38,16 +38,15 @@ BOOST_AUTO_TEST_CASE(multiple_outputs_to_data_buffer) {
 BOOST_AUTO_TEST_CASE(remove_last_from_nonempty_data_buffer) {
     data_buffer buffer;
     
-    buffer << "test1";
+    std::string test("test");
+    buffer << test << "1";
     buffer.remove_last();
 
-    BOOST_CHECK_EQUAL(buffer.str(), "test");
+    BOOST_CHECK_EQUAL(buffer.str(), test);
 }
 
 BOOST_AUTO_TEST_CASE(empty_data_buffer_reset) {
   data_buffer buffer;
-
-  buffer << "test";
 
   buffer.reset();
 
@@ -57,8 +56,8 @@ BOOST_AUTO_TEST_CASE(empty_data_buffer_reset) {
 BOOST_AUTO_TEST_CASE(nonempty_data_buffer_reset) {
   data_buffer buffer;
 
-  unsigned char data = '\11';
-  buffer.append(&data, 1);
+  buffer << "test";
+
   buffer.reset();
 
   BOOST_CHECK_EQUAL(buffer.size(), 0);
