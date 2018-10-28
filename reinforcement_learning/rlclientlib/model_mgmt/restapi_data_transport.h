@@ -14,7 +14,7 @@ namespace reinforcement_learning {
     int check(api_status* status);
   private:
     using time_t = std::chrono::time_point<std::chrono::system_clock>;
-    int get_data_info(::utility::datetime& last_modified, ::utility::size64_t& sz, api_status* status);
+    int get_data_info(::utility::datetime& last_modified, ::utility::size64_t& sz, api_status* status); 
     std::string _url;
     web::http::client::http_client _httpcli;
     ::utility::datetime _last_modified;

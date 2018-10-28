@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
 namespace reinforcement_learning {
@@ -18,6 +17,6 @@ namespace reinforcement_learning {
     virtual ~i_sender() = default;
 
   protected:
-    virtual int v_send(std::vector<unsigned char>&& data, api_status* status) { return 0; };
+    virtual int v_send(std::vector<unsigned char>&& data, api_status* status) = 0;
   };
 }

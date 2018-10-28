@@ -11,7 +11,7 @@ namespace reinforcement_learning { namespace utility {
     std::vector<unsigned char> buffer();
     size_t size() const;
     void remove_last();
-    void append(const unsigned char* start, size_t len);
+    void append(const unsigned char* data, size_t len);
     std::string str() const;
     data_buffer& operator<<(const std::string& cs);
     data_buffer& operator<<(const char*);

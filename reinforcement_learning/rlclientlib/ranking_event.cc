@@ -54,19 +54,18 @@ namespace reinforcement_learning {
     : event(event_id, pass_prob)
     , _body(body)
   { }
-
-  ranking_event::ranking_event(u::data_buffer& oss, const char* event_id, const char* context,
-    const ranking_response& response, float pass_prob)
+  
+  ranking_event::ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response)
     : event(event_id, pass_prob)
+    , _context(context)
+    , _model_id(response.get_model_id())
   {
-    _context = std::string(context);
     for (auto const &r : response) {
       _a_vector.push_back(r.action_id);
       _p_vector.push_back(r.probability);
     }
-    _model_id = std::string(response.get_model_id());
   }
-
+  
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
     , _body(std::move(other._body))
@@ -149,14 +148,14 @@ namespace reinforcement_learning {
     , _body(body)
   { }
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob)
+  outcome_event::outcome_event(const char* event_id, float pass_prob, const char* outcome)
     : event(event_id, pass_prob)
+    , _outcome(outcome)
   {
-    _outcome = std::string(outcome);
   }
 
-  outcome_event::outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob)
-    : event(event_id)
+  outcome_event::outcome_event(const char* event_id, float pass_prob, float outcome)
+    : event(event_id, pass_prob)
   {
     _outcome = std::to_string(outcome);
   }

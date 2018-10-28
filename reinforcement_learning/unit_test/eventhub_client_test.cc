@@ -26,13 +26,16 @@ BOOST_AUTO_TEST_CASE(send_bytes)
 
   //create a client
   eventhub_client eh("localhost:8080", "", "", "", 1, nullptr, nullptr, true);
-
+  
   api_status ret;
-  std::vector<unsigned char> messages;
-  messages.push_back('\11');
-  messages.push_back('\12');
-  messages.push_back('\13');
+  
+  std::string message1Str("message 1");
+  std::vector<unsigned char> message1(message1Str.begin(), message1Str.end());
+
+  std::string message2Str("message 2");
+  std::vector<unsigned char> message2(message2Str.begin(), message2Str.end());
 
   //send events
-  BOOST_CHECK_EQUAL(eh.send(std::move(messages), &ret), error_code::success);
+  BOOST_CHECK_EQUAL(eh.send(std::move(message1), &ret), error_code::success);
+  BOOST_CHECK_EQUAL(eh.send(std::move(message2), &ret), error_code::success);
 }

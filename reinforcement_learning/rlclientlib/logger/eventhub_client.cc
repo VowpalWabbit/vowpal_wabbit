@@ -20,7 +20,7 @@ namespace reinforcement_learning {
   eventhub_client::http_request_task::http_request_task(web::http::client::http_client& client,
     const std::string& host,
     const std::string& auth,
-    const std::vector<unsigned char>&& post_data,
+    std::vector<unsigned char>&& post_data,
     error_callback_fn* _error_callback)
     : _post_data(std::move(post_data))
   {
@@ -90,6 +90,7 @@ namespace reinforcement_learning {
   int eventhub_client::pop_task(api_status* status) {
     http_request_task oldest;
     _tasks.pop(&oldest);
+
     try {
       // This will block if the task is not complete yet.
       oldest.join();
@@ -109,7 +110,7 @@ namespace reinforcement_learning {
     return error_code::success;;
   }
 
-  int eventhub_client::v_send(std::vector<unsigned char> &&post_data, api_status* status) {
+  int eventhub_client::v_send(std::vector<unsigned char>&& post_data, api_status* status) {
     if (authorization(status) != error_code::success)
       return status->get_error_code();
     std::string auth_str;

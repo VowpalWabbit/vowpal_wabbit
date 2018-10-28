@@ -3,13 +3,13 @@
 #include "api_status.h"
 #include "moving_queue.h"
 #include "sender.h"
-#include <vector>
 #include "error_callback_fn.h"
 
 #include <cpprest/http_client.h>
 #include <pplx/pplxtasks.h>
 
 #include <queue>
+#include <vector>
 
 namespace reinforcement_learning {
   class i_trace;
@@ -25,13 +25,13 @@ namespace reinforcement_learning {
                     size_t tasks_count, i_trace* trace, error_callback_fn* _error_cb, bool local_test = false);
     ~eventhub_client();
   protected:
-    virtual int v_send(std::vector<unsigned char> &&data, api_status* status) override;
+    virtual int v_send(std::vector<unsigned char>&& data, api_status* status) override;
 
   private:
     class http_request_task {
     public:
       http_request_task();
-      http_request_task(web::http::client::http_client& client, const std::string& host, const std::string& auth, const std::vector<unsigned char> &&data, error_callback_fn* _error_cb);
+      http_request_task(web::http::client::http_client& client, const std::string& host, const std::string& auth, std::vector<unsigned char>&& data, error_callback_fn* _error_cb);
       http_request_task(http_request_task&& other);
       http_request_task& operator=(http_request_task&& other);
 

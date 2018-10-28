@@ -41,8 +41,6 @@ namespace reinforcement_learning {
     ranking_event();
     ranking_event(ranking_event&& other);
     ranking_event& operator=(ranking_event&& other);
-    ranking_event(utility::data_buffer& oss, const char* event_id, const char* context,
-      const ranking_response& resp, float pass_prob = 1);
 
     virtual flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
     virtual void serialize(utility::data_buffer& oss) override;
@@ -53,6 +51,7 @@ namespace reinforcement_learning {
 
   private:
     ranking_event(const char* event_id, float pass_prob, const std::string& body);
+    ranking_event::ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response);
 
     std::string _body;
     std::string _context;
@@ -65,9 +64,6 @@ namespace reinforcement_learning {
   class outcome_event : public event {
   public:
     outcome_event();
-
-    outcome_event(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
-    outcome_event(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
 
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
@@ -83,6 +79,8 @@ namespace reinforcement_learning {
 
   private:
     outcome_event(const char* event_id, float pass_prob, const std::string& body);
+    outcome_event(const char* event_id, float pass_prob, const char* outcome);
+    outcome_event(const char* event_id, float pass_prob, float outcome);
 
   private:
     std::string _body;

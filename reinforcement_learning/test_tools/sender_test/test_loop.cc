@@ -85,10 +85,7 @@ void test_loop::run() {
   for (size_t i = 0; i < _message_count; ++i) {
     if (step > 0 && i % step == 0) std::cout << "\r" << (i / step) << "%";
     auto message = get_message(i);
-    std::vector<unsigned char> buffer;
-    for (auto ch : message) {
-      buffer.push_back(ch);
-    }
+    std::vector<unsigned char> buffer(message.begin(), message.end());
     _sender->send(std::move(buffer));
   }
   std::cout << std::endl << "Done" << std::endl << std::endl;
