@@ -166,6 +166,9 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
 
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   batcher->append(test_undroppable_event("foo"));
   batcher->append(test_undroppable_event("bar"));
 
@@ -193,6 +196,9 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
   utility::watchdog watchdog(nullptr);
   async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size, queue_mode);
   batcher->init(nullptr);
+
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   int n = 10;
   for (int i = 0; i < n; ++i) {
