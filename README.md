@@ -26,6 +26,7 @@ manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 - GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
+- Python module `six` needs to be installed in order to run the tests.
 
 ### Vcpkg
 [Vcpkg](https://github.com/Microsoft/vcpkg) can also be used to install the dependencies. When running cmake the toolchain needs to be supplied, this is decribed in the [compiling section](#compiling).
@@ -292,3 +293,12 @@ cd build
 cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
 make -j
 ```
+
+## Gotchas
+### When using WSL (Windows Subsytem for Linux)
+- If the repo is cloned in Windows and used in the Linux environment, shell scripts will have CRLF line endings and will need to be converted to work.
+- A strange bug was seen that caused the `vw_jni` target to fail to build. A full fix isn't known but the following were factors:
+  - CMake version 3.5.1
+  - WSL Ubuntu 16.04
+  - Java was installed in Windows and added to the Windows path when compiling `vw_jni`
+  - Setting JAVA_HOME caused CMake to display the right dependency at configure time but the Windows files were actually used
