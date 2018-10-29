@@ -4,24 +4,20 @@
 import distutils.dir_util
 import os
 import platform
-import re
-import subprocess
 import sys
-import sysconfig
 from codecs import open
 from ctypes.util import find_library
 from distutils.command.clean import clean as _clean
-from os import environ, makedirs, path, remove, walk
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.test import test as _test
 from setuptools.command.install_lib import install_lib as _install_lib
-from shutil import copy, copytree, rmtree
+from shutil import copy, rmtree
 
 system = platform.system()
 version_info = sys.version_info
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 
 class CMakeExtension(Extension):
     def __init__(self, name):
@@ -40,8 +36,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         distutils.dir_util.mkpath(self.build_temp)
 
         # Ensure lib output directory is made
-        lib_output_dir = path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)))
-        lib_file_name = self.get_ext_fullname(ext.name)
+        lib_output_dir = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)))
         distutils.dir_util.mkpath(lib_output_dir)
 
         # example of cmake args
@@ -61,7 +56,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "pylibvw"
         ]
 
-        cmake_directory = path.join(here, '..')
+        cmake_directory = os.path.join(here, '..')
         os.chdir(str(self.build_temp))
         self.spawn(['cmake', str(cmake_directory)] + cmake_args)
         if not self.dry_run:
@@ -72,9 +67,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
 class Clean(_clean):
     """ Clean up after building python package directories """
     def run(self):
-        rmtree(path.join(here, 'dist'), ignore_errors=True)
-        rmtree(path.join(here, 'build'), ignore_errors=True)
-        rmtree(path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
+        rmtree(os.path.join(here, 'dist'), ignore_errors=True)
+        rmtree(os.path.join(here, 'build'), ignore_errors=True)
+        rmtree(os.path.join(here, 'vowpalwabbit.egg-info'), ignore_errors=True)
         _clean.run(self)
 
 
@@ -89,7 +84,7 @@ class InstallLib(_install_lib):
     def build(self):
         _install_lib.build(self)
         if system == 'Windows':
-            copy(path.join(here, 'bin', 'zlib.dll'), path.join(self.build_dir, 'zlib.dll'))
+            copy(os.path.join(here, 'bin', 'zlib.dll'), os.path.join(self.build_dir, 'zlib.dll'))
 
 
 class Tox(_test):
@@ -121,12 +116,11 @@ class Tox(_test):
 
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Get the current version for the python package from the configure.ac file
-version = '0.0.0'
-config_path = path.join(here, '..', 'version.txt')
+config_path = os.path.join(here, '..', 'version.txt')
 with open(config_path, encoding='utf-8') as f:
     version = f.readline().strip()
 
