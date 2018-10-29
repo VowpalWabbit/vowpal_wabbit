@@ -27,6 +27,7 @@ option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
+option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
