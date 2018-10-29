@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
-  // Let periodic_background_proc inside async_batcher to start waiting
+  // Allow periodic_background_proc inside async_batcher to start waiting
   // on a timer before sending any events to it.   Else we risk not 
   // triggering the batch mechanism and might get triggered by initial 
   // pass in do..while loop
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark,100000);
   batcher->init(nullptr);
 
-  // Let periodic_background_proc inside async_batcher to start waiting
+  // Allow periodic_background_proc inside async_batcher to start waiting
   // on a timer before sending any events to it.   Else we risk not 
   // triggering the batch mechanism and might get triggered by initial 
   // pass in do..while loop
