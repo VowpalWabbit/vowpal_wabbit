@@ -31,24 +31,25 @@ manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 [Vcpkg](https://github.com/Microsoft/vcpkg) can also be used to install the dependencies. When running cmake the toolchain needs to be supplied, this is decribed in the [compiling section](#compiling).
 ```
 # Linux
+# vcpkg cannot currently be used on Linux because boost-python fails to build on linux. [See this issue](https://github.com/Microsoft/vcpkg/issues/4603)
 vcpkg install rapidjson:x64-linux
-vcpkg install cpprestsdk:x64-linux
 vcpkg install zlib:x64-linux
 vcpkg install boost-system:x64-linux
 vcpkg install boost-program-options:x64-linux
 vcpkg install boost-test:x64-linux
 vcpkg install boost-align:x64-linux
 vcpkg install boost-foreach:x64-linux
+vcpkg install boost-python:x64-linux
 
 # Windows
 vcpkg install rapidjson:x64-windows
-vcpkg install cpprestsdk:x64-windows
 vcpkg install zlib:x64-windows
 vcpkg install boost-system:x64-windows
 vcpkg install boost-program-options:x64-windows
 vcpkg install boost-test:x64-windows
 vcpkg install boost-align:x64-windows
 vcpkg install boost-foreach:x64-windows
+vcpkg install boost-python:x64-windows
 ```
 
 ## Getting the code
@@ -269,9 +270,8 @@ vcpkg install boost-program-options:x64-windows
 vcpkg install boost-test:x64-windows
 vcpkg install boost-align:x64-windows
 vcpkg install boost-foreach:x64-windows
+vcpkg install boost-python:x64-windows
 ```
-
-Note: vcpkg can be used for dependencies on Linux as well by specifying the toolchain file as is done on Windows.
 
 ### Build
 #### Windows
