@@ -27,6 +27,30 @@ manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
 
+### Vcpkg
+[Vcpkg](https://github.com/Microsoft/vcpkg) can also be used to install the dependencies. When running cmake the toolchain needs to be supplied, this is decribed in the [compiling section](#compiling).
+```
+# Linux
+vcpkg install rapidjson:x64-linux
+vcpkg install cpprestsdk:x64-linux
+vcpkg install zlib:x64-linux
+vcpkg install boost-system:x64-linux
+vcpkg install boost-program-options:x64-linux
+vcpkg install boost-test:x64-linux
+vcpkg install boost-align:x64-linux
+vcpkg install boost-foreach:x64-linux
+
+# Windows
+vcpkg install rapidjson:x64-windows
+vcpkg install cpprestsdk:x64-windows
+vcpkg install zlib:x64-windows
+vcpkg install boost-system:x64-windows
+vcpkg install boost-program-options:x64-windows
+vcpkg install boost-test:x64-windows
+vcpkg install boost-align:x64-windows
+vcpkg install boost-foreach:x64-windows
+```
+
 ## Getting the code
 
 You can download the latest version from [here](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Download).
@@ -47,30 +71,31 @@ $ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 
 You should be able to build the *vowpal wabbit* on most systems with:
 ```
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-$ make test    # (optional)
+mkdir build
+cd build
+cmake ..
+make -j
+make test    # (optional)
 ```
 
-If that fails, try:
+If using vcpkg for dependencies the toolchain file needs to be supplied to `cmake`:
 ```
-$ ./autogen.sh
-$ make
-$ make test    # (optional)
-$ make install
+cmake .. -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake
 ```
 
-Note that `./autogen.sh` requires *automake* (see the prerequisites, above.)
-
-`./autogen.sh`'s command line arguments are passed directly to `configure` as
-if they were `configure` arguments and flags.
-
-Note that `./autogen.sh` will overwrite the supplied `Makefile`, including the `Makefile`s in sub-directories, so
-keeping a copy of the `Makefile`s may be a good idea before running `autogen.sh`. If your original `Makefile`s were overwritten by `autogen.sh` calling `automake`, you may always get the originals back from git using:
+The CMake definition supports the following options that can be set when invoking `cmake`:
 ```
-git checkout Makefile */Makefile
+CMAKE_BUILD_TYPE - Controls base flags for building. Release includes optimization, Debug is unoptimized. ([Debug|Release], default: Debug)
+PROFILE - Turn on flags required for profiling ([ON|OFF], default: OFF)
+VALGRIND_PROFILE - Turn on flags required for profiling with valgrind in gcc ([ON|OFF], default: OFF)
+GCOV - Turn on flags required for code coverage in gcc ([ON|OFF], default: OFF)
+WARNINGS - Turn on warning flags. ([ON|OFF], default: ON)
+STATIC_LINK_VW - Link VW executable statically ([ON|OFF], default: OFF)
+```
+
+Options can be specified at configuration time on the command line:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DSTATIC_LINK_VW=ON
 ```
 
 Be sure to read the wiki: https://github.com/VowpalWabbit/vowpal_wabbit/wiki
@@ -82,16 +107,10 @@ example flags.
 
 ## C++ Optimization
 
-The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider creating and running `configure` with the `--enable-debug` option, e.g.:
+The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider running `cmake` with the `Debug` build type:
 
 ```
-$ ./configure --enable-debug
-```
-
-or passing your own compiler flags via the `OPTIM_FLAGS` make variable:
-
-```
-$ make OPTIM_FLAGS="-O0 -g"
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 ```
 
 ## Ubuntu/Debian specific info
@@ -111,7 +130,10 @@ git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 
 # -- Build:
 cd vowpal_wabbit
-make
+mkdir build
+cd build
+cmake .. -DSTATIC_LINK_VW=ON
+make -j
 make test       # (optional)
 make install
 ```
@@ -119,13 +141,15 @@ make install
 ### Ubuntu advanced build options (clang and static)
 
 If you prefer building with `clang` instead of `gcc` (much faster build
-and slighly faster executable), install `clang` and change the `make`
-step slightly:
+and slighly faster executable), install `clang` and specify the compiler to be clang:
 
 ```
 apt-get install clang
 
-make CXX=clang++
+export CC=clang
+export CXX=clang++
+
+cmake ..
 ```
 
 A statically linked `vw` executable that is not sensitive to boost
@@ -133,7 +157,10 @@ version upgrades and can be safely copied between different Linux
 versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 
 ```
-make CXX='clang++ -static' clean vw test     # ignore warnings
+mkdir build
+cd build
+cmake .. -DSTATIC_LINK_VW=ON
+make vw-bin -j
 ```
 
 ## Debian Python 3 Binding
@@ -156,7 +183,6 @@ Install Vowpal Wabbit via pip:
 ```
 pip3 install vowpalwabbit
 ```
-
 
 ## Mac OS X-specific info
 
@@ -231,19 +257,21 @@ and then point your browser to `doc/html/index.html`.
 Note that documentation generates class diagrams using [Graphviz](https://www.graphviz.org). For best results, ensure that it is installed beforehand.
 
 
-## Experimental: CMake build system
+## Experimental: CMake build system on Windows
 Note: The CSharp projects are not yet converted to CMake for Windows. So the CMake generated solution is only for C++ projects for the time being. For this reason the existing solution can not yet be deprecated.
 ### Dependencies
 ```
-vcpkg install rapidjson:x64-linux
-vcpkg install cpprestsdk:x64-linux
-vcpkg install zlib:x64-linux
-vcpkg install boost-system:x64-linux
-vcpkg install boost-program-options:x64-linux
-vcpkg install boost-test:x64-linux
+vcpkg install rapidjson:x64-windows
+vcpkg install cpprestsdk:x64-windows
+vcpkg install zlib:x64-windows
+vcpkg install boost-system:x64-windows
+vcpkg install boost-program-options:x64-windows
+vcpkg install boost-test:x64-windows
 vcpkg install boost-align:x64-windows
 vcpkg install boost-foreach:x64-windows
 ```
+
+Note: vcpkg can be used for dependencies on Linux as well by specifying the toolchain file as is done on Windows.
 
 ### Build
 #### Windows
@@ -257,11 +285,10 @@ vcpkg install boost-foreach:x64-windows
 4. Generate
 5. Open Project
 
-#### Linux
-Note: not yet tested
+Or command line:
 ```
 mkdir build
 cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_BUILD_TYPE=DEBUG
+cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
 make -j
 ```
