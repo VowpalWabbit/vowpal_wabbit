@@ -89,42 +89,14 @@ namespace exploration {
   int sample_after_normalizing(const char* seed, It pdf_first, It pdf_last, uint32_t& chosen_index);
 
   /**
-   * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
-   * Second the first index according to descending scores is swapped with the sampled index.
-   * If the pdf is not normalized it will be updated in-place.
-   * 
-   * @tparam PdfIt Iterator type of the pdf. Must be an Iterator.
-   * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
-   * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
-   * @param pdf_first Iterator pointing to the beginning of the pdf.
-   * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param scores_first Iterator pointing to the beginning of the scores.
-   * @param scores_last Iterator pointing to the end of the scores.
-   * @param ranking_first Iterator pointing to the pre-allocated beginning of the output ranking.
-   * @param ranking_last Iterator pointing to the pre-allocated end of the output ranking.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
-   */
-  template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(const char* seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_first, OutputIt ranking_last);
-
-  /**
-   * @brief Produce a ranking based on the provided scores and pdf. First an index is sampled according to the pdf.
-   * Second the first index according to descending scores is swapped with the sampled index.
-   * 
-   * @tparam PdfIt Iterator type of the pdf. Must be an Iterator.
-   * @tparam InputScoreIt Iterator type of the scores. Must be an InputIterator.
-   * @tparam OutputIt Iterator type of the returned ranking. Must be a RandomAccessIterator.
-   * @param seed The seed for the pseudo-random generator.
-   * @param pdf_first Iterator pointing to the beginning of the pdf.
-   * @param pdf_last Iterator pointing to the end of the pdf.
-   * @param scores_first Iterator pointing to the beginning of the scores.
-   * @param scores_last Iterator pointing to the end of the scores.
-   * @param ranking_first Iterator pointing to the pre-allocated beginning of the output ranking.
-   * @param ranking_last Iterator pointing to the pre-allocated end of the output ranking.
-   * @param pdf_updated set to true if the pdf required normalization and was updated in-place.
-   * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*. 
-   */
-  template<typename PdfIt, typename InputScoreIt, typename OutputIt>
-  int sample_after_normalizing(uint64_t seed, PdfIt pdf_first, PdfIt pdf_last, InputScoreIt scores_first, InputScoreIt scores_last, OutputIt ranking_first, OutputIt ranking_last);
+  * @brief Swap the first value with the chosen index.  
+  *
+  * @tparam ActionIt Iterator type of the action. Must be an forward_iterator.
+  * @param action_first Iterator pointing to the beginning of the pdf.
+  * @param action_last Iterator pointing to the end of the pdf.
+  * @param chosen_index The index value that should be swapped with the first element
+  * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
+  */
+  template<typename ActionIt>
+  int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_index);
 }

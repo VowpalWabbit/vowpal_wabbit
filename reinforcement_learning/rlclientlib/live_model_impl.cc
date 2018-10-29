@@ -184,13 +184,21 @@ namespace reinforcement_learning {
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    response.push_back(chosen_action_id, pdf[chosen_action_id]);
-    // Setup response with pdf from prediction and chosen action
-    for (size_t idx = 1; idx < pdf.size(); ++idx) {
-      const auto cur_idx = chosen_action_id != idx ? idx : 0;
-      response.push_back(cur_idx, pdf[cur_idx]);
+
+    // Setup response with pdf from prediction and action indexes
+    for (size_t idx = 0; idx < pdf.size(); ++idx) {
+      response.push_back(idx, pdf[idx]);
     }
+
+    // Swap values in first position with values in chosen index
+    scode = e::swap_chosen(begin(response), end(response), chosen_action_id);
+
+    if ( S_EXPLORATION_OK != scode ) {
+      RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration (Swap) error code: " << scode;
+    }
+
     response.set_chosen_action_id(chosen_action_id);
+
     return error_code::success;
   }
 

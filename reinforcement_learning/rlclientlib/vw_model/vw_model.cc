@@ -39,21 +39,26 @@ namespace reinforcement_learning { namespace model_management {
       vw->rank(features, actions, scores);
 
       // Pick using the pdf. NOTE: sample_after_normalizing() can change the pdf
-      uint32_t action;
-      auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(scores), std::end(scores), action);
+      uint32_t chosen_action_idx;
+      auto scode = e::sample_after_normalizing(rnd_seed, std::begin(scores), std::end(scores), chosen_action_idx);
 
       if ( S_EXPLORATION_OK != scode ) {
         RETURN_ERROR_LS(_trace_logger, status, exploration_error) << scode;
       }
 
-      response.push_back(actions[action], scores[action]);
-
-      // Setup response with pdf from prediction and chosen action
-      for (size_t idx = 1; idx < actions.size(); ++idx) {
-        const auto cur_idx = action != idx ? idx : 0;
-        response.push_back(actions[cur_idx], scores[cur_idx]);
+      // Setup response with pdf from prediction and action indexes
+      for ( size_t idx = 0; idx < scores.size(); ++idx ) {
+        response.push_back(idx, scores[idx]);
       }
-      response.set_chosen_action_id(action);
+
+      // Swap values in first position with values in chosen index
+      scode = e::swap_chosen(std::begin(response), std::end(response), chosen_action_idx);
+
+      if ( S_EXPLORATION_OK != scode ) {
+        RETURN_ERROR_LS(_trace_logger, status, exploration_error) << "Exploration error code: " << scode;
+      }
+
+      response.set_chosen_action_id(actions[chosen_action_idx]);
       response.set_model_id(vw->id());
 
       return error_code::success;

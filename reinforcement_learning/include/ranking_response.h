@@ -7,6 +7,8 @@
  */
 #pragma once
 #include <cstddef>
+#include <iterator>
+#include <vector>
 
 namespace reinforcement_learning {
   class api_status;
@@ -16,6 +18,7 @@ namespace reinforcement_learning {
    * @brief Holds (action, probability) pairs.
    */
   struct action_prob {
+    action_prob(size_t action_id, float probability);
     //! action id
     size_t action_id;
     //! probability associated with the action id
@@ -29,8 +32,8 @@ namespace reinforcement_learning {
    */
   class ranking_response {
   public:
-    ranking_response();
-    ~ranking_response();
+    ranking_response() = default;
+    ~ranking_response() = default;
     /**
      * @brief Construct a new ranking response object.
      *
@@ -129,31 +132,77 @@ namespace reinforcement_learning {
      */
     ranking_response& operator =(const ranking_response&) = delete;
   private:
-    ranking_response_impl* _pimpl; //!The actual implementation details are forwarded to this object (PIMPL pattern)
+    std::string _event_id;
+    size_t _chosen_action_id;
+    std::string _model_id;
+    using coll_type = std::vector<action_prob>;
+    coll_type _ranking;
 
   public:
     /**
      * @brief Forward iterator class used to access the (action, probability) collection
      */
-    class ranking_iterator {
+    class iterator : public std::iterator<
+      std::forward_iterator_tag,
+      action_prob> {
     public:
       //! Construct an (action, probability) collection iterator using the ranking_response implementation
-      ranking_iterator(ranking_response_impl*);
+      iterator(ranking_response*);
       //! Construct an (action, probability) collection iterator using the ranking_response implementation and size
-      ranking_iterator(ranking_response_impl*, size_t);
+      iterator(ranking_response*, size_t);
       //! Move the iterator to the next element
-      ranking_iterator& operator++();
+      iterator& operator++();
       //! Inequality comparison for the iterator
-      bool operator!=(const ranking_iterator& other) const;
+      bool operator!=(const iterator& other) const;
       //! Dereferencing operator to get the (action, probability) pair
-      action_prob operator*() const;
+      action_prob& operator*();
+      //! Allow comparison of iterators
+      bool operator<(const iterator& rhs) const;
+      //! Allow distance measurement
+      int64_t operator-(const iterator& rhs) const;
+      //! Increment the index
+      iterator operator+(const uint32_t idx) const;
+
     private:
-      ranking_response_impl* _p_resp_impl;
+      ranking_response* _p_resp;
       size_t _idx;
     };
+
+    /**
+    * @brief Forward const iterator class used to access the (action, probability) collection
+    */
+    class const_iterator : public std::iterator<
+      std::forward_iterator_tag,
+      action_prob> {
+    public:
+      //! Construct an (action, probability) collection iterator using the ranking_response implementation
+      const_iterator(const ranking_response*);
+      //! Construct an (action, probability) collection iterator using the ranking_response implementation and size
+      const_iterator(const ranking_response*, size_t);
+      //! Move the iterator to the next element
+      const_iterator& operator++();
+      //! Inequality comparison for the iterator
+      bool operator!=(const const_iterator& other) const;
+      //! Dereferencing operator to get the (action, probability) pair
+      const action_prob& operator*() const;
+      //! Allow comparison of iterators
+      bool operator<(const const_iterator& rhs) const;
+      //! Allow distance measurement
+      int64_t operator-(const const_iterator& rhs) const;
+      //! Increment the index
+      const_iterator operator+(const uint32_t idx) const;
+
+    private:
+      const ranking_response* _p_resp;
+      size_t _idx;
+    };
+
     //! Returns an iterator pointing to the first element of the (action, probability) collection
-    ranking_iterator begin() const;
+    const_iterator begin() const;
+    iterator begin();
+
     //! Returns an iterator referring to the past-the-end element of the (action, probability) collection.
-    ranking_iterator end() const;
+    const_iterator end() const;
+    iterator end();
   };
 }

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28016.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 EndProject
@@ -269,16 +269,14 @@ Global
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x64.Build.0 = Release|x64
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.ActiveCfg = Release|Win32
 		{C5D19F4E-174D-40F0-8CD9-B92CBCE721E0}.Release|x86.Build.0 = Release|Win32
-		{E86A833A-514D-424D-9FE7-154225031662}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.ActiveCfg = Debug|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x64.Build.0 = Debug|x64
-		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.ActiveCfg = Debug|Win32
-		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.Build.0 = Debug|Win32
-		{E86A833A-514D-424D-9FE7-154225031662}.Release|Any CPU.ActiveCfg = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Debug|x86.ActiveCfg = Debug|x64
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|Any CPU.ActiveCfg = Release|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.ActiveCfg = Release|x64
 		{E86A833A-514D-424D-9FE7-154225031662}.Release|x64.Build.0 = Release|x64
-		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.ActiveCfg = Release|Win32
-		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.Build.0 = Release|Win32
+		{E86A833A-514D-424D-9FE7-154225031662}.Release|x86.ActiveCfg = Release|x64
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.ActiveCfg = Debug|x64
 		{47259EFF-C4C2-4F8D-AE67-1FA6F6D5D9FE}.Debug|x64.Build.0 = Debug|x64
@@ -324,7 +322,7 @@ Global
 		{8FF15F05-0D62-4B54-92B8-70A0EE2363AF} = {27A9AB97-FC8B-4818-AC80-034FA94998D5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 		EnterpriseLibraryConfigurationToolBinariesPathV6 = packages\EnterpriseLibrary.TransientFaultHandling.6.0.1304.0\lib\portable-net45+win+wp8
+		SolutionGuid = {14CFCE53-7467-4021-BD9A-978C2FC5BCC8}
 	EndGlobalSection
 EndGlobal
