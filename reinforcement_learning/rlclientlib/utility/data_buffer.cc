@@ -38,7 +38,7 @@ namespace reinforcement_learning {
     data_buffer& data_buffer::operator<<(size_t rhs) { return operator<<(std::to_string(rhs)); }
     data_buffer& data_buffer::operator<<(float rhs) { return operator<<(std::to_string(rhs)); }
 
-    buffer_factory::buffer_factory() {}
+    buffer_factory::buffer_factory() = default;
 
     data_buffer* buffer_factory::operator()() const { return new data_buffer(); }
   }

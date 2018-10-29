@@ -6,9 +6,7 @@
 namespace reinforcement_learning {
   namespace utility {
 
-    event_batcher::event_batcher()
-    {
-    }
+    event_batcher::event_batcher() = default;
 
     void event_batcher::batch_serialize(data_buffer& oss, size_t& remaining, event_queue<ranking_event>& queue, size_t _send_high_water_mark)
     {

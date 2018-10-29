@@ -41,7 +41,7 @@ namespace reinforcement_learning {
     ranking_event(ranking_event&& other);
     ranking_event& operator=(ranking_event&& other);
 
-    virtual flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
 
   public:
     static ranking_event choose_rank(utility::data_buffer& oss, const char* event_id, const char* context,
@@ -64,7 +64,7 @@ namespace reinforcement_learning {
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
 
-    virtual flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
 
   public:
     static outcome_event report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob = 1);
