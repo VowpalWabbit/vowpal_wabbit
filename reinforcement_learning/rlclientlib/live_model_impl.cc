@@ -216,13 +216,13 @@ namespace reinforcement_learning {
     }
 
     // Swap values in first position with values in chosen index
-    scode = e::swap_chosen(begin(response), end(response), chosen_action_id);
+    scode = e::swap_chosen(begin(response), end(response), chosen_index);
 
     if ( S_EXPLORATION_OK != scode ) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration (Swap) error code: " << scode;
     }
 
-    response.set_chosen_action_id(chosen_action_id);
+    response.set_chosen_action_id(chosen_index);
 
     return error_code::success;
   }
