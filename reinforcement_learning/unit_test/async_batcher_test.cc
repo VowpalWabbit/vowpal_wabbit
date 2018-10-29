@@ -22,7 +22,7 @@ public:
     return 0;
   }
 
-  virtual int v_send(const std::string& item, api_status* s = nullptr) override{
+  virtual int v_send(std::string&& item, api_status* s = nullptr) override{
     items.push_back(item);
     return error_code::success;
   };
@@ -53,6 +53,33 @@ public:
     serialize(buf);
     return buf.str();
   }
+};
+
+class test_droppable_event : public event {
+public:
+	test_droppable_event() {}
+	test_droppable_event(const std::string& id) : event(id.c_str()) {}
+
+	test_droppable_event(test_droppable_event&& other) : event(std::move(other)) {}
+	test_droppable_event& operator=(test_droppable_event&& other)
+	{
+		if (&other != this) event::operator=(std::move(other));
+		return *this;
+	}
+
+	bool try_drop(float drop_prob, int _drop_pass) override {
+		return true;
+	}
+
+	void serialize(utility::data_buffer& buf) override {
+		buf << _event_id;
+	}
+
+	std::string str() {
+		utility::data_buffer buf;
+		serialize(buf);
+		return buf.str();
+	}
 };
 
 void expect_no_error(const api_status& s, void* cntxt)
@@ -142,50 +169,44 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   BOOST_CHECK_EQUAL(items.front(), expected);
 }
 
-//test that events are dropped if the queue max capacity is reached
-/*BOOST_AUTO_TEST_CASE(queue_overflow_drop_event)
+//test that events are not dropped using the queue_dropping_disable option, even if the queue max capacity is reached
+BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
 {
   std::vector<std::string> items;
   auto s = new sender(items);
   size_t timeout_ms = 100;
-  size_t queue_max_size = 2;
+  size_t queue_max_size = 3;
+  queue_mode_enum queue_mode = BLOCK;
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog(nullptr);
-  async_batcher<test_event>* batcher = new async_batcher<test_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size);
+  async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size, queue_mode);
+  batcher->init(nullptr);
 
-  BOOST_CHECK_EQUAL(batcher->append(test_event("1")), error_code::success);
-  BOOST_CHECK_EQUAL(batcher->append(test_event("2")), error_code::success);
-  BOOST_CHECK_EQUAL(batcher->append(test_event("3")), error_code::background_queue_overflow);
+  int n = 10;
+  for (int i = 0; i < n; ++i) {
+	  batcher->append(test_droppable_event(std::to_string(i)));
+  }
 
-  //'3' was dropped because of the overflow
-  std::string expected_batch = "1\n2";
-
+  //triggers a final flush
   delete batcher;
 
-  BOOST_REQUIRE_EQUAL(items.size(), 1);
-  BOOST_CHECK_EQUAL(items.front(), expected_batch);
-}*/
+  //all batches were sent. Check that no event was dropped
+  std::string expected_output = "0";
+  for (int i = 1; i < n; ++i) {
+      expected_output += "\n" + std::to_string(i);
+  }
+  BOOST_REQUIRE(items.size()>0);
+  std::string actual_output = items[0];
+  for (int i = 1; i < items.size(); ++i) {
+      actual_output += "\n" + items[i];
+  }
+  BOOST_CHECK_EQUAL(expected_output, actual_output);
+}
 
-//test that status_api is correctly set when the queue_overflow error happens
-/*BOOST_AUTO_TEST_CASE(queue_overflow_return_error)
-{
-  std::vector<std::string> items;
-  auto s = new sender(items);
-  size_t queue_max_size = 2;
-  error_callback_fn error_fn(expect_no_error, nullptr);
-  utility::watchdog watchdog(nullptr);
-  async_batcher<test_event> batcher(s, watchdog, &error_fn ,262143, 1000, queue_max_size);
+BOOST_AUTO_TEST_CASE(convert_to_queue_mode_enum) {
+  BOOST_CHECK_EQUAL(DROP, to_queue_mode_enum("DROP"));
+  BOOST_CHECK_EQUAL(BLOCK, to_queue_mode_enum("BLOCK"));
 
-  //pass the status to each call, then check its content
-  api_status status;
-
-  //adding 2 elements of ok
-  BOOST_CHECK_EQUAL(batcher.append(test_event("1"), &status), error_code::success);
-  BOOST_CHECK_EQUAL(batcher.append(test_event("2"), &status), error_code::success);
-
-  //the batcher will try to exceed its queue capacity
-  BOOST_CHECK_EQUAL(batcher.append(test_event("3"), &status), error_code::background_queue_overflow);
-
-  //verify that the error status is correct
-  BOOST_CHECK_EQUAL(status.get_error_code(), error_code::background_queue_overflow);
-}*/
+  //default is DROP
+  BOOST_CHECK_EQUAL(DROP, to_queue_mode_enum("something_else"));
+}

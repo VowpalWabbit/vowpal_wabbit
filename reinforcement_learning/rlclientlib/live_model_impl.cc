@@ -49,7 +49,7 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int live_model_impl::choose_rank(const char* event_id, const char* context, ranking_response& response,
+  int live_model_impl::choose_rank(const char* event_id, const char* context, unsigned int flags, ranking_response& response,
     api_status* status) {
     response.clear();
     //clear previous errors if any
@@ -65,7 +65,7 @@ namespace reinforcement_learning {
       RETURN_IF_FAIL(explore_exploit(event_id, context, response, status));
     }
     response.set_event_id(event_id);
-    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, response, status));
+    RETURN_IF_FAIL(_ranking_logger->log(event_id, context, flags, response, status));
 
     // Check watchdog for any background errors. Do this at the end of function so that the work is still done.
     if (_watchdog.has_background_error_been_reported()) {
@@ -76,9 +76,16 @@ namespace reinforcement_learning {
   }
 
   //here the event_id is auto-generated
-  int live_model_impl::choose_rank(const char* context, ranking_response& response, api_status* status) {
-    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, response,
+  int live_model_impl::choose_rank(const char* context, unsigned int flags, ranking_response& response, api_status* status) {
+    return choose_rank(boost::uuids::to_string(boost::uuids::random_generator()()).c_str(), context, flags, response,
       status);
+  }
+
+  int live_model_impl::report_action_taken(const char* event_id, api_status* status) {
+    // Clear previous errors if any
+    api_status::try_clear(status);
+    // Send the outcome event to the backend
+    return _outcome_logger->report_action_taken(event_id, status);
   }
 
   int live_model_impl::report_outcome(const char* event_id, const char* outcome, api_status* status) {
@@ -138,13 +145,13 @@ namespace reinforcement_learning {
   int live_model_impl::init_loggers(api_status* status) {
     const auto ranking_sender_impl = _configuration.get(name::INTERACTION_SENDER_IMPLEMENTATION, value::INTERACTION_EH_SENDER);
     i_sender* ranking_sender;
-    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, status));
+    RETURN_IF_FAIL(_sender_factory->create(&ranking_sender, ranking_sender_impl, _configuration, &_error_cb, _trace_logger.get(), status));
     _ranking_logger.reset(new interaction_logger(_configuration, ranking_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_ranking_logger->init(status));
 
     const auto outcome_sender_impl = _configuration.get(name::OBSERVATION_SENDER_IMPLEMENTATION, value::OBSERVATION_EH_SENDER);
     i_sender* outcome_sender;
-    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, status));
+    RETURN_IF_FAIL(_sender_factory->create(&outcome_sender, outcome_sender_impl, _configuration, &_error_cb, _trace_logger.get(), status));
     _outcome_logger.reset(new observation_logger(_configuration, outcome_sender, _watchdog, &_error_cb));
     RETURN_IF_FAIL(_outcome_logger->init(status));
 
@@ -166,26 +173,44 @@ namespace reinforcement_learning {
 
   int live_model_impl::explore_only(const char* event_id, const char* context, ranking_response& response,
     api_status* status) const {
+
     // Generate egreedy pdf
     size_t action_count = 0;
     RETURN_IF_FAIL(utility::get_action_count(action_count, context, _trace_logger.get(), status));
+
     vector<float> pdf(action_count);
+    // Generate a pdf with epsilon distributed between all action.
+    // The top action gets the remaining (1 - epsilon)
     // Assume that the user's top choice for action is at index 0
     const auto top_action_id = 0;
     auto scode = e::generate_epsilon_greedy(_initial_epsilon, top_action_id, begin(pdf), end(pdf));
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
-    // Pick using the pdf
-    uint32_t chosen_action_id;
+
     // The seed used is composed of uniform_hash(app_id) + uniform_hash(event_id)
     const uint64_t seed = uniform_hash(event_id, strlen(event_id), 0) + _seed_shift;
-    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_action_id);
+
+    // Pick a slot using the pdf. NOTE: sample_after_normalizing() can change the pdf
+    uint32_t chosen_index;
+    scode = e::sample_after_normalizing(seed, begin(pdf), end(pdf), chosen_index);
+
     if (S_EXPLORATION_OK != scode) {
       RETURN_ERROR_LS(_trace_logger.get(), status, exploration_error) << "Exploration error code: " << scode;
     }
 
-    // Setup response with pdf from prediction and action indexes
+    // NOTE: When there is no model, the rank
+    // step was done by the user.  i.e. Actions are already in ranked order
+    // If there were an action list it would be [0,1,2,3,4..].  The index
+    // of the list matches the action_id.  There is no need to generate this
+    // list of actions we can use the index into this list as a proxy for the
+    // actual action_id.
+    // i.e  chosen_index == action[chosen_index]
+    // Why is this documented?  Because explore_exploit uses a model and we
+    // cannot make the same assumption there.  (Bug was fixed)
+
+    // Setup response with pdf from prediction and chosen action
+    // Chosen action goes first.  First action gets swapped with chosen action
     for (size_t idx = 0; idx < pdf.size(); ++idx) {
       response.push_back(idx, pdf[idx]);
     }

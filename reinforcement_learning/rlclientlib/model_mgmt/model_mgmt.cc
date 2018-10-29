@@ -1,6 +1,7 @@
 #include "model_mgmt.h"
 
 #include <new>
+#include <cstring>
 
 namespace reinforcement_learning {
   namespace model_management {
@@ -39,8 +40,27 @@ namespace reinforcement_learning {
     }
 
     void model_data::free() {
-      delete[] _data;
-      _data = nullptr;
+      if (_data != nullptr) {
+        delete[] _data;
+        _data = nullptr;
+      }
       _data_sz = 0;
+    }
+
+    model_data::model_data(model_data const& other) {
+      *this = other;
+    }
+
+    model_data& model_data::operator=(model_data const& other) {
+      if (this != &other) {
+        // alloc will free an existing buffer, alloc the required size and set the _data_sz property.
+        _data = alloc(other._data_sz);
+        _refresh_count = other._refresh_count;
+
+        // Copy the contents of the other buffer to this object.
+        std::memcpy(_data, other._data, _data_sz);
+      }
+
+      return *this;
     }
 }}

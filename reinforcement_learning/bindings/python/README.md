@@ -11,7 +11,7 @@
 7. `./reinforcement_learning/bindings/python/build_linux/restore.sh`
 8. `make clean`
 9. `make rl_python`
-10. `sudo python3.6 -m pip reinforcement_learning/bindings/python/dist/rl_client-0.0.5-cp36-cp36m-linux_x86_64.whl`
+10. `sudo python3.6 -m pip install reinforcement_learning/bindings/python/dist/rl_client-0.0.9-cp36-cp36m-linux_x86_64.whl`
 
 ## Usage
 To use the client Python bindings please use [these instructions](https://microsoft.github.io/vowpal_wabbit/reinforcement_learning/doc/python/html/index.html).

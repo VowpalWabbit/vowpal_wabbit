@@ -58,6 +58,7 @@
     <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
     <ClInclude Include="utility\watchdog.h" />
+    <ClInclude Include="moving_queue.h" />
     <ClInclude Include="..\include\trace_logger.h" />
     <ClInclude Include="console_tracer.h" />
   </ItemGroup>

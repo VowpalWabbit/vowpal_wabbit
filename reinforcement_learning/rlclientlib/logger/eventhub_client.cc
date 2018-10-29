@@ -4,6 +4,8 @@
 #include "err_constants.h"
 #include "utility/http_helper.h"
 #include "trace_logger.h"
+#include "error_callback_fn.h"
+#include "str_util.h"
 
 using namespace std::chrono;
 using namespace utility; // Common utilities like string conversions
@@ -12,6 +14,65 @@ using namespace web::http; // Common HTTP functionality
 namespace u = reinforcement_learning::utility;
 
 namespace reinforcement_learning {
+  eventhub_client::http_request_task::http_request_task()
+  {}
+
+  eventhub_client::http_request_task::http_request_task(web::http::client::http_client& client,
+    const std::string& host,
+    const std::string& auth,
+    std::string&& post_data,
+    error_callback_fn* _error_callback)
+    : _post_data(std::move(post_data))
+  {
+    http_request request(methods::POST);
+    request.headers().add(_XPLATSTR("Authorization"), auth.c_str());
+    request.headers().add(_XPLATSTR("Host"), host.c_str());
+    request.set_body(_post_data.c_str());
+
+    _task = client.request(request).then([this, _error_callback](pplx::task<http_response> response) {
+      web::http::status_code code = status_codes::InternalError;
+      api_status status;
+
+      try {
+        code = response.get().status_code();
+
+        if (code != status_codes::Created) {
+          auto msg = utility::concat("(expected 201): Found ", code, "\npost_data: ", _post_data);
+          api_status::try_update(&status, error_code::http_bad_status_code, msg.c_str());
+          ERROR_CALLBACK(_error_callback, status);
+        };
+      }
+      catch (const std::exception& e) {
+        api_status::try_update(&status, error_code::exception_during_http_req, e.what());
+        ERROR_CALLBACK(_error_callback, status);
+      }
+
+      return code;
+    });
+  }
+
+  eventhub_client::http_request_task::http_request_task(http_request_task&& other)
+    : _post_data(std::move(other._post_data))
+    , _task(std::move(other._task))
+  {}
+
+  eventhub_client::http_request_task& eventhub_client::http_request_task::operator=(http_request_task&& other) {
+    if (&other != this) {
+      _post_data = std::move(other._post_data);
+      _task = std::move(other._task);
+    }
+    return *this;
+  }
+
+  std::string eventhub_client::http_request_task::post_data() const {
+    return _post_data;
+  }
+
+  web::http::status_code eventhub_client::http_request_task::join() {
+    _task.wait();
+    return _task.get();
+  }
+
   //private helper
   string_t build_url(const std::string& host, const std::string& name, const bool local_test) {
     const std::string proto = local_test ? "http://" : "https://";
@@ -26,10 +87,30 @@ namespace reinforcement_learning {
 
   int eventhub_client::init(api_status* status) { return authorization(status); }
 
-  int eventhub_client::send(const std::string& post_data, api_status* status) { return v_send(post_data, status); }
+  int eventhub_client::pop_task(api_status* status) {
+    http_request_task oldest;
+    _tasks.pop(&oldest);
 
-  int eventhub_client::v_send(const std::string& post_data, api_status* status) {
-    http_request request(methods::POST);
+    try {
+      // This will block if the task is not complete yet.
+      oldest.join();
+    }
+    catch (...) {
+      // Ignore as previous task based continuation should have handled and reported background error.
+    }
+
+    return error_code::success;
+  }
+
+  int eventhub_client::submit_task(http_request_task&& task, api_status* status) {
+    if (_tasks.size() >= _max_tasks_count) {
+      RETURN_IF_FAIL(pop_task(status));
+    }
+    _tasks.push(std::move(task));
+    return error_code::success;;
+  }
+
+  int eventhub_client::v_send(std::string&& post_data, api_status* status) {
     if (authorization(status) != error_code::success)
       return status->get_error_code();
     std::string auth_str;
@@ -38,36 +119,34 @@ namespace reinforcement_learning {
       std::lock_guard<std::mutex> lock(_mutex);
       auth_str = _authorization;
     }
-    request.headers().add(_XPLATSTR("Authorization"), auth_str.c_str());
-    request.headers().add(_XPLATSTR("Host"), _eventhub_host.c_str());
-    request.set_body(post_data.c_str());
-    auto request_task = _client.request(request).then([&](http_response response) {
-      //expect http code 201
-      if (response.status_code() == status_codes::Created)
-        return error_code::success;
 
-      //report error (cannot use the macro here since return type is auto deduced)
-      RETURN_ERROR_ARG(_trace, status, http_bad_status_code, "(expected 201): Found ",
-        response.status_code(), "eh_host", _eventhub_host, "eh_name", _eventhub_name,
-        "\npost_data: ", post_data);
-    });
     try {
-      request_task.wait();
-      return request_task.get();
+      http_request_task request_task(_client, _eventhub_host, auth_str, std::move(post_data), _error_callback);
+      RETURN_IF_FAIL(submit_task(std::move(request_task), status));
     }
     catch (const std::exception& e) {
       RETURN_ERROR_LS(_trace, status, eventhub_http_generic) << e.what() << ", post_data: " << post_data;
     }
+    return error_code::success;
   }
 
   eventhub_client::eventhub_client(const std::string& host, const std::string& key_name,
-                                   const std::string& key, const std::string& name, i_trace* trace, const bool local_test)
+                                   const std::string& key, const std::string& name,
+                                   size_t max_tasks_count, i_trace* trace,
+                                   error_callback_fn* error_callback, const bool local_test)
     : _client(build_url(host, name, local_test), u::get_http_config()),
       _eventhub_host(host), _shared_access_key_name(key_name),
       _shared_access_key(key), _eventhub_name(name),
-      _authorization_valid_until(0),
+      _authorization_valid_until(0), _max_tasks_count(max_tasks_count),
+      _error_callback(error_callback),
       _trace(trace)
   { }
+
+  eventhub_client::~eventhub_client() {
+    while (_tasks.size() != 0) {
+      pop_task(nullptr);
+    }
+  }
 
   int eventhub_client::authorization(api_status* status) {
     const auto now = duration_cast<std::chrono::seconds>(system_clock::now().time_since_epoch()).count();

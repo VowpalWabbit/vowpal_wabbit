@@ -164,13 +164,14 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   //start a http server that will receive events sent from the eventhub_client
   bool post_error = true;
   http_helper http_server;
-  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080"),post_error));
+  BOOST_CHECK(http_server.on_initialize(U("http://localhost:8080"), post_error));
 
   //create a simple ds configuration
   u::configuration config;
   auto const status = cfg::create_from_json(JSON_CFG, config);
   BOOST_CHECK_EQUAL(status, r::error_code::success);
   config.set(r::name::EH_TEST, "true");
+
 
   ////////////////////////////////////////////////////////////////////
   //// Following mismatched object type is prevented by the compiler
@@ -179,20 +180,23 @@ BOOST_AUTO_TEST_CASE(typesafe_err_callback) {
   ////////////////////////////////////////////////////////////////////
 
   algo_server the_server;
-  //create a ds live_model, and initialize with configuration
-  r::live_model ds(config,algo_error_func,&the_server);
 
-  ds.init(nullptr);
+  // Create live_model in own scope so that destructor can be forced, flushing buffers and queues.
+  {
+    //create a ds live_model, and initialize with configuration
+    r::live_model ds(config, algo_error_func, &the_server);
 
-  const char* event_id = "event_id";
+    ds.init(nullptr);
 
-  r::ranking_response response;
-  BOOST_CHECK_EQUAL(the_server._err_count, 0);
-  // request ranking
-  BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), r::error_code::success);
-  //wait until the timeout triggers and error callback is fired
-  std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-  BOOST_CHECK_GT(the_server._err_count, 1);
+    const char* event_id = "event_id";
+
+    r::ranking_response response;
+    BOOST_CHECK_EQUAL(the_server._err_count, 0);
+    // request ranking
+    BOOST_CHECK_EQUAL(ds.choose_rank(event_id, JSON_CONTEXT, response), r::error_code::success);
+  }
+
+  BOOST_CHECK_GT(the_server._err_count, 0);
 }
 
 BOOST_AUTO_TEST_CASE(live_model_mocks) {

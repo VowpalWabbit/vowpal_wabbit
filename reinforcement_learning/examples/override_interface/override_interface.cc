@@ -32,7 +32,7 @@ public:
   }
 
 protected:
-  virtual int v_send(const std::string& data, r::api_status* status) override {
+  virtual int v_send(std::string&& data, r::api_status* status) override {
     std::lock_guard<std::mutex> lock(_mutex);
     _stream << data << std::endl;
     return err::success;
@@ -76,7 +76,7 @@ int main() {
 
   // Define a create function to be used in the factory.
   auto const create_ostream_sender_fn =
-    [&](r::i_sender** retval, const u::configuration&, r::i_trace* trace, r::api_status*) {
+    [&](r::i_sender** retval, const u::configuration&, r::error_callback_fn* error_callback, r::i_trace* trace, r::api_status*) {
     *retval = new ostream_sender(std::cout, cout_mutex);
     return err::success;
   };

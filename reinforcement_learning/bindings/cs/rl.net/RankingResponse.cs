@@ -5,21 +5,21 @@ using System.Threading;
 using System.Runtime.InteropServices;
 
 using Rl.Net.Native;
+using System.Collections;
 
 namespace Rl.Net {
     [StructLayout(LayoutKind.Sequential)]
-    internal struct ActionProbability
+    public struct ActionProbability
     {
-        public UIntPtr ActionId; // If we expose this publicly, this will not be CLS-compliant
-                                 // No idea if that could cause issues going to .NET Core (probably
-                                 // not, but this is something we should check.), but having to do
-                                 // a conversion on every iteration feels very heavyweight. Can 
-                                 // we change this contract to be defined as the signed version of
-                                 // the pointer type?
-        public float Probability;
+        private UIntPtr actionIndex;
+        private float probability;
+
+        public long ActionIndex => (long)this.actionIndex.ToUInt64();
+
+        public float Probability => this.probability;
     }
 
-    public sealed class RankingResponse: NativeObject<RankingResponse>
+    public sealed class RankingResponse: NativeObject<RankingResponse>, IEnumerable<ActionProbability>
     {
         [DllImport("rl.net.native.dll")]
         private static extern IntPtr CreateRankingResponse();
@@ -63,9 +63,9 @@ namespace Rl.Net {
         }
 
         // TODO: Why does this method call, which seems like a "get" of a value, have an API status?
-        public bool TryGetChosenAction(out long action, ApiStatus status = null)
+        public bool TryGetChosenAction(out long actionIndex, ApiStatus status = null)
         {
-            action = -1;
+            actionIndex = -1;
             UIntPtr chosenAction;
             int result = GetRankingChosenAction(this.NativeHandle, out chosenAction, status.ToNativeHandleOrNullptr());
 
@@ -74,8 +74,18 @@ namespace Rl.Net {
                 return false;
             }
 
-            action = (long)(chosenAction.ToUInt64());
+            actionIndex = (long)(chosenAction.ToUInt64());
             return true;
+        }
+
+        public IEnumerator<ActionProbability> GetEnumerator()
+        {
+            return new RankingResponseEnumerator(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
 
         private class RankingResponseEnumerator : NativeObject<RankingResponseEnumerator>, IEnumerator<ActionProbability>
@@ -92,10 +102,15 @@ namespace Rl.Net {
             private static extern void DeleteRankingEnumeratorAdapter(IntPtr rankingEnumeratorAdapter);
 
             [DllImport("rl.net.native.dll")]
+            private static extern int RankingEnumeratorInit(IntPtr rankingEnumeratorAdapter);
+
+            [DllImport("rl.net.native.dll")]
             private static extern int RankingEnumeratorMoveNext(IntPtr rankingEnumeratorAdapter);
         
             [DllImport("rl.net.native.dll")]
             private static extern ActionProbability GetRankingEnumeratorCurrent(IntPtr rankingEnumeratorAdapter);
+
+            private bool initialState = true;
 
             public RankingResponseEnumerator(RankingResponse rankingResponse) : base(BindConstructorArguments(rankingResponse), new Delete<RankingResponseEnumerator>(DeleteRankingEnumeratorAdapter))
             {
@@ -113,9 +128,18 @@ namespace Rl.Net {
 
             public bool MoveNext()
             {
-                // The contract of result is to return 1 if true, 0 if false.
-                int result = RankingEnumeratorMoveNext(this.NativeHandle);
+                int result;
+                if (this.initialState)
+                {
+                    this.initialState = false;
+                    result = RankingEnumeratorInit(this.NativeHandle);
+                }
+                else
+                {
+                    result = RankingEnumeratorMoveNext(this.NativeHandle);
+                }
 
+                // The contract of result is to return 1 if true, 0 if false.
                 return result == 1;
             }
 

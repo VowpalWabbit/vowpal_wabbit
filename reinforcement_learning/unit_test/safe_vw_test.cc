@@ -6,13 +6,18 @@
 #include <boost/test/unit_test.hpp>
 #include "vw_model/safe_vw.h"
 #include "utility/object_pool.h"
+#include "model_mgmt.h"
 #include "data.h"
 
 using namespace reinforcement_learning;
 using namespace reinforcement_learning::utility;
 
-using vw_ptr = std::shared_ptr<safe_vw>;
 using pooled_vw = pooled_object_guard<safe_vw, safe_vw_factory>;
+
+void get_model_data_from_raw(const char* data, unsigned int len, model_management::model_data* model_data) {
+  const auto buff = model_data->alloc(len);
+  std::memcpy(buff, data, len);
+}
 
 BOOST_AUTO_TEST_CASE(safe_vw_1)
 {
@@ -35,15 +40,18 @@ BOOST_AUTO_TEST_CASE(factory_with_initial_model)
   std::vector<float> ranking_expected = { .8f, .1f, .1f };
 
   // Start with an initial model
-  const auto initial_model = std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len);
-  const auto factory = new safe_vw_factory(initial_model);
+  model_management::model_data model_data;
+  get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &model_data);
+
+  const auto factory = new safe_vw_factory(model_data);
   object_pool<safe_vw, safe_vw_factory> pool(factory);
 
   {
     pooled_vw guard(pool, pool.get_or_create());
 
     // Update factory while an object is floating around
-    const auto updated_model = std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len);
+    model_management::model_data updated_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &updated_model);
     pool.update_factory(new safe_vw_factory(updated_model));
 
     std::vector<int> actions;
@@ -69,14 +77,15 @@ BOOST_AUTO_TEST_CASE(factory_with_empty_model) {
   const auto json = R"({"a":{"0":1,"5":2},"_multi":[{"b":{"0":1}},{"b":{"0":2}},{"b":{"0":3}}]})";
   std::vector<float> ranking_expected = { .8f, .1f, .1f };
 
-  // Start with empty model
-  const vw_ptr empty(nullptr);
-  const auto factory = new safe_vw_factory(empty);
+  // Start with empty model data
+  model_management::model_data empty_data;
+  const auto factory = new safe_vw_factory(empty_data);
   object_pool<safe_vw, safe_vw_factory> pool(factory);
 
   // Initial model & rank call
   {
-    const auto new_model = std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len);
+    model_management::model_data new_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &new_model);
     pool.update_factory(new safe_vw_factory(new_model));
     pooled_vw vw(pool, pool.get_or_create());
 
@@ -89,7 +98,8 @@ BOOST_AUTO_TEST_CASE(factory_with_empty_model) {
 
   // Update model & rank call
   {
-    const auto new_model = std::make_shared<safe_vw>((const char*)cb_data_5_model, cb_data_5_model_len);
+    model_management::model_data new_model;
+    get_model_data_from_raw((const char*)cb_data_5_model, cb_data_5_model_len, &new_model);
     pool.update_factory(new safe_vw_factory(new_model));
     pooled_vw vw(pool, pool.get_or_create());
 

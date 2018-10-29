@@ -100,7 +100,8 @@ namespace reinforcement_learning { namespace utility { namespace config {
       "ModelRefreshIntervalMs",
       "SendHighMaterMark",
       "QueueMaxSize",
-      "BatchTimeoutMs"
+      "BatchTimeoutMs",
+      "QueueMode"
     };
 
     const std::map<std::string, std::string> from_to = {
@@ -110,7 +111,8 @@ namespace reinforcement_learning { namespace utility { namespace config {
       { "QueueMaxSize"              , name::INTERACTION_SEND_QUEUE_MAXSIZE },
       { "SendBatchIntervalMs"       , name::INTERACTION_SEND_BATCH_INTERVAL_MS },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
-      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS }
+      { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS },
+      { "QueueMode"                 , name::QUEUE_MODE } // expect either DROP or BLOCK, default is DROP
     };
 
     auto obj = json::value::parse(to_string_t(config_json));

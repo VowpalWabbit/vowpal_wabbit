@@ -54,8 +54,8 @@ namespace reinforcement_learning {
 
   int restapi_data_tranport_create(m::i_data_transport** retval, const u::configuration& config, i_trace* trace_logger, api_status* status);
   int vw_model_create(m::i_model** retval, const u::configuration&, i_trace* trace_logger, api_status* status);
-  int observation_sender_create(i_sender** retval, const u::configuration&, i_trace* trace_logger,  api_status* status);
-  int interaction_sender_create(i_sender** retval, const u::configuration&, i_trace* trace_logger, api_status* status);
+  int observation_sender_create(i_sender** retval, const u::configuration&, error_callback_fn*, i_trace* trace_logger,  api_status* status);
+  int interaction_sender_create(i_sender** retval, const u::configuration&, error_callback_fn*, i_trace* trace_logger, api_status* status);
   int null_tracer_create(i_trace** retval, const u::configuration&, i_trace* trace_logger, api_status* status);
   int console_tracer_create(i_trace** retval, const u::configuration&, i_trace* trace_logger, api_status* status);
 
@@ -89,24 +89,28 @@ namespace reinforcement_learning {
     return error_code::success;
   }
 
-  int observation_sender_create(i_sender** retval, const u::configuration& cfg, i_trace* trace_logger, api_status* status) {
+  int observation_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* _error_cb, i_trace* trace_logger, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::OBSERVATION_EH_HOST, "localhost:8080"),
       cfg.get(name::OBSERVATION_EH_KEY_NAME, ""),
       cfg.get(name::OBSERVATION_EH_KEY, ""),
       cfg.get(name::OBSERVATION_EH_NAME, "observation"),
+      cfg.get_int(name::OBSERVATION_EH_TASKS_LIMIT, 16),
       trace_logger,
+      _error_cb,
       cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
 
-  int interaction_sender_create(i_sender** retval, const u::configuration& cfg, i_trace* trace_logger, api_status* status) {
+  int interaction_sender_create(i_sender** retval, const u::configuration& cfg, error_callback_fn* _error_cb, i_trace* trace_logger, api_status* status) {
     *retval = new eventhub_client(
       cfg.get(name::INTERACTION_EH_HOST, "localhost:8080"),
       cfg.get(name::INTERACTION_EH_KEY_NAME, ""),
       cfg.get(name::INTERACTION_EH_KEY, ""),
       cfg.get(name::INTERACTION_EH_NAME, "interaction"),
+      cfg.get_int(name::INTERACTION_EH_TASKS_LIMIT, 16),
       trace_logger,
+      _error_cb,
       cfg.get_bool(name::EH_TEST, false));
     return error_code::success;
   }
