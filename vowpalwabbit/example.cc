@@ -241,4 +241,12 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
   ec_seq.clear();
 }
 
+void clear_seq_and_finish_examples(vw& all, v_array<example*>& ec_seq)
+{
+  if (ec_seq.size() > 0)
+    for (example* ecc : ec_seq)
+      if (ecc->in_use)
+        VW::finish_example(all, *ecc);
+  ec_seq.clear();
+}
 }
