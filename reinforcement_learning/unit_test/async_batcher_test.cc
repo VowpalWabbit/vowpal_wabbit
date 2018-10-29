@@ -47,8 +47,6 @@ public:
   std::string get_event_id() {
     return _event_id;
   }
-
-  void serialize(utility::data_buffer& buffer) {}
 };
 
 class test_droppable_event : public event {
@@ -66,8 +64,6 @@ public:
   bool try_drop(float drop_prob, int _drop_pass) override {
     return true;
   }
-
-  void serialize(utility::data_buffer& buffer) {}
 };
 
 void expect_no_error(const api_status& s, void* cntxt)

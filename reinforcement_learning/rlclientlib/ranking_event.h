@@ -23,7 +23,6 @@ namespace reinforcement_learning {
     virtual ~event();
 
     virtual bool try_drop(float pass_prob, int drop_pass);
-    virtual void serialize(utility::data_buffer& buffer) = 0;
 
   protected:
     float prg(int drop_pass) const;
@@ -43,17 +42,14 @@ namespace reinforcement_learning {
     ranking_event& operator=(ranking_event&& other);
 
     virtual flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
-    virtual void serialize(utility::data_buffer& oss) override;
 
   public:
     static ranking_event choose_rank(utility::data_buffer& oss, const char* event_id, const char* context,
       unsigned int flags, const ranking_response& resp, float pass_prob = 1);
 
   private:
-    ranking_event(const char* event_id, float pass_prob, const std::string& body);
-    ranking_event::ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response);
+    ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response);
 
-    std::string _body;
     std::string _context;
     std::vector<uint64_t> _a_vector;
     std::vector<float> _p_vector;
@@ -69,7 +65,6 @@ namespace reinforcement_learning {
     outcome_event& operator=(outcome_event&& other);
 
     virtual flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
-    virtual void serialize(utility::data_buffer& oss) override;
 
   public:
     static outcome_event report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob = 1);
@@ -78,12 +73,10 @@ namespace reinforcement_learning {
     static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
 
   private:
-    outcome_event(const char* event_id, float pass_prob, const std::string& body);
     outcome_event(const char* event_id, float pass_prob, const char* outcome);
     outcome_event(const char* event_id, float pass_prob, float outcome);
 
   private:
-    std::string _body;
     std::string _outcome;
   };
 }

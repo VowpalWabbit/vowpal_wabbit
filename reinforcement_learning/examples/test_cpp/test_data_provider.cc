@@ -110,14 +110,12 @@ void test_data_provider::log(size_t thread_id, size_t example_id, const reinforc
     else
       outcome_evt = reinforcement_learning::outcome_event::report_outcome(buffer, get_event_id(thread_id, example_id), get_outcome_json(thread_id, example_id));
     buffer.reset();
-    outcome_evt.serialize(buffer);
     logger << R"("o":[)" << buffer.str() << "],";
     buffer.reset();
   }
 
   auto ranking_evt = reinforcement_learning::ranking_event::choose_rank(buffer, get_event_id(thread_id, example_id), get_context(thread_id, example_id), reinforcement_learning::action_flags::DEFAULT, response);
   buffer.reset();
-  ranking_evt.serialize(buffer);
   const std::string buffer_str = buffer.str();
   logger << buffer_str.substr(1, buffer_str.length() - 1) << std::endl;
 }

@@ -50,11 +50,6 @@ namespace reinforcement_learning {
   ranking_event::ranking_event()
   { }
 
-  ranking_event::ranking_event(const char* event_id, float pass_prob, const std::string& body)
-    : event(event_id, pass_prob)
-    , _body(body)
-  { }
-  
   ranking_event::ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response)
     : event(event_id, pass_prob)
     , _context(context)
@@ -68,7 +63,6 @@ namespace reinforcement_learning {
   
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
-    , _body(std::move(other._body))
     , _context(std::move(other._context))
     , _a_vector(std::move(other._a_vector))
     , _p_vector(std::move(other._p_vector))
@@ -78,7 +72,6 @@ namespace reinforcement_learning {
   ranking_event& ranking_event::operator=(ranking_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
-      _body = std::move(other._body);
       _context = std::move(other._context);
       _a_vector = std::move(other._a_vector);
       _p_vector = std::move(other._p_vector);
@@ -129,23 +122,10 @@ namespace reinforcement_learning {
 
     //add model id
     oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
-    return ranking_event(event_id, pass_prob, oss.str());
-  }
-
-  void ranking_event::serialize(u::data_buffer& oss) {
-    oss << _body;
-    if (_pass_prob < 1) {
-      oss << R"(,"pdrop":)" << (1 - _pass_prob);
-    }
-    oss << R"(})";
+    return ranking_event(event_id, pass_prob, context, resp);
   }
 
   outcome_event::outcome_event()
-  { }
-
-  outcome_event::outcome_event(const char* event_id, float pass_prob, const std::string& body)
-    : event(event_id, pass_prob)
-    , _body(body)
   { }
 
   outcome_event::outcome_event(const char* event_id, float pass_prob, const char* outcome)
@@ -162,14 +142,12 @@ namespace reinforcement_learning {
 
   outcome_event::outcome_event(outcome_event&& other)
     : event(std::move(other))
-    , _body(std::move(other._body))
     , _outcome(std::move(other._outcome))
   { }
 
   outcome_event& outcome_event::operator=(outcome_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
-      _body = std::move(other._body);
       _outcome = std::move(other._outcome);
     }
     return *this;
@@ -181,22 +159,18 @@ namespace reinforcement_learning {
     return VW::Events::CreateOutcomeEvent(builder, event_id_offset, outcome_offset);
   }
 
-  void outcome_event::serialize(u::data_buffer& oss) {
-    oss << _body;
-  }
-
   outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
-    return outcome_event(event_id, pass_prob, oss.str());
+    return outcome_event(event_id, pass_prob, outcome);
   }
 
   outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
-    return outcome_event(event_id, pass_prob, oss.str());
+    return outcome_event(event_id, pass_prob, outcome);
   }
 
   outcome_event outcome_event::report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob) {
     oss << R"({"EventId":")" << event_id << R"(","DeferredAction":false})";
-    return outcome_event(event_id, pass_prob, oss.str());
+    return outcome_event(event_id, pass_prob, "");
   }
 }
