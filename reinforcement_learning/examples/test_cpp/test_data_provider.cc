@@ -100,23 +100,19 @@ void test_data_provider::log(size_t thread_id, size_t example_id, const reinforc
     }
   }
 
-  reinforcement_learning::utility::data_buffer buffer;
   logger << R"({"_label_cost":)" << -get_outcome(thread_id, example_id) << R"(,"_label_probability":)" << prob << R"(,"_label_Action":)" << (action_id + 1) << R"(,"_labelIndex":)" << action_id << ",";
 
   if (is_rewarded(thread_id, example_id)) {
     reinforcement_learning::outcome_event outcome_evt;
     if (is_float_outcome)
-      outcome_evt = reinforcement_learning::outcome_event::report_outcome(buffer, get_event_id(thread_id, example_id), get_outcome(thread_id, example_id));
+      outcome_evt = reinforcement_learning::outcome_event::report_outcome(get_event_id(thread_id, example_id), get_outcome(thread_id, example_id));
     else
-      outcome_evt = reinforcement_learning::outcome_event::report_outcome(buffer, get_event_id(thread_id, example_id), get_outcome_json(thread_id, example_id));
-    buffer.reset();
-    logger << R"("o":[)" << buffer.str() << "],";
-    buffer.reset();
+      outcome_evt = reinforcement_learning::outcome_event::report_outcome(get_event_id(thread_id, example_id), get_outcome_json(thread_id, example_id));
+    logger << R"("o":[)" << outcome_evt.str() << "],";
   }
 
-  auto ranking_evt = reinforcement_learning::ranking_event::choose_rank(buffer, get_event_id(thread_id, example_id), get_context(thread_id, example_id), reinforcement_learning::action_flags::DEFAULT, response);
-  buffer.reset();
-  const std::string buffer_str = buffer.str();
+  auto ranking_evt = reinforcement_learning::ranking_event::choose_rank(get_event_id(thread_id, example_id), get_context(thread_id, example_id), reinforcement_learning::action_flags::DEFAULT, response);
+  const std::string buffer_str = ranking_evt.str();
   logger << buffer_str.substr(1, buffer_str.length() - 1) << std::endl;
 }
 

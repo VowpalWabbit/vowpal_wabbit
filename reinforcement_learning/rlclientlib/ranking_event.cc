@@ -50,19 +50,21 @@ namespace reinforcement_learning {
   ranking_event::ranking_event()
   { }
 
-  ranking_event::ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response)
+  ranking_event::ranking_event(const char* event_id, bool deferred_action, float pass_prob, const char* context, const ranking_response& response)
     : event(event_id, pass_prob)
+    , _deferred_action(deferred_action)
     , _context(context)
     , _model_id(response.get_model_id())
   {
     for (auto const &r : response) {
-      _a_vector.push_back(r.action_id);
+      _a_vector.push_back(r.action_id + 1);
       _p_vector.push_back(r.probability);
     }
   }
-  
+
   ranking_event::ranking_event(ranking_event&& other)
     : event(std::move(other))
+    , _deferred_action(other._deferred_action)
     , _context(std::move(other._context))
     , _a_vector(std::move(other._a_vector))
     , _p_vector(std::move(other._p_vector))
@@ -72,6 +74,7 @@ namespace reinforcement_learning {
   ranking_event& ranking_event::operator=(ranking_event&& other) {
     if (&other != this) {
       event::operator=(std::move(other));
+      _deferred_action = std::move(other._deferred_action);
       _context = std::move(other._context);
       _a_vector = std::move(other._a_vector);
       _p_vector = std::move(other._p_vector);
@@ -91,38 +94,43 @@ namespace reinforcement_learning {
 
     auto vw_state_offset = VW::Events::CreateVWStateType(builder, builder.CreateString(_model_id));
 
-    return VW::Events::CreateRankingEvent(builder, version, event_id_offset, a_vector_offset, context_offset, p_vector_offset, vw_state_offset);
+    return VW::Events::CreateRankingEvent(builder, version, event_id_offset, _deferred_action, a_vector_offset, context_offset, p_vector_offset, vw_state_offset);
   }
 
-  ranking_event ranking_event::choose_rank(u::data_buffer& oss, const char* event_id, const char* context,
+  ranking_event ranking_event::choose_rank(const char* event_id, const char* context,
     unsigned int flags, const ranking_response& resp, float pass_prob) {
+    return ranking_event(event_id, flags & action_flags::DEFERRED, pass_prob, context, resp);
+  }
 
-    //add version and eventId
-    oss << R"({"Version":"1","EventId":")" << event_id << R"(")";
+  std::string ranking_event::str() {
+    u::data_buffer oss;
 
-    if (flags & action_flags::DEFERRED) {
+    oss << R"({"Version":"1","EventId":")" << _event_id << R"(")";
+
+    if (_deferred_action) {
       oss << R"(,"DeferredAction":true)";
     }
 
     //add action ids
     oss << R"(,"a":[)";
-    if (resp.size() > 0) {
-      for (auto const &r : resp)
-        oss << r.action_id + 1 << ",";
-      oss.remove_last();//remove trailing ,
+    for (auto id : _a_vector) {
+      oss << id + 1 << ",";
     }
+    //remove trailing ,
+    oss.remove_last();
 
     //add probabilities
-    oss << R"(],"c":)" << context << R"(,"p":[)";
-    if (resp.size() > 0) {
-      for (auto const &r : resp)
-        oss << r.probability << ",";
-      oss.remove_last();//remove trailing ,
+    oss << R"(],"c":)" << _context << R"(,"p":[)";
+    for (auto prob : _p_vector) {
+      oss << prob << ",";
     }
+    //remove trailing ,
+    oss.remove_last();
 
     //add model id
-    oss << R"(],"VWState":{"m":")" << resp.get_model_id() << R"("})";
-    return ranking_event(event_id, pass_prob, context, resp);
+    oss << R"(],"VWState":{"m":")" << _model_id << R"("})";
+
+    return oss.str();
   }
 
   outcome_event::outcome_event()
@@ -153,24 +161,27 @@ namespace reinforcement_learning {
     return *this;
   }
 
+  std::string outcome_event::str() {
+    u::data_buffer oss;
+    oss << R"({"EventId":")" << _event_id << R"(","v":)" << _outcome << R"(})";
+    return oss.str();
+  }
+
   flatbuffers::Offset<OutcomeEvent> outcome_event::serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder) {
     auto event_id_offset = builder.CreateString(_event_id);
     auto outcome_offset = builder.CreateString(_outcome);
     return VW::Events::CreateOutcomeEvent(builder, event_id_offset, outcome_offset);
   }
 
-  outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+  outcome_event outcome_event::report_outcome(const char* event_id, const char* outcome, float pass_prob) {
     return outcome_event(event_id, pass_prob, outcome);
   }
 
-  outcome_event outcome_event::report_outcome(u::data_buffer& oss, const char* event_id, float outcome, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","v":)" << outcome << R"(})";
+  outcome_event outcome_event::report_outcome(const char* event_id, float outcome, float pass_prob) {
     return outcome_event(event_id, pass_prob, outcome);
   }
 
-  outcome_event outcome_event::report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","DeferredAction":false})";
+  outcome_event outcome_event::report_action_taken(const char* event_id, float pass_prob) {
     return outcome_event(event_id, pass_prob, "");
   }
 }

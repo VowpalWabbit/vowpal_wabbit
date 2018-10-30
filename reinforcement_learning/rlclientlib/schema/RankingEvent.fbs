@@ -10,6 +10,7 @@ table VWStateType {
 table RankingEvent {
     Version:short = 1;
     EventId:string;
+    DeferredAction:bool = false;
     a:[uint64];
     c:string;          // context
     p:[float];

@@ -118,10 +118,7 @@ namespace reinforcement_learning {
 
     template <typename D>
     int log(const char* event_id, D outcome, api_status* status) {
-      // Serialize outcome
-      utility::pooled_object_guard<utility::data_buffer, utility::buffer_factory> buffer(_buffer_pool, _buffer_pool.get_or_create());
-      buffer->reset();
-      return append(std::move(outcome_event::report_outcome(*buffer.get(), event_id, outcome)), status);
+      return append(std::move(outcome_event::report_outcome(event_id, outcome)), status);
     }
 
     int report_action_taken(const char* event_id, api_status* status);

@@ -42,18 +42,20 @@ namespace reinforcement_learning {
     ranking_event& operator=(ranking_event&& other);
 
     flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    std::string str();
 
   public:
-    static ranking_event choose_rank(utility::data_buffer& oss, const char* event_id, const char* context,
+    static ranking_event choose_rank(const char* event_id, const char* context,
       unsigned int flags, const ranking_response& resp, float pass_prob = 1);
 
   private:
-    ranking_event(const char* event_id, float pass_prob, const char* context, const ranking_response& response);
+    ranking_event(const char* event_id, bool deferred_action, float pass_prob, const char* context, const ranking_response& response);
 
     std::string _context;
     std::vector<uint64_t> _a_vector;
     std::vector<float> _p_vector;
     std::string _model_id;
+    bool _deferred_action;
   };
 
   //serializable outcome event
@@ -64,13 +66,14 @@ namespace reinforcement_learning {
     outcome_event(outcome_event&& other);
     outcome_event& operator=(outcome_event&& other);
 
+    std::string str();
     flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
 
   public:
-    static outcome_event report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob = 1);
+    static outcome_event report_action_taken(const char* event_id, float pass_prob = 1);
 
-    static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, const char* outcome, float pass_prob = 1);
-    static outcome_event report_outcome(utility::data_buffer& oss, const char* event_id, float outcome, float pass_prob = 1);
+    static outcome_event report_outcome(const char* event_id, const char* outcome, float pass_prob = 1);
+    static outcome_event report_outcome(const char* event_id, float outcome, float pass_prob = 1);
 
   private:
     outcome_event(const char* event_id, float pass_prob, const char* outcome);
