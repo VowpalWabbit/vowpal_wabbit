@@ -135,8 +135,8 @@ namespace reinforcement_learning {
     std::string _event_id;
     size_t _chosen_action_id;
     std::string _model_id;
-    using coll_type = std::vector<action_prob>;
-    coll_type _ranking;
+    using coll_t = std::vector<action_prob>;
+    coll_t _ranking;
 
   public:
     /**

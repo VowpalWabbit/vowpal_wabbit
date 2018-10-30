@@ -65,7 +65,7 @@ namespace exploration {
   /**
    * @brief Sample an index from the provided pdf. If the pdf is not normalized it will be updated in-place.
    * 
-   * @tparam InputIt Iterator type of the pdf. Must be an RandomAccessIterator.
+   * @tparam InputIt Iterator type of the pdf. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
@@ -78,7 +78,7 @@ namespace exploration {
   /**
    * @brief Sample an index from the provided pdf.  If the pdf is not normalized it will be updated in-place.
    * 
-   * @tparam It Iterator type of the pdf. Must be an RandomAccessIterator.
+   * @tparam It Iterator type of the pdf. Must be a RandomAccessIterator.
    * @param seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash.
    * @param pdf_first Iterator pointing to the beginning of the pdf.
    * @param pdf_last Iterator pointing to the end of the pdf.
@@ -91,7 +91,7 @@ namespace exploration {
   /**
   * @brief Swap the first value with the chosen index.  
   *
-  * @tparam ActionIt Iterator type of the action. Must be an forward_iterator.
+  * @tparam ActionIt Iterator type of the action. Must be a forward_iterator.
   * @param action_first Iterator pointing to the beginning of the pdf.
   * @param action_last Iterator pointing to the end of the pdf.
   * @param chosen_index The index value that should be swapped with the first element

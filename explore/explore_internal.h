@@ -273,7 +273,7 @@ namespace exploration
 
     if(!index_found)
       chosen_index = i - 1;
-    
+
     return S_EXPLORATION_OK;
   }
 
