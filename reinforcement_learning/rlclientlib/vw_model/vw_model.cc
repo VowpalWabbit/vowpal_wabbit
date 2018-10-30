@@ -51,7 +51,7 @@ namespace reinforcement_learning { namespace model_management {
 
       // Setup response with pdf from prediction and action indexes
       for ( size_t idx = 0; idx < pdf.size(); ++idx ) {
-        response.push_back(idx, pdf[idx]);
+        response.push_back(action_ids[idx], pdf[idx]);
       }
 
       // Swap values in first position with values in chosen index

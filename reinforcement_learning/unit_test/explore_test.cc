@@ -38,3 +38,23 @@ BOOST_AUTO_TEST_CASE(swap_action_test) {
     BOOST_CHECK_EQUAL(ap.action_id, (int)expected_scores[idx++]);
   }
 }
+
+BOOST_AUTO_TEST_CASE(swap_fail_test) {
+  r::ranking_response resp;
+  std::vector<float> scores = { 1.0f,2.0f,3.0f,4.0f,5.0f };
+  for ( auto f : scores )
+    resp.push_back((int)f, f);
+
+  const auto err_code = e::swap_chosen(std::begin(resp), std::end(resp), 5);
+
+  // Check that swap failed
+  BOOST_CHECK_EQUAL(err_code, E_EXPLORATION_BAD_RANGE);
+  
+  // Check that nothing changed
+  auto expected_scores = scores;
+  auto idx = 0;
+  for ( auto ap : resp ) {
+    BOOST_CHECK_EQUAL(ap.probability, expected_scores[idx]);
+    BOOST_CHECK_EQUAL(ap.action_id, (int)expected_scores[idx++]);
+  }
+}
