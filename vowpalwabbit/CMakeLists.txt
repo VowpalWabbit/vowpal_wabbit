@@ -22,22 +22,18 @@ set(vw_install_headers
 )
 
 set(vw_all_headers
-  accumulate.h correctedMath.h learner.h rand48.h action_score.h cost_sensitive.h log_multi.h
-  recall_tree.h active_cover.h crossplat_compat.h loss_functions.h reductions.h active.h cs_active.h
-  lrqfa.h scorer.h allreduce.h csoaa.h lrq.h search_dep_parser.h array_parameters_dense.h ect.h
-  marginal.h search_entityrelationtask.h array_parameters.h error_reporting.h memory.h
-  search_graph.h audit_regressor.h example.h mf.h search.h autolink.h example_predict.h multiclass.h
-  search_hooktask.h baseline.h explore_eval.h multilabel.h search_meta.h beam.h expreplay.h
-  multilabel_oaa.h search_multiclasstask.h best_constant.h ezexample.h mwt.h search_sequencetask.h
-  bfgs.h feature_group.h network.h sender.h binary.h floatbits.h nn.h simple_label.h boosting.h
-  ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h stable_unique.h cache.h gd_mf.h oaa.h
-  stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h cb_algs.h gen_cs_example.h parse_args.h
-  topk.h cb_explore_adf.h global_data.h parse_dispatch_loop.h unique_sort.h cb_explore.h interact.h
-  parse_example.h v_array.h cb.h interactions.h parse_example_json.h v_hashmap.h cbify.h
-  interactions_predict.h parse_primitives.h vw_allreduce.h classweight.h io_buf.h parse_regressor.h
-  vwdll.h comp_io.h kernel_svm.h parser.h vw_exception.h confidence.h label_dictionary.h
-  parser_helper.h vw.h config.h.in label_parser.h primitives.h vw_validate.h constant.h lda_core.h
-  print.h vw_versions.h
+  ${vw_install_headers} accumulate.h correctedMath.h rand48.h log_multi.h recall_tree.h
+  active_cover.h reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h
+  search_dep_parser.h array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h
+  array_parameters.h error_reporting.h search_graph.h audit_regressor.h mf.h search.h autolink.h
+  example_predict.h search_hooktask.h baseline.h explore_eval.h search_meta.h beam.h expreplay.h
+  multilabel_oaa.h search_multiclasstask.h best_constant.h mwt.h search_sequencetask.h bfgs.h
+  network.h sender.h binary.h nn.h boosting.h ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h
+  stable_unique.h cache.h gd_mf.h oaa.h stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h
+  cb_algs.h gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h
+  unique_sort.h interact.h interactions.h parse_example_json.h cbify.h interactions_predict.h
+  vw_allreduce.h classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
+  parser_helper.h config.h.in primitives.h lda_core.h print.h vw_versions.h
 )
 
 set(vw_all_sources

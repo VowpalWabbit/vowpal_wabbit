@@ -41,7 +41,7 @@ endif()
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 if(VALGRIND_PROFILE)
-  set(linux_flags ${linux_flags} -ffast-math -g -fomit-frame-pointer -fno-strict-aliasing)
+  set(linux_flags ${linux_flags} -g -fomit-frame-pointer -fno-strict-aliasing)
 endif()
 
 # gcov configuration
@@ -62,7 +62,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore/")
 
-set(Boost_USE_STATIC_LIBS OFF)
+if(STATIC_LINK_VW)
+  set(Boost_USE_STATIC_LIBS ON)
+  SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  SET(BUILD_SHARED_LIBS OFF)
+else()
+  set(Boost_USE_STATIC_LIBS OFF)
+endif()
+
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
