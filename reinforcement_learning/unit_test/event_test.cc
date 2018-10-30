@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_CASE(interaction_message_survive_test) {
   utility::data_buffer buffer;
   utility::data_buffer expected_buffer;
   ranking_response resp("interaction_id");
-  resp.push_back(1, 0.1);
-  resp.push_back(2, 0.2);
+  resp.push_back(1, 0.1f);
+  resp.push_back(2, 0.2f);
   resp.set_chosen_action_id(1);
 
   ranking_event evt = ranking_event::choose_rank(buffer, "interaction_id", "interaction_context", action_flags::DEFAULT, resp);
