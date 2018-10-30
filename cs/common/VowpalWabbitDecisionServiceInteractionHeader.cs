@@ -32,5 +32,10 @@ namespace VW
         /// Probability of drop extracted from Decision Service Interaction JSON data.
         /// </summary>
         public float ProbabilityOfDrop { get; set; }
+
+        /// <summary>
+        /// Flag if the action is deferred and was not activated - do not train on them
+        /// </summary>
+        public bool DeferredAction { get; set; }
     }
 }

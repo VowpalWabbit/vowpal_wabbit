@@ -6,6 +6,7 @@
  * @date 2018-07-18
  */
 #pragma once
+#include "action_flags.h"
 #include "ranking_response.h"
 #include "err_constants.h"
 #include "factory_resolver.h"
@@ -115,7 +116,7 @@ namespace reinforcement_learning {
     * @param event_id  The unique identifier for this interaction.  The same event_id should be used when
     *                  reporting the outcome for this action.
     * @param context_json Contains action, action features and context features in json format
-    * @param flags Action flags (0 - default, 1 - deferred)
+    * @param flags Action flags (see action_flags.h)
     * @param resp Ranking response contains the chosen action, probability distribution used for sampling actions and ranked actions
     * @param status  Optional field with detailed string description if there is an error
     * @return int Return error code.  This will also be returned in the api_status object
@@ -128,7 +129,7 @@ namespace reinforcement_learning {
     * and then sampling from it.  A unique event_id will be generated and returned in the ranking_response.
     * The same event_id should be used when reporting the outcome for this action.
     * @param context_json Contains action, action features and context features in json format
-    * @param flags Action flags (0 - default, 1 - deferred)
+    * @param flags Action flags (see action_flags.h)
     * @param resp Ranking response contains the chosen action, probability distribution used for sampling actions and ranked actions
     * @param status  Optional field with detailed string description if there is an error
     * @return int Return error code.  This will also be returned in the api_status object

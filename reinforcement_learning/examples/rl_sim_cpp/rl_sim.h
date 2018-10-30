@@ -98,7 +98,7 @@ public:
      * @return true If there is no error during init
      * @return false On init error
      */
-    bool init_people();
+    bool init_sim_world();
 
     /**
      * @brief Initialize the simulator
@@ -120,7 +120,7 @@ public:
     boost::program_options::variables_map _options;
     std::unique_ptr<reinforcement_learning::live_model> _rl;
     std::vector<person> _people;
-    std::vector<std::string> _actions;
+    std::vector<std::string> _topics;
     bool _run_loop = true;
 };
 

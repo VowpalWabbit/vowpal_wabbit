@@ -34,9 +34,11 @@ namespace reinforcement_learning {
 
       void init();
 
-      ranking_response choose_rank(const char* event_id, const char* context_json);
+      ranking_response choose_rank(const char* event_id, const char* context_json, bool deferred);
       // event_id is auto-generated.
-      ranking_response choose_rank(const char* context_json);
+      ranking_response choose_rank(const char* context_json, bool deferred);
+
+      void report_action_taken(const char* event_id);
 
       void report_outcome(const char* event_id, const char* outcome);
       void report_outcome(const char* event_id, float outcome);
