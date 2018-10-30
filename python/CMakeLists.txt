@@ -31,6 +31,6 @@ endif()
 # create the lib
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
-target_link_libraries(pylibvw PUBLIC Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
+target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::system Boost::python${BOOST_PY_VERSION_SUFFIX} vw allreduce)
 target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})

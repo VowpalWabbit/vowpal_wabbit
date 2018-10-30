@@ -200,37 +200,17 @@ brew install vowpal-wabbit
 ### Manual install of Vowpal Wabbit
 #### OSX Dependencies (if using Brew):
 ```
-brew install libtool
-brew install autoconf
-brew install automake
 brew install boost
 brew install boost-python
 ```
 
 #### OSX Dependencies (if using MacPorts):
 ```
-## Install glibtool and other GNU autotool friends:
-$ port install libtool autoconf automake
-
 ## Build Boost for Mac OS X 10.8 and below
 $ port install boost +no_single -no_static +openmpi +python27 configure.cxx_stdlib=libc++ configure.cxx=clang++
 
 ## Build Boost for Mac OS X 10.9 and above
 $ port install boost +no_single -no_static +openmpi +python27
-```
-
-#### OSX Manual compile:
-*Mac OS X 10.8 and below*: ``configure.cxx_stdlib=libc++`` and ``configure.cxx=clang++`` ensure that ``clang++`` uses
-the correct C++11 functionality while building Boost. Ordinarily, ``clang++`` relies on the older GNU ``g++`` 4.2 series
-header files and ``stdc++`` library; ``libc++`` is the ``clang`` replacement that provides newer C++11 functionality. If
-these flags aren't present, you will likely encounter compilation errors when compiling _vowpalwabbit/cbify.cc_. These
-error messages generally contain complaints about ``std::to_string`` and ``std::unique_ptr`` types missing.
-
-To compile:
-```
-$ sh autogen.sh --enable-libc++
-$ make
-$ make test    # (optional)
 ```
 
 #### OSX Python Binding installation with Anaconda
