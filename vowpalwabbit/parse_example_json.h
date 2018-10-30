@@ -1171,7 +1171,7 @@ namespace VW
   }
 
   template<bool audit>
-  bool read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+  void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
   {
     std::vector<char> line_vec;
     if (copy_line)
@@ -1188,14 +1188,9 @@ namespace VW
       handler.ctx.SetStartStateToDecisionService(data);
 
       ParseResult result = parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-      if (data->deferred) {
-        VW::clear_seq_and_finish_examples(all, examples);
-        all.p->begin_parsed_examples = all.p->end_parsed_examples;
-        examples.push_back(&VW::get_unused_example(&all));
-        return false;
-      }
+
       if (!result.IsError())
-        return true;
+        return;
 
       BaseState<audit>* current_state = handler.current_state();
 
@@ -1230,7 +1225,12 @@ int read_features_json(vw* all, v_array<example*>& examples)
       }
 
       DecisionServiceInteraction interaction;
-      if (!VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction)) {
+      VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+
+      if (interaction.deferred) {
+        VW::clear_seq_and_finish_examples(*all, examples);
+        all->p->begin_parsed_examples = all->p->end_parsed_examples;
+        examples.push_back(&VW::get_unused_example(all));
         reread = true;
       }
 
