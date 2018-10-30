@@ -100,12 +100,18 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn,262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
+  // Allow periodic_background_proc inside async_batcher to start waiting
+  // on a timer before sending any events to it.   Else we risk not 
+  // triggering the batch mechanism and might get triggered by initial 
+  // pass in do..while loop
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   //add 2 items in the current batch
   batcher.append(test_undroppable_event("foo"));
   batcher.append(test_undroppable_event("bar"));
 
   //wait until the timeout triggers
-  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
+  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
 
   //check the batch was sent
   std::string expected = "foo\nbar";
@@ -121,8 +127,14 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t send_high_water_mark = 10;//bytes
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog(nullptr);
-  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
+  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark,100000);
   batcher->init(nullptr);
+
+  // Allow periodic_background_proc inside async_batcher to start waiting
+  // on a timer before sending any events to it.   Else we risk not 
+  // triggering the batch mechanism and might get triggered by initial 
+  // pass in do..while loop
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   //add 2 items in the current batch
   batcher->append(test_undroppable_event("foo"));    //3 bytes
@@ -154,6 +166,9 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
 
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   batcher->append(test_undroppable_event("foo"));
   batcher->append(test_undroppable_event("bar"));
 
@@ -181,6 +196,9 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
   utility::watchdog watchdog(nullptr);
   async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn,262143, timeout_ms, queue_max_size, queue_mode);
   batcher->init(nullptr);
+
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   int n = 10;
   for (int i = 0; i < n; ++i) {
