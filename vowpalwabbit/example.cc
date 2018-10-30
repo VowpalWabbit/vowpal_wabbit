@@ -231,6 +231,7 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
 }
 
 void finish_example(vw&, example&);
+void return_unused_example(vw&, example&);
 
 void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
 {
@@ -241,12 +242,11 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
   ec_seq.clear();
 }
 
-void clear_seq_and_finish_examples(vw& all, v_array<example*>& ec_seq)
+void return_unused_examples(vw& all, v_array<example*>& examples)
 {
-  if (ec_seq.size() > 0)
-    for (example* ecc : ec_seq)
-      if (ecc->in_use)
-        VW::finish_example(all, *ecc);
-  ec_seq.clear();
+  for (auto ec : examples) {
+    return_unused_example(all, *ec);
+  }
+  examples.clear();
 }
 }

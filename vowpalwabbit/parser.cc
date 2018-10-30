@@ -787,6 +787,19 @@ example& get_unused_example(vw* all)
   }
 }
 
+void return_unused_example(vw& all, example& ec)
+{
+  empty_example(all, ec);
+
+  mutex_lock(&all.p->examples_lock);
+  assert(ec.in_use);
+  ec.in_use = false;
+  condition_variable_signal(&all.p->example_unused);
+  assert(all.p->begin_parsed_examples > 0);
+  all.p->begin_parsed_examples--;
+  mutex_unlock(&all.p->examples_lock);
+}
+
 void setup_examples(vw& all, v_array<example*>& examples)
 {
   for (example* ae : examples)
