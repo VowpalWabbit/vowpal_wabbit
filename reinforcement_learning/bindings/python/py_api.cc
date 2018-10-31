@@ -13,6 +13,15 @@
 
 namespace reinforcement_learning {
   namespace python {
+
+    // PyEval_InitThreads must be called before any threads are created, and definitely before we try to take the GIL.
+    // https://stackoverflow.com/questions/5140998/why-does-pygilstate-release-segfault-in-this-case
+    struct InitializeGILOnStartup {
+      InitializeGILOnStartup(){
+        PyEval_InitThreads();
+      }
+    } ensureGILIsReadyBeforeCreatingThreads;
+
     void dispatch_error_internal(const reinforcement_learning::api_status& status, error_callback* context) {
       // Obtain global interpreter lock to execute Python.
       PyGILState_STATE gstate;
@@ -84,22 +93,30 @@ namespace reinforcement_learning {
       return response;
     }
 
-    ranking_response live_model::choose_rank(const char* event_id, const char* context_json) {
+    ranking_response live_model::choose_rank(const char* event_id, const char* context_json, bool deferred) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
-      _impl.choose_rank(event_id, context_json, response_impl, &status);
+      unsigned int flags = deferred ? action_flags::DEFERRED : action_flags::DEFAULT;
+      _impl.choose_rank(event_id, context_json, flags, response_impl, &status);
       check_api_status(status);
 
       return convert_ranking_response(response_impl);
     }
     // event_id is auto-generated.
-    ranking_response live_model::choose_rank(const char* context_json) {
+    ranking_response live_model::choose_rank(const char* context_json, bool deferred) {
       reinforcement_learning::ranking_response response_impl;
       reinforcement_learning::api_status status;
-      _impl.choose_rank(context_json, response_impl, &status);
+      unsigned int flags = deferred ? action_flags::DEFERRED : action_flags::DEFAULT;
+      _impl.choose_rank(context_json, flags, response_impl, &status);
       check_api_status(status);
 
       return convert_ranking_response(response_impl);
+    }
+
+    void live_model::report_action_taken(const char* event_id) {
+      reinforcement_learning::api_status status;
+      _impl.report_action_taken(event_id, &status);
+      check_api_status(status);
     }
 
     void live_model::report_outcome(const char* event_id, const char* outcome) {

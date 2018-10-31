@@ -110,7 +110,7 @@ namespace reinforcement_learning {
       // The first action of the thread should be registering itself with the watchdog.
       _watchdog.register_thread(std::this_thread::get_id(), _proc_name, static_cast<long long>(_interval_ms * timeout_grace_multiplier_c));
 
-      while (_thread_is_running) {
+      do {
         api_status status;
 
         // Check in to the watchdog to report this thread is still alive.
@@ -121,9 +121,7 @@ namespace reinforcement_learning {
           ERROR_CALLBACK(_perror_cb, status);
         }
         // Cancelable sleep for interval
-        if (!_thread_is_running || !_sleeper.sleep(std::chrono::milliseconds(_interval_ms)))
-          return;
-      }
+      } while (_sleeper.sleep(std::chrono::milliseconds(_interval_ms)));
     }
   }
 }

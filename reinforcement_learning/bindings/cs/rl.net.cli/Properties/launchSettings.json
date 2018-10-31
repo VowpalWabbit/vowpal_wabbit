@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "rl.net.cli": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
