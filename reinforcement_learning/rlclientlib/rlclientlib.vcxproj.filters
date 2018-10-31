@@ -21,7 +21,6 @@
     <ClCompile Include="live_model.cc" />
     <ClCompile Include="ranking_event.cc" />
     <ClCompile Include="ranking_response.cc" />
-    <ClCompile Include="ranking_response_impl.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="console_tracer.cc" />
@@ -55,7 +54,6 @@
     <ClInclude Include="live_model_impl.h" />
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
-    <ClInclude Include="ranking_response_impl.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />

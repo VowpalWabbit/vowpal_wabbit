@@ -43,19 +43,24 @@ namespace reinforcement_learning { namespace model_management {
 
       // Pick a slot using the pdf. NOTE: sample_after_normalizing() can change the pdf
       uint32_t chosen_index;
-      auto const scode = e::sample_after_normalizing(rnd_seed, std::begin(pdf), std::end(pdf), chosen_index);
+      auto scode = e::sample_after_normalizing(rnd_seed, std::begin(pdf), std::end(pdf), chosen_index);
 
       if ( S_EXPLORATION_OK != scode ) {
         RETURN_ERROR_LS(_trace_logger, status, exploration_error) << scode;
       }
 
-      response.push_back(action_ids[chosen_index], pdf[chosen_index]);
-
-      // Setup response with pdf from prediction and chosen action
-      for (size_t idx = 1; idx < action_ids.size(); ++idx) {
-        const auto cur_idx = chosen_index != idx ? idx : 0;
-        response.push_back(action_ids[cur_idx], pdf[cur_idx]);
+      // Setup response with pdf from prediction and action indexes
+      for ( size_t idx = 0; idx < pdf.size(); ++idx ) {
+        response.push_back(action_ids[idx], pdf[idx]);
       }
+
+      // Swap values in first position with values in chosen index
+      scode = e::swap_chosen(std::begin(response), std::end(response), chosen_index);
+
+      if ( S_EXPLORATION_OK != scode ) {
+        RETURN_ERROR_LS(_trace_logger, status, exploration_error) << "Exploration error code: " << scode;
+      }
+
       response.set_chosen_action_id(action_ids[chosen_index]);
       response.set_model_id(vw->id());
 
