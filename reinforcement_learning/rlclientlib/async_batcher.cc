@@ -9,4 +9,4 @@ namespace reinforcement_learning {
       return DROP;
     }
   }
-};
+}

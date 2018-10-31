@@ -20,7 +20,7 @@ namespace reinforcement_learning {
 
   //convert a string to an enum value
   queue_mode_enum to_queue_mode_enum(const char* queue_mode);
-};
+}
 
 namespace reinforcement_learning {
   class error_callback_fn;
