@@ -17,6 +17,7 @@ namespace reinforcement_learning {
     queue_t _queue;
     std::mutex _mutex;
     int _drop_pass{ 0 };
+    size_t _capacity{ 0 };
 
   public:
     event_queue() {
@@ -29,6 +30,7 @@ namespace reinforcement_learning {
       if (!_queue.empty())
       {
         *item = std::move(_queue.front());
+        _capacity = (std::max)((int)0, (int)_capacity - (int)(item->size()));
         _queue.pop_front();
       }
     }
@@ -40,6 +42,7 @@ namespace reinforcement_learning {
     void push(T&& item)
     {
       std::unique_lock<std::mutex> mlock(_mutex);
+      _capacity += item.size();
       _queue.push_back(std::forward<T>(item));
     }
 
@@ -57,6 +60,11 @@ namespace reinforcement_learning {
     {
       std::unique_lock<std::mutex> mlock(_mutex);
       return _queue.size();
+    }
+
+    size_t capacity() const 
+    {
+      return _capacity;
     }
   };
 }

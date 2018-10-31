@@ -47,7 +47,7 @@ namespace reinforcement_learning {
                   error_callback_fn* perror_cb = nullptr,
                   size_t send_high_water_mark = (1024 * 1024 * 4),
                   size_t batch_timeout_ms = 1000,
-                  size_t queue_max_size = (8 * 1024),
+                  size_t queue_max_capacity = (16 * 1024 * 1024),
                   queue_mode_enum queue_mode = DROP);
     ~async_batcher();
 
@@ -57,7 +57,7 @@ namespace reinforcement_learning {
     event_queue<TEvent> _queue;       // A queue to accumulate batch of events.
     utility::data_buffer _buffer;           // Re-used buffer to prevent re-allocation during sends.
     size_t _send_high_water_mark;
-    size_t _queue_max_size;
+    size_t _queue_max_capacity;
     error_callback_fn* _perror_cb;
 
     utility::periodic_background_proc<async_batcher> _periodic_background_proc;
@@ -79,10 +79,10 @@ namespace reinforcement_learning {
     _queue.push(std::move(evt));
 
     //block or drop events if the queue if full
-    if (_queue.size() >= _queue_max_size) {
+    if (_queue.capacity() >= _queue_max_capacity) {
       if (BLOCK == _queue_mode) {
         std::unique_lock<std::mutex> lk(_m);
-        _cv.wait(lk, [this] { return _queue.size() < _queue_max_size; });
+        _cv.wait(lk, [this] { return _queue.capacity() < _queue_max_capacity; });
       }
       else if (DROP == _queue_mode) {
         _queue.prune(_pass_prob);
@@ -145,10 +145,10 @@ namespace reinforcement_learning {
 
   template<typename TEvent>
   async_batcher<TEvent>::async_batcher(i_sender* sender, utility::watchdog& watchdog, error_callback_fn* perror_cb, const size_t send_high_water_mark,
-    const size_t batch_timeout_ms, const size_t queue_max_size, queue_mode_enum queue_mode)
+    const size_t batch_timeout_ms, const size_t queue_max_capacity, queue_mode_enum queue_mode)
     : _sender(sender),
     _send_high_water_mark(send_high_water_mark),
-    _queue_max_size(queue_max_size),
+    _queue_max_capacity(queue_max_capacity),
     _perror_cb(perror_cb),
     _periodic_background_proc(static_cast<int>(batch_timeout_ms), watchdog, "Async batcher thread", perror_cb),
     _pass_prob(0.5),

@@ -35,6 +35,10 @@ public:
     serialize(buf);
     return buf.str();
   }
+
+  size_t size() const override {
+    return 10;
+  }
 };
 
 BOOST_AUTO_TEST_CASE(push_pop_test) {
@@ -70,7 +74,11 @@ BOOST_AUTO_TEST_CASE(prune_test) {
   test_event val;
 
   BOOST_CHECK_EQUAL(queue.size(), 5);
+  BOOST_CHECK_EQUAL(queue.capacity(), 50);
   queue.prune(1.0);
+  BOOST_CHECK_EQUAL(queue.size(), 3);
+  BOOST_CHECK_EQUAL(queue.capacity(), 30);
+
 
   queue.pop(&val);
   BOOST_CHECK_EQUAL(val.str(), "no_drop_1");
@@ -133,4 +141,20 @@ BOOST_AUTO_TEST_CASE(queue_move_push)
   test_event item;
   queue.pop(&item);
   BOOST_CHECK_EQUAL(item.str(), "hello");
+}
+
+BOOST_AUTO_TEST_CASE(queue_capacity_test)
+{
+  test_event test("hello");
+  reinforcement_learning::event_queue<test_event> queue;
+
+  BOOST_CHECK_EQUAL(queue.capacity(), 0);
+  // Contents of string moved into queue
+  queue.push(test);
+  BOOST_CHECK_EQUAL(queue.capacity(), 10);
+
+  // Contents of queue string moved into passed in string
+  test_event item;
+  queue.pop(&item);
+  BOOST_CHECK_EQUAL(queue.capacity(), 0);
 }

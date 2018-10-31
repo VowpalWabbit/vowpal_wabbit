@@ -107,6 +107,10 @@ namespace reinforcement_learning {
     return ranking_event(event_id, pass_prob, oss.str());
 	}
 
+  size_t ranking_event::size() const {
+    return _body.length();
+  }
+
   outcome_event::outcome_event()
   { }
 
@@ -147,4 +151,8 @@ namespace reinforcement_learning {
     oss << R"({"EventId":")" << event_id << R"(","DeferredAction":false})";
     return outcome_event(event_id, pass_prob, oss.str());
   }
+
+  size_t outcome_event::size() const {
+    return _body.length();
+  }  
 }

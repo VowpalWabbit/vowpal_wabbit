@@ -1,4 +1,5 @@
 #include <map>
+#include <set>
 #include <regex>
 #include "config_utility.h"
 #include "cpprest/json.h"
@@ -7,6 +8,7 @@
 #include "err_constants.h"
 #include "api_status.h"
 #include "str_util.h"
+#include "trace_logger.h"
 #include "../model_mgmt/restapi_data_transport.h"
 
 using namespace web;
@@ -99,7 +101,6 @@ namespace reinforcement_learning { namespace utility { namespace config {
       "InitialExplorationEpsilon",
       "ModelRefreshIntervalMs",
       "SendHighMaterMark",
-      "QueueMaxSize",
       "BatchTimeoutMs",
       "QueueMode"
     };
@@ -108,11 +109,14 @@ namespace reinforcement_learning { namespace utility { namespace config {
       { "ApplicationID"             , name::APP_ID },
       { "ModelBlobUri"              , name::MODEL_BLOB_URI },
       { "SendHighMaterMark"         , name::INTERACTION_SEND_HIGH_WATER_MARK },
-      { "QueueMaxSize"              , name::INTERACTION_SEND_QUEUE_MAXSIZE },
       { "SendBatchIntervalMs"       , name::INTERACTION_SEND_BATCH_INTERVAL_MS },
       { "InitialExplorationEpsilon" , name::INITIAL_EPSILON },
       { "ModelRefreshIntervalMs"    , name::MODEL_REFRESH_INTERVAL_MS },
       { "QueueMode"                 , name::QUEUE_MODE } // expect either DROP or BLOCK, default is DROP
+    };
+
+    const std::set<std::string> deprecated = {
+      "QueueMaxSize"
     };
 
     auto obj = json::value::parse(to_string_t(config_json));
@@ -123,6 +127,10 @@ namespace reinforcement_learning { namespace utility { namespace config {
       if (obj.has_field(wname)) {
         const auto jvalue = obj.at(wname);
         const auto value = to_utf8string( jvalue.is_string() ? jvalue.as_string() : jvalue.serialize());
+        if (deprecated.find(name) != deprecated.end()) {
+          auto message = concat("Field '", name, "' is unresponsive.");
+          TRACE_WARN(trace, message);
+        }
         name = translate(from_to, name);
         cc.set(name.c_str(), value.c_str());
       }

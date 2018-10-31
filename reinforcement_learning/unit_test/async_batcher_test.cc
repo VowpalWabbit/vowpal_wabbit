@@ -53,6 +53,10 @@ public:
     serialize(buf);
     return buf.str();
   }
+
+  size_t size() const override {
+    return 1;
+  }
 };
 
 class test_droppable_event : public event {
@@ -80,6 +84,10 @@ public:
 		serialize(buf);
 		return buf.str();
 	}
+
+  size_t size() const override {
+    return 1;
+  }
 };
 
 void expect_no_error(const api_status& s, void* cntxt)
