@@ -50,7 +50,7 @@ namespace reinforcement_learning {
     {
       std::unique_lock<std::mutex> mlock(_mutex);
       for (typename queue_t::iterator it = _queue.begin(); it != _queue.end();) {
-        it = it->try_drop(pass_prob, _drop_pass) ? _queue.erase(it) : (++it);
+        it = it->try_drop(pass_prob, _drop_pass) ? erase(it) : (++it);
       }
       ++_drop_pass;
     }
@@ -65,6 +65,13 @@ namespace reinforcement_learning {
     size_t capacity() const 
     {
       return _capacity;
+    }
+
+  private:
+    //thread-unsafe
+    typename queue_t::iterator erase(typename queue_t::iterator it) {
+      _capacity = (std::max)((int)0, (int)_capacity - (int)(it->size()));
+      return _queue.erase(it);
     }
   };
 }
