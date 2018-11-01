@@ -6,7 +6,7 @@ Here, the context denotes the const char* argument passed to the choose_rank() c
 
 The format of this context is a JSON string, with a specific structure. This JSON context contains two parts:
 - The description of the shared features, i.e. the features shared by all actions.
-- The description of the actions features, i.e. a JSON array that describes every actions.
+- The description of the action features, i.e. a JSON array that describes the set of features for each action.
 
 Typically, the shared features describe a user, while the actions features describe all the possible actions that can be taken for this user.
 
