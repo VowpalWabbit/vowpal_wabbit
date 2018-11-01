@@ -3,8 +3,10 @@
 namespace VW.Events;
 
 table OutcomeEvent {
-    EventId:string;
-    v:string;
+    event_id:string;
+	deferred_action:bool = false;
+	type:string;
+    value:[ubyte];
 }
 
 table OutcomeEventBatch {

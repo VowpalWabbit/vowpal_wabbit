@@ -9,10 +9,12 @@ namespace reinforcement_learning { namespace utility {
     data_buffer();
     void reset();
     std::vector<unsigned char> buffer();
+    uint8_t* data();
     size_t size() const;
     void remove_last();
     void append(const unsigned char* data, size_t len);
     std::string str() const;
+    void reserve(size_t size);
     data_buffer& operator<<(const std::string& cs);
     data_buffer& operator<<(const char*);
     data_buffer& operator<<(size_t rhs);

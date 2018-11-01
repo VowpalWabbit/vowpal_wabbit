@@ -41,8 +41,12 @@ namespace reinforcement_learning {
     ranking_event(ranking_event&& other);
     ranking_event& operator=(ranking_event&& other);
 
-    flatbuffers::Offset<RankingEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
     std::string str();
+    std::vector<unsigned char> get_context();
+    std::vector<uint64_t> get_action_ids();
+    std::vector<float> get_probabilities();
+    std::string get_model_id();
+    bool get_defered_action();
 
   public:
     static ranking_event choose_rank(const char* event_id, const char* context,
@@ -51,9 +55,9 @@ namespace reinforcement_learning {
   private:
     ranking_event(const char* event_id, bool deferred_action, float pass_prob, const char* context, const ranking_response& response);
 
-    std::string _context;
-    std::vector<uint64_t> _a_vector;
-    std::vector<float> _p_vector;
+    std::vector<unsigned char> _context;
+    std::vector<uint64_t> _action_ids_vector;
+    std::vector<float> _probilities_vector;
     std::string _model_id;
     bool _deferred_action;
   };
@@ -67,7 +71,8 @@ namespace reinforcement_learning {
     outcome_event& operator=(outcome_event&& other);
 
     std::string str();
-    flatbuffers::Offset<OutcomeEvent> serialize_eventhub_message(flatbuffers::FlatBufferBuilder& builder);
+    std::string get_outcome();
+    bool get_deferred_action();
 
   public:
     static outcome_event report_action_taken(const char* event_id, float pass_prob = 1);
@@ -76,10 +81,11 @@ namespace reinforcement_learning {
     static outcome_event report_outcome(const char* event_id, float outcome, float pass_prob = 1);
 
   private:
-    outcome_event(const char* event_id, float pass_prob, const char* outcome);
-    outcome_event(const char* event_id, float pass_prob, float outcome);
+    outcome_event(const char* event_id, float pass_prob, const char* outcome, bool _deferred_action);
+    outcome_event(const char* event_id, float pass_prob, float outcome, bool _deferred_action);
 
   private:
     std::string _outcome;
+    bool _deferred_action;
   };
 }
