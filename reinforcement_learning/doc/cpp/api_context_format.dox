@@ -73,7 +73,7 @@ Partial example with 3 action features:
 }
 ~~~~~
 
-The action features follows the same rules as shared features.
+The action features follow the same rules as shared features.
 
 
 Reserved field names:
