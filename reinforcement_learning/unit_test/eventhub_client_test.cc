@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_CASE(http_in_order_after_retry)
     // Succeed every 4th attempt.
     if (tries >= 4) {
       // extract_string can only be called once on an http_request but we only do it once. Using const cast to avoid having to read out the stream.
-      std::string test = const_cast<http_request&>(message).extract_utf8string().get();
-      received_messages.push_back(test);
+      std::vector<unsigned char> data = const_cast<http_request&>(message).extract_vector().get();
+      received_messages.push_back(std::string(data.begin(),data.end()));
       message.reply(status_codes::Created);
       tries = 0;
     }
