@@ -40,8 +40,10 @@ namespace reinforcement_learning {
     }
 
     void model_data::free() {
-      delete[] _data;
-      _data = nullptr;
+      if (_data != nullptr) {
+        delete[] _data;
+        _data = nullptr;
+      }
       _data_sz = 0;
     }
 
