@@ -61,7 +61,7 @@ target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/rapid
 # Use folders in VS solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(explore_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/explore/")
+set(explore_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/explore/")
 
 if(STATIC_LINK_VW)
   set(Boost_USE_STATIC_LIBS ON)
