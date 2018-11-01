@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -178,6 +178,7 @@
     <ClInclude Include="..\include\trace_logger.h" />
     <ClInclude Include="generated\OutcomeEvent_generated.h" />
     <ClInclude Include="generated\RankingEvent_generated.h" />
+    <ClInclude Include="azure_factories.h" />
     <ClInclude Include="console_tracer.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="moving_queue.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="utility\periodic_background_proc.h" />
     <ClInclude Include="utility\object_pool.h" />
     <ClCompile Include="async_batcher.cc" />
+    <ClCompile Include="azure_factories.cc" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="logger\event_batcher.cc" />
     <ClCompile Include="logger\event_logger.cc" />
@@ -205,7 +207,6 @@
     <ClInclude Include="live_model_impl.h" />
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
-    <ClInclude Include="ranking_response_impl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="model_mgmt\model_downloader.cc" />
@@ -227,7 +228,6 @@
     <ClCompile Include="live_model.cc" />
     <ClCompile Include="ranking_event.cc" />
     <ClCompile Include="ranking_response.cc" />
-    <ClCompile Include="ranking_response_impl.cc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\vowpalwabbit\vw_core.vcxproj">

@@ -21,13 +21,13 @@
     <ClCompile Include="live_model.cc" />
     <ClCompile Include="ranking_event.cc" />
     <ClCompile Include="ranking_response.cc" />
-    <ClCompile Include="ranking_response_impl.cc" />
     <ClCompile Include="logger\event_logger.cc" />
     <ClCompile Include="utility\watchdog.cc" />
     <ClCompile Include="console_tracer.cc" />
     <ClCompile Include="trace_logger.cc" />
     <ClCompile Include="async_batcher.cc" />
     <ClCompile Include="logger\event_batcher.cc" />
+    <ClCompile Include="azure_factories.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\api_status.h" />
@@ -57,7 +57,6 @@
     <ClInclude Include="live_model_impl.h" />
     <ClInclude Include="error_callback_fn.h" />
     <ClInclude Include="ranking_event.h" />
-    <ClInclude Include="ranking_response_impl.h" />
     <ClInclude Include="logger\event_logger.h" />
     <ClInclude Include="..\include\sender.h" />
     <ClInclude Include="..\include\object_factory.h" />
@@ -69,6 +68,7 @@
     <ClInclude Include="..\include\trace_logger.h" />
     <ClInclude Include="console_tracer.h" />
     <ClInclude Include="generated\OutcomeEvent_generated.h" />
+    <ClInclude Include="azure_factories.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

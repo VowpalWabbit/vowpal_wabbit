@@ -84,6 +84,12 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   async_batcher<test_undroppable_event> batcher(s, watchdog, &error_fn, 262143, timeout_ms, 8192);
   batcher.init(nullptr);
 
+  // Allow periodic_background_proc inside async_batcher to start waiting
+  // on a timer before sending any events to it.   Else we risk not 
+  // triggering the batch mechanism and might get triggered by initial 
+  // pass in do..while loop
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   //add 2 items in the current batch
   std::string foo("foo");
   std::string bar("bar");
@@ -91,14 +97,14 @@ BOOST_AUTO_TEST_CASE(flush_timeout)
   batcher.append(test_undroppable_event(bar));
 
   //wait until the timeout triggers
-  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms + 10));
+  std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
 
   //check the batch was sent
   std::string expected = foo + bar;
   BOOST_REQUIRE_EQUAL(items.size(), 1);
   std::string result;
   for (auto item : items) {
-      result.append(item.begin(), item.end());
+    result.append(item.begin(), item.end());
   }
   BOOST_CHECK_EQUAL(result, expected);
 }
@@ -111,15 +117,21 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   size_t send_high_water_mark = 10;//bytes	
   error_callback_fn error_fn(expect_no_error, nullptr);
   utility::watchdog watchdog(nullptr);
-  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark);
+  async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog, &error_fn, send_high_water_mark, 100000);
   batcher->init(nullptr);
-  
+
+  // Allow periodic_background_proc inside async_batcher to start waiting
+  // on a timer before sending any events to it.   Else we risk not 
+  // triggering the batch mechanism and might get triggered by initial 
+  // pass in do..while loop
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   //add 2 items in the current batch	
   std::string foo("foo");
   std::string bar("bar-yyy");
   batcher->append(test_undroppable_event(foo));   //3 bytes	
   batcher->append(test_undroppable_event(bar));   //7 bytes	
-  
+
   //'send_high_water_mark' will be triggered by previous 2 items.	
   //next item will be added in a new batch	
   std::string hello("hello");
@@ -129,11 +141,11 @@ BOOST_AUTO_TEST_CASE(flush_batches)
   std::string expected_batch_1 = hello;
 
   delete batcher;//flush force	
-  
+
   BOOST_REQUIRE_EQUAL(items.size(), 2);
   std::string batch_0(items[0].begin(), items[0].end());
   std::string batch_1(items[1].begin(), items[1].end());
-  
+
   BOOST_CHECK_EQUAL(batch_0, expected_batch_0);
   BOOST_CHECK_EQUAL(batch_1, expected_batch_1);
 }
@@ -146,6 +158,9 @@ BOOST_AUTO_TEST_CASE(flush_after_deletion)
   utility::watchdog watchdog(nullptr);
   async_batcher<test_undroppable_event>* batcher = new async_batcher<test_undroppable_event>(s, watchdog);
   batcher->init(nullptr);
+
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
   std::string foo("foo");
   std::string bar("bar");
@@ -178,6 +193,9 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
   async_batcher<test_droppable_event>* batcher = new async_batcher<test_droppable_event>(s, watchdog, &error_fn, 262143, timeout_ms, queue_max_size, queue_mode);
   batcher->init(nullptr);
 
+  // Allow periodic_background_proc to start waiting
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
   int n = 10;
   for (int i = 0; i < n; ++i) {
     batcher->append(test_droppable_event(std::to_string(i)));
@@ -185,17 +203,17 @@ BOOST_AUTO_TEST_CASE(queue_overflow_do_not_drop_event)
 
   //triggers a final flush
   delete batcher;
- 
+
   //all batches were sent. Check that no event was dropped
   std::string expected_output = "0";
   for (int i = 1; i < n; ++i) {
-      expected_output += std::to_string(i);
+    expected_output += std::to_string(i);
   }
 
-  BOOST_REQUIRE(items.size()>0);
+  BOOST_REQUIRE(items.size() > 0);
   std::string actual_output;
   for (auto item : items) {
-      actual_output.append(item.begin(), item.end());
+    actual_output.append(item.begin(), item.end());
   }
 
   BOOST_CHECK_EQUAL(expected_output, actual_output);
