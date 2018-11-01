@@ -8,7 +8,7 @@ The format of this context is a JSON string, with a specific structure. This JSO
 - The description of the shared features, i.e. the features shared by all actions.
 - The description of the action features, i.e. a JSON array that describes the set of features for each action.
 
-Typically, the shared features describe a user, while the actions features describe all the possible actions that can be taken for this user.
+Typically, the shared features describe a user, while the action features describe all the possible actions that can be taken for this user.
 
 
 Partial example with shared features (without actions features):
