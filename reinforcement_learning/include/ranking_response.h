@@ -15,14 +15,23 @@ namespace reinforcement_learning {
   class ranking_response_impl;
 
   /**
-   * @brief Holds (action, probability) pairs.
+   * @brief Holds (action, probability) pairs, POD used for extern "C"
    */
-  struct action_prob {
-    action_prob(size_t action_id, float probability);
+  struct action_prob_d {
     //! action id
     size_t action_id;
     //! probability associated with the action id
     float probability;
+  };
+
+  /**
+   * @brief Holds (action, probability) pairs.
+   */
+  struct action_prob : public action_prob_d {
+    inline action_prob(size_t action_id, float probability) {
+      this->action_id = action_id;
+      this->probability = probability;
+    };
   };
 
   /**
