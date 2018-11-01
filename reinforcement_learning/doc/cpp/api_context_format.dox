@@ -83,7 +83,7 @@ The field name "_multi" is reserved for action features. Its value is a JSON arr
 Another field name, "_text", splits the containing string into features.
 For example:
 ~~~~~
-	"_text":"London UK"
+	"_text": "London UK"
 ~~~~~
 becomes
 ~~~~~
