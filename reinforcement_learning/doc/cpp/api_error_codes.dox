@@ -1,4 +1,4 @@
-/*! \page error_codes API Error Codes
+/*! \page api_error_codes API Error Codes
 
 All RL Inference API functions return error codes.
 
