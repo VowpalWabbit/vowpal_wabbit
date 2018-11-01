@@ -28,6 +28,7 @@ option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
+option(VW_TEST "Turn on CMake testing target. On by default." ON)
 
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
@@ -87,7 +88,9 @@ add_subdirectory(vowpalwabbit)
 add_subdirectory(java)
 add_subdirectory(python)
 
-enable_testing()
+if(VW_TEST)
+  enable_testing()
+endif()
 add_subdirectory(test)
 
 # Don't offer these make dependent targets on Windows
