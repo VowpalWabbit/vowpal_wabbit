@@ -40,7 +40,7 @@ int rl_sim::loop() {
     }
 
     // What outcome did this action get?
-    const auto outcome = p.get_outcome(_actions[chosen_action]);
+    const auto outcome = p.get_outcome(_topics[chosen_action]);
 
     // Report outcome received
     if ( _rl->report_outcome(req_id.c_str(), outcome, &status) != err::success && outcome > 0.00001f ) {
@@ -115,33 +115,55 @@ int rl_sim::init_rl() {
   return err::success;
 }
 
-bool rl_sim::init_people() {
+bool rl_sim::init_sim_world() {
 
-  person::topic_prob tp1 { 
-    { "HerbGarden",0.03f }, 
-    { "MachineLearning",0.1f } };
-  _people.emplace_back("rnc", "engineering", "hiking", "spock", tp1);
+  //  Initilize topics
+  _topics = {
+    "SkiConditions-VT", 
+    "HerbGarden",
+    "BeyBlades",
+    "NYCLiving",
+    "MachineLearning"
+  };
 
-  person::topic_prob tp2 {
-    { "HerbGarden",0.3f },
-    { "MachineLearning",0.1f } };
-  _people.emplace_back("mk", "psychology", "kids", "7of9", tp2);
+  // Initialize click probability for p1
+  person::topic_prob tp = {
+    { _topics[0],0.08f },
+    { _topics[1],0.03f }, 
+    { _topics[2],0.05f },
+    { _topics[3],0.03f },
+    { _topics[4],0.25f }
+  };
+  _people.emplace_back("rnc", "engineering", "hiking", "spock", tp);
 
-  _actions.emplace_back("HerbGarden");
-  _actions.emplace_back("MachineLearning");
+  // Initialize click probability for p2
+  tp = {
+    { _topics[0],0.08f },
+    { _topics[1],0.30f },
+    { _topics[2],0.02f },
+    { _topics[3],0.02f },
+    { _topics[4],0.10f }
+  };
+  _people.emplace_back("mk", "psychology", "kids", "7of9", tp);
 
   return true;
 }
 
 bool rl_sim::init() {
   if ( init_rl() != err::success ) return false;
-  if ( !init_people() ) return false;
+  if ( !init_sim_world() ) return false;
   return true;
 }
 
 std::string rl_sim::get_action_features() {
   std::ostringstream oss;
-  oss << R"("_multi": [ { "TAction":{"topic":"HerbGarden"} }, { "TAction":{"topic":"MachineLearning"} } ])";
+  // example
+  // R"("_multi": [ { "TAction":{"topic":"HerbGarden"} }, { "TAction":{"topic":"MachineLearning"} } ])";
+  oss << R"("_multi": [ )";
+  for ( auto idx = 0; idx < _topics.size() - 1; ++idx) {
+    oss << R"({ "TAction":{"topic":")" << _topics[idx] << R"("} }, )";
+  }
+  oss << R"({ "TAction":{"topic":")" << _topics.back() << R"("} } ])";
   return oss.str();
 }
 

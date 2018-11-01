@@ -16,7 +16,20 @@ http_server::http_server(const utility::string_t& url, const bool post_err)
   m_listener.support(methods::HEAD, std::bind(&http_server::handle_head, this, std::placeholders::_1));
 }
 
+void http_server::set_post_error(bool value) {
+  _post_err = value;
+}
+
+void http_server::set_custom_responder(http::method method, std::function<response_fn> custom_responder) {
+  _custom_responders[method] = custom_responder;
+}
+
 void http_server::handle_get(const http_request& message) {
+  if (_custom_responders.count(message.method()) != 0) {
+    _custom_responders[message.method()](message);
+    return;
+  }
+
   http_response resp;
   resp.set_status_code(status_codes::OK);
   resp.headers().add(U("Last-Modified"), datetime::utc_now().to_string());
@@ -25,6 +38,11 @@ void http_server::handle_get(const http_request& message) {
 }
 
 void http_server::handle_post(const http_request& message) {
+  if (_custom_responders.count(message.method()) != 0) {
+    _custom_responders[message.method()](message);
+    return;
+  }
+
   if (_post_err)
     message.reply(status_codes::InternalError);
   else {
@@ -33,6 +51,10 @@ void http_server::handle_post(const http_request& message) {
 }
 
 void http_server::handle_head(const http_request& message) {
+  if (_custom_responders.count(message.method()) != 0) {
+    _custom_responders[message.method()](message);
+    return;
+  }
 
   http_response resp;
   resp.set_status_code(status_codes::OK);
@@ -42,9 +64,19 @@ void http_server::handle_head(const http_request& message) {
 }
 
 void http_server::handle_delete(const http_request& message) {
+  if (_custom_responders.count(message.method()) != 0) {
+    _custom_responders[message.method()](message);
+    return;
+  }
+
   message.reply(status_codes::OK);
 }
 
 void http_server::handle_put(const http_request& message) {
+  if (_custom_responders.count(message.method()) != 0) {
+    _custom_responders[message.method()](message);
+    return;
+  }
+
   message.reply(status_codes::OK);
 }
