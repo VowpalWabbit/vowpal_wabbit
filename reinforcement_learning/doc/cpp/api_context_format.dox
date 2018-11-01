@@ -48,7 +48,7 @@ In this example we used namespaces (i.e. "User", "Geo", "Refer" and "OUserAgent"
 It is always a good practice to use namespaces, even if the namespace contains only 1 single feature, because namespaces enable convenient featurization options like filtering or crossing namespaces (see Vowpal Wabbit options https://github.com/VowpalWabbit/vowpal_wabbit/wiki).
 
 
-Partial example with 3 actions features:
+Partial example with 3 action features:
 --------------------------------------------------
 ~~~~~
 {
