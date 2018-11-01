@@ -1228,7 +1228,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
       VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
       if (interaction.deferred) {
-        VW::return_unused_examples(*all, examples);
+        VW::return_multiple_example(*all, examples);
         examples.push_back(&VW::get_unused_example(all));
         reread = true;
       }

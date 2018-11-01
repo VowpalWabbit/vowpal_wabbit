@@ -129,5 +129,5 @@ typedef std::vector<example*> multi_ex;
 namespace VW {
 void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
 
-void return_unused_examples(vw& all, v_array<example*>& examples);
+void return_multiple_example(vw& all, v_array<example*>& examples);
 }
