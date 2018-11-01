@@ -6,7 +6,6 @@ import os
 import platform
 import sys
 from codecs import open
-from ctypes.util import find_library
 from distutils.command.clean import clean as _clean
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext as _build_ext
