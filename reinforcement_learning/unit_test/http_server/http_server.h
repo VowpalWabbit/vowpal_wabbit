@@ -1,6 +1,8 @@
 #pragma once
 #include <cpprest/http_listener.h>
 
+#include <functional>
+
 using namespace web;
 using namespace http;
 using namespace utility;
@@ -8,6 +10,8 @@ using namespace http::experimental::listener;
 
 class http_server {
 public:
+  using response_fn = void(const http_request&);
+
   http_server(const bool post_err = false)
     : _post_err(post_err) {}
 
@@ -21,8 +25,9 @@ public:
     return m_listener.close();
   }
 
+  void set_post_error(bool value);
+  void set_custom_responder(http::method, std::function<response_fn> custom_responder);
 private:
-
   void handle_get(const http_request& message);
   void handle_put(const http_request& message);
   void handle_post(const http_request& message);
@@ -31,6 +36,8 @@ private:
 
   http_listener m_listener;
   bool _post_err;
+
+  std::map<http::method, std::function<response_fn>> _custom_responders;
 };
 
 class http_helper {
@@ -48,6 +55,14 @@ public:
     catch (const std::exception&) {
       return false;
     }
+  }
+
+  void set_post_error(bool value) {
+    g_http->set_post_error(value);
+  }
+
+  void set_custom_responder(http::method method, std::function<http_server::response_fn> custom_responder) {
+    g_http->set_custom_responder(method, custom_responder);
   }
 
   ~http_helper() {
