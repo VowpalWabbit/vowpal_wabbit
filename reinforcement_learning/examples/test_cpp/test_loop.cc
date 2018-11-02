@@ -1,5 +1,6 @@
 #include "test_loop.h"
-
+#include "ranking_event.h"
+#include "utility/data_buffer.h"
 #include "config_utility.h"
 #include <fstream>
 #include <iostream>
@@ -116,6 +117,19 @@ void test_loop::perf_loop(size_t thread_id)
 {
   r::ranking_response response;
   r::api_status status;
+  std::cout << "Warmup..." << std::endl;
+  size_t choose_rank_size = 0;
+  {
+    r::utility::data_buffer buffer;
+    const std::string warmup_id = "_warmup_" + std::string(test_inputs.get_event_id(0, 0));
+    if (rl->choose_rank(warmup_id.c_str(), test_inputs.get_context(0, 0), response, &status) != err::success) {
+      std::cout << "Warmup is failed. " << status.get_error_msg() << std::endl;
+      return;
+    }
+    auto choose_rank_event = r::ranking_event::choose_rank(buffer, warmup_id.c_str(), test_inputs.get_context(0, 0), r::action_flags::DEFAULT, response);
+    choose_rank_size = choose_rank_event.size();
+    std::cout << "Choose rank size: " << choose_rank_size << std::endl;
+  }  
 
   std::cout << "Perf test is started..." << std::endl;
   std::cout << "Choose_rank..." << std::endl;
@@ -133,23 +147,7 @@ void test_loop::perf_loop(size_t thread_id)
 
   const auto choose_rank_end = chrono::high_resolution_clock::now();
 
-  std::cout << "Report_outcome..." << std::endl;
-  const auto report_outcome_start = chrono::high_resolution_clock::now();
-  for (size_t i = 0; i < examples; ++i) {
-    if (step > 0 && i % step == 0 && thread_id == 0) std::cout << "\r" << (i / step) << "%";
-    if (test_inputs.report_outcome(rl.get(), thread_id, i, &status) != err::success) {
-      std::cout << status.get_error_msg() << std::endl;
-      continue;
-    }
-  }
-  std::cout << std::endl;
-
-  const auto report_outcome_end = chrono::high_resolution_clock::now();
-
   const auto choose_rank_perf = (chrono::duration_cast<chrono::microseconds>(choose_rank_end - choose_rank_start).count()) / examples;
-  const auto report_outcome_perf = (chrono::duration_cast<chrono::microseconds>(report_outcome_end - report_outcome_start).count()) / examples;
-  
-  loggers[thread_id] << thread_id << ": Choose_rank: " << choose_rank_perf << std::endl;
-  loggers[thread_id] << thread_id << ": Report outcome: " << report_outcome_perf << std::endl;
+  loggers[thread_id] << thread_id << ": Choose_rank: " << choose_rank_perf << " microseconds" << std::endl;
 }
 
