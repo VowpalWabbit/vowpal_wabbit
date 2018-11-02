@@ -26,5 +26,5 @@ extern "C" {
 
     API int RankingEnumeratorInit(ranking_enumerator_adapter* adapter);
     API int RankingEnumeratorMoveNext(ranking_enumerator_adapter* adapter);
-    API reinforcement_learning::action_prob GetRankingEnumeratorCurrent(ranking_enumerator_adapter* adapter);
+    API reinforcement_learning::action_prob_d GetRankingEnumeratorCurrent(ranking_enumerator_adapter* adapter);
 }
