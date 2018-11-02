@@ -10,7 +10,7 @@ The format of this context is a JSON string, with a specific structure. This JSO
 
 Typically, the shared features describe a user, while the action features describe all the possible actions that can be taken for this user.
 
-In the following, we discuss the expected format for shared features and action features separately, and then at the end we provide an exampleof the expected context.
+In the following, we discuss the expected format for shared features and action features separately, and then at the end we provide an example of the expected context.
 
 Example of shared features:
 -------------------------------------------------------------
