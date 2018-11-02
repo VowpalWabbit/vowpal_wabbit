@@ -4,8 +4,6 @@
 
 namespace reinforcement_learning {
 
-  action_prob::action_prob(const size_t action_id, const float probability) : action_id { action_id }, probability { probability } {}
-
   ranking_response::ranking_response(char const* event_id)
     : _event_id { event_id }, _chosen_action_id { 0 } {}
 
