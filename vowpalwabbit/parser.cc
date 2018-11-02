@@ -980,6 +980,24 @@ void empty_example(vw& all, example& ec)
   ec.end_pass = false;
 }
 
+void clean_example(vw& all, example& ec, bool rewind)
+{
+  if (rewind) {
+    assert(all.p->begin_parsed_examples > 0);
+    all.p->begin_parsed_examples--;
+  }
+
+  empty_example(all, ec);
+
+  mutex_lock(&all.p->examples_lock);
+  assert(ec.in_use);
+  ec.in_use = false;
+  condition_variable_signal(&all.p->example_unused);
+  if (all.p->done)
+    condition_variable_signal_all(&all.p->example_available);
+  mutex_unlock(&all.p->examples_lock);
+}
+
 void finish_example(vw& all, multi_ex& ec_seq)
 {
   for(auto ec : ec_seq)
@@ -998,15 +1016,7 @@ void finish_example(vw& all, example& ec)
   condition_variable_signal(&all.p->output_done);
   mutex_unlock(&all.p->output_lock);
 
-  empty_example(all, ec);
-
-  mutex_lock(&all.p->examples_lock);
-  assert(ec.in_use);
-  ec.in_use = false;
-  condition_variable_signal(&all.p->example_unused);
-  if (all.p->done)
-    condition_variable_signal_all(&all.p->example_available);
-  mutex_unlock(&all.p->examples_lock);
+  clean_example(all, ec, false);
 }
 }
 
