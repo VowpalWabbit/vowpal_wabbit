@@ -3,11 +3,11 @@
 class ranking_enumerator_adapter
 {
 private:
-    reinforcement_learning::ranking_response::ranking_iterator current;
-    reinforcement_learning::ranking_response::ranking_iterator end;
+    reinforcement_learning::ranking_response::const_iterator current;
+    reinforcement_learning::ranking_response::const_iterator end;
 
 public:
-    inline ranking_enumerator_adapter(reinforcement_learning::ranking_response* response) : current{response->begin()}, end{response->end()}
+    inline ranking_enumerator_adapter(const reinforcement_learning::ranking_response* response) : current{response->begin()}, end{response->end()}
     {}
 
 public:
@@ -88,7 +88,7 @@ API int RankingEnumeratorMoveNext(ranking_enumerator_adapter* adapter)
   return adapter->move_next();
 }
 
-API reinforcement_learning::action_prob GetRankingEnumeratorCurrent(ranking_enumerator_adapter* adapter)
+API reinforcement_learning::action_prob_d GetRankingEnumeratorCurrent(ranking_enumerator_adapter* adapter)
 {
     return **adapter;
 }
