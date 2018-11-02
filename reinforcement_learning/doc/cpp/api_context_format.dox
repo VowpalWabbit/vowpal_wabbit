@@ -1,0 +1,142 @@
+/*! \page api_context_format API Context Format
+
+The choose_rank() call returns the chosen action among all actions defined in the context.
+
+Here, the context denotes the const char* argument passed to the choose_rank() call.
+
+The format of this context is a JSON string, with a specific structure. This JSON context contains two parts:
+- The description of the shared features, i.e. the features shared by all actions.
+- The description of the action features, i.e. a JSON array that describes the set of features for each action.
+
+Typically, the shared features describe a user, while the action features describe all the possible actions that can be taken for this user.
+
+
+Partial example with shared features (without actions features):
+-------------------------------------------------------------
+~~~~~
+{
+	"User": {
+		"age": 30,
+		"gender": 1
+	},
+	"Geo": {
+		"country": "United States",
+		"state": "New York",
+		"city": "Brooklyn"
+	},
+	"Refer": {
+		"referer": "https://www.microsoft.com/"
+	},
+	"OUserAgent": {
+		"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
+		"DeviceBrand": "",
+		"DeviceFamily": "Other",
+		"DeviceIsSpider": false,
+		"DeviceModel": "",
+		"OSFamily": "Mac OS X",
+		"OSMajor": "10",
+		"OSPatch": "6",
+		"DeviceType": "Desktop"
+	},
+	...
+}
+~~~~~
+
+Any field can take either a numeric value (like "age": 30), or a string value (like "country": "United States").
+
+In this example we used namespaces (i.e. "User", "Geo", "Refer" and "OUserAgent").
+It is always a good practice to use namespaces, even if the namespace contains only 1 single feature, because namespaces enable convenient featurization options like filtering or crossing namespaces (see Vowpal Wabbit options https://github.com/VowpalWabbit/vowpal_wabbit/wiki).
+
+
+Partial example with 3 action features:
+--------------------------------------------------
+~~~~~
+{
+	...
+	"_multi": [{
+			"Action": {
+				"global_id": 1,
+				"template": "123"
+			}
+		}, {
+			"Action": {
+				"global_id": 1,
+				"template": "70"
+			}
+		}, {
+			"Action": {
+				"global_id": 2,
+				"template": "73"
+			}
+		}
+	]
+}
+~~~~~
+
+The action features follow the same rules as shared features.
+
+
+Reserved field names:
+---------------------
+The field name "_multi" is reserved for action features. Its value is a JSON array, where each JSON object in the array defines one specific action.
+
+Another field name, "_text", splits the containing string into features.
+For example:
+~~~~~
+	"_text": "London UK"
+~~~~~
+becomes
+~~~~~
+	"London": 1,
+	"UK": 1
+~~~~~
+
+
+A complete example with both shared and action features:
+------------------------------------------------------
+~~~~~
+{
+	"User": {
+		"age": 30,
+		"gender": 1
+	},
+	"Geo": {
+		"country": "United States",
+		"state": "New York",
+		"city": "Brooklyn"
+	},
+	"Refer": {
+		"referer": "https://www.microsoft.com/"
+	},
+	"OUserAgent": {
+		"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
+		"DeviceBrand": "",
+		"DeviceFamily": "Other",
+		"DeviceIsSpider": false,
+		"DeviceModel": "",
+		"OSFamily": "Mac OS X",
+		"OSMajor": "10",
+		"OSPatch": "6",
+		"DeviceType": "Desktop"
+	},
+	"_multi": [{
+			"Action": {
+				"global_id": 1,
+				"template": "123"
+			}
+		}, {
+			"Action": {
+				"global_id": 1,
+				"template": "70"
+			}
+		}, {
+			"Action": {
+				"global_id": 2,
+				"template": "73"
+			}
+		}
+	]
+}
+~~~~~
+
+ */
