@@ -10,13 +10,14 @@ The format of this context is a JSON string, with a specific structure. This JSO
 
 Typically, the shared features describe a user, while the action features describe all the possible actions that can be taken for this user.
 
+In the following, we discuss the expected format for shared features and action features separately, and then at the end we provide an example of the expected context.
 
-Partial example with shared features (without actions features):
+Example of shared features:
 -------------------------------------------------------------
 ~~~~~
 {
 	"User": {
-		"age": 30,
+		"age": 30.6,
 		"gender": 1
 	},
 	"Geo": {
@@ -42,13 +43,13 @@ Partial example with shared features (without actions features):
 }
 ~~~~~
 
-Any field can take either a numeric value (like "age": 30), or a string value (like "country": "United States").
+Any field can take either a numeric value (like "age": 30.6 or "gender": 1), or a string value (like "country": "United States").
 
 In this example we used namespaces (i.e. "User", "Geo", "Refer" and "OUserAgent").
 It is always a good practice to use namespaces, even if the namespace contains only 1 single feature, because namespaces enable convenient featurization options like filtering or crossing namespaces (see Vowpal Wabbit options https://github.com/VowpalWabbit/vowpal_wabbit/wiki).
 
 
-Partial example with 3 action features:
+Example of actions features (3 actions):
 --------------------------------------------------
 ~~~~~
 {
@@ -57,6 +58,10 @@ Partial example with 3 action features:
 			"Action": {
 				"global_id": 1,
 				"template": "123"
+			},
+			"MoreInfo": {
+				"video": true,
+				"blogId": "123456"
 			}
 		}, {
 			"Action": {
@@ -73,7 +78,7 @@ Partial example with 3 action features:
 }
 ~~~~~
 
-The action features follow the same rules as shared features.
+The action features follow the same rules as shared features. Note that each action can have a different set of features.
 
 
 Reserved field names:
@@ -92,12 +97,12 @@ becomes
 ~~~~~
 
 
-A complete example with both shared and action features:
+A full example of the expected context (note that newlines shouldn't be included):
 ------------------------------------------------------
 ~~~~~
 {
 	"User": {
-		"age": 30,
+		"age": 30.6,
 		"gender": 1
 	},
 	"Geo": {
@@ -123,6 +128,10 @@ A complete example with both shared and action features:
 			"Action": {
 				"global_id": 1,
 				"template": "123"
+			},
+			"MoreInfo": {
+				"video": true,
+				"blogId": "123456"
 			}
 		}, {
 			"Action": {
