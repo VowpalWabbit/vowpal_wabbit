@@ -77,7 +77,7 @@ public:
 
   inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
   {
-    cout << message << std::string(begin, pos - begin).c_str() << message2
+    cerr << message << std::string(begin, pos - begin).c_str() << message2
          << "in Example #" << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
          << endl;
   }
