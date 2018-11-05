@@ -881,7 +881,7 @@ struct DecisionServiceInteraction
 
   float probabilityOfDrop;
 
-  bool deferred { false } ;
+  bool skipLearn { false } ;
 
   DecisionServiceInteraction() : probabilityOfDrop(0.f)
   { }
@@ -951,9 +951,9 @@ public:
       else if (length == 11 && !_stricmp(str, "_labelIndex"))
         return &ctx.label_index_state;
     }
-    else if (length == 9 && !strncmp(str, "_deferred", 9))
+    else if (length == 10 && !strncmp(str, "_skipLearn", 10))
     {
-      ctx.bool_state.output_bool = &data->deferred;
+      ctx.bool_state.output_bool = &data->skipLearn;
       return &ctx.bool_state;
     }
   }
@@ -1227,7 +1227,7 @@ int read_features_json(vw* all, v_array<example*>& examples)
       DecisionServiceInteraction interaction;
       VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
-      if (interaction.deferred) {
+      if (interaction.skipLearn) {
         VW::return_multiple_example(*all, examples);
         examples.push_back(&VW::get_unused_example(all));
         reread = true;
