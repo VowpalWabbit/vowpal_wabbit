@@ -57,10 +57,12 @@ namespace reinforcement_learning {
       void report_outcome(const char* event_id, float outcome);
 
       %pythoncode %{
-        def choose_rank(self, *args, deferred = False):
-            ranking_response = self.choose_rank_impl(*args, deferred)
-            if len(args) == 1:
+        def choose_rank(self, context, event_id = None, deferred = False):
+            if event_id == None:
+                ranking_response = self.choose_rank_impl(context, deferred)
                 return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities)), ranking_response.event_id
+
+            ranking_response = self.choose_rank_impl(event_id, context, deferred)
             return ranking_response.model_id, ranking_response.chosen_action_id, list(zip(ranking_response.action_ids, ranking_response.probabilities))
       %}
     };

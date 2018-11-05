@@ -34,7 +34,7 @@ public:
     d->extra_data  = NULL;
     d->extra_data2 = NULL;
   }
-  ~SearchTask()
+  virtual ~SearchTask()
   { VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
     VW::dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
   }
