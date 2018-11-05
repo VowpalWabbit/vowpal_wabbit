@@ -1,195 +1,85 @@
-CXX ?= $(shell which g++)
-# -- if you want to test 32-bit use this instead,
-#    it sometimes reveals type portability issues
-# CXX = $(shell which g++) -m32
-ifneq ($(CXX),)
-  #$(warning Using clang: "$(CXX)")
-  ARCH = -D__extern_always_inline=inline
-else
-  CXX = clang++
-  $(warning Using clang++)
-endif
-#ARCH = $(shell test `$CXX -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
+default: vw
+all: vw library_example java spanning_tree python
 
-ifeq ($(CXX),)
-  $(warning No compiler found)
-  exit 1
-endif
+# CMake configs
+ensure_cmake:
+	mkdir -p build
+	cd build; cmake ..
 
-UNAME := $(shell uname)
-ARCH_UNAME := $(shell uname -m)
-LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = -I /usr/local/include/boost -I /usr/include
-BOOST_LIBRARY = -L /usr/local/lib -L /usr/lib
-NPROCS := 1
+ensure_cmake_gcov:
+	mkdir -p build
+	cd build; cmake .. -DGCOV=On
 
-ifeq ($(UNAME), Linux)
-  BOOST_LIBRARY += -L /usr/lib/x86_64-linux-gnu
-  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
-endif
-ifeq ($(UNAME), FreeBSD)
-  LIBS = -l boost_program_options -l pthread -l z -l compat
-  BOOST_INCLUDE = -I /usr/local/include
-  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
-endif
-ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-  LIBS = -l boost_program_options-mt -l pthread -l z
-  BOOST_INCLUDE = -I /usr/include
-  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
-endif
-ifeq ($(UNAME), Darwin)
-  LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
-  # On Macs, the location isn't always clear
-  #	brew uses /usr/local
-  #	but /opt/local seems to be preferred by some users
-  #	so we try them both
-  ifneq (,$(wildcard /usr/local/include))
-    BOOST_INCLUDE = -I /usr/local/include
-    BOOST_LIBRARY = -L /usr/local/lib
-  endif
-  ifneq (,$(wildcard /opt/local/include))
-    BOOST_INCLUDE = -I /opt/local/include
-    BOOST_LIBRARY = -L /opt/local/lib
-  endif
-  NPROCS:=$(shell sysctl -n hw.ncpu)
-endif
+ensure_cmake_profile:
+	mkdir -p build
+	cd build; cmake .. -DPROFILE=On
 
-ifneq ($(USER_BOOST_INCLUDE),)
-  BOOST_INCLUDE = $(USER_BOOST_INCLUDE)
-endif
-ifneq ($(USER_BOOST_LIBRARY),)
-  BOOST_LIBRARY = $(USER_BOOST_LIBRARY)
-endif
+ensure_cmake_valgrind:
+	mkdir -p build
+	cd build; cmake .. -DVALGRIND_PROFILE=On
 
+ensure_cmake_static:
+	mkdir -p build
+	cd build; cmake .. -DSTATIC_LINK_VW=On
 
-JSON_INCLUDE = -I ../rapidjson/include
+# Build targets
+spanning_tree_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) spanning_tree
 
-#LIBS = -l boost_program_options-gcc34 -l pthread -l z
+vw_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) vw-bin
 
-ifeq ($(ARCH_UNAME), ppc64le)
-  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing #-msse2 is not supported on power
-else
-  OPTIM_FLAGS ?= -DNDEBUG -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse #-ffast-math #uncomment for speed, comment for testability
-endif
+active_interactor_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) active_interactor
 
-ifeq ($(UNAME), FreeBSD)
-  WARN_FLAGS = -Wall
-else
-  WARN_FLAGS = -Wall -pedantic
-endif
+library_example_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) ezexample_predict ezexample_predict_threaded ezexample_train library_example test_search search_generate recommend gd_mf_weights
 
-# for normal fast execution.
-FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -fPIC #-DVW_LDA_NO_SSE
+python_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) pylibvw
 
-# for profiling -- note that it needs to be gcc
-#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -pg  -fPIC
-#CXX = g++
+java_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) vw_jni
 
-# for valgrind / gdb debugging
-#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -g -O0  -fPIC
-
-# for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-#FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE)  -g -fomit-frame-pointer -ffast-math -fno-strict-aliasing  -fPIC
-
-FLAGS += -I ../rapidjson/include -I ../explore
-BINARIES = vw active_interactor
-MANPAGES = vw.1
-
-default:	vw
-
-all:	vw library_example java spanning_tree rl_clientlib
-
-%.1:	%
-	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
-
-export
-
-rl_clientlib: vw
-	cd reinforcement_learning/rlclientlib; $(MAKE) -j $(NPROCS) things
-
-# Devirtualization is an optimization that changes the vtable if the compiler decides a function
-# doesn't need to be virtual. This is incompatible with the mocking framework used in testing as it
-# makes the vtable structure unpredictable
-rl_clientlib_test: FLAGS += -fno-devirtualize
-rl_clientlib_test: vw rl_clientlib
-	cd reinforcement_learning/unit_test; $(MAKE) -j $(NPROCS) things
-	(cd reinforcement_learning/unit_test && ./rlclient-test.out)
-
-rl_example: vw rl_clientlib
-	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) -j $(NPROCS) things
-	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) -j $(NPROCS) things
-	cd reinforcement_learning/examples/test_cpp; $(MAKE) -j $(NPROCS) things
-	cd reinforcement_learning/examples/override_interface; $(MAKE) -j $(NPROCS) things
-
-rl_python: vw rl_clientlib
-	cd reinforcement_learning/bindings/python; $(MAKE) -j $(NPROCS) things
-
-spanning_tree:
-	cd cluster; $(MAKE)
-
-vw:
-	cd vowpalwabbit; $(MAKE) -j $(NPROCS) things
-
-#Target-specific flags for a profiling build.  (Copied from line 70)
-vw_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
-vw_gcov: CXX = g++
-vw_gcov:
-	cd vowpalwabbit && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) -j $(NPROCS) things
-
-active_interactor:
-	cd vowpalwabbit; $(MAKE)
-
-library_example: vw
-	cd library; $(MAKE) -j $(NPROCS) things
-
-#Target-specific flags for a profiling build.  (Copied from line 70)
-library_example_gcov: FLAGS = -std=c++11 $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -g -O0 -fprofile-arcs -ftest-coverage -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(BOOST_INCLUDE) $(JSON_INCLUDE) -I ../explore -pg  -fPIC #-DVW_LDA_NO_S
-library_example_gcov: CXX = g++
-library_example_gcov: vw_gcov
-	cd library && env LDFLAGS="-fprofile-arcs -ftest-coverage -lgcov"; $(MAKE) things
-
-python: vw
-	cd python; $(MAKE) things
-
-java: vw
-	cd java; $(MAKE) things
-
-.FORCE:
-
-test: .FORCE vw library_example unit_test
+test_build:
 	@echo "vw running test-suite..."
-	(cd test && ./RunTests -d -fe -E 0.001 -O --onethread ../vowpalwabbit/vw)
-	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw)
-	cd test && python save_resume_test.py --verbose_on_fail
+	cd build; make -j$(shell cat ./build/nprocs.txt) test_with_output
 
-unit_test: vw
-	cd test/unit_test; $(MAKE) -j $(NPROCS) things
-	(cd test/unit_test && ./vw-unit-test.out)
+unit_test_build:
+	cd build/test/unit_test; make -j$(shell cat ./build/nprocs.txt) vw-unit-test.out test
 
-test_gcov: .FORCE vw_gcov library_example_gcov
-	@echo "vw running test-suite..."
-	(cd test && ./RunTests -d -fe -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
+bigtests_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) bigtests BIG_TEST_ARGS="$(MAKEFLAGS)"
 
-bigtests:	.FORCE vw
-	(cd big_tests && $(MAKE) $(MAKEFLAGS))
+install_build:
+	cd build; make -j$(shell cat ./build/nprocs.txt) install
 
-install: $(BINARIES)
-	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install; cd ../java; $(MAKE) install;
+doc_build:
+	cd build; make doc
 
-doc:
-	(cd doc && doxygen Doxyfile)
+# These can be invoked with [gcov, valgrind, profile, static]
+spanning_tree_%: ensure_cmake_% spanning_tree_build ;
+vw_%: ensure_cmake_% vw_build ;
+active_interactor_%: ensure_cmake_% active_interactor_build ;
+library_example_%: ensure_cmake_% library_example_build ;
+python_%: ensure_cmake_% python_build ;
+java_%: ensure_cmake_% java_build ;
+test_%: ensure_cmake_% test_build ;
+unit_test_%: ensure_cmake_% unit_test_build ;
+bigtests_%: ensure_cmake_% bigtests_build ;
+install_%: ensure_cmake_% install_build ;
+
+# Normal build commands that use default configuration
+spanning_tree: ensure_cmake spanning_tree_build ;
+vw: ensure_cmake vw_build ;
+active_interactor: ensure_cmake active_interactor_build ;
+library_example: ensure_cmake library_example_build ;
+python: ensure_cmake python_build ;
+java: ensure_cmake java_build ;
+test: ensure_cmake test_build ;
+unit_test: ensure_cmake unit_test_build ;
+bigtests: ensure_cmake bigtests_build ;
+install: ensure_cmake install_build ;
 
 clean:
-	cd vowpalwabbit && $(MAKE) clean
-	cd cluster && $(MAKE) clean
-	cd library && $(MAKE) clean
-	cd python  && $(MAKE) clean
-	cd java    && $(MAKE) clean
-	cd reinforcement_learning/rlclientlib    && $(MAKE) clean
-	cd reinforcement_learning/unit_test; $(MAKE) clean
-	cd reinforcement_learning/bindings/python; $(MAKE) clean
-	cd reinforcement_learning/examples/basic_usage_cpp; $(MAKE) clean
-	cd reinforcement_learning/examples/rl_sim_cpp; $(MAKE) clean
-	cd reinforcement_learning/examples/test_cpp; $(MAKE) clean
-
-.PHONY: all clean install doc
+	rm -rf build
