@@ -144,7 +144,7 @@ namespace reinforcement_learning {
   }
 
   outcome_event outcome_event::report_action_taken(utility::data_buffer& oss, const char* event_id, float pass_prob) {
-    oss << R"({"EventId":")" << event_id << R"(","ActionTaken":true})";
+    oss << R"({"EventId":")" << event_id << R"(","DeferredAction":false})";
     return outcome_event(event_id, pass_prob, oss.str());
   }
 }
