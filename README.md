@@ -27,51 +27,81 @@ manager (*yum*, *apt*, *MacPorts*, *brew*, ...) to install missing software.
 - GNU *autotools*: *autoconf*, *automake*, *libtool*, *autoheader*, et. al. This is not a strict prereq. On many systems (notably Ubuntu with `libboost-program-options-dev` installed), the provided `Makefile` works fine.
 - (optional) [git](http://git-scm.com) if you want to check out the latest version of *vowpal wabbit*,
   work on the code, or even contribute code to the main project.
+- Python module `six` needs to be installed in order to run the tests.
+
+### Vcpkg
+[Vcpkg](https://github.com/Microsoft/vcpkg) can also be used to install the dependencies. When running cmake the toolchain needs to be supplied, this is decribed in the [compiling section](#compiling).
+```
+# Linux
+# vcpkg cannot currently be used on Linux because boost-python fails to build on linux. [See this issue](https://github.com/Microsoft/vcpkg/issues/4603)
+vcpkg install rapidjson:x64-linux
+vcpkg install zlib:x64-linux
+vcpkg install boost-system:x64-linux
+vcpkg install boost-program-options:x64-linux
+vcpkg install boost-test:x64-linux
+vcpkg install boost-align:x64-linux
+vcpkg install boost-foreach:x64-linux
+vcpkg install boost-python:x64-linux
+
+# Windows
+vcpkg install rapidjson:x64-windows
+vcpkg install zlib:x64-windows
+vcpkg install boost-system:x64-windows
+vcpkg install boost-program-options:x64-windows
+vcpkg install boost-test:x64-windows
+vcpkg install boost-align:x64-windows
+vcpkg install boost-foreach:x64-windows
+vcpkg install boost-python:x64-windows
+```
 
 ## Getting the code
 
-You can download the latest version from [here](https://github.com/JohnLangford/vowpal_wabbit/wiki/Download).
+You can download the latest version from [here](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Download).
 The very latest version is always available via 'github' by invoking one of the following:
 
 ```
 ## For the traditional ssh-based Git interaction:
-$ git clone git://github.com/JohnLangford/vowpal_wabbit.git
+$ git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 
 ## You can also try the following SSH URL:
-$ git clone git@github.com:JohnLangford/vowpal_wabbit.git
+$ git clone git@github.com:VowpalWabbit/vowpal_wabbit.git
 
 ## For HTTP-based Git interaction
-$ git clone https://github.com/JohnLangford/vowpal_wabbit.git
+$ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 ```
 
 ## Compiling
 
 You should be able to build the *vowpal wabbit* on most systems with:
 ```
-$ make
-$ make test    # (optional)
+mkdir build
+cd build
+cmake ..
+make -j
+make test    # (optional)
 ```
 
-If that fails, try:
+If using vcpkg for dependencies the toolchain file needs to be supplied to `cmake`:
 ```
-$ ./autogen.sh
-$ make
-$ make test    # (optional)
-$ make install
+cmake .. -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake
 ```
 
-Note that `./autogen.sh` requires *automake* (see the prerequisites, above.)
-
-`./autogen.sh`'s command line arguments are passed directly to `configure` as
-if they were `configure` arguments and flags.
-
-Note that `./autogen.sh` will overwrite the supplied `Makefile`, including the `Makefile`s in sub-directories, so
-keeping a copy of the `Makefile`s may be a good idea before running `autogen.sh`. If your original `Makefile`s were overwritten by `autogen.sh` calling `automake`, you may always get the originals back from git using:
+The CMake definition supports the following options that can be set when invoking `cmake`:
 ```
-git checkout Makefile */Makefile
+CMAKE_BUILD_TYPE - Controls base flags for building. Release includes optimization, Debug is unoptimized. ([Debug|Release], default: Debug)
+PROFILE - Turn on flags required for profiling ([ON|OFF], default: OFF)
+VALGRIND_PROFILE - Turn on flags required for profiling with valgrind in gcc ([ON|OFF], default: OFF)
+GCOV - Turn on flags required for code coverage in gcc ([ON|OFF], default: OFF)
+WARNINGS - Turn on warning flags. ([ON|OFF], default: ON)
+STATIC_LINK_VW - Link VW executable statically ([ON|OFF], default: OFF)
 ```
 
-Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
+Options can be specified at configuration time on the command line:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DSTATIC_LINK_VW=ON
+```
+
+Be sure to read the wiki: https://github.com/VowpalWabbit/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.
 
 The 'cluster' directory has it's own documentation for cluster
@@ -80,16 +110,10 @@ example flags.
 
 ## C++ Optimization
 
-The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider creating and running `configure` with the `--enable-debug` option, e.g.:
+The default C++ compiler optimization flags are very aggressive. If you should run into a problem, consider running `cmake` with the `Debug` build type:
 
 ```
-$ ./configure --enable-debug
-```
-
-or passing your own compiler flags via the `OPTIM_FLAGS` make variable:
-
-```
-$ make OPTIM_FLAGS="-O0 -g"
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 ```
 
 ## Ubuntu/Debian specific info
@@ -105,11 +129,14 @@ apt-get install libboost-dev zlib1g-dev
 apt-get install libboost-python-dev
 
 # -- Get the vw source:
-git clone git://github.com/JohnLangford/vowpal_wabbit.git
+git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 
 # -- Build:
 cd vowpal_wabbit
-make
+mkdir build
+cd build
+cmake .. -DSTATIC_LINK_VW=ON
+make -j
 make test       # (optional)
 make install
 ```
@@ -117,13 +144,15 @@ make install
 ### Ubuntu advanced build options (clang and static)
 
 If you prefer building with `clang` instead of `gcc` (much faster build
-and slighly faster executable), install `clang` and change the `make`
-step slightly:
+and slighly faster executable), install `clang` and specify the compiler to be clang:
 
 ```
 apt-get install clang
 
-make CXX=clang++
+export CC=clang
+export CXX=clang++
+
+cmake ..
 ```
 
 A statically linked `vw` executable that is not sensitive to boost
@@ -131,7 +160,10 @@ version upgrades and can be safely copied between different Linux
 versions (e.g. even from Ubuntu to Red-Hat) can be built and tested with:
 
 ```
-make CXX='clang++ -static' clean vw test     # ignore warnings
+mkdir build
+cd build
+cmake .. -DSTATIC_LINK_VW=ON
+make vw-bin -j
 ```
 
 ## Debian Python 3 Binding
@@ -155,7 +187,6 @@ Install Vowpal Wabbit via pip:
 pip3 install vowpalwabbit
 ```
 
-
 ## Mac OS X-specific info
 
 OSX requires _glibtools_, which is available via the [brew](http://brew.sh) or
@@ -170,37 +201,17 @@ brew install vowpal-wabbit
 ### Manual install of Vowpal Wabbit
 #### OSX Dependencies (if using Brew):
 ```
-brew install libtool
-brew install autoconf
-brew install automake
 brew install boost
 brew install boost-python
 ```
 
 #### OSX Dependencies (if using MacPorts):
 ```
-## Install glibtool and other GNU autotool friends:
-$ port install libtool autoconf automake
-
 ## Build Boost for Mac OS X 10.8 and below
 $ port install boost +no_single -no_static +openmpi +python27 configure.cxx_stdlib=libc++ configure.cxx=clang++
 
 ## Build Boost for Mac OS X 10.9 and above
 $ port install boost +no_single -no_static +openmpi +python27
-```
-
-#### OSX Manual compile:
-*Mac OS X 10.8 and below*: ``configure.cxx_stdlib=libc++`` and ``configure.cxx=clang++`` ensure that ``clang++`` uses
-the correct C++11 functionality while building Boost. Ordinarily, ``clang++`` relies on the older GNU ``g++`` 4.2 series
-header files and ``stdc++`` library; ``libc++`` is the ``clang`` replacement that provides newer C++11 functionality. If
-these flags aren't present, you will likely encounter compilation errors when compiling _vowpalwabbit/cbify.cc_. These
-error messages generally contain complaints about ``std::to_string`` and ``std::unique_ptr`` types missing.
-
-To compile:
-```
-$ sh autogen.sh --enable-libc++
-$ make
-$ make test    # (optional)
 ```
 
 #### OSX Python Binding installation with Anaconda
@@ -210,7 +221,7 @@ When using Anaconda as the source for Python the default Boost libraries used in
 # create anaconda environment with boost
 conda create --name vw boost
 source activate vw
-git clone https://github.com/JohnLangford/vowpal_wabbit.git
+git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 cd vowpal_wabbit
 # edit Makefile
 # change BOOST_INCLUDE to use anaconda env dir: /anaconda/envs/vw/include
@@ -227,3 +238,48 @@ To browse the code more easily, do
 and then point your browser to `doc/html/index.html`.
 
 Note that documentation generates class diagrams using [Graphviz](https://www.graphviz.org). For best results, ensure that it is installed beforehand.
+
+
+## Experimental: CMake build system on Windows
+Note: The CSharp projects are not yet converted to CMake for Windows. So the CMake generated solution is only for C++ projects for the time being. For this reason the existing solution can not yet be deprecated.
+### Dependencies
+```
+vcpkg install rapidjson:x64-windows
+vcpkg install cpprestsdk:x64-windows
+vcpkg install zlib:x64-windows
+vcpkg install boost-system:x64-windows
+vcpkg install boost-program-options:x64-windows
+vcpkg install boost-test:x64-windows
+vcpkg install boost-align:x64-windows
+vcpkg install boost-foreach:x64-windows
+vcpkg install boost-python:x64-windows
+```
+
+### Build
+#### Windows
+1. Open CMake GUI
+2. Add two entries
+    1. `CMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake`
+    2. `VCPKG_TARGET_TRIPLET=x64-windows`
+    3. `CMAKE_BUILD_TYPE=DEBUG`
+3. Configure
+    1. Choose `Visual Studio 15 2017 Win64`
+4. Generate
+5. Open Project
+
+Or command line:
+```
+mkdir build
+cd build
+cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+make -j
+```
+
+## Gotchas
+### When using WSL (Windows Subsytem for Linux)
+- If the repo is cloned in Windows and used in the Linux environment, shell scripts will have CRLF line endings and will need to be converted to work.
+- A strange bug was seen that caused the `vw_jni` target to fail to build. A full fix isn't known but the following were factors:
+  - CMake version 3.5.1
+  - WSL Ubuntu 16.04
+  - Java was installed in Windows and added to the Windows path when compiling `vw_jni`
+  - Setting JAVA_HOME caused CMake to display the right dependency at configure time but the Windows files were actually used

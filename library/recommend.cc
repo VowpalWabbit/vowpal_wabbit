@@ -78,8 +78,8 @@ typedef pair<float, string> scored_example;
 vector<scored_example> scored_examples;
 
 struct compare_scored_examples
-{ bool operator()(scored_example const& a, scored_example const& b) const
-  { return a.first > b.first;
+{ bool operator()(scored_example const& lhs, scored_example const& rhs) const
+  { return lhs.first > rhs.first;
   }
 };
 
