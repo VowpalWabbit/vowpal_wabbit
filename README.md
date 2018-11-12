@@ -88,12 +88,17 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=<vcpkg root>/scripts/buildsystems/vcpkg.cmake
 
 The CMake definition supports the following options that can be set when invoking `cmake`:
 ```
-CMAKE_BUILD_TYPE - Controls base flags for building. Release includes optimization, Debug is unoptimized. ([Debug|Release], default: Debug)
+CMAKE_BUILD_TYPE - Controls base flags for building. Release includes optimization, Debug is unoptimized ([Debug|Release], default: Debug)
 PROFILE - Turn on flags required for profiling ([ON|OFF], default: OFF)
 VALGRIND_PROFILE - Turn on flags required for profiling with valgrind in gcc ([ON|OFF], default: OFF)
 GCOV - Turn on flags required for code coverage in gcc ([ON|OFF], default: OFF)
-WARNINGS - Turn on warning flags. ([ON|OFF], default: ON)
+WARNINGS - Turn on warning flags ([ON|OFF], default: ON)
 STATIC_LINK_VW - Link VW executable statically ([ON|OFF], default: OFF)
+VW_INSTALL - Add install targets ([ON|OFF], default: ON)
+BUILD_TESTS - Build and enable tests ([ON|OFF], default: ON)
+BUILD_JAVA - Add Java targets ([ON|OFF], default: Off)
+BUILD_PYTHON - Add Python targets ([ON|OFF], default: Off)
+BUILD_DOCS - Add documentation targets ([ON|OFF], default: Off)
 ```
 
 Options can be specified at configuration time on the command line:
@@ -233,7 +238,12 @@ python setup.py install
 ## Code Documentation
 To browse the code more easily, do
 
-`make doc`
+```
+mkdir build
+cd build
+cmake .. -DBUILD_DOCS=On
+make doc
+```
 
 and then point your browser to `doc/html/index.html`.
 
