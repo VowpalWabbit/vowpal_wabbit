@@ -90,6 +90,8 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
+add_subdirectory(repro)
+
 if(BUILD_DOCS)
   add_subdirectory(doc)
 endif()
