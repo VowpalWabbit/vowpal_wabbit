@@ -97,9 +97,12 @@ endif(WARNINGS)
 if(NOT WIN32)
   add_executable(active_interactor active_interactor.cc)
 
-  install(TARGETS active_interactor
-    RUNTIME DESTINATION bin
-  )
+  if(VW_INSTALL)
+    install(TARGETS active_interactor
+      RUNTIME DESTINATION bin
+    )
+  endif()
+
 
   target_compile_definitions(active_interactor PUBLIC _FILE_OFFSET_BITS=64)
   target_compile_definitions(active_interactor PUBLIC $<$<CONFIG:RELEASE>:NDEBUG>)
@@ -113,7 +116,10 @@ if(NOT WIN32)
         --name="Vowpal Wabbit -- fast online learning tool" $<TARGET_FILE:vw-bin>
         --output=$<TARGET_FILE:vw-bin>.1
       DEPENDS vw-bin)
-    install(FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
+
+      if(VW_INSTALL)
+        install(FILES $<TARGET_FILE:vw-bin>.1 DESTINATION share/man/man1)
+      endif()
   else()
     message(STATUS "help2man not found, please install it to generate manpages")
   endif()
@@ -135,23 +141,27 @@ if(NOT DEFINED DO_NOT_BUILD_VW_C_WRAPPER)
   target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
   target_link_libraries(vw_c_wrapper PUBLIC vw)
 
-  install(TARGETS vw_c_wrapper
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-  )
+  if(VW_INSTALL)
+    install(TARGETS vw_c_wrapper
+      ARCHIVE DESTINATION lib
+      LIBRARY DESTINATION lib
+    )
+  endif()
 endif()
 
-# Install executables
-install(TARGETS vw-bin
+if(VW_INSTALL)
+  # Install executables
+  install(TARGETS vw-bin
   RUNTIME DESTINATION bin
-)
+  )
 
-# Install headers
-install(FILES ${vw_install_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/vowpalwabbit/vowpalwabbit)
-install(FILES ${explore_all_headers} DESTINATION include/vowpalwabbit/vowpalwabbit/explore)
+  # Install headers
+  install(FILES ${vw_install_headers} ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/vowpalwabbit/vowpalwabbit)
+  install(FILES ${explore_all_headers} DESTINATION include/vowpalwabbit/vowpalwabbit/explore)
 
-# Install libs
-install(TARGETS allreduce vw
+  # Install libs
+  install(TARGETS allreduce vw
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
+endif()

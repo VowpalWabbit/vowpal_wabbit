@@ -14,11 +14,11 @@ endif()
 # Read version into variable
 file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
-message("Version: ${PACKAGE_VERSION}")
+message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
 include(ProcessorCount)
 ProcessorCount(NumProcessors)
-message("Number of processors: ${NumProcessors}")
+message(STATUS "Number of processors: ${NumProcessors}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
@@ -28,7 +28,12 @@ option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF
 option(GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
-option(VW_TEST "Turn on CMake testing target. On by default." ON)
+
+option(VW_INSTALL "Add install targets." ON)
+option(BUILD_TESTS "Build and enable tests." ON)
+option(BUILD_JAVA "Add Java targets." Off)
+option(BUILD_PYTHON "Add Python targets." Off)
+option(BUILD_DOCS "Add documentation targets." Off)
 
 # Add -ffast-math for speed, remove for testability.
 set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
@@ -83,29 +88,40 @@ find_package(ZLIB REQUIRED)
 
 add_subdirectory(cluster)
 add_subdirectory(library)
-add_subdirectory(doc)
 add_subdirectory(vowpalwabbit)
-add_subdirectory(java)
-add_subdirectory(python)
 
-if(VW_TEST)
-  enable_testing()
+if(BUILD_DOCS)
+  add_subdirectory(doc)
 endif()
-add_subdirectory(test)
 
-# Don't offer these make dependent targets on Windows
-if(NOT WIN32)
+if(BUILD_JAVA)
+  add_subdirectory(java)
+endif()
+
+if(BUILD_PYTHON)
+  add_subdirectory(python)
+endif()
+
+if(BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+
+  # Don't offer these make dependent targets on Windows
+  if(NOT WIN32)
   # make bigtests BIG_TEST_ARGS="<args here>"
   add_custom_target(bigtests
     DEPENDS vw
     COMMAND make \${BIG_TEST_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/big_tests)
+  endif()
 endif()
 
 # TODO convert cs directory to cmake
 # TODO convert c_test directory to cmake
 
 # PkgConfig
-configure_file(libvw.pc.in libvw.pc)
-configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
+if(VW_INSTALL)
+  configure_file(libvw.pc.in libvw.pc)
+  configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw.pc ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc DESTINATION lib/pkgconfig)
+endif()

@@ -1,5 +1,8 @@
 if(NOT DEFINED PY_VERSION)
   set(PY_VERSION 2.7)
+  message(WARNING "No PY_VERSION specified, Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
+else()
+  message(STATUS "Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
 endif()
 string(REPLACE . "" PY_VERSION_STRIPPED ${PY_VERSION})
 
@@ -15,7 +18,6 @@ else(Boost_MINOR_VERSION GREATER 66)
   endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
 endif(Boost_MINOR_VERSION GREATER 66)
 
-message("Building Python module for Python version ${PY_VERSION}")
 find_package(PythonLibs ${PY_VERSION} REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system python${BOOST_PY_VERSION_SUFFIX})
 

@@ -44,6 +44,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(lib_output_dir),
             '-DCMAKE_BUILD_TYPE=' + config,
             '-DPY_VERSION=' + '{v[0]}.{v[1]}'.format(v=version_info),
+            '-DBUILD_PYTHON=On',
             '-DWARNINGS=Off'
         ]
 

@@ -48,8 +48,10 @@ if(JNI_FOUND)
       set(JAVA_INSTALL_PATH /Library/Java/Extensions)
   endif()
 
-  install(TARGETS vw_jni
-    RUNTIME DESTINATION ${JAVA_INSTALL_PATH}
-    LIBRARY DESTINATION ${JAVA_INSTALL_PATH}
-  )
+  if(VW_INSTALL)
+    install(TARGETS vw_jni
+      RUNTIME DESTINATION ${JAVA_INSTALL_PATH}
+      LIBRARY DESTINATION ${JAVA_INSTALL_PATH}
+    )
+  endif()
 endif()
