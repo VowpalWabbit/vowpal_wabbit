@@ -90,19 +90,7 @@ add_subdirectory(python)
 
 add_subdirectory(repro)
 
-if(BUILD_DOCS)
-  add_subdirectory(doc)
-endif()
-
-if(BUILD_JAVA)
-  add_subdirectory(java)
-endif()
-
-if(BUILD_PYTHON)
-  add_subdirectory(python)
-endif()
-
-if(BUILD_TESTS)
+if(VW_TEST)
   enable_testing()
 endif()
 add_subdirectory(test)
