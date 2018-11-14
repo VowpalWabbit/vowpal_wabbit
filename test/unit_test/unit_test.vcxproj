@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="main.cc" />
     <ClCompile Include="stable_unique_tests.cc" />

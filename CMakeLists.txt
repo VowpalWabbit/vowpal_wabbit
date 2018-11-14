@@ -90,9 +90,19 @@ add_subdirectory(cluster)
 add_subdirectory(library)
 add_subdirectory(vowpalwabbit)
 
-add_subdirectory(repro)
+if(BUILD_DOCS)
+  add_subdirectory(doc)
+endif()
 
-if(VW_TEST)
+if(BUILD_JAVA)
+  add_subdirectory(java)
+endif()
+
+if(BUILD_PYTHON)
+  add_subdirectory(python)
+endif()
+
+if(BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 
