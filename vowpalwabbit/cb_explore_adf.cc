@@ -94,7 +94,7 @@ template<class T> void swap(T& ele1, T& ele2)
 example* test_adf_sequence(multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
-    THROW("cb_adf: At least line must be provided for an example to be valid.");
+    THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
   example* ret = nullptr;
