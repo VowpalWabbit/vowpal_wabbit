@@ -1632,3 +1632,7 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 # Test 174 cbify adf, regcbopt
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
     train-sets/ref/cbify_regcbopt.stderr
+
+# Test 175 cbify ldf, regcbopt
+{VW} --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/cs_test.ldf
+    train-sets/ref/cbify_ldf_regcbopt.stderr
