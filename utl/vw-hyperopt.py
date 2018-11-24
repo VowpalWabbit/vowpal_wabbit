@@ -275,9 +275,6 @@ class HyperOptimizer(object):
             else:
                 y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             loss = log_loss(self.y_true_holdout, y_pred_holdout_proba)
-            print('y_true_holdout', self.y_true_holdout[:10])
-            print('y_pred_holdout_proba', y_pred_holdout_proba[:10])
-            print('loss', loss)
 
         elif self.outer_loss_function == 'squared':
             loss = mean_squared_error(self.y_true_holdout, y_pred_holdout)
