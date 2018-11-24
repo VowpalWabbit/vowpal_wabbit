@@ -176,6 +176,7 @@ class HyperOptimizer(object):
         self.max_evals = max_evals
         self.searcher = searcher
         self.is_regression = is_regression
+        self.labels_clf_count = 0
 
         self.trials = Trials()
         self.current_trial = 0
@@ -219,11 +220,16 @@ class HyperOptimizer(object):
     def compose_vw_train_command(self):
         data_part = ('vw -d %s -f %s --holdout_off -c '
                      % (self.train_set, self.train_model))
+        if self.labels_clf_count > 2: # multiclass, should take probabilities
+            data_part += ('--oaa %s --loss_function=logistic --probabilities '
+                          % (self.labels_clf_count))
         self.train_command = ' '.join([data_part, self.param_suffix])
 
     def compose_vw_validate_command(self):
         data_part = 'vw -t -d %s -i %s -p %s --holdout_off -c' \
                     % (self.holdout_set, self.train_model, self.holdout_pred)
+        if self.labels_clf_count > 2: # multiclass
+            data_part += ' --loss_function=logistic --probabilities'
         self.validate_command = data_part
 
     def fit_vw(self):
@@ -236,16 +242,6 @@ class HyperOptimizer(object):
         self.logger.info("executing the following command (validation): %s" % self.validate_command)
         subprocess.call(shlex.split(self.validate_command))
 
-    def get_y_true_train(self):
-        self.logger.info("loading true train class labels...")
-        yh = open(self.train_set, 'r')
-        self.y_true_train = []
-        for line in yh:
-            self.y_true_train.append(int(line.strip()[0:2]))
-        if not self.is_regression:
-            self.y_true_train = [(i + 1.) / 2 for i in self.y_true_train]
-        self.logger.info("train length: %d" % len(self.y_true_train))
-
     def get_y_true_holdout(self):
         self.logger.info("loading true holdout class labels...")
         yh = open(self.holdout_set, 'r')
@@ -253,18 +249,35 @@ class HyperOptimizer(object):
         for line in yh:
             self.y_true_holdout.append(float(line.split()[0]))
         if not self.is_regression:
-            self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
+            self.labels_clf_count = len(set(self.y_true_holdout))
+            if self.labels_clf_count > 2 and self.outer_loss_function != 'logistic':
+                raise KeyError('Only logistic loss function is available for multiclass clf')
+            if self.labels_clf_count <= 2:
+                self.y_true_holdout = [int((i + 1.) / 2) for i in self.y_true_holdout]
         self.logger.info("holdout length: %d" % len(self.y_true_holdout))
 
-    def validation_metric_vw(self):
-        v = open('%s' % self.holdout_pred, 'r')
+    def get_y_pred_holdout(self):
         y_pred_holdout = []
-        for line in v:
-            y_pred_holdout.append(float(line.split()[0].strip()))
+        with open('%s' % self.holdout_pred, 'r') as v:
+            for line in v:
+                if self.labels_clf_count > 2:
+                    y_pred_holdout.append(list(map(lambda x: float(x.split(':')[1]), line.split())))
+                else:
+                    y_pred_holdout.append(float(line.split()[0].strip()))
+        return y_pred_holdout
+
+    def validation_metric_vw(self):
+        y_pred_holdout = self.get_y_pred_holdout()
 
         if self.outer_loss_function == 'logistic':
-            y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
+            if self.labels_clf_count > 2:
+                y_pred_holdout_proba = y_pred_holdout
+            else:
+                y_pred_holdout_proba = [1. / (1 + exp(-i)) for i in y_pred_holdout]
             loss = log_loss(self.y_true_holdout, y_pred_holdout_proba)
+            print('y_true_holdout', self.y_true_holdout[:10])
+            print('y_pred_holdout_proba', y_pred_holdout_proba[:10])
+            print('loss', loss)
 
         elif self.outer_loss_function == 'squared':
             loss = mean_squared_error(self.y_true_holdout, y_pred_holdout)
