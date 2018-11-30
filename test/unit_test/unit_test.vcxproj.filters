@@ -27,10 +27,10 @@
     <ClCompile Include="cb_explore_adf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="options_boost_po_test.cc">
+    <ClCompile Include="arguments_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="options_test.cc">
+    <ClCompile Include="arguments_boost_po_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
