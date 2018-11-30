@@ -22,6 +22,8 @@
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="options_boost_po_test.cc" />
+    <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -130,9 +132,8 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-            <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
-
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

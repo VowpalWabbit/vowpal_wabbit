@@ -196,6 +196,8 @@
     <ClInclude Include="lrq.h" />
     <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
+    <ClInclude Include="options.h" />
+    <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
@@ -363,6 +365,5 @@
     <Error Condition="!Exists('$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\boost_thread-vc140.1.63.0.0\build\native\boost_thread-vc140.targets'))" />
     <Error Condition="!Exists('$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
   </Target>
-
   <Import Project="..\sdl\SDL-7.0-NativeAnalysis.targets" />
 </Project>
