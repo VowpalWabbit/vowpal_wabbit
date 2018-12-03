@@ -42,7 +42,7 @@ struct typed_parameter : base_parameter {
 };
 
 template<typename T>
-typed_parameter<T> make_typed_option(std::string name, T* location) {
+typed_parameter<T> make_typed_parameter(std::string name, T* location) {
   return typed_parameter<T>(name, location);
 }
 
@@ -54,6 +54,18 @@ bool operator==(const typed_parameter<T>& lhs, const typed_parameter<T>& rhs) {
     && lhs.m_short_name == rhs.m_short_name
     && lhs.m_keep == rhs.m_keep
     && lhs.m_default_value == rhs.m_default_value;
+}
+
+bool operator==(const base_parameter& lhs, const base_parameter& rhs) {
+  return lhs.m_name == rhs.m_name
+    && lhs.m_type_hash == rhs.m_type_hash
+    && lhs.m_help == rhs.m_help
+    && lhs.m_short_name == rhs.m_short_name
+    && lhs.m_keep == rhs.m_keep;
+}
+
+bool operator!=(const base_parameter& lhs, const base_parameter& rhs) {
+  return !(lhs == rhs);
 }
 
 template<typename T>
