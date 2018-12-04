@@ -82,9 +82,6 @@ struct arguments_boost_po : public arguments_i {
   template<typename T>
   po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg);
 
-  template<>
-  po::typed_value<std::vector<bool>>* convert_to_boost_value(std::shared_ptr<typed_argument<bool>>& arg);
-
   template<typename T>
   po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_argument<T>>& arg, po::typed_value<std::vector<T>>* po_value);
 
@@ -152,6 +149,9 @@ template<typename T>
 po::typed_value<std::vector<T>>* arguments_boost_po::convert_to_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg) {
   return get_base_boost_value(arg)->multitoken();
 }
+
+template<>
+po::typed_value<std::vector<bool>>* arguments_boost_po::convert_to_boost_value(std::shared_ptr<typed_argument<bool>>& arg);
 
 template<typename T>
 po::typed_value<std::vector<T>>* arguments_boost_po::add_notifier(std::shared_ptr<typed_argument<T>>& arg, po::typed_value<std::vector<T>>* po_value) {

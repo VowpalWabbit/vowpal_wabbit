@@ -12,8 +12,8 @@ namespace VW {
       : m_name(name), m_type_hash(type_hash)
     {}
 
-    size_t m_type_hash;
     std::string m_name;
+    size_t m_type_hash;
     std::string m_help = "";
     std::string m_short_name = "";
     bool m_keep = false;
