@@ -3,15 +3,10 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
+#include "test_common.h"
+
 #include <vector>
 #include "../../explore/explore.h"
-
-void check_float_vectors(const std::vector<float>& lhs, const std::vector<float>& rhs, const float tolerance_percent) {
-  BOOST_CHECK_EQUAL(lhs.size(), rhs.size());
-  for ( auto l = begin(lhs), r = begin(rhs); l < end(lhs); ++l, ++r ) {
-    BOOST_CHECK_CLOSE(*l, *r, tolerance_percent);
-  }
-}
 
 BOOST_AUTO_TEST_CASE(sample_after_nomalizing_basic) {
   std::vector<float> pdf = { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };

@@ -51,6 +51,14 @@ class vw_argument_disagreement_exception : public vw_exception
 	~vw_argument_disagreement_exception() _NOEXCEPT {};
 };
 
+class vw_argument_invalid_value_exception : public vw_exception
+{
+public:
+  vw_argument_invalid_value_exception(const char* file, int lineNumber, std::string message) : vw_exception(file, lineNumber, message) {};
+  vw_argument_invalid_value_exception(const vw_argument_disagreement_exception& ex) : vw_exception(ex) {};
+  ~vw_argument_invalid_value_exception() _NOEXCEPT {};
+};
+
 #ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
