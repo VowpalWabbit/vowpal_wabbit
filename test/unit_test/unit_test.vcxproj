@@ -34,6 +34,9 @@
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test_common.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E02E3869-D9AD-4513-B352-93F90B7D6FE3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

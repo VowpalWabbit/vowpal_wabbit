@@ -5,8 +5,8 @@
 #include <typeinfo>
 #include <memory>
 
-struct base_parameter {
-  base_parameter(std::string name, size_t type_hash)
+struct base_argument {
+  base_argument(std::string name, size_t type_hash)
     : m_name(name), m_type_hash(type_hash)
   {}
 
@@ -16,25 +16,34 @@ struct base_parameter {
   std::string m_short_name = "";
   bool m_keep = false;
 
-  virtual ~base_parameter() {}
+  virtual ~base_argument() {}
 };
 
 template<typename T>
-struct typed_parameter : base_parameter {
-  explicit typed_parameter(std::string name, T* location)
-    : base_parameter(name, typeid(T).hash_code()) {
+struct typed_argument : base_argument {
+  explicit typed_argument(std::string name, T* location)
+    : base_argument(name, typeid(T).hash_code()) {
     m_locations.push_back(location);
   }
 
-  typed_parameter& default_value(T value) {
+  typed_argument& default_value(T value) {
     m_default_supplied = true;
     m_default_value = value;
     return *this;
   }
 
-  typed_parameter& short_name(std::string short_name) { m_short_name = short_name; return *this; }
-  typed_parameter& help(std::string help) { m_help = help; return *this; }
-  typed_parameter& keep(bool keep = true) { m_keep = keep; return *this; }
+  typed_argument& short_name(std::string short_name) {
+    m_short_name = short_name;
+    return *this;
+  }
+
+  typed_argument& help(std::string help) {
+    m_help = help; return *this;
+  }
+
+  typed_argument& keep(bool keep = true) {
+    m_keep = keep; return *this;
+  }
 
   bool m_default_supplied = false;
   T m_default_value;
@@ -42,51 +51,28 @@ struct typed_parameter : base_parameter {
 };
 
 template<typename T>
-typed_parameter<T> make_typed_parameter(std::string name, T* location) {
-  return typed_parameter<T>(name, location);
-}
-
-template<typename T>
-bool operator==(const typed_parameter<T>& lhs, const typed_parameter<T>& rhs) {
-  return lhs.m_name == rhs.m_name
-    && lhs.m_type_hash == rhs.m_type_hash
-    && lhs.m_help == rhs.m_help
-    && lhs.m_short_name == rhs.m_short_name
-    && lhs.m_keep == rhs.m_keep
-    && lhs.m_default_value == rhs.m_default_value;
-}
-
-bool operator==(const base_parameter& lhs, const base_parameter& rhs) {
-  return lhs.m_name == rhs.m_name
-    && lhs.m_type_hash == rhs.m_type_hash
-    && lhs.m_help == rhs.m_help
-    && lhs.m_short_name == rhs.m_short_name
-    && lhs.m_keep == rhs.m_keep;
-}
-
-bool operator!=(const base_parameter& lhs, const base_parameter& rhs) {
-  return !(lhs == rhs);
-}
-
-template<typename T>
-bool operator!=(const typed_parameter<T>& lhs, const typed_parameter<T>& rhs) {
-  return !(lhs == rhs);
+typed_argument<T> make_typed_arg(std::string name, T* location) {
+  return typed_argument<T>(name, location);
 }
 
 struct argument_group_definition {
-  argument_group_definition(std::string name) : m_name(name) {}
+  argument_group_definition(std::string name)
+    : m_name(name)
+  {}
 
   template<typename T>
-  void add(typed_parameter<T> op) { m_parameters.push_back(std::make_shared<typed_parameter<T>>(op)); }
+  void add(typed_argument<T> op) {
+    m_arguments.push_back(std::make_shared<typed_argument<T>>(op));
+  }
 
   template<typename T>
-  argument_group_definition& operator()(typed_parameter<T> op) {
+  argument_group_definition& operator()(typed_argument<T> op) {
     add(op);
     return *this;
   }
 
   std::string m_name;
-  std::vector<std::shared_ptr<base_parameter>> m_parameters;
+  std::vector<std::shared_ptr<base_argument>> m_arguments;
 };
 
 struct arguments_i {
@@ -97,3 +83,21 @@ struct arguments_i {
 
   virtual ~arguments_i() {}
 };
+
+template<typename T>
+bool operator==(const typed_argument<T>& lhs, const typed_argument<T>& rhs) {
+  return lhs.m_name == rhs.m_name
+    && lhs.m_type_hash == rhs.m_type_hash
+    && lhs.m_help == rhs.m_help
+    && lhs.m_short_name == rhs.m_short_name
+    && lhs.m_keep == rhs.m_keep
+    && lhs.m_default_value == rhs.m_default_value;
+}
+
+template<typename T>
+bool operator!=(const typed_argument<T>& lhs, const typed_argument<T>& rhs) {
+  return !(lhs == rhs);
+}
+
+bool operator==(const base_argument& lhs, const base_argument& rhs);
+bool operator!=(const base_argument& lhs, const base_argument& rhs);

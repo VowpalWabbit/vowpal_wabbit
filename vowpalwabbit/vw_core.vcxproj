@@ -254,6 +254,8 @@
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
     <ClCompile Include="action_score.cc" />
+    <ClCompile Include="arguments.cc" />
+    <ClCompile Include="arguments_boost_po.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />
