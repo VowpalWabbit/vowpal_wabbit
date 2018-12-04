@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+using namespace VW;
+
 
 char** convert_to_command_args(char* command_line, int& argc, int max_args = 64) {
   char** argv = new char*[max_args];
@@ -48,7 +50,7 @@ BOOST_AUTO_TEST_CASE(typed_arguments_parsing) {
   arg_group.add(make_typed_arg("char_arg", &char_arg));
   arg_group.add(make_typed_arg("float_arg", &float_arg));
 
-  arguments->add_and_parse(arg_group);
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(str_arg, "test_str");
   BOOST_CHECK_EQUAL(int_arg, 5);
@@ -101,11 +103,12 @@ BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_args) {
   arg_group.add(make_typed_arg("bool_switch", &bool_switch));
   arg_group.add(make_typed_arg("bool_switch_unspecified", &bool_switch_unspecified));
 
-  arguments->add_and_parse(arg_group);
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(bool_switch, true);
   BOOST_CHECK_EQUAL(bool_switch_unspecified, false);
 }
+
 BOOST_AUTO_TEST_CASE(incorrect_arg_type) {
   int int_arg;
 
@@ -122,6 +125,7 @@ BOOST_AUTO_TEST_CASE(incorrect_arg_type) {
 
   BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
+
 BOOST_AUTO_TEST_CASE(multiple_locations_one_arg) {
   std::string str_arg_1;
   std::string str_arg_2;
@@ -138,14 +142,167 @@ BOOST_AUTO_TEST_CASE(multiple_locations_one_arg) {
   arg_group.add(make_typed_arg("str_arg", &str_arg_1));
   arg_group.add(make_typed_arg("str_arg", &str_arg_2));
 
-  arguments->add_and_parse(arg_group);
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(str_arg_1, "value");
   BOOST_CHECK_EQUAL(str_arg_2, "value");
 }
-BOOST_AUTO_TEST_CASE(duplicate_arg_clash) {}
-BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {}
-BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {}
-BOOST_AUTO_TEST_CASE(merge_two_groups) {}
-BOOST_AUTO_TEST_CASE(was_supplied_test) {}
 
+BOOST_AUTO_TEST_CASE(duplicate_arg_clash) {
+  int int_arg;
+  char char_arg;
+
+  char command_line[] = "exe --the_arg s";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group");
+  arg_group.add(make_typed_arg("the_arg", &int_arg));
+  arg_group.add(make_typed_arg("the_arg", &char_arg));
+
+  BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_exception);
+}
+
+BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
+  int int_arg;
+
+  char command_line[] = "exe --int_arg 3 --int_arg 5";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group");
+  arg_group.add(make_typed_arg("int_arg", &int_arg));
+
+  BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
+}
+
+BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
+  int int_arg;
+
+  char command_line[] = "exe --int_arg 3 --int_arg 3";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group");
+  arg_group.add(make_typed_arg("int_arg", &int_arg));
+
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_EQUAL(int_arg, 3);
+}
+
+BOOST_AUTO_TEST_CASE(merge_two_groups) {
+  int int_arg;
+  std::string str_arg;
+
+  char command_line[] = "exe --int_arg 3 --str_arg test";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group1("group1");
+  arg_group1.add(make_typed_arg("int_arg", &int_arg));
+
+  argument_group_definition arg_group2("group2");
+  arg_group2.add(make_typed_arg("str_arg", &str_arg));
+
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group1));
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group2));
+  BOOST_CHECK_EQUAL(int_arg, 3);
+  BOOST_CHECK_EQUAL(str_arg, "test");
+}
+
+BOOST_AUTO_TEST_CASE(was_supplied_test) {
+  int int_arg;
+  std::string str_arg;
+  bool bool_arg;
+
+  char command_line[] = "exe --int_arg 3 --str_arg test";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group1");
+  arg_group.add(make_typed_arg("int_arg", &int_arg));
+  arg_group.add(make_typed_arg("str_arg", &str_arg));
+  arg_group.add(make_typed_arg("bool_arg", &bool_arg));
+
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_EQUAL(int_arg, 3);
+  BOOST_CHECK_EQUAL(str_arg, "test");
+  BOOST_CHECK_EQUAL(bool_arg, false);
+
+  BOOST_CHECK_EQUAL(arguments->was_supplied("int_arg"), true);
+  BOOST_CHECK_EQUAL(arguments->was_supplied("str_arg"), true);
+  BOOST_CHECK_EQUAL(arguments->was_supplied("bool_arg"), false);
+  BOOST_CHECK_EQUAL(arguments->was_supplied("other_arg"), false);
+}
+
+BOOST_AUTO_TEST_CASE(kept_command_line) {
+  int int_arg;
+  std::string str_arg;
+  bool bool_arg;
+  bool other_bool_arg;
+  std::vector<char> char_vec_arg;
+
+  char command_line[] = "exe --int_arg 3 --str_arg test --other_bool_arg --char_vec_arg a c --char_vec_arg d";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group1");
+  arg_group.add(make_typed_arg("int_arg", &int_arg));
+  arg_group.add(make_typed_arg("str_arg", &str_arg).keep());
+  arg_group.add(make_typed_arg("bool_arg", &bool_arg).keep());
+  arg_group.add(make_typed_arg("other_bool_arg", &other_bool_arg).keep());
+  arg_group.add(make_typed_arg("char_vec_arg", &char_vec_arg).keep());
+
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_EQUAL(int_arg, 3);
+  BOOST_CHECK_EQUAL(str_arg, "test");
+  BOOST_CHECK_EQUAL(bool_arg, false);
+  BOOST_CHECK_EQUAL(other_bool_arg, true);
+  BOOST_CHECK_NE(arguments->get_kept().find("--str_arg test"), std::string::npos);
+  BOOST_CHECK_NE(arguments->get_kept().find("--other_bool_arg"), std::string::npos);
+  BOOST_CHECK_NE(arguments->get_kept().find("--char_vec_arg a c d"), std::string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(unregistered_arguments) {
+  int int_arg;
+
+  char command_line[] = "exe --int_arg 3 --str_arg test";
+  int argc;
+  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+
+  std::unique_ptr<arguments_i> arguments = std::unique_ptr<arguments_boost_po>(
+    new arguments_boost_po(argc, argv.get()));
+
+  argument_group_definition arg_group("group1");
+  arg_group.add(make_typed_arg("int_arg", &int_arg));
+
+  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_EQUAL(int_arg, 3);
+
+  BOOST_CHECK_THROW(arguments->check_unregistered(), VW::vw_exception);
+}

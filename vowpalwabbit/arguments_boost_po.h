@@ -6,6 +6,7 @@ namespace po = boost::program_options;
 #include <memory>
 #include <vector>
 #include <sstream>
+#include <set>
 
 #include "arguments.h"
 #include "vw_exception.h"
@@ -27,79 +28,38 @@ template std::ostream& std::operator<< <std::string> (std::ostream &, const std:
 template std::ostream& std::operator<< <float>(std::ostream &, const std::vector<float>&);
 template std::ostream& std::operator<< <bool>(std::ostream &, const std::vector<bool>&);
 
-template<typename T>
-po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_argument<T>>& arg) {
-  po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+namespace VW {
 
-  if (arg->m_default_supplied) {
-    value->default_value({ arg->m_default_value });
+template <typename T>
+std::string get_kept_arg_string_vec(const std::shared_ptr<typed_argument<std::vector<T>>>& arg, std::vector<T> final_value) {
+  std::stringstream ss;
+  if (final_value.size() > 0) {
+    ss << " --" << arg->m_name;
+    for (auto const& value : final_value) {
+      ss << " " << value;
+    }
   }
 
-  return add_notifier(arg, value)->composing();
+  return ss.str();
 }
 
-template<typename T>
-po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg) {
-  po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+template <typename T>
+std::string get_kept_arg_string(const std::shared_ptr<typed_argument<T>>& arg, T final_value) {
+  std::stringstream ss;
+  ss << " --" << arg->m_name << " " << final_value;
+  return ss.str();
+}
 
-  if (arg->m_default_supplied) {
-    value->default_value(arg->m_default_value);
+template <>
+inline std::string get_kept_arg_string<bool>(const std::shared_ptr<typed_argument<bool>>& arg, bool final_value) {
+  std::stringstream ss;
+
+  if (final_value) {
+    ss << " --" << arg->m_name;
   }
 
-  return add_notifier(arg, value)->composing();
+  return ss.str();
 }
-
-template<typename T>
-po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_argument<T>>& arg) {
-  return get_base_boost_value(arg);
-}
-
-template<typename T>
-po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg) {
-  return get_base_boost_value(arg)->multitoken();
-}
-
-template<>
-po::typed_value<std::vector<bool>>* convert_to_boost_value(std::shared_ptr<typed_argument<bool>>& arg);
-
-template<typename T>
-po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_argument<T>>& arg, po::typed_value<std::vector<T>>* po_value) {
-  return po_value->notifier([arg](std::vector<T> final_arguments) {
-    T first = final_arguments[0];
-    for (auto const& item : final_arguments) {
-      if (item != first) {
-        std::stringstream ss;
-        ss << "Disagreeing option values for '" << arg->m_name << "': '" << first << "' vs '" << item << "'";
-        THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
-      }
-    }
-
-    // Set the value for all listening locations.
-    for (auto location : arg->m_locations) {
-      *location = final_arguments[0];
-    }
-
-    if (arg->m_keep) {
-      // TODO keep
-    }
-  });
-}
-
-template<typename T>
-po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_argument<std::vector<T>>>& arg, po::typed_value<std::vector<T>>* po_value) {
-  return po_value->notifier([arg](std::vector<T> final_arguments) {
-    // Set the value for all listening locations.
-    for (auto location : arg->m_locations) {
-      *location = final_arguments;
-    }
-
-    if (arg->m_keep) {
-      // TODO keep
-    }
-  });
-}
-
-
 
 struct arguments_boost_po : public arguments_i {
   arguments_boost_po(int argc, char** argv)
@@ -109,6 +69,27 @@ struct arguments_boost_po : public arguments_i {
   arguments_boost_po(std::vector<std::string> args)
     : m_command_line(args)
   {}
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_argument<T>>& arg);
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg);
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_argument<T>>& arg);
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg);
+
+  template<>
+  po::typed_value<std::vector<bool>>* convert_to_boost_value(std::shared_ptr<typed_argument<bool>>& arg);
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_argument<T>>& arg, po::typed_value<std::vector<T>>* po_value);
+
+  template<typename T>
+  po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_argument<std::vector<T>>>& arg, po::typed_value<std::vector<T>>* po_value);
 
   template<typename T>
   bool mismatches_with_existing_option(typed_argument<T>& arg_to_check);
@@ -128,14 +109,86 @@ struct arguments_boost_po : public arguments_i {
   virtual bool was_supplied(std::string key) override;
   virtual std::string help() override;
   virtual std::string get_kept() override;
+  virtual void check_unregistered() override;
 
 private:
   std::vector<std::string> m_command_line;
   po::variables_map m_vm;
   po::options_description m_merged_options;
+  std::set<std::string> m_supplied_options;
+  std::string m_kept_command_line;
 
   std::vector<std::shared_ptr<base_argument>> m_existing_arguments;
 };
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::get_base_boost_value(std::shared_ptr<typed_argument<T>>& arg) {
+  po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+
+  if (arg->m_default_supplied) {
+    value->default_value({ arg->m_default_value });
+  }
+
+  return add_notifier(arg, value)->composing();
+}
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::get_base_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg) {
+  po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+
+  if (arg->m_default_supplied) {
+    value->default_value(arg->m_default_value);
+  }
+
+  return add_notifier(arg, value)->composing();
+}
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::convert_to_boost_value(std::shared_ptr<typed_argument<T>>& arg) {
+  return get_base_boost_value(arg);
+}
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::convert_to_boost_value(std::shared_ptr<typed_argument<std::vector<T>>>& arg) {
+  return get_base_boost_value(arg)->multitoken();
+}
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::add_notifier(std::shared_ptr<typed_argument<T>>& arg, po::typed_value<std::vector<T>>* po_value) {
+  return po_value->notifier([this, arg](std::vector<T> final_arguments) {
+    T first = final_arguments[0];
+    for (auto const& item : final_arguments) {
+      if (item != first) {
+        std::stringstream ss;
+        ss << "Disagreeing option values for '" << arg->m_name << "': '" << first << "' vs '" << item << "'";
+        THROW_EX(VW::vw_argument_disagreement_exception, ss.str());
+      }
+    }
+
+    // Set the value for all listening locations.
+    for (auto location : arg->m_locations) {
+      *location = first;
+    }
+
+    if (arg->m_keep) {
+      this->m_kept_command_line += get_kept_arg_string(arg, first);
+    }
+  });
+}
+
+template<typename T>
+po::typed_value<std::vector<T>>* arguments_boost_po::add_notifier(std::shared_ptr<typed_argument<std::vector<T>>>& arg, po::typed_value<std::vector<T>>* po_value) {
+  return po_value->notifier([this, arg](std::vector<T> final_arguments) {
+    // Set the value for all listening locations.
+    for (auto location : arg->m_locations) {
+      *location = final_arguments;
+    }
+
+    if (arg->m_keep) {
+      this->m_kept_command_line += get_kept_arg_string_vec(arg, final_arguments);
+    }
+  });
+}
 
 template<typename T>
 bool arguments_boost_po::mismatches_with_existing_option(typed_argument<T>& arg_to_check) {
@@ -186,7 +239,7 @@ bool arguments_boost_po::add_if_t(std::shared_ptr<base_argument> arg, po::option
 template<typename T>
 void arguments_boost_po::add_to_description(std::shared_ptr<typed_argument<T>> arg, po::options_description& options_description) {
   if (mismatches_with_existing_option(*arg)) {
-    throw std::invalid_argument("Duplicate detected");
+    THROW("There already exists an option with name '" << arg->m_name << "' with a different spec. To subscribe for this value, the spec must match.");
   }
 
   auto equiv = get_equivalent_argument_if_exists(*arg);
@@ -201,4 +254,5 @@ void arguments_boost_po::add_to_description(std::shared_ptr<typed_argument<T>> a
     }
     options_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(arg), arg->m_help.c_str());
   }
+}
 }

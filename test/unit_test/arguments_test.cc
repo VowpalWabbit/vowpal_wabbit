@@ -8,6 +8,8 @@
 #include <vector>
 #include <string>
 
+using namespace VW;
+
 BOOST_AUTO_TEST_CASE(make_argument_and_customize) {
   int loc;
   auto arg = make_typed_arg("arg", &loc)
