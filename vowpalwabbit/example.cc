@@ -231,6 +231,7 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
 }
 
 void finish_example(vw&, example&);
+void clean_example(vw&, example&, bool rewind);
 
 void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
 {
@@ -241,4 +242,11 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
   ec_seq.clear();
 }
 
+void return_multiple_example(vw& all, v_array<example*>& examples)
+{
+  for (auto ec : examples) {
+    clean_example(all, *ec, true);
+  }
+  examples.clear();
+}
 }

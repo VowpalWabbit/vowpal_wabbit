@@ -13,6 +13,10 @@ license as described in the file LICENSE.
 #endif
 
 #if !defined(VW_NO_INLINE_SIMD)
+#  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
+#    define __SSE2__
+#  endif
+
 #  if defined(__ARM_NEON__)
 #include <arm_neon.h>
 #  elif defined(__SSE2__)
@@ -85,7 +89,7 @@ static inline float InvSqrt(float x)
   float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
   // Extract result
   return vget_lane_f32(e3, 0);
-#  elif (defined(__SSE2__) || defined(_M_AMD64) || defined(_M_X64))
+#  elif defined(__SSE2__)
   __m128 eta = _mm_load_ss(&x);
   eta = _mm_rsqrt_ss(eta);
   _mm_store_ss(&x, eta);

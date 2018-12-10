@@ -1,9 +1,0 @@
-{
-  "ApplicationID": "<appid>",
-  "EventHubInteractionConnectionString": "Endpoint=sb://<ingest>.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=<SAKey>;EntityPath=interaction",
-  "EventHubObservationConnectionString": "Endpoint=sb://<ingest>.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=<SAKey>;EntityPath=observation",
-  "IsExplorationEnabled": true,
-  "ModelBlobUri": "https://<storage>.blob.core.windows.net/mwt-models/current?sv=2017-07-29&sr=b&sig=<sig>&st=2018-06-26T09%3A00%3A55Z&se=2028-06-26T09%3A01%3A55Z&sp=r",
-  "AppInsightsKey": "<AppInsightsKey>",
-  "InitialExplorationEpsilon": 1.0
-}
