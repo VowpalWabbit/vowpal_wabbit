@@ -6,6 +6,7 @@
 #include "test_common.h"
 
 #include "arguments_boost_po.h"
+#include "arguments_serializer_boost_po.h"
 
 #include <memory>
 #include <vector>
@@ -282,9 +283,19 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   BOOST_CHECK_EQUAL(str_arg, "test");
   BOOST_CHECK_EQUAL(bool_arg, false);
   BOOST_CHECK_EQUAL(other_bool_arg, true);
-  BOOST_CHECK_NE(arguments->get_kept().find("--str_arg test"), std::string::npos);
-  BOOST_CHECK_NE(arguments->get_kept().find("--other_bool_arg"), std::string::npos);
-  BOOST_CHECK_NE(arguments->get_kept().find("--char_vec_arg a c d"), std::string::npos);
+
+  VW::arguments_serializer_boost_po serializer(true);
+  for (auto& arg : arguments->get_all_args()) {
+    serializer.add(*arg);
+  }
+
+  auto serialized_string = serializer.str();
+
+  BOOST_CHECK_NE(serialized_string.find("--str_arg test"), std::string::npos);
+  BOOST_CHECK_NE(serialized_string.find("--other_bool_arg"), std::string::npos);
+  BOOST_CHECK_NE(serialized_string.find("--char_vec_arg a c d"), std::string::npos);
+  BOOST_CHECK_EQUAL(serialized_string.find("--bool_arg"), std::string::npos);
+  BOOST_CHECK_EQUAL(serialized_string.find("--int_arg"), std::string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(unregistered_arguments) {

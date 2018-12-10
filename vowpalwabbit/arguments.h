@@ -28,10 +28,21 @@ namespace VW {
       m_locations.push_back(location);
     }
 
+    static size_t type_hash() {
+      return typeid(T).hash_code();
+    }
+
     typed_argument& default_value(T value) {
-      m_default_supplied = true;
-      m_default_value = value;
+      m_default_value = std::make_shared<T>(value);
       return *this;
+    }
+
+    bool default_value_supplied() {
+      return m_default_value.get() != nullptr;
+    }
+
+    T default_value() {
+      return m_default_value ? *m_default_value : T();
     }
 
     typed_argument& short_name(std::string short_name) {
@@ -47,9 +58,25 @@ namespace VW {
       m_keep = keep; return *this;
     }
 
-    bool m_default_supplied = false;
-    T m_default_value;
+    bool value_supplied() {
+      return m_value.get() != nullptr;
+    }
+
+    typed_argument& value(T& value) {
+      m_value = std::make_shared<T>(value);
+      return *this;
+    }
+
+    T value(){
+      return m_value ? *m_value : T();
+    }
+
     std::vector<T*> m_locations;
+
+  private:
+    // Would prefer to use std::optional (C++17) here but we are targeting C++11
+    std::shared_ptr<T> m_value{ nullptr };
+    std::shared_ptr<T> m_default_value{ nullptr };
   };
 
   template<typename T>
@@ -81,7 +108,21 @@ namespace VW {
     virtual void add_and_parse(argument_group_definition group) = 0;
     virtual bool was_supplied(std::string key) = 0;
     virtual std::string help() = 0;
-    virtual std::string get_kept() = 0;
+
+    virtual void merge(arguments_i* other) = 0;
+
+    virtual std::vector<std::shared_ptr<base_argument>>& get_all_args() = 0;
+    virtual base_argument& get_arg(std::string key) = 0;
+
+    template <typename T>
+    typed_argument<T>& get_typed_arg(std::string key) {
+      base_argument& base = get_arg(key);
+      if (base.m_type_hash != typed_argument<T>::type_hash()) {
+        throw std::bad_cast();
+      }
+
+      return dynamic_cast<typed_argument<T>&>(base);
+    }
 
     // Will throw if any options were supplied that do not having a matching argument specification.
     virtual void check_unregistered() = 0;
@@ -89,18 +130,25 @@ namespace VW {
     virtual ~arguments_i() {}
   };
 
+  struct arguments_serializer_i {
+    virtual void add(base_argument& argument) = 0;
+    virtual std::string str() = 0;
+    virtual const char* data() = 0;
+    virtual size_t size() = 0;
+  };
+
   template<typename T>
-  bool operator==(const typed_argument<T>& lhs, const typed_argument<T>& rhs) {
+  bool operator==(typed_argument<T>& lhs, typed_argument<T>& rhs) {
     return lhs.m_name == rhs.m_name
       && lhs.m_type_hash == rhs.m_type_hash
       && lhs.m_help == rhs.m_help
       && lhs.m_short_name == rhs.m_short_name
       && lhs.m_keep == rhs.m_keep
-      && lhs.m_default_value == rhs.m_default_value;
+      && lhs.default_value() == rhs.default_value();
   }
 
   template<typename T>
-  bool operator!=(const typed_argument<T>& lhs, const typed_argument<T>& rhs) {
+  bool operator!=(typed_argument<T>& lhs, typed_argument<T>& rhs) {
     return !(lhs == rhs);
   }
 
