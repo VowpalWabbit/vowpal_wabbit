@@ -28,10 +28,61 @@ void arguments_boost_po::add_and_parse(argument_group_definition group) {
 
   for (auto param_ptr : group.m_arguments) {
     add_to_description(param_ptr, new_options);
-    m_existing_arguments.push_back(param_ptr);
   }
 
   m_merged_options.add(new_options);
+  process_current_options_description();
+}
+
+bool arguments_boost_po::was_supplied(std::string key) {
+  return m_supplied_options.count(key) > 0;
+}
+
+std::string arguments_boost_po::help() {
+  std::stringstream ss;
+  m_merged_options.print(ss);
+  return ss.str();
+}
+
+void arguments_boost_po::merge(arguments_i* other) {
+  auto all_other_args = other->get_all_args();
+
+  for (auto param_ptr : all_other_args) {
+    add_to_description(param_ptr, m_merged_options);
+  }
+
+  process_current_options_description();
+}
+
+std::vector<std::shared_ptr<base_argument>>& arguments_boost_po::get_all_args() {
+  return m_existing_arguments;
+}
+
+base_argument& arguments_boost_po::get_arg(std::string key) {
+  for (auto const& arg : m_existing_arguments) {
+    if (arg->m_name == key)
+      return *arg;
+  }
+
+  throw std::out_of_range(key + " was not found.");
+}
+
+// Explicit run without allow_unregistered.
+void arguments_boost_po::check_unregistered() {
+  try {
+    po::store(po::command_line_parser(m_command_line)
+      .options(m_merged_options).run(), m_vm);
+    po::notify(m_vm);
+  }
+  catch (boost::exception_detail::clone_impl<
+    boost::exception_detail::error_info_injector<
+    boost::program_options::unknown_option>>& ex) {
+    THROW(ex.what());
+  }
+}
+
+void arguments_boost_po::process_current_options_description()
+{
   try {
     auto parsed_options = po::command_line_parser(m_command_line)
       .options(m_merged_options).allow_unregistered().run();
@@ -45,36 +96,7 @@ void arguments_boost_po::add_and_parse(argument_group_definition group) {
   }
   catch (boost::exception_detail::clone_impl<
     boost::exception_detail::error_info_injector<
-    boost::program_options::invalid_option_value>>& ex) {
+    boost::program_options::invalid_option_value>>&ex) {
     THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
-  }
-}
-
-bool arguments_boost_po::was_supplied(std::string key) {
-  return m_supplied_options.count(key) > 0;
-}
-
-std::string arguments_boost_po::help() {
-  std::stringstream ss;
-  m_merged_options.print(ss);
-  return ss.str();
-}
-
-std::string arguments_boost_po::get_kept() {
-  return m_kept_command_line;
-}
-
-// Explicit run without allow_unregistered.
-// TODO create exception type for unregistered
-void arguments_boost_po::check_unregistered() {
-  try {
-    po::store(po::command_line_parser(m_command_line)
-      .options(m_merged_options).run(), m_vm);
-    po::notify(m_vm);
-  }
-  catch (boost::exception_detail::clone_impl<
-    boost::exception_detail::error_info_injector<
-    boost::program_options::unknown_option>>& ex) {
-    THROW(ex.what());
   }
 }

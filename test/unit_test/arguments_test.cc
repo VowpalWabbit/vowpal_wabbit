@@ -19,8 +19,8 @@ BOOST_AUTO_TEST_CASE(make_argument_and_customize) {
     .short_name("t");
 
   BOOST_CHECK_EQUAL(arg.m_name, "arg");
-  BOOST_CHECK_EQUAL(arg.m_default_supplied, true);
-  BOOST_CHECK_EQUAL(arg.m_default_value, 4);
+  BOOST_CHECK_EQUAL(arg.default_value_supplied(), true);
+  BOOST_CHECK_EQUAL(arg.default_value(), 4);
   BOOST_CHECK_EQUAL(arg.m_help, "Help text");
   BOOST_CHECK_EQUAL(arg.m_keep, true);
   BOOST_CHECK_EQUAL(arg.m_short_name, "t");
