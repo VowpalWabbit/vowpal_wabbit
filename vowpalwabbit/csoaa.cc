@@ -276,7 +276,7 @@ bool test_ldf_sequence(ldf& data, size_t start_K, multi_ex& ec_seq)
     if (COST_SENSITIVE::cs_label.test_label(&ec->l) != isTest)
     {
       isTest = true;
-      data.all->opts_n_args.trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
+      data.all->trace_message << "warning: ldf example has mix of train/test data; assuming test" << endl;
     }
     if (ec_is_example_header(*ec))
       THROW("warning: example headers at position " << k << ": can only have in initial position!");
@@ -857,9 +857,9 @@ base_learner* csldf_setup(arguments& arg)
   {
     arg.all->sd->report_multiclass_log_loss = true;
     if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
-      arg.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      arg.all->trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld->treat_as_classifier)
-      arg.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+      arg.all->trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
 
   arg.all->p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;

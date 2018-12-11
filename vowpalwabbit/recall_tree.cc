@@ -585,8 +585,8 @@ base_learner* recall_tree_setup(arguments& arg)
 
   init_tree (*tree.get());
 
-  if (! arg.all->quiet)
-    arg.trace_message << "recall_tree:"
+  if (!arg.all->quiet)
+    arg.all->trace_message << "recall_tree:"
                       << " node_only = " << tree->node_only
                       << " bern_hyper = " << tree->bern_hyper
                       << " max_depth = " << tree->max_depth
