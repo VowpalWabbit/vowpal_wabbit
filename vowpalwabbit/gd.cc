@@ -984,7 +984,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     if (resume)
     {
       if (read && all.model_file_ver < VERSION_SAVE_RESUME_FIX)
-        all.opts_n_args.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
+        all.trace_message << endl << "WARNING: --save_resume functionality is known to have inaccuracy in model files version less than " << VERSION_SAVE_RESUME_FIX << endl << endl;
       // save_load_online_state(g, model_file, read, text);
       save_load_online_state(all, model_file, read, text, &g);
     }
@@ -1147,7 +1147,7 @@ base_learner* setup(arguments& arg)
     THROW("Cannot use adax without adaptive");
 
   if (pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses) < 0.0001 )
-    arg.trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses)
+    arg.all->trace_message << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)arg.all->eta_decay_rate, (double)arg.all->numpasses)
                       << " adjust --decay_learning_rate larger to avoid this." << endl;
 
   if (arg.all->reg_mode % 2)
