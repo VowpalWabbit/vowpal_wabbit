@@ -372,7 +372,7 @@ base_learner* cb_adf_setup(arguments& arg)
     ld->gen_cs.cb_type = CB_TYPE_DM;
   else
     {
-      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
+      arg.all->trace_message << "warning: cb_type must be in {'ips','dr','mtr','dm'}; resetting to ips." << std::endl;
       ld->gen_cs.cb_type = CB_TYPE_IPS;
     }
 

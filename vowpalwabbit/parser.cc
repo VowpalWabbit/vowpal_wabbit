@@ -330,7 +330,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   io_buf* output = all.p->output;
   if (output->files.size() != 0)
   {
-    all.opts_n_args.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -340,7 +340,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1)
   {
-    all.opts_n_args.trace_message << "can't create cache file !" << endl;
+    all.trace_message << "can't create cache file !" << endl;
     return;
   }
 
@@ -354,7 +354,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   push_many(output->finalname,newname.c_str(),newname.length()+1);
   all.p->write_cache = true;
   if (!quiet)
-    all.opts_n_args.trace_message << "creating cache_file = " << newname << endl;
+    all.trace_message << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(vw& all, po::variables_map &vm, string source,
@@ -385,14 +385,14 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
       if (c < all.num_bits)
       {
         if (!quiet)
-          all.opts_n_args.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
+          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
         all.p->input->close_file();
         make_write_cache(all, caches[i], quiet);
       }
       else
       {
         if (!quiet)
-          all.opts_n_args.trace_message << "using cache_file = " << caches[i].c_str() << endl;
+          all.trace_message << "using cache_file = " << caches[i].c_str() << endl;
         all.p->reader = read_cached_features;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
@@ -407,7 +407,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
   if (caches.size() == 0)
   {
     if (!quiet)
-      all.opts_n_args.trace_message << "using no cache" << endl;
+      all.trace_message << "using no cache" << endl;
     all.p->output->space.delete_v();
   }
 }
@@ -435,18 +435,18 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     {
       stringstream msg;
       msg << "socket: " << strerror(errno);
-      all.opts_n_args.trace_message << msg.str() << endl;
+      all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.opts_n_args.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.opts_n_args.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
@@ -470,7 +470,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.opts_n_args.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       ofstream port_file;
       port_file.open(all.opts_n_args.vm["port_file"].as<string>().c_str());
@@ -577,7 +577,7 @@ child:
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
     if (!all.quiet)
-      all.opts_n_args.trace_message << "calling accept" << endl;
+      all.trace_message << "calling accept" << endl;
     int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
     if (f < 0)
       THROWERRNO("accept");
@@ -590,7 +590,7 @@ child:
     all.p->input->files.push_back(f);
     all.p->max_fd = max(f, all.p->max_fd);
     if (!all.quiet)
-      all.opts_n_args.trace_message << "reading data from port " << port << endl;
+      all.trace_message << "reading data from port " << port << endl;
 
     all.p->max_fd++;
     if(all.active)
@@ -615,13 +615,13 @@ child:
     if (all.p->input->files.size() > 0)
     {
       if (!quiet)
-        all.opts_n_args.trace_message << "ignoring text input in favor of cache input" << endl;
+        all.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       string temp = all.data_filename;
       if (!quiet)
-        all.opts_n_args.trace_message << "Reading datafile = " << temp << endl;
+        all.trace_message << "Reading datafile = " << temp << endl;
       try
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
@@ -631,7 +631,7 @@ child:
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (temp.size() != 0)
         {
-          all.opts_n_args.trace_message << "can't open '" << temp << "', sailing on!" << endl;
+          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
         {
@@ -669,7 +669,7 @@ child:
 
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
-    all.opts_n_args.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
 void lock_done(parser& p)

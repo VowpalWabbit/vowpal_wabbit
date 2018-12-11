@@ -482,6 +482,9 @@ struct vw
   double normalized_sum_norm_x;
   bool vw_is_main;  // true if vw is executable; false in library mode
 
+  //error reporting
+  vw_ostream trace_message;
+
   arguments opts_n_args;
 
   void* /*Search::search*/ searchstr;
