@@ -232,7 +232,7 @@ bool update_statistics(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 
 void output_example(vw& all, cb_adf& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline(ec) || (CB::ec_is_example_header(ec) && ec_seq->size() == 1)) return;
+  if (example_is_newline_not_header(ec)) return;
 
   bool labeled_example = update_statistics(all, c, ec, ec_seq);
 
