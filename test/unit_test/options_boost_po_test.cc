@@ -5,8 +5,8 @@
 
 #include "test_common.h"
 
-#include "arguments_boost_po.h"
-#include "arguments_serializer_boost_po.h"
+#include "options_boost_po.h"
+#include "options_serializer_boost_po.h"
 
 #include <memory>
 #include <vector>
@@ -29,7 +29,7 @@ char** convert_to_command_args(char* command_line, int& argc, int max_args = 64)
   return argv;
 }
 
-BOOST_AUTO_TEST_CASE(typed_arguments_parsing) {
+BOOST_AUTO_TEST_CASE(typed_options_parsing) {
   std::string str_arg;
   int int_opt;
   bool bool_opt;
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(typed_arguments_parsing) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(typed_arguments_parsing) {
   arg_group.add(make_typed_option("char_opt", &char_opt));
   arg_group.add(make_typed_option("float_opt", &float_opt));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(str_arg, "test_str");
   BOOST_CHECK_EQUAL(int_opt, 5);
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
   arg_group.add(make_typed_option("char_opt", &char_opt));
   arg_group.add(make_typed_option("float_opt", &float_opt));
 
-  arguments->add_and_parse(arg_group);
+  options->add_and_parse(arg_group);
 
   check_vectors(str_opt, { "test_str", "another", "at_end" });
   check_vectors(int_opt, { 5 });
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
   check_float_vectors(float_opt, { 4.3f }, 0.001f);
 }
 
-BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_args) {
+BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_options) {
   bool bool_switch;
   bool bool_switch_unspecified;
 
@@ -97,20 +97,20 @@ BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_args) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("bool_switch", &bool_switch));
   arg_group.add(make_typed_option("bool_switch_unspecified", &bool_switch_unspecified));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(bool_switch, true);
   BOOST_CHECK_EQUAL(bool_switch_unspecified, false);
 }
 
-BOOST_AUTO_TEST_CASE(incorrect_arg_type) {
+BOOST_AUTO_TEST_CASE(incorrect_option_type) {
   int int_opt;
 
   char command_line[] = "exe --int_opt str";
@@ -118,16 +118,16 @@ BOOST_AUTO_TEST_CASE(incorrect_arg_type) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("int_opt", &int_opt));
 
-  BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
 
-BOOST_AUTO_TEST_CASE(multiple_locations_one_arg) {
+BOOST_AUTO_TEST_CASE(multiple_locations_one_option) {
   std::string str_opt_1;
   std::string str_opt_2;
 
@@ -136,20 +136,20 @@ BOOST_AUTO_TEST_CASE(multiple_locations_one_arg) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("str_opt", &str_opt_1));
   arg_group.add(make_typed_option("str_opt", &str_opt_2));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
   BOOST_CHECK_EQUAL(str_opt_1, "value");
   BOOST_CHECK_EQUAL(str_opt_2, "value");
 }
 
-BOOST_AUTO_TEST_CASE(duplicate_arg_clash) {
+BOOST_AUTO_TEST_CASE(duplicate_option_clash) {
   int int_opt;
   char char_opt;
 
@@ -158,14 +158,14 @@ BOOST_AUTO_TEST_CASE(duplicate_arg_clash) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("the_opt", &int_opt));
   arg_group.add(make_typed_option("the_opt", &char_opt));
 
-  BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_exception);
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
 }
 
 BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
@@ -176,13 +176,13 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("int_opt", &int_opt));
 
-  BOOST_CHECK_THROW(arguments->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
+  BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
 BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
@@ -193,13 +193,13 @@ BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
   arg_group.add(make_typed_option("int_opt", &int_opt));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
 }
 
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(merge_two_groups) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group1("group1");
@@ -221,8 +221,8 @@ BOOST_AUTO_TEST_CASE(merge_two_groups) {
   option_group_definition arg_group2("group2");
   arg_group2.add(make_typed_option("str_opt", &str_opt));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group1));
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group2));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group1));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group2));
   BOOST_CHECK_EQUAL(int_opt, 3);
   BOOST_CHECK_EQUAL(str_opt, "test");
 }
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(was_supplied_test) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
@@ -245,15 +245,15 @@ BOOST_AUTO_TEST_CASE(was_supplied_test) {
   arg_group.add(make_typed_option("str_opt", &str_opt));
   arg_group.add(make_typed_option("bool_opt", &bool_opt));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
   BOOST_CHECK_EQUAL(str_opt, "test");
   BOOST_CHECK_EQUAL(bool_opt, false);
 
-  BOOST_CHECK_EQUAL(arguments->was_supplied("int_opt"), true);
-  BOOST_CHECK_EQUAL(arguments->was_supplied("str_opt"), true);
-  BOOST_CHECK_EQUAL(arguments->was_supplied("bool_opt"), false);
-  BOOST_CHECK_EQUAL(arguments->was_supplied("other_opt"), false);
+  BOOST_CHECK_EQUAL(options->was_supplied("int_opt"), true);
+  BOOST_CHECK_EQUAL(options->was_supplied("str_opt"), true);
+  BOOST_CHECK_EQUAL(options->was_supplied("bool_opt"), false);
+  BOOST_CHECK_EQUAL(options->was_supplied("other_opt"), false);
 }
 
 BOOST_AUTO_TEST_CASE(kept_command_line) {
@@ -261,14 +261,14 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   std::string str_opt;
   bool bool_opt;
   bool other_bool_opt;
-  std::vector<char> char_opt_arg;
+  std::vector<char> char_opt_option;
 
-  char command_line[] = "exe --int_opt 3 --str_opt test --other_bool_opt --char_opt_arg a c --char_opt_arg d";
+  char command_line[] = "exe --int_opt 3 --str_opt test --other_bool_opt --char_opt_option a c --char_opt_option d";
   int argc;
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
@@ -276,16 +276,16 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   arg_group.add(make_typed_option("str_opt", &str_opt).keep());
   arg_group.add(make_typed_option("bool_opt", &bool_opt).keep());
   arg_group.add(make_typed_option("other_bool_opt", &other_bool_opt).keep());
-  arg_group.add(make_typed_option("char_opt_arg", &char_opt_arg).keep());
+  arg_group.add(make_typed_option("char_opt_option", &char_opt_option).keep());
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
   BOOST_CHECK_EQUAL(str_opt, "test");
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 
   VW::options_serializer_boost_po serializer(true);
-  for (auto& arg : arguments->get_all_options()) {
+  for (auto& arg : options->get_all_options()) {
     serializer.add(*arg);
   }
 
@@ -293,12 +293,12 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
 
   BOOST_CHECK_NE(serialized_string.find("--str_opt test"), std::string::npos);
   BOOST_CHECK_NE(serialized_string.find("--other_bool_opt"), std::string::npos);
-  BOOST_CHECK_NE(serialized_string.find("--char_opt_arg a c d"), std::string::npos);
+  BOOST_CHECK_NE(serialized_string.find("--char_opt_option a c d"), std::string::npos);
   BOOST_CHECK_EQUAL(serialized_string.find("--bool_opt"), std::string::npos);
   BOOST_CHECK_EQUAL(serialized_string.find("--int_opt"), std::string::npos);
 }
 
-BOOST_AUTO_TEST_CASE(unregistered_arguments) {
+BOOST_AUTO_TEST_CASE(unregistered_options) {
   int int_opt;
 
   char command_line[] = "exe --int_opt 3 --str_opt test";
@@ -306,14 +306,14 @@ BOOST_AUTO_TEST_CASE(unregistered_arguments) {
   // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
   std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
 
-  std::unique_ptr<options_i> arguments = std::unique_ptr<options_boost_po>(
+  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
   arg_group.add(make_typed_option("int_opt", &int_opt));
 
-  BOOST_CHECK_NO_THROW(arguments->add_and_parse(arg_group));
+  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
 
-  BOOST_CHECK_THROW(arguments->check_unregistered(), VW::vw_exception);
+  BOOST_CHECK_THROW(options->check_unregistered(), VW::vw_exception);
 }

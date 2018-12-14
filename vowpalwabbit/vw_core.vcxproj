@@ -155,7 +155,7 @@
   <ItemGroup>
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
-    <ClInclude Include="arguments_serializer_boost_po.h" />
+    <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
@@ -197,8 +197,8 @@
     <ClInclude Include="lrq.h" />
     <ClInclude Include="lrqfa.h" />
     <ClInclude Include="log_multi.h" />
-    <ClInclude Include="arguments.h" />
-    <ClInclude Include="arguments_boost_po.h" />
+    <ClInclude Include="options.h" />
+    <ClInclude Include="options_boost_po.h" />
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />
@@ -255,9 +255,9 @@
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
     <ClCompile Include="action_score.cc" />
-    <ClCompile Include="arguments.cc" />
-    <ClCompile Include="arguments_boost_po.cc" />
-    <ClCompile Include="arguments_serializer_boost_po.cc" />
+    <ClCompile Include="options.cc" />
+    <ClCompile Include="options_boost_po.cc" />
+    <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="active.cc" />

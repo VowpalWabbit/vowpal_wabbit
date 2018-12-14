@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arguments.h"
+#include "options.h"
 
 #include "vw_exception.h"
 
