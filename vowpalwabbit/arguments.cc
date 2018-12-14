@@ -2,7 +2,7 @@
 
 using namespace VW;
 
-bool VW::operator==(const base_argument& lhs, const base_argument& rhs) {
+bool VW::operator==(const base_option& lhs, const base_option& rhs) {
   return lhs.m_name == rhs.m_name
     && lhs.m_type_hash == rhs.m_type_hash
     && lhs.m_help == rhs.m_help
@@ -10,6 +10,6 @@ bool VW::operator==(const base_argument& lhs, const base_argument& rhs) {
     && lhs.m_keep == rhs.m_keep;
 }
 
-bool VW::operator!=(const base_argument& lhs, const base_argument& rhs) {
+bool VW::operator!=(const base_option& lhs, const base_option& rhs) {
   return !(lhs == rhs);
 }

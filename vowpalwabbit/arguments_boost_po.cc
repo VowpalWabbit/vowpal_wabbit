@@ -5,28 +5,28 @@ using namespace VW;
 #include <sstream>
 
 template<>
-po::typed_value<std::vector<bool>>* arguments_boost_po::convert_to_boost_value(std::shared_ptr<typed_argument<bool>>& arg) {
-  return get_base_boost_value(arg)->default_value({ false })->implicit_value({ true });
+po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt) {
+  return get_base_boost_value(opt)->default_value({ false })->implicit_value({ true });
 }
 
-void arguments_boost_po::add_to_description(std::shared_ptr<base_argument> arg, po::options_description& options_description) {
-  if (add_if_t<int>(arg, options_description)) { return; }
-  if (add_if_t<float>(arg, options_description)) { return; }
-  if (add_if_t<char>(arg, options_description)) { return; }
-  if (add_if_t<std::string>(arg, options_description)) { return; }
-  if (add_if_t<bool>(arg, options_description)) { return; }
-  if (add_if_t<std::vector<int>>(arg, options_description)) { return; }
-  if (add_if_t<std::vector<float>>(arg, options_description)) { return; }
-  if (add_if_t<std::vector<char>>(arg, options_description)) { return; }
-  if (add_if_t<std::vector<std::string>>(arg, options_description)) { return; }
+void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description) {
+  if (add_if_t<int>(opt, options_description)) { return; }
+  if (add_if_t<float>(opt, options_description)) { return; }
+  if (add_if_t<char>(opt, options_description)) { return; }
+  if (add_if_t<std::string>(opt, options_description)) { return; }
+  if (add_if_t<bool>(opt, options_description)) { return; }
+  if (add_if_t<std::vector<int>>(opt, options_description)) { return; }
+  if (add_if_t<std::vector<float>>(opt, options_description)) { return; }
+  if (add_if_t<std::vector<char>>(opt, options_description)) { return; }
+  if (add_if_t<std::vector<std::string>>(opt, options_description)) { return; }
 
   THROW("That is an unsupported argument type.");
 }
 
-void arguments_boost_po::add_and_parse(argument_group_definition group) {
+void options_boost_po::add_and_parse(option_group_definition group) {
   po::options_description new_options(group.m_name);
 
-  for (auto param_ptr : group.m_arguments) {
+  for (auto param_ptr : group.m_options) {
     add_to_description(param_ptr, new_options);
   }
 
@@ -34,18 +34,18 @@ void arguments_boost_po::add_and_parse(argument_group_definition group) {
   process_current_options_description();
 }
 
-bool arguments_boost_po::was_supplied(std::string key) {
+bool options_boost_po::was_supplied(std::string key) {
   return m_supplied_options.count(key) > 0;
 }
 
-std::string arguments_boost_po::help() {
+std::string options_boost_po::help() {
   std::stringstream ss;
   m_merged_options.print(ss);
   return ss.str();
 }
 
-void arguments_boost_po::merge(arguments_i* other) {
-  auto all_other_args = other->get_all_args();
+void options_boost_po::merge(options_i* other) {
+  auto all_other_args = other->get_all_options();
 
   for (auto param_ptr : all_other_args) {
     add_to_description(param_ptr, m_merged_options);
@@ -54,12 +54,12 @@ void arguments_boost_po::merge(arguments_i* other) {
   process_current_options_description();
 }
 
-std::vector<std::shared_ptr<base_argument>>& arguments_boost_po::get_all_args() {
-  return m_existing_arguments;
+std::vector<std::shared_ptr<base_option>>& options_boost_po::get_all_options() {
+  return m_existing_options;
 }
 
-base_argument& arguments_boost_po::get_arg(std::string key) {
-  for (auto const& arg : m_existing_arguments) {
+base_option& options_boost_po::get_option(std::string key) {
+  for (auto const& arg : m_existing_options) {
     if (arg->m_name == key)
       return *arg;
   }
@@ -68,7 +68,7 @@ base_argument& arguments_boost_po::get_arg(std::string key) {
 }
 
 // Explicit run without allow_unregistered.
-void arguments_boost_po::check_unregistered() {
+void options_boost_po::check_unregistered() {
   try {
     po::store(po::command_line_parser(m_command_line)
       .options(m_merged_options).run(), m_vm);
@@ -81,7 +81,7 @@ void arguments_boost_po::check_unregistered() {
   }
 }
 
-void arguments_boost_po::process_current_options_description()
+void options_boost_po::process_current_options_description()
 {
   try {
     auto parsed_options = po::command_line_parser(m_command_line)
