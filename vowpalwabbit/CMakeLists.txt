@@ -22,8 +22,8 @@ set(vw_install_headers
 )
 
 set(vw_all_headers
-  ${vw_install_headers} accumulate.h arguments.h arguments_boost_po.h
-  arguments_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h active_cover.h
+  ${vw_install_headers} accumulate.h options.h options_boost_po.h
+  options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h active_cover.h
   reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h search_dep_parser.h
   array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h array_parameters.h
   error_reporting.h search_graph.h audit_regressor.h mf.h search.h autolink.h example_predict.h
@@ -38,7 +38,7 @@ set(vw_all_headers
 )
 
 set(vw_all_sources
-  arguments.cc arguments_boost_po.cc arguments_serializer_boost_po.cc global_data.cc io_buf.cc
+  options.cc options_boost_po.cc options_serializer_boost_po.cc global_data.cc io_buf.cc
   parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc
   multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc binary.cc lrq.cc
   cost_sensitive.cc multilabel.cc label_dictionary.cc csoaa.cc cb.cc cb_adf.cc cb_algs.cc search.cc

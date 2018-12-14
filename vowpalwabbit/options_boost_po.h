@@ -8,7 +8,7 @@ namespace po = boost::program_options;
 #include <sstream>
 #include <set>
 
-#include "arguments.h"
+#include "options.h"
 #include "vw_exception.h"
 
 // Boost Program Options requires that all types that have a default option are ostreamable
