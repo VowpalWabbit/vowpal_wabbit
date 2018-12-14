@@ -7,15 +7,15 @@
 #include <sstream>
 
 namespace VW {
-  struct arguments_serializer_boost_po : arguments_serializer_i {
-    arguments_serializer_boost_po(bool only_serialize_keep_args) :
-      m_only_serialize_keep_args(only_serialize_keep_args)
+  struct options_serializer_boost_po : options_serializer_i {
+    options_serializer_boost_po(bool only_serialize_keep_opts) :
+      m_only_serialize_keep_args(only_serialize_keep_opts)
     {}
 
     template <typename T>
-    bool serialize_if_t(base_argument& base_argument) {
-      if (base_argument.m_type_hash == typeid(T).hash_code()) {
-        auto typed = dynamic_cast<typed_argument<T>&>(base_argument);
+    bool serialize_if_t(base_option& base_option) {
+      if (base_option.m_type_hash == typeid(T).hash_code()) {
+        auto typed = dynamic_cast<typed_option<T>&>(base_option);
         serialize(typed);
         return true;
       }
@@ -24,22 +24,22 @@ namespace VW {
     }
 
     template <typename T>
-    void serialize(typed_argument<T> typed_argument) {
-      m_output_stream << " --" << typed_argument.m_name << " " << typed_argument.value();
+    void serialize(typed_option<T> typed_option) {
+      m_output_stream << " --" << typed_option.m_name << " " << typed_option.value();
     }
 
     template <typename T>
-    void serialize(typed_argument<std::vector<T>> typed_argument) {
-      auto vec = typed_argument.value();
+    void serialize(typed_option<std::vector<T>> typed_option) {
+      auto vec = typed_option.value();
       if (vec.size() > 0) {
-        m_output_stream << " --" << typed_argument.m_name;
+        m_output_stream << " --" << typed_option.m_name;
         for (auto const& value : vec) {
           m_output_stream << " " << value;
         }
       }
     }
 
-    virtual void add(base_argument& argument) override;
+    virtual void add(base_option& option) override;
     virtual std::string str() override;
     virtual const char* data() override;
     virtual size_t size() override;
@@ -50,5 +50,5 @@ namespace VW {
   };
 
   template <>
-  void arguments_serializer_boost_po::serialize<bool>(typed_argument<bool> typed_argument);
+  void options_serializer_boost_po::serialize<bool>(typed_option<bool> typed_argument);
 }

@@ -7,8 +7,8 @@
 
 namespace VW {
 
-  struct base_argument {
-    base_argument(std::string name, size_t type_hash)
+  struct base_option {
+    base_option(std::string name, size_t type_hash)
       : m_name(name), m_type_hash(type_hash)
     {}
 
@@ -18,13 +18,13 @@ namespace VW {
     std::string m_short_name = "";
     bool m_keep = false;
 
-    virtual ~base_argument() {}
+    virtual ~base_option() {}
   };
 
   template<typename T>
-  struct typed_argument : base_argument {
-    typed_argument(std::string name, T* location)
-      : base_argument(name, typeid(T).hash_code()) {
+  struct typed_option : base_option {
+    typed_option(std::string name, T* location)
+      : base_option(name, typeid(T).hash_code()) {
       m_locations.push_back(location);
     }
 
@@ -32,7 +32,7 @@ namespace VW {
       return typeid(T).hash_code();
     }
 
-    typed_argument& default_value(T value) {
+    typed_option& default_value(T value) {
       m_default_value = std::make_shared<T>(value);
       return *this;
     }
@@ -45,16 +45,16 @@ namespace VW {
       return m_default_value ? *m_default_value : T();
     }
 
-    typed_argument& short_name(std::string short_name) {
+    typed_option& short_name(std::string short_name) {
       m_short_name = short_name;
       return *this;
     }
 
-    typed_argument& help(std::string help) {
+    typed_option& help(std::string help) {
       m_help = help; return *this;
     }
 
-    typed_argument& keep(bool keep = true) {
+    typed_option& keep(bool keep = true) {
       m_keep = keep; return *this;
     }
 
@@ -62,7 +62,7 @@ namespace VW {
       return m_value.get() != nullptr;
     }
 
-    typed_argument& value(T& value) {
+    typed_option& value(T& value) {
       m_value = std::make_shared<T>(value);
       return *this;
     }
@@ -80,65 +80,65 @@ namespace VW {
   };
 
   template<typename T>
-  typed_argument<T> make_typed_arg(std::string name, T* location) {
-    return typed_argument<T>(name, location);
+  typed_option<T> make_typed_option(std::string name, T* location) {
+    return typed_option<T>(name, location);
   }
 
-  struct argument_group_definition {
-    argument_group_definition(std::string name)
+  struct option_group_definition {
+    option_group_definition(std::string name)
       : m_name(name)
     {}
 
     template<typename T>
-    void add(typed_argument<T> op) {
-      m_arguments.push_back(std::make_shared<typed_argument<T>>(op));
+    void add(typed_option<T> op) {
+      m_options.push_back(std::make_shared<typed_option<T>>(op));
     }
 
     template<typename T>
-    argument_group_definition& operator()(typed_argument<T> op) {
+    option_group_definition& operator()(typed_option<T> op) {
       add(op);
       return *this;
     }
 
     std::string m_name;
-    std::vector<std::shared_ptr<base_argument>> m_arguments;
+    std::vector<std::shared_ptr<base_option>> m_options;
   };
 
-  struct arguments_i {
-    virtual void add_and_parse(argument_group_definition group) = 0;
+  struct options_i {
+    virtual void add_and_parse(option_group_definition group) = 0;
     virtual bool was_supplied(std::string key) = 0;
     virtual std::string help() = 0;
 
-    virtual void merge(arguments_i* other) = 0;
+    virtual void merge(options_i* other) = 0;
 
-    virtual std::vector<std::shared_ptr<base_argument>>& get_all_args() = 0;
-    virtual base_argument& get_arg(std::string key) = 0;
+    virtual std::vector<std::shared_ptr<base_option>>& get_all_options() = 0;
+    virtual base_option& get_option(std::string key) = 0;
 
     template <typename T>
-    typed_argument<T>& get_typed_arg(std::string key) {
-      base_argument& base = get_arg(key);
-      if (base.m_type_hash != typed_argument<T>::type_hash()) {
+    typed_option<T>& get_typed_arg(std::string key) {
+      base_option& base = get_option(key);
+      if (base.m_type_hash != typed_option<T>::type_hash()) {
         throw std::bad_cast();
       }
 
-      return dynamic_cast<typed_argument<T>&>(base);
+      return dynamic_cast<typed_option<T>&>(base);
     }
 
     // Will throw if any options were supplied that do not having a matching argument specification.
     virtual void check_unregistered() = 0;
 
-    virtual ~arguments_i() {}
+    virtual ~options_i() {}
   };
 
-  struct arguments_serializer_i {
-    virtual void add(base_argument& argument) = 0;
+  struct options_serializer_i {
+    virtual void add(base_option& argument) = 0;
     virtual std::string str() = 0;
     virtual const char* data() = 0;
     virtual size_t size() = 0;
   };
 
   template<typename T>
-  bool operator==(typed_argument<T>& lhs, typed_argument<T>& rhs) {
+  bool operator==(typed_option<T>& lhs, typed_option<T>& rhs) {
     return lhs.m_name == rhs.m_name
       && lhs.m_type_hash == rhs.m_type_hash
       && lhs.m_help == rhs.m_help
@@ -148,10 +148,10 @@ namespace VW {
   }
 
   template<typename T>
-  bool operator!=(typed_argument<T>& lhs, typed_argument<T>& rhs) {
+  bool operator!=(typed_option<T>& lhs, typed_option<T>& rhs) {
     return !(lhs == rhs);
   }
 
-  bool operator==(const base_argument& lhs, const base_argument& rhs);
-  bool operator!=(const base_argument& lhs, const base_argument& rhs);
+  bool operator==(const base_option& lhs, const base_option& rhs);
+  bool operator!=(const base_option& lhs, const base_option& rhs);
 }
