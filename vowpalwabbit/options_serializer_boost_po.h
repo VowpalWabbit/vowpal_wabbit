@@ -9,10 +9,6 @@
 namespace VW {
   namespace config {
     struct options_serializer_boost_po : options_serializer_i {
-      options_serializer_boost_po(bool only_serialize_keep_opts) :
-        m_only_serialize_keep_args(only_serialize_keep_opts)
-      {}
-
       template <typename T>
       bool serialize_if_t(base_option& base_option) {
         if (base_option.m_type_hash == typeid(T).hash_code()) {
@@ -47,7 +43,6 @@ namespace VW {
 
     private:
       std::stringstream m_output_stream;
-      bool m_only_serialize_keep_args;
     };
 
     template <>

@@ -24,10 +24,8 @@ namespace VW {
 
   template<typename T>
   struct typed_option : base_option {
-    typed_option(std::string name, T* location)
-      : base_option(name, typeid(T).hash_code()) {
-      m_locations.push_back(location);
-    }
+    typed_option(std::string name, T& location)
+      : base_option(name, typeid(T).hash_code()), m_location{ location } {}
 
     static size_t type_hash() {
       return typeid(T).hash_code();
@@ -72,7 +70,7 @@ namespace VW {
       return m_value ? *m_value : T();
     }
 
-    std::vector<T*> m_locations;
+    T& m_location;
 
   private:
     // Would prefer to use std::optional (C++17) here but we are targeting C++11
@@ -81,7 +79,7 @@ namespace VW {
   };
 
   template<typename T>
-  typed_option<T> make_typed_option(std::string name, T* location) {
+  typed_option<T> make_typed_option(std::string name, T& location) {
     return typed_option<T>(name, location);
   }
 
@@ -110,10 +108,10 @@ namespace VW {
     virtual bool was_supplied(std::string key) = 0;
     virtual std::string help() = 0;
 
-    virtual void merge(options_i* other) = 0;
+    //virtual void merge(options_i* other) = 0;
 
-    virtual std::vector<std::shared_ptr<base_option>>& get_all_options() = 0;
-    virtual base_option& get_option(std::string key) = 0;
+    virtual std::vector<std::shared_ptr<base_option>>& get_all_kept_options() = 0;
+    //virtual base_option& get_option(std::string key) = 0;
 
     template <typename T>
     typed_option<T>& get_typed_arg(std::string key) {
