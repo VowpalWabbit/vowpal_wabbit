@@ -182,6 +182,25 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
+//BOOST_AUTO_TEST_CASE(positional_data_value) {
+//  std::string data;
+//
+//  char command_line[] = "exe data_file";
+//  int argc;
+//  // Only the returned char* needs to be deleted as the individual pointers simply point into command_line.
+//  std::unique_ptr<char*> argv(convert_to_command_args(command_line, argc));
+//
+//  std::unique_ptr<options_i> options = std::unique_ptr<options_boost_po>(
+//    new options_boost_po(argc, argv.get()));
+//
+//  option_group_definition arg_group("group");
+//  arg_group.add(make_typed_option("data", data));
+//
+//  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
+//  BOOST_CHECK_EQUAL(data, "data_file");
+//}
+
+
 BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
   int int_opt;
 
@@ -200,7 +219,7 @@ BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
   BOOST_CHECK_EQUAL(int_opt, 3);
 }
 
-BOOST_AUTO_TEST_CASE(merge_two_groups) {
+BOOST_AUTO_TEST_CASE(add_two_groups) {
   int int_opt;
   std::string str_opt;
 
@@ -282,8 +301,10 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 
   options_serializer_boost_po serializer;
-  for (auto& arg : options->get_all_kept_options()) {
-    serializer.add(*arg);
+  for (auto& opt : options->get_all_options()) {
+    if (opt->m_keep) {
+      serializer.add(*opt);
+    }
   }
 
   auto serialized_string = serializer.str();

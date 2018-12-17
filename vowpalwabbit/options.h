@@ -108,10 +108,8 @@ namespace VW {
     virtual bool was_supplied(std::string key) = 0;
     virtual std::string help() = 0;
 
-    //virtual void merge(options_i* other) = 0;
-
-    virtual std::vector<std::shared_ptr<base_option>>& get_all_kept_options() = 0;
-    //virtual base_option& get_option(std::string key) = 0;
+    virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
+    virtual std::shared_ptr<base_option> get_option(std::string key) = 0;
 
     template <typename T>
     typed_option<T>& get_typed_arg(std::string key) {

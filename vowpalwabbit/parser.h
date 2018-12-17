@@ -8,10 +8,9 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "example.h"
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
 
 struct vw;
+struct input_options;
 
 struct parser
 { v_array<substring> channels;//helper(s) for text parsing
@@ -62,7 +61,7 @@ struct parser
 
 parser* new_parser();
 
-void enable_sources(vw& all, bool quiet, size_t passes);
+void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
 bool examples_to_finish();
 

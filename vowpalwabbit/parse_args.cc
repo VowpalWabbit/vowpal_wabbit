@@ -75,7 +75,11 @@ license as described in the file LICENSE.
 #include "classweight.h"
 // #include "cntk.h"
 
+#include "options.h"
+#include "options_boost_po.h"
+
 using namespace std;
+
 //
 // Does string end with a certain substring?
 //
@@ -317,121 +321,116 @@ void parse_affix_argument(vw&all, string str)
   free(cstr);
 }
 
-void parse_diagnostics(arguments& arg)
+void parse_diagnostics(VW::config::options_i* options, vw& all)
 {
-  if (arg.new_options("Diagnostic options")
-      ("version","Version information")
-      (arg.all->audit, "audit,a", "print weights of features")
-      ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
-      (arg.all->quiet, "quiet", "Don't output disgnostics and progress updates")
-      ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.").missing())
-    return;
+  bool version_arg;
+  std::string progress_arg;
+  VW::config::option_group_definition diagnostic_group("Diagnostic options");
+  diagnostic_group
+    (VW::config::make_typed_option("version", version_arg).help("Version information"))
+    (VW::config::make_typed_option("audit", all.audit).short_name("a").help("print weights of features"))
+    (VW::config::make_typed_option("progress", progress_arg).short_name("P").help("Progress update frequency. int: additive, float: multiplicative"))
+    (VW::config::make_typed_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
+    (VW::config::make_typed_option("help", all.help_requested).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
-  if (arg.vm.count("version"))
-  { /* upon direct query for version -- spit it out to stdout */
+  options->add_and_parse(diagnostic_group);
+
+  // upon direct query for version -- spit it out to stdout
+  if (version_arg)
+  {
     cout << version.to_string() << "\n";
     exit(0);
   }
 
-  if (arg.vm.count("progress") && !arg.all->quiet)
+  if (options->was_supplied("progress") && !all.quiet)
+  {
+    all.progress_arg = (float)::atof(progress_arg.c_str());
+    // --progress interval is dual: either integer or floating-point
+    if (progress_arg.find_first_of(".") == string::npos)
     {
-      string progress_str = arg.vm["progress"].as<string>();
-      arg.all->progress_arg = (float)::atof(progress_str.c_str());
-
-      // --progress interval is dual: either integer or floating-point
-      if (progress_str.find_first_of(".") == string::npos)
-        {
-          // No "." in arg: assume integer -> additive
-          arg.all->progress_add = true;
-          if (arg.all->progress_arg < 1)
-            {
-              arg.all->trace_message    << "warning: additive --progress <int>"
-                                   << " can't be < 1: forcing to 1" << endl;
-              arg.all->progress_arg = 1;
-
-            }
-          arg.all->sd->dump_interval = arg.all->progress_arg;
-
-        }
-      else
-        {
-          // A "." in arg: assume floating-point -> multiplicative
-          arg.all->progress_add = false;
-
-          if (arg.all->progress_arg <= 1.0)
-            {
-              arg.all->trace_message    << "warning: multiplicative --progress <float>: "
-                                   << arg.vm["progress"].as<string>()
-                                   << " is <= 1.0: adding 1.0"
-                                   << endl;
-              arg.all->progress_arg += 1.0;
-
-            }
-          else if (arg.all->progress_arg > 9.0)
-            {
-              arg.all->trace_message    << "warning: multiplicative --progress <float>"
-                                   << " is > 9.0: you probably meant to use an integer"
-                                   << endl;
-            }
-          arg.all->sd->dump_interval = 1.0;
-        }
+      // No "." in arg: assume integer -> additive
+      all.progress_add = true;
+      if (all.progress_arg < 1)
+      {
+        all.trace_message    << "warning: additive --progress <int>"
+                              << " can't be < 1: forcing to 1" << endl;
+        all.progress_arg = 1;
+      }
+      all.sd->dump_interval = all.progress_arg;
     }
+    else
+    {
+        // A "." in arg: assume floating-point -> multiplicative
+      all.progress_add = false;
+
+      if (all.progress_arg <= 1.0)
+      {
+        all.trace_message    << "warning: multiplicative --progress <float>: "
+                                << progress_arg
+                                << " is <= 1.0: adding 1.0"
+                                << endl;
+        all.progress_arg += 1.0;
+      }
+      else if (all.progress_arg > 9.0)
+      {
+        all.trace_message    << "warning: multiplicative --progress <float>"
+                                << " is > 9.0: you probably meant to use an integer"
+                                << endl;
+      }
+      all.sd->dump_interval = 1.0;
+    }
+  }
 }
 
-void parse_source(arguments& arg)
+input_options parse_source(vw& all, VW::config::options_i* options)
 {
-  arg.new_options("Input options")
-    ("data,d", arg.all->data_filename, "Example Set")
-    ("daemon", "persistent daemon mode on port 26542")
-    ("foreground", "in persistent daemon mode, do not run in the background")
-    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
-    ("num_children", arg.all->num_children, "number of children for persistent daemon mode")
-    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
-    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
-    ("cache,c", "Use a cache.  The default is <data>.cache")
-    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
-    ("json", "Enable JSON parsing.")
-    ("dsjson", "Enable Decision Service JSON parsing.")
-    ("kill_cache,k", "do not reuse existing cache: create a new one always")
-    ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
-    (arg.all->stdin_off, "no_stdin", "do not default to reading from stdin").missing();
+  input_options parsed_options;
 
-  // Be friendly: if -d was left out, treat positional param as data file
-  po::positional_options_description p;
-  p.add("data", -1);
-  po::parsed_options pos = po::command_line_parser(arg.args).
-                           style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-                           options(arg.opts).positional(p).run();
+  VW::config::option_group_definition input_options("Input options");
+  input_options.add(VW::config::make_typed_option("data", all.data_filename).short_name("d").help("Example set"));
+  input_options.add(VW::config::make_typed_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"));
+  input_options.add(VW::config::make_typed_option("foreground", parsed_options.foreground).help("in persistent daemon mode, do not run in the background"));
+  input_options.add(VW::config::make_typed_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"));
+  input_options.add(VW::config::make_typed_option("num_children", all.num_children).help("number of children for persistent daemon mode"));
+  input_options.add(VW::config::make_typed_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"));
+  input_options.add(VW::config::make_typed_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"));
+  input_options.add(VW::config::make_typed_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"));
+  input_options.add(VW::config::make_typed_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."));
+  input_options.add(VW::config::make_typed_option("json", parsed_options.json).help("Enable JSON parsing."));
+  input_options.add(VW::config::make_typed_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."));
+  input_options.add(VW::config::make_typed_option("kill_cache", parsed_options.kill_cache).short_name("k").help("do not reuse existing cache: create a new one always"));
+  input_options.add(VW::config::make_typed_option("compressed", parsed_options.compressed).help("use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."));
+  input_options.add(VW::config::make_typed_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
 
-  arg.vm = po::variables_map();
-  po::store(pos, arg.vm);
-  if (arg.vm.count("data") > 0)
-    arg.all->data_filename = arg.vm["data"].as<string>();
-
-  if ( (arg.vm.count("total") || arg.vm.count("node") || arg.vm.count("unique_id")) && !(arg.vm.count("total") && arg.vm.count("node") && arg.vm.count("unique_id")) )
-    THROW("you must specificy unique_id, total, and node if you specify any");
-
-  if (arg.vm.count("daemon") || arg.vm.count("pid_file") || (arg.vm.count("port") && !arg.all->active) )
+  options->add_and_parse(input_options);
+  if (parsed_options.daemon || options->was_supplied("pid_file") || (options->was_supplied("port") && !all.active))
   {
-    arg.all->daemon = true;
+    all.daemon = true;
     // allow each child to process up to 1e5 connections
-    arg.all->numpasses = (size_t) 1e5;
+    all.numpasses = (size_t) 1e5;
   }
 
-  if (arg.vm.count("compressed"))
-    set_compressed(arg.all->p);
+  // Add an implicit cache file based on the data filename.
+  if(parsed_options.cache) {
+    parsed_options.cache_files.push_back(all.data_filename + ".cache");
+  }
 
-  if (ends_with(arg.all->data_filename, ".gz"))
-    set_compressed(arg.all->p);
+  if (parsed_options.compressed)
+    set_compressed(all.p);
 
-  if ((arg.vm.count("cache") || arg.vm.count("cache_file")) && arg.vm.count("invert_hash"))
+  if (ends_with(all.data_filename, ".gz"))
+    set_compressed(all.p);
+
+  if ((parsed_options.cache || options->was_supplied("cache_file")) && options->was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
-  if(!arg.all->holdout_set_off && (arg.vm.count("output_feature_regularizer_binary") || arg.vm.count("output_feature_regularizer_text")))
+  if(!all.holdout_set_off && (options->was_supplied("output_feature_regularizer_binary") || options->was_supplied("output_feature_regularizer_text")))
   {
-    arg.all->holdout_set_off = true;
-    arg.all->trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
+    all.holdout_set_off = true;
+    all.trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
   }
+
+  return parsed_options;
 }
 
 bool interactions_settings_doubled = false; // local setting setted in parse_modules()
@@ -1063,19 +1062,19 @@ void load_input_model(vw& all, io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (all.opts_n_args.vm.count("feature_mask") && all.opts_n_args.vm.count("initial_regressor")
-      && all.opts_n_args.vm["feature_mask"].as<string>() == all.opts_n_args.vm["initial_regressor"].as< vector<string> >()[0])
+  if (!all.feature_mask.empty() && all.initial_regressors.size() > 0 && all.feature_mask == all.initial_regressors[0])
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
+    // TODO Isn't this a noop based on the internals of parse_mask_regressor_args?
     // set the mask, which will reuse -i file we just loaded
-    parse_mask_regressor_args(all);
+    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
   }
   else
   { // load mask first
-    parse_mask_regressor_args(all);
+    parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -1180,9 +1179,9 @@ void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, cons
   }
 }
 
-vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* trace_context)
-{
+vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, void* trace_context) {
   vw& all = *(new vw());
+  all.options = options;
 
   if (trace_listener)
   {
@@ -1192,50 +1191,61 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
   try
   {
-    all.vw_is_main = false;
-    add_to_args(all, argc, argv);
-
-    all.program_name = argv[0];
-
     time(&all.init_time);
 
-    all.opts_n_args.new_options("VW options")
-      ("ring_size", all.p->ring_size, "size of example ring")
-      ("onethread", "Disable parse thread").missing();
+    VW::config::option_group_definition vw_args("VW options");
+    vw_args
+      (VW::config::make_typed_option("ring_size", all.p->ring_size).help("size of example ring"));
+    options->add_and_parse(vw_args);
 
-    all.opts_n_args.new_options("Update options")
-      ("learning_rate,l", all.eta, "Set learning rate")
-      ("power_t", all.power_t, "t power value")
-      ("decay_learning_rate", all.eta_decay_rate,
-       "Set Decay factor for learning_rate between passes")
-      ("initial_t", all.sd->t, "initial t value")
-      ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.").missing();
+    VW::config::option_group_definition update_args("Update options");
+    update_args
+      (VW::config::make_typed_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
+      (VW::config::make_typed_option("power_t", all.power_t).help("t power value"))
+      (VW::config::make_typed_option("decay_learning_rate", all.eta_decay_rate).help("Set Decay factor for learning_rate between passes"))
+      (VW::config::make_typed_option("initial_t", all.sd->t).help("initial t value"))
+      (VW::config::make_typed_option("feature_mask", all.feature_mask).help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights."));
+    options->add_and_parse(update_args);
 
-    all.opts_n_args.new_options("Weight options")
-      ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-      ("initial_weight", all.initial_weight, "Set all weights to an initial value of arg.")
-      ("random_weights", all.random_weights, "make initial weights random")
-      ("normal_weights", all.normal_weights, "make initial weights normal")
-      ("truncated_normal_weights", all.tnormal_weights, "make initial weights truncated normal")
-      (all.weights.sparse, "sparse_weights", "Use a sparse datastructure for weights")
-      ("input_feature_regularizer", all.per_feature_regularizer_input, "Per feature regularization input file").missing();
+    VW::config::option_group_definition weight_args("Weight options");
+    weight_args
+      (VW::config::make_typed_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
+      (VW::config::make_typed_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
+      (VW::config::make_typed_option("random_weights", all.random_weights).help("make initial weights random"))
+      (VW::config::make_typed_option("normal_weights", all.normal_weights).help("make initial weights normal"))
+      (VW::config::make_typed_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+      (VW::config::make_typed_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
+      (VW::config::make_typed_option("input_feature_regularizer", all.per_feature_regularizer_input).help("Per feature regularization input file"));
+    options->add_and_parse(weight_args);
 
-    all.opts_n_args.new_options("Parallelization options")
-      ("span_server", po::value<string>(), "Location of server for setting up spanning tree")
-      ("threads", "Enable multi-threading")
-      ("unique_id", po::value<size_t>()->default_value(0), "unique id used for cluster parallel jobs")
-      ("total", po::value<size_t>()->default_value(1), "total number of nodes used in cluster parallel job")
-      ("node", po::value<size_t>()->default_value(0), "node number in cluster parallel job").missing();
+    std::string span_server_arg;
+    //bool threads_arg;
+    size_t unique_id_arg;
+    size_t total_arg;
+    size_t node_arg;
+    VW::config::option_group_definition parallelization_args("Parallelization options");
+    parallelization_args
+      (VW::config::make_typed_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
+      //(VW::config::make_typed_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
+      (VW::config::make_typed_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+      (VW::config::make_typed_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
+      (VW::config::make_typed_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
+    options->add_and_parse(parallelization_args);
 
-    po::variables_map& vm = all.opts_n_args.vm;
+    // total, unique_id and node must be specified together.
+    if ((options->was_supplied("total") || options->was_supplied("node") || options->was_supplied("unique_id"))
+      && !(options->was_supplied("total") && options->was_supplied("node") && options->was_supplied("unique_id")))
+    {
+      THROW("you must specificy unique_id, total, and node if you specify any");
+    }
 
-    if (vm.count("span_server"))
+    if (options->was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
-      all.all_reduce = new AllReduceSockets(vm["span_server"].as<string>(),
-        vm["unique_id"].as<size_t>(), vm["total"].as<size_t>(), vm["node"].as<size_t>());
+      all.all_reduce = new AllReduceSockets(span_server_arg, unique_id_arg, total_arg, node_arg);
     }
-    parse_diagnostics(all.opts_n_args);
+
+    parse_diagnostics(options, all);
 
     all.initial_t = (float)all.sd->t;
     return all;
@@ -1264,19 +1274,24 @@ bool check_interaction_settings_collision(vw& all)
   return opts_has_inter;
 }
 
-void parse_modules(vw& all, io_buf& model)
+
+void parse_modules(VW::config::options_i* options, vw& all, io_buf& model)
 {
+  // TODO convert
   save_load_header(all, model, true, false);
 
+  // TODO convert
   interactions_settings_doubled = check_interaction_settings_collision(all);
 
+  // TODO merge options from model file
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all.opts_n_args.file_options->str(), temp_argc);
 
+  // TODO determine how to handle doubled interactions
   if (interactions_settings_doubled)
   {
     //remove
-    const char* interaction_params[] = {"--quadratic", "--cubic", "--interactions"};
+    const char* interaction_params[] = { "--quadratic", "--cubic", "--interactions" };
     add_to_args(all, temp_argc, temp_argv, 3, interaction_params);
   }
   else
@@ -1286,8 +1301,8 @@ void parse_modules(vw& all, io_buf& model)
   free(temp_argv);
 
   po::parsed_options pos = po::command_line_parser(all.opts_n_args.args).
-                           style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-                           options(all.opts_n_args.opts).allow_unregistered().run();
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(all.opts_n_args.opts).allow_unregistered().run();
 
   po::variables_map& vm = all.opts_n_args.vm;
   vm = po::variables_map();
@@ -1321,28 +1336,23 @@ void parse_modules(vw& all, io_buf& model)
   }
 }
 
-void parse_sources(vw& all, io_buf& model, bool skipModelLoad)
+void parse_sources(VW::config::options_i* options, vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
+    // TODO
     load_input_model(all, model);
   else
     model.close_file();
 
-  parse_source(all.opts_n_args);
-  enable_sources(all, all.quiet, all.numpasses);
+  auto parsed_source_options = parse_source(all, options);
+  enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
+
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
   while (params_per_problem > ((uint64_t)1 << i))
     i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
-
-  if (all.opts_n_args.vm.count("help"))
-  {
-    /* upon direct query for help -- spit it out to stdout */
-    cout << all.opts_n_args.all_opts;
-    exit(0);
-  }
 }
 
 namespace VW
@@ -1406,6 +1416,54 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
+vw* initialize(VW::config::options_i* options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+{
+  vw& all = parse_args(options, trace_listener, trace_context);
+
+  try
+  {
+    // if user doesn't pass in a model, read from options
+    io_buf localModel;
+    if (!model)
+    {
+      std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
+      all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
+      read_regressor_file(all, all_initial_regressor_files, localModel);
+      model = &localModel;
+    }
+
+    // TODO
+    parse_modules(options, all, *model);
+
+    // TODO
+    parse_sources(options, all, *model, skipModelLoad);
+
+    // TODO throw for unregistered
+
+    // upon direct query for help -- spit it out to stdout;
+    if (all.help_requested) {
+        cout << options->help();
+        exit(0);
+    }
+
+    initialize_parser_datastructures(all);
+    all.l->init_driver();
+
+    return &all;
+  }
+  catch (std::exception& e)
+  {
+    all.trace_message << "Error: " << e.what() << endl;
+    finish(all);
+    throw;
+  }
+  catch (...)
+  {
+    finish(all);
+    throw;
+  }
+}
+
 vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
@@ -1426,36 +1484,9 @@ vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trac
 
 vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  vw& all = parse_args(argc, argv, trace_listener, trace_context);
-
-  try
-  {
-    // if user doesn't pass in a model, read from arguments
-    io_buf localModel;
-    if (!model)
-    {
-      parse_regressor_args(all, localModel);
-      model = &localModel;
-    }
-
-    parse_modules(all, *model);
-    parse_sources(all, *model, skipModelLoad);
-    initialize_parser_datastructures(all);
-    all.l->init_driver();
-
-    return &all;
-  }
-  catch (std::exception& e)
-  {
-    all.trace_message << "Error: " << e.what() << endl;
-    finish(all);
-    throw;
-  }
-  catch (...)
-  {
-    finish(all);
-    throw;
-  }
+  // TODO work out lifetime
+  VW::config::options_i* options = new config::options_boost_po(argc, argv);
+  return initialize(options, model, skipModelLoad, trace_listener, trace_context);
 }
 
 // Create a new VW instance while sharing the model with another instance

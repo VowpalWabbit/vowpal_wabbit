@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 
 namespace po = boost::program_options;
 
-void parse_regressor_args(vw& all, io_buf& io_temp);
+void read_regressor_file(vw& all, std::vector<std::string> files, io_buf& io_temp);
 
 void finalize_regressor(vw& all, std::string reg_name);
 void initialize_regressor(vw& all);
@@ -18,4 +18,4 @@ void initialize_regressor(vw& all);
 void save_predictor(vw& all, std::string reg_name, size_t current_pass);
 void save_load_header(vw& all, io_buf& model_file, bool read, bool text);
 
-void parse_mask_regressor_args(vw& all);
+void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors);

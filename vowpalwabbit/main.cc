@@ -17,12 +17,16 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include <fstream>
 
+#include "options.h"
+#include "options_boost_po.h"
+
 using namespace std;
 
-vw* setup(int argc, char* argv[])
+
+vw* setup(VW::config::options_i* args)
 {
   vw* all = nullptr;
-  try { all = VW::initialize(argc, argv);
+  try { all = VW::initialize(args);
   }
   catch(const exception& ex){
     cout << ex.what() << endl;
@@ -79,6 +83,7 @@ int main(int argc, char *argv[])
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
+    vector<VW::config::options_boost_po> arguments;
     vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
@@ -98,20 +103,29 @@ int main(int argc, char *argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        alls.push_back(setup(l_argc, l_argv));
+        arguments.push_back(VW::config::options_boost_po(argc, argv));
+        alls.push_back(setup(&arguments[arguments.size() - 1]));
       }
     }
     else
     {
-      alls.push_back(setup(argc, argv));
+      arguments.push_back(VW::config::options_boost_po(argc, argv));
+      alls.push_back(setup(&arguments[0]));
     }
 
     vw& all = *alls[0];
+    auto master_args = &arguments[0];
+
+    // TODO handle positional parameter
+    bool should_use_onethread;
+    VW::config::option_group_definition driver_config("driver");
+    driver_config.add(VW::config::make_typed_option("onethread", should_use_onethread).help("Disable parse thread"));
+    master_args->add_and_parse(driver_config);
 
     //struct timeb t_start, t_end;
     //ftime(&t_start);
 
-    if (all.opts_n_args.vm.count("onethread") > 0) {
+    if (should_use_onethread) {
         if (alls.size() == 1)
           LEARNER::generic_driver_onethread(all);
         else

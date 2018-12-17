@@ -31,19 +31,35 @@ template std::ostream& std::operator<< <bool>(std::ostream &, const std::vector<
 namespace VW {
   namespace config {
     struct options_boost_po : public options_i {
-      options_boost_po(int argc, char** argv)
-        : m_command_line(argv + 1, argv + argc)
+      options_boost_po(int argc, char** argv) : options_boost_po(std::vector<std::string>(argv + 1, argv + argc))
       {}
 
       options_boost_po(std::vector<std::string> args)
         : m_command_line(args)
-      {}
+      {
+        //// Be friendly: if -d was left out, treat positional param as data file
+        //po::positional_options_description pos_description;
+        //po::options_description opt_description;
+        //opt_description.add_options()("data", po::value<std::string>());
+
+        //pos_description.add("data", -1);
+        //po::parsed_options parsed = po::command_line_parser(args).options(opt_description).positional(pos_description).allow_unregistered().run();
+
+        //po::variables_map vm;
+        //po::store(parsed, vm);
+        //
+        //if (vm.count("data") > 0) {
+        //  args.push_back("--data");
+        //  args.push_back(vm["data"].as<std::string>());
+        //}
+      }
 
       virtual void add_and_parse(option_group_definition group) override;
       virtual bool was_supplied(std::string key) override;
       virtual std::string help() override;
       virtual void check_unregistered() override;
-      virtual std::vector<std::shared_ptr<base_option>>& get_all_kept_options() override;
+      virtual std::vector<std::shared_ptr<base_option>> get_all_options() override;
+      virtual std::shared_ptr<base_option> get_option(std::string key) override;
 
     private:
       template<typename T>
@@ -72,18 +88,17 @@ namespace VW {
       template<typename T>
       void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
+      std::map<std::string, std::shared_ptr<base_option>> m_options;
 
       std::vector<std::string> m_command_line;
 
-      po::options_description m_merged_options;
+      std::stringstream m_help_stringstream;
 
       // All options that were supplied on the command line.
       std::set<std::string> m_supplied_options;
 
       // All options that a description was provided for.
       std::set<std::string> m_defined_options;
-
-      std::vector<std::shared_ptr<base_option>> m_kept_options;
     };
 
     template<typename T>
@@ -167,10 +182,6 @@ namespace VW {
         boost_option_name += opt->m_short_name;
       }
       options_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), opt->m_help.c_str());
-
-      if (opt->m_keep) {
-        m_kept_options.push_back(opt);
-      }
     }
   }
 }

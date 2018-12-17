@@ -571,40 +571,29 @@ void finalize_regressor(vw& all, string reg_name)
   }
 }
 
-void parse_regressor_args(vw& all, io_buf& io_temp)
+void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& io_temp)
 {
-  po::variables_map& vm = all.opts_n_args.vm;
-  vector<string> regs;
-  if (vm.count("initial_regressor") || vm.count("i"))
-    regs = vm["initial_regressor"].as< vector<string> >();
-
-  if (vm.count("input_feature_regularizer"))
-    regs.push_back(vm["input_feature_regularizer"].as<string>());
-
-  if (regs.size() > 0)
+  if (all_intial.size() > 0)
   {
-    io_temp.open_file(regs[0].c_str(), all.stdin_off, io_buf::READ);
+    io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
     if (!all.quiet)
     {
       //all.trace_message << "initial_regressor = " << regs[0] << endl;
-      if (regs.size() > 1)
+      if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
+        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << endl;
       }
     }
   }
 }
 
-void parse_mask_regressor_args(vw& all)
+void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors)
 {
-  po::variables_map& vm = all.opts_n_args.vm;
-  if (vm.count("feature_mask"))
+  if (!feature_mask.empty())
   {
-    string mask_filename = vm["feature_mask"].as<string>();
-    if (vm.count("initial_regressor"))
+    if (initial_regressors.size() > 0)
     {
-      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
-      if(mask_filename == init_filename[0])   //-i and -mask are from same file, just generate mask
+      if(feature_mask == initial_regressors[0])   //-i and -mask are from same file, just generate mask
       {
         return;
       }
@@ -612,19 +601,18 @@ void parse_mask_regressor_args(vw& all)
 
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
+    io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
     save_load_header(all, io_temp_mask, true, false);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
 
     // Deal with the over-written header from initial regressor
-    if (vm.count("initial_regressor"))
+    if (initial_regressors.size() > 0)
     {
-      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
 
       // Load original header again.
       io_buf io_temp;
-      io_temp.open_file(init_filename[0].c_str(), false, io_buf::READ);
+      io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
       save_load_header(all, io_temp, true, false);
       io_temp.close_file();
 
@@ -634,6 +622,7 @@ void parse_mask_regressor_args(vw& all)
     else
     {
       // If no initial regressor, just clear out the options loaded from the header.
+      // TODO clear file options
       all.opts_n_args.file_options->str("");
     }
   }
