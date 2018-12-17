@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 
-using namespace VW;
+using namespace VW::config;
 
 BOOST_AUTO_TEST_CASE(make_option_and_customize) {
   int loc;

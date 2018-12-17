@@ -1,8 +1,8 @@
 #include "options_boost_po.h"
 
-using namespace VW;
-
 #include <sstream>
+
+using namespace VW::config;
 
 template<>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt) {

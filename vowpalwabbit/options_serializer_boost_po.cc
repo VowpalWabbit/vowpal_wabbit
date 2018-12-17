@@ -1,6 +1,6 @@
 #include "options_serializer_boost_po.h"
 
-using namespace VW;
+using namespace VW::config;
 
 std::string options_serializer_boost_po::str() {
   return m_output_stream.str();
