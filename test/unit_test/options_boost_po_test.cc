@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-using namespace VW;
+using namespace VW::config;
 
 
 char** convert_to_command_args(char* command_line, int& argc, int max_args = 64) {
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
   BOOST_CHECK_EQUAL(bool_opt, false);
   BOOST_CHECK_EQUAL(other_bool_opt, true);
 
-  VW::options_serializer_boost_po serializer(true);
+  options_serializer_boost_po serializer(true);
   for (auto& arg : options->get_all_options()) {
     serializer.add(*arg);
   }

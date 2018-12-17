@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace VW {
+  namespace config {
 
   struct base_option {
     base_option(std::string name, size_t type_hash)
@@ -154,4 +155,6 @@ namespace VW {
 
   bool operator==(const base_option& lhs, const base_option& rhs);
   bool operator!=(const base_option& lhs, const base_option& rhs);
+    }
+
 }
