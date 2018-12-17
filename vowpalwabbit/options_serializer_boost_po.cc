@@ -15,11 +15,6 @@ size_t options_serializer_boost_po::size() {
 }
 
 void options_serializer_boost_po::add(base_option& option) {
-  // If the serializer should only save keep args early exit here for non keep.
-  if (m_only_serialize_keep_args && !option.m_keep) {
-    return;
-  }
-
   if (serialize_if_t<int>(option)) { return; }
   if (serialize_if_t<float>(option)) { return; }
   if (serialize_if_t<char>(option)) { return; }
