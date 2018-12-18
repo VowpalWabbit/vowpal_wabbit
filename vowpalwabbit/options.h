@@ -111,6 +111,8 @@ namespace VW {
     virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
     virtual std::shared_ptr<base_option> get_option(std::string key) = 0;
 
+    virtual void insert(std::string key, std::string value) = 0;
+
     template <typename T>
     typed_option<T>& get_typed_arg(std::string key) {
       base_option& base = get_option(key);

@@ -61,6 +61,11 @@ namespace VW {
       virtual std::vector<std::shared_ptr<base_option>> get_all_options() override;
       virtual std::shared_ptr<base_option> get_option(std::string key) override;
 
+      virtual void insert(std::string key, std::string value) override {
+        m_command_line.push_back("--" + key);
+        m_command_line.push_back(value);
+      }
+
     private:
       template<typename T>
       po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
@@ -88,6 +93,7 @@ namespace VW {
       template<typename T>
       void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
+    private:
       std::map<std::string, std::shared_ptr<base_option>> m_options;
 
       std::vector<std::string> m_command_line;

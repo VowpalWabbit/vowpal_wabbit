@@ -77,6 +77,7 @@ license as described in the file LICENSE.
 
 #include "options.h"
 #include "options_boost_po.h"
+#include "options_serializer_boost_po.h"
 
 using namespace std;
 
@@ -1257,62 +1258,62 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
   }
 }
 
-bool check_interaction_settings_collision(vw& all)
+bool check_interaction_settings_collision(VW::config::options_i* options, std::string file_options)
 {
-  bool args_has_inter = std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), std::string("-q")) != all.opts_n_args.args.end();
-  args_has_inter = args_has_inter || ( std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), std::string("--quadratic")) != all.opts_n_args.args.end() );
-  args_has_inter = args_has_inter || ( std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), std::string("--cubic")) != all.opts_n_args.args.end() );
-  args_has_inter = args_has_inter || ( std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), std::string("--interactions")) != all.opts_n_args.args.end() );
+  bool command_line_has_interaction =
+    options->was_supplied("q") ||
+    options->was_supplied("quadratic") ||
+    options->was_supplied("cubic") ||
+    options->was_supplied("interactions");
 
-  if (!args_has_inter) return false;
+  if (!command_line_has_interaction) return false;
 
   // we don't use -q to save pairs in all.file_options, so only 3 options checked
-  bool opts_has_inter = all.opts_n_args.file_options->str().find("--quadratic") != std::string::npos;
-  opts_has_inter = opts_has_inter || (all.opts_n_args.file_options->str().find("--cubic") != std::string::npos);
-  opts_has_inter = opts_has_inter || (all.opts_n_args.file_options->str().find("--interactions") != std::string::npos);
+  bool file_options_has_interaction = file_options.find("--quadratic") != std::string::npos;
+  file_options_has_interaction = file_options_has_interaction || (file_options.find("--cubic") != std::string::npos);
+  file_options_has_interaction = file_options_has_interaction || (file_options.find("--interactions") != std::string::npos);
 
-  return opts_has_inter;
+  return file_options_has_interaction;
 }
 
 
-void parse_modules(VW::config::options_i* options, vw& all, io_buf& model)
+VW::config::options_i* load_header_merge_options(VW::config::options_i* options, vw& all, io_buf& model)
 {
-  // TODO convert
-  save_load_header(all, model, true, false);
+  std::string file_options;
+  save_load_header(all, model, true, false, file_options, options);
 
-  // TODO convert
-  interactions_settings_doubled = check_interaction_settings_collision(all);
+  interactions_settings_doubled = check_interaction_settings_collision(options, file_options);
 
-  // TODO merge options from model file
-  int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all.opts_n_args.file_options->str(), temp_argc);
+  // Convert file_options into a vector.
+  std::istringstream ss{file_options};
+  std::vector<std::string> container{std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  // TODO determine how to handle doubled interactions
-  if (interactions_settings_doubled)
-  {
-    //remove
-    const char* interaction_params[] = { "--quadratic", "--cubic", "--interactions" };
-    add_to_args(all, temp_argc, temp_argv, 3, interaction_params);
+  // Get list of options in file options string
+  po::parsed_options pos = po::command_line_parser(container).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing)
+    .allow_unregistered().run();
+
+  for(auto opt : pos.options) {
+    // If the interaction settings are doubled, the copy in the model file is ignored.
+    if(interactions_settings_doubled && (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions" )) {
+      // skip this option.
+      continue;
+    }
+
+    for(auto value : opt.value) {
+      options->insert(opt.string_key, value);
+    }
   }
-  else
-    add_to_args(all, temp_argc, temp_argv);
-  for (int i = 0; i < temp_argc; i++)
-    free(temp_argv[i]);
-  free(temp_argv);
 
-  po::parsed_options pos = po::command_line_parser(all.opts_n_args.args).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all.opts_n_args.opts).allow_unregistered().run();
+  return options;
+}
 
-  po::variables_map& vm = all.opts_n_args.vm;
-  vm = po::variables_map();
 
-  po::store(pos, vm);
-  po::notify(vm);
-  all.opts_n_args.file_options->str("");
-
-  all.opts_n_args.new_options("Random Seed option")
-    ("random_seed", all.random_seed, "seed random number generator").missing();
+void parse_modules(VW::config::options_i* options, vw& all)
+{
+  VW::config::option_group_definition rand_options("Randomization options");
+  rand_options.add(VW::config::make_typed_option("random_seed", all.random_seed).help("seed random number generator"));
+  options->add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
   parse_feature_tweaks(all.opts_n_args); //feature tweaks
@@ -1432,8 +1433,11 @@ vw* initialize(VW::config::options_i* options, io_buf* model, bool skipModelLoad
       model = &localModel;
     }
 
+    // Loads header of model files and loads the command line options into the options object.
+    load_header_merge_options(options, all, *model);
+
     // TODO
-    parse_modules(options, all, *model);
+    parse_modules(options, all);
 
     // TODO
     parse_sources(options, all, *model, skipModelLoad);

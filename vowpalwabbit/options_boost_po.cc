@@ -69,7 +69,14 @@ void options_boost_po::add_and_parse(option_group_definition group) {
 }
 
 bool options_boost_po::was_supplied(std::string key) {
-  return m_supplied_options.count(key) > 0;
+  // Best check, only valid after options parsed.
+  if(m_supplied_options.count(key) > 0) {
+    return true;
+  }
+
+  // Basic check, string match against command line.
+  auto it = std::find(m_command_line.begin(), m_command_line.end(), std::string("--" + key));
+  return it !=  m_command_line.end();
 }
 
 std::string options_boost_po::help() {

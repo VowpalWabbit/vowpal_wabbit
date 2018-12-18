@@ -9,6 +9,12 @@
 namespace VW {
   namespace config {
     struct options_serializer_boost_po : options_serializer_i {
+      virtual void add(base_option& option) override;
+      virtual std::string str() override;
+      virtual const char* data() override;
+      virtual size_t size() override;
+
+    private:
       template <typename T>
       bool serialize_if_t(base_option& base_option) {
         if (base_option.m_type_hash == typeid(T).hash_code()) {
@@ -36,12 +42,6 @@ namespace VW {
         }
       }
 
-      virtual void add(base_option& option) override;
-      virtual std::string str() override;
-      virtual const char* data() override;
-      virtual size_t size() override;
-
-    private:
       std::stringstream m_output_stream;
     };
 
