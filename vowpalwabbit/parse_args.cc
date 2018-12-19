@@ -993,85 +993,93 @@ void parse_example_tweaks(VW::config::options_i* options, vw& all)
   }
 }
 
-void parse_output_preds(arguments& arg)
+void parse_output_preds(VW::config::options_i* options, vw& all)
 {
-  if (arg.new_options("Output options")
-      ("predictions,p", po::value< string >(), "File to output predictions to")
-      ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to").missing())
-    return;
+  std::string predictions;
+  std::string raw_predictions;
 
-  if (arg.vm.count("predictions"))
+  VW::config::option_group_definition output_options("Output options");
+  output_options
+    (VW::config::make_typed_option("predictions", predictions).short_name("p").help("File to output predictions to"))
+    (VW::config::make_typed_option("raw_predictions", raw_predictions).short_name("r").help("File to output unnormalized predictions to"));
+  options->add_and_parse(output_options);
+
+  if (options->was_supplied("predictions"))
   {
-    if (!arg.all->quiet)
-      arg.all->trace_message << "predictions = " <<  arg.vm["predictions"].as< string >() << endl;
-    if (strcmp(arg.vm["predictions"].as< string >().c_str(), "stdout") == 0)
+    if (!all.quiet)
+      all.trace_message << "predictions = " <<  predictions << endl;
+
+    if (predictions == "stdout")
     {
-      arg.all->final_prediction_sink.push_back((size_t) 1);//stdout
+      all.final_prediction_sink.push_back((size_t) 1);//stdout
     }
     else
     {
-      const char* fstr = (arg.vm["predictions"].as< string >().c_str());
+      const char* fstr = predictions.c_str();
       int f;
+      // TODO can we migrate files to fstreams?
 #ifdef _WIN32
       _sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
       f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if (f < 0)
-        arg.all->trace_message << "Error opening the predictions file: " << fstr << endl;
-      arg.all->final_prediction_sink.push_back((size_t) f);
+        all.trace_message << "Error opening the predictions file: " << fstr << endl;
+      all.final_prediction_sink.push_back((size_t) f);
     }
   }
 
-  if (arg.vm.count("raw_predictions"))
+  if (options->was_supplied("raw_predictions"))
   {
-    if (!arg.all->quiet)
+    if (!all.quiet)
     {
-      arg.all->trace_message << "raw predictions = " <<  arg.vm["raw_predictions"].as< string >() << endl;
-      if (arg.vm.count("binary"))
-        arg.all->trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
+      all.trace_message << "raw predictions = " <<  raw_predictions << endl;
+      if (options->was_supplied("binary"))
+        all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
-    if (strcmp(arg.vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      arg.all->raw_prediction = 1;//stdout
+    if (raw_predictions.c_str() == "stdout")
+      all.raw_prediction = 1; //stdout
     else
     {
-      const char* t = arg.vm["raw_predictions"].as< string >().c_str();
+      const char* t = raw_predictions.c_str();
       int f;
 #ifdef _WIN32
       _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
       f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-      arg.all->raw_prediction = f;
+      all.raw_prediction = f;
     }
   }
 }
 
-void parse_output_model(arguments& arg)
+void parse_output_model(VW::config::options_i* options, vw& all)
 {
-  if (arg.new_options("Output model")
-      ("final_regressor,f", arg.all->final_regressor_name, "Final regressor")
-      ("readable_model", arg.all->text_regressor_name, "Output human-readable final regressor with numeric features")
-      ("invert_hash", arg.all->inv_hash_regressor_name, "Output human-readable final regressor with feature names.  Computationally expensive.")
-      (arg.all->save_resume, "save_resume", "save extra state so learning can be resumed later with new data")
-      (arg.all->preserve_performance_counters, "preserve_performance_counters", "reset performance counters when warmstarting")
-      (arg.all->save_per_pass, "save_per_pass", "Save the model after every pass over data")
-      ("output_feature_regularizer_binary", arg.all->per_feature_regularizer_output, "Per feature regularization output file")
-      ("output_feature_regularizer_text", arg.all->per_feature_regularizer_text, "Per feature regularization output file, in text")
-      ("id", arg.all->id, "User supplied ID embedded into the final regressor").missing())
-    return;
+  VW::config::option_group_definition output_model_options("Output model");
+  output_model_options
+    (VW::config::make_typed_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
+    (VW::config::make_typed_option("readable_model", all.text_regressor_name).help("Output human-readable final regressor with numeric features"))
+    (VW::config::make_typed_option("invert_hash", all.inv_hash_regressor_name).help("Output human-readable final regressor with feature names.  Computationally expensive."))
+    (VW::config::make_typed_option("save_resume", all.save_resume).help("save extra state so learning can be resumed later with new data"))
+    (VW::config::make_typed_option("preserve_performance_counters", all.preserve_performance_counters).help("reset performance counters when warmstarting"))
+    (VW::config::make_typed_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
+    (VW::config::make_typed_option("output_feature_regularizer_binary", all.per_feature_regularizer_output).help("Per feature regularization output file"))
+    (VW::config::make_typed_option("output_feature_regularizer_text", all.per_feature_regularizer_text).help("Per feature regularization output file, in text"))
+    (VW::config::make_typed_option("id", all.id).help("User supplied ID embedded into the final regressor"));
+  options->add_and_parse(output_model_options);
 
-  if (arg.all->final_regressor_name.compare("") && !arg.all->quiet)
-    arg.all->trace_message << "final_regressor = " << arg.all->final_regressor_name << endl;
+  if (all.final_regressor_name.compare("") && !all.quiet)
+    all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (arg.vm.count("invert_hash"))
-    arg.all->hash_inv = true;
+  if (options->was_supplied("invert_hash"))
+    all.hash_inv = true;
 
-  if (arg.vm.count("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
-  {
-    arg.args.push_back("--id");
-    arg.args.push_back(arg.vm["id"].as<string>());
-  }
+  // Question: This doesn't seem necessary
+  // if (arg.vm.count("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
+  // {
+  //   arg.args.push_back("--id");
+  //   arg.args.push_back(arg.vm["id"].as<string>());
+  // }
 }
 
 void load_input_model(vw& all, io_buf& io_temp)
@@ -1335,9 +1343,9 @@ void parse_modules(VW::config::options_i* options, vw& all)
 
   parse_example_tweaks(options, all); //example manipulation
 
-  parse_output_model(all.opts_n_args);
+  parse_output_model(options, all);
 
-  parse_output_preds(all.opts_n_args);
+  parse_output_preds(options, all);
 
   parse_reductions(all.opts_n_args);
 
