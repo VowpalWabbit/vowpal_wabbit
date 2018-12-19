@@ -141,7 +141,7 @@ string find_in_path(vector<string> paths, string fname)
   return "";
 }
 
-void parse_dictionary_argument(vw&all, string str)
+void parse_dictionary_argument(vw& all, string str)
 {
   if (str.length() == 0) return;
   // expecting 'namespace:file', for instance 'w:foo.txt'
@@ -533,7 +533,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(arguments& arg)
+void parse_feature_tweaks(VW::config::options_i* options, vw& all)
 {
   string hash_function("strings");
   uint32_t new_bits;
@@ -546,149 +546,160 @@ void parse_feature_tweaks(arguments& arg)
   vector<string> keeps;
   vector<string> redefines;
   vector<string> dictionary_nses;
-  if (arg.new_options("Feature options")
-      .keep("hash", po::value(&hash_function), "how to hash the features. Available options: strings, all")
-      .keep("hash_seed", arg.all->hash_seed, (uint32_t)0, "seed for hash function")
-      .keep_vector("ignore", po::value(&ignores), "ignore namespaces beginning with character <arg>")
-      .keep_vector("ignore_linear", po::value(&ignore_linears), "ignore namespaces beginning with character <arg> for linear terms only")
-      .keep_vector("keep", po::value(&keeps), "keep namespaces beginning with character <arg>")
-      .keep_vector("redefine", po::value(&redefines), "redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.")
-      ("bit_precision,b", new_bits, "number of bits in the feature table")
-      ("noconstant", "Don't add a constant feature")
-      ("constant,C", po::value(&(arg.all->initial_constant)), "Set initial value of constant")
-      ("ngram", arg.all->ngram_strings, "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
-      ("skips", arg.all->skip_strings, "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN.")
-      ("feature_limit", arg.all->limit_strings, "limit to N features. To apply to a single namespace 'foo', arg should be fN")
-      .keep<string>("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
-      .keep_vector("spelling", po::value(&spelling_ns), "compute spelling features for a give namespace (use '_' for default namespace)")
-      .keep_vector("dictionary", po::value(&dictionary_nses), "read a dictionary for additional features (arg either 'x:file' or just 'file')")
-      ("dictionary_path", po::value< vector<string> >(), "look in this directory for dictionaries; defaults to current directory or env{PATH}")
-      .keep_vector("interactions", po::value(&interactions), "Create feature interactions of any level between namespaces.")
-      (arg.all->permutations, "permutations", "Use permutations instead of combinations for feature interactions of same namespace.")
-      ("leave_duplicate_interactions", "Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'.")
-      .keep_vector("quadratic,q", po::value(&quadratics), "Create and use quadratic features")
-      ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
-      .keep_vector("cubic", po::value(&cubics), "Create and use cubic features").missing())
-    return;
+
+  vector<string> dictionary_path;
+
+  bool noconstant;
+  bool leave_duplicate_interactions;
+  std::string affix;
+  std::string q_colon;
+
+  VW::config::option_group_definition feature_options("Feature options");
+  feature_options
+    (VW::config::make_typed_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
+    (VW::config::make_typed_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
+    (VW::config::make_typed_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
+    (VW::config::make_typed_option("ignore_linear", ignore_linears).keep().help("ignore namespaces beginning with character <arg> for linear terms only"))
+    (VW::config::make_typed_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
+    (VW::config::make_typed_option("redefine", redefines).keep().help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.").keep())
+    (VW::config::make_typed_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
+    (VW::config::make_typed_option("noconstant", noconstant).help("Don't add a constant feature"))
+    (VW::config::make_typed_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
+    (VW::config::make_typed_option("ngram", all.ngram_strings).help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
+    (VW::config::make_typed_option("skips", all.skip_strings).help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
+    (VW::config::make_typed_option("feature_limit", all.limit_strings).help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
+    (VW::config::make_typed_option("affix", affix).keep().help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
+    (VW::config::make_typed_option("spelling", spelling_ns).keep().help("compute spelling features for a give namespace (use '_' for default namespace)"))
+    (VW::config::make_typed_option("dictionary", dictionary_nses).keep().help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
+    (VW::config::make_typed_option("dictionary_path", dictionary_path).help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
+    (VW::config::make_typed_option("interactions", interactions).keep().help("Create feature interactions of any level between namespaces."))
+    (VW::config::make_typed_option("permutations", all.permutations).help("Use permutations instead of combinations for feature interactions of same namespace."))
+    (VW::config::make_typed_option("leave_duplicate_interactions", leave_duplicate_interactions).help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
+    (VW::config::make_typed_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
+    // TODO this option is unused - remove?
+    (VW::config::make_typed_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
+    (VW::config::make_typed_option("cubic", cubics).keep().help("Create and use cubic features"));
+  options->add_and_parse(feature_options);
 
   //feature manipulation
-  arg.all->p->hasher = getHasher(hash_function);
+  all.p->hasher = getHasher(hash_function);
 
-  if (arg.vm.count("spelling"))
+  if (options->was_supplied("spelling"))
   {
     for (size_t id=0; id<spelling_ns.size(); id++)
     {
       spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
-      if (spelling_ns[id][0] == '_') arg.all->spelling_features[(unsigned char)' '] = true;
-      else arg.all->spelling_features[(size_t)spelling_ns[id][0]] = true;
+      if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
+      else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
     }
   }
 
-  if (arg.vm.count("affix"))
-    parse_affix_argument(*arg.all, spoof_hex_encoded_namespaces(arg.vm["affix"].as<string>()));
+  if (options->was_supplied("affix"))
+    parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
 
-  if(arg.vm.count("ngram"))
+  if(options->was_supplied("ngram"))
   {
-    if(arg.vm.count("sort_features"))
+    if(options->was_supplied("sort_features"))
       THROW("ngram is incompatible with sort_features.");
 
-    for (size_t i = 0; i < arg.all->ngram_strings.size(); i++)
-      arg.all->ngram_strings[i] = spoof_hex_encoded_namespaces(arg.all->ngram_strings[i]);
-    compile_gram(arg.all->ngram_strings, arg.all->ngram, (char*)"grams", arg.all->quiet);
+    for (size_t i = 0; i < all.ngram_strings.size(); i++)
+      all.ngram_strings[i] = spoof_hex_encoded_namespaces(all.ngram_strings[i]);
+    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
-  if(arg.vm.count("skips"))
+  if(options->was_supplied("skips"))
   {
-    if(!arg.vm.count("ngram"))
+    if(!options->was_supplied("ngram"))
       THROW("You can not skip unless ngram is > 1");
 
-    for (size_t i = 0; i < arg.all->skip_strings.size(); i++)
-      arg.all->skip_strings[i] = spoof_hex_encoded_namespaces(arg.all->skip_strings[i]);
-    compile_gram(arg.all->skip_strings, arg.all->skips, (char*)"skips", arg.all->quiet);
+    for (size_t i = 0; i < all.skip_strings.size(); i++)
+      all.skip_strings[i] = spoof_hex_encoded_namespaces(all.skip_strings[i]);
+    compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
-  if(arg.vm.count("feature_limit"))
-    compile_limits(arg.all->limit_strings, arg.all->limit, arg.all->quiet);
+  if(options->was_supplied("feature_limit"))
+    compile_limits(all.limit_strings, all.limit, all.quiet);
 
-  if (arg.vm.count("bit_precision"))
+  if (options->was_supplied("bit_precision"))
   {
-    if (arg.all->default_bits == false && new_bits != arg.all->num_bits)
-      THROW("Number of bits is set to " << new_bits << " and " << arg.all->num_bits << " by argument and model.  That does not work.");
+    if (all.default_bits == false && new_bits != all.num_bits)
+      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
 
-    arg.all->default_bits = false;
-    arg.all->num_bits = new_bits;
+    all.default_bits = false;
+    all.num_bits = new_bits;
 
-    VW::validate_num_bits(*arg.all);
+    VW::validate_num_bits(all);
   }
 
   // prepare namespace interactions
   std::vector<std::string> expanded_interactions;
 
-  if ( ( ((!arg.all->pairs.empty() || !arg.all->triples.empty() || !arg.all->interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
-          (arg.vm.count("quadratic") || arg.vm.count("cubic") || arg.vm.count("interactions")) ) )
+  // TODO move interactions_settings_doubled to a parameter not global
+  if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+          (options->was_supplied("quadratic") || options->was_supplied("cubic") || options->was_supplied("interactions")) ) )
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    arg.all->trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
+    all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!arg.all->pairs.empty()) arg.all->pairs.clear();
-    if (!arg.all->triples.empty()) arg.all->triples.clear();
-    if (!arg.all->interactions.empty()) arg.all->interactions.clear();
+    if (!all.pairs.empty()) all.pairs.clear();
+    if (!all.triples.empty()) all.triples.clear();
+    if (!all.interactions.empty()) all.interactions.clear();
   }
 
-  if (arg.vm.count("quadratic"))
+  if (options->was_supplied("quadratic"))
   {
-    if (!arg.all->quiet)
-      arg.all->trace_message << "creating quadratic features for pairs: ";
+    if (!all.quiet)
+      all.trace_message << "creating quadratic features for pairs: ";
 
     for (vector<string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet)
-        arg.all->trace_message << *i << " ";
+      if (!all.quiet)
+        all.trace_message << *i << " ";
     }
 
     expanded_interactions = INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
-    if (!arg.all->quiet)
-      arg.all->trace_message << endl;
+    if (!all.quiet)
+      all.trace_message << endl;
   }
 
-  if (arg.vm.count("cubic"))
+  if (options->was_supplied("cubic"))
   {
-    if (!arg.all->quiet)
-      arg.all->trace_message << "creating cubic features for triples: ";
+    if (!all.quiet)
+      all.trace_message << "creating cubic features for triples: ";
     for (vector<string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet)
-        arg.all->trace_message << *i << " ";
+      if (!all.quiet)
+        all.trace_message << *i << " ";
     }
 
     std::vector<std::string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
-    if (!arg.all->quiet)
-      arg.all->trace_message << endl;
+    if (!all.quiet)
+      all.trace_message << endl;
   }
 
-  if (arg.vm.count("interactions"))
+  if (options->was_supplied("interactions"))
   {
-    if (!arg.all->quiet)
-      arg.all->trace_message << "creating features for following interactions: ";
+    if (!all.quiet)
+      all.trace_message << "creating features for following interactions: ";
     for (vector<string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet)
-        arg.all->trace_message << *i << " ";
+      if (!all.quiet)
+        all.trace_message << *i << " ";
     }
 
     std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
-    if (!arg.all->quiet)
-      arg.all->trace_message << endl;
+    if (!all.quiet)
+      all.trace_message << endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -696,119 +707,118 @@ void parse_feature_tweaks(arguments& arg)
 
     size_t removed_cnt;
     size_t sorted_cnt;
-    INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !arg.vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
+    INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0)
-      arg.all->trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     if (sorted_cnt > 0)
-      arg.all->trace_message << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+      all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
 
 
-    if (arg.all->interactions.size() > 0)
+    if (all.interactions.size() > 0)
     {
       // should be empty, but just in case...
-      arg.all->interactions.clear();
+      all.interactions.clear();
     }
 
-    arg.all->interactions = expanded_interactions;
+    all.interactions = expanded_interactions;
 
     // copy interactions of size 2 and 3 to old vectors for backward compatibility
     for (auto& i : expanded_interactions)
     {
       const size_t len = i.size();
       if (len == 2)
-        arg.all->pairs.push_back(i);
+        all.pairs.push_back(i);
       else if (len == 3)
-        arg.all->triples.push_back(i);
+        all.triples.push_back(i);
     }
   }
 
   for (size_t i = 0; i < 256; i++)
-    {
-      arg.all->ignore[i] = false;
-      arg.all->ignore_linear[i] = false;
-    }
-  arg.all->ignore_some = false;
-  arg.all->ignore_some_linear = false;
-
-  if (arg.vm.count("ignore"))
   {
-    arg.all->ignore_some = true;
+    all.ignore[i] = false;
+    all.ignore_linear[i] = false;
+  }
+  all.ignore_some = false;
+  all.ignore_some_linear = false;
+
+  if (options->was_supplied("ignore"))
+  {
+    all.ignore_some = true;
 
     for (vector<string>::iterator i = ignores.begin(); i != ignores.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       for (string::const_iterator j = i->begin(); j != i->end(); j++)
-        arg.all->ignore[(size_t)(unsigned char)*j] = true;
+        all.ignore[(size_t)(unsigned char)*j] = true;
     }
 
-    if (!arg.all->quiet)
+    if (!all.quiet)
     {
-      arg.all->trace_message << "ignoring namespaces beginning with: ";
+      all.trace_message << "ignoring namespaces beginning with: ";
       for (auto const& ignore : ignores)
         for (auto const character : ignore)
-          arg.all->trace_message << character << " ";
+          all.trace_message << character << " ";
 
-      arg.all->trace_message << endl;
+      all.trace_message << endl;
     }
   }
 
-  if (arg.vm.count("ignore_linear"))
+  if (options->was_supplied("ignore_linear"))
   {
-    arg.all->ignore_some_linear = true;
+    all.ignore_some_linear = true;
 
     for (vector<string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       for (string::const_iterator j = i->begin(); j != i->end(); j++)
-        arg.all->ignore_linear[(size_t)(unsigned char)*j] = true;
-
+        all.ignore_linear[(size_t)(unsigned char)*j] = true;
     }
 
-    if (!arg.all->quiet)
+    if (!all.quiet)
     {
-      arg.all->trace_message << "ignoring linear terms for namespaces beginning with: ";
+      all.trace_message << "ignoring linear terms for namespaces beginning with: ";
       for (auto const& ignore : ignore_linears)
         for (auto const character : ignore)
-          arg.all->trace_message << character << " ";
+          all.trace_message << character << " ";
 
-      arg.all->trace_message << endl;
+      all.trace_message << endl;
     }
   }
 
-  if (arg.vm.count("keep"))
+  if (options->was_supplied("keep"))
   {
     for (size_t i = 0; i < 256; i++)
-      arg.all->ignore[i] = true;
+      all.ignore[i] = true;
 
-    arg.all->ignore_some = true;
+    all.ignore_some = true;
 
     for (vector<string>::iterator i = keeps.begin(); i != keeps.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
       for (string::const_iterator j = i->begin(); j != i->end(); j++)
-        arg.all->ignore[(size_t)(unsigned char)*j] = false;
+        all.ignore[(size_t)(unsigned char)*j] = false;
     }
 
-    if (!arg.all->quiet)
+    if (!all.quiet)
     {
-      arg.all->trace_message << "using namespaces beginning with: ";
+      all.trace_message << "using namespaces beginning with: ";
       for (auto const& keep : keeps)
         for (auto const character : keep)
-          arg.all->trace_message << character << " ";
+          all.trace_message << character << " ";
 
-      arg.all->trace_message << endl;
+      all.trace_message << endl;
     }
   }
 
   // --redefine param code
-  arg.all->redefine_some = false; // false by default
+  all.redefine_some = false; // false by default
 
-  if (arg.vm.count("redefine"))
+  if (options->was_supplied("redefine"))
   {
     // initail values: i-th namespace is redefined to i itself
     for (size_t i = 0; i < 256; i++)
-      arg.all->redefine[i] = (unsigned char)i;
+      all.redefine[i] = (unsigned char)i;
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -840,26 +850,26 @@ void parse_feature_tweaks(arguments& arg)
         THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
       if (++operator_pos > 3) // seek operator end
-        arg.all->trace_message << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+        all.trace_message << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
 
-      arg.all->redefine_some = true;
+      all.redefine_some = true;
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
       if (operator_pos == arg_len) // S is empty, default namespace shall be used
-        arg.all->redefine[(int) ' '] = new_namespace;
+        all.redefine[(int) ' '] = new_namespace;
       else
         for (size_t i = operator_pos; i < arg_len; i++)
         {
           // all namespaces from S are redefined to N
           unsigned char c = argument[i];
           if (c != ':')
-            arg.all->redefine[c] = new_namespace;
+            all.redefine[c] = new_namespace;
           else
           {
             // wildcard found: redefine all except default and break
             for (size_t i = 0; i < 256; i++)
-              arg.all->redefine[i] = new_namespace;
+              all.redefine[i] = new_namespace;
             break; //break processing S
           }
         }
@@ -867,14 +877,14 @@ void parse_feature_tweaks(arguments& arg)
     }
   }
 
-  if (arg.vm.count("dictionary"))
+  if (options->was_supplied("dictionary"))
   {
-    if (arg.vm.count("dictionary_path"))
-      for (string path : arg.vm["dictionary_path"].as< vector<string> >())
+    if (options->was_supplied("dictionary_path"))
+      for (string path : dictionary_path)
         if (directory_exists(path))
-          arg.all->dictionary_path.push_back(path);
+          all.dictionary_path.push_back(path);
     if (directory_exists("."))
-      arg.all->dictionary_path.push_back(".");
+      all.dictionary_path.push_back(".");
 
     const std::string PATH = getenv( "PATH" );
 #if _WIN32
@@ -888,19 +898,19 @@ void parse_feature_tweaks(arguments& arg)
       size_t index = PATH.find( delimiter );
       while( index != string::npos )
       {
-        arg.all->dictionary_path.push_back( PATH.substr(previous, index-previous));
+        all.dictionary_path.push_back( PATH.substr(previous, index-previous));
         previous=index+1;
         index = PATH.find( delimiter, previous );
       }
-      arg.all->dictionary_path.push_back( PATH.substr(previous) );
+      all.dictionary_path.push_back( PATH.substr(previous) );
     }
 
     for (size_t id=0; id<dictionary_nses.size(); id++)
-      parse_dictionary_argument(*arg.all, dictionary_nses[id]);
+      parse_dictionary_argument(all, dictionary_nses[id]);
   }
 
-  if (arg.vm.count("noconstant"))
-    arg.all->add_constant = false;
+  if (noconstant)
+    all.add_constant = false;
 }
 
 void parse_example_tweaks(arguments& arg)
@@ -1316,7 +1326,7 @@ void parse_modules(VW::config::options_i* options, vw& all)
   options->add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
-  parse_feature_tweaks(all.opts_n_args); //feature tweaks
+  parse_feature_tweaks(options, all); //feature tweaks
 
   parse_example_tweaks(all.opts_n_args); //example manipulation
 
