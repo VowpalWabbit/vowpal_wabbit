@@ -177,7 +177,7 @@ inline void safe_memcpy(char *& __dest, size_t& __dest_size, const void *__src, 
 }
 
 // file_options will be written to when reading
-void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i* options)
+void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
 {
   char* buff2 = (char*) malloc(default_buf_size);
   size_t buf2_size = default_buf_size;
@@ -217,7 +217,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
                                                 "", read, msg, text);
         all.id = buff2;
 
-        if (read && options->was_supplied("id") && !all.id.empty())
+        if (read && options.was_supplied("id") && !all.id.empty())
         {
           file_options += " --id";
           file_options += " " + all.id;
@@ -244,7 +244,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
                           "", read, msg, text);
 
-      if (read && options->was_supplied("bit_precision"))
+      if (read && options.was_supplied("bit_precision"))
       {
         file_options += " --bit_precision";
         std::stringstream temp;
@@ -382,7 +382,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
                             "", read, msg, text);
         if (rank != 0)
         {
-          if (options->was_supplied("rank"))
+          if (options.was_supplied("rank"))
           {
             file_options += " --rank";
             std::stringstream temp;
@@ -473,7 +473,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
       else
       {
         VW::config::options_serializer_boost_po serializer;
-        for(auto const& option : options->get_all_options())
+        for(auto const& option : options.get_all_options())
         {
           if(option->m_keep)
           {
@@ -539,7 +539,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
   std::string unused;
-  save_load_header(all, buf, false, as_text, unused, all.options);
+  save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
     all.l->save_load(buf, false, as_text);
 
@@ -611,7 +611,7 @@ void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& i
 
 void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors)
 {
-  // TODO does this need to be used?
+  // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;
   if (!feature_mask.empty())
   {
@@ -626,7 +626,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
     io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
-    save_load_header(all, io_temp_mask, true, false, file_options, all.options);
+    save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
 
@@ -637,7 +637,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
       // Load original header again.
       io_buf io_temp;
       io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
-      save_load_header(all, io_temp, true, false, file_options, all.options);
+      save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
@@ -647,7 +647,7 @@ void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<st
     {
       // If no initial regressor, just clear out the options loaded from the header.
       // TODO clear file options
-      all.opts_n_args.file_options->str("");
+      //all.opts_n_args.file_options.str("");
     }
   }
 }

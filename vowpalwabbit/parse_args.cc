@@ -322,7 +322,7 @@ void parse_affix_argument(vw&all, string str)
   free(cstr);
 }
 
-void parse_diagnostics(VW::config::options_i* options, vw& all)
+void parse_diagnostics(VW::config::options_i& options, vw& all)
 {
   bool version_arg;
   std::string progress_arg;
@@ -334,7 +334,7 @@ void parse_diagnostics(VW::config::options_i* options, vw& all)
     (VW::config::make_typed_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
     (VW::config::make_typed_option("help", all.help_requested).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
-  options->add_and_parse(diagnostic_group);
+  options.add_and_parse(diagnostic_group);
 
   // upon direct query for version -- spit it out to stdout
   if (version_arg)
@@ -343,7 +343,7 @@ void parse_diagnostics(VW::config::options_i* options, vw& all)
     exit(0);
   }
 
-  if (options->was_supplied("progress") && !all.quiet)
+  if (options.was_supplied("progress") && !all.quiet)
   {
     all.progress_arg = (float)::atof(progress_arg.c_str());
     // --progress interval is dual: either integer or floating-point
@@ -383,7 +383,7 @@ void parse_diagnostics(VW::config::options_i* options, vw& all)
   }
 }
 
-input_options parse_source(vw& all, VW::config::options_i* options)
+input_options parse_source(vw& all, VW::config::options_i& options)
 {
   input_options parsed_options;
 
@@ -403,8 +403,8 @@ input_options parse_source(vw& all, VW::config::options_i* options)
   input_options.add(VW::config::make_typed_option("compressed", parsed_options.compressed).help("use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."));
   input_options.add(VW::config::make_typed_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
 
-  options->add_and_parse(input_options);
-  if (parsed_options.daemon || options->was_supplied("pid_file") || (options->was_supplied("port") && !all.active))
+  options.add_and_parse(input_options);
+  if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
   {
     all.daemon = true;
     // allow each child to process up to 1e5 connections
@@ -422,10 +422,10 @@ input_options parse_source(vw& all, VW::config::options_i* options)
   if (ends_with(all.data_filename, ".gz"))
     set_compressed(all.p);
 
-  if ((parsed_options.cache || options->was_supplied("cache_file")) && options->was_supplied("invert_hash"))
+  if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
-  if(!all.holdout_set_off && (options->was_supplied("output_feature_regularizer_binary") || options->was_supplied("output_feature_regularizer_text")))
+  if(!all.holdout_set_off && (options.was_supplied("output_feature_regularizer_binary") || options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
     all.trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
@@ -533,7 +533,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(VW::config::options_i* options, vw& all)
+void parse_feature_tweaks(VW::config::options_i& options, vw& all)
 {
   string hash_function("strings");
   uint32_t new_bits;
@@ -579,12 +579,12 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     // TODO this option is unused - remove?
     (VW::config::make_typed_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
     (VW::config::make_typed_option("cubic", cubics).keep().help("Create and use cubic features"));
-  options->add_and_parse(feature_options);
+  options.add_and_parse(feature_options);
 
   //feature manipulation
   all.p->hasher = getHasher(hash_function);
 
-  if (options->was_supplied("spelling"))
+  if (options.was_supplied("spelling"))
   {
     for (size_t id=0; id<spelling_ns.size(); id++)
     {
@@ -594,12 +594,12 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     }
   }
 
-  if (options->was_supplied("affix"))
+  if (options.was_supplied("affix"))
     parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
 
-  if(options->was_supplied("ngram"))
+  if(options.was_supplied("ngram"))
   {
-    if(options->was_supplied("sort_features"))
+    if(options.was_supplied("sort_features"))
       THROW("ngram is incompatible with sort_features.");
 
     for (size_t i = 0; i < all.ngram_strings.size(); i++)
@@ -607,9 +607,9 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
-  if(options->was_supplied("skips"))
+  if(options.was_supplied("skips"))
   {
-    if(!options->was_supplied("ngram"))
+    if(!options.was_supplied("ngram"))
       THROW("You can not skip unless ngram is > 1");
 
     for (size_t i = 0; i < all.skip_strings.size(); i++)
@@ -617,10 +617,10 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
-  if(options->was_supplied("feature_limit"))
+  if(options.was_supplied("feature_limit"))
     compile_limits(all.limit_strings, all.limit, all.quiet);
 
-  if (options->was_supplied("bit_precision"))
+  if (options.was_supplied("bit_precision"))
   {
     if (all.default_bits == false && new_bits != all.num_bits)
       THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
@@ -636,7 +636,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
 
   // TODO move interactions_settings_doubled to a parameter not global
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
-          (options->was_supplied("quadratic") || options->was_supplied("cubic") || options->was_supplied("interactions")) ) )
+          (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
@@ -648,7 +648,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     if (!all.interactions.empty()) all.interactions.clear();
   }
 
-  if (options->was_supplied("quadratic"))
+  if (options.was_supplied("quadratic"))
   {
     if (!all.quiet)
       all.trace_message << "creating quadratic features for pairs: ";
@@ -666,7 +666,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
       all.trace_message << endl;
   }
 
-  if (options->was_supplied("cubic"))
+  if (options.was_supplied("cubic"))
   {
     if (!all.quiet)
       all.trace_message << "creating cubic features for triples: ";
@@ -684,7 +684,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
       all.trace_message << endl;
   }
 
-  if (options->was_supplied("interactions"))
+  if (options.was_supplied("interactions"))
   {
     if (!all.quiet)
       all.trace_message << "creating features for following interactions: ";
@@ -742,7 +742,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
   all.ignore_some = false;
   all.ignore_some_linear = false;
 
-  if (options->was_supplied("ignore"))
+  if (options.was_supplied("ignore"))
   {
     all.ignore_some = true;
 
@@ -764,7 +764,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     }
   }
 
-  if (options->was_supplied("ignore_linear"))
+  if (options.was_supplied("ignore_linear"))
   {
     all.ignore_some_linear = true;
 
@@ -786,7 +786,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     }
   }
 
-  if (options->was_supplied("keep"))
+  if (options.was_supplied("keep"))
   {
     for (size_t i = 0; i < 256; i++)
       all.ignore[i] = true;
@@ -814,7 +814,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
   // --redefine param code
   all.redefine_some = false; // false by default
 
-  if (options->was_supplied("redefine"))
+  if (options.was_supplied("redefine"))
   {
     // initail values: i-th namespace is redefined to i itself
     for (size_t i = 0; i < 256; i++)
@@ -877,9 +877,9 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     }
   }
 
-  if (options->was_supplied("dictionary"))
+  if (options.was_supplied("dictionary"))
   {
-    if (options->was_supplied("dictionary_path"))
+    if (options.was_supplied("dictionary_path"))
       for (string path : dictionary_path)
         if (directory_exists(path))
           all.dictionary_path.push_back(path);
@@ -913,7 +913,7 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     all.add_constant = false;
 }
 
-void parse_example_tweaks(VW::config::options_i* options, vw& all)
+void parse_example_tweaks(VW::config::options_i& options, vw& all)
 {
   string named_labels;
   string loss_function;
@@ -941,7 +941,7 @@ void parse_example_tweaks(VW::config::options_i* options, vw& all)
     (VW::config::make_typed_option("l2", all.l2_lambda).help("l_2 lambda"))
     (VW::config::make_typed_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
     (VW::config::make_typed_option("named_labels", named_labels).keep().help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
-  options->add_and_parse(example_options);
+  options.add_and_parse(example_options);
 
   if (test_only || all.eta == 0.)
   {
@@ -959,10 +959,10 @@ void parse_example_tweaks(VW::config::options_i* options, vw& all)
   else
     all.holdout_set_off = true;
 
-  if (options->was_supplied("min_prediction") || options->was_supplied("max_prediction") || test_only)
+  if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
     all.set_minmax = noop_mm;
 
-  if (options->was_supplied("named_labels"))
+  if (options.was_supplied("named_labels"))
   {
     all.sd->ldict = &calloc_or_throw<namedlabels>();
     new (all.sd->ldict) namedlabels(named_labels);
@@ -986,14 +986,14 @@ void parse_example_tweaks(VW::config::options_i* options, vw& all)
   all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
   if (!all.quiet)
   {
-    if (all.reg_mode %2 && !options->was_supplied("bfgs"))
+    if (all.reg_mode %2 && !options.was_supplied("bfgs"))
       all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
     if (all.reg_mode > 1)
       all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
-void parse_output_preds(VW::config::options_i* options, vw& all)
+void parse_output_preds(VW::config::options_i& options, vw& all)
 {
   std::string predictions;
   std::string raw_predictions;
@@ -1002,9 +1002,9 @@ void parse_output_preds(VW::config::options_i* options, vw& all)
   output_options
     (VW::config::make_typed_option("predictions", predictions).short_name("p").help("File to output predictions to"))
     (VW::config::make_typed_option("raw_predictions", raw_predictions).short_name("r").help("File to output unnormalized predictions to"));
-  options->add_and_parse(output_options);
+  options.add_and_parse(output_options);
 
-  if (options->was_supplied("predictions"))
+  if (options.was_supplied("predictions"))
   {
     if (!all.quiet)
       all.trace_message << "predictions = " <<  predictions << endl;
@@ -1029,12 +1029,12 @@ void parse_output_preds(VW::config::options_i* options, vw& all)
     }
   }
 
-  if (options->was_supplied("raw_predictions"))
+  if (options.was_supplied("raw_predictions"))
   {
     if (!all.quiet)
     {
       all.trace_message << "raw predictions = " <<  raw_predictions << endl;
-      if (options->was_supplied("binary"))
+      if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
     if (raw_predictions.c_str() == "stdout")
@@ -1053,7 +1053,7 @@ void parse_output_preds(VW::config::options_i* options, vw& all)
   }
 }
 
-void parse_output_model(VW::config::options_i* options, vw& all)
+void parse_output_model(VW::config::options_i& options, vw& all)
 {
   VW::config::option_group_definition output_model_options("Output model");
   output_model_options
@@ -1066,12 +1066,12 @@ void parse_output_model(VW::config::options_i* options, vw& all)
     (VW::config::make_typed_option("output_feature_regularizer_binary", all.per_feature_regularizer_output).help("Per feature regularization output file"))
     (VW::config::make_typed_option("output_feature_regularizer_text", all.per_feature_regularizer_text).help("Per feature regularization output file, in text"))
     (VW::config::make_typed_option("id", all.id).help("User supplied ID embedded into the final regressor"));
-  options->add_and_parse(output_model_options);
+  options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.quiet)
     all.trace_message << "final_regressor = " << all.final_regressor_name << endl;
 
-  if (options->was_supplied("invert_hash"))
+  if (options.was_supplied("invert_hash"))
     all.hash_inv = true;
 
   // Question: This doesn't seem necessary
@@ -1203,9 +1203,9 @@ void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, cons
   }
 }
 
-vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, void* trace_context) {
+vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener, void* trace_context) {
   vw& all = *(new vw());
-  all.options = options;
+  all.options = &options;
 
   if (trace_listener)
   {
@@ -1220,7 +1220,7 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
     VW::config::option_group_definition vw_args("VW options");
     vw_args
       (VW::config::make_typed_option("ring_size", all.p->ring_size).help("size of example ring"));
-    options->add_and_parse(vw_args);
+    options.add_and_parse(vw_args);
 
     VW::config::option_group_definition update_args("Update options");
     update_args
@@ -1229,7 +1229,7 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
       (VW::config::make_typed_option("decay_learning_rate", all.eta_decay_rate).help("Set Decay factor for learning_rate between passes"))
       (VW::config::make_typed_option("initial_t", all.sd->t).help("initial t value"))
       (VW::config::make_typed_option("feature_mask", all.feature_mask).help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights."));
-    options->add_and_parse(update_args);
+    options.add_and_parse(update_args);
 
     VW::config::option_group_definition weight_args("Weight options");
     weight_args
@@ -1240,7 +1240,7 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
       (VW::config::make_typed_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
       (VW::config::make_typed_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
       (VW::config::make_typed_option("input_feature_regularizer", all.per_feature_regularizer_input).help("Per feature regularization input file"));
-    options->add_and_parse(weight_args);
+    options.add_and_parse(weight_args);
 
     std::string span_server_arg;
     //bool threads_arg;
@@ -1254,16 +1254,16 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
       (VW::config::make_typed_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
       (VW::config::make_typed_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
       (VW::config::make_typed_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
-    options->add_and_parse(parallelization_args);
+    options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
-    if ((options->was_supplied("total") || options->was_supplied("node") || options->was_supplied("unique_id"))
-      && !(options->was_supplied("total") && options->was_supplied("node") && options->was_supplied("unique_id")))
+    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id"))
+      && !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
     {
       THROW("you must specificy unique_id, total, and node if you specify any");
     }
 
-    if (options->was_supplied("span_server"))
+    if (options.was_supplied("span_server"))
     {
       all.all_reduce_type = AllReduceType::Socket;
       all.all_reduce = new AllReduceSockets(span_server_arg, unique_id_arg, total_arg, node_arg);
@@ -1281,13 +1281,13 @@ vw& parse_args(VW::config::options_i* options, trace_message_t trace_listener, v
   }
 }
 
-bool check_interaction_settings_collision(VW::config::options_i* options, std::string file_options)
+bool check_interaction_settings_collision(VW::config::options_i& options, std::string file_options)
 {
   bool command_line_has_interaction =
-    options->was_supplied("q") ||
-    options->was_supplied("quadratic") ||
-    options->was_supplied("cubic") ||
-    options->was_supplied("interactions");
+    options.was_supplied("q") ||
+    options.was_supplied("quadratic") ||
+    options.was_supplied("cubic") ||
+    options.was_supplied("interactions");
 
   if (!command_line_has_interaction) return false;
 
@@ -1300,7 +1300,7 @@ bool check_interaction_settings_collision(VW::config::options_i* options, std::s
 }
 
 
-VW::config::options_i* load_header_merge_options(VW::config::options_i* options, vw& all, io_buf& model)
+VW::config::options_i& load_header_merge_options(VW::config::options_i& options, vw& all, io_buf& model)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
@@ -1324,7 +1324,7 @@ VW::config::options_i* load_header_merge_options(VW::config::options_i* options,
     }
 
     for(auto value : opt.value) {
-      options->insert(opt.string_key, value);
+      options.insert(opt.string_key, value);
     }
   }
 
@@ -1332,11 +1332,11 @@ VW::config::options_i* load_header_merge_options(VW::config::options_i* options,
 }
 
 
-void parse_modules(VW::config::options_i* options, vw& all)
+void parse_modules(VW::config::options_i& options, vw& all)
 {
   VW::config::option_group_definition rand_options("Randomization options");
   rand_options.add(VW::config::make_typed_option("random_seed", all.random_seed).help("seed random number generator"));
-  options->add_and_parse(rand_options);
+  options.add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
   parse_feature_tweaks(options, all); //feature tweaks
@@ -1360,7 +1360,7 @@ void parse_modules(VW::config::options_i* options, vw& all)
   }
 }
 
-void parse_sources(VW::config::options_i* options, vw& all, io_buf& model, bool skipModelLoad)
+void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
     // TODO
@@ -1440,7 +1440,7 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(VW::config::options_i* options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = parse_args(options, trace_listener, trace_context);
 
@@ -1469,7 +1469,7 @@ vw* initialize(VW::config::options_i* options, io_buf* model, bool skipModelLoad
 
     // upon direct query for help -- spit it out to stdout;
     if (all.help_requested) {
-        cout << options->help();
+        cout << options.help();
         exit(0);
     }
 
@@ -1513,7 +1513,7 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_
 {
   // TODO work out lifetime
   VW::config::options_i* options = new config::options_boost_po(argc, argv);
-  return initialize(options, model, skipModelLoad, trace_listener, trace_context);
+  return initialize(*options, model, skipModelLoad, trace_listener, trace_context);
 }
 
 // Create a new VW instance while sharing the model with another instance

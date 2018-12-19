@@ -23,7 +23,7 @@ license as described in the file LICENSE.
 using namespace std;
 
 
-vw* setup(VW::config::options_i* args)
+vw* setup(VW::config::options_i& args)
 {
   vw* all = nullptr;
   try { all = VW::initialize(args);
@@ -104,13 +104,13 @@ int main(int argc, char *argv[])
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
         arguments.push_back(VW::config::options_boost_po(argc, argv));
-        alls.push_back(setup(&arguments[arguments.size() - 1]));
+        alls.push_back(setup(arguments[arguments.size() - 1]));
       }
     }
     else
     {
       arguments.push_back(VW::config::options_boost_po(argc, argv));
-      alls.push_back(setup(&arguments[0]));
+      alls.push_back(setup(arguments[0]));
     }
 
     vw& all = *alls[0];
