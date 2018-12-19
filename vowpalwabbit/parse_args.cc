@@ -1106,18 +1106,17 @@ void load_input_model(vw& all, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(arguments& args)
+LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all)
 {
-  LEARNER::base_learner* ret = args.all->reduction_stack.pop()(args);
+  LEARNER::base_learner* ret = all.reduction_stack.pop()(options, all);
   if (ret == nullptr)
-    return setup_base(args);
+    return setup_base(options, all);
   else
     return ret;
 }
 
-void parse_reductions(arguments& arg)
+void parse_reductions(VW::config::options_i& options, vw& all)
 {
-  vw& all = *arg.all;
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
   all.reduction_stack.push_back(kernel_svm_setup);
@@ -1175,7 +1174,7 @@ void parse_reductions(arguments& arg)
   all.reduction_stack.push_back(Search::setup);
   all.reduction_stack.push_back(audit_regressor_setup);
 
-  all.l = setup_base(arg);
+  all.l = setup_base(options, all);
 }
 
 void add_to_args(vw& all, int argc, char* argv[], int excl_param_count = 0, const char* excl_params[] = NULL)

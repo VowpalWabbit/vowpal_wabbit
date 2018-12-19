@@ -571,7 +571,7 @@ struct vw
 
   size_t length () { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(arguments&)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.
