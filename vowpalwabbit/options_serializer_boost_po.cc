@@ -15,6 +15,7 @@ size_t options_serializer_boost_po::size() {
 }
 
 void options_serializer_boost_po::add(base_option& option) {
+  if (serialize_if_t<unsigned int>(option)) { return; }
   if (serialize_if_t<int>(option)) { return; }
   if (serialize_if_t<size_t>(option)) { return; }
   if (serialize_if_t<float>(option)) { return; }

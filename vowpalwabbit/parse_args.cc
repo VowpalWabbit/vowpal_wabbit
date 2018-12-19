@@ -913,78 +913,83 @@ void parse_feature_tweaks(VW::config::options_i* options, vw& all)
     all.add_constant = false;
 }
 
-void parse_example_tweaks(arguments& arg)
+void parse_example_tweaks(VW::config::options_i* options, vw& all)
 {
   string named_labels;
   string loss_function;
   float loss_parameter = 0.0;
-  if (arg.new_options("Example options")
-      ("testonly,t", "Ignore label information and just test")
-      (arg.all->holdout_set_off, "holdout_off", "no holdout data in multiple passes")
-      ("holdout_period", arg.all->holdout_period, (uint32_t)10, "holdout period for test only")
-      ("holdout_after", arg.all->holdout_after, "holdout after n training examples, default off (disables holdout_period)")
-      ("early_terminate", po::value<size_t>()->default_value(3), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination")
-      ("passes", arg.all->numpasses,"Number of Training Passes")
-      ("initial_pass_length", arg.all->pass_length, "initial number of examples per pass")
-      ("examples", arg.all->max_examples, "number of examples to parse")
-      ("min_prediction", arg.all->sd->min_label, "Smallest prediction to output")
-      ("max_prediction", arg.all->sd->max_label, "Largest prediction to output")
-      (arg.all->p->sort_features, "sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
-      ("loss_function", loss_function, (string)"squared", "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson.")
-      ("quantile_tau", loss_parameter, 0.5f, "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
-      ("l1", arg.all->l1_lambda, "l_1 lambda")
-      ("l2", arg.all->l2_lambda, "l_2 lambda")
-      ("no_bias_regularization", arg.all->no_bias,"no bias in regularization")
-      .keep("named_labels", named_labels, "use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\"").missing())
-    return;
 
-  if (arg.vm.count("testonly") || arg.all->eta == 0.)
+  bool test_only;
+  size_t early_terminate;
+
+  VW::config::option_group_definition example_options("Example options");
+  example_options
+    (VW::config::make_typed_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
+    (VW::config::make_typed_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
+    (VW::config::make_typed_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
+    (VW::config::make_typed_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
+    (VW::config::make_typed_option("early_terminate", early_terminate).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
+    (VW::config::make_typed_option("passes", all.numpasses).help("Number of Training Passes"))
+    (VW::config::make_typed_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
+    (VW::config::make_typed_option("examples", all.max_examples).help("number of examples to parse"))
+    (VW::config::make_typed_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
+    (VW::config::make_typed_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
+    (VW::config::make_typed_option("sort_features", all.p->sort_features).help("turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes"))
+    (VW::config::make_typed_option("loss_function", loss_function).default_value("squared").help("Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson."))
+    (VW::config::make_typed_option("quantile_tau", loss_parameter).default_value(0.5f).help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+    (VW::config::make_typed_option("l1", all.l1_lambda).help("l_1 lambda"))
+    (VW::config::make_typed_option("l2", all.l2_lambda).help("l_2 lambda"))
+    (VW::config::make_typed_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+    (VW::config::make_typed_option("named_labels", named_labels).keep().help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
+  options->add_and_parse(example_options);
+
+  if (test_only || all.eta == 0.)
   {
-    if (!arg.all->quiet)
-      arg.all->trace_message << "only testing" << endl;
-    arg.all->training = false;
-    if (arg.all->lda > 0)
-      arg.all->eta = 0;
+    if (!all.quiet)
+      all.trace_message << "only testing" << endl;
+    all.training = false;
+    if (all.lda > 0)
+      all.eta = 0;
   }
   else
-    arg.all->training = true;
+    all.training = true;
 
-  if((arg.all->numpasses > 1 || arg.all->holdout_after > 0) && !arg.vm["holdout_off"].as<bool>())
-    arg.all->holdout_set_off = false;//holdout is on unless explicitly off
+  if((all.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
+    all.holdout_set_off = false;//holdout is on unless explicitly off
   else
-    arg.all->holdout_set_off = true;
+    all.holdout_set_off = true;
 
-  if (arg.vm.count("min_prediction") || arg.vm.count("max_prediction") || arg.vm.count("testonly"))
-    arg.all->set_minmax = noop_mm;
+  if (options->was_supplied("min_prediction") || options->was_supplied("max_prediction") || test_only)
+    all.set_minmax = noop_mm;
 
-  if (arg.vm.count("named_labels"))
+  if (options->was_supplied("named_labels"))
   {
-    arg.all->sd->ldict = &calloc_or_throw<namedlabels>();
-    new (arg.all->sd->ldict) namedlabels(named_labels);
-    if (!arg.all->quiet)
-      arg.all->trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
+    all.sd->ldict = &calloc_or_throw<namedlabels>();
+    new (all.sd->ldict) namedlabels(named_labels);
+    if (!all.quiet)
+      all.trace_message << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
   }
 
-  arg.all->loss = getLossFunction(*arg.all, loss_function, loss_parameter);
+  all.loss = getLossFunction(all, loss_function, loss_parameter);
 
-  if (arg.all->l1_lambda < 0.)
+  if (all.l1_lambda < 0.)
   {
-    arg.all->trace_message << "l1_lambda should be nonnegative: resetting from " << arg.all->l1_lambda << " to 0" << endl;
-    arg.all->l1_lambda = 0.;
+    all.trace_message << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    all.l1_lambda = 0.;
   }
-  if (arg.all->l2_lambda < 0.)
+  if (all.l2_lambda < 0.)
   {
-    arg.all->trace_message << "l2_lambda should be nonnegative: resetting from " << arg.all->l2_lambda << " to 0" << endl;
-    arg.all->l2_lambda = 0.;
+    all.trace_message << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    all.l2_lambda = 0.;
   }
-  arg.all->reg_mode += (arg.all->l1_lambda > 0.) ? 1 : 0;
-  arg.all->reg_mode += (arg.all->l2_lambda > 0.) ? 2 : 0;
-  if (!arg.all->quiet)
+  all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
+  all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
+  if (!all.quiet)
   {
-    if (arg.all->reg_mode %2 && !arg.vm.count("bfgs"))
-      arg.all->trace_message << "using l1 regularization = " << arg.all->l1_lambda << endl;
-    if (arg.all->reg_mode > 1)
-      arg.all->trace_message << "using l2 regularization = " << arg.all->l2_lambda << endl;
+    if (all.reg_mode %2 && !options->was_supplied("bfgs"))
+      all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
+    if (all.reg_mode > 1)
+      all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
   }
 }
 
@@ -1328,7 +1333,7 @@ void parse_modules(VW::config::options_i* options, vw& all)
 
   parse_feature_tweaks(options, all); //feature tweaks
 
-  parse_example_tweaks(all.opts_n_args); //example manipulation
+  parse_example_tweaks(options, all); //example manipulation
 
   parse_output_model(all.opts_n_args);
 

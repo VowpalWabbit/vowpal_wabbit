@@ -13,6 +13,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 }
 
 void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description) {
+  if (add_if_t<unsigned int>(opt, options_description)) { return; }
   if (add_if_t<int>(opt, options_description)) { return; }
   if (add_if_t<size_t>(opt, options_description)) { return; }
   if (add_if_t<float>(opt, options_description)) { return; }
