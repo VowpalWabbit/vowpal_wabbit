@@ -359,7 +359,7 @@ base_learner* gd_mf_setup(VW::config::options_i& options, vw& all)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    data->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    data->early_stop_thres = all.early_terminate_passes;
   }
 
   if(!arg.vm.count("learning_rate") && !arg.vm.count("l"))

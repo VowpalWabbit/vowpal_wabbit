@@ -1100,7 +1100,7 @@ base_learner* bfgs_setup(VW::config::options_i& options, vw& all)
   if(!arg.all->holdout_set_off)
   {
     arg.all->sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    b->early_stop_thres = all.early_terminate_passes;
   }
 
   if (b->m==0)

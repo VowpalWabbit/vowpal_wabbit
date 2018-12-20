@@ -920,7 +920,6 @@ void parse_example_tweaks(VW::config::options_i& options, vw& all)
   float loss_parameter = 0.0;
 
   bool test_only;
-  size_t early_terminate;
 
   VW::config::option_group_definition example_options("Example options");
   example_options
@@ -928,7 +927,7 @@ void parse_example_tweaks(VW::config::options_i& options, vw& all)
     (VW::config::make_typed_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
     (VW::config::make_typed_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
     (VW::config::make_typed_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
-    (VW::config::make_typed_option("early_terminate", early_terminate).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
+    (VW::config::make_typed_option("early_terminate", all.early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
     (VW::config::make_typed_option("passes", all.numpasses).help("Number of Training Passes"))
     (VW::config::make_typed_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
     (VW::config::make_typed_option("examples", all.max_examples).help("number of examples to parse"))
@@ -1118,7 +1117,7 @@ LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all)
 void parse_reductions(VW::config::options_i& options, vw& all)
 {
   //Base algorithms
-  all.reduction_stack.push_back(GD::setup);
+  all.reduction_stack.push_back(GD::setup); // DONE
   all.reduction_stack.push_back(kernel_svm_setup);
   all.reduction_stack.push_back(ftrl_setup);
   all.reduction_stack.push_back(svrg_setup);

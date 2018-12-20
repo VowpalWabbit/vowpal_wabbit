@@ -28,6 +28,7 @@ namespace VW {
 
       template <typename T>
       void serialize(typed_option<T> typed_option) {
+        // TODO does the stream precision need to be set?
         m_output_stream << " --" << typed_option.m_name << " " << typed_option.value();
       }
 

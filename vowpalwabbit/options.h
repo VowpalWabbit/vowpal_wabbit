@@ -114,7 +114,7 @@ namespace VW {
     virtual void insert(std::string key, std::string value) = 0;
 
     template <typename T>
-    typed_option<T>& get_typed_arg(std::string key) {
+    typed_option<T>& get_typed_option(std::string key) {
       base_option& base = get_option(key);
       if (base.m_type_hash != typed_option<T>::type_hash()) {
         throw std::bad_cast();

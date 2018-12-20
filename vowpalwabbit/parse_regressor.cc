@@ -483,7 +483,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
 
         auto serialized_keep_options = serializer.str();
 
-        //We need to save our current PRG state
+        // We need to save our current PRG state
         if (all.save_resume && all.random_state != 0)
         {
           serialized_keep_options += " --random_seed";
