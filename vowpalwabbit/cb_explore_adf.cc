@@ -742,7 +742,7 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
 
 using namespace CB_EXPLORE_ADF;
 
-base_learner* cb_explore_adf_setup(arguments& arg)
+base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
   if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")

@@ -254,7 +254,7 @@ void init_driver(audit_regressor_data& dat)
 
 
 
-LEARNER::base_learner* audit_regressor_setup(arguments& arg)
+LEARNER::base_learner* audit_regressor_setup(VW::config::options_i& options, vw& all)
 {
  string out_file;
   if (arg.new_options("Audit Regressor")

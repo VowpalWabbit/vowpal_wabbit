@@ -122,7 +122,7 @@ void finish(csoaa& c)
 }
 
 
-base_learner* csoaa_setup(arguments& arg)
+base_learner* csoaa_setup(VW::config::options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
   if (arg.new_options("Cost Sensitive One Against All")
@@ -809,7 +809,7 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   return ret;
 }
 
-base_learner* csldf_setup(arguments& arg)
+base_learner* csldf_setup(VW::config::options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<ldf>();
   if (arg.new_options("Cost Sensitive One Against All with Label Dependent Features")

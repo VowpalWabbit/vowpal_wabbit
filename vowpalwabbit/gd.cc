@@ -1070,7 +1070,7 @@ uint64_t ceil_log_2(uint64_t v)
     return 1 + ceil_log_2(v >> 1);
 }
 
-base_learner* setup(arguments& arg)
+base_learner* setup(VW::config::options_i& options, vw& all)
 {
   auto g = scoped_calloc_or_throw<gd>();
   if (arg.new_options("Gradient Descent options")

@@ -36,7 +36,7 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   cout << endl;
 }
 
-LEARNER::base_learner* print_setup(arguments& arg)
+LEARNER::base_learner* print_setup(VW::config::options_i& options, vw& all)
 {
   if (arg.new_options("Print psuedolearner").critical("print", "print examples").missing())
     return nullptr;

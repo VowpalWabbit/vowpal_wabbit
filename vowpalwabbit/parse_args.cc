@@ -1139,7 +1139,7 @@ void parse_reductions(VW::config::options_i& options, vw& all)
   all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
-  all.reduction_stack.push_back(marginal_setup);
+  all.reduction_stack.push_back(marginal_setup); // DONE
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
   all.reduction_stack.push_back(lrqfa_setup);
@@ -1346,7 +1346,7 @@ void parse_modules(VW::config::options_i& options, vw& all)
 
   parse_output_preds(options, all);
 
-  parse_reductions(all.opts_n_args);
+  parse_reductions(options, all);
 
   if (!all.quiet)
   {

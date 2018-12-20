@@ -2424,7 +2424,7 @@ void parse_neighbor_features(string& nf_string, search&sch)
   delete[] cstr;
 }
 
-base_learner* setup(arguments& arg)
+base_learner* setup(VW::config::options_i& options, vw& all)
 {
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
   search_private& priv = *sch->priv;

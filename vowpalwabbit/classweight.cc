@@ -69,7 +69,7 @@ void finish(classweights& data) { data.weights.~unordered_map();}
 
 using namespace CLASSWEIGHTS;
 
-LEARNER::base_learner* classweight_setup(arguments& arg)
+LEARNER::base_learner* classweight_setup(VW::config::options_i& options, vw& all)
 {
   vector<string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();

@@ -288,7 +288,7 @@ vw::vw()
   current_pass = 0;
   reduction_stack=v_init<LEARNER::base_learner* (*)(arguments&)>();
 
-  new (&opts_n_args) arguments(*this);
+  // new (&opts_n_args) arguments(*this);
 
   data_filename = "";
   delete_prediction = nullptr;

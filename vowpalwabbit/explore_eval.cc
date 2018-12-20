@@ -185,7 +185,7 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(arguments& arg)
+base_learner* explore_eval_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<explore_eval>();
 

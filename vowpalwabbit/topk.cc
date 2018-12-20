@@ -101,7 +101,7 @@ void finish(topk& d)
   d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
-LEARNER::base_learner* topk_setup(arguments& arg)
+LEARNER::base_learner* topk_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<topk>();
   if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())

@@ -168,7 +168,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
 using namespace SVRG;
 
-base_learner* svrg_setup(arguments& arg)
+base_learner* svrg_setup(VW::config::options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
   if (arg.new_options("Stochastic Variance Reduced Gradient")

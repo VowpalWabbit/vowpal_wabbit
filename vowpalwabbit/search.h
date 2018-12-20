@@ -336,5 +336,5 @@ bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(arguments& arg);
+LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }

@@ -339,7 +339,7 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 
 }
 using namespace CB_ADF;
-base_learner* cb_adf_setup(arguments& arg)
+base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<cb_adf>();
   std::string type_string;

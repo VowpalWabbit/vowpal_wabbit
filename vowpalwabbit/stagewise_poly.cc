@@ -674,7 +674,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(arguments& arg)
+base_learner *stagewise_poly_setup(VW::config::options_i& options, vw& all)
 {
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   if (arg.new_options("Stagewise polynomial options")

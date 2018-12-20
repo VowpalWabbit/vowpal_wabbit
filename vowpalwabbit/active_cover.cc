@@ -221,7 +221,7 @@ void finish(active_cover& ac)
   delete[] ac.lambda_d;
 }
 
-base_learner* active_cover_setup(arguments& arg)
+base_learner* active_cover_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active_cover>();
   if(arg.new_options("Active Learning with Cover")

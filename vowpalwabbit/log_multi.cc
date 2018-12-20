@@ -495,7 +495,7 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* log_multi_setup(arguments& arg)	//learner setup
+base_learner* log_multi_setup(VW::config::options_i& options, vw& all)	//learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   if (arg.new_options("Logarithmic Time Multiclass Tree")

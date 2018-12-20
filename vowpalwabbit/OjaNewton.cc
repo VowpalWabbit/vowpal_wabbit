@@ -529,7 +529,7 @@ void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* OjaNewton_setup(arguments& arg)
+base_learner* OjaNewton_setup(VW::config::options_i& options, vw& all)
 {
   auto ON = scoped_calloc_or_throw<OjaNewton>();
   if (arg.new_options("OjaNewton options")

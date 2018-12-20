@@ -237,7 +237,7 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(arguments& arg)
+base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<ftrl>();
   if (arg.new_options("Follow the Regularized Leader")

@@ -149,7 +149,7 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 
 void finish(interact& in) { in.feat_store.delete_v(); }
 
-LEARNER::base_learner* interact_setup(arguments& arg)
+LEARNER::base_learner* interact_setup(VW::config::options_i& options, vw& all)
 {
   string s;
   if(arg.new_options("Interact via elementwise multiplication")

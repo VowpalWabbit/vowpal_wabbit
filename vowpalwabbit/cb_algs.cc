@@ -132,7 +132,7 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(arguments& arg)
+base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string;

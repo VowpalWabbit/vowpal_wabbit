@@ -67,7 +67,7 @@ void finish(expreplay& er)
 }
 
 template<char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(arguments& arg)
+LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
   std::string replay_string = "replay_";
   replay_string += er_level;

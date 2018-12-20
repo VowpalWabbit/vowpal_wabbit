@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 
 void learn(char&, LEARNER::base_learner&, example&) {}
 
-LEARNER::base_learner* noop_setup(arguments& arg)
+LEARNER::base_learner* noop_setup(VW::config::options_i& options, vw& all)
 {
   if (arg.new_options("Noop Learner").critical("noop", "do no learning").missing()) return nullptr;
 

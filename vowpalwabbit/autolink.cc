@@ -34,7 +34,7 @@ void predict_or_learn(autolink& b, LEARNER::single_learner& base, example& ec)
   ec.indices.pop();
 }
 
-LEARNER::base_learner* autolink_setup(arguments& arg)
+LEARNER::base_learner* autolink_setup(VW::config::options_i& options, vw& all)
 {
   free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
   if (arg.new_options("Autolink")

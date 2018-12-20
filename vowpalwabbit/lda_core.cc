@@ -1259,7 +1259,7 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(arguments& arg)
+LEARNER::base_learner *lda_setup(VW::config::options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
   if (arg.new_options("Latent Dirichlet Allocation")

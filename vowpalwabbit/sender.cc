@@ -96,7 +96,7 @@ void finish(sender& s)
   delete s.buf;
 }
 
-LEARNER::base_learner* sender_setup(arguments& arg)
+LEARNER::base_learner* sender_setup(VW::config::options_i& options, vw& all)
 {
   string host;
   if (arg.new_options("Network sending").critical("sendto", host, "send examples to <host>").missing())

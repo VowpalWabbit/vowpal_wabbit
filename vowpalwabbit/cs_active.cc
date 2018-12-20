@@ -293,7 +293,7 @@ void finish(cs_active& data)
   data.examples_by_queries.delete_v();
 }
 
-base_learner* cs_active_setup(arguments& arg)
+base_learner* cs_active_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cs_active>();
   if (arg.new_options("Cost-sensitive Active Learning")

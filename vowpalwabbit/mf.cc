@@ -193,7 +193,7 @@ void finish(mf& o)
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(arguments& arg)
+base_learner* mf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
   if (arg.new_options("Matrix Factorization Reduction")

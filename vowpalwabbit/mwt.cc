@@ -238,7 +238,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 }
 using namespace MWT;
 
-base_learner* mwt_setup(arguments& arg)
+base_learner* mwt_setup(VW::config::options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<mwt>();
   string s;

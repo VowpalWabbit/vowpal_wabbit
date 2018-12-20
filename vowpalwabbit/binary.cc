@@ -26,7 +26,7 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* binary_setup(arguments& arg)
+LEARNER::base_learner* binary_setup(VW::config::options_i& options, vw& all)
 {
   if (arg.new_options("Binary loss").
       critical("binary", "report loss as binary classification on -1,1").missing())

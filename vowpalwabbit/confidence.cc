@@ -68,7 +68,7 @@ void return_confidence_example(vw& all, confidence& c, example& ec)
   VW::finish_example(all,ec);
 }
 
-base_learner* confidence_setup(arguments& arg)
+base_learner* confidence_setup(VW::config::options_i& options, vw& all)
 {
   if (arg.new_options("Confidence")
       .critical("confidence", "Get confidence for binary predictions")

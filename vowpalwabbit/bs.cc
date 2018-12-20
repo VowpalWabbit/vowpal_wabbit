@@ -234,7 +234,7 @@ void finish_example(vw& all, bs& d, example& ec)
 void finish(bs& d)
 { delete d.pred_vec; }
 
-base_learner* bs_setup(arguments& arg)
+base_learner* bs_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");

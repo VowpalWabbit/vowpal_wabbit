@@ -332,7 +332,7 @@ void learn(gdmf& d, single_learner&, example& ec)
 
 void finish(gdmf& d) { d.scalars.delete_v();}
 
-base_learner* gd_mf_setup(arguments& arg)
+base_learner* gd_mf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<gdmf>();
   if (arg.new_options("Gradient Descent Matrix Factorization")

@@ -190,7 +190,7 @@ void finish(baseline& data)
   free(data.ec);
 }
 
-base_learner* baseline_setup(arguments& arg)
+base_learner* baseline_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<baseline>();
   if (arg.new_options("Baseline options")

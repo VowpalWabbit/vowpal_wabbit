@@ -208,7 +208,7 @@ void init_adf_data(cbify& data, const size_t num_actions)
   }
 }
 
-base_learner* cbify_setup(arguments& arg)
+base_learner* cbify_setup(VW::config::options_i& options, vw& all)
 {
   uint32_t num_actions=0;
   auto data = scoped_calloc_or_throw<cbify>();

@@ -564,7 +564,7 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
 using namespace recall_tree_ns;
 
-base_learner* recall_tree_setup(arguments& arg)
+base_learner* recall_tree_setup(VW::config::options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree> ();
   if (arg.new_options("Recall Tree").critical("recall_tree", tree->k, "Use online tree for multiclass")

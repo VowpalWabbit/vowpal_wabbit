@@ -409,7 +409,7 @@ void finish(nn& n)
   VW::dealloc_example(nullptr, n.outputweight);
 }
 
-base_learner* nn_setup(arguments& arg)
+base_learner* nn_setup(VW::config::options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
   if (arg.new_options("Neural Network")

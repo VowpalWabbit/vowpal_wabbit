@@ -172,7 +172,7 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
-base_learner* lrq_setup(arguments& arg)
+base_learner* lrq_setup(VW::config::options_i& options, vw& all)
 {
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   if (arg.new_options("Low Rank Quadratics")

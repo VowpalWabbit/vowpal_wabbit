@@ -353,7 +353,7 @@ void finish(ect& e)
   e.tournaments_won.delete_v();
 }
 
-base_learner* ect_setup(arguments& arg)
+base_learner* ect_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
   if (arg.new_options("Error Correcting Tournament Options").

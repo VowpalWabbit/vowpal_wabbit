@@ -855,7 +855,7 @@ void finish(svm_params& params)
   params.all->trace_message<<"Done with finish "<<endl;
 }
 
-LEARNER::base_learner* kernel_svm_setup(arguments& arg)
+LEARNER::base_learner* kernel_svm_setup(VW::config::options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;

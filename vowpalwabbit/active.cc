@@ -135,7 +135,7 @@ void return_active_example(vw& all, active& a, example& ec)
   VW::finish_example(all,ec);
 }
 
-base_learner* active_setup(arguments& arg)
+base_learner* active_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active>();
   if(arg.new_options("Active Learning").critical("active", "enable active learning")

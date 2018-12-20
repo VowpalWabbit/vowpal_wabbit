@@ -357,7 +357,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(vw& all, po::variables_map &vm, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
+void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
 {
   all.p->write_cache = false;
 
@@ -413,7 +413,7 @@ void parse_cache(vw& all, po::variables_map &vm, std::vector<std::string> cache_
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
   all.p->input->current = 0;
-  parse_cache(all, all.opts_n_args.vm, input_options.cache_files, input_options.kill_cache, quiet);
+  parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   if (all.daemon || all.active)
   {
@@ -466,9 +466,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       ofstream port_file;
-      port_file.open(all.opts_n_args.vm["port_file"].as<string>().c_str());
+      port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
-        THROW("error writing port file: " << all.opts_n_args.vm["port_file"].as<string>());
+        THROW("error writing port file: " << input_options.port_file);
 
       port_file << ntohs(address.sin_port) << endl;
       port_file.close();

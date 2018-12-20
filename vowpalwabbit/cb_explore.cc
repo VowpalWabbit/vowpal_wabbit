@@ -286,7 +286,7 @@ void finish_example(vw& all, cb_explore& c, example& ec)
 using namespace CB_EXPLORE;
 
 
-base_learner* cb_explore_setup(arguments& arg)
+base_learner* cb_explore_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore>();
   if (arg.new_options("Contextual Bandit Exploration")
