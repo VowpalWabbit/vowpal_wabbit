@@ -167,7 +167,8 @@ po::variables_map arguments::add_options_skip_duplicates(po::options_description
                     }
                   }
 
-              trace_message << "ignoring duplicate option: '" << ignored << "'" << endl;
+              // TODO expose this message
+              //trace_message << "ignoring duplicate option: '" << ignored << "'" << endl;
               }
           catch (boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::invalid_command_line_syntax>>& e)
             {

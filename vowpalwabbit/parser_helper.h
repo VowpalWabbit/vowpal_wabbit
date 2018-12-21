@@ -26,7 +26,6 @@ class arguments {
  public:
   po::options_description all_opts; //All specified options.
   po::options_description opts; //Critical options and their dependencies.
-  vw_ostream trace_message;//error reporting
   std::stringstream* file_options; // the set of options to store in the model file.
   po::variables_map vm; //A stored map from option to value.
   std::vector<std::string> args;//All arguments

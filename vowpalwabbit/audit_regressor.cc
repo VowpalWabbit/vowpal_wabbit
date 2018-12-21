@@ -152,7 +152,7 @@ void end_examples(audit_regressor_data& d)
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  all.opts_n_args.trace_message << std::left
+  all.trace_message << std::left
                                 << std::setw(shared_data::col_example_counter) << ex_processed
                                 << " " << std::right
                                 << std::setw(9) << vals_found
@@ -186,7 +186,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
-    dat.all->opts_n_args.trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
+    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
       dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
 }
 
@@ -233,15 +233,15 @@ void init_driver(audit_regressor_data& dat)
 
   if (!dat.all->quiet)
   {
-    dat.all->opts_n_args.trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    dat.all->opts_n_args.trace_message << std::left
+    dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    dat.all->trace_message << std::left
                            << std::setw(shared_data::col_example_counter) << "example"
                            << " "
                            << std::setw(shared_data::col_example_weight) << "values"
                            << " "
                            << std::setw(shared_data::col_current_label) << "total"
                            << std::endl;
-    dat.all->opts_n_args.trace_message << std::left
+    dat.all->trace_message << std::left
                            << std::setw(shared_data::col_example_counter) << "counter"
                            << " "
                            << std::setw(shared_data::col_example_weight) << "audited"

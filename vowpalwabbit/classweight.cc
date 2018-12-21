@@ -81,7 +81,7 @@ LEARNER::base_learner* classweight_setup(arguments& arg)
     cweights->load_string(s);
 
   if (!arg.all->quiet)
-    arg.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
+    arg.all->trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
   LEARNER::single_learner* base = as_singleline(setup_base(arg));
 

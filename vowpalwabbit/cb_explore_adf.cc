@@ -90,31 +90,38 @@ template<class T> void swap(T& ele1, T& ele2)
   ele1 = temp;
 }
 
+// Validates a multiline example collection as a valid sequence for action dependent features format.
 example* test_adf_sequence(multi_ex& ec_seq)
 {
+  if (ec_seq.size() == 0)
+    THROW("cb_adf: At least one action must be provided for an example to be valid.");
+
   uint32_t count = 0;
   example* ret = nullptr;
   for (size_t k = 0; k < ec_seq.size(); k++)
   {
     example *ec = ec_seq[k];
 
+    // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
       THROW("cb_adf: badly formatted example, only one cost can be known.");
 
+    // Check whether the cost was initialized to a value.
     if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
     {
       ret = ec;
       count += 1;
     }
 
-    if (CB::ec_is_example_header(*ec))
-      if (k != 0)
-        THROW("warning: example headers at position " << k << ": can only have in initial position!");
+    // Check whether the current line is a shared features example and not in the first position.
+    if (CB::ec_is_example_header(*ec) && (k != 0))
+      THROW("warning: example headers at position " << k << ": can only have in initial position!");
   }
-  if (count == 0 || count == 1)
-    return ret;
-  else
+
+  if (count > 1)
     THROW("cb_adf: badly formatted example, only one line can have a cost");
+
+  return ret;
 }
 
 // TODO: same as cs_active.cc, move to shared place
@@ -657,7 +664,7 @@ void finish_multiline_example(vw& all, cb_explore_adf& data, multi_ex& ec_seq)
 template <bool is_learn>
 void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_seq)
 {
-  example* label_example=test_adf_sequence(ec_seq);
+  example* label_example = test_adf_sequence(ec_seq);
   data.gen_cs.known_cost = CB_ADF::get_observed_cost(ec_seq);
 
   if (label_example == nullptr || !is_learn)
@@ -809,14 +816,14 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     else if (type_string.compare("mtr") == 0)
     {
       if (arg.vm.count("cover"))
-        arg.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
+        arg.all->trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
     else
-      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
+      arg.all->trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
-      arg.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
+      arg.all->trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
 
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
