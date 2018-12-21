@@ -240,30 +240,49 @@ void end_pass(ftrl& g)
 base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<ftrl>();
-  if (arg.new_options("Follow the Regularized Leader")
-      .critical("ftrl", "FTRL: Follow the Proximal Regularized Leader")
-      ("ftrl_alpha", b->ftrl_alpha, 0.005f, "Learning rate for FTRL optimization")
-      ("ftrl_beta", b->ftrl_beta, 0.1f, "FTRL beta parameter").missing())
-    if (arg.new_options("").critical("pistol", "FTRL: Parameter-free Stochastic Learning")
-        ("ftrl_alpha", b->ftrl_alpha, 1.0f, "Learning rate for FTRL optimization")
-        ("ftrl_beta", b->ftrl_beta, 0.5f, "FTRL beta parameter").missing())
-      return nullptr;
+  bool ftrl = false;
+  bool pistol = false;
 
-  b->all = arg.all;
+  VW::config::option_group_definition ftrl_options("Follow the Regularized Leader");
+  ftrl_options
+    (VW::config::make_typed_option("ftrl", ftrl).keep().help("FTRL: Follow the Proximal Regularized Leader"))
+    (VW::config::make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
+    (VW::config::make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+    (VW::config::make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"))
+  options.add_and_parse(ftrl_options);
+
+  if(!ftrl && !pistol)
+  {
+    return nullptr;
+  }
+
+  // Defaults that are specific to the mode that was chosen.
+  if(ftrl)
+  {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
+  }
+  else if(pistol)
+  {
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
+  }
+
+  b->all = &all;
   b->no_win_counter = 0;
 
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
   string algorithm_name;
-  if (arg.vm["ftrl"].as<bool>())
+  if (ftrl)
   {
     algorithm_name = "Proximal-FTRL";
-    if (arg.all->audit)
+    if (all.audit)
       learn_ptr=learn_proximal<true>;
     else
       learn_ptr=learn_proximal<false>;
   }
-  else if (arg.vm["pistol"].as<bool>())
+  else if (pistol)
   {
     algorithm_name = "PiSTOL";
     learn_ptr=learn_pistol;
@@ -273,9 +292,9 @@ base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
 
-  arg.all->weights.stride_shift(2); // NOTE: for more parameter storage
+  all.weights.stride_shift(2); // NOTE: for more parameter storage
 
-  if (!arg.all->quiet)
+  if (!all.quiet)
   {
     cerr << "Enabling FTRL based optimization" << endl;
     cerr << "Algorithm used: " << algorithm_name << endl;
@@ -283,19 +302,19 @@ base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
     cerr << "ftrl_beta = " << b->ftrl_beta << endl;
   }
 
-  if(!arg.all->holdout_set_off)
+  if(!all.holdout_set_off)
   {
-    arg.all->sd->holdout_best_loss = FLT_MAX;
+    all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = all.early_terminate_passes;
   }
 
   learner<ftrl,example>* l;
-  if (arg.all->audit || arg.all->hash_inv)
-    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << arg.all->weights.stride_shift());
+  if (all.audit || all.hash_inv)
+    l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
   else
-    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << arg.all->weights.stride_shift());
+    l = &init_learner(b, learn_ptr, predict<false>, UINT64_ONE << all.weights.stride_shift());
   l->set_sensitivity(sensitivity);
-  if (arg.all->audit || arg.all->hash_inv)
+  if (all.audit || all.hash_inv)
     l->set_multipredict(multipredict<true>);
   else
     l->set_multipredict(multipredict<false>);
