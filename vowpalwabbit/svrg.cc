@@ -171,18 +171,26 @@ using namespace SVRG;
 base_learner* svrg_setup(VW::config::options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
-  if (arg.new_options("Stochastic Variance Reduced Gradient")
-      .critical("svrg", "Streaming Stochastic Variance Reduced Gradient")
-      ("stage_size", s->stage_size, 1, "Number of passes per SVRG stage").missing())
-    return nullptr;
 
-  s->all = arg.all;
+  bool svrg = false;
+  VW::config::option_group_definition svrg_options("Stochastic Variance Reduced Gradient");
+  svrg_options
+    (VW::config::make_typed_option("svrg", svrg).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+    (VW::config::make_typed_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
+  options.add_and_parse(svrg_options);
+
+  if(!svrg)
+  {
+    return nullptr;
+  }
+
+  s->all = &all;
   s->prev_pass = -1;
   s->stable_grad_count = 0;
 
   // Request more parameter storage (4 floats per feature)
-  arg.all->weights.stride_shift(2);
-  learner<svrg,example>& l = init_learner(s, learn, predict, UINT64_ONE << arg.all->weights.stride_shift());
+  all.weights.stride_shift(2);
+  learner<svrg,example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }

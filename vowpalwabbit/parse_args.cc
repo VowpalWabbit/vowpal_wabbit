@@ -1120,7 +1120,7 @@ void parse_reductions(VW::config::options_i& options, vw& all)
   all.reduction_stack.push_back(GD::setup); // DONE
   all.reduction_stack.push_back(kernel_svm_setup); // DONE
   all.reduction_stack.push_back(ftrl_setup); // DONE
-  all.reduction_stack.push_back(svrg_setup);
+  all.reduction_stack.push_back(svrg_setup); // DONE
   all.reduction_stack.push_back(sender_setup);
   all.reduction_stack.push_back(gd_mf_setup);
   all.reduction_stack.push_back(print_setup);

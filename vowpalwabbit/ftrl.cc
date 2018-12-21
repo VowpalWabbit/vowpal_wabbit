@@ -248,7 +248,7 @@ base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
     (VW::config::make_typed_option("ftrl", ftrl).keep().help("FTRL: Follow the Proximal Regularized Leader"))
     (VW::config::make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
     (VW::config::make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
-    (VW::config::make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"))
+    (VW::config::make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(ftrl_options);
 
   if(!ftrl && !pistol)
