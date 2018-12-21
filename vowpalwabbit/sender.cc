@@ -99,15 +99,22 @@ void finish(sender& s)
 LEARNER::base_learner* sender_setup(VW::config::options_i& options, vw& all)
 {
   string host;
-  if (arg.new_options("Network sending").critical("sendto", host, "send examples to <host>").missing())
+
+  VW::config::option_group_definition sender_options("Network sending");
+  sender_options.add(VW::config::make_typed_option("sendto", host).keep().help("send examples to <host>"));
+  options.add_and_parse(sender_options);
+
+  if(options.was_supplied("host"))
+  {
     return nullptr;
+  }
 
   auto s = scoped_calloc_or_throw<sender>();
   s->sd = -1;
   open_sockets(*s.get(), host);
 
-  s->all = arg.all;
-  s->delay_ring = calloc_or_throw<example*>(arg.all->p->ring_size);
+  s->all = &all;
+  s->delay_ring = calloc_or_throw<example*>(all.p->ring_size);
 
   LEARNER::learner<sender,example>& l = init_learner(s, learn, learn, 1);
   l.set_finish(finish);
