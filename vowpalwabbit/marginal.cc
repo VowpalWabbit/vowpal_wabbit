@@ -362,7 +362,7 @@ LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   std::string marginal;
 
   option_group_definition marginal_options("VW options");
-  marginal_options.add(make_typed_option("marginal", marginal).help("substitute marginal label estimates for ids"));
+  marginal_options.add(make_typed_option("marginal", marginal).keep().help("substitute marginal label estimates for ids"));
   marginal_options.add(make_typed_option("initial_denominator", d->initial_denominator).default_value(1.f).help("initial denominator"));
   marginal_options.add(make_typed_option("initial_numerator", d->initial_numerator).default_value(0.5f).help("initial numerator"));
   marginal_options.add(make_typed_option("compete", d->compete).help("enable competition with marginal features"));
