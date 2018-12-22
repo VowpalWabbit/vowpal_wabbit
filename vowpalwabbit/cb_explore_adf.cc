@@ -581,6 +581,7 @@ void finish(cb_explore_adf& data)
     data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
+  data.gen_cs.mtr_ec_seq.~vector();
 }
 
 
