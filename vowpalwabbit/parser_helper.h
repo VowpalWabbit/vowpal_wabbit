@@ -35,9 +35,11 @@ class arguments {
  arguments(vw& all_in, std::string name_in=""):new_od(name_in), missing_critical(false), all(&all_in) {
    file_options = new std::stringstream;
  };
+  
+  //this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
  arguments():missing_critical(false){
    file_options = nullptr;
- };//this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
+ };
   ~arguments(){ 
     if (file_options != nullptr) {
       delete file_options;
