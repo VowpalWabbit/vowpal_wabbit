@@ -163,8 +163,8 @@ void parse_dictionary_argument(vw&all, string str)
   unsigned long long fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
-  if (! all.quiet)
-    all.opts_n_args.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
+  if (!all.quiet)
+    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
 
   // see if we've already read this dictionary
   for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
@@ -260,8 +260,8 @@ void parse_dictionary_argument(vw&all, string str)
   VW::dealloc_example(all.p->lp.delete_label, *ec);
   free(ec);
 
-  if (! all.quiet)
-    all.opts_n_args.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s") << endl;
+  if (!all.quiet)
+    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s") << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
   dictionary_info info = { calloc_or_throw<char>(strlen(s)+1), fd_hash, map };
@@ -345,7 +345,7 @@ void parse_diagnostics(arguments& arg)
           arg.all->progress_add = true;
           if (arg.all->progress_arg < 1)
             {
-              arg.trace_message    << "warning: additive --progress <int>"
+              arg.all->trace_message    << "warning: additive --progress <int>"
                                    << " can't be < 1: forcing to 1" << endl;
               arg.all->progress_arg = 1;
 
@@ -360,7 +360,7 @@ void parse_diagnostics(arguments& arg)
 
           if (arg.all->progress_arg <= 1.0)
             {
-              arg.trace_message    << "warning: multiplicative --progress <float>: "
+              arg.all->trace_message    << "warning: multiplicative --progress <float>: "
                                    << arg.vm["progress"].as<string>()
                                    << " is <= 1.0: adding 1.0"
                                    << endl;
@@ -369,7 +369,7 @@ void parse_diagnostics(arguments& arg)
             }
           else if (arg.all->progress_arg > 9.0)
             {
-              arg.trace_message    << "warning: multiplicative --progress <float>"
+              arg.all->trace_message    << "warning: multiplicative --progress <float>"
                                    << " is > 9.0: you probably meant to use an integer"
                                    << endl;
             }
@@ -430,7 +430,7 @@ void parse_source(arguments& arg)
   if(!arg.all->holdout_set_off && (arg.vm.count("output_feature_regularizer_binary") || arg.vm.count("output_feature_regularizer_text")))
   {
     arg.all->holdout_set_off = true;
-    arg.trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
+    arg.all->trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
   }
 }
 
@@ -629,7 +629,7 @@ void parse_feature_tweaks(arguments& arg)
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    arg.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
+    arg.all->trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
     if (!arg.all->pairs.empty()) arg.all->pairs.clear();
@@ -640,49 +640,55 @@ void parse_feature_tweaks(arguments& arg)
   if (arg.vm.count("quadratic"))
   {
     if (!arg.all->quiet)
-      arg.trace_message << "creating quadratic features for pairs: ";
+      arg.all->trace_message << "creating quadratic features for pairs: ";
 
     for (vector<string>::iterator i = quadratics.begin(); i != quadratics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet) arg.trace_message << *i << " ";
+      if (!arg.all->quiet)
+        arg.all->trace_message << *i << " ";
     }
 
     expanded_interactions = INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
-    if (!arg.all->quiet) arg.trace_message << endl;
+    if (!arg.all->quiet)
+      arg.all->trace_message << endl;
   }
 
   if (arg.vm.count("cubic"))
   {
     if (!arg.all->quiet)
-      arg.trace_message << "creating cubic features for triples: ";
+      arg.all->trace_message << "creating cubic features for triples: ";
     for (vector<string>::iterator i = cubics.begin(); i != cubics.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet) arg.trace_message << *i << " ";
+      if (!arg.all->quiet)
+        arg.all->trace_message << *i << " ";
     }
 
     std::vector<std::string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
-    if (!arg.all->quiet) arg.trace_message << endl;
+    if (!arg.all->quiet)
+      arg.all->trace_message << endl;
   }
 
   if (arg.vm.count("interactions"))
   {
     if (!arg.all->quiet)
-      arg.trace_message << "creating features for following interactions: ";
+      arg.all->trace_message << "creating features for following interactions: ";
     for (vector<string>::iterator i = interactions.begin(); i != interactions.end(); ++i)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      if (!arg.all->quiet) arg.trace_message << *i << " ";
+      if (!arg.all->quiet)
+        arg.all->trace_message << *i << " ";
     }
 
     std::vector<std::string> exp_inter = INTERACTIONS::expand_interactions(interactions, 0, "");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_inter), std::end(exp_inter));
 
-    if (!arg.all->quiet) arg.trace_message << endl;
+    if (!arg.all->quiet)
+      arg.all->trace_message << endl;
   }
 
   if (expanded_interactions.size() > 0)
@@ -693,9 +699,9 @@ void parse_feature_tweaks(arguments& arg)
     INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !arg.vm.count("leave_duplicate_interactions"), removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0)
-      arg.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      arg.all->trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     if (sorted_cnt > 0)
-      arg.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
+      arg.all->trace_message << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
 
 
     if (arg.all->interactions.size() > 0)
@@ -738,12 +744,12 @@ void parse_feature_tweaks(arguments& arg)
 
     if (!arg.all->quiet)
     {
-      arg.trace_message << "ignoring namespaces beginning with: ";
-      for (vector<string>::iterator i = ignores.begin(); i != ignores.end(); i++)
-        for (string::const_iterator j = i->begin(); j != i->end(); j++)
-          arg.trace_message << *j << " ";
+      arg.all->trace_message << "ignoring namespaces beginning with: ";
+      for (auto const& ignore : ignores)
+        for (auto const character : ignore)
+          arg.all->trace_message << character << " ";
 
-      arg.trace_message << endl;
+      arg.all->trace_message << endl;
     }
   }
 
@@ -761,12 +767,12 @@ void parse_feature_tweaks(arguments& arg)
 
     if (!arg.all->quiet)
     {
-      arg.trace_message << "ignoring linear terms for namespaces beginning with: ";
-      for (vector<string>::iterator i = ignore_linears.begin(); i != ignore_linears.end(); i++)
-        for (string::const_iterator j = i->begin(); j != i->end(); j++)
-          arg.trace_message << *j << " ";
+      arg.all->trace_message << "ignoring linear terms for namespaces beginning with: ";
+      for (auto const& ignore : ignore_linears)
+        for (auto const character : ignore)
+          arg.all->trace_message << character << " ";
 
-      arg.trace_message << endl;
+      arg.all->trace_message << endl;
     }
   }
 
@@ -786,12 +792,12 @@ void parse_feature_tweaks(arguments& arg)
 
     if (!arg.all->quiet)
     {
-      arg.trace_message << "using namespaces beginning with: ";
-      for (vector<string>::iterator i = keeps.begin(); i != keeps.end(); i++)
-        for (string::const_iterator j = i->begin(); j != i->end(); j++)
-          arg.trace_message << *j << " ";
+      arg.all->trace_message << "using namespaces beginning with: ";
+      for (auto const& keep : keeps)
+        for (auto const character : keep)
+          arg.all->trace_message << character << " ";
 
-      arg.trace_message << endl;
+      arg.all->trace_message << endl;
     }
   }
 
@@ -834,7 +840,7 @@ void parse_feature_tweaks(arguments& arg)
         THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
       if (++operator_pos > 3) // seek operator end
-        arg.trace_message << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+        arg.all->trace_message << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
 
       arg.all->redefine_some = true;
 
@@ -925,7 +931,7 @@ void parse_example_tweaks(arguments& arg)
   if (arg.vm.count("testonly") || arg.all->eta == 0.)
   {
     if (!arg.all->quiet)
-      arg.trace_message << "only testing" << endl;
+      arg.all->trace_message << "only testing" << endl;
     arg.all->training = false;
     if (arg.all->lda > 0)
       arg.all->eta = 0;
@@ -946,19 +952,19 @@ void parse_example_tweaks(arguments& arg)
     arg.all->sd->ldict = &calloc_or_throw<namedlabels>();
     new (arg.all->sd->ldict) namedlabels(named_labels);
     if (!arg.all->quiet)
-      arg.trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
+      arg.all->trace_message << "parsed " << arg.all->sd->ldict->getK() << " named labels" << endl;
   }
 
   arg.all->loss = getLossFunction(*arg.all, loss_function, loss_parameter);
 
   if (arg.all->l1_lambda < 0.)
   {
-    arg.trace_message << "l1_lambda should be nonnegative: resetting from " << arg.all->l1_lambda << " to 0" << endl;
+    arg.all->trace_message << "l1_lambda should be nonnegative: resetting from " << arg.all->l1_lambda << " to 0" << endl;
     arg.all->l1_lambda = 0.;
   }
   if (arg.all->l2_lambda < 0.)
   {
-    arg.trace_message << "l2_lambda should be nonnegative: resetting from " << arg.all->l2_lambda << " to 0" << endl;
+    arg.all->trace_message << "l2_lambda should be nonnegative: resetting from " << arg.all->l2_lambda << " to 0" << endl;
     arg.all->l2_lambda = 0.;
   }
   arg.all->reg_mode += (arg.all->l1_lambda > 0.) ? 1 : 0;
@@ -966,9 +972,9 @@ void parse_example_tweaks(arguments& arg)
   if (!arg.all->quiet)
   {
     if (arg.all->reg_mode %2 && !arg.vm.count("bfgs"))
-      arg.trace_message << "using l1 regularization = " << arg.all->l1_lambda << endl;
+      arg.all->trace_message << "using l1 regularization = " << arg.all->l1_lambda << endl;
     if (arg.all->reg_mode > 1)
-      arg.trace_message << "using l2 regularization = " << arg.all->l2_lambda << endl;
+      arg.all->trace_message << "using l2 regularization = " << arg.all->l2_lambda << endl;
   }
 }
 
@@ -982,7 +988,7 @@ void parse_output_preds(arguments& arg)
   if (arg.vm.count("predictions"))
   {
     if (!arg.all->quiet)
-      arg.trace_message << "predictions = " <<  arg.vm["predictions"].as< string >() << endl;
+      arg.all->trace_message << "predictions = " <<  arg.vm["predictions"].as< string >() << endl;
     if (strcmp(arg.vm["predictions"].as< string >().c_str(), "stdout") == 0)
     {
       arg.all->final_prediction_sink.push_back((size_t) 1);//stdout
@@ -997,7 +1003,7 @@ void parse_output_preds(arguments& arg)
       f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if (f < 0)
-        arg.trace_message << "Error opening the predictions file: " << fstr << endl;
+        arg.all->trace_message << "Error opening the predictions file: " << fstr << endl;
       arg.all->final_prediction_sink.push_back((size_t) f);
     }
   }
@@ -1006,9 +1012,9 @@ void parse_output_preds(arguments& arg)
   {
     if (!arg.all->quiet)
     {
-      arg.trace_message << "raw predictions = " <<  arg.vm["raw_predictions"].as< string >() << endl;
+      arg.all->trace_message << "raw predictions = " <<  arg.vm["raw_predictions"].as< string >() << endl;
       if (arg.vm.count("binary"))
-        arg.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
+        arg.all->trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
     if (strcmp(arg.vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       arg.all->raw_prediction = 1;//stdout
@@ -1041,7 +1047,7 @@ void parse_output_model(arguments& arg)
     return;
 
   if (arg.all->final_regressor_name.compare("") && !arg.all->quiet)
-      arg.trace_message << "final_regressor = " << arg.all->final_regressor_name << endl;
+    arg.all->trace_message << "final_regressor = " << arg.all->final_regressor_name << endl;
 
   if (arg.vm.count("invert_hash"))
     arg.all->hash_inv = true;
@@ -1180,8 +1186,8 @@ vw& parse_args(int argc, char *argv[], trace_message_t trace_listener, void* tra
 
   if (trace_listener)
   {
-    all.opts_n_args.trace_message.trace_listener = trace_listener;
-    all.opts_n_args.trace_message.trace_context = trace_context;
+    all.trace_message.trace_listener = trace_listener;
+    all.trace_message.trace_context = trace_context;
   }
 
   try
@@ -1306,12 +1312,12 @@ void parse_modules(vw& all, io_buf& model)
 
   if (!all.quiet)
   {
-    all.opts_n_args.trace_message << "Num weight bits = " << all.num_bits << endl;
-    all.opts_n_args.trace_message << "learning rate = " << all.eta << endl;
-    all.opts_n_args.trace_message << "initial_t = " << all.sd->t << endl;
-    all.opts_n_args.trace_message << "power_t = " << all.power_t << endl;
+    all.trace_message << "Num weight bits = " << all.num_bits << endl;
+    all.trace_message << "learning rate = " << all.eta << endl;
+    all.trace_message << "initial_t = " << all.sd->t << endl;
+    all.trace_message << "power_t = " << all.power_t << endl;
     if (all.numpasses > 1)
-      all.opts_n_args.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      all.trace_message << "decay_learning_rate = " << all.eta_decay_rate << endl;
   }
 }
 
@@ -1441,7 +1447,7 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_
   }
   catch (std::exception& e)
   {
-    all.opts_n_args.trace_message << "Error: " << e.what() << endl;
+    all.trace_message << "Error: " << e.what() << endl;
     finish(all);
     throw;
   }
@@ -1512,48 +1518,48 @@ void finish(vw& all, bool delete_all)
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!all.quiet && !all.opts_n_args.vm.count("audit_regressor"))
   {
-    all.opts_n_args.trace_message.precision(6);
-    all.opts_n_args.trace_message << std::fixed;
-    all.opts_n_args.trace_message << endl << "finished run";
+    all.trace_message.precision(6);
+    all.trace_message << std::fixed;
+    all.trace_message << endl << "finished run";
     if(all.current_pass == 0 || all.current_pass == 1)
-      all.opts_n_args.trace_message << endl << "number of examples = " << all.sd->example_number;
+      all.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
-      all.opts_n_args.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
-      all.opts_n_args.trace_message << endl << "passes used = " << all.current_pass;
+      all.trace_message << endl << "number of examples per pass = " << all.sd->example_number / all.current_pass;
+      all.trace_message << endl << "passes used = " << all.current_pass;
     }
-    all.opts_n_args.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
-    all.opts_n_args.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
-    all.opts_n_args.trace_message << endl << "average loss = ";
+    all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
+    all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
+    all.trace_message << endl << "average loss = ";
     if(all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
-        all.opts_n_args.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
+        all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
-        all.opts_n_args.trace_message << "n.a.";
+        all.trace_message << "n.a.";
     else if  ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
-      all.opts_n_args.trace_message << "undefined (no holdout)";
+      all.trace_message << "undefined (no holdout)";
     else
-      all.opts_n_args.trace_message << all.sd->holdout_best_loss << " h";
+      all.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.opts_n_args.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
+        all.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.opts_n_args.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
+        all.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
     float best_constant; float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
-      all.opts_n_args.trace_message << endl << "best constant = " << best_constant;
+      all.trace_message << endl << "best constant = " << best_constant;
       if (best_constant_loss != FLT_MIN)
-        all.opts_n_args.trace_message << endl << "best constant's loss = " << best_constant_loss;
+        all.trace_message << endl << "best constant's loss = " << best_constant_loss;
     }
 
-    all.opts_n_args.trace_message << endl << "total feature number = " << all.sd->total_features;
+    all.trace_message << endl << "total feature number = " << all.sd->total_features;
     if (all.sd->queries > 0)
-      all.opts_n_args.trace_message << endl << "total queries = " << all.sd->queries;
-    all.opts_n_args.trace_message << endl;
+      all.trace_message << endl << "total queries = " << all.sd->queries;
+    all.trace_message << endl;
   }
 
   // implement finally.
