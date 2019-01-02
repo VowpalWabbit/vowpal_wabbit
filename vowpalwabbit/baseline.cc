@@ -201,7 +201,6 @@ base_learner* baseline_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"));
   new_options.add(VW::config::make_typed_option("global_only", data->global_only).keep().help("use separate example with only global constant for baseline predictions"));
   new_options.add(VW::config::make_typed_option("check_enabled", data->check_enabled).keep().help("only use baseline when the example contains enabled flag"));
-  new_options.add(VW::config::make_typed_option("loss_function", loss_function).help("Used to heck if lr_scaling should be used"));
 
   if (!baseline)
     return nullptr;
@@ -210,7 +209,9 @@ base_learner* baseline_setup(VW::config::options_i& options, vw& all)
   data->ec = VW::alloc_examples(simple_label.label_size, 1);
   data->ec->in_use = true;
   data->all = &all;
-  if (!options.was_supplied("loss_function") || loss_function != "logistic" )
+
+  auto loss_function_type = all.loss->getType();
+  if (loss_function_type != "logistic" )
     data->lr_scaling = true;
 
   auto base = as_singleline(setup_base(*all.options, all));
