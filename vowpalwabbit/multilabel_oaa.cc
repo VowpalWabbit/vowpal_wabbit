@@ -58,17 +58,19 @@ void finish_example(vw& all, multi_oaa&, example& ec)
 LEARNER::base_learner* multilabel_oaa_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<multi_oaa>();
-  if (arg.new_options("Multilabel One Against All")
-      .critical("multilabel_oaa", data->k, "One-against-all multilabel with <k> labels")
-      .missing())
+  VW::config::option_group_definition new_options("Multilabel One Against All");
+  new_options.add(VW::config::make_typed_option("multilabel_oaa", data->k).keep().help("One-against-all multilabel with <k> labels"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("multilabel_oaa"))
     return nullptr;
 
-  LEARNER::learner<multi_oaa,example>& l = LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
+  LEARNER::learner<multi_oaa,example>& l = LEARNER::init_learner(data, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
                                                          predict_or_learn<false>, data->k, prediction_type::multilabels);
   l.set_finish_example(finish_example);
-  arg.all->p->lp = MULTILABEL::multilabel;
-  arg.all->label_type = label_type::multi;
-  arg.all->delete_prediction = MULTILABEL::multilabel.delete_label;
+  all.p->lp = MULTILABEL::multilabel;
+  all.label_type = label_type::multi;
+  all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
   return make_base(l);
 }

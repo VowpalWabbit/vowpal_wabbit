@@ -498,23 +498,27 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 base_learner* log_multi_setup(VW::config::options_i& options, vw& all)	//learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
-  if (arg.new_options("Logarithmic Time Multiclass Tree")
-      .critical("log_multi", data->k, "Use online tree for multiclass")
-      (data->progress, "no_progress", "disable progressive validation")
-      ("swap_resistance", data->swap_resist, (uint32_t)4, "higher = more resistance to swap, default=4").missing())
+  VW::config::option_group_definition new_options("Logarithmic Time Multiclass Tree");
+  new_options.add(VW::config::make_typed_option("log_multi", data->k).keep().help("Use online tree for multiclass"));
+  new_options.add(VW::config::make_typed_option("no_progress", data->progress).help("disable progressive validation"));
+  new_options.add(VW::config::make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"));
+  new_options.add(VW::config::make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("log_multi"))
     return nullptr;
 
   data->progress = !data->progress;
 
   string loss_function = "quantile";
   float loss_parameter = 0.5;
-  delete(arg.all->loss);
-  arg.all->loss = getLossFunction(*arg.all, loss_function, loss_parameter);
+  delete(all.loss);
+  all.loss = getLossFunction(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi,example>& l = init_multiclass_learner(data, as_singleline(setup_base(arg)), learn, predict, arg.all->p, data->max_predictors);
+  learner<log_multi,example>& l = init_multiclass_learner(data, as_singleline(setup_base(*all.options, all)), learn, predict, all.p, data->max_predictors);
   l.set_save_load(save_load_tree);
   l.set_finish(finish);
 

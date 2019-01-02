@@ -919,7 +919,7 @@ void parse_example_tweaks(VW::config::options_i& options, vw& all)
   string loss_function;
   float loss_parameter = 0.0;
 
-  bool test_only;
+  bool test_only = false;
 
   VW::config::option_group_definition example_options("Example options");
   example_options
@@ -1074,7 +1074,7 @@ void parse_output_model(VW::config::options_i& options, vw& all)
     all.hash_inv = true;
 
   // Question: This doesn't seem necessary
-  // if (arg.vm.count("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
+  // if (options.was_supplied("id") && find(arg.args.begin(), arg.args.end(), "--id") == arg.args.end())
   // {
   //   arg.args.push_back("--id");
   //   arg.args.push_back(arg.vm["id"].as<string>());

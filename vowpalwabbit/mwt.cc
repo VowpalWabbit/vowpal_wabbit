@@ -243,44 +243,46 @@ base_learner* mwt_setup(VW::config::options_i& options, vw& all)
   auto c = scoped_calloc_or_throw<mwt>();
   string s;
   bool exclude_eval = false;
-  if (arg.new_options("Multiworld Testing Options")
-      .critical("multiworld_test", s, "Evaluate features as a policies")
-      ("learn", c->num_classes, "Do Contextual Bandit learning on <n> classes.")
-      (exclude_eval, "exclude_eval", "Discard mwt policy features before learning").missing())
+  VW::config::option_group_definition new_options("Multiworld Testing Options");
+  new_options.add(VW::config::make_typed_option("multiworld_test", s).keep().help("Evaluate features as a policies"));
+  new_options.add(VW::config::make_typed_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."));
+  new_options.add(VW::config::make_typed_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("multiworld_test"))
     return nullptr;
 
   for (size_t i = 0; i < s.size(); i++)
     c->namespaces[(unsigned char)s[i]] = true;
-  c->all = arg.all;
+  c->all = &all;
 
-  calloc_reserve(c->evals, arg.all->length());
-  c->evals.end() = c->evals.begin() + arg.all->length();
+  calloc_reserve(c->evals, all.length());
+  c->evals.end() = c->evals.begin() + all.length();
 
-  arg.all->delete_prediction = delete_scalars;
-  arg.all->p->lp = CB::cb_label;
-  arg.all->label_type = label_type::cb;
+  all.delete_prediction = delete_scalars;
+  all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
 
   if (c->num_classes > 0)
   {
     c->learn = true;
 
-    if (count(arg.args.begin(), arg.args.end(),"--cb") == 0)
+    if (!options.was_supplied("cb"))
     {
-      arg.args.push_back("--cb");
       stringstream ss;
       ss << c->num_classes;
-      arg.args.push_back(ss.str());
+      options.insert("cb", ss.str());
     }
   }
 
   learner<mwt,example>* l;
   if (c->learn)
     if (exclude_eval)
-      l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true, true, true>, predict_or_learn<true, true, false>, 1, prediction_type::scalars);
     else
-      l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
+      l = &init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true, false, true>, predict_or_learn<true, false, false>, 1, prediction_type::scalars);
   else
-    l = &init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
+    l = &init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<false, false, true>, predict_or_learn<false, false, false>, 1, prediction_type::scalars);
 
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);

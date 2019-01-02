@@ -196,19 +196,22 @@ void finish(mf& o)
 base_learner* mf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
-  if (arg.new_options("Matrix Factorization Reduction")
-      .critical("new_mf", data->rank, "rank for reduction-based matrix factorization").missing())
+  VW::config::option_group_definition new_options("Matrix Factorization Reduction");
+  new_options.add(VW::config::make_typed_option("new_mf",  data->rank).keep().help("rank for reduction-based matrix factorization"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("new_mf"))
     return nullptr;
 
-  data->all = arg.all;
+  data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  data->pairs = arg.all->pairs;
-  arg.all->pairs.clear();
+  data->pairs = all.pairs;
+  all.pairs.clear();
 
-  arg.all->random_positive_weights = true;
+  all.random_positive_weights = true;
 
-  learner<mf,example>& l = init_learner(data, as_singleline(setup_base(arg)), learn, predict<false>, 2*data->rank+1);
+  learner<mf,example>& l = init_learner(data, as_singleline(setup_base(*all.options, all)), learn, predict<false>, 2*data->rank+1);
   l.set_finish(finish);
   return make_base(l);
 }

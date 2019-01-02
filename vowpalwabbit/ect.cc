@@ -356,18 +356,24 @@ void finish(ect& e)
 base_learner* ect_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
-  if (arg.new_options("Error Correcting Tournament Options").
-      critical("ect", data->k, "Error correcting tournament with <k> labels")
-      .keep("error", data->errors, (uint64_t)0, "errors allowed by ECT").missing())
+  std::string link;
+  VW::config::option_group_definition new_options("Error Correcting Tournament Options");
+  new_options.add(VW::config::make_typed_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"));
+  new_options.add(VW::config::make_typed_option("error", data->errors).default_value(0).help("errors allowed by ECT"));
+  // Used to check value
+  new_options.add(VW::config::make_typed_option("link", link).default_value("identity").help("Specify the link function: identity, logistic, glf1 or poisson"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("ect"))
     return nullptr;
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors+1);
 
-  base_learner* base = setup_base(arg);
-  if (arg.vm["link"].as<string>().compare("logistic") == 0)
+  base_learner* base = setup_base(*all.options, all);
+  if (link.compare("logistic") == 0)
     data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
-  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, arg.all->p, wpp);
+  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp);
   l.set_finish(finish);
 
   return make_base(l);

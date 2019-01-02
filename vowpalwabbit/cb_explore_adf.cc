@@ -772,7 +772,6 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   if(!cb_explore_adf)
     return nullptr;
 
-
   data->all = &all;
   if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
     data->lambda = -data->lambda;

@@ -50,13 +50,15 @@ LEARNER::base_learner* scorer_setup(VW::config::options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
   string link;
-  if(arg.new_options("scorer options")
-     .keep("link", link, (string)"identity", "Specify the link function: identity, logistic, glf1 or poisson").missing())
-    return nullptr;
+  VW::config::option_group_definition new_options("scorer options");
+  new_options.add(VW::config::make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  options.add_and_parse(new_options);
 
-  s->all = arg.all;
+  // This always returns a base_learner.
 
-  auto base = as_singleline(setup_base(arg));
+  s->all = &all;
+
+  auto base = as_singleline(setup_base(*all.options, all));
   LEARNER::learner<scorer,example>* l;
   void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
 
@@ -84,7 +86,7 @@ LEARNER::base_learner* scorer_setup(VW::config::options_i& options, vw& all)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
-  arg.all->scorer = LEARNER::as_singleline(l);
+  all.scorer = LEARNER::as_singleline(l);
 
-  return make_base(*arg.all->scorer);
+  return make_base(*all.scorer);
 }

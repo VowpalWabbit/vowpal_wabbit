@@ -11,7 +11,13 @@ void learn(char&, LEARNER::base_learner&, example&) {}
 
 LEARNER::base_learner* noop_setup(VW::config::options_i& options, vw& all)
 {
-  if (arg.new_options("Noop Learner").critical("noop", "do no learning").missing()) return nullptr;
+  bool noop = false;
+  VW::config::option_group_definition new_options("Noop Learner");
+  new_options.add(VW::config::make_typed_option("noop", noop).keep().help("do no learning"));
+  options.add_and_parse(new_options);
+
+  if(!noop)
+    return nullptr;
 
   return make_base(LEARNER::init_learner(learn, 1));
 }
