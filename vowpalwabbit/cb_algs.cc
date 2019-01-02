@@ -136,12 +136,15 @@ base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string;
-  bool eval=false;
+  bool eval = false;
 
-  if (arg.new_options("Contextual Bandit Options")
-      .critical("cb", data->cbcs.num_actions, "Use contextual bandit learning with <k> costs")
-      .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
-      (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
+  VW::config::option_group_definition new_options("Contextual Bandit Options");
+  new_options.add(VW::config::make_typed_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"));
+  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("dr").help("contextual bandit method to use in {ips,dm,dr}"));
+  new_options.add(VW::config::make_typed_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+  options.add_and_parse(new_options);
+
+  if(!options.was_supplied("cb"))
     return nullptr;
 
   cb_to_cs& c = data->cbcs;
@@ -150,41 +153,40 @@ base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
   if (type_string.compare("dr") == 0)
     c.cb_type = CB_TYPE_DR;
   else if (type_string.compare("dm") == 0)
-    {
-      if (eval)
-        THROW( "direct method can not be used for evaluation --- it is biased.");
-      c.cb_type = CB_TYPE_DM;
-      problem_multiplier = 1;
-    }
-  else if (type_string.compare("ips") == 0)
-    {
-      c.cb_type = CB_TYPE_IPS;
-      problem_multiplier = 1;
-    }
-  else
-    {
-      std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
-      c.cb_type = CB_TYPE_DR;
-    }
-
-  if (count(arg.args.begin(), arg.args.end(),"--csoaa") == 0)
   {
-    arg.args.push_back("--csoaa");
+    if (eval)
+      THROW("direct method can not be used for evaluation --- it is biased.");
+    c.cb_type = CB_TYPE_DM;
+    problem_multiplier = 1;
+  }
+  else if (type_string.compare("ips") == 0)
+  {
+    c.cb_type = CB_TYPE_IPS;
+    problem_multiplier = 1;
+  }
+  else
+  {
+    std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
+    c.cb_type = CB_TYPE_DR;
+  }
+
+  if(!options.was_supplied("csoaa"))
+  {
     stringstream ss;
     ss << data->cbcs.num_actions;
-    arg.args.push_back(ss.str());
+    options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(*all.options, all));
   if (eval)
   {
-    arg.all->p->lp = CB_EVAL::cb_eval;
-    arg.all->label_type = label_type::cb_eval;
+    all.p->lp = CB_EVAL::cb_eval;
+    all.label_type = label_type::cb_eval;
   }
   else
   {
-    arg.all->p->lp = CB::cb_label;
-    arg.all->label_type = label_type::cb;
+    all.p->lp = CB::cb_label;
+    all.label_type = label_type::cb;
   }
 
   learner<cb,example>* l;
@@ -199,7 +201,7 @@ base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
                       problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  c.scorer = arg.all->scorer;
+  c.scorer = all.scorer;
 
   l->set_finish(finish);
   return make_base(*l);

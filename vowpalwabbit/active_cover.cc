@@ -224,28 +224,33 @@ void finish(active_cover& ac)
 base_learner* active_cover_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active_cover>();
-  if(arg.new_options("Active Learning with Cover")
-     .critical("active_cover", "enable active learning with cover")
-     ("mellowness", data->active_c0, 8.f, "active learning mellowness parameter c_0. Default 8.")
-     ("alpha", data->alpha, 1.f, "active learning variance upper bound parameter alpha. Default 1.")
-     ("beta_scale", data->beta_scale, sqrtf(10.f), "active learning variance upper bound parameter beta_scale. Default sqrt(10).")
-     .keep("cover", data->cover_size, (size_t)12, "cover size. Default 12.")
-     (data->oracular, "oracular", "Use Oracular-CAL style query or not. Default false.").missing())
+  VW::config::option_group_definition new_options("Active Learning with Cover");
+
+  bool active_cover = false;
+  new_options.add(VW::config::make_typed_option("active_cover", active_cover).keep().help("enable active learning with cover"));
+  new_options.add(VW::config::make_typed_option("mellowness", data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8."));
+  new_options.add(VW::config::make_typed_option("alpha", data->alpha).default_value(1.f).help("active learning variance upper bound parameter alpha. Default 1."));
+  new_options.add(VW::config::make_typed_option("beta_scale", data->beta_scale).default_value(sqrtf(10.f)).help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."));
+  new_options.add(VW::config::make_typed_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."));
+  new_options.add(VW::config::make_typed_option("oracular", data->oracular).default_value(false).help("Use Oracular-CAL style query or not. Default false."));
+  options.add_and_parse(new_options);
+
+  if (!active_cover)
     return nullptr;
 
-  data->all = arg.all;
+  data->all = &all;
   data->beta_scale *= data->beta_scale;
 
   if(data->oracular)
     data->cover_size = 0;
 
-  if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
+  if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");
 
-  if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
+  if (options.was_supplied("active"))
     THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(*all.options, all));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];

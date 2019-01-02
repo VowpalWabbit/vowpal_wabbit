@@ -238,15 +238,17 @@ base_learner* bs_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
-  if (arg.new_options("Bootstrap")
-      .critical("bootstrap", data->B, "k-way bootstrap by online importance resampling")
-      .keep("bs_type", type_string, "prediction type {mean,vote}").missing())
+  VW::config::option_group_definition new_options("Bootstrap");
+  new_options.add(VW::config::make_typed_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"));
+  new_options.add(VW::config::make_typed_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
+
+  if(!options.was_supplied("boostrap"))
     return nullptr;
 
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
-  if (arg.vm.count("bs_type"))
+  if (options.was_supplied("bs_type"))
   {
     if (type_string.compare("mean") == 0)
       data->bs_type = BS_TYPE_MEAN;
@@ -263,9 +265,9 @@ base_learner* bs_setup(VW::config::options_i& options, vw& all)
 
   data->pred_vec = new vector<double>();
   data->pred_vec->reserve(data->B);
-  data->all = arg.all;
+  data->all = &all;
 
-  learner<bs,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
+  learner<bs,example>& l = init_learner(data, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
                                 predict_or_learn<false>, data->B);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

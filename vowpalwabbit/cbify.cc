@@ -210,67 +210,65 @@ void init_adf_data(cbify& data, const size_t num_actions)
 
 base_learner* cbify_setup(VW::config::options_i& options, vw& all)
 {
-  uint32_t num_actions=0;
+  uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
 
-  if (arg.new_options("Make Multiclass into Contextual Bandit")
-      .critical("cbify", num_actions, "Convert multiclass on <k> classes into a contextual bandit problem")
-      (use_cs, "cbify_cs", "consume cost-sensitive classification examples instead of multiclass")
-      ("loss0", data->loss0, 0.f, "loss for correct label")
-      ("loss1", data->loss1, 1.f, "loss for incorrect label").missing())
-    return nullptr;
+  VW::config::option_group_definition new_options("Make Multiclass into Contextual Bandit");
+  new_options.add(VW::config::make_typed_option("cbify", num_actions).keep().help("Convert multiclass on <k> classes into a contextual bandit problem"));
+  new_options.add(VW::config::make_typed_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"));
+  new_options.add(VW::config::make_typed_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"));
+  new_options.add(VW::config::make_typed_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+  options.add_and_parse(new_options);
 
-  data->use_adf = count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") > 0;
+  data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
-  data->all = arg.all;
+  data->all = &all;
 
   if (data->use_adf)
     init_adf_data(*data.get(), num_actions);
 
-  if (count(arg.args.begin(), arg.args.end(),"--cb_explore") == 0 && !data->use_adf)
+  if (!options.was_supplied("cb_explore") && !data->use_adf)
   {
-    arg.args.push_back("--cb_explore");
     stringstream ss;
     ss << num_actions;
-    arg.args.push_back(ss.str());
+    options.insert("cb_explore", ss.str());
   }
+
   if (data->use_adf)
-    {
-      arg.args.push_back("--cb_min_cost");
-      arg.args.push_back(to_string(data->loss0));
-      arg.args.push_back("--cb_max_cost");
-      arg.args.push_back(to_string(data->loss1));
-    }
-  if (count(arg.args.begin(), arg.args.end(), "--baseline"))
   {
-    arg.args.push_back("--lr_multiplier");
+    options.insert("cb_min_cost", to_string(data->loss0));
+    options.insert("cb_max_cost", to_string(data->loss1));
+  }
+
+  if (options.was_supplied("baseline"))
+  {
     stringstream ss;
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
-    arg.args.push_back(ss.str());
+    options.insert("lr_multiplier", ss.str());
   }
 
   learner<cbify,example>* l;
 
   if (data->use_adf)
   {
-    multi_learner* base = as_multiline(setup_base(arg));
+    multi_learner* base = as_multiline(setup_base(*all.options, all));
     if (use_cs)
-      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, 1);
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, arg.all->p, 1);
+      l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, 1);
   }
   else
   {
-    single_learner* base = as_singleline(setup_base(arg));
+    single_learner* base = as_singleline(setup_base(*all.options, all));
     if (use_cs)
-      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, arg.all->p, 1);
+      l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
     else
-      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, arg.all->p, 1);
+      l = &init_multiclass_learner(data, base, predict_or_learn<true, false>, predict_or_learn<false, false>, all.p, 1);
   }
   l->set_finish(finish);
-  arg.all->delete_prediction = nullptr;
+  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }

@@ -193,20 +193,27 @@ void finish(baseline& data)
 base_learner* baseline_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<baseline>();
-  if (arg.new_options("Baseline options")
-      .critical("baseline", "Learn an additive baseline (from constant features) and a residual separately in regression.")
-      ("lr_multiplier", data->lr_multiplier, "learning rate multiplier for baseline model")
-      .keep(data->global_only, "global_only", "use separate example with only global constant for baseline predictions")
-      .keep(data->check_enabled, "check_enabled", "only use baseline when the example contains enabled flag").missing())
+  bool baseline = false;
+  std::string loss_function;
+
+  VW::config::option_group_definition new_options("Baseline options");
+  new_options.add(VW::config::make_typed_option("baseline", baseline).keep().help("Learn an additive baseline (from constant features) and a residual separately in regression."));
+  new_options.add(VW::config::make_typed_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"));
+  new_options.add(VW::config::make_typed_option("global_only", data->global_only).keep().help("use separate example with only global constant for baseline predictions"));
+  new_options.add(VW::config::make_typed_option("check_enabled", data->check_enabled).keep().help("only use baseline when the example contains enabled flag"));
+  new_options.add(VW::config::make_typed_option("loss_function", loss_function).help("Used to heck if lr_scaling should be used"));
+
+  if (!baseline)
     return nullptr;
+
   // initialize baseline example
   data->ec = VW::alloc_examples(simple_label.label_size, 1);
   data->ec->in_use = true;
-  data->all = arg.all;
-  if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
+  data->all = &all;
+  if (!options.was_supplied("loss_function") || loss_function != "logistic" )
     data->lr_scaling = true;
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(*all.options, all));
 
   learner<baseline,example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 

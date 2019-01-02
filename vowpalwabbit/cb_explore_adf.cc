@@ -745,85 +745,94 @@ using namespace CB_EXPLORE_ADF;
 base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
-  if (arg.new_options("Contextual Bandit Exploration with Action Dependent Features")
-      .critical("cb_explore_adf", "Online explore-exploit for a contextual bandit problem with multiline action dependent features")
-      .keep("first", data->tau, "tau-first exploration")
-      .keep("epsilon", data->epsilon, "epsilon-greedy exploration")
-      .keep("bag", data->bag_size, "bagging-based exploration")
-      .keep("cover", data->cover_size ,"Online cover based exploration")
-      .keep("psi", data->psi, 1.0f, "disagreement parameter for cover")
-      .keep(data->nounif, "nounif", "do not explore uniformly on zero-probability actions in cover")
-      .keep("softmax", "softmax exploration")
-      .keep("regcb", "RegCB-elim exploration")
-      .keep(data->regcbopt, "regcbopt", "RegCB optimistic exploration")
-      .keep("mellowness", data->c0, 0.1f, "RegCB mellowness parameter c_0. Default 0.1")
-      .keep(data->greedify, "greedify", "always update first policy once in bagging")
-      .keep("cb_min_cost", data->min_cb_cost, 0.f, "lower bound on cost")
-      .keep("cb_max_cost", data->max_cb_cost, 1.f, "upper bound on cost")
-      .keep(data->first_only, "first_only", "Only explore the first action in a tie-breaking event")
-      .keep("lambda", data->lambda, -1.0f, "parameter for softmax").missing())
+  bool cb_explore_adf = false;
+  bool softmax = false;
+  bool regcb = false;
+  std::string type_string;
+  VW::config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  new_options.add(VW::config::make_typed_option("cb_explore_adf", cb_explore_adf).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
+  new_options.add(VW::config::make_typed_option("first", data->tau).keep().help("tau-first exploration"));
+  new_options.add(VW::config::make_typed_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"));
+  new_options.add(VW::config::make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
+  new_options.add(VW::config::make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
+  new_options.add(VW::config::make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+  new_options.add(VW::config::make_typed_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"));
+  new_options.add(VW::config::make_typed_option("softmax", softmax).keep().help("softmax exploration"));
+  new_options.add(VW::config::make_typed_option("regcb", regcb).keep().help("RegCB-elim exploration"));
+  new_options.add(VW::config::make_typed_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"));
+  new_options.add(VW::config::make_typed_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"));
+  new_options.add(VW::config::make_typed_option("greedify", data->greedify).keep().help("always update first policy once in bagging"));
+  new_options.add(VW::config::make_typed_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"));
+  new_options.add(VW::config::make_typed_option("cb_min_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
+  new_options.add(VW::config::make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
+  new_options.add(VW::config::make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
+  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("ips").help("contextual bandit method to use in {ips,dm,dr}"));
+  options.add_and_parse(new_options);
+
+  if(!cb_explore_adf)
     return nullptr;
 
-  data->all = arg.all;
+
+  data->all = &all;
   if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
     data->lambda = -data->lambda;
-  if (count(arg.args.begin(), arg.args.end(), "--cb_adf") == 0)
-    arg.args.push_back("--cb_adf");
 
-  arg.all->delete_prediction = delete_action_scores;
+  if(!options.was_supplied("cb_adf"))
+  {
+    options.insert("cb_adf", "true");
+  }
+
+  all.delete_prediction = delete_action_scores;
 
   size_t problem_multiplier = 1;
 
-  if (arg.vm.count("cover"))
+  if (options.was_supplied("cover"))
   {
     data->explore_type = COVER;
     problem_multiplier = data->cover_size+1;
   }
-  else if (arg.vm.count("bag"))
+  else if (options.was_supplied("bag"))
   {
     data->explore_type = BAG_EXPLORE;
     problem_multiplier = data->bag_size;
   }
-  else if (arg.vm.count("first"))
+  else if (options.was_supplied("first"))
     data->explore_type = EXPLORE_FIRST;
-  else if (arg.vm["softmax"].as<bool>())
+  else if (softmax)
     data->explore_type = SOFTMAX;
-  else if (arg.vm["regcb"].as<bool>() || arg.vm["regcbopt"].as<bool>())
+  else if (regcb || (options.was_supplied("regcbopt") && data->regcbopt))
     data->explore_type = REGCB;
   else
   {
-    if (!arg.vm.count("epsilon")) data->epsilon = 0.05f;
+    if (!options.was_supplied("epsilon")) data->epsilon = 0.05f;
     data->explore_type = EPS_GREEDY;
   }
 
-  multi_learner* base = as_multiline(setup_base(arg));
-  arg.all->p->lp = CB::cb_label;
-  arg.all->label_type = label_type::cb;
+  multi_learner* base = as_multiline(setup_base(*all.options, all));
+  all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
 
   //Extract from lower level reductions.
-  data->gen_cs.scorer = arg.all->scorer;
-  data->cs_ldf_learner = as_multiline(arg.all->cost_sensitive);
+  data->gen_cs.scorer = all.scorer;
+  data->cs_ldf_learner = as_multiline(all.cost_sensitive);
   data->gen_cs.cb_type = CB_TYPE_IPS;
-  if (arg.vm.count("cb_type"))
+  if (options.was_supplied("cb_type"))
   {
-    std::string type_string;
-    type_string = arg.vm["cb_type"].as<std::string>();
-
     if (type_string.compare("dr") == 0)
       data->gen_cs.cb_type = CB_TYPE_DR;
     else if (type_string.compare("ips") == 0)
       data->gen_cs.cb_type = CB_TYPE_IPS;
     else if (type_string.compare("mtr") == 0)
     {
-      if (arg.vm.count("cover"))
-        arg.all->trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
+      if (options.was_supplied("cover"))
+        all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
     else
-      arg.all->trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
+      all.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
-      arg.all->trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
+      all.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
 
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,

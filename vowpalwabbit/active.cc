@@ -138,26 +138,33 @@ void return_active_example(vw& all, active& a, example& ec)
 base_learner* active_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active>();
-  if(arg.new_options("Active Learning").critical("active", "enable active learning")
-     ("simulation", "active learning simulation mode")
-     ("mellowness", data->active_c0, 8.f, "active learning mellowness parameter c_0. Default 8").missing())
+
+  bool active;
+  bool simulation;
+  VW::config::option_group_definition new_options("Active Learning");
+  new_options.add(VW::config::make_typed_option("active", active).keep().help("enable active learning"));
+  new_options.add(VW::config::make_typed_option("simulation", simulation).help("active learning simulation mode"));
+  new_options.add(VW::config::make_typed_option("mellowness",  data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("active"))
     return nullptr;
 
-  data->all=arg.all;
+  data->all= &all;
 
-  if (count(arg.args.begin(), arg.args.end(), "--lda") != 0)
+  if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(*all.options, all));
 
   //Create new learner
   learner<active,example>* l;
-  if (arg.vm.count("simulation"))
+  if (options.was_supplied("simulation"))
     l = &init_learner(data, base, predict_or_learn_simulation<true>,
                       predict_or_learn_simulation<false>);
   else
   {
-    arg.all->active = true;
+    all.active = true;
     l = &init_learner(data, base, predict_or_learn_active<true>,
                       predict_or_learn_active<false>);
     l->set_finish_example(return_active_example);

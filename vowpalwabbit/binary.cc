@@ -28,11 +28,15 @@ void predict_or_learn(char&, LEARNER::single_learner& base, example& ec)
 
 LEARNER::base_learner* binary_setup(VW::config::options_i& options, vw& all)
 {
-  if (arg.new_options("Binary loss").
-      critical("binary", "report loss as binary classification on -1,1").missing())
+  bool binary = false;
+  VW::config::option_group_definition new_options("Binary loss");
+  new_options.add(VW::config::make_typed_option("binary", binary).keep().help("report loss as binary classification on -1,1"));
+  options.add_and_parse(new_options);
+
+  if(!binary)
     return nullptr;
 
   LEARNER::learner<char,example>& ret =
-    LEARNER::init_learner(as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
+    LEARNER::init_learner(as_singleline(setup_base(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }
