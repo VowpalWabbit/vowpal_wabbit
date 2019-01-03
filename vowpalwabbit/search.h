@@ -197,7 +197,7 @@ struct search_task
   void (*run)(search&, multi_ex&);
 
   // optional
-  void (*initialize)(search&, size_t&, arguments&);
+  void (*initialize)(search&, size_t&, VW::config::options_i&);
   void (*finish)(search&);
   void (*run_setup)(search&, multi_ex&);
   void (*run_takedown)(search&, multi_ex&);
@@ -209,7 +209,7 @@ struct search_metatask
   void (*run)(search&,multi_ex&);
 
   // optional
-  void (*initialize)(search&,size_t&,arguments&);
+  void (*initialize)(search&,size_t&,VW::config::options_i&);
   void (*finish)(search&);
   void (*run_setup)(search&,multi_ex&);
   void (*run_takedown)(search&,multi_ex&);

@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 namespace HookTask
 {
-void initialize(Search::search&, size_t&, arguments&);
+void initialize(Search::search&, size_t&, VW::config::options_i&);
 void finish(Search::search&);
 void run(Search::search&, multi_ex&);
 void run_setup(Search::search&, multi_ex&);

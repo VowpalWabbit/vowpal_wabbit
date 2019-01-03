@@ -7,6 +7,7 @@ namespace po = boost::program_options;
 #include <vector>
 #include <sstream>
 #include <set>
+#include <algorithm>
 
 #include "options.h"
 #include "vw_exception.h"
@@ -64,6 +65,26 @@ namespace VW {
       virtual void insert(std::string key, std::string value) override {
         m_command_line.push_back("--" + key);
         m_command_line.push_back(value);
+      }
+
+      // Note: does not work for vector options.
+      virtual void replace(std::string key, std::string value) override {
+        auto full_key = "--" + key;
+        auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
+
+        // Not found, insert instead.
+        if(it == m_command_line.end()) {
+          insert(key, value);
+          return;
+        }
+
+        // Check if it is the final option or the next option is not a value.
+        if(it+1 == m_command_line.end() || (*(it+1)).find("--") != std::string::npos){
+          THROW(key + " option does not have a value.");
+        }
+
+        // Actually replace the value.
+        *(it+1) = value;
       }
 
     private:

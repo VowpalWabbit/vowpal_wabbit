@@ -151,10 +151,14 @@ void end_pass(gd& g)
   if(all.save_resume)
   {
     // TODO work out a better system to update state that will be saved in the model.
-    if (all.sd->gravity != 0.)
+    if (all.sd->gravity != 0.) {
+        g.all->options->replace("l1_state", std::to_string(all.sd->gravity));
         g.all->options->get_typed_option<double>("l1_state").value(all.sd->gravity);
-    if (all.sd->contraction != 1.)
+    }
+    if (all.sd->contraction != 1.){
+        g.all->options->replace("l2_state", std::to_string(all.sd->contraction));
         g.all->options->get_typed_option<double>("l2_state").value(all.sd->contraction);
+    }
   }
   else
     sync_weights(all);

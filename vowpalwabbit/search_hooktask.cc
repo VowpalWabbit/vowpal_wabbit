@@ -12,7 +12,7 @@ namespace HookTask
 {
 Search::search_task task = { "hook", run, initialize, finish, run_setup, run_takedown  };
 
-void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
+void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&)
 {
   task_data *td = new task_data;
   td->run_f = nullptr;

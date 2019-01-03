@@ -112,6 +112,7 @@ namespace VW {
     virtual std::shared_ptr<base_option> get_option(std::string key) = 0;
 
     virtual void insert(std::string key, std::string value) = 0;
+    virtual void replace(std::string key, std::string value) = 0;
 
     template <typename T>
     typed_option<T>& get_typed_option(std::string key) {
