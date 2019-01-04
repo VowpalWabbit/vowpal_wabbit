@@ -226,8 +226,8 @@ base_learner* active_cover_setup(VW::config::options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<active_cover>();
   VW::config::option_group_definition new_options("Active Learning with Cover");
 
-  bool active_cover = false;
-  new_options.add(VW::config::make_typed_option("active_cover", active_cover).keep().help("enable active learning with cover"));
+  bool active_cover_option = false;
+  new_options.add(VW::config::make_typed_option("active_cover", active_cover_option).keep().help("enable active learning with cover"));
   new_options.add(VW::config::make_typed_option("mellowness", data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8."));
   new_options.add(VW::config::make_typed_option("alpha", data->alpha).default_value(1.f).help("active learning variance upper bound parameter alpha. Default 1."));
   new_options.add(VW::config::make_typed_option("beta_scale", data->beta_scale).default_value(sqrtf(10.f)).help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."));
@@ -235,7 +235,7 @@ base_learner* active_cover_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("oracular", data->oracular).default_value(false).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);
 
-  if (!active_cover)
+  if (!active_cover_option)
     return nullptr;
 
   data->all = &all;

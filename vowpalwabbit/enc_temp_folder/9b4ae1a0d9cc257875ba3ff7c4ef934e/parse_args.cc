@@ -1117,12 +1117,12 @@ LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all)
 void parse_reductions(VW::config::options_i& options, vw& all)
 {
   //Base algorithms
-  all.reduction_stack.push_back(GD::setup);
-  all.reduction_stack.push_back(kernel_svm_setup);
-  all.reduction_stack.push_back(ftrl_setup);
-  all.reduction_stack.push_back(svrg_setup);
-  all.reduction_stack.push_back(sender_setup);
-  all.reduction_stack.push_back(gd_mf_setup);
+  all.reduction_stack.push_back(GD::setup); // DONE
+  all.reduction_stack.push_back(kernel_svm_setup); // DONE
+  all.reduction_stack.push_back(ftrl_setup); // DONE
+  all.reduction_stack.push_back(svrg_setup); // DONE
+  all.reduction_stack.push_back(sender_setup); // DONE
+  all.reduction_stack.push_back(gd_mf_setup); // DONE
   all.reduction_stack.push_back(print_setup);
   all.reduction_stack.push_back(noop_setup);
   all.reduction_stack.push_back(lda_setup);
@@ -1138,7 +1138,7 @@ void parse_reductions(VW::config::options_i& options, vw& all)
   all.reduction_stack.push_back(confidence_setup);
   all.reduction_stack.push_back(nn_setup);
   all.reduction_stack.push_back(mf_setup);
-  all.reduction_stack.push_back(marginal_setup);
+  all.reduction_stack.push_back(marginal_setup); // DONE
   all.reduction_stack.push_back(autolink_setup);
   all.reduction_stack.push_back(lrq_setup);
   all.reduction_stack.push_back(lrqfa_setup);

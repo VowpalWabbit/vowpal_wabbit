@@ -61,7 +61,7 @@ namespace VW {
       return m_value.get() != nullptr;
     }
 
-    typed_option& value(T& value) {
+    typed_option& value(T value) {
       m_value = std::make_shared<T>(value);
       return *this;
     }
@@ -116,7 +116,7 @@ namespace VW {
 
     template <typename T>
     typed_option<T>& get_typed_option(std::string key) {
-      base_option& base = get_option(key);
+      base_option& base = *get_option(key);
       if (base.m_type_hash != typed_option<T>::type_hash()) {
         throw std::bad_cast();
       }

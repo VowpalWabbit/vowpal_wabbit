@@ -487,8 +487,6 @@ struct vw
   //error reporting
   vw_ostream trace_message;
 
-  // arguments opts_n_args;
-
   VW::config::options_i* options;
 
   void* /*Search::search*/ searchstr;

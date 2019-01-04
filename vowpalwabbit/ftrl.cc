@@ -240,24 +240,24 @@ void end_pass(ftrl& g)
 base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<ftrl>();
-  bool ftrl = false;
+  bool ftrl_option = false;
   bool pistol = false;
 
   VW::config::option_group_definition ftrl_options("Follow the Regularized Leader");
   ftrl_options
-    (VW::config::make_typed_option("ftrl", ftrl).keep().help("FTRL: Follow the Proximal Regularized Leader"))
+    (VW::config::make_typed_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
     (VW::config::make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
     (VW::config::make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
     (VW::config::make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(ftrl_options);
 
-  if(!ftrl && !pistol)
+  if(!ftrl_option && !pistol)
   {
     return nullptr;
   }
 
   // Defaults that are specific to the mode that was chosen.
-  if(ftrl)
+  if(ftrl_option)
   {
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
@@ -274,7 +274,7 @@ base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
   void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
   string algorithm_name;
-  if (ftrl)
+  if (ftrl_option)
   {
     algorithm_name = "Proximal-FTRL";
     if (all.audit)

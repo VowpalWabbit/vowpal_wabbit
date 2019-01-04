@@ -384,6 +384,7 @@ LEARNER::base_learner* boosting_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("boosting", data->N).keep().help("Online boosting with <N> weak learners"));
   new_options.add(VW::config::make_typed_option("gamma", data->gamma).default_value(0.1f).help("weak learner's edge (=0.1), used only by online BBM"));
   new_options.add(VW::config::make_typed_option("alg", data->alg).keep().default_value("BBM").help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
+  options.add_and_parse(new_options);
 
   if(!options.was_supplied("boosting"))
     return nullptr;

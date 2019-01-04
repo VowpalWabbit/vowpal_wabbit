@@ -107,7 +107,7 @@ LEARNER::base_learner* topk_setup(VW::config::options_i& options, vw& all)
 
   VW::config::option_group_definition new_options("Top K");
   new_options.add(VW::config::make_typed_option("top", data->B).keep().help("top k recommendation"));
-  options.add_and_parse(new_options);.missing())
+  options.add_and_parse(new_options);
 
   if (!options.was_supplied("top"))
     return nullptr;

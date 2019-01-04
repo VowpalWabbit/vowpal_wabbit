@@ -200,21 +200,21 @@ void regressor_values(audit_regressor_data& dat, T& w)
 void init_driver(audit_regressor_data& dat)
 {
   // checks a few settings that might be applied after audit_regressor_setup() is called
-
-  po::variables_map& vm = dat.all->opts_n_args.vm;
-  if ( (vm.count("cache_file") || vm.count("cache") ) && !vm.count("kill_cache") )
+  if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache"))
+    && !dat.all->options->was_supplied("kill_cache"))
+  {
     THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
+  }
 
   dat.all->sd->dump_interval = 1.; // regressor could initialize these if saved with --save_resume
   dat.all->sd->example_number = 0;
 
-
   dat.increment = dat.all->l->increment/dat.all->l->weights;
   dat.total_class_cnt = dat.all->l->weights;
 
-  if (dat.all->opts_n_args.vm.count("csoaa"))
+  if (dat.all->options->was_supplied("csoaa"))
   {
-    size_t n = dat.all->opts_n_args.vm["csoaa"].as<uint32_t>();
+    size_t n = dat.all->options->get_typed_option<uint32_t>("csoaa").value();
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;

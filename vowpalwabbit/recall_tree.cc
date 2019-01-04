@@ -567,7 +567,7 @@ using namespace recall_tree_ns;
 base_learner* recall_tree_setup(VW::config::options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree> ();
-  VW::config::option_group_definition new_options("Recall Tree")
+  VW::config::option_group_definition new_options("Recall Tree");
   new_options.add(VW::config::make_typed_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"));
   new_options.add(VW::config::make_typed_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"));
   new_options.add(VW::config::make_typed_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"));

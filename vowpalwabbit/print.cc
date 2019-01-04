@@ -38,12 +38,12 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
 
 LEARNER::base_learner* print_setup(VW::config::options_i& options, vw& all)
 {
-  bool print = false;
+  bool print_option = false;
   VW::config::option_group_definition new_options("Print psuedolearner");
-  new_options.add(VW::config::make_typed_option("print", print).keep().help("print examples"));
+  new_options.add(VW::config::make_typed_option("print", print_option).keep().help("print examples"));
   options.add_and_parse(new_options);
 
-  if (!print)
+  if (!print_option)
     return nullptr;
 
   auto p = scoped_calloc_or_throw<print>();

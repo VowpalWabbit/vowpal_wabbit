@@ -537,13 +537,13 @@ base_learner* OjaNewton_setup(VW::config::options_i& options, vw& all)
   float alpha_inverse;
   VW::config::option_group_definition new_options("OjaNewton options");
   new_options.add(VW::config::make_typed_option("OjaNewton", oja_newton).keep().help("Online Newton with Oja's Sketch"));
-  new_options.add(VW::config::make_typed_option("sketch_size", ON->m).default_value(10).help("size of sketch");
-  new_options.add(VW::config::make_typed_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch");
-  new_options.add(VW::config::make_typed_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy");
-  new_options.add(VW::config::make_typed_option("alpha_inverse", alpha_inverse).help("one over alpha, similar to learning rate");
-  new_options.add(VW::config::make_typed_option("learning_rate_cnt", ON->learning_rate_cnt).default_value(2.f).help("constant for the learning rate 1/t");
-  new_options.add(VW::config::make_typed_option("normalize", ON->normalize).default_value(true).help("normalize the features or not");
-  new_options.add(VW::config::make_typed_option("random_init", ON->random_init).default_value(true).help("randomize initialization of Oja or not");
+  new_options.add(VW::config::make_typed_option("sketch_size", ON->m).default_value(10).help("size of sketch"));
+  new_options.add(VW::config::make_typed_option("epoch_size", ON->epoch_size).default_value(1).help("size of epoch"));
+  new_options.add(VW::config::make_typed_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy"));
+  new_options.add(VW::config::make_typed_option("alpha_inverse", alpha_inverse).help("one over alpha, similar to learning rate"));
+  new_options.add(VW::config::make_typed_option("learning_rate_cnt", ON->learning_rate_cnt).default_value(2.f).help("constant for the learning rate 1/t"));
+  new_options.add(VW::config::make_typed_option("normalize", ON->normalize).default_value(true).help("normalize the features or not"));
+  new_options.add(VW::config::make_typed_option("random_init", ON->random_init).default_value(true).help("randomize initialization of Oja or not"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("OjaNewton"))

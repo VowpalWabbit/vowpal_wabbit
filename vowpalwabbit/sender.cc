@@ -104,7 +104,7 @@ LEARNER::base_learner* sender_setup(VW::config::options_i& options, vw& all)
   sender_options.add(VW::config::make_typed_option("sendto", host).keep().help("send examples to <host>"));
   options.add_and_parse(sender_options);
 
-  if(options.was_supplied("host"))
+  if(!options.was_supplied("host"))
   {
     return nullptr;
   }

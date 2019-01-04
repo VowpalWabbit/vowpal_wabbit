@@ -831,7 +831,6 @@ base_learner* csldf_setup(options_i& options, vw& all)
   csldf_inner_options.add(make_typed_option("wap_ldf", wap_ldf).keep().help("Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."));
 
   options.add_and_parse(csldf_outer_options);
-
   if(!options.was_supplied("csoaa_ldf"))
   {
     options.add_and_parse(csldf_inner_options);

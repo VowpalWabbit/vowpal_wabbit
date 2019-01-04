@@ -23,10 +23,10 @@ license as described in the file LICENSE.
 using namespace std;
 
 
-vw* setup(VW::config::options_i& args)
+vw* setup(VW::config::options_i& options)
 {
   vw* all = nullptr;
-  try { all = VW::initialize(args);
+  try { all = VW::initialize(options);
   }
   catch(const exception& ex){
     cout << ex.what() << endl;
@@ -39,7 +39,7 @@ vw* setup(VW::config::options_i& args)
   }
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !all->opts_n_args.vm.count("audit_regressor"))
+  if (!all->quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left
                                    << std::setw(shared_data::col_avg_loss) << std::left << "average"

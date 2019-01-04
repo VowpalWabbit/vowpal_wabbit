@@ -23,7 +23,6 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   td->takedown_object = nullptr;
   td->delete_run_object = nullptr;
   td->delete_extra_data = nullptr;
-  td->arg = &arg;
   td->num_actions = num_actions;
   sch.set_task_data<task_data>(td);
 }

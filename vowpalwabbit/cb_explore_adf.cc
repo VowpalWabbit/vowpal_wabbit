@@ -745,12 +745,12 @@ using namespace CB_EXPLORE_ADF;
 base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
-  bool cb_explore_adf = false;
+  bool cb_explore_adf_option = false;
   bool softmax = false;
   bool regcb = false;
   std::string type_string;
   VW::config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(VW::config::make_typed_option("cb_explore_adf", cb_explore_adf).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
+  new_options.add(VW::config::make_typed_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
   new_options.add(VW::config::make_typed_option("first", data->tau).keep().help("tau-first exploration"));
   new_options.add(VW::config::make_typed_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"));
   new_options.add(VW::config::make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
@@ -763,13 +763,13 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"));
   new_options.add(VW::config::make_typed_option("greedify", data->greedify).keep().help("always update first policy once in bagging"));
   new_options.add(VW::config::make_typed_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"));
-  new_options.add(VW::config::make_typed_option("cb_min_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
+  new_options.add(VW::config::make_typed_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
   new_options.add(VW::config::make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
   new_options.add(VW::config::make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
   new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("ips").help("contextual bandit method to use in {ips,dm,dr}"));
   options.add_and_parse(new_options);
 
-  if(!cb_explore_adf)
+  if(!cb_explore_adf_option)
     return nullptr;
 
   data->all = &all;

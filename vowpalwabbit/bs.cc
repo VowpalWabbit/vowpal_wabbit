@@ -241,6 +241,7 @@ base_learner* bs_setup(VW::config::options_i& options, vw& all)
   VW::config::option_group_definition new_options("Bootstrap");
   new_options.add(VW::config::make_typed_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"));
   new_options.add(VW::config::make_typed_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
+  options.add_and_parse(new_options);
 
   if(!options.was_supplied("boostrap"))
     return nullptr;

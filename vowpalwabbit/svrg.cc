@@ -172,14 +172,14 @@ base_learner* svrg_setup(VW::config::options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
 
-  bool svrg = false;
+  bool svrg_option = false;
   VW::config::option_group_definition svrg_options("Stochastic Variance Reduced Gradient");
   svrg_options
-    (VW::config::make_typed_option("svrg", svrg).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+    (VW::config::make_typed_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
     (VW::config::make_typed_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
   options.add_and_parse(svrg_options);
 
-  if(!svrg)
+  if(!svrg_option)
   {
     return nullptr;
   }

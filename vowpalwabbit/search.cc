@@ -2171,7 +2171,6 @@ void end_pass(search& sch)
     // TODO work out a better system to update state that will be saved in the model.
     all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
     all->options->get_typed_option<size_t>("search_trained_nb_policies").value(static_cast<size_t>(priv.current_policy));
-    //VW::cmd_string_replace_value(all->opts_n_args.file_options,"--search_trained_nb_policies", ss.str());
   }
 }
 
@@ -2339,7 +2338,7 @@ void handle_condition_options(vw& all, auto_condition_settings& acset)
   new_options.add(make_typed_option("search_max_quad_ngram_length", acset.max_quad_ngram_length).keep().default_value(0).help("add bias *times* input features for each ngram up to and including this length (def: 0)"));
   new_options.add(make_typed_option("search_condition_feature_value", acset.feature_value).keep().default_value(1.f).help("how much weight should the conditional features get? (def: 1.)"));
   new_options.add(make_typed_option("search_use_passthrough_repr", acset.use_passthrough_repr).keep().help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
-  all.options.add_and_parse(new_options);
+  all.options->add_and_parse(new_options);
 }
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
@@ -2547,10 +2546,10 @@ base_learner* setup(options_i& options, vw& all)
     priv.current_policy--;
 
   all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
-  all.options->get_typed_option<size_t>("search_trained_nb_policies").value(priv.current_policy);
+  all.options->get_typed_option<size_t>("search_trained_nb_policies").value(static_cast<size_t>(priv.current_policy));
 
   all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
-  all.options->get_typed_option<size_t>("search_total_nb_policies").value(priv.total_number_of_policies);
+  all.options->get_typed_option<size_t>("search_total_nb_policies").value(static_cast<size_t>(priv.total_number_of_policies));
 
   cdbg << "search current_policy = " << priv.current_policy << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
