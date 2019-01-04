@@ -69,6 +69,10 @@ $ git clone git@github.com:VowpalWabbit/vowpal_wabbit.git
 ## For HTTP-based Git interaction
 $ git clone https://github.com/VowpalWabbit/vowpal_wabbit.git
 ```
+You may need to initialize or update your `rapidjson` submodule by invoking:
+```
+git submodule update --init
+```
 
 ## Compiling
 
