@@ -40,6 +40,8 @@ void options_boost_po::add_and_parse(option_group_definition group) {
   for (auto opt_ptr : group.m_options) {
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
+    m_defined_options.insert(opt_ptr->m_short_name);
+    m_defined_options.insert("-" + opt_ptr->m_short_name);
 
     // Only the first object for a given key will be inserted
     m_options.insert(std::make_pair(opt_ptr->m_name, opt_ptr));
@@ -48,10 +50,20 @@ void options_boost_po::add_and_parse(option_group_definition group) {
   try {
     po::variables_map vm;
     auto parsed_options = po::command_line_parser(m_command_line)
-      .options(new_options).allow_unregistered().run();
+      .options(new_options).style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).allow_unregistered().run();
 
     for (auto const& option : parsed_options.options) {
       m_supplied_options.insert(option.string_key);
+
+      // Parsed options can contain short options in the form -k, we can only check these as the group definitions come in.
+      if (option.string_key.length() > 0 && option.string_key[0] == '-') {
+        auto short_name = option.string_key.substr(1);
+        for (auto opt_ptr : group.m_options) {
+          if (opt_ptr->m_short_name == short_name) {
+            m_supplied_options.insert(short_name);
+          }
+        }
+      }
     }
 
     po::store(parsed_options, vm);
@@ -91,7 +103,7 @@ std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options() {
     m_options.begin(),
     m_options.end(),
     std::back_inserter(output_values),
-    [](auto &kv) { return kv.second; }
+    [](std::pair<const std::string, std::shared_ptr<base_option>>& kv) { return kv.second; }
   );
 
   return output_values;

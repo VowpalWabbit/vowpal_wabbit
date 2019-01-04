@@ -320,22 +320,22 @@ base_learner* cs_active_setup(VW::config::options_i& options, vw& all)
   data->t = 1;
 
   auto loss_function_type = all.loss->getType();
-  if (loss_function_type.compare("squared") != 0)
+  if (loss_function_type != "squared")
     THROW("error: you can't use non-squared loss with cs_active");
 
-  if (options.was_supplied("lda") != 0)
+  if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");
 
-  if (options.was_supplied("active") != 0)
+  if (options.was_supplied("active"))
     THROW("error: you can't use --cs_active and --active at the same time");
 
-  if (options.was_supplied("active_cover") != 0)
+  if (options.was_supplied("active_cover"))
     THROW("error: you can't use --cs_active and --active_cover at the same time");
 
-  if (options.was_supplied("csoaa") != 0)
+  if (options.was_supplied("csoaa"))
     THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (options.was_supplied("adax") == 0)
+  if (!options.was_supplied("adax"))
     all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
   all.p->lp = cs_label; // assigning the label parser

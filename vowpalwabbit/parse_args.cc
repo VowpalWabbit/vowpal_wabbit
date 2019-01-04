@@ -1288,18 +1288,45 @@ VW::config::options_i& load_header_merge_options(VW::config::options_i& options,
 
   // Get list of options in file options string
   po::parsed_options pos = po::command_line_parser(container).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).options(desc)
+    options(desc)
     .allow_unregistered().run();
 
+  bool skipping = false;
+  std::string saved_key = "";
   for (auto opt : pos.options) {
+
+    // If we previously encountered an option we want to skip, ignore tokens without --.
+    if (skipping) {
+      for (auto token : opt.original_tokens) {
+        auto found = token.find("--");
+        if (found != std::string::npos) {
+          skipping = false;
+        }
+      }
+
+      if (skipping) {
+        saved_key = "";
+        continue;
+      }
+    }
+
     // If the interaction settings are doubled, the copy in the model file is ignored.
     if (interactions_settings_doubled && (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions")) {
       // skip this option.
+      skipping = true;
       continue;
     }
 
-    for (auto value : opt.value) {
-      options.insert(opt.string_key, value);
+    // File options should always use long form.
+
+    // If the key is empty this must be a value, otherwise set the key.
+    if (opt.string_key != "") {
+      saved_key = opt.string_key;
+    }
+    else {
+      for (auto value : opt.value) {
+        options.insert(saved_key, value);
+      }
     }
   }
 
@@ -1426,7 +1453,7 @@ vw* initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if(options.was_supplied("initial_regressor"))
+      if(options.was_supplied("input_feature_regularizer"))
       {
         all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
       }

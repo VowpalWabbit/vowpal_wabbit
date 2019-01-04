@@ -824,8 +824,8 @@ base_learner* csldf_setup(options_i& options, vw& all)
   option_group_definition csldf_outer_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_outer_options.add(make_typed_option("csoaa_ldf", csoaa_ldf).keep().help("Use one-against-all multiclass learning with label dependent features."));
   csldf_outer_options.add(make_typed_option("ldf_override", ldf_override).help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"));
-  csldf_outer_options.add(make_typed_option("csoaa_rank", ld->rank).help("Return actions sorted by score order"));
-  csldf_outer_options.add(make_typed_option("probabilities", ld->is_probabilities).help("predict probabilites of all classes"));
+  csldf_outer_options.add(make_typed_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"));
+  csldf_outer_options.add(make_typed_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
 
   option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
   csldf_inner_options.add(make_typed_option("wap_ldf", wap_ldf).keep().help("Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."));

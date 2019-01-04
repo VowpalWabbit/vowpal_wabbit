@@ -221,6 +221,9 @@ base_learner* cbify_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
   options.add_and_parse(new_options);
 
+  if (!options.was_supplied("cbify"))
+    return nullptr;
+
   data->use_adf = options.was_supplied("cb_explore_adf");
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();

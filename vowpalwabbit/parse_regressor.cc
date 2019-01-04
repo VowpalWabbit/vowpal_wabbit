@@ -217,7 +217,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
                                                 "", read, msg, text);
         all.id = buff2;
 
-        if (read && options.was_supplied("id") && !all.id.empty())
+        if (read && !options.was_supplied("id") && !all.id.empty())
         {
           file_options += " --id";
           file_options += " " + all.id;
@@ -244,7 +244,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
                           "", read, msg, text);
 
-      if (read && options.was_supplied("bit_precision"))
+      if (read && !options.was_supplied("bit_precision"))
       {
         file_options += " --bit_precision";
         std::stringstream temp;
@@ -382,7 +382,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
                             "", read, msg, text);
         if (rank != 0)
         {
-          if (options.was_supplied("rank"))
+          if (!options.was_supplied("rank"))
           {
             file_options += " --rank";
             std::stringstream temp;
@@ -468,14 +468,14 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
         bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
 
         // Write out file options to caller.
-        file_options = buff2;
+        file_options = file_options + " " +  buff2;
       }
       else
       {
         VW::config::options_serializer_boost_po serializer;
         for(auto const& option : options.get_all_options())
         {
-          if(option->m_keep)
+          if(option->m_keep && options.was_supplied(option->m_name))
           {
             serializer.add(*option);
           }

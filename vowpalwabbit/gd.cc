@@ -1080,11 +1080,11 @@ base_learner* setup(options_i& options, vw& all)
 {
   auto g = scoped_calloc_or_throw<gd>();
 
-  bool sgd{};
-  bool adaptive{};
-  bool adax{};
-  bool invariant{};
-  bool normalized{};
+  bool sgd = false;
+  bool adaptive = false;
+  bool adax = false;
+  bool invariant = false;
+  bool normalized = false;
 
   option_group_definition gd_opts("Gradient Descent options");
   gd_opts.add(make_typed_option("sgd", sgd).help("use regular stochastic gradient descent update."));

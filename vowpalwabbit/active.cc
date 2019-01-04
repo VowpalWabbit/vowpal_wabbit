@@ -139,8 +139,8 @@ base_learner* active_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active>();
 
-  bool active_option;
-  bool simulation;
+  bool active_option = false;
+  bool simulation = false;
   VW::config::option_group_definition new_options("Active Learning");
   new_options.add(VW::config::make_typed_option("active", active_option).keep().help("enable active learning"));
   new_options.add(VW::config::make_typed_option("simulation", simulation).help("active learning simulation mode"));

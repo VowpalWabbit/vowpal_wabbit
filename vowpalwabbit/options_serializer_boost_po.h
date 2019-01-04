@@ -36,8 +36,8 @@ namespace VW {
       void serialize(typed_option<std::vector<T>> typed_option) {
         auto vec = typed_option.value();
         if (vec.size() > 0) {
-          m_output_stream << " --" << typed_option.m_name;
           for (auto const& value : vec) {
+            m_output_stream << " --" << typed_option.m_name;
             m_output_stream << " " << value;
           }
         }

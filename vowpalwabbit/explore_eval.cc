@@ -191,7 +191,7 @@ base_learner* explore_eval_setup(VW::config::options_i& options, vw& all)
   bool explore_eval_option = false;
   VW::config::option_group_definition new_options("Explore evaluation");
   new_options.add(VW::config::make_typed_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"));
-  new_options.add(VW::config::make_typed_option("critical", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
+  new_options.add(VW::config::make_typed_option("multiplier", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
   options.add_and_parse(new_options);
 
   if (!explore_eval_option)
