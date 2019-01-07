@@ -147,6 +147,12 @@ base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
   if(!options.was_supplied("cb"))
     return nullptr;
 
+  // Ensure serialization of this option in all cases.
+  if(!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+  }
+
   cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;//default for DR

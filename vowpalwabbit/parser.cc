@@ -34,7 +34,6 @@ int getpid()
 #else
 #include <netdb.h>
 #endif
-#include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>

@@ -772,6 +772,12 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   if(!cb_explore_adf_option)
     return nullptr;
 
+  // Ensure serialization of this option in all cases.
+  if(!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+  }
+
   data->all = &all;
   if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
     data->lambda = -data->lambda;

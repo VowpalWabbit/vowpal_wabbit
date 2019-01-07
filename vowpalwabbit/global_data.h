@@ -13,8 +13,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <cstdio>
 #include <inttypes.h>
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
+#include <climits>
 
 #include "v_array.h"
 #include "array_parameters.h"
@@ -29,7 +28,6 @@ namespace po = boost::program_options;
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
-#include "parser_helper.h"
 
 #include "options.h"
 

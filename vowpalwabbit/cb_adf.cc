@@ -355,6 +355,12 @@ base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
   if(!cb_adf_option)
     return nullptr;
 
+  // Ensure serialization of this option in all cases.
+  if(!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+  }
+
   ld->all = &all;
 
   // number of weight vectors needed

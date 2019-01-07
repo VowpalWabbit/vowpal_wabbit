@@ -468,7 +468,18 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
         bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
 
         // Write out file options to caller.
-        file_options = file_options + " " +  buff2;
+        if (len > 0)
+        {
+          // There is a potential bug here if len is read out to be zero (e.g. corrupted file). If we naively
+          // append buff2 into file_options it might contain old information and thus be invalid. Before, what
+          // probably happened is boost::program_options did the right thing, but now we have to construct the
+          // input to it where we do not know whether a particular option key can have multiple values or not.
+          //
+          // In some cases we end up with a string like: "--bit_precision 18 <something_not_an_int>", which will
+          // cause a "bad program options value" exception, rather than the true "file is corrupted" issue. Only
+          // pushing the contents of buff2 into file_options when it is valid will prevent this false error.
+          file_options = file_options + " " + buff2;
+        }
       }
       else
       {

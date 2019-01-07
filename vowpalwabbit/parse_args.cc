@@ -80,6 +80,7 @@ license as described in the file LICENSE.
 #include "options_serializer_boost_po.h"
 
 using namespace std;
+namespace po = boost::program_options;
 
 //
 // Does string end with a certain substring?
@@ -1542,13 +1543,15 @@ vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_l
   VW::config::options_serializer_boost_po serializer;
   for(auto const& option : vw_model->options->get_all_options())
   {
-    // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the model.
-    if(option->m_name == "no_stdin" || option->m_name == "initial_regressor")
-    {
-      continue;
-    }
+    if (vw_model->options->was_supplied(option->m_name)) {
+      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the model.
+      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor")
+      {
+        continue;
+      }
 
-    serializer.add(*option);
+      serializer.add(*option);
+    }
   }
 
   auto serialized_options = serializer.str();

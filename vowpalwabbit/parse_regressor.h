@@ -8,8 +8,6 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "options.h"
 
-namespace po = boost::program_options;
-
 void read_regressor_file(vw& all, std::vector<std::string> files, io_buf& io_temp);
 
 void finalize_regressor(vw& all, std::string reg_name);

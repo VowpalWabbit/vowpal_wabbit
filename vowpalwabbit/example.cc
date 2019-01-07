@@ -4,6 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <stdint.h>
+#include <algorithm>
+
 #include "gd.h"
 
 float collision_cleanup(features& fs)

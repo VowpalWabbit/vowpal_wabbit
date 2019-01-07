@@ -80,12 +80,17 @@ void options_boost_po::add_and_parse(option_group_definition group) {
   }
   catch (boost::exception_detail::clone_impl<
     boost::exception_detail::error_info_injector<
-    boost::program_options::invalid_option_value>>&ex) {
+    boost::program_options::invalid_option_value>>& ex) {
     THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
   }
   catch (boost::exception_detail::clone_impl<
     boost::exception_detail::error_info_injector<
-    boost::program_options::ambiguous_option>>&ex) {
+    boost::bad_lexical_cast>>& ex) {
+    THROW_EX(VW::vw_argument_invalid_value_exception, ex.what());
+  }
+  catch (boost::exception_detail::clone_impl<
+    boost::exception_detail::error_info_injector<
+    boost::program_options::ambiguous_option>>& ex) {
     THROW(ex.what());
   }
 }
