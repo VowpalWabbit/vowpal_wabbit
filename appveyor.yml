@@ -7,13 +7,15 @@ shallow_clone: true
 clone_folder: C:\vowpal_wabbit
 cache:
   - vowpalwabbit\packages -> **\packages.config
+install:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - git submodule update --init --recursive
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
 # Temporary workaround: https://github.com/Microsoft/vcpkg/issues/4189#issuecomment-417462822
 - rd /s /q C:\OpenSSL-v11-Win32
 - rd /s /q C:\OpenSSL-v11-Win64
 - cd c:\vowpal_wabbit
-- git submodule update --init
 - vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\cs\packages.config
 - vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\azure\packages.config
 - vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\azure_worker\packages.config
