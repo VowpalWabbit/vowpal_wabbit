@@ -3,7 +3,7 @@ os: Windows Server 2012 R2
 configuration:
 - Release
 platform: x64
-shallow_clone: true
+shallow_clone: false
 clone_folder: C:\vowpal_wabbit
 cache:
   - vowpalwabbit\packages -> **\packages.config
