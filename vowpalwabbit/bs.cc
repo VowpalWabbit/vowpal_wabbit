@@ -243,7 +243,7 @@ base_learner* bs_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
   options.add_and_parse(new_options);
 
-  if(!options.was_supplied("boostrap"))
+  if(!options.was_supplied("bootstrap"))
     return nullptr;
 
   data->ub = FLT_MAX;

@@ -1269,7 +1269,7 @@ LEARNER::base_learner *lda_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("lda_rho", ld->lda_rho).keep().default_value(0.1f).help("Prior on sparsity of topic distributions"));
   new_options.add(VW::config::make_typed_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"));
   new_options.add(VW::config::make_typed_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"));
-  new_options.add(VW::config::make_typed_option("minibatch", ld->minibatch).default_value(0.001f).help("Minibatch size, for LDA"));
+  new_options.add(VW::config::make_typed_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"));
   new_options.add(VW::config::make_typed_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"));
   new_options.add(VW::config::make_typed_option("metrics", ld->compute_coherence_metrics).default_value(false).help("Compute metrics"));
   options.add_and_parse(new_options);
