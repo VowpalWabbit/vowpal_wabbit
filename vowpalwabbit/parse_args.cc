@@ -1293,6 +1293,8 @@ VW::config::options_i& load_header_merge_options(VW::config::options_i& options,
 
   bool skipping = false;
   std::string saved_key = "";
+  unsigned int count = 0;
+  bool first_seen = false;
   for (auto opt : pos.options) {
 
     // If we previously encountered an option we want to skip, ignore tokens without --.
@@ -1321,13 +1323,25 @@ VW::config::options_i& load_header_merge_options(VW::config::options_i& options,
 
     // If the key is empty this must be a value, otherwise set the key.
     if (opt.string_key != "") {
+      // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
+      if (count == 0 && first_seen) {
+        options.insert(saved_key, "");
+      }
+
       saved_key = opt.string_key;
+      count = 0;
+      first_seen = true;
     }
     else {
       for (auto value : opt.value) {
         options.insert(saved_key, value);
+        count++;
       }
     }
+  }
+
+  if (count == 0 && saved_key != "") {
+    options.insert(saved_key, "");
   }
 
   return options;
@@ -1538,6 +1552,7 @@ vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_l
   }
 
   auto serialized_options = serializer.str();
+  serialized_options = serialized_options + " " + extra_args;
 
   vw* new_model = VW::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
   free_it(new_model->sd);

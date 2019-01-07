@@ -864,14 +864,13 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   int degree = 2;
 
   bool ksvm = false;
-  bool para_active = false;
 
   option_group_definition kernel_svn_options("Kernel SVM");
   kernel_svn_options
-    (make_typed_option("ksvm", all.final_regressor_name).keep().help("kernel svm"))
+    (make_typed_option("ksvm", ksvm).keep().help("kernel svm"))
     (make_typed_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
     (make_typed_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
-    (make_typed_option("para_active", para_active).help("do parallel active learning"))
+    (make_typed_option("para_active", params->para_active).help("do parallel active learning"))
     (make_typed_option("pool_size", params->pool_size).default_value(1).help("size of pools for active learning"))
     (make_typed_option("subsample", params->subsample).default_value(1).help("number of items to subsample from the pool"))
     (make_typed_option("kernel", kernel_type).keep().default_value("linear").help("type of kernel (rbf or linear (default))"))
@@ -879,7 +878,7 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
     (make_typed_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
   options.add_and_parse(kernel_svn_options);
 
-  if(!options.was_supplied("ksvm"))
+  if(!ksvm)
   {
     return nullptr;
   }

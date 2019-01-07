@@ -9,7 +9,16 @@ using namespace VW::config;
 
 template<>
 po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt) {
-  return get_base_boost_value(opt)->default_value({ false })->implicit_value({ true });
+  auto value = get_base_boost_value(opt)->implicit_value({ true });
+
+  if (opt->default_value_supplied()) {
+    value->default_value({ opt->default_value() });
+  }
+  else {
+    value->default_value({ false });
+  }
+
+  return value;
 }
 
 void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description) {
