@@ -43,9 +43,6 @@ void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::
 void options_boost_po::add_and_parse(option_group_definition group) {
   po::options_description new_options(group.m_name);
 
-  // Add the help for the given options.
-  new_options.print(m_help_stringstream);
-
   for (auto opt_ptr : group.m_options) {
     add_to_description(opt_ptr, new_options);
     m_defined_options.insert(opt_ptr->m_name);
@@ -55,6 +52,9 @@ void options_boost_po::add_and_parse(option_group_definition group) {
     // Only the first object for a given key will be inserted
     m_options.insert(std::make_pair(opt_ptr->m_name, opt_ptr));
   }
+
+  // Add the help for the given options.
+  new_options.print(m_help_stringstream, 50);
 
   try {
     po::variables_map vm;

@@ -895,8 +895,7 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   params->all = &all;
 
   // This param comes from the active reduction.
-  // TODO this changes the semantics a bit - now this will only be true if --active was supplied and NOT --simulation
-  // Is this the correct behavior? Was it a bug before?
+  // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and NOT --simulation
   if(all.active)
     params->active = true;
   if(params->active)

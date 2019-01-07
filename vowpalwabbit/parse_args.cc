@@ -635,7 +635,6 @@ void parse_feature_tweaks(VW::config::options_i& options, vw& all)
   // prepare namespace interactions
   std::vector<std::string> expanded_interactions;
 
-  // TODO move interactions_settings_doubled to a parameter not global
   if ( ( ((!all.pairs.empty() || !all.triples.empty() || !all.interactions.empty()) && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
@@ -1092,8 +1091,6 @@ void load_input_model(vw& all, io_buf& io_temp)
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
-    // TODO Isn't this a noop based on the internals of parse_mask_regressor_args?
-    // set the mask, which will reuse -i file we just loaded
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
   }
   else
@@ -1380,7 +1377,6 @@ void parse_modules(VW::config::options_i& options, vw& all)
 void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
-    // TODO
     load_input_model(all, model);
   else
     model.close_file();
@@ -1479,13 +1475,11 @@ vw* initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad
     // Loads header of model files and loads the command line options into the options object.
     load_header_merge_options(options, all, *model);
 
-    // TODO
     parse_modules(options, all);
 
-    // TODO
     parse_sources(options, all, *model, skipModelLoad);
 
-    // TODO throw for unregistered
+    options.check_unregistered();
 
     // upon direct query for help -- spit it out to stdout;
     if (all.help_requested) {

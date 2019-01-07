@@ -37,23 +37,7 @@ namespace VW {
 
       options_boost_po(std::vector<std::string> args)
         : m_command_line(args)
-      {
-        //// Be friendly: if -d was left out, treat positional param as data file
-        //po::positional_options_description pos_description;
-        //po::options_description opt_description;
-        //opt_description.add_options()("data", po::value<std::string>());
-
-        //pos_description.add("data", -1);
-        //po::parsed_options parsed = po::command_line_parser(args).options(opt_description).positional(pos_description).allow_unregistered().run();
-
-        //po::variables_map vm;
-        //po::store(parsed, vm);
-        //
-        //if (vm.count("data") > 0) {
-        //  args.push_back("--data");
-        //  args.push_back(vm["data"].as<std::string>());
-        //}
-      }
+      {}
 
       virtual void add_and_parse(option_group_definition group) override;
       virtual bool was_supplied(std::string key) override;
