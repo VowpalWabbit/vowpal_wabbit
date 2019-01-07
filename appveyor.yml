@@ -8,8 +8,8 @@ clone_folder: C:\vowpal_wabbit
 cache:
   - vowpalwabbit\packages -> **\packages.config
 install:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - git submodule update --init --recursive
+- cmd: git clone -q --recursive --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+- cmd: git checkout -qf %APPVEYOR_REPO_COMMIT%
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
 # Temporary workaround: https://github.com/Microsoft/vcpkg/issues/4189#issuecomment-417462822
