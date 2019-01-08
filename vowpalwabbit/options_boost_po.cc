@@ -54,7 +54,7 @@ void options_boost_po::add_and_parse(option_group_definition group) {
   }
 
   // Add the help for the given options.
-  new_options.print(m_help_stringstream, 50);
+  new_options.print(m_help_stringstream);
 
   try {
     po::variables_map vm;
