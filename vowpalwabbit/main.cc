@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    vector<VW::config::options_boost_po> arguments;
+    vector<std::unique_ptr<VW::config::options_boost_po>> arguments;
     vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
@@ -107,16 +107,18 @@ int main(int argc, char *argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        arguments.push_back(VW::config::options_boost_po(argc, argv));
-        arguments[arguments.size() - 1].add_and_parse(driver_config);
-        alls.push_back(setup(arguments[arguments.size() - 1]));
+        std::unique_ptr<VW::config::options_boost_po> ptr(new VW::config::options_boost_po(argc, argv));
+        ptr->add_and_parse(driver_config);
+        alls.push_back(setup(*ptr.get()));
+        arguments.push_back(std::move(ptr));
       }
     }
     else
     {
-      arguments.push_back(VW::config::options_boost_po(argc, argv));
-      arguments[0].add_and_parse(driver_config);
-      alls.push_back(setup(arguments[0]));
+      std::unique_ptr<VW::config::options_boost_po> ptr(new VW::config::options_boost_po(argc, argv));
+      ptr->add_and_parse(driver_config);
+      alls.push_back(setup(*ptr.get()));
+      arguments.push_back(std::move(ptr));
     }
 
     vw& all = *alls[0];
