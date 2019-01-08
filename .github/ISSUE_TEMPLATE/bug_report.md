@@ -23,7 +23,7 @@ A clear and concise description of what you expected to happen.
 How did VW behave? Please include any stack trace, log messages or crash logs.
 
 **VW Version**
-e.g. `8.6.1`
+e.g. `VW 8.6.1 on Linux with the python bindings`
 
 **Additional context**
 Add any other context about the problem here.
