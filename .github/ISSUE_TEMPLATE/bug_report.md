@@ -19,6 +19,9 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Observed Behavior**
+How did VW behave? Please include any stack trace, log messages or crash logs.
+
 **VW Version**
 e.g. `8.6.1`
 
