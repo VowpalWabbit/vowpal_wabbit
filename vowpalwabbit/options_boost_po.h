@@ -42,31 +42,29 @@ namespace VW {
       options_boost_po(options_boost_po&) = delete;
       options_boost_po& operator=(options_boost_po&) = delete;
 
-      options_boost_po(options_boost_po&& other) {
-        if (this != &other) {
-          std::swap(this->m_options, other.m_options);
-          std::swap(this->m_command_line, other.m_command_line);
-          std::swap(this->m_help_stringstream, other.m_help_stringstream);
-          std::swap(this->m_help_stringstream, other.m_help_stringstream);
-          std::swap(this->m_supplied_options, other.m_supplied_options);
-          std::swap(this->m_ignore_supplied, other.m_defined_options);
-          std::swap(this->m_defined_options, other.m_defined_options);
-        }
-      }
+      // options_boost_po(options_boost_po&& other) {
+      //   if (this != &other) {
+      //     std::swap(this->m_options, other.m_options);
+      //     std::swap(this->m_command_line, other.m_command_line);
+      //     std::swap(this->m_help_stringstream, other.m_help_stringstream);
+      //     std::swap(this->m_supplied_options, other.m_supplied_options);
+      //     std::swap(this->m_ignore_supplied, other.m_defined_options);
+      //     std::swap(this->m_defined_options, other.m_defined_options);
+      //   }
+      // }
 
-      options_boost_po& operator=(options_boost_po&& other) {
-        if (this != &other) {
-          std::swap(this->m_options, other.m_options);
-          std::swap(this->m_command_line, other.m_command_line);
-          std::swap(this->m_help_stringstream, other.m_help_stringstream);
-          std::swap(this->m_help_stringstream, other.m_help_stringstream);
-          std::swap(this->m_supplied_options, other.m_supplied_options);
-          std::swap(this->m_ignore_supplied, other.m_defined_options);
-          std::swap(this->m_defined_options, other.m_defined_options);
-        }
+      // options_boost_po& operator=(options_boost_po&& other) {
+      //   if (this != &other) {
+      //     std::swap(this->m_options, other.m_options);
+      //     std::swap(this->m_command_line, other.m_command_line);
+      //     std::swap(this->m_help_stringstream, other.m_help_stringstream);
+      //     std::swap(this->m_supplied_options, other.m_supplied_options);
+      //     std::swap(this->m_ignore_supplied, other.m_defined_options);
+      //     std::swap(this->m_defined_options, other.m_defined_options);
+      //   }
 
-        return *this;
-      }
+      //   return *this;
+      // }
 
       virtual void add_and_parse(option_group_definition group) override;
       virtual bool was_supplied(std::string key) override;
