@@ -485,6 +485,8 @@ struct vw
   //error reporting
   vw_ostream trace_message;
 
+  // Flag used when VW internally manages lifetime of options object.
+  bool should_delete_options = false;
   VW::config::options_i* options;
 
   void* /*Search::search*/ searchstr;

@@ -1525,9 +1525,12 @@ vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trac
 
 vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  // TODO work out lifetime
   VW::config::options_i* options = new config::options_boost_po(argc, argv);
-  return initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+  vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
+
+  // When VW is deleted the options object will be cleaned up too.
+  all->should_delete_options = true;
+  return all;
 }
 
 // Create a new VW instance while sharing the model with another instance
@@ -1704,5 +1707,9 @@ void finish(vw& all, bool delete_all)
 
   if (finalize_regressor_exception_thrown)
     throw finalize_regressor_exception;
+
+  // Check if options object lifetime is managed internally.
+  if(all.should_delete_options)
+    delete all.options;
 }
 }
