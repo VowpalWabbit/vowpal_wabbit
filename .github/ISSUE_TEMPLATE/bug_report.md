@@ -22,7 +22,10 @@ A clear and concise description of what you expected to happen.
 **Observed Behavior**
 How did VW behave? Please include any stack trace, log messages or crash logs.
 
-**VW Version**
+**Environment**
+What version of VW did you use?
+What OS or language did you use?
+
 e.g. `VW 8.6.1 on Linux with the python bindings`
 
 **Additional context**
