@@ -39,6 +39,35 @@ namespace VW {
         : m_command_line(args)
       {}
 
+      options_boost_po(options_boost_po&) = delete;
+      options_boost_po& operator=(options_boost_po&) = delete;
+
+      options_boost_po(options_boost_po&& other) {
+        if (this != &other) {
+          std::swap(this->m_options, other.m_options);
+          std::swap(this->m_command_line, other.m_command_line);
+          std::swap(this->m_help_stringstream, other.m_help_stringstream);
+          std::swap(this->m_help_stringstream, other.m_help_stringstream);
+          std::swap(this->m_supplied_options, other.m_supplied_options);
+          std::swap(this->m_ignore_supplied, other.m_defined_options);
+          std::swap(this->m_defined_options, other.m_defined_options);
+        }
+      }
+
+      options_boost_po& operator=(options_boost_po&& other) {
+        if (this != &other) {
+          std::swap(this->m_options, other.m_options);
+          std::swap(this->m_command_line, other.m_command_line);
+          std::swap(this->m_help_stringstream, other.m_help_stringstream);
+          std::swap(this->m_help_stringstream, other.m_help_stringstream);
+          std::swap(this->m_supplied_options, other.m_supplied_options);
+          std::swap(this->m_ignore_supplied, other.m_defined_options);
+          std::swap(this->m_defined_options, other.m_defined_options);
+        }
+
+        return *this;
+      }
+
       virtual void add_and_parse(option_group_definition group) override;
       virtual bool was_supplied(std::string key) override;
       virtual std::string help() override;
@@ -107,6 +136,10 @@ namespace VW {
 
       // All options that were supplied on the command line.
       std::set<std::string> m_supplied_options;
+
+      // Used the ignore values that get incorrectly interpreted as options.
+      std::set<std::string> m_ignore_supplied;
+
 
       // All options that a description was provided for.
       std::set<std::string> m_defined_options;

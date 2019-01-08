@@ -64,6 +64,11 @@ void options_boost_po::add_and_parse(option_group_definition group) {
     for (auto const& option : parsed_options.options) {
       m_supplied_options.insert(option.string_key);
 
+      // If a string is later determined to be a value the erase it. This happens for negative numbers "-2"
+      for(auto& val : option.value) {
+        m_ignore_supplied.insert(val);
+      }
+
       // Parsed options can contain short options in the form -k, we can only check these as the group definitions come in.
       if (option.string_key.length() > 0 && option.string_key[0] == '-') {
         auto short_name = option.string_key.substr(1);
@@ -135,7 +140,7 @@ std::shared_ptr<base_option> VW::config::options_boost_po::get_option(std::strin
 // Explicit run without allow_unregistered.
 void options_boost_po::check_unregistered() {
   for (auto const& supplied : m_supplied_options) {
-    if (m_defined_options.count(supplied) == 0) {
+    if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0) {
       THROW(supplied << " is not a recognized command line option");
     }
   }

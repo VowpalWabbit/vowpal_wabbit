@@ -80,6 +80,10 @@ vw* setup(VW::config::options_i& options)
 
 int main(int argc, char *argv[])
 {
+  bool should_use_onethread = false;
+  VW::config::option_group_definition driver_config("driver");
+  driver_config.add(VW::config::make_typed_option("onethread", should_use_onethread).help("Disable parse thread"));
+
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
@@ -104,23 +108,18 @@ int main(int argc, char *argv[])
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
         arguments.push_back(VW::config::options_boost_po(argc, argv));
+        arguments[arguments.size() - 1].add_and_parse(driver_config);
         alls.push_back(setup(arguments[arguments.size() - 1]));
       }
     }
     else
     {
       arguments.push_back(VW::config::options_boost_po(argc, argv));
+      arguments[0].add_and_parse(driver_config);
       alls.push_back(setup(arguments[0]));
     }
 
     vw& all = *alls[0];
-    auto master_args = &arguments[0];
-
-    // TODO handle positional parameter
-    bool should_use_onethread;
-    VW::config::option_group_definition driver_config("driver");
-    driver_config.add(VW::config::make_typed_option("onethread", should_use_onethread).help("Disable parse thread"));
-    master_args->add_and_parse(driver_config);
 
     //struct timeb t_start, t_end;
     //ftime(&t_start);
