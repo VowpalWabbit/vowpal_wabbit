@@ -337,7 +337,7 @@ void parse_diagnostics(VW::config::options_i& options, vw& all)
 
   options.add_and_parse(diagnostic_group);
 
-  // upon direct query for version -- spit it out to stdout
+  // Upon direct query for version -- spit it out to stdout
   if (version_arg)
   {
     cout << version.to_string() << "\n";
