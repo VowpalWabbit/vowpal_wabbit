@@ -9,6 +9,11 @@
 namespace VW {
   namespace config {
     struct options_serializer_boost_po : options_serializer_i {
+
+      options_serializer_boost_po() {
+        m_output_stream.precision(15);
+      }
+
       virtual void add(base_option& option) override;
       virtual std::string str() override;
       virtual const char* data() override;
@@ -28,7 +33,6 @@ namespace VW {
 
       template <typename T>
       void serialize(typed_option<T> typed_option) {
-        // TODO does the stream precision need to be set?
         m_output_stream << " --" << typed_option.m_name << " " << typed_option.value();
       }
 

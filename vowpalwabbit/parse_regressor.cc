@@ -498,7 +498,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::st
         if (all.save_resume && all.random_state != 0)
         {
           serialized_keep_options += " --random_seed";
-          serialized_keep_options += " " + all.random_state;
+          serialized_keep_options += " " + std::to_string(all.random_state);
         }
 
         msg << "options:"<< serialized_keep_options << "\n";
