@@ -15,9 +15,6 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env)
   catch(const std::bad_alloc& e)
   { throw_java_exception(env, "java/lang/OutOfMemoryError", e.what());
   }
-  catch(const boost::program_options::error& e)
-  { throw_java_exception(env, "java/lang/IllegalArgumentException", e.what());
-  }
   catch(const std::exception& e)
   { throw_java_exception(env, "java/lang/Exception", e.what());
   }
