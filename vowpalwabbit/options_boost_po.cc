@@ -141,7 +141,7 @@ std::shared_ptr<base_option> VW::config::options_boost_po::get_option(std::strin
 void options_boost_po::check_unregistered() {
   for (auto const& supplied : m_supplied_options) {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0) {
-      THROW(supplied << " is not a recognized command line option");
+      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << supplied << "'");
     }
   }
 }

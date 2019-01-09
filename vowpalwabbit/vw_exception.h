@@ -61,6 +61,19 @@ public:
   ~vw_argument_invalid_value_exception() _NOEXCEPT {}
 };
 
+class vw_unrecognised_option_exception : public vw_exception {
+ public:
+  vw_unrecognised_option_exception(const char* file, int lineNumber, std::string message)
+    : vw_exception(file, lineNumber, message)
+  {}
+
+  vw_unrecognised_option_exception(const vw_unrecognised_option_exception& ex)
+    : vw_exception(ex)
+  {}
+
+  ~vw_unrecognised_option_exception() _NOEXCEPT {}
+};
+
 #ifdef _WIN32
 void vw_trace(const char* filename, int linenumber, const char* fmt, ...);
 
