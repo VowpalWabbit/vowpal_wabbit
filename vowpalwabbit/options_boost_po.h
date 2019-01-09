@@ -42,30 +42,6 @@ namespace VW {
       options_boost_po(options_boost_po&) = delete;
       options_boost_po& operator=(options_boost_po&) = delete;
 
-      // options_boost_po(options_boost_po&& other) {
-      //   if (this != &other) {
-      //     std::swap(this->m_options, other.m_options);
-      //     std::swap(this->m_command_line, other.m_command_line);
-      //     std::swap(this->m_help_stringstream, other.m_help_stringstream);
-      //     std::swap(this->m_supplied_options, other.m_supplied_options);
-      //     std::swap(this->m_ignore_supplied, other.m_defined_options);
-      //     std::swap(this->m_defined_options, other.m_defined_options);
-      //   }
-      // }
-
-      // options_boost_po& operator=(options_boost_po&& other) {
-      //   if (this != &other) {
-      //     std::swap(this->m_options, other.m_options);
-      //     std::swap(this->m_command_line, other.m_command_line);
-      //     std::swap(this->m_help_stringstream, other.m_help_stringstream);
-      //     std::swap(this->m_supplied_options, other.m_supplied_options);
-      //     std::swap(this->m_ignore_supplied, other.m_defined_options);
-      //     std::swap(this->m_defined_options, other.m_defined_options);
-      //   }
-
-      //   return *this;
-      // }
-
       virtual void add_and_parse(option_group_definition group) override;
       virtual bool was_supplied(std::string key) override;
       virtual std::string help() override;
@@ -96,6 +72,26 @@ namespace VW {
 
         // Actually replace the value.
         *(it+1) = value;
+      }
+
+      // key must reference an option previously defined.
+      bool try_get_positional_option_token(std::string key, std::string& token, int position) {
+        po::positional_options_description p;
+        p.add(key.c_str(), position);
+        po::parsed_options pos = po::command_line_parser(m_command_line).
+          style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+          options(master_description).positional(p).run();
+
+        auto it = std::find_if(pos.options.begin(), pos.options.end(),
+          [&key](boost::program_options::option option) { return option.string_key == key; }
+        );
+
+        if (it != pos.options.end() && (*it).value.size() > 0) {
+          token = (*it).value.at(0);
+          return true;
+        }
+
+        return false;
       }
 
     private:
@@ -138,6 +134,7 @@ namespace VW {
       // Used the ignore values that get incorrectly interpreted as options.
       std::set<std::string> m_ignore_supplied;
 
+      po::options_description master_description;
 
       // All options that a description was provided for.
       std::set<std::string> m_defined_options;
@@ -224,6 +221,11 @@ namespace VW {
         boost_option_name += opt->m_short_name;
       }
       options_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), opt->m_help.c_str());
+
+      if(m_defined_options.count(opt->m_name) == 0) {
+        // TODO may need to add noop notifier here.
+        master_description.add_options()(boost_option_name.c_str(), convert_to_boost_value(opt), "");
+      }
     }
   }
 }

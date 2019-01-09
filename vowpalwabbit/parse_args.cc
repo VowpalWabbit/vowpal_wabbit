@@ -405,6 +405,21 @@ input_options parse_source(vw& all, VW::config::options_i& options)
   input_options.add(VW::config::make_typed_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
 
   options.add_and_parse(input_options);
+
+  // If the option provider is program_options try and retrieve data as a positional parameter.
+  VW::config::options_i* options_ptr = &options;
+  auto boost_options = dynamic_cast<VW::config::options_boost_po*>(options_ptr);
+  if (boost_options)
+  {
+    std::string data;
+    if (boost_options->try_get_positional_option_token("data", data, -1))
+    {
+      if (all.data_filename != data) {
+        all.data_filename = data;
+      }
+    }
+  }
+
   if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
   {
     all.daemon = true;
@@ -1660,6 +1675,10 @@ void finish(vw& all, bool delete_all)
     free_it(all.l);
   }
 
+  // Check if options object lifetime is managed internally.
+  if (all.should_delete_options)
+    delete all.options;
+
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.clear();
@@ -1707,9 +1726,5 @@ void finish(vw& all, bool delete_all)
 
   if (finalize_regressor_exception_thrown)
     throw finalize_regressor_exception;
-
-  // Check if options object lifetime is managed internally.
-  if(all.should_delete_options)
-    delete all.options;
 }
 }
