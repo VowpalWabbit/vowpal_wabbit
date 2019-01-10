@@ -1344,6 +1344,14 @@ VW::config::options_i& load_header_merge_options(VW::config::options_i& options,
       saved_key = opt.string_key;
       count = 0;
       first_seen = true;
+
+      if (opt.value.size() > 0)
+      {
+        for (auto value : opt.value) {
+          options.insert(saved_key, value);
+          count++;
+        }
+      }
     }
     else {
       for (auto value : opt.value) {
