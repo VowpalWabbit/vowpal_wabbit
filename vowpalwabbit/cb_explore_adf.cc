@@ -777,6 +777,7 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   if(!options.was_supplied("cb_type"))
   {
     options.insert("cb_type", type_string);
+    options.add_and_parse(new_options);
   }
 
   data->all = &all;

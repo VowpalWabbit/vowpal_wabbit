@@ -80,7 +80,7 @@ namespace VW {
         p.add(key.c_str(), position);
         po::parsed_options pos = po::command_line_parser(m_command_line).
           style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-          options(master_description).positional(p).run();
+          options(master_description).allow_unregistered().positional(p).run();
 
         auto it = std::find_if(pos.options.begin(), pos.options.end(),
           [&key](boost::program_options::option option) { return option.string_key == key; }

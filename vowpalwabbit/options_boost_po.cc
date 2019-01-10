@@ -49,8 +49,8 @@ void options_boost_po::add_and_parse(option_group_definition group) {
     m_defined_options.insert(opt_ptr->m_short_name);
     m_defined_options.insert("-" + opt_ptr->m_short_name);
 
-    // Only the first object for a given key will be inserted
-    m_options.insert(std::make_pair(opt_ptr->m_name, opt_ptr));
+    // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but the previously defined option's default value was serialized into the model. This resolves that state info.
+    m_options[opt_ptr->m_name] = opt_ptr;
   }
 
   // Add the help for the given options.
@@ -141,7 +141,7 @@ std::shared_ptr<base_option> VW::config::options_boost_po::get_option(std::strin
 void options_boost_po::check_unregistered() {
   for (auto const& supplied : m_supplied_options) {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0) {
-      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '" << supplied << "'");
+      THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'");
     }
   }
 }
