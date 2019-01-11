@@ -37,11 +37,11 @@ void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    data.all->opts_n_args.trace_message << "update count = " << data.update_count << endl;
+    data.all->trace_message << "update count = " << data.update_count << endl;
     if (data.violations > 0)
-      data.all->opts_n_args.trace_message << "violation count = " << data.violations << endl;
+      data.all->trace_message << "violation count = " << data.violations << endl;
     if (!data.fixed_multiplier)
-      data.all->opts_n_args.trace_message << "final multiplier = " << data.multiplier << endl;
+      data.all->trace_message << "final multiplier = " << data.multiplier << endl;
   }
 }
 

@@ -581,6 +581,7 @@ void finish(cb_explore_adf& data)
     data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
+  data.gen_cs.mtr_ec_seq.~vector();
 }
 
 
@@ -816,14 +817,14 @@ base_learner* cb_explore_adf_setup(arguments& arg)
     else if (type_string.compare("mtr") == 0)
     {
       if (arg.vm.count("cover"))
-        arg.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
+        arg.all->trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
     else
-      arg.trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
+      arg.all->trace_message << "warning: cb_type must be in {'ips','dr','mtr'}; resetting to ips." << std::endl;
 
     if (data->explore_type == REGCB && data->gen_cs.cb_type != CB_TYPE_MTR)
-      arg.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
+      arg.all->trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
 
   learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,

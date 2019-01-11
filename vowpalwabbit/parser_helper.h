@@ -26,16 +26,26 @@ class arguments {
  public:
   po::options_description all_opts; //All specified options.
   po::options_description opts; //Critical options and their dependencies.
-  vw_ostream trace_message;//error reporting
   std::stringstream* file_options; // the set of options to store in the model file.
   po::variables_map vm; //A stored map from option to value.
   std::vector<std::string> args;//All arguments
   vw* all;//backdoor that should go away over time.
 
   //initialization
- arguments(vw& all_in, std::string name_in=""):new_od(name_in), missing_critical(false), all(&all_in) {file_options = new std::stringstream;};
- arguments():missing_critical(false){};//this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
-  ~arguments(){ delete file_options;};
+ arguments(vw& all_in, std::string name_in=""):new_od(name_in), missing_critical(false), all(&all_in) {
+   file_options = new std::stringstream;
+ };
+  
+  //this should not be used but appears sometimes unavoidable.  Do an in-place allocation with the upper initializer after it is used.
+ arguments():missing_critical(false){
+   file_options = nullptr;
+ };
+  ~arguments(){ 
+    if (file_options != nullptr) {
+      delete file_options;
+      file_options = nullptr;
+    }
+  };
 
   //reinitialization
   arguments& new_options(std::string name_in="")
