@@ -749,7 +749,7 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   bool cb_explore_adf_option = false;
   bool softmax = false;
   bool regcb = false;
-  std::string type_string;
+  std::string type_string = "ips";
   VW::config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options.add(VW::config::make_typed_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
   new_options.add(VW::config::make_typed_option("first", data->tau).keep().help("tau-first exploration"));
@@ -767,7 +767,7 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
   new_options.add(VW::config::make_typed_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
   new_options.add(VW::config::make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
   new_options.add(VW::config::make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("ips").help("contextual bandit method to use in {ips,dm,dr}"));
+  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
   options.add_and_parse(new_options);
 
   if(!cb_explore_adf_option)
@@ -786,7 +786,7 @@ base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
 
   if(!options.was_supplied("cb_adf"))
   {
-    options.insert("cb_adf", "true");
+    options.insert("cb_adf", "");
   }
 
   all.delete_prediction = delete_action_scores;

@@ -135,12 +135,12 @@ using namespace CB_ALGS;
 base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
-  std::string type_string;
+  std::string type_string = "dr";
   bool eval = false;
 
   VW::config::option_group_definition new_options("Contextual Bandit Options");
   new_options.add(VW::config::make_typed_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("dr").help("contextual bandit method to use in {ips,dm,dr}"));
+  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
   new_options.add(VW::config::make_typed_option("eval", eval).help("Evaluate a policy rather than optimizing."));
   options.add_and_parse(new_options);
 

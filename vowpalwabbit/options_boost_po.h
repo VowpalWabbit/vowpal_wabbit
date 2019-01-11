@@ -51,7 +51,9 @@ namespace VW {
 
       virtual void insert(std::string key, std::string value) override {
         m_command_line.push_back("--" + key);
-        m_command_line.push_back(value);
+        if (value != "") {
+          m_command_line.push_back(value);
+        }
       }
 
       // Note: does not work for vector options.
@@ -71,7 +73,7 @@ namespace VW {
         }
 
         // Actually replace the value.
-        *(it+1) = value;
+        *(it + 1) = value;
       }
 
       // key must reference an option previously defined.

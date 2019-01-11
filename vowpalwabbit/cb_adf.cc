@@ -343,13 +343,13 @@ base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<cb_adf>();
   bool cb_adf_option = false;
-  std::string type_string;
+  std::string type_string = "ips";
 
   VW::config::option_group_definition new_options("Contextual Bandit with Action Dependent Features");
   new_options.add(VW::config::make_typed_option("cb_adf", cb_adf_option).keep().help("Do Contextual Bandit learning with multiline action dependent features."));
   new_options.add(VW::config::make_typed_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"));
   new_options.add(VW::config::make_typed_option("no_predict", ld->no_predict).help("Do not do a prediction when training"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().default_value("ips").help("contextual bandit method to use in {ips,dm,dr, mtr}"));
+  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr, mtr}"));
   options.add_and_parse(new_options);
 
   if(!cb_adf_option)
@@ -400,13 +400,13 @@ base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
 
     if (!options.was_supplied("csoaa_rank"))
     {
-      options.insert("csoaa_rank", "true");
+      options.insert("csoaa_rank", "");
     }
   }
 
   if (options.was_supplied("baseline") && check_baseline_enabled)
   {
-    options.insert("check_enabled", "true");
+    options.insert("check_enabled", "");
   }
 
   auto base = as_multiline(setup_base(*all.options, all));

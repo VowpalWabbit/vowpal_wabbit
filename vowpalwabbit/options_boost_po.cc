@@ -137,7 +137,7 @@ std::shared_ptr<base_option> VW::config::options_boost_po::get_option(std::strin
   throw std::out_of_range(key + " was not found.");
 }
 
-// Explicit run without allow_unregistered.
+// Check all supplied arguments against defined args.
 void options_boost_po::check_unregistered() {
   for (auto const& supplied : m_supplied_options) {
     if (m_defined_options.count(supplied) == 0 && m_ignore_supplied.count(supplied) == 0) {

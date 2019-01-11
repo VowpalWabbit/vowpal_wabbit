@@ -205,7 +205,7 @@ base_learner* explore_eval_setup(VW::config::options_i& options, vw& all)
     data->multiplier = 1;
 
   if (!options.was_supplied("cb_explore_adf"))
-    options.insert("cb_explore_adf", "true");
+    options.insert("cb_explore_adf", "");
 
   all.delete_prediction = nullptr;
 
