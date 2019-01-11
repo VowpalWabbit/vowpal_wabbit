@@ -42,7 +42,7 @@ namespace cs_test
             List<VowpalWabbit> vwInstances = new List<VowpalWabbit>();
             for (int i = 0; i < instances; i++)
             {
-                vwInstances.Add(new VowpalWabbit($"--no_stdin --oaa 3 --cache_file {i}.cache -k --early_terminate 10 --passes 10"));
+                vwInstances.Add(new VowpalWabbit($"--oaa 3 --cache_file {i}.cache -k --early_terminate 10 --passes 10"));
             }
 
             string ex1 = "1 | some features here",
