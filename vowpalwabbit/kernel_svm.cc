@@ -888,18 +888,6 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
   delete all.loss;
   all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
-  // Need to update the loss_function argument in case a reduction tries to determine the function.
-  auto it = find(arg.args.begin(), arg.args.end(), "--loss_function");
-  if (it == arg.args.end())
-  {
-    arg.args.push_back("--loss_function");
-    arg.args.push_back("hinge");
-  }
-  else
-  {
-    *(it + 1) = "hinge";
-  }
-
   params->model = &calloc_or_throw<svm_model>();
   params->model->num_support = 0;
   params->maxcache = 1024*1024*1024;
