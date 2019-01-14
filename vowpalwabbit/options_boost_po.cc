@@ -40,7 +40,7 @@ void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::
   THROW("That is an unsupported argument type.");
 }
 
-void options_boost_po::add_and_parse(option_group_definition group) {
+void options_boost_po::add_and_parse(const option_group_definition& group) {
   po::options_description new_options(group.m_name);
 
   for (auto opt_ptr : group.m_options) {
@@ -100,7 +100,7 @@ void options_boost_po::add_and_parse(option_group_definition group) {
   }
 }
 
-bool options_boost_po::was_supplied(std::string key) {
+bool options_boost_po::was_supplied(const std::string& key) {
   // Best check, only valid after options parsed.
   if(m_supplied_options.count(key) > 0) {
     return true;
@@ -128,7 +128,7 @@ std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options() {
   return output_values;
 }
 
-std::shared_ptr<base_option> VW::config::options_boost_po::get_option(std::string key) {
+std::shared_ptr<base_option> VW::config::options_boost_po::get_option(const std::string& key) {
   auto it = m_options.find(key);
   if (it != m_options.end()) {
     return it->second;

@@ -24,7 +24,7 @@ namespace VW {
 
   template<typename T>
   struct typed_option : base_option {
-    typed_option(std::string name, T& location)
+    typed_option(const std::string& name, T& location)
       : base_option(name, typeid(T).hash_code()), m_location{ location } {}
 
     static size_t type_hash() {
@@ -44,12 +44,12 @@ namespace VW {
       return m_default_value ? *m_default_value : T();
     }
 
-    typed_option& short_name(std::string short_name) {
+    typed_option& short_name(const std::string& short_name) {
       m_short_name = short_name;
       return *this;
     }
 
-    typed_option& help(std::string help) {
+    typed_option& help(const std::string& help) {
       m_help = help; return *this;
     }
 
@@ -104,18 +104,18 @@ namespace VW {
   };
 
   struct options_i {
-    virtual void add_and_parse(option_group_definition group) = 0;
-    virtual bool was_supplied(std::string key) = 0;
+    virtual void add_and_parse(const option_group_definition& group) = 0;
+    virtual bool was_supplied(const std::string& key) = 0;
     virtual std::string help() = 0;
 
     virtual std::vector<std::shared_ptr<base_option>> get_all_options() = 0;
-    virtual std::shared_ptr<base_option> get_option(std::string key) = 0;
+    virtual std::shared_ptr<base_option> get_option(const std::string& key) = 0;
 
-    virtual void insert(std::string key, std::string value) = 0;
-    virtual void replace(std::string key, std::string value) = 0;
+    virtual void insert(const std::string& key, const std::string& value) = 0;
+    virtual void replace(const std::string& key, const std::string& value) = 0;
 
     template <typename T>
-    typed_option<T>& get_typed_option(std::string key) {
+    typed_option<T>& get_typed_option(const std::string& key) {
       base_option& base = *get_option(key);
       if (base.m_type_hash != typed_option<T>::type_hash()) {
         throw std::bad_cast();

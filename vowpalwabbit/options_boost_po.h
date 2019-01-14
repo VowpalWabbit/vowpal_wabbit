@@ -42,14 +42,14 @@ namespace VW {
       options_boost_po(options_boost_po&) = delete;
       options_boost_po& operator=(options_boost_po&) = delete;
 
-      virtual void add_and_parse(option_group_definition group) override;
-      virtual bool was_supplied(std::string key) override;
+      virtual void add_and_parse(const option_group_definition& group) override;
+      virtual bool was_supplied(const std::string& key) override;
       virtual std::string help() override;
       virtual void check_unregistered() override;
       virtual std::vector<std::shared_ptr<base_option>> get_all_options() override;
-      virtual std::shared_ptr<base_option> get_option(std::string key) override;
+      virtual std::shared_ptr<base_option> get_option(const std::string& key) override;
 
-      virtual void insert(std::string key, std::string value) override {
+      virtual void insert(const std::string& key, const std::string& value) override {
         m_command_line.push_back("--" + key);
         if (value != "") {
           m_command_line.push_back(value);
@@ -57,7 +57,7 @@ namespace VW {
       }
 
       // Note: does not work for vector options.
-      virtual void replace(std::string key, std::string value) override {
+      virtual void replace(const std::string& key, const std::string& value) override {
         auto full_key = "--" + key;
         auto it = std::find(m_command_line.begin(), m_command_line.end(), full_key);
 
@@ -77,7 +77,7 @@ namespace VW {
       }
 
       // key must reference an option previously defined.
-      bool try_get_positional_option_token(std::string key, std::string& token, int position) {
+      bool try_get_positional_option_token(const std::string& key, std::string& token, int position) {
         po::positional_options_description p;
         p.add(key.c_str(), position);
         po::parsed_options pos = po::command_line_parser(m_command_line).
