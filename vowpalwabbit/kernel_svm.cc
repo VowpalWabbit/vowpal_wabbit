@@ -220,14 +220,14 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   if(read)
   {
     fec = &calloc_or_throw<flat_example>();
-    brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
+    brw = model_file.bin_read_fixed((char*) fec, sizeof(flat_example), "");
 
     if(brw > 0)
     {
       if(fec->tag_len > 0)
       {
         fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
+        brw = model_file.bin_read_fixed((char*) fec->tag, fec->tag_len*sizeof(char), "");
         if(!brw) return 2;
       }
       if(fec->fs.size() > 0)
@@ -236,13 +236,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         size_t len = fs.size();
         fs.values = v_init<feature_value>();
         fs.values.resize(len);
-        brw = bin_read_fixed(model_file, (char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
+        brw = model_file.bin_read_fixed((char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
         fs.values.end() = fs.values.begin()+len;
 
         len = fs.indicies.size();
         fs.indicies = v_init<feature_index>();
         fs.indicies.resize(len);
-        brw = bin_read_fixed(model_file, (char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
+        brw = model_file.bin_read_fixed((char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
         fs.indicies.end() = fs.indicies.begin()+len;
       }
     }
@@ -250,13 +250,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   }
   else
   {
-    brw = bin_write_fixed(model_file, (char*) fec, sizeof(flat_example));
+    brw = model_file.bin_write_fixed((char*) fec, sizeof(flat_example));
 
     if(brw > 0)
     {
       if(fec->tag_len > 0)
       {
-        brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
+        brw = model_file.bin_write_fixed((char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
         if(!brw)
         {
           cerr<<fec->tag_len<<" "<<fec->tag<<endl;
@@ -265,8 +265,8 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
       }
       if(fec->fs.size() > 0)
       {
-        brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
-        brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
+        brw = model_file.bin_write_fixed((char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
+        brw = model_file.bin_write_fixed((char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
       }
     }
     else return 1;

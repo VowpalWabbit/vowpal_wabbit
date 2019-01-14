@@ -85,7 +85,7 @@ struct lda
 // if it makes it into VS 2015 change the next ifdef to check Visual Studio Release
 
   // static constexpr float underflow_threshold = 1.0e-10f;
-  inline const float  underflow_threshold() { return 1.0e-10f; }
+  inline float  underflow_threshold() { return 1.0e-10f; }
 
   inline float digamma(float x);
   inline float lgamma(float x);
@@ -207,9 +207,9 @@ template <const int idx> float v4sf_index(const v4sf x)
 // Specialization for the 0'th element
 template <> float v4sf_index<0>(const v4sf x) { return _mm_cvtss_f32(x); }
 
-inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
+inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
-inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
+inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
 #ifdef WIN32
 
@@ -397,25 +397,25 @@ void vexpdigammify_2(vw &all, float* gamma, const float *norm, const float under
 // The generic template is specialized for the particular accuracy setting.
 
 // Log gamma:
-template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
+template <typename T, const lda_math_mode mtype> inline T lgamma(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
 }
 
 // Digamma:
-template <typename T, const lda_math_mode mtype> inline T digamma(T x)
+template <typename T, const lda_math_mode mtype> inline T digamma(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
 }
 
 // Exponential
-template <typename T, lda_math_mode mtype> inline T exponential(T x)
+template <typename T, lda_math_mode mtype> inline T exponential(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
-template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
+template <typename T, lda_math_mode mtype> inline T powf(T /* x */, T /* p */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
 }

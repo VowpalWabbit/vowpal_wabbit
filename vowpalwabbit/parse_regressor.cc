@@ -28,7 +28,7 @@ using namespace std;
 template <class T> class set_initial_wrapper
 {
 public:
-  static void func(weight& w, float& initial, uint64_t index) { w = initial; }
+  static void func(weight& w, float& initial, uint64_t /* index */) { w = initial; }
 };
 
 template <class T> class random_positive_wrapper
@@ -76,10 +76,10 @@ template<class T> void truncate(vw& all,T& weights)
   });
 }
 
-template<class T> double calculate_sd(vw& all,T& weights)
+template<class T> double calculate_sd(vw& /* all */,T& weights)
 {
   static int my_size = 0;
-  for_each(weights.begin(), weights.end(), [](float v) {my_size += 1;});
+  for_each(weights.begin(), weights.end(), [](float /* v */) {my_size += 1;});
   double sum = accumulate(weights.begin(), weights.end(), 0.0);
   double mean = sum / my_size;
   vector<double> diff(my_size);
@@ -200,7 +200,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       VW::validate_version(all);
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-        model_file.verify_hash = true;
+        model_file.verify_hash(true);
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_ID)
       {
@@ -456,11 +456,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (read)
       {
         uint32_t len;
-        size_t ret = bin_read_fixed(model_file, (char*)&len, sizeof(len), "");
+        size_t ret = model_file.bin_read_fixed((char*)&len, sizeof(len), "");
         if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t))
           THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
-        bytes_read_write += bin_read_fixed(model_file, buff2, len, "") + ret;
+        bytes_read_write += model_file.bin_read_fixed(buff2, len, "") + ret;
         all.opts_n_args.file_options->str(buff2);
       }
       else
@@ -483,7 +483,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
       {
         uint32_t check_sum = (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH) ?
-                             model_file.hash :
+                             model_file.hash() :
                              (uint32_t)uniform_hash(model_file.space.begin(), bytes_read_write, 0);
 
         uint32_t check_sum_saved = check_sum;
@@ -498,11 +498,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_CHAINED_HASH)
       {
-        model_file.verify_hash = false;
-
-        // reset the hash so that the io_buf can be re-used for loading
-        // as it is done for Reload()
-        model_file.hash = 0;
+        model_file.verify_hash(false);
       }
     }
   }

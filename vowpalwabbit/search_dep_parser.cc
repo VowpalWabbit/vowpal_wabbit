@@ -110,12 +110,12 @@ void finish(Search::search& sch)
   delete data;
 }
 
-void inline add_feature(example& ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool audit=false)
+void inline add_feature(example& ex, uint64_t idx, unsigned char ns, uint64_t mask, uint64_t multiplier, bool /* audit */=false)
 {
   ex.feature_space[(int)ns].push_back(1.0f, (idx * multiplier) & mask);
 }
 
-void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier, uint64_t offset, bool audit=false)
+void add_all_features(example& ex, example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier, uint64_t offset, bool /* audit */=false)
 {
   features& tgt_fs = ex.feature_space[tgt_ns];
   for (namespace_index ns : src.indices)
@@ -133,7 +133,7 @@ void inline reset_ex(example *ex)
 }
 
 // arc-hybrid System.
-size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t n)
+size_t transition_hybrid(Search::search& sch, uint64_t a_id, uint32_t idx, uint32_t t_id, uint32_t /* n */)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads, &gold_tags=data->gold_tags, &tags = data->tags;
@@ -461,7 +461,7 @@ void get_cost_to_go_losses(Search::search &sch, v_array<pair<action, float>>& go
   }
 }
 
-void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t n, v_array<action>& gold_actions)
+void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_array<action>& gold_actions)
 {
   task_data *data = sch.get_task_data<task_data>();
   v_array<uint32_t> &action_loss = data->action_loss, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions;

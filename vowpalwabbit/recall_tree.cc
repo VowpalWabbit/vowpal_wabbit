@@ -250,7 +250,7 @@ void add_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
   // TODO: if namespace already exists ?
 }
 
-void remove_node_id_feature (recall_tree& b, uint32_t cn, example& ec)
+void remove_node_id_feature (recall_tree& /* b */, uint32_t /* cn */, example& ec)
 {
   features& fs = ec.feature_space[node_id_namespace];
   fs.clear();

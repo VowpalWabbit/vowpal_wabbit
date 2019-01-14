@@ -80,7 +80,7 @@ class arguments {
     {
       return operator()(option,
                         po::value(&store)->default_value(def)
-                        ->notifier([this, option, def] (T arg)
+                        ->notifier([this, option] (T arg)
                                    {
                                      *this->file_options << " --" << long_only(option) << " " << arg;
                                    }),

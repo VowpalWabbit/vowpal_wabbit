@@ -501,7 +501,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   }
 }
 
-void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns)
+void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
   if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   {
@@ -1440,7 +1440,7 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
 }
 
 // note: ec_cnt should be 1 if we are not LDF
-action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost, size_t learner_id, float& a_cost, float weight)
+action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, const float* allowed_actions_cost, size_t learner_id, float& a_cost, float /* weight */)
 {
   size_t condition_on_cnt = condition_on_names ? strlen(condition_on_names) : 0;
   size_t t = priv.t + priv.meta_t;

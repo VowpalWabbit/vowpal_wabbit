@@ -43,7 +43,7 @@ void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(vo
     dst->l = src->l;
 }
 
-void copy_example_metadata(bool audit, example* dst, example* src)
+void copy_example_metadata(bool /* audit */, example* dst, example* src)
 {
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;

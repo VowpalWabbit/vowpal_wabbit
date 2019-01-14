@@ -59,7 +59,7 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
   d.score += (1/uncertain)*sign(fx);
 }
 
-float sensitivity(ftrl& b, base_learner& base, example& ec)
+float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 {
   uncertainty uncetain(b);
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);

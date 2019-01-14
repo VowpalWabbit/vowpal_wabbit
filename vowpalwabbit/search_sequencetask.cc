@@ -238,7 +238,7 @@ void run(Search::search& sch, multi_ex& ec)
 
 namespace SequenceTaskCostToGo
 {
-void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
+void initialize(Search::search& sch, size_t& num_actions, arguments& /* arg */)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -379,7 +379,7 @@ void finish(Search::search& sch)
 
 
 // this is totally bogus for the example -- you'd never actually do this!
-void my_update_example_indicies(Search::search& sch, bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
+void my_update_example_indicies(Search::search& sch, bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
   for (features& fs : *ec)

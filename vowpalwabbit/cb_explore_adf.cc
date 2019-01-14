@@ -224,7 +224,7 @@ void get_cost_ranges(std::vector<float> &min_costs,
   }
 }
 
-size_t fill_tied(cb_explore_adf& data, v_array<action_score>& preds)
+size_t fill_tied(cb_explore_adf& /* data */, v_array<action_score>& preds)
 {
   if (preds.size() == 0 )
     return 0;

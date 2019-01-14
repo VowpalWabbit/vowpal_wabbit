@@ -174,7 +174,7 @@ public:
   }
 
 #ifndef _WIN32
-	void share(size_t length)
+	void share(size_t /* length */)
 	{throw 1; //TODO: add better exceptions
 	}
 #endif
