@@ -865,8 +865,8 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 
   bool ksvm = false;
 
-  option_group_definition kernel_svn_options("Kernel SVM");
-  kernel_svn_options
+  option_group_definition kernel_svm_options("Kernel SVM");
+  kernel_svm_options
     (make_typed_option("ksvm", ksvm).keep().help("kernel svm"))
     (make_typed_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
     (make_typed_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
@@ -876,7 +876,7 @@ LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
     (make_typed_option("kernel", kernel_type).keep().default_value("linear").help("type of kernel (rbf or linear (default))"))
     (make_typed_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
     (make_typed_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
-  options.add_and_parse(kernel_svn_options);
+  options.add_and_parse(kernel_svm_options);
 
   if(!ksvm)
   {
