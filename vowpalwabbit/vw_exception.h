@@ -28,6 +28,8 @@ private:
 public:
   vw_exception(const char* file, int lineNumber, std::string message);
   vw_exception(const vw_exception& ex);
+  vw_exception& operator=(const vw_exception& other);
+
   ~vw_exception() _NOEXCEPT;
 
   virtual const char* what() const _NOEXCEPT;
@@ -45,6 +47,15 @@ class vw_argument_disagreement_exception : public vw_exception {
     : vw_exception(ex)
   {}
 
+  vw_argument_disagreement_exception& operator=(const vw_argument_disagreement_exception& other)
+  {
+    // check for self-assignment
+    if(&other == this)
+        return *this;
+    vw_exception::operator=(other);
+    return *this;
+  }
+
   ~vw_argument_disagreement_exception() _NOEXCEPT {}
 };
 
@@ -58,6 +69,15 @@ public:
     : vw_exception(ex)
   {}
 
+  vw_argument_invalid_value_exception& operator=(const vw_argument_invalid_value_exception& other)
+  {
+    // check for self-assignment
+    if(&other == this)
+        return *this;
+    vw_exception::operator=(other);
+    return *this;
+  }
+
   ~vw_argument_invalid_value_exception() _NOEXCEPT {}
 };
 
@@ -70,6 +90,15 @@ class vw_unrecognised_option_exception : public vw_exception {
   vw_unrecognised_option_exception(const vw_unrecognised_option_exception& ex)
     : vw_exception(ex)
   {}
+
+  vw_unrecognised_option_exception& operator=(const vw_unrecognised_option_exception& other)
+  {
+    // check for self-assignment
+    if(&other == this)
+        return *this;
+    vw_exception::operator=(other);
+    return *this;
+  }
 
   ~vw_unrecognised_option_exception() _NOEXCEPT {}
 };
