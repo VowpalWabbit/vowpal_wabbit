@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <errno.h>
 
+#include "correctedMath.h"
 #include "reductions.h"
 #include "v_hashmap.h"
 #include "label_dictionary.h"
@@ -524,7 +525,7 @@ void do_actual_learning(ldf& data, single_learner& base, multi_ex& ec_seq_all)
       // but partial_prediction is lower for better classes (we are predicting the cost),
       // so we need to take score = -partial_prediction,
       // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-      float prob = 1.f / (1.f + exp(ec_seq[k]->partial_prediction));
+      float prob = 1.f / (1.f + correctedExp(ec_seq[k]->partial_prediction));
       ec_seq[k]->pred.prob = prob;
       sum_prob += prob;
     }
