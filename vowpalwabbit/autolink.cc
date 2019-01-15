@@ -40,7 +40,8 @@ LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
   option_group_definition new_options("Autolink");
-  new_options.add(make_typed_option("autolink", data->d).keep().help("create link function with polynomial d"));
+  new_options
+    .add(make_option("autolink", data->d).keep().help("create link function with polynomial d"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("autolink"))

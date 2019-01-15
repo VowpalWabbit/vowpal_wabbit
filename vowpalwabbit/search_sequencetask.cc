@@ -114,8 +114,9 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   bool search_span_bilou = false;
   option_group_definition new_options("search sequencespan options");
-  new_options.add(make_typed_option("search_span_bilou", search_span_bilou).help("switch to (internal) BILOU encoding instead of BIO encoding"));
-  new_options.add(make_typed_option("search_span_multipass", D->multipass).default_value(1).help("do multiple passes"));
+  new_options
+    .add(make_option("search_span_bilou", search_span_bilou).help("switch to (internal) BILOU encoding instead of BIO encoding"))
+    .add(make_option("search_span_multipass", D->multipass).default_value(1).help("do multiple passes"));
   options.add_and_parse(new_options);
 
   if (search_span_bilou)
@@ -285,9 +286,10 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   task_data* D = new task_data();
 
   option_group_definition new_options("argmax options");
-  new_options.add(make_typed_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"));
-  new_options.add(make_typed_option("negative_weight", D->negative_weight).default_value(1.f).help("Relative weight of negative examples"));
-  new_options.add(make_typed_option("max", D->predict_max).help("Disable structure: just predict the max"));
+  new_options
+    .add(make_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
+    .add(make_option("negative_weight", D->negative_weight).default_value(1.f).help("Relative weight of negative examples"))
+    .add(make_option("max", D->predict_max).help("Disable structure: just predict the max"));
   options.add_and_parse(new_options);
 
   sch.set_task_data(D);

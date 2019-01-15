@@ -80,7 +80,7 @@ license as described in the file LICENSE.
 #include "options_serializer_boost_po.h"
 
 using namespace std;
-namespace po = boost::program_options;
+using namespace VW::config;
 
 //
 // Does string end with a certain substring?
@@ -323,17 +323,17 @@ void parse_affix_argument(vw&all, string str)
   free(cstr);
 }
 
-void parse_diagnostics(VW::config::options_i& options, vw& all)
+void parse_diagnostics(options_i& options, vw& all)
 {
   bool version_arg;
   std::string progress_arg;
-  VW::config::option_group_definition diagnostic_group("Diagnostic options");
+  option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group
-    (VW::config::make_typed_option("version", version_arg).help("Version information"))
-    (VW::config::make_typed_option("audit", all.audit).short_name("a").help("print weights of features"))
-    (VW::config::make_typed_option("progress", progress_arg).short_name("P").help("Progress update frequency. int: additive, float: multiplicative"))
-    (VW::config::make_typed_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
-    (VW::config::make_typed_option("help", all.help_requested).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+    .add(make_option("version", version_arg).help("Version information"))
+    .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
+    .add(make_option("progress", progress_arg).short_name("P").help("Progress update frequency. int: additive, float: multiplicative"))
+    .add(make_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
+    .add(make_option("help", all.help_requested).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -384,31 +384,32 @@ void parse_diagnostics(VW::config::options_i& options, vw& all)
   }
 }
 
-input_options parse_source(vw& all, VW::config::options_i& options)
+input_options parse_source(vw& all, options_i& options)
 {
   input_options parsed_options;
 
-  VW::config::option_group_definition input_options("Input options");
-  input_options.add(VW::config::make_typed_option("data", all.data_filename).short_name("d").help("Example set"));
-  input_options.add(VW::config::make_typed_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"));
-  input_options.add(VW::config::make_typed_option("foreground", parsed_options.foreground).help("in persistent daemon mode, do not run in the background"));
-  input_options.add(VW::config::make_typed_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"));
-  input_options.add(VW::config::make_typed_option("num_children", all.num_children).help("number of children for persistent daemon mode"));
-  input_options.add(VW::config::make_typed_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"));
-  input_options.add(VW::config::make_typed_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"));
-  input_options.add(VW::config::make_typed_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"));
-  input_options.add(VW::config::make_typed_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."));
-  input_options.add(VW::config::make_typed_option("json", parsed_options.json).help("Enable JSON parsing."));
-  input_options.add(VW::config::make_typed_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."));
-  input_options.add(VW::config::make_typed_option("kill_cache", parsed_options.kill_cache).short_name("k").help("do not reuse existing cache: create a new one always"));
-  input_options.add(VW::config::make_typed_option("compressed", parsed_options.compressed).help("use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."));
-  input_options.add(VW::config::make_typed_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
+  option_group_definition input_options("Input options");
+  input_options
+    .add(make_option("data", all.data_filename).short_name("d").help("Example set"))
+    .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
+    .add(make_option("foreground", parsed_options.foreground).help("in persistent daemon mode, do not run in the background"))
+    .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
+    .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
+    .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
+    .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
+    .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
+    .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."))
+    .add(make_option("json", parsed_options.json).help("Enable JSON parsing."))
+    .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."))
+    .add(make_option("kill_cache", parsed_options.kill_cache).short_name("k").help("do not reuse existing cache: create a new one always"))
+    .add(make_option("compressed", parsed_options.compressed).help("use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
+    .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
 
   options.add_and_parse(input_options);
 
   // If the option provider is program_options try and retrieve data as a positional parameter.
-  VW::config::options_i* options_ptr = &options;
-  auto boost_options = dynamic_cast<VW::config::options_boost_po*>(options_ptr);
+  options_i* options_ptr = &options;
+  auto boost_options = dynamic_cast<options_boost_po*>(options_ptr);
   if (boost_options)
   {
     std::string data;
@@ -549,7 +550,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
   return res;
 }
 
-void parse_feature_tweaks(VW::config::options_i& options, vw& all)
+void parse_feature_tweaks(options_i& options, vw& all)
 {
   string hash_function("strings");
   uint32_t new_bits;
@@ -570,31 +571,31 @@ void parse_feature_tweaks(VW::config::options_i& options, vw& all)
   std::string affix;
   std::string q_colon;
 
-  VW::config::option_group_definition feature_options("Feature options");
+  option_group_definition feature_options("Feature options");
   feature_options
-    (VW::config::make_typed_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
-    (VW::config::make_typed_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
-    (VW::config::make_typed_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
-    (VW::config::make_typed_option("ignore_linear", ignore_linears).keep().help("ignore namespaces beginning with character <arg> for linear terms only"))
-    (VW::config::make_typed_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
-    (VW::config::make_typed_option("redefine", redefines).keep().help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.").keep())
-    (VW::config::make_typed_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
-    (VW::config::make_typed_option("noconstant", noconstant).help("Don't add a constant feature"))
-    (VW::config::make_typed_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
-    (VW::config::make_typed_option("ngram", all.ngram_strings).help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
-    (VW::config::make_typed_option("skips", all.skip_strings).help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
-    (VW::config::make_typed_option("feature_limit", all.limit_strings).help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
-    (VW::config::make_typed_option("affix", affix).keep().help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
-    (VW::config::make_typed_option("spelling", spelling_ns).keep().help("compute spelling features for a give namespace (use '_' for default namespace)"))
-    (VW::config::make_typed_option("dictionary", dictionary_nses).keep().help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
-    (VW::config::make_typed_option("dictionary_path", dictionary_path).help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
-    (VW::config::make_typed_option("interactions", interactions).keep().help("Create feature interactions of any level between namespaces."))
-    (VW::config::make_typed_option("permutations", all.permutations).help("Use permutations instead of combinations for feature interactions of same namespace."))
-    (VW::config::make_typed_option("leave_duplicate_interactions", leave_duplicate_interactions).help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
-    (VW::config::make_typed_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
+    .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
+    .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
+    .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
+    .add(make_option("ignore_linear", ignore_linears).keep().help("ignore namespaces beginning with character <arg> for linear terms only"))
+    .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
+    .add(make_option("redefine", redefines).keep().help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.").keep())
+    .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
+    .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
+    .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
+    .add(make_option("ngram", all.ngram_strings).help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
+    .add(make_option("skips", all.skip_strings).help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
+    .add(make_option("feature_limit", all.limit_strings).help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
+    .add(make_option("affix", affix).keep().help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
+    .add(make_option("spelling", spelling_ns).keep().help("compute spelling features for a give namespace (use '_' for default namespace)"))
+    .add(make_option("dictionary", dictionary_nses).keep().help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
+    .add(make_option("dictionary_path", dictionary_path).help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
+    .add(make_option("interactions", interactions).keep().help("Create feature interactions of any level between namespaces."))
+    .add(make_option("permutations", all.permutations).help("Use permutations instead of combinations for feature interactions of same namespace."))
+    .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions).help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
+    .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
     // TODO this option is unused - remove?
-    (VW::config::make_typed_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
-    (VW::config::make_typed_option("cubic", cubics).keep().help("Create and use cubic features"));
+    .add(make_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
+    .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
   //feature manipulation
@@ -928,7 +929,7 @@ void parse_feature_tweaks(VW::config::options_i& options, vw& all)
     all.add_constant = false;
 }
 
-void parse_example_tweaks(VW::config::options_i& options, vw& all)
+void parse_example_tweaks(options_i& options, vw& all)
 {
   string named_labels;
   string loss_function;
@@ -936,25 +937,25 @@ void parse_example_tweaks(VW::config::options_i& options, vw& all)
 
   bool test_only = false;
 
-  VW::config::option_group_definition example_options("Example options");
+  option_group_definition example_options("Example options");
   example_options
-    (VW::config::make_typed_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-    (VW::config::make_typed_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-    (VW::config::make_typed_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
-    (VW::config::make_typed_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
-    (VW::config::make_typed_option("early_terminate", all.early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-    (VW::config::make_typed_option("passes", all.numpasses).help("Number of Training Passes"))
-    (VW::config::make_typed_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
-    (VW::config::make_typed_option("examples", all.max_examples).help("number of examples to parse"))
-    (VW::config::make_typed_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
-    (VW::config::make_typed_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-    (VW::config::make_typed_option("sort_features", all.p->sort_features).help("turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes"))
-    (VW::config::make_typed_option("loss_function", loss_function).default_value("squared").help("Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson."))
-    (VW::config::make_typed_option("quantile_tau", loss_parameter).default_value(0.5f).help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-    (VW::config::make_typed_option("l1", all.l1_lambda).help("l_1 lambda"))
-    (VW::config::make_typed_option("l2", all.l2_lambda).help("l_2 lambda"))
-    (VW::config::make_typed_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
-    (VW::config::make_typed_option("named_labels", named_labels).keep().help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
+    .add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
+    .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
+    .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
+    .add(make_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
+    .add(make_option("early_terminate", all.early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
+    .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
+    .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
+    .add(make_option("examples", all.max_examples).help("number of examples to parse"))
+    .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
+    .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
+    .add(make_option("sort_features", all.p->sort_features).help("turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes"))
+    .add(make_option("loss_function", loss_function).default_value("squared").help("Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson."))
+    .add(make_option("quantile_tau", loss_parameter).default_value(0.5f).help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+    .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
+    .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
+    .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+    .add(make_option("named_labels", named_labels).keep().help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
   if (test_only || all.eta == 0.)
@@ -1007,15 +1008,15 @@ void parse_example_tweaks(VW::config::options_i& options, vw& all)
   }
 }
 
-void parse_output_preds(VW::config::options_i& options, vw& all)
+void parse_output_preds(options_i& options, vw& all)
 {
   std::string predictions;
   std::string raw_predictions;
 
-  VW::config::option_group_definition output_options("Output options");
+  option_group_definition output_options("Output options");
   output_options
-    (VW::config::make_typed_option("predictions", predictions).short_name("p").help("File to output predictions to"))
-    (VW::config::make_typed_option("raw_predictions", raw_predictions).short_name("r").help("File to output unnormalized predictions to"));
+    .add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
+    .add(make_option("raw_predictions", raw_predictions).short_name("r").help("File to output unnormalized predictions to"));
   options.add_and_parse(output_options);
 
   if (options.was_supplied("predictions"))
@@ -1067,19 +1068,19 @@ void parse_output_preds(VW::config::options_i& options, vw& all)
   }
 }
 
-void parse_output_model(VW::config::options_i& options, vw& all)
+void parse_output_model(options_i& options, vw& all)
 {
-  VW::config::option_group_definition output_model_options("Output model");
+  option_group_definition output_model_options("Output model");
   output_model_options
-    (VW::config::make_typed_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
-    (VW::config::make_typed_option("readable_model", all.text_regressor_name).help("Output human-readable final regressor with numeric features"))
-    (VW::config::make_typed_option("invert_hash", all.inv_hash_regressor_name).help("Output human-readable final regressor with feature names.  Computationally expensive."))
-    (VW::config::make_typed_option("save_resume", all.save_resume).help("save extra state so learning can be resumed later with new data"))
-    (VW::config::make_typed_option("preserve_performance_counters", all.preserve_performance_counters).help("reset performance counters when warmstarting"))
-    (VW::config::make_typed_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
-    (VW::config::make_typed_option("output_feature_regularizer_binary", all.per_feature_regularizer_output).help("Per feature regularization output file"))
-    (VW::config::make_typed_option("output_feature_regularizer_text", all.per_feature_regularizer_text).help("Per feature regularization output file, in text"))
-    (VW::config::make_typed_option("id", all.id).help("User supplied ID embedded into the final regressor"));
+    .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
+    .add(make_option("readable_model", all.text_regressor_name).help("Output human-readable final regressor with numeric features"))
+    .add(make_option("invert_hash", all.inv_hash_regressor_name).help("Output human-readable final regressor with feature names.  Computationally expensive."))
+    .add(make_option("save_resume", all.save_resume).help("save extra state so learning can be resumed later with new data"))
+    .add(make_option("preserve_performance_counters", all.preserve_performance_counters).help("reset performance counters when warmstarting"))
+    .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
+    .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output).help("Per feature regularization output file"))
+    .add(make_option("output_feature_regularizer_text", all.per_feature_regularizer_text).help("Per feature regularization output file, in text"))
+    .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.quiet)
@@ -1118,7 +1119,7 @@ void load_input_model(vw& all, io_buf& io_temp)
   }
 }
 
-LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* setup_base(options_i& options, vw& all)
 {
   LEARNER::base_learner* ret = all.reduction_stack.pop()(options, all);
   if (ret == nullptr)
@@ -1127,7 +1128,7 @@ LEARNER::base_learner* setup_base(VW::config::options_i& options, vw& all)
     return ret;
 }
 
-void parse_reductions(VW::config::options_i& options, vw& all)
+void parse_reductions(options_i& options, vw& all)
 {
   //Base algorithms
   all.reduction_stack.push_back(GD::setup);
@@ -1189,7 +1190,7 @@ void parse_reductions(VW::config::options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener, void* trace_context) {
+vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context) {
   vw& all = *(new vw());
   all.options = &options;
 
@@ -1203,29 +1204,29 @@ vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener, v
   {
     time(&all.init_time);
 
-    VW::config::option_group_definition vw_args("VW options");
+    option_group_definition vw_args("VW options");
     vw_args
-      (VW::config::make_typed_option("ring_size", all.p->ring_size).help("size of example ring"));
+      .add(make_option("ring_size", all.p->ring_size).help("size of example ring"));
     options.add_and_parse(vw_args);
 
-    VW::config::option_group_definition update_args("Update options");
+    option_group_definition update_args("Update options");
     update_args
-      (VW::config::make_typed_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-      (VW::config::make_typed_option("power_t", all.power_t).help("t power value"))
-      (VW::config::make_typed_option("decay_learning_rate", all.eta_decay_rate).help("Set Decay factor for learning_rate between passes"))
-      (VW::config::make_typed_option("initial_t", all.sd->t).help("initial t value"))
-      (VW::config::make_typed_option("feature_mask", all.feature_mask).help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights."));
+      .add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
+      .add(make_option("power_t", all.power_t).help("t power value"))
+      .add(make_option("decay_learning_rate", all.eta_decay_rate).help("Set Decay factor for learning_rate between passes"))
+      .add(make_option("initial_t", all.sd->t).help("initial t value"))
+      .add(make_option("feature_mask", all.feature_mask).help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights."));
     options.add_and_parse(update_args);
 
-    VW::config::option_group_definition weight_args("Weight options");
+    option_group_definition weight_args("Weight options");
     weight_args
-      (VW::config::make_typed_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-      (VW::config::make_typed_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
-      (VW::config::make_typed_option("random_weights", all.random_weights).help("make initial weights random"))
-      (VW::config::make_typed_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-      (VW::config::make_typed_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
-      (VW::config::make_typed_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
-      (VW::config::make_typed_option("input_feature_regularizer", all.per_feature_regularizer_input).help("Per feature regularization input file"));
+      .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
+      .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
+      .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
+      .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
+      .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+      .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
+      .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input).help("Per feature regularization input file"));
     options.add_and_parse(weight_args);
 
     std::string span_server_arg;
@@ -1233,13 +1234,13 @@ vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener, v
     size_t unique_id_arg;
     size_t total_arg;
     size_t node_arg;
-    VW::config::option_group_definition parallelization_args("Parallelization options");
+    option_group_definition parallelization_args("Parallelization options");
     parallelization_args
-      (VW::config::make_typed_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
-      //(VW::config::make_typed_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
-      (VW::config::make_typed_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
-      (VW::config::make_typed_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-      (VW::config::make_typed_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
+      .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
+      //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
+      .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+      .add(make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
+      .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
     options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
@@ -1267,7 +1268,7 @@ vw& parse_args(VW::config::options_i& options, trace_message_t trace_listener, v
   }
 }
 
-bool check_interaction_settings_collision(VW::config::options_i& options, std::string file_options)
+bool check_interaction_settings_collision(options_i& options, std::string file_options)
 {
   bool command_line_has_interaction =
     options.was_supplied("q") ||
@@ -1286,7 +1287,7 @@ bool check_interaction_settings_collision(VW::config::options_i& options, std::s
 }
 
 
-VW::config::options_i& load_header_merge_options(VW::config::options_i& options, vw& all, io_buf& model)
+options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
@@ -1369,10 +1370,10 @@ VW::config::options_i& load_header_merge_options(VW::config::options_i& options,
 }
 
 
-void parse_modules(VW::config::options_i& options, vw& all)
+void parse_modules(options_i& options, vw& all)
 {
-  VW::config::option_group_definition rand_options("Randomization options");
-  rand_options.add(VW::config::make_typed_option("random_seed", all.random_seed).help("seed random number generator"));
+  option_group_definition rand_options("Randomization options");
+  rand_options.add(make_option("random_seed", all.random_seed).help("seed random number generator"));
   options.add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
@@ -1397,7 +1398,7 @@ void parse_modules(VW::config::options_i& options, vw& all)
   }
 }
 
-void parse_sources(VW::config::options_i& options, vw& all, io_buf& model, bool skipModelLoad)
+void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoad)
 {
   if (!skipModelLoad)
     load_input_model(all, model);
@@ -1476,7 +1477,7 @@ void free_args(int argc, char* argv[])
   free(argv);
 }
 
-vw* initialize(VW::config::options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = parse_args(options, trace_listener, trace_context);
 
@@ -1548,7 +1549,7 @@ vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trac
 
 vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
-  VW::config::options_i* options = new config::options_boost_po(argc, argv);
+  options_i* options = new config::options_boost_po(argc, argv);
   vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
 
   // When VW is deleted the options object will be cleaned up too.
@@ -1560,7 +1561,7 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_
 // The extra arguments will be appended to those of the other VW instance
 vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_listener, void* trace_context)
 {
-  VW::config::options_serializer_boost_po serializer;
+  options_serializer_boost_po serializer;
   for(auto const& option : vw_model->options->get_all_options())
   {
     if (vw_model->options->was_supplied(option->m_name)) {

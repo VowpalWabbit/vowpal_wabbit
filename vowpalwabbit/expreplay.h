@@ -76,8 +76,9 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 
   auto er = scoped_calloc_or_throw<expreplay>();
   VW::config::option_group_definition new_options("Experience Replay");
-  new_options.add(VW::config::make_typed_option(replay_string, er->N).keep().help("use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"));
-  new_options.add(VW::config::make_typed_option(replay_count_string, er->replay_count).default_value(1).help("how many times (in expectation) should each example be played (default: 1 = permuting)"));
+  new_options
+    .add(VW::config::make_option(replay_string, er->N).keep().help("use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
+    .add(VW::config::make_option(replay_count_string, er->replay_count).default_value(1).help("how many times (in expectation) should each example be played (default: 1 = permuting)"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied(replay_string) || er->N==0)

@@ -140,9 +140,10 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
   bool eval = false;
 
   option_group_definition new_options("Contextual Bandit Options");
-  new_options.add(make_typed_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"));
-  new_options.add(make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
-  new_options.add(make_typed_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+  new_options
+    .add(make_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"))
+    .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
+    .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("cb"))

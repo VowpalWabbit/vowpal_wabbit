@@ -144,9 +144,10 @@ base_learner* active_setup(options_i& options, vw& all)
   bool active_option = false;
   bool simulation = false;
   option_group_definition new_options("Active Learning");
-  new_options.add(make_typed_option("active", active_option).keep().help("enable active learning"));
-  new_options.add(make_typed_option("simulation", simulation).help("active learning simulation mode"));
-  new_options.add(make_typed_option("mellowness",  data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8"));
+  new_options
+    .add(make_option("active", active_option).keep().help("enable active learning"))
+    .add(make_option("simulation", simulation).help("active learning simulation mode"))
+    .add(make_option("mellowness",  data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8"));
   options.add_and_parse(new_options);
 
   if (!active_option)

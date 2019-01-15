@@ -54,12 +54,12 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   sch.set_task_data<task_data>(data);
 
   option_group_definition new_options("Dependency Parser Options");
-  new_options.add(make_typed_option("root_label", data->root_label).keep().default_value(8).help("Ensure that there is only one root in each sentence"));
-  new_options.add(make_typed_option("num_label", data->num_label).keep().default_value(12).help("Number of arc labels"));
-  new_options.add(make_typed_option("transition_system", data->transition_system).keep().default_value(1).help("1: arc-hybrid 2: arc-eager"));
-  new_options.add(make_typed_option("one_learner", data->one_learner).keep().help("Using one learner instead of three learners for labeled parser"));
-  new_options.add(make_typed_option("cost_to_go", data->cost_to_go).keep().help("Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out"));
-  new_options.add(make_typed_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
+  new_options.add(make_option("root_label", data->root_label).keep().default_value(8).help("Ensure that there is only one root in each sentence"));
+  new_options.add(make_option("num_label", data->num_label).keep().default_value(12).help("Number of arc labels"));
+  new_options.add(make_option("transition_system", data->transition_system).keep().default_value(1).help("1: arc-hybrid 2: arc-eager"));
+  new_options.add(make_option("one_learner", data->one_learner).keep().help("Using one learner instead of three learners for labeled parser"));
+  new_options.add(make_option("cost_to_go", data->cost_to_go).keep().help("Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out"));
+  new_options.add(make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
 
   data->ex = VW::alloc_examples(sizeof(polylabel), 1);

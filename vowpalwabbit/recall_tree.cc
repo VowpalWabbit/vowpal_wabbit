@@ -569,12 +569,13 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree> ();
   option_group_definition new_options("Recall Tree");
-  new_options.add(make_typed_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"));
-  new_options.add(make_typed_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"));
-  new_options.add(make_typed_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"));
-  new_options.add(make_typed_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"));
-  new_options.add(make_typed_option("node_only", tree->node_only).default_value(false).keep().help("only use node features, not full path features"));
-  new_options.add(make_typed_option("randomized_routing", tree->randomized_routing).default_value(false).keep().help("randomized routing"));
+  new_options
+    .add(make_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"))
+    .add(make_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"))
+    .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"))
+    .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
+    .add(make_option("node_only", tree->node_only).default_value(false).keep().help("only use node features, not full path features"))
+    .add(make_option("randomized_routing", tree->randomized_routing).default_value(false).keep().help("randomized routing"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("recall_tree"))

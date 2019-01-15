@@ -76,7 +76,8 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   vector<string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
   option_group_definition new_options("importance weight classes");
-  new_options.add(make_typed_option("classweight", classweight_array).help("importance weight multiplier for class"));
+  new_options
+    .add(make_option("classweight", classweight_array).help("importance weight multiplier for class"));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("classweight"))

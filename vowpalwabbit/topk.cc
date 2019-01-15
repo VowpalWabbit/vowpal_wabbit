@@ -108,7 +108,8 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<topk>();
 
   option_group_definition new_options("Top K");
-  new_options.add(make_typed_option("top", data->B).keep().help("top k recommendation"));
+  new_options
+    .add(make_option("top", data->B).keep().help("top k recommendation"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("top"))

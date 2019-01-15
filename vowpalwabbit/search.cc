@@ -2334,10 +2334,10 @@ void ensure_param(float &v, float lo, float hi, float def, const char* string)
 void handle_condition_options(vw& all, auto_condition_settings& acset)
 {
   option_group_definition new_options("Search Auto-conditioning Options");
-  new_options.add(make_typed_option("search_max_bias_ngram_length", acset.max_bias_ngram_length).keep().default_value(1).help("add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional"));
-  new_options.add(make_typed_option("search_max_quad_ngram_length", acset.max_quad_ngram_length).keep().default_value(0).help("add bias *times* input features for each ngram up to and including this length (def: 0)"));
-  new_options.add(make_typed_option("search_condition_feature_value", acset.feature_value).keep().default_value(1.f).help("how much weight should the conditional features get? (def: 1.)"));
-  new_options.add(make_typed_option("search_use_passthrough_repr", acset.use_passthrough_repr).keep().help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
+  new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length).keep().default_value(1).help("add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional"));
+  new_options.add(make_option("search_max_quad_ngram_length", acset.max_quad_ngram_length).keep().default_value(0).help("add bias *times* input features for each ngram up to and including this length (def: 0)"));
+  new_options.add(make_option("search_condition_feature_value", acset.feature_value).keep().default_value(1.f).help("how much weight should the conditional features get? (def: 1.)"));
+  new_options.add(make_option("search_use_passthrough_repr", acset.use_passthrough_repr).keep().help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
 }
 
@@ -2442,28 +2442,28 @@ base_learner* setup(options_i& options, vw& all)
 
   priv.A = 1;
   option_group_definition new_options("Search options");
-  new_options.add(make_typed_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
-  new_options.add(make_typed_option("search_task", task_string).keep().help("the search task (use \"--search_task list\" to get a list of available tasks)"));
-  new_options.add(make_typed_option("search_metatask", metatask_string).keep().help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
-  new_options.add(make_typed_option("search_interpolation", interpolation_string).keep().help("at what level should interpolation happen? [*data|policy]"));
-  new_options.add(make_typed_option("search_rollout", rollout_string).help("how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]"));
-  new_options.add(make_typed_option("search_rollin", rollin_string).help("how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]"));
-  new_options.add(make_typed_option("search_passes_per_policy", priv.passes_per_policy).default_value(1).help("number of passes per policy (only valid for search_interpolation=policy)"));
-  new_options.add(make_typed_option("search_beta", priv.beta).default_value(0.5f).help("interpolation rate for policies (only valid for search_interpolation=policy)"));
-  new_options.add(make_typed_option("search_alpha", priv.alpha).default_value(1e-10f).help("annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
-  new_options.add(make_typed_option("search_total_nb_policies", priv.total_number_of_policies).help("if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained"));
-  new_options.add(make_typed_option("search_trained_nb_policies", search_trained_nb_policies).help("the number of trained policies in a file"));
-  new_options.add(make_typed_option("search_allowed_transitions", search_allowed_transitions).help("read file of allowed transitions [def: all transitions are allowed]"));
-  new_options.add(make_typed_option("search_subsample_time", priv.subsample_timesteps).help("instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
-  new_options.add(make_typed_option("search_neighbor_features", neighbor_features_string).keep().help("copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them"));
-  new_options.add(make_typed_option("search_rollout_num_steps", priv.rollout_num_steps).help("how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (default means \"infinite\")"));
-  new_options.add(make_typed_option("search_history_length", priv.history_length).keep().default_value(1).help("some tasks allow you to specify how much history their depend on; specify that here"));
-  new_options.add(make_typed_option("search_no_caching", priv.no_caching).help("turn off the built-in caching ability (makes things slower, but technically more safe)"));
-  new_options.add(make_typed_option("search_xv", priv.xv).help("train two separate policies, alternating prediction/learning"));
-  new_options.add(make_typed_option("search_perturb_oracle", priv.perturb_oracle).default_value(0.f).help("perturb the oracle on rollin with this probability"));
-  new_options.add(make_typed_option("search_linear_ordering", priv.linear_ordering).help("insist on generating examples in linear order (def: hoopla permutation)"));
-  new_options.add(make_typed_option("search_active_verify", priv.active_csoaa_verify).help("verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)"));
-  new_options.add(make_typed_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
+  new_options.add(make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
+  new_options.add(make_option("search_task", task_string).keep().help("the search task (use \"--search_task list\" to get a list of available tasks)"));
+  new_options.add(make_option("search_metatask", metatask_string).keep().help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
+  new_options.add(make_option("search_interpolation", interpolation_string).keep().help("at what level should interpolation happen? [*data|policy]"));
+  new_options.add(make_option("search_rollout", rollout_string).help("how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]"));
+  new_options.add(make_option("search_rollin", rollin_string).help("how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]"));
+  new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy).default_value(1).help("number of passes per policy (only valid for search_interpolation=policy)"));
+  new_options.add(make_option("search_beta", priv.beta).default_value(0.5f).help("interpolation rate for policies (only valid for search_interpolation=policy)"));
+  new_options.add(make_option("search_alpha", priv.alpha).default_value(1e-10f).help("annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
+  new_options.add(make_option("search_total_nb_policies", priv.total_number_of_policies).help("if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained"));
+  new_options.add(make_option("search_trained_nb_policies", search_trained_nb_policies).help("the number of trained policies in a file"));
+  new_options.add(make_option("search_allowed_transitions", search_allowed_transitions).help("read file of allowed transitions [def: all transitions are allowed]"));
+  new_options.add(make_option("search_subsample_time", priv.subsample_timesteps).help("instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
+  new_options.add(make_option("search_neighbor_features", neighbor_features_string).keep().help("copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them"));
+  new_options.add(make_option("search_rollout_num_steps", priv.rollout_num_steps).help("how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (default means \"infinite\")"));
+  new_options.add(make_option("search_history_length", priv.history_length).keep().default_value(1).help("some tasks allow you to specify how much history their depend on; specify that here"));
+  new_options.add(make_option("search_no_caching", priv.no_caching).help("turn off the built-in caching ability (makes things slower, but technically more safe)"));
+  new_options.add(make_option("search_xv", priv.xv).help("train two separate policies, alternating prediction/learning"));
+  new_options.add(make_option("search_perturb_oracle", priv.perturb_oracle).default_value(0.f).help("perturb the oracle on rollin with this probability"));
+  new_options.add(make_option("search_linear_ordering", priv.linear_ordering).help("insist on generating examples in linear order (def: hoopla permutation)"));
+  new_options.add(make_option("search_active_verify", priv.active_csoaa_verify).help("verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)"));
+  new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
   options.add_and_parse(new_options);
 
 

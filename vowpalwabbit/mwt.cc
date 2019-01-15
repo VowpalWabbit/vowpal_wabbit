@@ -245,9 +245,10 @@ base_learner* mwt_setup(options_i& options, vw& all)
   string s;
   bool exclude_eval = false;
   option_group_definition new_options("Multiworld Testing Options");
-  new_options.add(make_typed_option("multiworld_test", s).keep().help("Evaluate features as a policies"));
-  new_options.add(make_typed_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."));
-  new_options.add(make_typed_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
+  new_options
+    .add(make_option("multiworld_test", s).keep().help("Evaluate features as a policies"))
+    .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."))
+    .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("multiworld_test"))

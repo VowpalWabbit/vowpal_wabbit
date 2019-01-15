@@ -53,7 +53,8 @@ LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
   auto s = scoped_calloc_or_throw<scorer>();
   string link;
   option_group_definition new_options("scorer options");
-  new_options.add(make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  new_options
+    .add(make_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
   // This always returns a base_learner.

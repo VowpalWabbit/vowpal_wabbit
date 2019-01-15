@@ -42,7 +42,8 @@ LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
   bool print_option = false;
   option_group_definition new_options("Print psuedolearner");
-  new_options.add(make_typed_option("print", print_option).keep().help("print examples"));
+  new_options
+    .add(make_option("print", print_option).keep().help("print examples"));
   options.add_and_parse(new_options);
 
   if (!print_option)

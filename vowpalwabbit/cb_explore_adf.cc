@@ -753,23 +753,24 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   bool regcb = false;
   std::string type_string = "ips";
   option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(make_typed_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
-  new_options.add(make_typed_option("first", data->tau).keep().help("tau-first exploration"));
-  new_options.add(make_typed_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"));
-  new_options.add(make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
-  new_options.add(make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
-  new_options.add(make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
-  new_options.add(make_typed_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"));
-  new_options.add(make_typed_option("softmax", softmax).keep().help("softmax exploration"));
-  new_options.add(make_typed_option("regcb", regcb).keep().help("RegCB-elim exploration"));
-  new_options.add(make_typed_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"));
-  new_options.add(make_typed_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"));
-  new_options.add(make_typed_option("greedify", data->greedify).keep().help("always update first policy once in bagging"));
-  new_options.add(make_typed_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"));
-  new_options.add(make_typed_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
-  new_options.add(make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
-  new_options.add(make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
-  new_options.add(make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
+  new_options
+    .add(make_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+    .add(make_option("first", data->tau).keep().help("tau-first exploration"))
+    .add(make_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"))
+    .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
+    .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+    .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
+    .add(make_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
+    .add(make_option("softmax", softmax).keep().help("softmax exploration"))
+    .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
+    .add(make_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"))
+    .add(make_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
+    .add(make_option("greedify", data->greedify).keep().help("always update first policy once in bagging"))
+    .add(make_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
+    .add(make_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
+    .add(make_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"))
+    .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
+    .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
   options.add_and_parse(new_options);
 
   if(!cb_explore_adf_option)

@@ -634,7 +634,7 @@ child:
       if (input_options.json || input_options.dsjson)
       {
         // TODO: change to class with virtual method
-        if (all.audit)
+        if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
           all.p->audit = true;

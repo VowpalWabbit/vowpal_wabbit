@@ -79,7 +79,7 @@ namespace VW {
   };
 
   template<typename T>
-  typed_option<T> make_typed_option(std::string name, T& location) {
+  typed_option<T> make_option(std::string name, T& location) {
     return typed_option<T>(name, location);
   }
 
@@ -89,8 +89,9 @@ namespace VW {
     {}
 
     template<typename T>
-    void add(typed_option<T> op) {
+    option_group_definition& add(typed_option<T> op) {
       m_options.push_back(std::make_shared<typed_option<T>>(op));
+      return *this;
     }
 
     template<typename T>
@@ -154,6 +155,18 @@ namespace VW {
 
   bool operator==(const base_option& lhs, const base_option& rhs);
   bool operator!=(const base_option& lhs, const base_option& rhs);
-    }
 
+  inline bool operator==(const base_option& lhs, const base_option& rhs) {
+    return lhs.m_name == rhs.m_name
+      && lhs.m_type_hash == rhs.m_type_hash
+      && lhs.m_help == rhs.m_help
+      && lhs.m_short_name == rhs.m_short_name
+      && lhs.m_keep == rhs.m_keep;
+  }
+
+  inline bool operator!=(const base_option& lhs, const base_option& rhs) {
+    return !(lhs == rhs);
+  }
+
+  }
 }

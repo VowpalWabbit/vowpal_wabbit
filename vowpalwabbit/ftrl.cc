@@ -244,13 +244,13 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   bool ftrl_option = false;
   bool pistol = false;
 
-  option_group_definition ftrl_options("Follow the Regularized Leader");
-  ftrl_options
-    (make_typed_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-    (make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
-    (make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
-    (make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
-  options.add_and_parse(ftrl_options);
+  option_group_definition new_options("Follow the Regularized Leader");
+  new_options
+    .add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
+    .add(make_option("pistol", pistol).keep().help("FTRL beta parameter"))
+    .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+    .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
+  options.add_and_parse(new_options);
 
   if(!ftrl_option && !pistol)
   {

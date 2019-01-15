@@ -44,12 +44,13 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   sch.set_task_data<task_data>(my_task_data);
 
   option_group_definition new_options("Entity Relation Options");
-  new_options.add(make_typed_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"));
-  new_options.add(make_typed_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"));
-  new_options.add(make_typed_option("constraints", my_task_data->constraints).keep().help("Use Constraints"));
-  new_options.add(make_typed_option("relation_none_cost", my_task_data->relation_none_cost).keep().default_value(0.5f).help("None Relation Cost"));
-  new_options.add(make_typed_option("skip_cost", my_task_data->skip_cost).keep().default_value(0.01f).help("Skip Cost (only used when search_order = skip"));
-  new_options.add(make_typed_option("search_order", my_task_data->search_order).keep().default_value(0).help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)"));
+  new_options
+    .add(make_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"))
+    .add(make_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"))
+    .add(make_option("constraints", my_task_data->constraints).keep().help("Use Constraints"))
+    .add(make_option("relation_none_cost", my_task_data->relation_none_cost).keep().default_value(0.5f).help("None Relation Cost"))
+    .add(make_option("skip_cost", my_task_data->skip_cost).keep().default_value(0.01f).help("Skip Cost (only used when search_order = skip"))
+    .add(make_option("search_order", my_task_data->search_order).keep().default_value(0).help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)"));
   options.add_and_parse(new_options);
 
   // setup entity and relation labels

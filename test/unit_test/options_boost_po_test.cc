@@ -45,11 +45,11 @@ BOOST_AUTO_TEST_CASE(typed_options_parsing) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("str_opt", str_arg));
-  arg_group.add(make_typed_option("int_opt", int_opt).short_name("i"));
-  arg_group.add(make_typed_option("bool_opt", bool_opt));
-  arg_group.add(make_typed_option("char_opt", char_opt));
-  arg_group.add(make_typed_option("float_opt", float_opt));
+  arg_group.add(make_option("str_opt", str_arg));
+  arg_group.add(make_option("int_opt", int_opt).short_name("i"));
+  arg_group.add(make_option("bool_opt", bool_opt));
+  arg_group.add(make_option("char_opt", char_opt));
+  arg_group.add(make_option("float_opt", float_opt));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
@@ -75,10 +75,10 @@ BOOST_AUTO_TEST_CASE(typed_option_collection_parsing) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("str_opt", str_opt));
-  arg_group.add(make_typed_option("int_opt", int_opt).short_name("i"));
-  arg_group.add(make_typed_option("char_opt", char_opt));
-  arg_group.add(make_typed_option("float_opt", float_opt));
+  arg_group.add(make_option("str_opt", str_opt));
+  arg_group.add(make_option("int_opt", int_opt).short_name("i"));
+  arg_group.add(make_option("char_opt", char_opt));
+  arg_group.add(make_option("float_opt", float_opt));
 
   options->add_and_parse(arg_group);
 
@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE(bool_implicit_and_explicit_options) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("bool_switch", bool_switch));
-  arg_group.add(make_typed_option("bool_switch_unspecified", bool_switch_unspecified));
+  arg_group.add(make_option("bool_switch", bool_switch));
+  arg_group.add(make_option("bool_switch_unspecified", bool_switch_unspecified));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(incorrect_option_type) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("int_opt", int_opt));
+  arg_group.add(make_option("int_opt", int_opt));
 
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
@@ -140,8 +140,8 @@ BOOST_AUTO_TEST_CASE(multiple_locations_one_option) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("str_opt", str_opt_1));
-  arg_group.add(make_typed_option("str_opt", str_opt_2));
+  arg_group.add(make_option("str_opt", str_opt_1));
+  arg_group.add(make_option("str_opt", str_opt_2));
 
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
 }
@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE(duplicate_option_clash) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("the_opt", int_opt));
-  arg_group.add(make_typed_option("the_opt", char_opt));
+  arg_group.add(make_option("the_opt", int_opt));
+  arg_group.add(make_option("the_opt", char_opt));
 
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_exception);
 }
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("int_opt", int_opt));
+  arg_group.add(make_option("int_opt", int_opt));
 
   BOOST_CHECK_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(mismatched_values_duplicate_command_line) {
 //    new options_boost_po(argc, argv.get()));
 //
 //  option_group_definition arg_group("group");
-//  arg_group.add(make_typed_option("data", data));
+//  arg_group.add(make_option("data", data));
 //
 //  BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
 //  BOOST_CHECK_EQUAL(data, "data_file");
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(matching_values_duplicate_command_line) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group");
-  arg_group.add(make_typed_option("int_opt", int_opt));
+  arg_group.add(make_option("int_opt", int_opt));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
@@ -232,10 +232,10 @@ BOOST_AUTO_TEST_CASE(add_two_groups) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group1("group1");
-  arg_group1.add(make_typed_option("int_opt", int_opt));
+  arg_group1.add(make_option("int_opt", int_opt));
 
   option_group_definition arg_group2("group2");
-  arg_group2.add(make_typed_option("str_opt", str_opt));
+  arg_group2.add(make_option("str_opt", str_opt));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group1));
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group2));
@@ -257,9 +257,9 @@ BOOST_AUTO_TEST_CASE(was_supplied_test) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
-  arg_group.add(make_typed_option("int_opt", int_opt));
-  arg_group.add(make_typed_option("str_opt", str_opt));
-  arg_group.add(make_typed_option("bool_opt", bool_opt));
+  arg_group.add(make_option("int_opt", int_opt));
+  arg_group.add(make_option("str_opt", str_opt));
+  arg_group.add(make_option("bool_opt", bool_opt));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
@@ -288,11 +288,11 @@ BOOST_AUTO_TEST_CASE(kept_command_line) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
-  arg_group.add(make_typed_option("int_opt", int_opt));
-  arg_group.add(make_typed_option("str_opt", str_opt).keep());
-  arg_group.add(make_typed_option("bool_opt", bool_opt).keep());
-  arg_group.add(make_typed_option("other_bool_opt", other_bool_opt).keep());
-  arg_group.add(make_typed_option("char_opt_option", char_opt_option).keep());
+  arg_group.add(make_option("int_opt", int_opt));
+  arg_group.add(make_option("str_opt", str_opt).keep());
+  arg_group.add(make_option("bool_opt", bool_opt).keep());
+  arg_group.add(make_option("other_bool_opt", other_bool_opt).keep());
+  arg_group.add(make_option("char_opt_option", char_opt_option).keep());
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(unregistered_options) {
     new options_boost_po(argc, argv.get()));
 
   option_group_definition arg_group("group1");
-  arg_group.add(make_typed_option("int_opt", int_opt));
+  arg_group.add(make_option("int_opt", int_opt));
 
   BOOST_CHECK_NO_THROW(options->add_and_parse(arg_group));
   BOOST_CHECK_EQUAL(int_opt, 3);
