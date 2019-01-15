@@ -40,6 +40,6 @@ LEARNER::base_learner* binary_setup(options_i& options, vw& all)
     return nullptr;
 
   LEARNER::learner<char,example>& ret =
-    LEARNER::init_learner(as_singleline(setup_base(*all.options, all)), predict_or_learn<true>, predict_or_learn<false>);
+    LEARNER::init_learner(as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   return make_base(ret);
 }

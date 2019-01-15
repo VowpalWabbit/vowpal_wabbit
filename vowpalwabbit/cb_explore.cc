@@ -316,7 +316,7 @@ base_learner* cb_explore_setup(options_i& options, vw& all)
   all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
-  single_learner* base = as_singleline(setup_base(*all.options, all));
+  single_learner* base = as_singleline(setup_base(options, all));
   data->cbcs.scorer = all.scorer;
 
   learner<cb_explore,example>* l;

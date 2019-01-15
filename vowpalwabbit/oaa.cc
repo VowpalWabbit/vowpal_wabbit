@@ -251,7 +251,7 @@ LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
 
   oaa* data_ptr = data.get();
   LEARNER::learner<oaa,example>* l;
-  auto base = as_singleline(setup_base(*all.options, all));
+  auto base = as_singleline(setup_base(options, all));
   if( probabilities || scores)
   {
     all.delete_prediction = delete_scalars;

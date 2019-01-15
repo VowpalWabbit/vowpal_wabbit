@@ -158,7 +158,7 @@ base_learner* active_setup(options_i& options, vw& all)
   if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");
 
-  auto base = as_singleline(setup_base(*all.options, all));
+  auto base = as_singleline(setup_base(options, all));
 
   //Create new learner
   learner<active,example>* l;

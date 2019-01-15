@@ -115,7 +115,7 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   if (!options.was_supplied("top"))
     return nullptr;
 
-  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
+  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

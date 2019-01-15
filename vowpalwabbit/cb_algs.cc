@@ -186,7 +186,7 @@ base_learner* cb_algs_setup(options_i& options, vw& all)
     options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(setup_base(*all.options, all));
+  auto base = as_singleline(setup_base(options, all));
   if (eval)
   {
     all.p->lp = CB_EVAL::cb_eval;

@@ -226,7 +226,7 @@ base_learner* lrq_setup(options_i& options, vw& all)
     all.trace_message<<endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate,example>& l = init_learner(lrq, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
+  learner<LRQstate,example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
                                       predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);

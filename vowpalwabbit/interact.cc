@@ -178,7 +178,7 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
   data->all = &all;
 
   LEARNER::learner<interact,example>* l;
-  l = &LEARNER::init_learner(data, as_singleline(setup_base(*all.options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l = &LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

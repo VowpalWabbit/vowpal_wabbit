@@ -252,7 +252,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
   if (options.was_supplied("active"))
     THROW("error: you can't use --active_cover and --active at the same time");
 
-  auto base = as_singleline(setup_base(*all.options, all));
+  auto base = as_singleline(setup_base(options, all));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];

@@ -371,7 +371,7 @@ base_learner* ect_setup(options_i& options, vw& all)
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors+1);
 
-  base_learner* base = setup_base(*all.options, all);
+  base_learner* base = setup_base(options, all);
   if (link.compare("logistic") == 0)
     data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 

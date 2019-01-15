@@ -258,7 +258,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
 
   if (data->use_adf)
   {
-    multi_learner* base = as_multiline(setup_base(*all.options, all));
+    multi_learner* base = as_multiline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, 1);
     else
@@ -266,7 +266,7 @@ base_learner* cbify_setup(options_i& options, vw& all)
   }
   else
   {
-    single_learner* base = as_singleline(setup_base(*all.options, all));
+    single_learner* base = as_singleline(setup_base(options, all));
     if (use_cs)
       l = &init_cost_sensitive_learner(data, base, predict_or_learn<true, true>, predict_or_learn<false, true>, all.p, 1);
     else

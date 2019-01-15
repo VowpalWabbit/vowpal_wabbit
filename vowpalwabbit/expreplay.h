@@ -96,7 +96,7 @@ LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
   if (! all.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
-  er->base = LEARNER::as_singleline(setup_base(*all.options, all));
+  er->base = LEARNER::as_singleline(setup_base(options, all));
   LEARNER::learner<expreplay,example>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);

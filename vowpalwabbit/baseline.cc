@@ -217,7 +217,7 @@ base_learner* baseline_setup(options_i& options, vw& all)
   if (loss_function_type != "logistic" )
     data->lr_scaling = true;
 
-  auto base = as_singleline(setup_base(*all.options, all));
+  auto base = as_singleline(setup_base(options, all));
 
   learner<baseline,example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 

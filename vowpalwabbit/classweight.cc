@@ -89,7 +89,7 @@ LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
   if (!all.quiet)
     all.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
-  LEARNER::single_learner* base = as_singleline(setup_base(*all.options, all));
+  LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
   LEARNER::learner<classweights,example>* ret;
   if (base->pred_type == prediction_type::scalar)
