@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <float.h>
 #include <math.h>
+#include "correctedMath.h"
 #include "reductions.h"
 #include "rand48.h"
 #include "vw_exception.h"
@@ -111,7 +112,7 @@ void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
       float sum_prob = 0;
       for(uint32_t i =0; i< o.k; i++)
       {
-        ec.pred.scalars[i] =  1.f / (1.f + exp(- o.pred[i].scalar));
+        ec.pred.scalars[i] =  1.f / (1.f + correctedExp(- o.pred[i].scalar));
         sum_prob += ec.pred.scalars[i];
       }
       float inv_sum_prob = 1.f / sum_prob;
