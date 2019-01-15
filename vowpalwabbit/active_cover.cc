@@ -5,6 +5,7 @@
 #include "vw.h"
 
 using namespace LEARNER;
+using namespace VW::config;
 
 inline float sign(float w) { if (w <= 0.f) return -1.f; else  return 1.f;}
 
@@ -221,18 +222,18 @@ void finish(active_cover& ac)
   delete[] ac.lambda_d;
 }
 
-base_learner* active_cover_setup(VW::config::options_i& options, vw& all)
+base_learner* active_cover_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active_cover>();
-  VW::config::option_group_definition new_options("Active Learning with Cover");
+  option_group_definition new_options("Active Learning with Cover");
 
   bool active_cover_option = false;
-  new_options.add(VW::config::make_typed_option("active_cover", active_cover_option).keep().help("enable active learning with cover"));
-  new_options.add(VW::config::make_typed_option("mellowness", data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8."));
-  new_options.add(VW::config::make_typed_option("alpha", data->alpha).default_value(1.f).help("active learning variance upper bound parameter alpha. Default 1."));
-  new_options.add(VW::config::make_typed_option("beta_scale", data->beta_scale).default_value(sqrtf(10.f)).help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."));
-  new_options.add(VW::config::make_typed_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."));
-  new_options.add(VW::config::make_typed_option("oracular", data->oracular).default_value(false).help("Use Oracular-CAL style query or not. Default false."));
+  new_options.add(make_typed_option("active_cover", active_cover_option).keep().help("enable active learning with cover"));
+  new_options.add(make_typed_option("mellowness", data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8."));
+  new_options.add(make_typed_option("alpha", data->alpha).default_value(1.f).help("active learning variance upper bound parameter alpha. Default 1."));
+  new_options.add(make_typed_option("beta_scale", data->beta_scale).default_value(sqrtf(10.f)).help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."));
+  new_options.add(make_typed_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."));
+  new_options.add(make_typed_option("oracular", data->oracular).default_value(false).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);
 
   if (!active_cover_option)

@@ -8,6 +8,8 @@
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
+
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   float b,sb,rs,sl;
@@ -135,16 +137,16 @@ void return_active_example(vw& all, active& a, example& ec)
   VW::finish_example(all,ec);
 }
 
-base_learner* active_setup(VW::config::options_i& options, vw& all)
+base_learner* active_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active>();
 
   bool active_option = false;
   bool simulation = false;
-  VW::config::option_group_definition new_options("Active Learning");
-  new_options.add(VW::config::make_typed_option("active", active_option).keep().help("enable active learning"));
-  new_options.add(VW::config::make_typed_option("simulation", simulation).help("active learning simulation mode"));
-  new_options.add(VW::config::make_typed_option("mellowness",  data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8"));
+  option_group_definition new_options("Active Learning");
+  new_options.add(make_typed_option("active", active_option).keep().help("enable active learning"));
+  new_options.add(make_typed_option("simulation", simulation).help("active learning simulation mode"));
+  new_options.add(make_typed_option("mellowness",  data->active_c0).default_value(8.f).help("active learning mellowness parameter c_0. Default 8"));
   options.add_and_parse(new_options);
 
   if (!active_option)

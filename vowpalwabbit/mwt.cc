@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 using namespace CB_ALGS;
+using namespace VW::config;
 
 namespace MWT
 {
@@ -238,15 +239,15 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 }
 using namespace MWT;
 
-base_learner* mwt_setup(VW::config::options_i& options, vw& all)
+base_learner* mwt_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<mwt>();
   string s;
   bool exclude_eval = false;
-  VW::config::option_group_definition new_options("Multiworld Testing Options");
-  new_options.add(VW::config::make_typed_option("multiworld_test", s).keep().help("Evaluate features as a policies"));
-  new_options.add(VW::config::make_typed_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."));
-  new_options.add(VW::config::make_typed_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
+  option_group_definition new_options("Multiworld Testing Options");
+  new_options.add(make_typed_option("multiworld_test", s).keep().help("Evaluate features as a policies"));
+  new_options.add(make_typed_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes."));
+  new_options.add(make_typed_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("multiworld_test"))

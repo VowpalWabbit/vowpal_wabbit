@@ -21,6 +21,8 @@
 #include "reductions.h"
 
 using namespace std;
+using namespace VW::config;
+
 struct sender
 {
   io_buf* buf;
@@ -96,12 +98,12 @@ void finish(sender& s)
   delete s.buf;
 }
 
-LEARNER::base_learner* sender_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* sender_setup(options_i& options, vw& all)
 {
   string host;
 
-  VW::config::option_group_definition sender_options("Network sending");
-  sender_options.add(VW::config::make_typed_option("sendto", host).keep().help("send examples to <host>"));
+  option_group_definition sender_options("Network sending");
+  sender_options.add(make_typed_option("sendto", host).keep().help("send examples to <host>"));
   options.add_and_parse(sender_options);
 
   if(!options.was_supplied("sendto"))

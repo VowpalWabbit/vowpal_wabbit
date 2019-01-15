@@ -38,7 +38,9 @@ license as described in the file LICENSE.
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
 #endif
+
 using namespace std;
+using namespace VW::config;
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -1259,19 +1261,19 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner *lda_setup(options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
-  VW::config::option_group_definition new_options("Latent Dirichlet Allocation");
+  option_group_definition new_options("Latent Dirichlet Allocation");
   int math_mode;
-  new_options.add(VW::config::make_typed_option("lda", ld->topics).keep().help("Run lda with <int> topics"));
-  new_options.add(VW::config::make_typed_option("lda_alpha", ld->lda_alpha).keep().default_value(0.1f).help("Prior on sparsity of per-document topic weights"));
-  new_options.add(VW::config::make_typed_option("lda_rho", ld->lda_rho).keep().default_value(0.1f).help("Prior on sparsity of topic distributions"));
-  new_options.add(VW::config::make_typed_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"));
-  new_options.add(VW::config::make_typed_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"));
-  new_options.add(VW::config::make_typed_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"));
-  new_options.add(VW::config::make_typed_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"));
-  new_options.add(VW::config::make_typed_option("metrics", ld->compute_coherence_metrics).default_value(false).help("Compute metrics"));
+  new_options.add(make_typed_option("lda", ld->topics).keep().help("Run lda with <int> topics"));
+  new_options.add(make_typed_option("lda_alpha", ld->lda_alpha).keep().default_value(0.1f).help("Prior on sparsity of per-document topic weights"));
+  new_options.add(make_typed_option("lda_rho", ld->lda_rho).keep().default_value(0.1f).help("Prior on sparsity of topic distributions"));
+  new_options.add(make_typed_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"));
+  new_options.add(make_typed_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"));
+  new_options.add(make_typed_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"));
+  new_options.add(make_typed_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"));
+  new_options.add(make_typed_option("metrics", ld->compute_coherence_metrics).default_value(false).help("Compute metrics"));
   options.add_and_parse(new_options);
 
   // Convert from int to corresponding enum value.

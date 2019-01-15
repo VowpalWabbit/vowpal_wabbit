@@ -8,7 +8,10 @@ license as described in the file LICENSE.
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
+
 using namespace std;
+using namespace VW::config;
+
 struct audit_regressor_data
 {
   vw* all;
@@ -254,12 +257,12 @@ void init_driver(audit_regressor_data& dat)
 
 
 
-LEARNER::base_learner* audit_regressor_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
   string out_file;
 
-  VW::config::option_group_definition new_options("Audit Regressor");
-  new_options.add(VW::config::make_typed_option("audit_regressor", out_file).keep().help("stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode."));
+  option_group_definition new_options("Audit Regressor");
+  new_options.add(make_typed_option("audit_regressor", out_file).keep().help("stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode."));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("audit_regressor"))

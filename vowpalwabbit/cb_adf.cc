@@ -21,6 +21,7 @@ using namespace CB;
 using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
+using namespace VW::config;
 
 namespace CB_ADF
 {
@@ -339,17 +340,17 @@ void save_load(cb_adf& c, io_buf& model_file, bool read, bool text)
 
 }
 using namespace CB_ADF;
-base_learner* cb_adf_setup(VW::config::options_i& options, vw& all)
+base_learner* cb_adf_setup(options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<cb_adf>();
   bool cb_adf_option = false;
   std::string type_string = "ips";
 
-  VW::config::option_group_definition new_options("Contextual Bandit with Action Dependent Features");
-  new_options.add(VW::config::make_typed_option("cb_adf", cb_adf_option).keep().help("Do Contextual Bandit learning with multiline action dependent features."));
-  new_options.add(VW::config::make_typed_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"));
-  new_options.add(VW::config::make_typed_option("no_predict", ld->no_predict).help("Do not do a prediction when training"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr, mtr}"));
+  option_group_definition new_options("Contextual Bandit with Action Dependent Features");
+  new_options.add(make_typed_option("cb_adf", cb_adf_option).keep().help("Do Contextual Bandit learning with multiline action dependent features."));
+  new_options.add(make_typed_option("rank_all", ld->rank_all).keep().help("Return actions sorted by score order"));
+  new_options.add(make_typed_option("no_predict", ld->no_predict).help("Do not do a prediction when training"));
+  new_options.add(make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr, mtr}"));
   options.add_and_parse(new_options);
 
   if(!cb_adf_option)

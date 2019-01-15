@@ -4,6 +4,8 @@
 #include "vw_exception.h"
 
 using namespace std;
+using namespace VW::config;
+
 struct scorer { vw* all; }; // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
@@ -46,12 +48,12 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(- in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-LEARNER::base_learner* scorer_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
   string link;
-  VW::config::option_group_definition new_options("scorer options");
-  new_options.add(VW::config::make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  option_group_definition new_options("scorer options");
+  new_options.add(make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
   // This always returns a base_learner.

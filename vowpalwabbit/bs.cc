@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 struct bs
 {
@@ -234,13 +235,13 @@ void finish_example(vw& all, bs& d, example& ec)
 void finish(bs& d)
 { delete d.pred_vec; }
 
-base_learner* bs_setup(VW::config::options_i& options, vw& all)
+base_learner* bs_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<bs>();
   std::string type_string("mean");
-  VW::config::option_group_definition new_options("Bootstrap");
-  new_options.add(VW::config::make_typed_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"));
-  new_options.add(VW::config::make_typed_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
+  option_group_definition new_options("Bootstrap");
+  new_options.add(make_typed_option("bootstrap", data->B).keep().help("k-way bootstrap by online importance resampling"));
+  new_options.add(make_typed_option("bs_type", type_string).keep().help("prediction type {mean,vote}"));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("bootstrap"))

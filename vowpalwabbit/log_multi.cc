@@ -12,6 +12,7 @@ license as described in the file LICENSE.node
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 class node_pred
 {
@@ -495,14 +496,14 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   }
 }
 
-base_learner* log_multi_setup(VW::config::options_i& options, vw& all)	//learner setup
+base_learner* log_multi_setup(options_i& options, vw& all)	//learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
-  VW::config::option_group_definition new_options("Logarithmic Time Multiclass Tree");
-  new_options.add(VW::config::make_typed_option("log_multi", data->k).keep().help("Use online tree for multiclass"));
-  new_options.add(VW::config::make_typed_option("no_progress", data->progress).help("disable progressive validation"));
-  new_options.add(VW::config::make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"));
-  new_options.add(VW::config::make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
+  option_group_definition new_options("Logarithmic Time Multiclass Tree");
+  new_options.add(make_typed_option("log_multi", data->k).keep().help("Use online tree for multiclass"));
+  new_options.add(make_typed_option("no_progress", data->progress).help("disable progressive validation"));
+  new_options.add(make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("disable progressive validation"));
+  new_options.add(make_typed_option("swap_resistance", data->swap_resist).default_value(4).help("higher = more resistance to swap, default=4"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("log_multi"))

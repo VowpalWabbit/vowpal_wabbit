@@ -4,6 +4,8 @@
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
+
 struct confidence { vw* all;};
 
 template <bool is_learn, bool is_confidence_after_training>
@@ -68,13 +70,13 @@ void return_confidence_example(vw& all, confidence& c, example& ec)
   VW::finish_example(all,ec);
 }
 
-base_learner* confidence_setup(VW::config::options_i& options, vw& all)
+base_learner* confidence_setup(options_i& options, vw& all)
 {
   bool confidence_arg = false;
   bool confidence_after_training = false;
-  VW::config::option_group_definition new_options("Confidence");
-  new_options.add(VW::config::make_typed_option("confidence", confidence_arg).keep().help("Get confidence for binary predictions"));
-  new_options.add(VW::config::make_typed_option("confidence_after_training", confidence_after_training).help("Confidence after training"));
+  option_group_definition new_options("Confidence");
+  new_options.add(make_typed_option("confidence", confidence_arg).keep().help("Get confidence for binary predictions"));
+  new_options.add(make_typed_option("confidence_after_training", confidence_after_training).help("Confidence after training"));
   options.add_and_parse(new_options);
 
   if(!confidence_arg)

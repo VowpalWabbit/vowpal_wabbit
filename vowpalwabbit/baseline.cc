@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 namespace
 {
@@ -190,17 +191,17 @@ void finish(baseline& data)
   free(data.ec);
 }
 
-base_learner* baseline_setup(VW::config::options_i& options, vw& all)
+base_learner* baseline_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<baseline>();
   bool baseline_option = false;
   std::string loss_function;
 
-  VW::config::option_group_definition new_options("Baseline options");
-  new_options.add(VW::config::make_typed_option("baseline", baseline_option).keep().help("Learn an additive baseline (from constant features) and a residual separately in regression."));
-  new_options.add(VW::config::make_typed_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"));
-  new_options.add(VW::config::make_typed_option("global_only", data->global_only).keep().help("use separate example with only global constant for baseline predictions"));
-  new_options.add(VW::config::make_typed_option("check_enabled", data->check_enabled).keep().help("only use baseline when the example contains enabled flag"));
+  option_group_definition new_options("Baseline options");
+  new_options.add(make_typed_option("baseline", baseline_option).keep().help("Learn an additive baseline (from constant features) and a residual separately in regression."));
+  new_options.add(make_typed_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"));
+  new_options.add(make_typed_option("global_only", data->global_only).keep().help("use separate example with only global constant for baseline predictions"));
+  new_options.add(make_typed_option("check_enabled", data->check_enabled).keep().help("only use baseline when the example contains enabled flag"));
   options.add_and_parse(new_options);
 
   if (!baseline_option)

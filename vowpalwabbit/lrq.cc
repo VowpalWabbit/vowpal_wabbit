@@ -7,6 +7,7 @@
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 
 struct LRQstate
 {
@@ -172,13 +173,13 @@ void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 
 void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
-base_learner* lrq_setup(VW::config::options_i& options, vw& all)
+base_learner* lrq_setup(options_i& options, vw& all)
 {
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   vector<string> lrq_names;
-  VW::config::option_group_definition new_options("Low Rank Quadratics");
-  new_options.add(VW::config::make_typed_option("lrq", lrq_names).keep().help("use low rank quadratic features"));
-  new_options.add(VW::config::make_typed_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
+  option_group_definition new_options("Low Rank Quadratics");
+  new_options.add(make_typed_option("lrq", lrq_names).keep().help("use low rank quadratic features"));
+  new_options.add(make_typed_option("lrqdropout", lrq->dropout).keep().help("use dropout training for low rank quadratic features"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("lrq"))

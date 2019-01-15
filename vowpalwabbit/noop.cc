@@ -7,13 +7,15 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 
+using namespace VW::config;
+
 void learn(char&, LEARNER::base_learner&, example&) {}
 
-LEARNER::base_learner* noop_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* noop_setup(options_i& options, vw& all)
 {
   bool noop = false;
-  VW::config::option_group_definition new_options("Noop Learner");
-  new_options.add(VW::config::make_typed_option("noop", noop).keep().help("do no learning"));
+  option_group_definition new_options("Noop Learner");
+  new_options.add(make_typed_option("noop", noop).keep().help("do no learning"));
   options.add_and_parse(new_options);
 
   if(!noop)

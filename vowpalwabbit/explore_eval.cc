@@ -13,6 +13,7 @@
 using namespace LEARNER;
 using namespace CB_ALGS;
 using namespace std;
+using namespace VW::config;
 
 namespace EXPLORE_EVAL
 {
@@ -185,13 +186,13 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(VW::config::options_i& options, vw& all)
+base_learner* explore_eval_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
-  VW::config::option_group_definition new_options("Explore evaluation");
-  new_options.add(VW::config::make_typed_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"));
-  new_options.add(VW::config::make_typed_option("multiplier", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
+  option_group_definition new_options("Explore evaluation");
+  new_options.add(make_typed_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"));
+  new_options.add(make_typed_option("multiplier", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
   options.add_and_parse(new_options);
 
   if (!explore_eval_option)

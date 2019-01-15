@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 static const uint32_t parent_bit = 1;
 static const uint32_t cycle_bit = 2;
@@ -674,17 +675,17 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(VW::config::options_i& options, vw& all)
+base_learner *stagewise_poly_setup(options_i& options, vw& all)
 {
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
   bool stage_poly = false;
-  VW::config::option_group_definition new_options("Stagewise polynomial options");
-  new_options.add(VW::config::make_typed_option("stage_poly", stage_poly).keep().help("use stagewise polynomial feature learning"));
-  new_options.add(VW::config::make_typed_option("sched_exponent", poly->sched_exponent).default_value(1.f).help("exponent controlling quantity of included features"));
-  new_options.add(VW::config::make_typed_option("batch_sz", poly->batch_sz).default_value(1000).help("multiplier on batch size before including more features"));
-  new_options.add(VW::config::make_typed_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
+  option_group_definition new_options("Stagewise polynomial options");
+  new_options.add(make_typed_option("stage_poly", stage_poly).keep().help("use stagewise polynomial feature learning"));
+  new_options.add(make_typed_option("sched_exponent", poly->sched_exponent).default_value(1.f).help("exponent controlling quantity of included features"));
+  new_options.add(make_typed_option("batch_sz", poly->batch_sz).default_value(1000).help("multiplier on batch size before including more features"));
+  new_options.add(make_typed_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
 #ifdef MAGIC_ARGUMENT
-  new_options.add(VW::config::make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
+  new_options.add(make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
 #endif //MAGIC_ARGUMENT
   options.add_and_parse(new_options);
 

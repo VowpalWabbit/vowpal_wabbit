@@ -75,9 +75,7 @@ string get_arguments(vw_ptr all)
   for (auto const& option : all->options->get_all_options())
   {
     if (all->options->was_supplied(option->m_name))
-    {
       serializer.add(*option);
-    }
   }
 
   return serializer.str();

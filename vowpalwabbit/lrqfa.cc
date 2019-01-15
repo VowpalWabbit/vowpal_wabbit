@@ -5,6 +5,7 @@
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 
 struct LRQFAstate
 {
@@ -134,11 +135,11 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* lrqfa_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
   std::string lrqfa;
-  VW::config::option_group_definition new_options("Low Rank Quadratics FA");
-  new_options.add(VW::config::make_typed_option("lrqfa", lrqfa).keep().help("use low rank quadratic features with field aware weights"));
+  option_group_definition new_options("Low Rank Quadratics FA");
+  new_options.add(make_typed_option("lrqfa", lrqfa).keep().help("use low rank quadratic features with field aware weights"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("lrqfa"))

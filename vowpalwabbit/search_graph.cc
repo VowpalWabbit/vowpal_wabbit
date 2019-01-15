@@ -7,7 +7,10 @@ license as described in the file LICENSE.
 #include "vw.h"
 #include "gd.h"
 #include "vw_exception.h"
+
 using namespace std;
+using namespace VW::config;
+
 /*
 example format:
 
@@ -91,15 +94,15 @@ struct task_data
 
 inline bool example_is_test(polylabel&l) { return l.cs.costs.size() == 0; }
 
-void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i& options)
+void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data * D = new task_data();
 
-  VW::config::option_group_definition new_options("search graphtask options");
-  new_options.add(VW::config::make_typed_option("search_graph_num_loops", D->num_loops).default_value(2).help("how many loops to run [def: 2]"));
-  new_options.add(VW::config::make_typed_option("search_graph_no_structure", D->use_structure).help("turn off edge features"));
-  new_options.add(VW::config::make_typed_option("search_graph_separate_learners", D->separate_learners).help("use a different learner for each pass"));
-  new_options.add(VW::config::make_typed_option("search_graph_directed", D->directed).help("construct features based on directed graph semantics"));
+  option_group_definition new_options("search graphtask options");
+  new_options.add(make_typed_option("search_graph_num_loops", D->num_loops).default_value(2).help("how many loops to run [def: 2]"));
+  new_options.add(make_typed_option("search_graph_no_structure", D->use_structure).help("turn off edge features"));
+  new_options.add(make_typed_option("search_graph_separate_learners", D->separate_learners).help("use a different learner for each pass"));
+  new_options.add(make_typed_option("search_graph_directed", D->directed).help("construct features based on directed graph semantics"));
   options.add_and_parse(new_options);
 
   D->use_structure = !D->use_structure;

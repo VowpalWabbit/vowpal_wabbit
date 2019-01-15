@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 
 using namespace CB;
 using namespace GEN_CS;
@@ -132,16 +133,16 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(VW::config::options_i& options, vw& all)
+base_learner* cb_algs_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
   bool eval = false;
 
-  VW::config::option_group_definition new_options("Contextual Bandit Options");
-  new_options.add(VW::config::make_typed_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
-  new_options.add(VW::config::make_typed_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+  option_group_definition new_options("Contextual Bandit Options");
+  new_options.add(make_typed_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"));
+  new_options.add(make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
+  new_options.add(make_typed_option("eval", eval).help("Evaluate a policy rather than optimizing."));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("cb"))

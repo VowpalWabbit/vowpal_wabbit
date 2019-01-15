@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace VW::config;
 
 struct multi_oaa
 {
@@ -55,11 +56,11 @@ void finish_example(vw& all, multi_oaa&, example& ec)
   VW::finish_example(all, ec);
 }
 
-LEARNER::base_learner* multilabel_oaa_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* multilabel_oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<multi_oaa>();
-  VW::config::option_group_definition new_options("Multilabel One Against All");
-  new_options.add(VW::config::make_typed_option("multilabel_oaa", data->k).keep().help("One-against-all multilabel with <k> labels"));
+  option_group_definition new_options("Multilabel One Against All");
+  new_options.add(make_typed_option("multilabel_oaa", data->k).keep().help("One-against-all multilabel with <k> labels"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("multilabel_oaa"))

@@ -10,6 +10,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 #define W_XT 0   // current parameter
 #define W_ZT 1   // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -237,18 +238,18 @@ void end_pass(ftrl& g)
   }
 }
 
-base_learner* ftrl_setup(VW::config::options_i& options, vw& all)
+base_learner* ftrl_setup(options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<ftrl>();
   bool ftrl_option = false;
   bool pistol = false;
 
-  VW::config::option_group_definition ftrl_options("Follow the Regularized Leader");
+  option_group_definition ftrl_options("Follow the Regularized Leader");
   ftrl_options
-    (VW::config::make_typed_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-    (VW::config::make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
-    (VW::config::make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
-    (VW::config::make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
+    (make_typed_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
+    (make_typed_option("pistol", pistol).keep().help("FTRL beta parameter"))
+    (make_typed_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
+    (make_typed_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(ftrl_options);
 
   if(!ftrl_option && !pistol)

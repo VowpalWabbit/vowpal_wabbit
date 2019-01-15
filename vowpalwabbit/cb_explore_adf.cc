@@ -13,6 +13,8 @@ using namespace ACTION_SCORE;
 using namespace std;
 using namespace CB_ALGS;
 using namespace exploration;
+using namespace VW::config;
+
 //All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities are the probability with which each action should be replaced to the top of the list.
 
 //tau first
@@ -743,31 +745,31 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
 
 using namespace CB_EXPLORE_ADF;
 
-base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all)
+base_learner* cb_explore_adf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore_adf>();
   bool cb_explore_adf_option = false;
   bool softmax = false;
   bool regcb = false;
   std::string type_string = "ips";
-  VW::config::option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
-  new_options.add(VW::config::make_typed_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
-  new_options.add(VW::config::make_typed_option("first", data->tau).keep().help("tau-first exploration"));
-  new_options.add(VW::config::make_typed_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"));
-  new_options.add(VW::config::make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
-  new_options.add(VW::config::make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
-  new_options.add(VW::config::make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
-  new_options.add(VW::config::make_typed_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"));
-  new_options.add(VW::config::make_typed_option("softmax", softmax).keep().help("softmax exploration"));
-  new_options.add(VW::config::make_typed_option("regcb", regcb).keep().help("RegCB-elim exploration"));
-  new_options.add(VW::config::make_typed_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"));
-  new_options.add(VW::config::make_typed_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"));
-  new_options.add(VW::config::make_typed_option("greedify", data->greedify).keep().help("always update first policy once in bagging"));
-  new_options.add(VW::config::make_typed_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"));
-  new_options.add(VW::config::make_typed_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
-  new_options.add(VW::config::make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
-  new_options.add(VW::config::make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
-  new_options.add(VW::config::make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
+  option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
+  new_options.add(make_typed_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"));
+  new_options.add(make_typed_option("first", data->tau).keep().help("tau-first exploration"));
+  new_options.add(make_typed_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"));
+  new_options.add(make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
+  new_options.add(make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
+  new_options.add(make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+  new_options.add(make_typed_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"));
+  new_options.add(make_typed_option("softmax", softmax).keep().help("softmax exploration"));
+  new_options.add(make_typed_option("regcb", regcb).keep().help("RegCB-elim exploration"));
+  new_options.add(make_typed_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"));
+  new_options.add(make_typed_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"));
+  new_options.add(make_typed_option("greedify", data->greedify).keep().help("always update first policy once in bagging"));
+  new_options.add(make_typed_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"));
+  new_options.add(make_typed_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"));
+  new_options.add(make_typed_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"));
+  new_options.add(make_typed_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"));
+  new_options.add(make_typed_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
   options.add_and_parse(new_options);
 
   if(!cb_explore_adf_option)

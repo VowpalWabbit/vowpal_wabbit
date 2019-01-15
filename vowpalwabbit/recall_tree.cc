@@ -14,6 +14,7 @@ license as described in the file LICENSE.node
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 namespace recall_tree_ns
 {
@@ -564,16 +565,16 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
 
 using namespace recall_tree_ns;
 
-base_learner* recall_tree_setup(VW::config::options_i& options, vw& all)
+base_learner* recall_tree_setup(options_i& options, vw& all)
 {
   auto tree = scoped_calloc_or_throw<recall_tree> ();
-  VW::config::option_group_definition new_options("Recall Tree");
-  new_options.add(VW::config::make_typed_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"));
-  new_options.add(VW::config::make_typed_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"));
-  new_options.add(VW::config::make_typed_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"));
-  new_options.add(VW::config::make_typed_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"));
-  new_options.add(VW::config::make_typed_option("node_only", tree->node_only).default_value(false).keep().help("only use node features, not full path features"));
-  new_options.add(VW::config::make_typed_option("randomized_routing", tree->randomized_routing).default_value(false).keep().help("randomized routing"));
+  option_group_definition new_options("Recall Tree");
+  new_options.add(make_typed_option("recall_tree", tree->k).keep().help("Use online tree for multiclass"));
+  new_options.add(make_typed_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"));
+  new_options.add(make_typed_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"));
+  new_options.add(make_typed_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"));
+  new_options.add(make_typed_option("node_only", tree->node_only).default_value(false).keep().help("only use node features, not full path features"));
+  new_options.add(make_typed_option("randomized_routing", tree->randomized_routing).default_value(false).keep().help("randomized routing"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("recall_tree"))

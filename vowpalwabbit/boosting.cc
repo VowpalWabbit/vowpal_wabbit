@@ -25,6 +25,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 inline float sign(float w) { if (w <= 0.) return -1.; else  return 1.;}
 
@@ -377,13 +378,13 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
   }
 }
 
-LEARNER::base_learner* boosting_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
-  VW::config::option_group_definition new_options("Boosting");
-  new_options.add(VW::config::make_typed_option("boosting", data->N).keep().help("Online boosting with <N> weak learners"));
-  new_options.add(VW::config::make_typed_option("gamma", data->gamma).default_value(0.1f).help("weak learner's edge (=0.1), used only by online BBM"));
-  new_options.add(VW::config::make_typed_option("alg", data->alg).keep().default_value("BBM").help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
+  option_group_definition new_options("Boosting");
+  new_options.add(make_typed_option("boosting", data->N).keep().help("Online boosting with <N> weak learners"));
+  new_options.add(make_typed_option("gamma", data->gamma).default_value(0.1f).help("weak learner's edge (=0.1), used only by online BBM"));
+  new_options.add(make_typed_option("alg", data->alg).keep().default_value("BBM").help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("boosting"))

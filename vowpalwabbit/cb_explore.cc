@@ -11,6 +11,7 @@ using namespace GEN_CS;
 using namespace std;
 using namespace CB_ALGS;
 using namespace exploration;
+using namespace VW::config;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE
@@ -286,16 +287,16 @@ void finish_example(vw& all, cb_explore& c, example& ec)
 using namespace CB_EXPLORE;
 
 
-base_learner* cb_explore_setup(VW::config::options_i& options, vw& all)
+base_learner* cb_explore_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore>();
-  VW::config::option_group_definition new_options("Contextual Bandit Exploration");
-  new_options.add(VW::config::make_typed_option("cb_explore", data->cbcs.num_actions).keep().help("Online explore-exploit for a <k> action contextual bandit problem"));
-  new_options.add(VW::config::make_typed_option("first", data->tau).keep().help("tau-first exploration"));
-  new_options.add(VW::config::make_typed_option("epsilon", data->epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"));
-  new_options.add(VW::config::make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
-  new_options.add(VW::config::make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
-  new_options.add(VW::config::make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+  option_group_definition new_options("Contextual Bandit Exploration");
+  new_options.add(make_typed_option("cb_explore", data->cbcs.num_actions).keep().help("Online explore-exploit for a <k> action contextual bandit problem"));
+  new_options.add(make_typed_option("first", data->tau).keep().help("tau-first exploration"));
+  new_options.add(make_typed_option("epsilon", data->epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"));
+  new_options.add(make_typed_option("bag", data->bag_size).keep().help("bagging-based exploration"));
+  new_options.add(make_typed_option("cover", data->cover_size).keep().help("Online cover based exploration"));
+  new_options.add(make_typed_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("cb_explore"))

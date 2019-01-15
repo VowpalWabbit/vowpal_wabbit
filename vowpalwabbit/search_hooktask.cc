@@ -6,13 +6,15 @@ license as described in the file LICENSE.
 #include "search_hooktask.h"
 
 using namespace std;
+using namespace VW::config;
+
 // this is used for the C++ library and python library hook; hopefully
 // it can be used for any foreign library too!
 namespace HookTask
 {
 Search::search_task task = { "hook", run, initialize, finish, run_setup, run_takedown  };
 
-void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&)
+void initialize(Search::search& sch, size_t& num_actions, options_i&)
 {
   task_data *td = new task_data;
   td->run_f = nullptr;

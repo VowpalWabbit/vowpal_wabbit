@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 namespace SVRG
 {
@@ -168,15 +169,15 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 
 using namespace SVRG;
 
-base_learner* svrg_setup(VW::config::options_i& options, vw& all)
+base_learner* svrg_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
 
   bool svrg_option = false;
-  VW::config::option_group_definition svrg_options("Stochastic Variance Reduced Gradient");
+  option_group_definition svrg_options("Stochastic Variance Reduced Gradient");
   svrg_options
-    (VW::config::make_typed_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
-    (VW::config::make_typed_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
+    (make_typed_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+    (make_typed_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
   options.add_and_parse(svrg_options);
 
   if(!svrg_option)

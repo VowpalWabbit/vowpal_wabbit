@@ -13,6 +13,7 @@ using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace std;
+using namespace VW::config;
 
 struct cbify;
 
@@ -208,17 +209,17 @@ void init_adf_data(cbify& data, const size_t num_actions)
   }
 }
 
-base_learner* cbify_setup(VW::config::options_i& options, vw& all)
+base_learner* cbify_setup(options_i& options, vw& all)
 {
   uint32_t num_actions = 0;
   auto data = scoped_calloc_or_throw<cbify>();
   bool use_cs;
 
-  VW::config::option_group_definition new_options("Make Multiclass into Contextual Bandit");
-  new_options.add(VW::config::make_typed_option("cbify", num_actions).keep().help("Convert multiclass on <k> classes into a contextual bandit problem"));
-  new_options.add(VW::config::make_typed_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"));
-  new_options.add(VW::config::make_typed_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"));
-  new_options.add(VW::config::make_typed_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+  option_group_definition new_options("Make Multiclass into Contextual Bandit");
+  new_options.add(make_typed_option("cbify", num_actions).keep().help("Convert multiclass on <k> classes into a contextual bandit problem"));
+  new_options.add(make_typed_option("cbify_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"));
+  new_options.add(make_typed_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"));
+  new_options.add(make_typed_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify"))

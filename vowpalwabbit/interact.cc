@@ -7,7 +7,10 @@ license as described in the file LICENSE.
 #include <float.h>
 #include "reductions.h"
 #include "v_array.h"
+
 using namespace std;
+using namespace VW::config;
+
 struct interact
 {
   unsigned char n1, n2;  //namespaces to interact
@@ -149,11 +152,11 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 
 void finish(interact& in) { in.feat_store.delete_v(); }
 
-LEARNER::base_learner* interact_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   string s;
-  VW::config::option_group_definition new_options("Interact via elementwise multiplication");
-  new_options.add(VW::config::make_typed_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
+  option_group_definition new_options("Interact via elementwise multiplication");
+  new_options.add(make_typed_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("interact"))

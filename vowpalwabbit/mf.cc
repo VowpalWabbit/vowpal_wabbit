@@ -12,8 +12,8 @@
 #include "gd.h"
 
 using namespace std;
-
 using namespace LEARNER;
+using namespace VW::config;
 
 struct mf
 {
@@ -193,11 +193,11 @@ void finish(mf& o)
   o.sub_predictions.delete_v();
 }
 
-base_learner* mf_setup(VW::config::options_i& options, vw& all)
+base_learner* mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<mf>();
-  VW::config::option_group_definition new_options("Matrix Factorization Reduction");
-  new_options.add(VW::config::make_typed_option("new_mf", data->rank).keep().help("rank for reduction-based matrix factorization"));
+  option_group_definition new_options("Matrix Factorization Reduction");
+  new_options.add(make_typed_option("new_mf", data->rank).keep().help("rank for reduction-based matrix factorization"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("new_mf"))

@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 const float hidden_min_activation = -3;
 const float hidden_max_activation = 3;
@@ -409,16 +410,16 @@ void finish(nn& n)
   VW::dealloc_example(nullptr, n.outputweight);
 }
 
-base_learner* nn_setup(VW::config::options_i& options, vw& all)
+base_learner* nn_setup(options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
-  VW::config::option_group_definition new_options("Neural Network");
-  new_options.add(VW::config::make_typed_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"));
-  new_options.add(VW::config::make_typed_option("inpass", n->inpass).keep().help("Train or test sigmoidal feedforward network with input passthrough."));
-  new_options.add(VW::config::make_typed_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."));
-  new_options.add(VW::config::make_typed_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."));
-  new_options.add(VW::config::make_typed_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
+  option_group_definition new_options("Neural Network");
+  new_options.add(make_typed_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"));
+  new_options.add(make_typed_option("inpass", n->inpass).keep().help("Train or test sigmoidal feedforward network with input passthrough."));
+  new_options.add(make_typed_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."));
+  new_options.add(make_typed_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."));
+  new_options.add(make_typed_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("nn"))

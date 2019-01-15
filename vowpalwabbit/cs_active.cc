@@ -12,6 +12,7 @@
 using namespace LEARNER;
 using namespace std;
 using namespace COST_SENSITIVE;
+using namespace VW::config;
 
 struct lq_data
 {
@@ -293,24 +294,24 @@ void finish(cs_active& data)
   data.examples_by_queries.delete_v();
 }
 
-base_learner* cs_active_setup(VW::config::options_i& options, vw& all)
+base_learner* cs_active_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cs_active>();
 
   bool simulation = false;
-  VW::config::option_group_definition new_options("Cost-sensitive Active Learning");
-  new_options.add(VW::config::make_typed_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"));
-  new_options.add(VW::config::make_typed_option("simulation", simulation).help("cost-sensitive active learning simulation mode"));
-  new_options.add(VW::config::make_typed_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"));
-  new_options.add(VW::config::make_typed_option("domination", data->use_domination).default_value(true).help("cost-sensitive active learning use domination. Default true"));
-  new_options.add(VW::config::make_typed_option("mellowness", data->c0).default_value(0.1f).help("mellowness parameter c_0. Default 0.1."));
-  new_options.add(VW::config::make_typed_option("range_c", data->c1).default_value(0.5f).help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."));
-  new_options.add(VW::config::make_typed_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."));
-  new_options.add(VW::config::make_typed_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."));
-  new_options.add(VW::config::make_typed_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."));
-  new_options.add(VW::config::make_typed_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."));
+  option_group_definition new_options("Cost-sensitive Active Learning");
+  new_options.add(make_typed_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"));
+  new_options.add(make_typed_option("simulation", simulation).help("cost-sensitive active learning simulation mode"));
+  new_options.add(make_typed_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"));
+  new_options.add(make_typed_option("domination", data->use_domination).default_value(true).help("cost-sensitive active learning use domination. Default true"));
+  new_options.add(make_typed_option("mellowness", data->c0).default_value(0.1f).help("mellowness parameter c_0. Default 0.1."));
+  new_options.add(make_typed_option("range_c", data->c1).default_value(0.5f).help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."));
+  new_options.add(make_typed_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."));
+  new_options.add(make_typed_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."));
+  new_options.add(make_typed_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."));
+  new_options.add(make_typed_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."));
   // TODO replace with trace and quiet
-  new_options.add(VW::config::make_typed_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
+  new_options.add(make_typed_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
   options.add_and_parse(new_options);
 
   if(!options.was_supplied("cs_active"))

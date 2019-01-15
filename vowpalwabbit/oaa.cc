@@ -13,6 +13,8 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace VW::config;
+
 struct oaa
 {
   uint64_t k;
@@ -203,16 +205,16 @@ void finish_example_scores(vw& all, oaa& o, example& ec)
   VW::finish_example(all, ec);
 }
 
-LEARNER::base_learner* oaa_setup(VW::config::options_i& options, vw& all)
+LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<oaa>();
   bool probabilities = false;
   bool scores = false;
-  VW::config::option_group_definition new_options("One Against All Options");
-  new_options.add(VW::config::make_typed_option("oaa", data->k).keep().help("One-against-all multiclass with <k> labels"));
-  new_options.add(VW::config::make_typed_option("oaa_subsample", data->num_subsample).help("subsample this number of negative examples when learning"));
-  new_options.add(VW::config::make_typed_option("probabilities", probabilities).help("predict probabilites of all classes"));
-  new_options.add(VW::config::make_typed_option("scores", scores).help("output raw scores per class"));
+  option_group_definition new_options("One Against All Options");
+  new_options.add(make_typed_option("oaa", data->k).keep().help("One-against-all multiclass with <k> labels"));
+  new_options.add(make_typed_option("oaa_subsample", data->num_subsample).help("subsample this number of negative examples when learning"));
+  new_options.add(make_typed_option("probabilities", probabilities).help("predict probabilites of all classes"));
+  new_options.add(make_typed_option("scores", scores).help("output raw scores per class"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("oaa"))

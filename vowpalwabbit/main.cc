@@ -21,9 +21,9 @@ license as described in the file LICENSE.
 #include "options_boost_po.h"
 
 using namespace std;
+using namespace VW::config;
 
-
-vw* setup(VW::config::options_i& options)
+vw* setup(options_i& options)
 {
   vw* all = nullptr;
   try { all = VW::initialize(options);
@@ -81,13 +81,13 @@ vw* setup(VW::config::options_i& options)
 int main(int argc, char *argv[])
 {
   bool should_use_onethread = false;
-  VW::config::option_group_definition driver_config("driver");
-  driver_config.add(VW::config::make_typed_option("onethread", should_use_onethread).help("Disable parse thread"));
+  option_group_definition driver_config("driver");
+  driver_config.add(make_typed_option("onethread", should_use_onethread).help("Disable parse thread"));
 
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
-    vector<std::unique_ptr<VW::config::options_boost_po>> arguments;
+    vector<std::unique_ptr<options_boost_po>> arguments;
     vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        std::unique_ptr<VW::config::options_boost_po> ptr(new VW::config::options_boost_po(argc, argv));
+        std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
         ptr->add_and_parse(driver_config);
         alls.push_back(setup(*ptr.get()));
         arguments.push_back(std::move(ptr));
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-      std::unique_ptr<VW::config::options_boost_po> ptr(new VW::config::options_boost_po(argc, argv));
+      std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
       ptr->add_and_parse(driver_config);
       alls.push_back(setup(*ptr.get()));
       arguments.push_back(std::move(ptr));

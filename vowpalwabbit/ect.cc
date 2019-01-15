@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 struct direction
 {
@@ -353,15 +354,15 @@ void finish(ect& e)
   e.tournaments_won.delete_v();
 }
 
-base_learner* ect_setup(VW::config::options_i& options, vw& all)
+base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
   std::string link;
-  VW::config::option_group_definition new_options("Error Correcting Tournament Options");
-  new_options.add(VW::config::make_typed_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"));
-  new_options.add(VW::config::make_typed_option("error", data->errors).keep().default_value(0).help("errors allowed by ECT"));
+  option_group_definition new_options("Error Correcting Tournament Options");
+  new_options.add(make_typed_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"));
+  new_options.add(make_typed_option("error", data->errors).keep().default_value(0).help("errors allowed by ECT"));
   // Used to check value. TODO replace
-  new_options.add(VW::config::make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  new_options.add(make_typed_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("ect"))
