@@ -35,8 +35,8 @@ RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
   git checkout e8dda215426172cd348e4d6d455141f40768bf47 && \
   mkdir build && \
   cd build && \
-  cmake .. -DBUILD_TESTS=Off -DBUILD_SAMPLES=Off && \
-  make -j 4 && \
+  cmake .. && \
+  make && \
   make install && \
   cd ../../../ && \
   rm -rf casablanca
@@ -52,7 +52,7 @@ RUN easy_install pip && \
     $HOME/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 
 # Download maven dependencies
-RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
+RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml && \
   mvn dependency:resolve -f pom.xml && \
   rm pom.xml
 
