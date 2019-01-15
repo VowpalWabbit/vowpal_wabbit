@@ -38,7 +38,7 @@ set(vw_all_headers
 )
 
 set(vw_all_sources
-  options.cc options_boost_po.cc options_serializer_boost_po.cc global_data.cc io_buf.cc
+  options_boost_po.cc options_serializer_boost_po.cc global_data.cc io_buf.cc
   parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc
   multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc binary.cc lrq.cc
   cost_sensitive.cc multilabel.cc label_dictionary.cc csoaa.cc cb.cc cb_adf.cc cb_algs.cc search.cc

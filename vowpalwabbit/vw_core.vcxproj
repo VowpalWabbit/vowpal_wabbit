@@ -255,7 +255,6 @@
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
     <ClCompile Include="action_score.cc" />
-    <ClCompile Include="options.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="autolink.cc" />
