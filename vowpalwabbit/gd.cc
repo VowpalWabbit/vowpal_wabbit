@@ -1120,8 +1120,7 @@ base_learner* setup(options_i& options, vw& all)
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    // TODO save this into all
-    g->early_stop_thres = all.early_terminate_passes;
+    g->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
   g->initial_constant = all.initial_constant;

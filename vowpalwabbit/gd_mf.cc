@@ -371,7 +371,7 @@ base_learner* gd_mf_setup(options_i& options, vw& all)
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    data->early_stop_thres = all.early_terminate_passes;
+    data->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
   if(!options.was_supplied("learning_rate") && !options.was_supplied("l"))

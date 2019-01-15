@@ -325,7 +325,8 @@ void parse_affix_argument(vw&all, string str)
 
 void parse_diagnostics(options_i& options, vw& all)
 {
-  bool version_arg;
+  bool version_arg = false;
+  bool help = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
   diagnostic_group
@@ -333,7 +334,7 @@ void parse_diagnostics(options_i& options, vw& all)
     .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
     .add(make_option("progress", progress_arg).short_name("P").help("Progress update frequency. int: additive, float: multiplicative"))
     .add(make_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
-    .add(make_option("help", all.help_requested).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+    .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -934,7 +935,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   string named_labels;
   string loss_function;
   float loss_parameter = 0.0;
-
+  size_t early_terminate_passes;
   bool test_only = false;
 
   option_group_definition example_options("Example options");
@@ -943,7 +944,7 @@ void parse_example_tweaks(options_i& options, vw& all)
     .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
     .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
     .add(make_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
-    .add(make_option("early_terminate", all.early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
+    .add(make_option("early_terminate", early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
     .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
     .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
     .add(make_option("examples", all.max_examples).help("number of examples to parse"))
@@ -1506,7 +1507,7 @@ vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_mess
     options.check_unregistered();
 
     // upon direct query for help -- spit it out to stdout;
-    if (all.help_requested) {
+    if (options.get_typed_option<bool>("help").value()) {
         cout << options.help();
         exit(0);
     }

@@ -539,7 +539,6 @@ struct vw
 
   void(*delete_prediction)(void*); bool audit; //should I print lots of debugging information?
   bool quiet;//Should I suppress progress-printing of updates?
-  bool help_requested;
   bool training;//Should I train if lable data is available?
   bool active;
   bool adaptive;//Should I use adaptive individual learning rates?
@@ -559,7 +558,6 @@ struct vw
   uint32_t holdout_period;
   uint32_t holdout_after;
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple passes learning a single policy
-  size_t early_terminate_passes;
 
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 

@@ -1116,7 +1116,7 @@ base_learner* bfgs_setup(options_i& options, vw& all)
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = all.early_terminate_passes;
+    b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
   if (b->m==0)
