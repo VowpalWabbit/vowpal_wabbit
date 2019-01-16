@@ -52,6 +52,10 @@ license as described in the file LICENSE.
 
 class io_buf
 {
+  // used to check-sum i/o files for corruption detection
+  bool _verify_hash;
+  uint32_t _hash;
+
 public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values from/to the buffer.
   v_array<int> files;
@@ -60,10 +64,6 @@ public:
   char* head;
   v_array<char> currentname;
   v_array<char> finalname;
-
-  // used to check-sum i/o files for corruption detection
-  bool verify_hash;
-  uint32_t hash;
 
   static const int READ = 1;
   static const int WRITE = 2;
@@ -78,8 +78,22 @@ public:
     current = 0;
     count = 0;
     head = space.begin();
-    verify_hash = false;
-    hash = 0;
+    _verify_hash = false;
+    _hash = 0;
+  }
+
+  void verify_hash(bool verify) {
+    _verify_hash = verify;
+    // reset the hash so that the io_buf can be re-used for loading
+    // as it is done for Reload()
+    if(!verify)
+      _hash = 0;
+  }
+
+  uint32_t hash() {
+    if (!_verify_hash)
+      THROW("HASH WAS NOT CALCULATED");
+    return _hash;
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ)
@@ -203,69 +217,69 @@ public:
   }
 
   static bool is_socket(int f);
+
+  void buf_write(char* &pointer, size_t n);
+  size_t buf_read(char* &pointer, size_t n);
+
+  //if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
+  size_t bin_read_fixed(char* data, size_t len, const char* read_message)
+  { if (len > 0)
+    { char* p;
+      // if the model is corrupt the number of bytes can be less then specified (as there isn't enought data available in the file)
+      len = buf_read(p,len);
+
+      // compute hash for check-sum
+      if (_verify_hash)
+        _hash = (uint32_t)uniform_hash(p, len, _hash);
+
+      if (*read_message == '\0')
+        memcpy(data,p,len);
+      else if (memcmp(data,p,len) != 0)
+        THROW(read_message);
+      return len;
+    }
+    return 0;
+  }
+
+  size_t bin_write_fixed(const char* data, size_t len)
+  { if (len > 0)
+    { char* p;
+      buf_write (p, len);
+
+    memcpy (p, data, len);
+
+      // compute hash for check-sum
+      if (_verify_hash)
+        _hash = (uint32_t)uniform_hash(p, len, _hash);
+    }
+    return len;
+  }
 };
 
-void buf_write(io_buf &o, char* &pointer, size_t n);
-size_t buf_read(io_buf &i, char* &pointer, size_t n);
 bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);
 
-//if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
-inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
-{ if (len > 0)
-  { char* p;
-    // if the model is corrupt the number of bytes can be less then specified (as there isn't enought data available in the file)
-    len = buf_read(i,p,len);
-
-    // compute hash for check-sum
-    if (i.verify_hash)
-      i.hash = (uint32_t)uniform_hash(p, len, i.hash);
-
-    if (*read_message == '\0')
-      memcpy(data,p,len);
-    else if (memcmp(data,p,len) != 0)
-      THROW(read_message);
-    return len;
-  }
-  return 0;
-}
-
 inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
 { uint32_t obj_len;
-  size_t ret = bin_read_fixed(i,(char*)&obj_len,sizeof(obj_len),"");
+  size_t ret = i.bin_read_fixed((char*)&obj_len,sizeof(obj_len),"");
   if (obj_len > len || ret < sizeof(uint32_t))
     THROW("bad model format!");
 
-  ret += bin_read_fixed(i,data,obj_len,read_message);
+  ret += i.bin_read_fixed(data,obj_len,read_message);
 
   return ret;
 }
 
-inline size_t bin_write_fixed(io_buf& o, const char* data, size_t len)
-{ if (len > 0)
-  { char* p;
-    buf_write (o, p, len);
-
-	memcpy (p, data, len);
-
-    // compute hash for check-sum
-    if (o.verify_hash)
-    { o.hash = (uint32_t)uniform_hash(p, len, o.hash);
-    }
-  }
-  return len;
-}
-
 inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
-{ bin_write_fixed(o,(char*)&len, sizeof(len));
-  bin_write_fixed(o,data,len);
+{ o.bin_write_fixed((char*)&len, sizeof(len));
+  o.bin_write_fixed(data,len);
   return (len + sizeof(len));
 }
 
 inline size_t bin_text_write(io_buf& io, char* data, size_t len,
                              std::stringstream& msg, bool text)
 { if (text)
-  { size_t temp = bin_write_fixed (io, msg.str().c_str(), msg.str().size());
+  { size_t temp = io.bin_write_fixed (msg.str().c_str(), msg.str().size());
     msg.str("");
     return temp;
   }
@@ -287,12 +301,12 @@ inline size_t bin_text_read_write(io_buf& io, char* data, size_t len,
 inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len,
                                    std::stringstream& msg, bool text)
 { if (text)
-  { size_t temp = bin_write_fixed(io, msg.str().c_str(), msg.str().size());
+  { size_t temp = io.bin_write_fixed(msg.str().c_str(), msg.str().size());
     msg.str("");
     return temp;
   }
   else
-    return bin_write_fixed (io, data, len);
+    return io.bin_write_fixed (data, len);
   return 0;
 }
 
@@ -301,7 +315,7 @@ inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len,
                                         const char* read_message, bool read,
                                         std::stringstream& msg, bool text)
 { if (read)
-    return bin_read_fixed(io, data, len, read_message);
+    return io.bin_read_fixed(data, len, read_message);
   else
     return bin_text_write_fixed(io, data, len, msg, text);
 }

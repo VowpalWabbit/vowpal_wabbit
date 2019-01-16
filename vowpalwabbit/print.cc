@@ -7,7 +7,7 @@ using namespace VW::config;
 
 struct print { vw* all; }; //regressor, feature loop
 
-void print_feature(vw& all, float value, uint64_t index)
+void print_feature(vw& /* all */, float value, uint64_t index)
 {
   cout << index;
   if (value != 1.)

@@ -476,6 +476,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
     // background process (if foreground is not set)
     if (!input_options.foreground)
     {
+      //FIXME switch to posix_spawn
       if (!all.active && daemon(1,1))
         THROWERRNO("daemon");
     }
@@ -962,7 +963,7 @@ void parse_example_label(vw& all, example&ec, string label)
   words.delete_v();
 }
 
-void empty_example(vw& all, example& ec)
+void empty_example(vw& /* all */, example& ec)
 {
   for (features& fs : ec)
     fs.clear();

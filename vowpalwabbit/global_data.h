@@ -137,7 +137,7 @@ struct dictionary_info
   feature_dict* dict;
 };
 
-inline void deleter(substring ss, uint64_t label)
+inline void deleter(substring ss, uint64_t /* label */)
 { free_it(ss.begin); }
 
 class namedlabels

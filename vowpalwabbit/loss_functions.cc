@@ -95,7 +95,7 @@ public:
     return example_loss;
   }
 
-  float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
+  float getUpdate(float prediction, float label,float update_scale, float /* pred_per_update */)
   {
     return 2.f*(label - prediction) * update_scale;
   }
@@ -358,7 +358,7 @@ public:
     return (label - exp_prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
+  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */)
   {
     THROW("Active learning not supported by poisson loss");
   }
@@ -375,7 +375,7 @@ public:
     return (exp_prediction - label);
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float /* label */)
   {
     float exp_prediction = expf(prediction);
     return exp_prediction;

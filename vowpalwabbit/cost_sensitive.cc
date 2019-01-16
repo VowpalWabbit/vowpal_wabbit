@@ -35,7 +35,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
   ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass)*num;
-  if (buf_read(cache, c, (int)total) < total)
+  if (cache.buf_read(c, (int)total) < total)
   {
     cout << "error in demarshal of cost data" << endl;
     return c;
@@ -56,7 +56,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   ld->costs.clear();
   char *c;
   size_t total = sizeof(size_t);
-  if (buf_read(cache, c, (int)total) < total)
+  if (cache.buf_read(c, (int)total) < total)
     return 0;
   bufread_label(ld,c, cache);
 
@@ -84,7 +84,7 @@ void cache_label(void* v, io_buf& cache)
 {
   char *c;
   label* ld = (label*) v;
-  buf_write(cache, c, sizeof(size_t)+sizeof(wclass)*ld->costs.size());
+  cache.buf_write(c, sizeof(size_t)+sizeof(wclass)*ld->costs.size());
   bufcache_label(ld,c);
 }
 

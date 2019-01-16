@@ -27,7 +27,7 @@ size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   label_t* ld = (label_t*) v;
   char *c;
   size_t total = sizeof(ld->label)+sizeof(ld->weight);
-  if (buf_read(cache, c, total) < total)
+  if (cache.buf_read(c, total) < total)
     return 0;
   bufread_label(ld,c);
 
@@ -53,7 +53,7 @@ void cache_label(void* v, io_buf& cache)
 {
   char *c;
   label_t* ld = (label_t*) v;
-  buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
+  cache.buf_write(c, sizeof(ld->label)+sizeof(ld->weight));
   bufcache_label(ld,c);
 }
 
