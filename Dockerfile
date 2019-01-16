@@ -2,15 +2,17 @@ FROM ubuntu:14.04 AS build
 
 # Upgrade cmake to 3.2
 RUN apt-get update
-RUN apt-get install -y software-properties-common python-software-properties
+RUN apt-get install -y software-properties-common python-software-properties debconf-utils
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
-# Add Oracle JDK repo (including license agreement)
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | \
+# Add Oracle JDK repo (including license agreement), install Java
+RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | \
   debconf-set-selections && \
   add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update
+  apt-get update && \
+  apt-get install -y oracle-java8-installer && \
+  rm -rf /var/cache/oracle-jdk8-installer
 
 # Install build tools
 RUN apt-get install -y \
@@ -18,8 +20,7 @@ RUN apt-get install -y \
     python-setuptools python-dev build-essential \
     maven oracle-java8-installer \
   wget git vim netcat pkg-config && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/oracle-jdk8-installer
+  rm -rf /var/lib/apt/lists/*
 
 # ppa for g++ 4.9 (first version that supports complete c++11.  i.e. <regex>)
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
