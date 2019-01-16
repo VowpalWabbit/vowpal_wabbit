@@ -10,6 +10,8 @@ trigger:
     include:
     - Dockerfile
 
+pr: none
+
 steps:
   - script: docker build -t $(dockerOrgId)/$(imageName):$(Build.BuildNumber) .
   - script: docker login -u "$(dockerCredId)" -p "$(pswd)" https://index.docker.io/v1/
