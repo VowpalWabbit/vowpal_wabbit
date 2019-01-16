@@ -7,18 +7,18 @@ RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
 # Add Oracle JDK repo (including license agreement), install Java
-RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | \
-  debconf-set-selections && \
-  add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update && \
-  apt-get install -y oracle-java8-installer && \
-  rm -rf /var/cache/oracle-jdk8-installer
+# RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | \
+#   debconf-set-selections && \
+#   add-apt-repository -y ppa:webupd8team/java && \
+#   apt-get update && \
+#   apt-get install -y oracle-java8-installer && \
+#   rm -rf /var/cache/oracle-jdk8-installer
 
 # Install build tools
 RUN apt-get install -y \
   gcc g++ libboost-all-dev zlib1g-dev help2man make libssl-dev cmake doxygen graphviz \
     python-setuptools python-dev build-essential \
-    maven oracle-java8-installer \
+    maven \
   wget git vim netcat pkg-config && \
   rm -rf /var/lib/apt/lists/*
 
@@ -52,10 +52,10 @@ RUN easy_install pip && \
     $HOME/miniconda/bin/conda update -q conda && \
     $HOME/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 
-# Download maven dependencies
-RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
-  mvn dependency:resolve -f pom.xml && \
-  rm pom.xml
+# # Download maven dependencies
+# RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
+#   mvn dependency:resolve -f pom.xml && \
+#   rm pom.xml
 
 # Cleanup
 RUN apt-get clean autoclean && \
@@ -64,4 +64,4 @@ RUN apt-get clean autoclean && \
 
 # Set environment variables used by build
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
-ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+# ENV JAVA_HOME="/usr/lib/jvm/java-8-oracle"
