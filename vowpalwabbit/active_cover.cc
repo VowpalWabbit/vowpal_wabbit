@@ -24,7 +24,7 @@ struct active_cover
   LEARNER::base_learner* l;
 };
 
-bool dis_test(vw& all, example& ec, single_learner& base, float prediction, float threshold)
+bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
 {
   if(all.sd->t + ec.weight <= 3)
   {

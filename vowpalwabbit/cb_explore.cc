@@ -120,7 +120,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, example& ec)
   ec.pred.a_s = probs;
 }
 
-void get_cover_probabilities(cb_explore& data, single_learner& base, example& ec, v_array<action_score>& probs)
+void get_cover_probabilities(cb_explore& data, single_learner& /* base */, example& ec, v_array<action_score>& probs)
 {
   float additive_probability = 1.f / (float)data.cover_size;
   data.preds.clear();

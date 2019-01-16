@@ -7,7 +7,7 @@ using namespace std;
 struct confidence { vw* all;};
 
 template <bool is_learn, bool is_confidence_after_training>
-void predict_or_learn_with_confidence(confidence& c, single_learner& base, example& ec)
+void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base, example& ec)
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
@@ -62,7 +62,7 @@ void output_and_account_confidence_example(vw& all, example& ec)
   print_update(all, ec);
 }
 
-void return_confidence_example(vw& all, confidence& c, example& ec)
+void return_confidence_example(vw& all, confidence& /* c */, example& ec)
 {
   output_and_account_confidence_example(all, ec);
   VW::finish_example(all,ec);

@@ -400,7 +400,7 @@ void run(Search::search& sch, multi_ex& ec)
   predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
-void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount)
+void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   for (features& fs : *ec)
     for (feature_index& idx : fs.indicies)

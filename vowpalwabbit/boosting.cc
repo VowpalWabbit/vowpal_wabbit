@@ -287,7 +287,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     if (read)
     {
       float f;
-      bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
+      model_file.bin_read_fixed((char *) &f,  sizeof(f), "");
       o.alpha[i] = f;
     }
     else
@@ -301,7 +301,7 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     if (read)
     {
       float f;
-      bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
+      model_file.bin_read_fixed((char *) &f,  sizeof(f), "");
       o.v[i] = f;
     }
     else
@@ -332,7 +332,7 @@ void finish(boosting& o)
   o.alpha.~vector();
 }
 
-void return_example(vw& all, boosting& a, example& ec)
+void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all,ec);
@@ -354,7 +354,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
     if (read)
     {
       float f;
-      bin_read_fixed(model_file, (char *) &f,  sizeof(f), "");
+      model_file.bin_read_fixed((char *) &f,  sizeof(f), "");
       o.alpha[i] = f;
     }
     else

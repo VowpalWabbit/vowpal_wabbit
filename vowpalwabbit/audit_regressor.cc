@@ -63,12 +63,12 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
     temp = to_string(dat.cur_class) + ':' + temp;
 
-  bin_write_fixed(*dat.out_file, temp.c_str(), (uint32_t)temp.size());
+  dat.out_file->bin_write_fixed(temp.c_str(), (uint32_t)temp.size());
 
   weights[ft_idx] = 0.; //mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& base, example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* base */, example& ec)
 {
   vw& all = *rd.all;
 
@@ -90,7 +90,7 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& base
     }
   }
 
-  bin_write_fixed(*rd.out_file, tempstream.str().c_str(), (uint32_t)tempstream.str().size());
+  rd.out_file->bin_write_fixed(tempstream.str().c_str(), (uint32_t)tempstream.str().size());
 }
 
 

@@ -174,7 +174,7 @@ float dot_with_direction(vw& all, example& ec)
 }
 
 template<class T>
-double regularizer_direction_magnitude(vw& all, bfgs& b, double regularizer, T& weights)
+double regularizer_direction_magnitude(vw& /* all */, bfgs& b, double regularizer, T& weights)
 {
   double ret = 0.;
   if (b.regularizers == nullptr)
@@ -204,7 +204,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
 }
 
 template<class T>
-float direction_magnitude(vw& all, T& weights)
+float direction_magnitude(vw& /* all */, T& weights)
 {
   //compute direction magnitude
   double ret = 0.;
@@ -480,7 +480,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 }
 
 template <class T>
-void finalize_preconditioner(vw& all, bfgs& b, float regularization, T& weights)
+void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& weights)
 {
   float max_hessian = 0.f;
 
@@ -558,7 +558,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 }
 
 template<class T>
-void regularizer_to_weight(vw& all, bfgs& b, T& weights)
+void regularizer_to_weight(vw& /* all */, bfgs& b, T& weights)
 {
   if (b.regularizers != nullptr)
   {
@@ -587,7 +587,7 @@ void zero_state(vw& all)
 }
 
 template<class T>
-double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& weights)
+double derivative_in_direction(vw& /* all */, bfgs& b, float* mem, int &origin, T& weights)
 {
   double ret = 0.;
   for (typename T::iterator w = weights.begin(); w != weights.end();  ++w)
@@ -608,7 +608,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 }
 
 template<class T>
-void update_weight(vw& all, float step_size, T& w)
+void update_weight(vw& /* all */, float step_size, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
     (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR];
@@ -976,12 +976,12 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     if (read)
     {
       c++;
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+      brw = model_file.bin_read_fixed((char*)&i, sizeof(i),"");
       if (brw > 0)
       {
         assert (i< length);
         v = &(b.regularizers[i]);
-        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+        brw += model_file.bin_read_fixed((char*)v, sizeof(*v), "");
       }
     }
     else // write binary or text

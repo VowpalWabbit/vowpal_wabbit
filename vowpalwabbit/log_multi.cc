@@ -245,7 +245,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
   return b.nodes[current].internal;
 }
 
-void train_node(log_multi& b, single_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t depth)
+void train_node(log_multi& b, single_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
     ec.l.simple.label = -1.f;

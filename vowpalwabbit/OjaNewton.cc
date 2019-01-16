@@ -342,7 +342,7 @@ struct OjaNewton
   }
 };
 
-void keep_example(vw& all, OjaNewton& ON, example& ec)
+void keep_example(vw& all, OjaNewton& /* ON */, example& ec)
 {
   output_and_account_example(all, ec);
 }
