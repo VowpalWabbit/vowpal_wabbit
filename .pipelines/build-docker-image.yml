@@ -1,5 +1,5 @@
 variables:
-  buildVersionStamp: $(Date:yyyyMMdd).$(Rev:.r)
+  buildVersionStamp: $(Date:yyyyMMdd)$(Rev:.r)
 
 name: $(buildVersionStamp)
 
