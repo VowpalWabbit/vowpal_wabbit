@@ -634,6 +634,7 @@ child:
       if (input_options.json || input_options.dsjson)
       {
         // TODO: change to class with virtual method
+        // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
