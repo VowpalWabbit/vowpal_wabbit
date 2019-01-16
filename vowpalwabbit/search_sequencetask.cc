@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace VW::config;
 
 namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, nullptr,   nullptr,  nullptr     }; }
 namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
@@ -16,7 +17,7 @@ namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf"
 
 namespace SequenceTask
 {
-void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& /*arg*/)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*options*/)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -107,18 +108,18 @@ struct task_data
   size_t multipass;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, arguments& arg)
+void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   task_data * D = new task_data();
-  if (arg.new_options("search sequencespan options")
-      ("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding")
-      ("search_span_multipass", D->multipass, (size_t)1, "do multiple passes").missing())
-    {
-      delete D;
-      return;
-    }
 
-  if (arg.vm.count("search_span_bilou"))
+  bool search_span_bilou = false;
+  option_group_definition new_options("search sequencespan options");
+  new_options
+    .add(make_option("search_span_bilou", search_span_bilou).help("switch to (internal) BILOU encoding instead of BIO encoding"))
+    .add(make_option("search_span_multipass", D->multipass).default_value(1).help("do multiple passes"));
+  options.add_and_parse(new_options);
+
+  if (search_span_bilou)
   {
     cerr << "switching to BILOU encoding for sequence span labeling" << endl;
     D->encoding = BILOU;
@@ -238,7 +239,7 @@ void run(Search::search& sch, multi_ex& ec)
 
 namespace SequenceTaskCostToGo
 {
-void initialize(Search::search& sch, size_t& num_actions, arguments& /* arg */)
+void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/)
 {
   sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                    Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -280,17 +281,16 @@ struct task_data
   bool predict_max;
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
   task_data* D = new task_data();
-  if (arg.new_options("argmax options")
-      ("cost", D->false_negative_cost, 10.0f, "False Negative Cost")
-      ("negative_weight", D->negative_weight, 1.f, "Relative weight of negative examples")
-      (D->predict_max, "max", "Disable structure: just predict the max").missing())
-    {
-      delete D;
-      return;
-    }
+
+  option_group_definition new_options("argmax options");
+  new_options
+    .add(make_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
+    .add(make_option("negative_weight", D->negative_weight).default_value(1.f).help("Relative weight of negative examples"))
+    .add(make_option("max", D->predict_max).help("Disable structure: just predict the max"));
+  options.add_and_parse(new_options);
 
   sch.set_task_data(D);
 
@@ -346,7 +346,7 @@ struct task_data
   size_t   num_actions;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, arguments& /*arg*/)
+void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/)
 {
   CS::wclass default_wclass = { 0., 0, 0., 0. };
 

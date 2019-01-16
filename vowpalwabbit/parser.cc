@@ -34,7 +34,6 @@ int getpid()
 #else
 #include <netdb.h>
 #endif
-#include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
@@ -43,7 +42,6 @@ int getpid()
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
-namespace po = boost::program_options;
 
 #include "parse_example.h"
 #include "cache.h"
@@ -54,6 +52,7 @@ namespace po = boost::program_options;
 #include "vw_exception.h"
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
+#include "parse_args.h"
 
 using namespace std;
 
@@ -357,28 +356,21 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(vw& all, po::variables_map &vm, string source,
-                 bool quiet)
+void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
 {
-  vector<string> caches;
-  if (vm.count("cache_file"))
-    caches = vm["cache_file"].as< vector<string> >();
-  if (vm.count("cache"))
-    caches.push_back(source+string(".cache"));
-
   all.p->write_cache = false;
 
-  for (size_t i = 0; i < caches.size(); i++)
+  for (auto& file : cache_files)
   {
     int f = -1;
-    if (!vm.count("kill_cache"))
+    if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
+        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (const exception& ) { f = -1; }
     if (f == -1)
-      make_write_cache(all, caches[i], quiet);
+      make_write_cache(all, file, quiet);
     else
     {
       uint64_t c = cache_numbits(all.p->input, f);
@@ -387,12 +379,12 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
         if (!quiet)
           all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
         all.p->input->close_file();
-        make_write_cache(all, caches[i], quiet);
+        make_write_cache(all, file, quiet);
       }
       else
       {
         if (!quiet)
-          all.trace_message << "using cache_file = " << caches[i].c_str() << endl;
+          all.trace_message << "using cache_file = " << file.c_str() << endl;
         all.p->reader = read_cached_features;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
@@ -404,7 +396,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
   }
 
   all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
-  if (caches.size() == 0)
+  if (cache_files.size() == 0)
   {
     if (!quiet)
       all.trace_message << "using no cache" << endl;
@@ -417,10 +409,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(vw& all, bool quiet, size_t passes)
+void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
   all.p->input->current = 0;
-  parse_cache(all, all.opts_n_args.vm, all.data_filename, quiet);
+  parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   if (all.daemon || all.active)
   {
@@ -452,8 +444,8 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.opts_n_args.vm.count("port"))
-      port = (uint16_t)all.opts_n_args.vm["port"].as<size_t>();
+    if (all.options->was_supplied("port"))
+      port = (uint16_t)input_options.port;
     address.sin_port = htons(port);
 
     // attempt to bind to socket
@@ -465,7 +457,7 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       THROWERRNO("listen");
 
     // write port file
-    if (all.opts_n_args.vm.count("port_file"))
+    if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
@@ -473,16 +465,16 @@ void enable_sources(vw& all, bool quiet, size_t passes)
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       ofstream port_file;
-      port_file.open(all.opts_n_args.vm["port_file"].as<string>().c_str());
+      port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
-        THROW("error writing port file: " << all.opts_n_args.vm["port_file"].as<string>());
+        THROW("error writing port file: " << input_options.port_file);
 
       port_file << ntohs(address.sin_port) << endl;
       port_file.close();
     }
 
     // background process (if foreground is not set)
-    if (!all.opts_n_args.vm.count("foreground"))
+    if (!input_options.foreground)
     {
       //FIXME switch to posix_spawn
       if (!all.active && daemon(1,1))
@@ -490,10 +482,10 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     }
 
     // write pid file
-    if (all.opts_n_args.vm.count("pid_file"))
+    if (all.options->was_supplied("pid_file"))
     {
       ofstream pid_file;
-      pid_file.open(all.opts_n_args.vm["pid_file"].as<string>().c_str());
+      pid_file.open(input_options.pid_file.c_str());
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
@@ -640,7 +632,7 @@ child:
         }
       }
 
-      if (all.opts_n_args.vm.count("json") || all.opts_n_args.vm.count("dsjson"))
+      if (input_options.json || input_options.dsjson)
       {
         // TODO: change to class with virtual method
         // --invert_hash requires the audit parser version to save the extra information.
@@ -657,7 +649,7 @@ child:
           all.p->jsonp = new json_parser<false>;
         }
 
-        all.p->decision_service_json = all.opts_n_args.vm.count("dsjson") > 0;
+        all.p->decision_service_json = input_options.dsjson;
       }
       else
         all.p->reader = read_features_string;

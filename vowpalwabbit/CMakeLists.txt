@@ -22,25 +22,27 @@ set(vw_install_headers
 )
 
 set(vw_all_headers
-  ${vw_install_headers} accumulate.h correctedMath.h rand48.h log_multi.h recall_tree.h
-  active_cover.h reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h
-  search_dep_parser.h array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h
-  array_parameters.h error_reporting.h search_graph.h audit_regressor.h mf.h search.h autolink.h
-  example_predict.h search_hooktask.h baseline.h explore_eval.h search_meta.h beam.h expreplay.h
-  multilabel_oaa.h search_multiclasstask.h best_constant.h mwt.h search_sequencetask.h bfgs.h
-  network.h sender.h binary.h nn.h boosting.h ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h
-  stable_unique.h cache.h gd_mf.h oaa.h stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h
-  cb_algs.h gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h
-  unique_sort.h interact.h interactions.h parse_example_json.h cbify.h interactions_predict.h
-  vw_allreduce.h classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
-  parser_helper.h config.h.in primitives.h lda_core.h print.h vw_versions.h
+  ${vw_install_headers} accumulate.h options.h options_boost_po.h
+  options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h active_cover.h
+  reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h search_dep_parser.h
+  array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h array_parameters.h
+  error_reporting.h search_graph.h audit_regressor.h mf.h search.h autolink.h example_predict.h
+  search_hooktask.h baseline.h explore_eval.h search_meta.h beam.h expreplay.h multilabel_oaa.h
+  search_multiclasstask.h best_constant.h mwt.h search_sequencetask.h bfgs.h network.h sender.h
+  binary.h nn.h boosting.h ftrl.h no_label.h spanning_tree.h bs.h gd.h noop.h stable_unique.h
+  cache.h gd_mf.h oaa.h stagewise_poly.h cb_adf.h gd_predict.h OjaNewton.h svrg.h cb_algs.h
+  gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h unique_sort.h
+  interact.h interactions.h parse_example_json.h cbify.h interactions_predict.h vw_allreduce.h
+  classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
+  config.h.in primitives.h lda_core.h print.h vw_versions.h
 )
 
 set(vw_all_sources
-  global_data.cc io_buf.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc
-  simple_label.cc multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc
-  binary.cc lrq.cc cost_sensitive.cc multilabel.cc label_dictionary.cc csoaa.cc cb.cc cb_adf.cc
-  cb_algs.cc search.cc search_meta.cc search_sequencetask.cc search_dep_parser.cc search_hooktask.cc
+  options_boost_po.cc options_serializer_boost_po.cc global_data.cc io_buf.cc
+  parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc
+  multiclass.cc oaa.cc multilabel_oaa.cc boosting.cc ect.cc marginal.cc autolink.cc binary.cc lrq.cc
+  cost_sensitive.cc multilabel.cc label_dictionary.cc csoaa.cc cb.cc cb_adf.cc cb_algs.cc search.cc
+  search_meta.cc search_sequencetask.cc search_dep_parser.cc search_hooktask.cc
   search_multiclasstask.cc search_entityrelationtask.cc search_graph.cc parse_example.cc scorer.cc
   network.cc parse_args.cc accumulate.cc gd.cc learner.cc mwt.cc lda_core.cc gd_mf.cc mf.cc bfgs.cc
   noop.cc print.cc example.cc parser.cc loss_functions.cc sender.cc nn.cc confidence.cc bs.cc
@@ -48,7 +50,7 @@ set(vw_all_sources
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
   action_score.cc cb_explore_adf.cc OjaNewton.cc parse_example_json.cc baseline.cc classweight.cc
-  vw_exception.cc parser_helper.cc no_label.cc
+  vw_exception.cc no_label.cc
 )
 
 set(explore_all_headers

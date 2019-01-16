@@ -13,7 +13,11 @@ struct vw;
 class loss_function
 {
 
-public :
+public:
+
+  // Identifies the type of the implementing loss function, matches the name used in getLossFunction.
+  virtual std::string getType() = 0;
+
   /*
    * getLoss evaluates the example loss.
    * The function returns the loss value

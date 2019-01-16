@@ -25,6 +25,8 @@ using namespace std;
 #include "vw_validate.h"
 #include "vw_versions.h"
 
+#include "options_serializer_boost_po.h"
+
 template <class T> class set_initial_wrapper
 {
 public:
@@ -174,7 +176,8 @@ inline void safe_memcpy(char *& __dest, size_t& __dest_size, const void *__src, 
   memcpy(__dest, __src, __n);
 }
 
-void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
+// file_options will be written to when reading
+void save_load_header(vw& all, io_buf& model_file, bool read, bool text, std::string& file_options, VW::config::options_i& options)
 {
   char* buff2 = (char*) malloc(default_buf_size);
   size_t buf2_size = default_buf_size;
@@ -214,10 +217,10 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                                                 "", read, msg, text);
         all.id = buff2;
 
-        if (read && find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--id") == all.opts_n_args.args.end() && !all.id.empty())
+        if (read && !options.was_supplied("id") && !all.id.empty())
         {
-          all.opts_n_args.args.push_back("--id");
-          all.opts_n_args.args.push_back(all.id);
+          file_options += " --id";
+          file_options += " " + all.id;
         }
       }
 
@@ -241,10 +244,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       bytes_read_write += bin_text_read_write_fixed_validated(model_file, (char *)&local_num_bits, sizeof(local_num_bits),
                           "", read, msg, text);
 
-      if (read && find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--bit_precision") == all.opts_n_args.args.end())
+      if (read && !options.was_supplied("bit_precision"))
       {
-        all.opts_n_args.args.push_back("--bit_precision");
-        all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(local_num_bits));
+        file_options += " --bit_precision";
+        std::stringstream temp;
+        temp << local_num_bits;
+        file_options += " " + temp.str();
       }
 
       VW::validate_default_bits(all, local_num_bits);
@@ -377,12 +382,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                             "", read, msg, text);
         if (rank != 0)
         {
-          if (std::find(all.opts_n_args.args.begin(), all.opts_n_args.args.end(), "--rank") == all.opts_n_args.args.end())
+          if (!options.was_supplied("rank"))
           {
-            all.opts_n_args.args.push_back("--rank");
-            stringstream temp;
+            file_options += " --rank";
+            std::stringstream temp;
             temp << rank;
-            all.opts_n_args.args.push_back(temp.str());
+            file_options += " " + temp.str();
           }
           else
             all.trace_message << "WARNING: this model file contains 'rank: " << rank << "' value but it will be ignored as another value specified via the command line." << endl;
@@ -411,11 +416,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                             "", read, msg, text);
         if (read)
         {
-          string temp(ngram);
+          std::string temp(ngram);
           all.ngram_strings.push_back(temp);
 
-          all.opts_n_args.args.push_back("--ngram");
-          all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(temp));
+          file_options += " --ngram";
+          file_options += " " + temp;
         }
       }
 
@@ -442,11 +447,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
                             "", read, msg, text);
         if (read)
         {
-          string temp(skip);
+          std::string temp(skip);
           all.skip_strings.push_back(temp);
 
-          all.opts_n_args.args.push_back("--skips");
-          all.opts_n_args.args.push_back(boost::lexical_cast<std::string>(temp));
+          file_options += " --skips";
+          file_options += " " + temp;
         }
       }
       msg << "\n";
@@ -461,23 +466,50 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
           THROW("bad model format!");
         resize_buf_if_needed(buff2, buf2_size, len);
         bytes_read_write += model_file.bin_read_fixed(buff2, len, "") + ret;
-        all.opts_n_args.file_options->str(buff2);
+
+        // Write out file options to caller.
+        if (len > 0)
+        {
+          // There is a potential bug here if len is read out to be zero (e.g. corrupted file). If we naively
+          // append buff2 into file_options it might contain old information and thus be invalid. Before, what
+          // probably happened is boost::program_options did the right thing, but now we have to construct the
+          // input to it where we do not know whether a particular option key can have multiple values or not.
+          //
+          // In some cases we end up with a string like: "--bit_precision 18 <something_not_an_int>", which will
+          // cause a "bad program options value" exception, rather than the true "file is corrupted" issue. Only
+          // pushing the contents of buff2 into file_options when it is valid will prevent this false error.
+          file_options = file_options + " " + buff2;
+        }
       }
       else
       {
-        if (all.save_resume && all.random_state != 0) //We need to save our current PRG state
-          *all.opts_n_args.file_options << " --random_seed " << all.random_state;
+        VW::config::options_serializer_boost_po serializer;
+        for(auto const& option : options.get_all_options())
+        {
+          if(option->m_keep && options.was_supplied(option->m_name))
+          {
+            serializer.add(*option);
+          }
+        }
 
-        msg << "options:"<< all.opts_n_args.file_options->str() << "\n";
+        auto serialized_keep_options = serializer.str();
 
-        uint32_t len = (uint32_t)all.opts_n_args.file_options->str().length();
+        // We need to save our current PRG state
+        if (all.save_resume && all.random_state != 0)
+        {
+          serialized_keep_options += " --random_seed";
+          serialized_keep_options += " " + std::to_string(all.random_state);
+        }
+
+        msg << "options:"<< serialized_keep_options << "\n";
+
+        uint32_t len = (uint32_t)serialized_keep_options.length();
         if (len > 0)
-          safe_memcpy(buff2, buf2_size, all.opts_n_args.file_options->str().c_str(), len + 1);
+          safe_memcpy(buff2, buf2_size, serialized_keep_options.c_str(), len + 1);
         *(buff2 + len) = 0;
         bytes_read_write += bin_text_read_write(model_file, buff2, len + 1, //len+1 to write a \0
                                                 "", read, msg, text);
       }
-
 
       // Read/write checksum if required by version
       if (all.model_file_ver >= VERSION_FILE_WITH_HEADER_HASH)
@@ -513,7 +545,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 
 void dump_regressor(vw& all, io_buf& buf, bool as_text)
 {
-  save_load_header(all, buf, false, as_text);
+  std::string unused;
+  save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr)
     all.l->save_load(buf, false, as_text);
 
@@ -567,40 +600,31 @@ void finalize_regressor(vw& all, string reg_name)
   }
 }
 
-void parse_regressor_args(vw& all, io_buf& io_temp)
+void read_regressor_file(vw& all, std::vector<std::string> all_intial, io_buf& io_temp)
 {
-  po::variables_map& vm = all.opts_n_args.vm;
-  vector<string> regs;
-  if (vm.count("initial_regressor") || vm.count("i"))
-    regs = vm["initial_regressor"].as< vector<string> >();
-
-  if (vm.count("input_feature_regularizer"))
-    regs.push_back(vm["input_feature_regularizer"].as<string>());
-
-  if (regs.size() > 0)
+  if (all_intial.size() > 0)
   {
-    io_temp.open_file(regs[0].c_str(), all.stdin_off, io_buf::READ);
+    io_temp.open_file(all_intial[0].c_str(), all.stdin_off, io_buf::READ);
     if (!all.quiet)
     {
       //all.trace_message << "initial_regressor = " << regs[0] << endl;
-      if (regs.size() > 1)
+      if (all_intial.size() > 1)
       {
-        all.trace_message << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
+        all.trace_message << "warning: ignoring remaining " << (all_intial.size() - 1) << " initial regressors" << endl;
       }
     }
   }
 }
 
-void parse_mask_regressor_args(vw& all)
+void parse_mask_regressor_args(vw& all, std::string feature_mask, std::vector<std::string> initial_regressors)
 {
-  po::variables_map& vm = all.opts_n_args.vm;
-  if (vm.count("feature_mask"))
+  // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
+  std::string file_options;
+  if (!feature_mask.empty())
   {
-    string mask_filename = vm["feature_mask"].as<string>();
-    if (vm.count("initial_regressor"))
+    if (initial_regressors.size() > 0)
     {
-      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
-      if(mask_filename == init_filename[0])   //-i and -mask are from same file, just generate mask
+      if(feature_mask == initial_regressors[0])   //-i and -mask are from same file, just generate mask
       {
         return;
       }
@@ -608,20 +632,19 @@ void parse_mask_regressor_args(vw& all)
 
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
-    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
-    save_load_header(all, io_temp_mask, true, false);
+    io_temp_mask.open_file(feature_mask.c_str(), false, io_buf::READ);
+    save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
 
     // Deal with the over-written header from initial regressor
-    if (vm.count("initial_regressor"))
+    if (initial_regressors.size() > 0)
     {
-      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
 
       // Load original header again.
       io_buf io_temp;
-      io_temp.open_file(init_filename[0].c_str(), false, io_buf::READ);
-      save_load_header(all, io_temp, true, false);
+      io_temp.open_file(initial_regressors[0].c_str(), false, io_buf::READ);
+      save_load_header(all, io_temp, true, false, file_options, *all.options);
       io_temp.close_file();
 
       // Re-zero the weights, in case weights of initial regressor use different indices
@@ -630,7 +653,8 @@ void parse_mask_regressor_args(vw& all)
     else
     {
       // If no initial regressor, just clear out the options loaded from the header.
-      all.opts_n_args.file_options->str("");
+      // TODO clear file options
+      //all.opts_n_args.file_options.str("");
     }
   }
 }

@@ -3,10 +3,13 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-// This implements the allreduce function of MPI.
 
+// This implements the allreduce function of MPI.
 #pragma once
+
 #include <string>
+#include <algorithm>
+
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>

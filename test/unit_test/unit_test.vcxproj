@@ -22,6 +22,8 @@
     <ClCompile Include="cb_explore_adf_test.cc" />
     <ClCompile Include="explore_test.cc" />
     <ClCompile Include="main.cc" />
+    <ClCompile Include="options_boost_po_test.cc" />
+    <ClCompile Include="options_test.cc" />
     <ClCompile Include="stable_unique_tests.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +33,9 @@
     <ProjectReference Include="..\..\vowpalwabbit\vw_core.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3593}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test_common.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E02E3869-D9AD-4513-B352-93F90B7D6FE3}</ProjectGuid>
@@ -130,9 +135,8 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..\explore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-            <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
-
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

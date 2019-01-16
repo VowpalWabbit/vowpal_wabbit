@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 
 using namespace CB;
 using namespace GEN_CS;
@@ -132,17 +133,28 @@ void eval_finish_example(vw& all, cb& c, example& ec)
 }
 }
 using namespace CB_ALGS;
-base_learner* cb_algs_setup(arguments& arg)
+base_learner* cb_algs_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
-  std::string type_string;
-  bool eval=false;
+  std::string type_string = "dr";
+  bool eval = false;
 
-  if (arg.new_options("Contextual Bandit Options")
-      .critical("cb", data->cbcs.num_actions, "Use contextual bandit learning with <k> costs")
-      .keep("cb_type", type_string, (string)"dr", "contextual bandit method to use in {ips,dm,dr}")
-      (eval, "eval", "Evaluate a policy rather than optimizing.").missing())
+  option_group_definition new_options("Contextual Bandit Options");
+  new_options
+    .add(make_option("cb", data->cbcs.num_actions).keep().help("Use contextual bandit learning with <k> costs"))
+    .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"))
+    .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing."));
+  options.add_and_parse(new_options);
+
+  if(!options.was_supplied("cb"))
     return nullptr;
+
+  // Ensure serialization of this option in all cases.
+  if(!options.was_supplied("cb_type"))
+  {
+    options.insert("cb_type", type_string);
+    options.add_and_parse(new_options);
+  }
 
   cb_to_cs& c = data->cbcs;
 
@@ -150,41 +162,40 @@ base_learner* cb_algs_setup(arguments& arg)
   if (type_string.compare("dr") == 0)
     c.cb_type = CB_TYPE_DR;
   else if (type_string.compare("dm") == 0)
-    {
-      if (eval)
-        THROW( "direct method can not be used for evaluation --- it is biased.");
-      c.cb_type = CB_TYPE_DM;
-      problem_multiplier = 1;
-    }
-  else if (type_string.compare("ips") == 0)
-    {
-      c.cb_type = CB_TYPE_IPS;
-      problem_multiplier = 1;
-    }
-  else
-    {
-      std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
-      c.cb_type = CB_TYPE_DR;
-    }
-
-  if (count(arg.args.begin(), arg.args.end(),"--csoaa") == 0)
   {
-    arg.args.push_back("--csoaa");
+    if (eval)
+      THROW("direct method can not be used for evaluation --- it is biased.");
+    c.cb_type = CB_TYPE_DM;
+    problem_multiplier = 1;
+  }
+  else if (type_string.compare("ips") == 0)
+  {
+    c.cb_type = CB_TYPE_IPS;
+    problem_multiplier = 1;
+  }
+  else
+  {
+    std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
+    c.cb_type = CB_TYPE_DR;
+  }
+
+  if(!options.was_supplied("csoaa"))
+  {
     stringstream ss;
     ss << data->cbcs.num_actions;
-    arg.args.push_back(ss.str());
+    options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(options, all));
   if (eval)
   {
-    arg.all->p->lp = CB_EVAL::cb_eval;
-    arg.all->label_type = label_type::cb_eval;
+    all.p->lp = CB_EVAL::cb_eval;
+    all.label_type = label_type::cb_eval;
   }
   else
   {
-    arg.all->p->lp = CB::cb_label;
-    arg.all->label_type = label_type::cb;
+    all.p->lp = CB::cb_label;
+    all.label_type = label_type::cb;
   }
 
   learner<cb,example>* l;
@@ -199,7 +210,7 @@ base_learner* cb_algs_setup(arguments& arg)
                       problem_multiplier, prediction_type::multiclass);
     l->set_finish_example(finish_example);
   }
-  c.scorer = arg.all->scorer;
+  c.scorer = all.scorer;
 
   l->set_finish(finish);
   return make_base(*l);

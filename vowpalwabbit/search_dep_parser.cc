@@ -9,13 +9,14 @@
 #include "label_dictionary.h"   // for add_example_namespaces_from_example
 #include "vw.h"
 #include "vw_exception.h"
+
 using namespace std;
+using namespace VW::config;
 
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 344429
 #define arc_hybrid 1
 #define arc_eager 2
-
 
 namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, setup, nullptr};  }
 
@@ -44,7 +45,7 @@ const action REDUCE_LEFT  = 3;
 const action REDUCE       = 4;
 const uint32_t my_null = 9999999; /*representing_defalut*/
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
   vw& all = sch.get_vw_pointer_unsafe();
   task_data *data = new task_data();
@@ -52,13 +53,14 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
   data->ex = NULL;
   sch.set_task_data<task_data>(data);
 
-  arg.new_options("Dependency Parser Options")
-    .keep("root_label", data->root_label, (size_t)8, "Ensure that there is only one root in each sentence")
-    .keep("num_label", data->num_label, (uint32_t)12, "Number of arc labels")
-    .keep("transition_system", data->transition_system, (uint32_t)1, "1: arc-hybrid 2: arc-eager")
-    .keep(data->one_learner, "one_learner", "Using one learner instead of three learners for labeled parser")
-    .keep(data->cost_to_go, "cost_to_go", "Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out")
-    .keep(data->old_style_labels, "old_style_labels", "Use old hack of label information").missing();
+  option_group_definition new_options("Dependency Parser Options");
+  new_options.add(make_option("root_label", data->root_label).keep().default_value(8).help("Ensure that there is only one root in each sentence"));
+  new_options.add(make_option("num_label", data->num_label).keep().default_value(12).help("Number of arc labels"));
+  new_options.add(make_option("transition_system", data->transition_system).keep().default_value(1).help("1: arc-hybrid 2: arc-eager"));
+  new_options.add(make_option("one_learner", data->one_learner).keep().help("Using one learner instead of three learners for labeled parser"));
+  new_options.add(make_option("cost_to_go", data->cost_to_go).keep().help("Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out"));
+  new_options.add(make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
+  options.add_and_parse(new_options);
 
   data->ex = VW::alloc_examples(sizeof(polylabel), 1);
   data->ex->indices.push_back(val_namespace);

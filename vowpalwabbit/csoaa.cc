@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 using namespace COST_SENSITIVE;
+using namespace VW::config;
 
 namespace CSOAA
 {
@@ -123,24 +124,27 @@ void finish(csoaa& c)
 }
 
 
-base_learner* csoaa_setup(arguments& arg)
+base_learner* csoaa_setup(options_i& options, vw& all)
 {
   auto c = scoped_calloc_or_throw<csoaa>();
-  if (arg.new_options("Cost Sensitive One Against All")
-      .critical("csoaa", c->num_classes, "One-against-all multiclass with <k> costs").missing())
+  option_group_definition new_options("Cost Sensitive One Against All");
+  new_options.add(make_option("csoaa", c->num_classes).keep().help("One-against-all multiclass with <k> costs"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("csoaa"))
     return nullptr;
 
   c->pred = calloc_or_throw<polyprediction>(c->num_classes);
 
-  learner<csoaa,example>& l = init_learner(c, as_singleline(setup_base(arg)), predict_or_learn<true>,
+  learner<csoaa,example>& l = init_learner(c, as_singleline(setup_base(*all.options, all)), predict_or_learn<true>,
                                    predict_or_learn<false>, c->num_classes, prediction_type::multiclass);
-  arg.all->p->lp = cs_label;
-  arg.all->label_type = label_type::cs;
+  all.p->lp = cs_label;
+  all.label_type = label_type::cs;
 
   l.set_finish_example(finish_example);
   l.set_finish(finish);
-  arg.all->cost_sensitive = make_base(l);
-  return arg.all->cost_sensitive;
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 
 using namespace ACTION_SCORE;
@@ -810,36 +814,52 @@ multi_ex process_labels(ldf& data, const multi_ex& ec_seq_all)
   return ret;
 }
 
-base_learner* csldf_setup(arguments& arg)
+base_learner* csldf_setup(options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<ldf>();
-  if (arg.new_options("Cost Sensitive One Against All with Label Dependent Features")
-      .critical<string>("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.")
-      ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
-      .keep(ld->rank, "csoaa_rank", "Return actions sorted by score order")
-      .keep(ld->is_probabilities, "probabilities", "predict probabilites of all classes").missing())
-    if (arg.new_options("").critical<string>("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.").missing())
-      return nullptr;
 
-  ld->all = arg.all;
+  std::string csoaa_ldf;
+  std::string ldf_override;
+  std::string wap_ldf;
+
+  option_group_definition csldf_outer_options("Cost Sensitive One Against All with Label Dependent Features");
+  csldf_outer_options.add(make_option("csoaa_ldf", csoaa_ldf).keep().help("Use one-against-all multiclass learning with label dependent features."));
+  csldf_outer_options.add(make_option("ldf_override", ldf_override).help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"));
+  csldf_outer_options.add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"));
+  csldf_outer_options.add(make_option("probabilities", ld->is_probabilities).keep().help("predict probabilites of all classes"));
+
+  option_group_definition csldf_inner_options("Cost Sensitive One Against All with Label Dependent Features");
+  csldf_inner_options.add(make_option("wap_ldf", wap_ldf).keep().help("Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline."));
+
+  options.add_and_parse(csldf_outer_options);
+  if(!options.was_supplied("csoaa_ldf"))
+  {
+    options.add_and_parse(csldf_inner_options);
+    if(!options.was_supplied("wap_ldf"))
+    {
+      return nullptr;
+    }
+  }
+
+  ld->all = &all;
   ld->first_pass = true;
 
   string ldf_arg;
 
-  if( arg.vm.count("csoaa_ldf") )
-    ldf_arg = arg.vm["csoaa_ldf"].as<string>();
+  if(options.was_supplied("csoaa_ldf"))
+    ldf_arg = csoaa_ldf;
   else
   {
-    ldf_arg = arg.vm["wap_ldf"].as<string>();
+    ldf_arg = wap_ldf;
     ld->is_wap = true;
   }
-  if ( arg.vm.count("ldf_override") )
-    ldf_arg = arg.vm["ldf_override"].as<string>();
+  if (options.was_supplied("ldf_override"))
+    ldf_arg = ldf_override;
   if (ld->rank)
-    arg.all->delete_prediction = delete_action_scores;
+    all.delete_prediction = delete_action_scores;
 
-  arg.all->p->lp = COST_SENSITIVE::cs_label;
-  arg.all->label_type = label_type::cs;
+  all.p->lp = COST_SENSITIVE::cs_label;
+  all.label_type = label_type::cs;
 
   ld->treat_as_classifier = false;
   if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
@@ -847,7 +867,7 @@ base_learner* csldf_setup(arguments& arg)
   else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0)
     ld->treat_as_classifier = true;
   else
-  { if (arg.all->training)
+  { if (all.training)
       THROW("ldf requires either m/multiline or mc/multiline-classifier");
     if ( ( ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) ||
          ( ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) )
@@ -856,14 +876,15 @@ base_learner* csldf_setup(arguments& arg)
 
   if(ld->is_probabilities)
   {
-    arg.all->sd->report_multiclass_log_loss = true;
-    if (!arg.vm.count("loss_function") || arg.vm["loss_function"].as<string>() != "logistic" )
-      arg.all->trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+    all.sd->report_multiclass_log_loss = true;
+    auto loss_function_type = all.loss->getType();
+    if (loss_function_type != "logistic")
+      all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
     if (!ld->treat_as_classifier)
-      arg.all->trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
+      all.trace_message << "WARNING: --probabilities should be used with --csoaa_ldf=mc (or --oaa)" << endl;
   }
 
-  arg.all->p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
 
   features fs;
   ld->label_features.init(256, fs, LabelDict::size_t_eq);
@@ -878,11 +899,11 @@ base_learner* csldf_setup(arguments& arg)
     pred_type = prediction_type::multiclass;
 
   ld->read_example_this_loop = 0;
-  learner<ldf,multi_ex>& l = init_learner(ld, as_singleline(setup_base(arg)), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
+  learner<ldf,multi_ex>& l = init_learner(ld, as_singleline(setup_base(*all.options, all)), do_actual_learning<true>, do_actual_learning<false>, 1, pred_type);
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);
   l.set_end_pass(end_pass);
-  arg.all->cost_sensitive = make_base(l);
-  return arg.all->cost_sensitive;
+  all.cost_sensitive = make_base(l);
+  return all.cost_sensitive;
 }
 }

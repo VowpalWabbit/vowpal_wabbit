@@ -27,8 +27,19 @@
     <ClCompile Include="cb_explore_adf_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="options_boost_po_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="options_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

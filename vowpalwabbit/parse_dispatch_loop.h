@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 using dispatch_fptr = std::function<void(vw&, v_array<example*>&)>;
 
 inline void parse_dispatch(vw& all, dispatch_fptr dispatch)

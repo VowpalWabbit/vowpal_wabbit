@@ -11,6 +11,7 @@ using namespace GEN_CS;
 using namespace std;
 using namespace CB_ALGS;
 using namespace exploration;
+using namespace VW::config;
 //All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 namespace CB_EXPLORE
@@ -286,39 +287,42 @@ void finish_example(vw& all, cb_explore& c, example& ec)
 using namespace CB_EXPLORE;
 
 
-base_learner* cb_explore_setup(arguments& arg)
+base_learner* cb_explore_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb_explore>();
-  if (arg.new_options("Contextual Bandit Exploration")
-      .critical("cb_explore", data->cbcs.num_actions, "Online explore-exploit for a <k> action contextual bandit problem")
-      .keep("first", data->tau, "tau-first exploration")
-      .keep("epsilon", data->epsilon, 0.05f,"epsilon-greedy exploration")
-      .keep("bag", data->bag_size,"bagging-based exploration")
-      .keep("cover", data->cover_size ,"Online cover based exploration")
-      .keep("psi", data->psi, 1.0f, "disagreement parameter for cover").missing())
+  option_group_definition new_options("Contextual Bandit Exploration");
+  new_options
+    .add(make_option("cb_explore", data->cbcs.num_actions).keep().help("Online explore-exploit for a <k> action contextual bandit problem"))
+    .add(make_option("first", data->tau).keep().help("tau-first exploration"))
+    .add(make_option("epsilon", data->epsilon).keep().default_value(0.05f).help("epsilon-greedy exploration"))
+    .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
+    .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+    .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"));
+  options.add_and_parse(new_options);
+
+  if(!options.was_supplied("cb_explore"))
     return nullptr;
 
-  data->all = arg.all;
+  data->all = &all;
   uint32_t num_actions = data->cbcs.num_actions;
 
-  if (count(arg.args.begin(), arg.args.end(),"--cb") == 0)
+   if(!options.was_supplied("cb"))
   {
-    arg.args.push_back("--cb");
     stringstream ss;
     ss << data->cbcs.num_actions;
-    arg.args.push_back(ss.str());
+    options.insert("cb", ss.str());
   }
 
-  arg.all->delete_prediction = delete_action_scores;
+  all.delete_prediction = delete_action_scores;
   data->cbcs.cb_type = CB_TYPE_DR;
 
-  single_learner* base = as_singleline(setup_base(arg));
-  data->cbcs.scorer = arg.all->scorer;
+  single_learner* base = as_singleline(setup_base(options, all));
+  data->cbcs.scorer = all.scorer;
 
   learner<cb_explore,example>* l;
-  if (arg.vm.count("cover"))
+  if (options.was_supplied("cover"))
   {
-    data->cs = (learner<cb_explore, example>*)(as_singleline(arg.all->cost_sensitive));
+    data->cs = (learner<cb_explore, example>*)(as_singleline(all.cost_sensitive));
     data->second_cs_label.costs.resize(num_actions);
     data->second_cs_label.costs.end() = data->second_cs_label.costs.begin()+num_actions;
     data->cover_probs = v_init<float>();
@@ -327,9 +331,9 @@ base_learner* cb_explore_setup(arguments& arg)
     data->preds.resize(data->cover_size);
     l = &init_learner(data, base, predict_or_learn_cover<true>, predict_or_learn_cover<false>, data->cover_size + 1, prediction_type::action_probs);
   }
-  else if (arg.vm.count("bag"))
+  else if (options.was_supplied("bag"))
     l = &init_learner(data, base, predict_or_learn_bag<true>, predict_or_learn_bag<false>, data->bag_size, prediction_type::action_probs);
-  else if (arg.vm.count("first") )
+  else if (options.was_supplied("first") )
     l = &init_learner(data, base, predict_or_learn_first<true>, predict_or_learn_first<false>, 1, prediction_type::action_probs);
   else//greedy
     l = &init_learner(data, base, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, 1, prediction_type::action_probs);

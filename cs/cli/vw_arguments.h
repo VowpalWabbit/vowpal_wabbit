@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 #include <msclr\marshal_cppstd.h>
 #include "vw.h"
+#include "options_serializer_boost_po.h"
 #include <algorithm>
 
 using namespace std;
@@ -40,23 +41,31 @@ internal:
     m_finalRegressor(gcnew String(vw->final_regressor_name.c_str())),
     m_testonly(!vw->training),
     m_passes((int)vw->numpasses)
-  { po::variables_map& vm = vw->opts_n_args.vm;
-    if (vm.count("initial_regressor") || vm.count("i"))
+  {
+    auto options = vw->options;
+
+    if (vw->initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;
 
-      vector<string> regs = vm["initial_regressor"].as< vector<string> >();
-      for (auto& r : regs)
+      for (auto& r : vw->initial_regressors)
         m_regressors->Add(gcnew String(r.c_str()));
     }
 
-    StringBuilder^ sb = gcnew StringBuilder();
-    for (auto& s : vw->opts_n_args.args)
-      sb->AppendFormat("{0} ", gcnew String(s.c_str()));
+    VW::config::options_serializer_boost_po serializer;
+    for (auto const& option : options->get_all_options())
+    {
+      if (options->was_supplied(option->m_name))
+      {
+        serializer.add(*option);
+      }
+    }
 
-    m_commandLine = sb->ToString()->TrimEnd();
+    auto serialized_keep_options = serializer.str();
+    m_commandLine = gcnew String(serialized_keep_options.c_str());
 
-    if (vw->opts_n_args.vm.count("cb"))
-      m_numberOfActions = (int)vw->opts_n_args.vm["cb"].as<uint32_t>();
+    if (options->was_supplied("cb")) {
+      m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
+    }
 
 	m_learning_rate = vw->eta;
 	m_power_t = vw->power_t;

@@ -8,7 +8,10 @@ license as described in the file LICENSE.
 #include "interactions.h"
 #include "parse_args.h"
 #include "vw.h"
+
 using namespace std;
+using namespace VW::config;
+
 struct audit_regressor_data
 {
   vw* all;
@@ -200,21 +203,21 @@ void regressor_values(audit_regressor_data& dat, T& w)
 void init_driver(audit_regressor_data& dat)
 {
   // checks a few settings that might be applied after audit_regressor_setup() is called
-
-  po::variables_map& vm = dat.all->opts_n_args.vm;
-  if ( (vm.count("cache_file") || vm.count("cache") ) && !vm.count("kill_cache") )
+  if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache"))
+    && !dat.all->options->was_supplied("kill_cache"))
+  {
     THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
+  }
 
   dat.all->sd->dump_interval = 1.; // regressor could initialize these if saved with --save_resume
   dat.all->sd->example_number = 0;
 
-
   dat.increment = dat.all->l->increment/dat.all->l->weights;
   dat.total_class_cnt = dat.all->l->weights;
 
-  if (dat.all->opts_n_args.vm.count("csoaa"))
+  if (dat.all->options->was_supplied("csoaa"))
   {
-    size_t n = dat.all->opts_n_args.vm["csoaa"].as<uint32_t>();
+    size_t n = dat.all->options->get_typed_option<uint32_t>("csoaa").value();
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;
@@ -254,28 +257,33 @@ void init_driver(audit_regressor_data& dat)
 
 
 
-LEARNER::base_learner* audit_regressor_setup(arguments& arg)
+LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
- string out_file;
-  if (arg.new_options("Audit Regressor")
-      .critical("audit_regressor", out_file, "stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode.").missing())
+  string out_file;
+
+  option_group_definition new_options("Audit Regressor");
+  new_options
+    .add(make_option("audit_regressor", out_file).keep().help("stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode."));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("audit_regressor"))
     return nullptr;
 
   if (out_file.empty())
     THROW("audit_regressor argument (output filename) is missing.");
 
-  if (arg.all->numpasses > 1)
+  if (all.numpasses > 1)
     THROW("audit_regressor can't be used with --passes > 1.");
 
-  arg.all->audit = true;
+  all.audit = true;
 
   auto dat = scoped_calloc_or_throw<audit_regressor_data>();
-  dat->all = arg.all;
+  dat->all = &all;
   dat->ns_pre = new vector<string>(); // explicitly invoking vector's constructor
   dat->out_file = new io_buf();
-  dat->out_file->open_file( out_file.c_str(), arg.all->stdin_off, io_buf::WRITE );
+  dat->out_file->open_file( out_file.c_str(), all.stdin_off, io_buf::WRITE );
 
-  LEARNER::learner<audit_regressor_data,example>& ret = LEARNER::init_learner(dat, as_singleline(setup_base(arg)), audit_regressor, audit_regressor, 1);
+  LEARNER::learner<audit_regressor_data,example>& ret = LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

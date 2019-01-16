@@ -1,6 +1,9 @@
 #pragma once
+
 #include <string.h>
 #include <unordered_map>
+#include <cstddef>
+
 #ifndef _WIN32
 #include <sys/mman.h>
 #endif

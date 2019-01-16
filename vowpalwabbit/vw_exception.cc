@@ -17,6 +17,18 @@ vw_exception::vw_exception(const vw_exception& ex)
 {
 }
 
+vw_exception& vw_exception::operator=(const vw_exception& other) {
+  // check for self-assignment
+  if(&other == this)
+    return *this;
+
+  file = other.file;
+  message = other.message;
+  lineNumber = other.lineNumber;
+
+  return *this;
+}
+
 vw_exception::~vw_exception() _NOEXCEPT
 {
 }

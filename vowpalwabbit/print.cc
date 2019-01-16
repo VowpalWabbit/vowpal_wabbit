@@ -3,6 +3,8 @@
 #include "reductions.h"
 
 using namespace std;
+using namespace VW::config;
+
 struct print { vw* all; }; //regressor, feature loop
 
 void print_feature(vw& /* all */, float value, uint64_t index)
@@ -36,15 +38,21 @@ void learn(print& p, LEARNER::base_learner&, example& ec)
   cout << endl;
 }
 
-LEARNER::base_learner* print_setup(arguments& arg)
+LEARNER::base_learner* print_setup(options_i& options, vw& all)
 {
-  if (arg.new_options("Print psuedolearner").critical("print", "print examples").missing())
+  bool print_option = false;
+  option_group_definition new_options("Print psuedolearner");
+  new_options
+    .add(make_option("print", print_option).keep().help("print examples"));
+  options.add_and_parse(new_options);
+
+  if (!print_option)
     return nullptr;
 
   auto p = scoped_calloc_or_throw<print>();
-  p->all = arg.all;
+  p->all = &all;
 
-  arg.all->weights.stride_shift(0);
+  all.weights.stride_shift(0);
 
   LEARNER::learner<print,example>& ret = init_learner(p, learn, learn, 1);
   return make_base(ret);

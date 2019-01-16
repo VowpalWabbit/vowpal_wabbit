@@ -23,6 +23,7 @@ Implementation by Miro Dudik.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 #define CG_EXTRA 1
 
@@ -1077,54 +1078,69 @@ void init_driver(bfgs& b)
   b.backstep_on = true;
 }
 
-base_learner* bfgs_setup(arguments& arg)
+base_learner* bfgs_setup(options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<bfgs>();
-  if (arg.new_options("LBFGS and Conjugate Gradient options")
-      .critical("conjugate_gradient", "use conjugate gradient based optimization").missing())
-    if (arg.new_options("").critical("bfgs", "use bfgs optimization")
-        (arg.all->hessian_on, "hessian_on", "use second derivative in line search")
-        ("mem", b->m, 15, "memory in bfgs")
-        ("termination", b->rel_threshold, 0.001f,"Termination threshold").missing())
+  bool conjugate_gradient = false;
+  bool bfgs_option = false;
+  option_group_definition bfgs_outer_options("LBFGS and Conjugate Gradient options");
+  bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient).keep().help("use conjugate gradient based optimization"));
+
+  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient options");
+  bfgs_inner_options.add(make_option("bfgs", bfgs_option).keep().help("use conjugate gradient based optimization"));
+  bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("use second derivative in line search"));
+  bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("memory in bfgs"));
+  bfgs_inner_options.add(make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
+
+  options.add_and_parse(bfgs_outer_options);
+  if(!conjugate_gradient)
+  {
+    options.add_and_parse(bfgs_inner_options);
+    if(!bfgs_option)
+    {
       return nullptr;
-  b->all = arg.all;
+    }
+  }
+
+
+  b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->backstep_on = false;
-  b->final_pass=arg.all->numpasses;
+  b->final_pass=all.numpasses;
   b->no_win_counter = 0;
 
-  if(!arg.all->holdout_set_off)
+  if(!all.holdout_set_off)
   {
-    arg.all->sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    all.sd->holdout_best_loss = FLT_MAX;
+    b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
   if (b->m==0)
-    arg.all->hessian_on = true;
+    all.hessian_on = true;
 
-  if (!arg.all->quiet)
+  if (!all.quiet)
   {
     if (b->m>0)
       b->all->trace_message << "enabling BFGS based optimization ";
     else
       b->all->trace_message << "enabling conjugate gradient optimization via BFGS ";
-    if (arg.all->hessian_on)
+    if (all.hessian_on)
       b->all->trace_message << "with curvature calculation" << endl;
     else
       b->all->trace_message << "**without** curvature calculation" << endl;
   }
 
-  if (arg.all->numpasses < 2 && arg.all->training)
+  if (all.numpasses < 2 && all.training)
     THROW("you must make at least 2 passes to use BFGS");
 
-  arg.all->bfgs = true;
-  arg.all->weights.stride_shift(2);
+  all.bfgs = true;
+  all.weights.stride_shift(2);
 
-  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
+  learner<bfgs,example>& l = init_learner(b, learn, predict, all.weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

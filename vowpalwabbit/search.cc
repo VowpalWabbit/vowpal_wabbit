@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 namespace CS = COST_SENSITIVE;
 namespace MC = MULTICLASS;
 
@@ -2167,9 +2168,9 @@ void end_pass(search& sch)
       priv.current_policy = priv.total_number_of_policies;
     }
     //reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
-    std::stringstream ss;
-    ss << priv.current_policy;
-    VW::cmd_string_replace_value(all->opts_n_args.file_options,"--search_trained_nb_policies", ss.str());
+    // TODO work out a better system to update state that will be saved in the model.
+    all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
+    all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
   }
 }
 
@@ -2182,18 +2183,18 @@ void finish_multiline_example(vw& all, search& sch, multi_ex& ec_seq)
 void end_examples(search& sch)
 {
   search_private& priv = *sch.priv;
-  vw* all    = priv.all;
+  vw* all = priv.all;
 
   if( all->training )
   {
-    std::stringstream ss1;
-    std::stringstream ss2;
-    ss1 << ((priv.passes_since_new_policy == 0) ? priv.current_policy : (priv.current_policy+1));
-    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_trained_nb_policies
-    VW::cmd_string_replace_value(all->opts_n_args.file_options,"--search_trained_nb_policies", ss1.str());
-    ss2 << priv.total_number_of_policies;
-    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_total_nb_policies
-    VW::cmd_string_replace_value(all->opts_n_args.file_options,"--search_total_nb_policies", ss2.str());
+    // TODO work out a better system to update state that will be saved in the model.
+    // Dig out option and change it in case we already loaded a predictor which had a value stored for --search_trained_nb_policies
+    auto val = (priv.passes_since_new_policy == 0) ? priv.current_policy : (priv.current_policy+1);
+    all->options->replace("search_trained_nb_policies", std::to_string(val));
+    all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(val);
+    // Dig out option and change it in case we already loaded a predictor which had a value stored for --search_total_nb_policies
+    all->options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
+    all->options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
   }
 }
 
@@ -2330,13 +2331,14 @@ void ensure_param(float &v, float lo, float hi, float def, const char* string)
   }
 }
 
-void handle_condition_options(vw& vw, auto_condition_settings& acset)
+void handle_condition_options(vw& all, auto_condition_settings& acset)
 {
-  vw.opts_n_args.new_options("Search Auto-conditioning Options")
-    .keep("search_max_bias_ngram_length", acset.max_bias_ngram_length, (size_t)1, "add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional")
-    .keep("search_max_quad_ngram_length", acset.max_quad_ngram_length, (size_t)0, "add bias *times* input features for each ngram up to and including this length (def: 0)")
-    .keep("search_condition_feature_value", acset.feature_value, 1.f, "how much weight should the conditional features get? (def: 1.)")
-    .keep(acset.use_passthrough_repr, "search_use_passthrough_repr", "should we use lower-level reduction _internal state_ as additional features? (def: no)").missing();
+  option_group_definition new_options("Search Auto-conditioning Options");
+  new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length).keep().default_value(1).help("add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 (default), then you get a single feature for each conditional"));
+  new_options.add(make_option("search_max_quad_ngram_length", acset.max_quad_ngram_length).keep().default_value(0).help("add bias *times* input features for each ngram up to and including this length (def: 0)"));
+  new_options.add(make_option("search_condition_feature_value", acset.feature_value).keep().default_value(1.f).help("how much weight should the conditional features get? (def: 1.)"));
+  new_options.add(make_option("search_use_passthrough_repr", acset.use_passthrough_repr).keep().help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
+  all.options->add_and_parse(new_options);
 }
 
 v_array<CS::label> read_allowed_transitions(action A, const char* filename)
@@ -2424,58 +2426,52 @@ void parse_neighbor_features(string& nf_string, search&sch)
   delete[] cstr;
 }
 
-base_learner* setup(arguments& arg)
+base_learner* setup(options_i& options, vw& all)
 {
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
   search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
   std::string interpolation_string = "data";
-  string neighbor_features_string;
+  std::string neighbor_features_string;
   std::string rollout_string = "mix_per_state";
   std::string rollin_string = "mix_per_state";
 
-  bool has_hook_task = false;
-  for (int i=0; i< (int)(arg.args.size())-1; i++)
-    if (arg.args[i] == "--search_task" && arg.args[i+1] == "hook")
-      has_hook_task = true;
-  if (has_hook_task)
-    for (int i = (int)arg.args.size()-2; i >= 0; i--)
-      if (arg.args[i] == "--search_task" && arg.args[i+1] != "hook")
-        arg.args.erase(arg.args.begin() + i, arg.args.begin() + i + 2);
+  uint32_t search_trained_nb_policies;
+  std::string search_allowed_transitions;
 
   priv.A = 1;
-  if (arg.new_options("Search options")
-      .keep("search", priv.A, "Use learning to search, argument=maximum action id or 0 for LDF")
-      .critical("search_task", task_string, "the search task (use \"--search_task list\" to get a list of available tasks)")
-      .keep("search_metatask",  metatask_string, "the search metatask (use \"--search_metatask list\" to get a list of available metatasks)")
-      .keep("search_interpolation", interpolation_string, "at what level should interpolation happen? [*data|policy]")
-      ("search_rollout",           rollout_string, "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
-      ("search_rollin",            rollin_string, "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
+  option_group_definition new_options("Search options");
+  new_options.add(make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
+  new_options.add(make_option("search_task", task_string).keep().help("the search task (use \"--search_task list\" to get a list of available tasks)"));
+  new_options.add(make_option("search_metatask", metatask_string).keep().help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
+  new_options.add(make_option("search_interpolation", interpolation_string).keep().help("at what level should interpolation happen? [*data|policy]"));
+  new_options.add(make_option("search_rollout", rollout_string).help("how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]"));
+  new_options.add(make_option("search_rollin", rollin_string).help("how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]"));
+  new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy).default_value(1).help("number of passes per policy (only valid for search_interpolation=policy)"));
+  new_options.add(make_option("search_beta", priv.beta).default_value(0.5f).help("interpolation rate for policies (only valid for search_interpolation=policy)"));
+  new_options.add(make_option("search_alpha", priv.alpha).default_value(1e-10f).help("annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
+  new_options.add(make_option("search_total_nb_policies", priv.total_number_of_policies).help("if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained"));
+  new_options.add(make_option("search_trained_nb_policies", search_trained_nb_policies).help("the number of trained policies in a file"));
+  new_options.add(make_option("search_allowed_transitions", search_allowed_transitions).help("read file of allowed transitions [def: all transitions are allowed]"));
+  new_options.add(make_option("search_subsample_time", priv.subsample_timesteps).help("instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
+  new_options.add(make_option("search_neighbor_features", neighbor_features_string).keep().help("copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them"));
+  new_options.add(make_option("search_rollout_num_steps", priv.rollout_num_steps).help("how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (default means \"infinite\")"));
+  new_options.add(make_option("search_history_length", priv.history_length).keep().default_value(1).help("some tasks allow you to specify how much history their depend on; specify that here"));
+  new_options.add(make_option("search_no_caching", priv.no_caching).help("turn off the built-in caching ability (makes things slower, but technically more safe)"));
+  new_options.add(make_option("search_xv", priv.xv).help("train two separate policies, alternating prediction/learning"));
+  new_options.add(make_option("search_perturb_oracle", priv.perturb_oracle).default_value(0.f).help("perturb the oracle on rollin with this probability"));
+  new_options.add(make_option("search_linear_ordering", priv.linear_ordering).help("insist on generating examples in linear order (def: hoopla permutation)"));
+  new_options.add(make_option("search_active_verify", priv.active_csoaa_verify).help("verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)"));
+  new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
+  options.add_and_parse(new_options);
 
-      ("search_passes_per_policy", priv.passes_per_policy, (size_t)1, "number of passes per policy (only valid for search_interpolation=policy)")
-      ("search_beta",              priv.beta, 0.5f, "interpolation rate for policies (only valid for search_interpolation=policy)")
 
-      ("search_alpha",            priv.alpha, 1e-10f, "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)")
-
-      ("search_total_nb_policies", priv.total_number_of_policies, "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
-
-      ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
-      ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
-      ("search_subsample_time",    priv.subsample_timesteps,  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning")
-      .keep("search_neighbor_features", neighbor_features_string, "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
-      ("search_rollout_num_steps", priv.rollout_num_steps, "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (default means \"infinite\")")
-      .keep("search_history_length",   priv.history_length, (size_t)1, "some tasks allow you to specify how much history their depend on; specify that here")
-
-      (priv.no_caching, "search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
-      (priv.xv, "search_xv",                                     "train two separate policies, alternating prediction/learning")
-      ("search_perturb_oracle", priv.perturb_oracle, 0.f, "perturb the oracle on rollin with this probability")
-      (priv.linear_ordering, "search_linear_ordering", "insist on generating examples in linear order (def: hoopla permutation)")
-      ("search_active_verify",    priv.active_csoaa_verify,  "verify that active learning is doing the right thing (arg = multiplier, should be = cost_range * range_c)")
-      ("search_save_every_k_runs", priv.save_every_k_runs, "save model every k runs").missing())
+  // If hook was passed as the search_task then do not activate reduction. This task can only be used in library form.
+  if (!options.was_supplied("search_task") || task_string == "hook")
     return nullptr;
 
-  search_initialize(arg.all, *sch.get());
+  search_initialize(&all, *sch.get());
 
   parse_neighbor_features(neighbor_features_string, *sch.get());
 
@@ -2483,7 +2479,7 @@ base_learner* setup(arguments& arg)
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
-    priv.passes_per_policy = arg.all->numpasses;
+    priv.passes_per_policy = all.numpasses;
     if (priv.current_policy > 1) priv.current_policy = 1;
   }
   else if (interpolation_string.compare("policy") == 0) ;
@@ -2507,7 +2503,7 @@ base_learner* setup(arguments& arg)
 
   //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
   priv.allowed_actions_cache = &calloc_or_throw<polylabel>();
-  if (arg.vm.count("cb"))
+  if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
     CB::cb_label.default_label(priv.allowed_actions_cache);
@@ -2530,8 +2526,8 @@ base_learner* setup(arguments& arg)
   //compute total number of policies we will have at end of training
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
-  if( arg.all->training )
-    tmp_number_of_policies += (int)ceil(((float)arg.all->numpasses) / ((float)priv.passes_per_policy));
+  if( all.training )
+    tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)priv.passes_per_policy));
 
   //the user might have specified the number of policies that will eventually be trained through multiple vw calls,
   //so only set total_number_of_policies to computed value if it is larger
@@ -2546,12 +2542,14 @@ base_learner* setup(arguments& arg)
   //current policy currently points to a new policy we would train
   //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
   //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-  if( !arg.all->training && priv.current_policy > 0 )
+  if( !all.training && priv.current_policy > 0 )
     priv.current_policy--;
 
-  std::stringstream ss1, ss2;
-  ss1 << priv.current_policy;           VW::cmd_string_replace_value(arg.file_options,"--search_trained_nb_policies", ss1.str());
-  ss2 << priv.total_number_of_policies; VW::cmd_string_replace_value(arg.file_options,"--search_total_nb_policies",   ss2.str());
+  all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
+  all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
+
+  all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
+  all.options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
 
   cdbg << "search current_policy = " << priv.current_policy << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
@@ -2580,7 +2578,7 @@ base_learner* setup(arguments& arg)
     }
   if (priv.task == nullptr)
   {
-    if (! arg.vm.count("help"))
+    if (! options.was_supplied("help"))
       THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
   }
   priv.metatask = nullptr;
@@ -2591,47 +2589,46 @@ base_learner* setup(arguments& arg)
       sch->metatask_name = (*mytask)->metatask_name;
       break;
     }
-  arg.all->p->emptylines_separate_examples = true;
+  all.p->emptylines_separate_examples = true;
 
-  if (count(arg.args.begin(), arg.args.end(),"--csoaa") == 0
-      && count(arg.args.begin(), arg.args.end(),"--cs_active") == 0
-      && count(arg.args.begin(), arg.args.end(),"--csoaa_ldf") == 0
-      && count(arg.args.begin(), arg.args.end(),"--wap_ldf") == 0
-      && count(arg.args.begin(), arg.args.end(),"--cb") == 0)
+  if (!options.was_supplied("csoaa")
+    && !options.was_supplied("cs_active")
+    && !options.was_supplied("csoaa_ldf")
+    && !options.was_supplied("wap_ldf")
+    && !options.was_supplied("cb"))
   {
-    arg.args.push_back("--csoaa");
-    stringstream ss;
-    ss << priv.A;
-    arg.args.push_back(ss.str());
+    options.insert("csoaa", std::to_string(priv.A));
   }
-  priv.active_csoaa = count(arg.args.begin(), arg.args.end(), "--cs_active") > 0;
+
+  priv.active_csoaa = options.was_supplied("cs_active");
   priv.active_csoaa_verify = -1.;
-  if (count(arg.args.begin(), arg.args.end(), "--search_active_verify") > 0)
+  if (options.was_supplied("search_active_verify"))
     if (!priv.active_csoaa)
       THROW("cannot use --search_active_verify without using --cs_active");
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner* base = setup_base(arg);
+  base_learner* base = setup_base(*all.options, all);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  arg.all->p->lp = MC::mc_label;
-  arg.all->label_type = label_type::mc;
+  all.p->lp = MC::mc_label;
+  all.label_type = label_type::mc;
   if (priv.task && priv.task->initialize)
-    priv.task->initialize(*sch.get(), priv.A, arg);
+    priv.task->initialize(*sch.get(), priv.A, options);
   if (priv.metatask && priv.metatask->initialize)
-    priv.metatask->initialize(*sch.get(), priv.A, arg);
+    priv.metatask->initialize(*sch.get(), priv.A, options);
   priv.meta_t = 0;
 
-  if (arg.vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, arg.vm["search_allowed_transitions"].as<string>().c_str());
+  if (options.was_supplied("search_allowed_transitions"))
+    read_allowed_transitions((action)priv.A, search_allowed_transitions.c_str());
 
   // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
-  handle_condition_options(*(arg.all), priv.acset);
+  handle_condition_options(all, priv.acset);
 
   if (!priv.allow_current_policy) // if we're not dagger
-    arg.all->check_holdout_every_n_passes = priv.passes_per_policy;
+    all.check_holdout_every_n_passes = priv.passes_per_policy;
 
-  arg.all->searchstr = &sch;
+  all.searchstr = &sch;
 
   priv.start_clock_time = clock();
 

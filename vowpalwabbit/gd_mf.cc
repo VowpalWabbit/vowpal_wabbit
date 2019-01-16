@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 using namespace std;
 
 using namespace LEARNER;
+using namespace VW::config;
 
 struct gdmf
 {
@@ -332,48 +333,59 @@ void learn(gdmf& d, single_learner&, example& ec)
 
 void finish(gdmf& d) { d.scalars.delete_v();}
 
-base_learner* gd_mf_setup(arguments& arg)
+base_learner* gd_mf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<gdmf>();
-  if (arg.new_options("Gradient Descent Matrix Factorization")
-      .critical("rank", data->rank, "rank for matrix factorization.").missing())
+
+  bool bfgs = false;
+  bool conjugate_gradient = false;
+  option_group_definition gf_md_options("Gradient Descent Matrix Factorization");
+  gf_md_options.add(make_option("rank", data->rank).keep().help("rank for matrix factorization."));
+
+  // Not supported, need to be checked to be false.
+  gf_md_options.add(make_option("bfgs", bfgs).help("Option not supported by this reduction"));
+  gf_md_options.add(make_option("conjugate_gradient", conjugate_gradient).help("Option not supported by this reduction"));
+  options.add_and_parse(gf_md_options);
+
+  if (!options.was_supplied("rank"))
     return nullptr;
 
-  if (arg.vm.count("adaptive"))
+  if (options.was_supplied("adaptive"))
     THROW("adaptive is not implemented for matrix factorization");
-  if (arg.vm.count("normalized"))
+  if (options.was_supplied("normalized"))
     THROW("normalized is not implemented for matrix factorization");
-  if (arg.vm.count("exact_adaptive_norm"))
+  if (options.was_supplied("exact_adaptive_norm"))
     THROW("normalized adaptive updates is not implemented for matrix factorization");
-  if (arg.vm["bfgs"].as<bool>() || arg.vm["conjugate_gradient"].as<bool>())
+
+  if (bfgs || conjugate_gradient)
     THROW("bfgs is not implemented for matrix factorization");
 
-  data->all = arg.all;
+  data->all = &all;
   data->no_win_counter = 0;
 
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf((float)(data->rank*2+1)) / logf (2.f));
-  arg.all->weights.stride_shift((size_t) temp);
-  arg.all->random_weights = true;
+  all.weights.stride_shift((size_t) temp);
+  all.random_weights = true;
 
-  if(!arg.all->holdout_set_off)
+  if(!all.holdout_set_off)
   {
-    arg.all->sd->holdout_best_loss = FLT_MAX;
-    data->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    all.sd->holdout_best_loss = FLT_MAX;
+    data->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  if(!arg.vm.count("learning_rate") && !arg.vm.count("l"))
-    arg.all->eta = 10; //default learning rate to 10 for non default update rule
+  if(!options.was_supplied("learning_rate") && !options.was_supplied("l"))
+    all.eta = 10; //default learning rate to 10 for non default update rule
 
   //default initial_t to 1 instead of 0
-  if(!arg.vm.count("initial_t"))
+  if(!options.was_supplied("initial_t"))
   {
-    arg.all->sd->t = 1.f;
-    arg.all->initial_t = 1.f;
+    all.sd->t = 1.f;
+    all.initial_t = 1.f;
   }
-  arg.all->eta *= powf((float)(arg.all->sd->t), arg.all->power_t);
+  all.eta *= powf((float)(all.sd->t), all.power_t);
 
-  learner<gdmf,example>& l = init_learner(data, learn, predict, (UINT64_ONE << arg.all->weights.stride_shift()));
+  learner<gdmf,example>& l = init_learner(data, learn, predict, (UINT64_ONE << all.weights.stride_shift()));
   l.set_save_load(save_load);
   l.set_end_pass(end_pass);
   l.set_finish(finish);

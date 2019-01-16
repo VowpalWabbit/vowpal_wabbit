@@ -19,6 +19,8 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "parse_example.h"
 
+#include "options.h"
+
 namespace VW
 {
 
@@ -26,6 +28,7 @@ namespace VW
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
+vw* initialize(config::options_i& options, io_buf* model = nullptr, bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(std::string s, io_buf* model=nullptr, bool skipModelLoad=false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* initialize(int argc, char* argv[], io_buf* model=nullptr, bool skipModelLoad = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 vw* seed_vw_model(vw* vw_model, std::string extra_args, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);

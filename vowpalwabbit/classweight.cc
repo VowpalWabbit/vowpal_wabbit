@@ -1,6 +1,8 @@
 #include <unordered_map>
 #include "reductions.h"
+
 using namespace std;
+using namespace VW::config;
 
 namespace CLASSWEIGHTS
 {
@@ -69,21 +71,25 @@ void finish(classweights& data) { data.weights.~unordered_map();}
 
 using namespace CLASSWEIGHTS;
 
-LEARNER::base_learner* classweight_setup(arguments& arg)
+LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 {
   vector<string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
-  if (arg.new_options("importance weight classes")
-      .critical_vector<string>("classweight", po::value<vector<string> >(&classweight_array), "importance weight multiplier for class", false).missing())
+  option_group_definition new_options("importance weight classes");
+  new_options
+    .add(make_option("classweight", classweight_array).help("importance weight multiplier for class"));
+  options.add_and_parse(new_options);
+
+  if(!options.was_supplied("classweight"))
     return nullptr;
 
   for (auto& s : classweight_array)
     cweights->load_string(s);
 
-  if (!arg.all->quiet)
-    arg.all->trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
+  if (!all.quiet)
+    all.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
-  LEARNER::single_learner* base = as_singleline(setup_base(arg));
+  LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
   LEARNER::learner<classweights,example>* ret;
   if (base->pred_type == prediction_type::scalar)

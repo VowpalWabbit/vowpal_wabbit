@@ -5,7 +5,9 @@
 */
 #include "search_entityrelationtask.h"
 #include "vw.h"
+
 using namespace std;
+using namespace VW::config;
 
 #define R_NONE 10 // label for NONE relation
 #define LABEL_SKIP 11 // label for SKIP
@@ -36,18 +38,20 @@ struct task_data
 };
 
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
   task_data * my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
-  arg.new_options("Entity Relation Options")
-    .keep("relation_cost", my_task_data->relation_cost, 1.0f, "Relation Cost")
-    .keep("entity_cost", my_task_data->entity_cost, 1.0f, "Entity Cost")
-    .keep(my_task_data->constraints, "constraints", "Use Constraints")
-    .keep("relation_none_cost", my_task_data->relation_none_cost, 0.5f, "None Relation Cost")
-    .keep("skip_cost", my_task_data->skip_cost, 0.01f, "Skip Cost (only used when search_order = skip")
-    .keep("search_order", my_task_data->search_order, (size_t)0, "Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)" ).missing();
+  option_group_definition new_options("Entity Relation Options");
+  new_options
+    .add(make_option("relation_cost", my_task_data->relation_cost).keep().default_value(1.f).help("Relation Cost"))
+    .add(make_option("entity_cost", my_task_data->entity_cost).keep().default_value(1.f).help("Entity Cost"))
+    .add(make_option("constraints", my_task_data->constraints).keep().help("Use Constraints"))
+    .add(make_option("relation_none_cost", my_task_data->relation_none_cost).keep().default_value(0.5f).help("None Relation Cost"))
+    .add(make_option("skip_cost", my_task_data->skip_cost).keep().default_value(0.01f).help("Skip Cost (only used when search_order = skip"))
+    .add(make_option("search_order", my_task_data->search_order).keep().default_value(0).help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)"));
+  options.add_and_parse(new_options);
 
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc

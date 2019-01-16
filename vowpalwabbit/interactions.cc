@@ -1,6 +1,10 @@
 #include "interactions.h"
+
 #include "vw_exception.h"
+#include <algorithm>
+
 using namespace std;
+
 namespace INTERACTIONS
 {
 
@@ -121,13 +125,13 @@ void sort_and_filter_duplicate_interactions(std::vector<std::string>& vec, bool 
     std::sort(std::begin(sorted_i), std::end(sorted_i));
     vec_sorted.push_back(make_pair(sorted_i, i));
   }
-      
+
   if (filter_duplicates)
   {
-    // remove duplicates 
-    sort(vec_sorted.begin(), vec_sorted.end(), 
+    // remove duplicates
+    sort(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first < b.first; });
-    auto last = unique(vec_sorted.begin(), vec_sorted.end(), 
+    auto last = unique(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
@@ -135,7 +139,7 @@ void sort_and_filter_duplicate_interactions(std::vector<std::string>& vec, bool 
     removed_cnt = vec.size() - vec_sorted.size();
 
     // restore original order
-    sort(vec_sorted.begin(), vec_sorted.end(), 
+    sort(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.second < b.second; });
   }
 
