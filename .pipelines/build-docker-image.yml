@@ -2,6 +2,6 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 steps:
-  - script: docker build -t $(dockerOrgId)/$(imageName) .
+  - script: docker build -t $(dockerOrgId)/$(imageName):test-image .
   - script: docker login -u "$(dockerCredId)" -p "$(pswd)" https://index.docker.io/v1/
-  - script: docker push $(dockerOrgId)/$(imageName)
+  - script: docker push $(dockerOrgId)/$(imageName):test-image
