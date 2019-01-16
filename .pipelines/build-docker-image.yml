@@ -13,7 +13,7 @@ trigger:
 pr: none
 
 steps:
-  - script: docker build -t $(dockerOrgId)/$(imageName):$(Build.BuildNumber) .
+  - script: docker build -t $(dockerOrgId)/$(imageName):$(Build.BuildNumber) ./.pipelines/
   - script: docker login -u "$(dockerCredId)" -p "$(pswd)" https://index.docker.io/v1/
   - script: docker push $(dockerOrgId)/$(imageName):$(Build.BuildNumber)
 
