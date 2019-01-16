@@ -1,6 +1,15 @@
 pool:
   vmImage: 'ubuntu-16.04'
 
+# Trigger dockerfile to build when updated on master
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - Dockerfile
+
 steps:
   - script: docker build -t $(dockerOrgId)/$(imageName):$(tag) .
   - script: docker login -u "$(dockerCredId)" -p "$(pswd)" https://index.docker.io/v1/
