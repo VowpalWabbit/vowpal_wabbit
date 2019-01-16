@@ -6,13 +6,12 @@ RUN apt-get install -y software-properties-common python-software-properties deb
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
-# Add Oracle JDK repo (including license agreement), install Java
-# RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | \
-#   debconf-set-selections && \
-#   add-apt-repository -y ppa:webupd8team/java && \
-#   apt-get update && \
-#   apt-get install -y oracle-java8-installer && \
-#   rm -rf /var/cache/oracle-jdk8-installer
+# Add Open JDK repo (including license agreement), install Java
+RUN echo "oracle-java11-installer shared/accepted-oracle-license-v1-2 select true" | \
+  sudo debconf-set-selections && \
+  sudo add-apt-repository ppa:openjdk-r/ppa && \
+  sudo apt-get update && \
+  sudo apt install -y openjdk-11-jdk
 
 # Install build tools
 RUN apt-get install -y \
@@ -52,10 +51,10 @@ RUN easy_install pip && \
     $HOME/miniconda/bin/conda update -q conda && \
     $HOME/miniconda/bin/conda create -q -n test-python27 python=2.7 nomkl numpy scipy scikit-learn
 
-# # Download maven dependencies
-# RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
-#   mvn dependency:resolve -f pom.xml && \
-#   rm pom.xml
+# Download maven dependencies
+RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
+  mvn dependency:resolve -f pom.xml && \
+  rm pom.xml
 
 # Cleanup
 RUN apt-get clean autoclean && \
