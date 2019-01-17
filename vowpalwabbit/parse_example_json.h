@@ -114,7 +114,7 @@ struct BaseState
     return nullptr;
   }
 
-  virtual BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool copy)
+  virtual BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */)
   {
     ctx.error() << "Unexpected token: key('" << str << "' len: " << len << ")";
     return nullptr;
@@ -153,7 +153,7 @@ public:
   {
   }
 
-  void init(vw* all)
+  void init(vw* /* all */)
   {
     found = found_cb = false;
 
@@ -177,7 +177,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool copy)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */)
   {
     ctx.key = str;
     ctx.key_length = len;
@@ -314,7 +314,7 @@ struct LabelState : BaseState<audit>
     return ctx.label_object_state.StartObject(ctx);
   }
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool copy)
   {
     // only to be used with copy=false
     assert(!copy);
@@ -496,7 +496,7 @@ public:
     return Float(ctx, (float)f);
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx)
+  BaseState<audit>* Null(Context<audit>& /* ctx */)
   {
     // ignore null values and stay in current state
     return this;
@@ -510,7 +510,7 @@ public:
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType elementCount)
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */)
   {
     return ctx.PopNamespace();
   }
@@ -776,19 +776,19 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f)
+  BaseState<audit>* Uint(Context<audit>& /* ctx */, unsigned f)
   {
     output_array->push_back((T)f);
     return this;
   }
 
-  BaseState<audit>* Float(Context<audit>& ctx, float f)
+  BaseState<audit>* Float(Context<audit>& /* ctx */, float f)
   {
     output_array->push_back((T)f);
     return this;
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx)
+  BaseState<audit>* Null(Context<audit>& /* ctx */)
   {
     // ignore null values and stay in current state
     return this;
@@ -810,7 +810,7 @@ public:
 
   std::string* output_string;
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */)
   {
     output_string->assign(str, str + length);
 
@@ -897,19 +897,19 @@ public:
 
   DecisionServiceInteraction* data;
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
+  BaseState<audit>* StartObject(Context<audit>& /* ctx */)
   {
     // TODO: improve validation
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount)
+  BaseState<audit>* EndObject(Context<audit>& /* ctx */, rapidjson::SizeType /* memberCount */)
   {
     // TODO: improve validation
     return this;
   }
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */)
   {
     if (length == 1)
     {
@@ -1131,7 +1131,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   bool VWReaderHandlerDefault() { return false; }
 
   // alternative to above if we want to re-use the VW float parser...
-  bool RawNumber(const char* str, rapidjson::SizeType length, bool copy) { return false; }
+  bool RawNumber(const char* /* str */, rapidjson::SizeType /* length */, bool /* copy */) { return false; }
 
   std::stringstream& error() { return ctx.error(); }
 

@@ -3,6 +3,7 @@
 #include "correctedMath.h"
 
 using namespace std;
+using namespace VW::config;
 
 namespace MARGINAL
 {
@@ -355,28 +356,34 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
 
 using namespace MARGINAL;
 
-LEARNER::base_learner* marginal_setup(arguments& arg)
+LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
 {
   free_ptr<MARGINAL::data> d = scoped_calloc_or_throw<MARGINAL::data>();
-  if (arg.new_options("Marginal")
-      .critical<string>("marginal", po::value<string>(), "substitute marginal label estimates for ids")
-      ("initial_denominator", po::value<float>(&d->initial_denominator)->default_value(1.f), "initial denominator")
-      ("initial_numerator", po::value<float>(&d->initial_numerator)->default_value(0.5f), "initial numerator")
-      (d->compete, "compete", "enable competition with marginal features")
-      ("update_before_learn",po::value<bool>(&d->update_before_learn)->default_value(false), "update marginal values before learning")
-      ("unweighted_marginals",po::value<bool>(&d->unweighted_marginals)->default_value(false), "ignore importance weights when computing marginals")
-      ("decay", po::value<float>(&d->decay)->default_value(0.f), "decay multiplier per event (1e-3 for example)").missing())
-    return nullptr;
+  std::string marginal;
 
-  d->all = arg.all;
-  string s = (string)arg.vm["marginal"].as<string>();
+  option_group_definition marginal_options("VW options");
+  marginal_options.add(make_option("marginal", marginal).keep().help("substitute marginal label estimates for ids"));
+  marginal_options.add(make_option("initial_denominator", d->initial_denominator).default_value(1.f).help("initial denominator"));
+  marginal_options.add(make_option("initial_numerator", d->initial_numerator).default_value(0.5f).help("initial numerator"));
+  marginal_options.add(make_option("compete", d->compete).help("enable competition with marginal features"));
+  marginal_options.add(make_option("update_before_learn", d->update_before_learn).default_value(false).help("update marginal values before learning"));
+  marginal_options.add(make_option("unweighted_marginals", d->unweighted_marginals).default_value(false).help("ignore importance weights when computing marginals"));
+  marginal_options.add(make_option("decay", d->decay).default_value(0.f).help("decay multiplier per event (1e-3 for example)"));
+  options.add_and_parse(marginal_options);
+
+  if (!options.was_supplied("marginal"))
+  {
+    return nullptr;
+  }
+
+  d->all = &all;
 
   for (size_t u = 0; u < 256; u++)
-    if (s.find((char)u) != string::npos)
+    if (marginal.find((char)u) != string::npos)
       d->id_features[u] = true;
 
   LEARNER::learner<MARGINAL::data,example>& ret =
-    init_learner(d, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(d, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   ret.set_finish(finish);
   ret.set_save_load(save_load);
 

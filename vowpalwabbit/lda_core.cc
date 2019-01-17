@@ -38,7 +38,9 @@ license as described in the file LICENSE.
 #if BOOST_VERSION >= 105600
 #include <boost/align/is_aligned.hpp>
 #endif
+
 using namespace std;
+using namespace VW::config;
 
 enum lda_math_mode { USE_SIMD, USE_PRECISE, USE_FAST_APPROX };
 
@@ -85,7 +87,7 @@ struct lda
 // if it makes it into VS 2015 change the next ifdef to check Visual Studio Release
 
   // static constexpr float underflow_threshold = 1.0e-10f;
-  inline const float  underflow_threshold() { return 1.0e-10f; }
+  inline float  underflow_threshold() { return 1.0e-10f; }
 
   inline float digamma(float x);
   inline float lgamma(float x);
@@ -207,9 +209,9 @@ template <const int idx> float v4sf_index(const v4sf x)
 // Specialization for the 0'th element
 template <> float v4sf_index<0>(const v4sf x) { return _mm_cvtss_f32(x); }
 
-inline const v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
+inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
-inline const v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
+inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
 #ifdef WIN32
 
@@ -397,25 +399,25 @@ void vexpdigammify_2(vw &all, float* gamma, const float *norm, const float under
 // The generic template is specialized for the particular accuracy setting.
 
 // Log gamma:
-template <typename T, const lda_math_mode mtype> inline T lgamma(T x)
+template <typename T, const lda_math_mode mtype> inline T lgamma(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::lgamma is not defined for this type and math mode.");
 }
 
 // Digamma:
-template <typename T, const lda_math_mode mtype> inline T digamma(T x)
+template <typename T, const lda_math_mode mtype> inline T digamma(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::digamma is not defined for this type and math mode.");
 }
 
 // Exponential
-template <typename T, lda_math_mode mtype> inline T exponential(T x)
+template <typename T, lda_math_mode mtype> inline T exponential(T /* x */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::exponential is not defined for this type and math mode.");
 }
 
 // Powf
-template <typename T, lda_math_mode mtype> inline T powf(T x, T p)
+template <typename T, lda_math_mode mtype> inline T powf(T /* x */, T /* p */)
 {
   BOOST_STATIC_ASSERT_MSG(true, "ldamath::powf is not defined for this type and math mode.");
 }
@@ -1259,58 +1261,66 @@ std::istream &operator>>(std::istream &in, lda_math_mode &mmode)
   return in;
 }
 
-LEARNER::base_learner *lda_setup(arguments& arg)
+LEARNER::base_learner *lda_setup(options_i& options, vw& all)
 {
   auto ld = scoped_calloc_or_throw<lda>();
-  if (arg.new_options("Latent Dirichlet Allocation")
-      .critical("lda", ld->topics, "Run lda with <int> topics")
-      .keep("lda_alpha", ld->lda_alpha, 0.1f,"Prior on sparsity of per-document topic weights")
-      .keep("lda_rho", ld->lda_rho, 0.1f, "Prior on sparsity of topic distributions")
-      ("lda_D", ld->lda_D, 10000.f, "Number of documents")
-      ("lda_epsilon", ld->lda_epsilon, 0.001f, "Loop convergence threshold")
-      ("minibatch", ld->minibatch, (size_t)1, "Minibatch size, for LDA")
-      ("math-mode", ld->mmode, USE_SIMD, "Math mode: simd, accuracy, fast-approx")
-      ("metrics", ld->compute_coherence_metrics, false, "Compute metrics").missing())
+  option_group_definition new_options("Latent Dirichlet Allocation");
+  int math_mode;
+  new_options
+    .add(make_option("lda", ld->topics).keep().help("Run lda with <int> topics"))
+    .add(make_option("lda_alpha", ld->lda_alpha).keep().default_value(0.1f).help("Prior on sparsity of per-document topic weights"))
+    .add(make_option("lda_rho", ld->lda_rho).keep().default_value(0.1f).help("Prior on sparsity of topic distributions"))
+    .add(make_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"))
+    .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
+    .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
+    .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
+    .add(make_option("metrics", ld->compute_coherence_metrics).default_value(false).help("Compute metrics"));
+  options.add_and_parse(new_options);
+
+  // Convert from int to corresponding enum value.
+  ld->mmode = static_cast<lda_math_mode>(math_mode);
+
+  if (!options.was_supplied("lda"))
     return nullptr;
 
-  arg.all->lda = (uint32_t)ld->topics;
-  arg.all->delete_prediction = delete_scalars;
+  all.lda = (uint32_t)ld->topics;
+  all.delete_prediction = delete_scalars;
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = 0;
-  ld->all = arg.all;
-  ld->example_t = arg.all->initial_t;
+  ld->all = &all;
+  ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
-    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << arg.all->num_bits));
+    ld->feature_counts.resize((uint32_t)(UINT64_ONE << all.num_bits));
+    ld->feature_to_example_map.resize((uint32_t)(UINT64_ONE << all.num_bits));
   }
 
-  float temp = ceilf(logf((float)(arg.all->lda * 2 + 1)) / logf(2.f));
+  float temp = ceilf(logf((float)(all.lda * 2 + 1)) / logf(2.f));
 
-  arg.all->weights.stride_shift((size_t)temp);
-  arg.all->random_weights = true;
-  arg.all->add_constant = false;
+  all.weights.stride_shift((size_t)temp);
+  all.random_weights = true;
+  all.add_constant = false;
 
-  if (arg.all->eta > 1.)
+  if (all.eta > 1.)
   {
     std::cerr << "your learning rate is too high, setting it to 1" << std::endl;
-    arg.all->eta = min(arg.all->eta, 1.f);
+    all.eta = min(all.eta, 1.f);
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
-  arg.all->p->ring_size = arg.all->p->ring_size > minibatch2 ? arg.all->p->ring_size : minibatch2;
+  all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
 
-  ld->v.resize(arg.all->lda * ld->minibatch);
+  ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
-  arg.all->p->lp = no_label::no_label_parser;
+  all.p->lp = no_label::no_label_parser;
 
   LEARNER::learner<lda,example> &l = init_learner(
                     ld,
                     ld->compute_coherence_metrics ? learn_with_metrics : learn,
                     ld->compute_coherence_metrics ? predict_with_metrics : predict,
-                    UINT64_ONE << arg.all->weights.stride_shift(),
+                    UINT64_ONE << all.weights.stride_shift(),
                     prediction_type::scalars);
 
   l.set_save_load(save_load);

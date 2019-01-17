@@ -1,6 +1,9 @@
 #pragma once
+
 #include <string.h>
 #include <unordered_map>
+#include <cstddef>
+
 #ifndef _WIN32
 #include <sys/mman.h>
 #endif
@@ -174,7 +177,7 @@ public:
   }
 
 #ifndef _WIN32
-	void share(size_t length)
+	void share(size_t /* length */)
 	{throw 1; //TODO: add better exceptions
 	}
 #endif

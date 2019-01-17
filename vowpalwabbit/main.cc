@@ -17,12 +17,16 @@ license as described in the file LICENSE.
 #include "vw_exception.h"
 #include <fstream>
 
-using namespace std;
+#include "options.h"
+#include "options_boost_po.h"
 
-vw* setup(int argc, char* argv[])
+using namespace std;
+using namespace VW::config;
+
+vw* setup(options_i& options)
 {
   vw* all = nullptr;
-  try { all = VW::initialize(argc, argv);
+  try { all = VW::initialize(options);
   }
   catch(const exception& ex){
     cout << ex.what() << endl;
@@ -35,7 +39,7 @@ vw* setup(int argc, char* argv[])
   }
   all->vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !all->opts_n_args.vm.count("audit_regressor"))
+  if (!all->quiet && !all->bfgs && !all->searchstr && !options.was_supplied("audit_regressor"))
   {
     all->trace_message << std::left
                                    << std::setw(shared_data::col_avg_loss) << std::left << "average"
@@ -76,9 +80,14 @@ vw* setup(int argc, char* argv[])
 
 int main(int argc, char *argv[])
 {
+  bool should_use_onethread = false;
+  option_group_definition driver_config("driver");
+  driver_config.add(make_option("onethread", should_use_onethread).help("Disable parse thread"));
+
   try
   {
     // support multiple vw instances for training of the same datafile for the same instance
+    vector<std::unique_ptr<options_boost_po>> arguments;
     vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
@@ -98,12 +107,18 @@ int main(int argc, char *argv[])
         int l_argc;
         char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
-        alls.push_back(setup(l_argc, l_argv));
+        std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+        ptr->add_and_parse(driver_config);
+        alls.push_back(setup(*ptr.get()));
+        arguments.push_back(std::move(ptr));
       }
     }
     else
     {
-      alls.push_back(setup(argc, argv));
+      std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
+      ptr->add_and_parse(driver_config);
+      alls.push_back(setup(*ptr.get()));
+      arguments.push_back(std::move(ptr));
     }
 
     vw& all = *alls[0];
@@ -111,7 +126,7 @@ int main(int argc, char *argv[])
     //struct timeb t_start, t_end;
     //ftime(&t_start);
 
-    if (all.opts_n_args.vm.count("onethread") > 0) {
+    if (should_use_onethread) {
         if (alls.size() == 1)
           LEARNER::generic_driver_onethread(all);
         else

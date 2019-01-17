@@ -1,5 +1,7 @@
 #include "reductions.h"
 
+using namespace VW::config;
+
 const int autoconstant = 524267083;
 
 struct autolink
@@ -34,17 +36,21 @@ void predict_or_learn(autolink& b, LEARNER::single_learner& base, example& ec)
   ec.indices.pop();
 }
 
-LEARNER::base_learner* autolink_setup(arguments& arg)
+LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
-  if (arg.new_options("Autolink")
-      .critical("autolink", data->d, "create link function with polynomial d").missing())
+  option_group_definition new_options("Autolink");
+  new_options
+    .add(make_option("autolink", data->d).keep().help("create link function with polynomial d"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("autolink"))
     return nullptr;
 
-  data->stride_shift = arg.all->weights.stride_shift();
+  data->stride_shift = all.weights.stride_shift();
 
   LEARNER::learner<autolink,example>& ret =
-    init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>);
+    init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }
