@@ -79,7 +79,7 @@ public:
 
   AllReduce(size_t ptotal, const size_t pnode)
     : total(ptotal), node(pnode)
-  { assert(node >= 0 && node < total);
+  { assert(node < total);
   }
 
   virtual ~AllReduce()

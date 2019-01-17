@@ -1053,7 +1053,7 @@ void parse_output_preds(options_i& options, vw& all)
       if (options.was_supplied("binary"))
         all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
     }
-    if (raw_predictions.c_str() == "stdout")
+    if (strcmp(raw_predictions.c_str(),"stdout")==0)
       all.raw_prediction = 1; //stdout
     else
     {
