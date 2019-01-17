@@ -53,8 +53,8 @@ RUN easy_install pip && \
 
 # Download maven dependencies
 RUN wget https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/java/pom.xml.in && \
-  mvn dependency:resolve -f pom.xml && \
-  rm pom.xml
+  mvn dependency:resolve -f pom.xml.in && \
+  rm pom.xml.in
 
 # Cleanup
 RUN apt-get clean autoclean && \
