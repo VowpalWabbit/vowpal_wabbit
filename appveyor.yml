@@ -2,18 +2,23 @@ version: 1.0.{build}
 os: Windows Server 2012 R2
 configuration:
 - Release
-environment:
-  APPVEYOR_RDP_PASSWORD: Vowp4l
 platform: x64
 shallow_clone: false
 clone_folder: C:\vowpal_wabbit
 cache:
   - vowpalwabbit\packages -> **\packages.config
-init:
-- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 # need to install nuget packages before Visual Studio starts to make ANTLR targets available.
 build_script:
+- cmd: cd ..
+# preserve cached files
+- cmd: mkdir vw_pkgs
+- cmd: move C:\vowpal_wabbit\vowpalwabbit\packages C:\vw_pkgs
+- cmd: rd /s /q %APPVEYOR_BUILD_FOLDER%
+- cmd: git clone -q --recursive --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+- cmd: cd %APPVEYOR_BUILD_FOLDER%
+- cmd: git checkout -qf %APPVEYOR_REPO_COMMIT%
+- cmd: mkdir C:\vowpal_wabbit\vowpalwabbit\packages
+- cmd: move C:\vw_pkgs\* C:\vowpalwabbit\packages
 # Temporary workaround: https://github.com/Microsoft/vcpkg/issues/4189#issuecomment-417462822
 - rd /s /q C:\OpenSSL-v11-Win32
 - rd /s /q C:\OpenSSL-v11-Win64
