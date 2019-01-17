@@ -11,7 +11,7 @@ using namespace VW::config;
 
 void learn(char&, LEARNER::base_learner&, example&) {}
 
-LEARNER::base_learner* noop_setup(options_i& options, vw& all)
+LEARNER::base_learner* noop_setup(options_i& options, vw&)
 {
   bool noop = false;
   option_group_definition new_options("Noop Learner");
