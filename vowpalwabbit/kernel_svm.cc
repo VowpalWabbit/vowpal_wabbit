@@ -36,6 +36,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 struct svm_params;
 
@@ -220,14 +221,14 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   if(read)
   {
     fec = &calloc_or_throw<flat_example>();
-    brw = bin_read_fixed(model_file, (char*) fec, sizeof(flat_example), "");
+    brw = model_file.bin_read_fixed((char*) fec, sizeof(flat_example), "");
 
     if(brw > 0)
     {
       if(fec->tag_len > 0)
       {
         fec->tag = calloc_or_throw<char>(fec->tag_len);
-        brw = bin_read_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char), "");
+        brw = model_file.bin_read_fixed((char*) fec->tag, fec->tag_len*sizeof(char), "");
         if(!brw) return 2;
       }
       if(fec->fs.size() > 0)
@@ -236,13 +237,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
         size_t len = fs.size();
         fs.values = v_init<feature_value>();
         fs.values.resize(len);
-        brw = bin_read_fixed(model_file, (char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
+        brw = model_file.bin_read_fixed((char*) fs.values.begin(), len*sizeof(feature_value), ""); 	  if(!brw) return 3;
         fs.values.end() = fs.values.begin()+len;
 
         len = fs.indicies.size();
         fs.indicies = v_init<feature_index>();
         fs.indicies.resize(len);
-        brw = bin_read_fixed(model_file, (char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
+        brw = model_file.bin_read_fixed((char*) fs.indicies.begin(), len*sizeof(feature_index), ""); 	  if(!brw) return 3;
         fs.indicies.end() = fs.indicies.begin()+len;
       }
     }
@@ -250,13 +251,13 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
   }
   else
   {
-    brw = bin_write_fixed(model_file, (char*) fec, sizeof(flat_example));
+    brw = model_file.bin_write_fixed((char*) fec, sizeof(flat_example));
 
     if(brw > 0)
     {
       if(fec->tag_len > 0)
       {
-        brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
+        brw = model_file.bin_write_fixed((char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
         if(!brw)
         {
           cerr<<fec->tag_len<<" "<<fec->tag<<endl;
@@ -265,8 +266,8 @@ int save_load_flat_example(io_buf& model_file, bool read, flat_example*& fec)
       }
       if(fec->fs.size() > 0)
       {
-        brw = bin_write_fixed(model_file, (char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
-        brw = bin_write_fixed(model_file, (char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
+        brw = model_file.bin_write_fixed((char*) fec->fs.values.begin(), (uint32_t)fec->fs.size()*sizeof(feature_value));    	  if(!brw) return 3;
+        brw = model_file.bin_write_fixed((char*) fec->fs.indicies.begin(), (uint32_t)fec->fs.indicies.size()*sizeof(feature_index));    	  if(!brw) return 3;
       }
     }
     else return 1;
@@ -855,36 +856,47 @@ void finish(svm_params& params)
   params.all->trace_message<<"Done with finish "<<endl;
 }
 
-LEARNER::base_learner* kernel_svm_setup(arguments& arg)
+LEARNER::base_learner* kernel_svm_setup(options_i& options, vw& all)
 {
   auto params = scoped_calloc_or_throw<svm_params>();
   std::string kernel_type;
   float bandwidth=1.f;
   int degree = 2;
-  if (arg.new_options("Kernel SVM").critical("ksvm", "kernel svm")
-      ("reprocess", params->reprocess, (size_t)1, "number of reprocess steps for LASVM")
-      (params->active_pool_greedy, "pool_greedy", "use greedy selection on mini pools")
-      ("para_active", "do parallel active learning")
-      ("pool_size", params->pool_size, (size_t)1, "size of pools for active learning")
-      ("subsample", params->subsample, (size_t)1, "number of items to subsample from the pool")
-      .keep("kernel", kernel_type, (string)"linear", "type of kernel (rbf or linear (default))")
-      .keep("bandwidth", bandwidth, 1.f, "bandwidth of rbf kernel")
-      .keep("degree", degree, 2, "degree of poly kernel").missing())
-      //.keep("lambda", params->lambda, "saving regularization for test time").missing())
+
+  bool ksvm = false;
+
+  option_group_definition new_options("Kernel SVM");
+  new_options
+    .add(make_option("ksvm", ksvm).keep().help("kernel svm"))
+    .add(make_option("reprocess", params->reprocess).default_value(1).help("number of reprocess steps for LASVM"))
+    .add(make_option("pool_greedy", params->active_pool_greedy).help("use greedy selection on mini pools"))
+    .add(make_option("para_active", params->para_active).help("do parallel active learning"))
+    .add(make_option("pool_size", params->pool_size).default_value(1).help("size of pools for active learning"))
+    .add(make_option("subsample", params->subsample).default_value(1).help("number of items to subsample from the pool"))
+    .add(make_option("kernel", kernel_type).keep().default_value("linear").help("type of kernel (rbf or linear (default))"))
+    .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("bandwidth of rbf kernel"))
+    .add(make_option("degree", degree).keep().default_value(2).help("degree of poly kernel"));
+  options.add_and_parse(new_options);
+
+  if(!ksvm)
+  {
     return nullptr;
+  }
 
   string loss_function = "hinge";
   float loss_parameter = 0.0;
-  delete arg.all->loss;
-  arg.all->loss = getLossFunction(*arg.all, loss_function, (float)loss_parameter);
+  delete all.loss;
+  all.loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   params->model = &calloc_or_throw<svm_model>();
   params->model->num_support = 0;
   params->maxcache = 1024*1024*1024;
   params->loss_sum = 0.;
-  params->all = arg.all;
+  params->all = &all;
 
-  if(arg.vm["active"].as<bool>())
+  // This param comes from the active reduction.
+  // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and NOT --simulation
+  if(all.active)
     params->active = true;
   if(params->active)
     params->active_c = 1.;
@@ -892,10 +904,10 @@ LEARNER::base_learner* kernel_svm_setup(arguments& arg)
   params->pool = calloc_or_throw<svm_example*>(params->pool_size);
   params->pool_pos = 0;
 
-  if(!arg.vm.count("subsample") && params->para_active)
-    params->subsample = (size_t)ceil(params->pool_size / arg.all->all_reduce->total);
+  if(!options.was_supplied("subsample") && params->para_active)
+    params->subsample = (size_t)ceil(params->pool_size / all.all_reduce->total);
 
-  params->lambda = arg.all->l2_lambda;
+  params->lambda = all.l2_lambda;
   if(params->lambda == 0.)
     params->lambda = 1.;
   params->all->trace_message<<"Lambda = "<<params->lambda<<endl;

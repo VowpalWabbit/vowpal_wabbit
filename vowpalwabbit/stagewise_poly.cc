@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 static const uint32_t parent_bit = 1;
 static const uint32_t cycle_bit = 2;
@@ -674,21 +675,25 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   //#endif //DEBUG
 }
 
-base_learner *stagewise_poly_setup(arguments& arg)
+base_learner *stagewise_poly_setup(options_i& options, vw& all)
 {
   auto poly = scoped_calloc_or_throw<stagewise_poly>();
-  if (arg.new_options("Stagewise polynomial options")
-      .critical("stage_poly", "use stagewise polynomial feature learning")
-      ("sched_exponent", poly->sched_exponent, 1.f, "exponent controlling quantity of included features")
-      ("batch_sz", poly->batch_sz, (uint32_t)1000, "multiplier on batch size before including more features")
-      (poly->batch_sz_double, "batch_sz_no_doubling", "batch_sz does not double")
+  bool stage_poly = false;
+  option_group_definition new_options("Stagewise polynomial options");
+  new_options
+    .add(make_option("stage_poly", stage_poly).keep().help("use stagewise polynomial feature learning"))
+    .add(make_option("sched_exponent", poly->sched_exponent).default_value(1.f).help("exponent controlling quantity of included features"))
+    .add(make_option("batch_sz", poly->batch_sz).default_value(1000).help("multiplier on batch size before including more features"))
+    .add(make_option("batch_sz_no_doubling", poly->batch_sz_double).help("batch_sz does not double"));
 #ifdef MAGIC_ARGUMENT
-      ("magic_argument", poly->magic_argument, 0., "magical feature flag")
+  new_options.add(make_typed_option("magic_argument", poly->magic_argument).default_value(0.).help("magical feature flag"));
 #endif //MAGIC_ARGUMENT
-      .missing())
+  options.add_and_parse(new_options);
+
+  if (!stage_poly)
     return nullptr;
 
-  poly->all = arg.all;
+  poly->all = &all;
   depthsbits_create(*poly.get());
   sort_data_create(*poly.get());
 
@@ -706,7 +711,7 @@ base_learner *stagewise_poly_setup(arguments& arg)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  learner<stagewise_poly,example>& l = init_learner(poly, as_singleline(setup_base(arg)), learn, predict);
+  learner<stagewise_poly,example>& l = init_learner(poly, as_singleline(setup_base(options, all)), learn, predict);
   l.set_finish(finish);
   l.set_save_load(save_load);
   l.set_finish_example(finish_example);

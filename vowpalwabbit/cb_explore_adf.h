@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include<vector>
 struct example;
 
-LEARNER::base_learner* cb_explore_adf_setup(arguments& arg);
+LEARNER::base_learner* cb_explore_adf_setup(VW::config::options_i& options, vw& all);
 
 namespace CB_EXPLORE_ADF
 {

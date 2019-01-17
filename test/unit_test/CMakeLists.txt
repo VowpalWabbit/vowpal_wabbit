@@ -1,4 +1,7 @@
-add_executable(vw-unit-test.out main.cc cb_explore_adf_test.cc explore_test.cc stable_unique_tests.cc)
+add_executable(vw-unit-test.out
+  main.cc options_test.cc options_boost_po_test.cc cb_explore_adf_test.cc explore_test.cc
+  stable_unique_tests.cc test_common.h
+)
 
 # Add the include directories from vw target for testing
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)

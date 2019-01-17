@@ -16,10 +16,7 @@ using namespace std;
 class squaredloss : public loss_function
 {
 public:
-  squaredloss()
-  {
-
-  }
+  std::string getType() { return "squared"; }
 
   float getLoss(shared_data* sd, float prediction, float label)
   {
@@ -90,7 +87,7 @@ public:
 class classic_squaredloss : public loss_function
 {
 public:
-  classic_squaredloss() {}
+  std::string getType() { return "classic"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
@@ -98,7 +95,7 @@ public:
     return example_loss;
   }
 
-  float getUpdate(float prediction, float label,float update_scale, float pred_per_update)
+  float getUpdate(float prediction, float label,float update_scale, float /* pred_per_update */)
   {
     return 2.f*(label - prediction) * update_scale;
   }
@@ -133,10 +130,8 @@ public:
 class hingeloss : public loss_function
 {
 public:
-  hingeloss()
-  {
+  std::string getType() { return "hinge"; }
 
-  }
 
   float getLoss(shared_data*, float prediction, float label)
   {
@@ -184,10 +179,8 @@ public:
 class logloss : public loss_function
 {
 public:
-  logloss()
-  {
+  std::string getType() { return "logistic"; }
 
-  }
 
   float getLoss(shared_data*, float prediction, float label)
   {
@@ -263,6 +256,9 @@ class quantileloss : public loss_function
 public:
   quantileloss(float &tau_) : tau(tau_) { }
 
+  std::string getType() { return "quantile"; }
+
+
   float getLoss(shared_data*, float prediction, float label)
   {
     float e = label - prediction;
@@ -332,7 +328,7 @@ public:
 class poisson_loss : public loss_function
 {
 public:
-  poisson_loss() {}
+  std::string getType() { return "poisson"; }
 
   float getLoss(shared_data*, float prediction, float label)
   {
@@ -362,7 +358,7 @@ public:
     return (label - exp_prediction) * update_scale;
   }
 
-  float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
+  float getRevertingWeight(shared_data* /* sd */, float /* prediction */, float /* eta_t */)
   {
     THROW("Active learning not supported by poisson loss");
   }
@@ -379,7 +375,7 @@ public:
     return (exp_prediction - label);
   }
 
-  float second_derivative(shared_data*, float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float /* label */)
   {
     float exp_prediction = expf(prediction);
     return exp_prediction;

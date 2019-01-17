@@ -197,7 +197,7 @@ struct search_task
   void (*run)(search&, multi_ex&);
 
   // optional
-  void (*initialize)(search&, size_t&, arguments&);
+  void (*initialize)(search&, size_t&, VW::config::options_i&);
   void (*finish)(search&);
   void (*run_setup)(search&, multi_ex&);
   void (*run_takedown)(search&, multi_ex&);
@@ -209,7 +209,7 @@ struct search_metatask
   void (*run)(search&,multi_ex&);
 
   // optional
-  void (*initialize)(search&,size_t&,arguments&);
+  void (*initialize)(search&,size_t&,VW::config::options_i&);
   void (*finish)(search&);
   void (*run_setup)(search&,multi_ex&);
   void (*run_takedown)(search&,multi_ex&);
@@ -329,12 +329,12 @@ private:
   }
   }*/
 
-void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
+//void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
 bool string_equal(std::string a, std::string b);
 bool float_equal(float a, float b);
 bool uint32_equal(uint32_t a, uint32_t b);
 bool size_equal(size_t a, size_t b);
 
 // our interface within VW
-LEARNER::base_learner* setup(arguments& arg);
+LEARNER::base_learner* setup(VW::config::options_i& options, vw& all);
 }

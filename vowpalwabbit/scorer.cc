@@ -4,6 +4,8 @@
 #include "vw_exception.h"
 
 using namespace std;
+using namespace VW::config;
+
 struct scorer { vw* all; }; // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
@@ -46,17 +48,20 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(- in)) - 1.f; }
 
 inline float id(float in) { return in; }
 
-LEARNER::base_learner* scorer_setup(arguments& arg)
+LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<scorer>();
   string link;
-  if(arg.new_options("scorer options")
-     .keep("link", link, (string)"identity", "Specify the link function: identity, logistic, glf1 or poisson").missing())
-    return nullptr;
+  option_group_definition new_options("scorer options");
+  new_options
+    .add(make_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  options.add_and_parse(new_options);
 
-  s->all = arg.all;
+  // This always returns a base_learner.
 
-  auto base = as_singleline(setup_base(arg));
+  s->all = &all;
+
+  auto base = as_singleline(setup_base(options, all));
   LEARNER::learner<scorer,example>* l;
   void (*multipredict_f)(scorer&, LEARNER::single_learner&, example&, size_t, size_t, polyprediction*, bool) = multipredict<id>;
 
@@ -84,7 +89,7 @@ LEARNER::base_learner* scorer_setup(arguments& arg)
 
   l->set_multipredict(multipredict_f);
   l->set_update(update);
-  arg.all->scorer = LEARNER::as_singleline(l);
+  all.scorer = LEARNER::as_singleline(l);
 
-  return make_base(*arg.all->scorer);
+  return make_base(*all.scorer);
 }

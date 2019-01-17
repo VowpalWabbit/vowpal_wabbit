@@ -13,6 +13,7 @@
 using namespace LEARNER;
 using namespace CB_ALGS;
 using namespace std;
+using namespace VW::config;
 
 namespace EXPLORE_EVAL
 {
@@ -185,30 +186,34 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
 
 using namespace EXPLORE_EVAL;
 
-base_learner* explore_eval_setup(arguments& arg)
+base_learner* explore_eval_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<explore_eval>();
+  bool explore_eval_option = false;
+  option_group_definition new_options("Explore evaluation");
+  new_options
+    .add(make_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"))
+    .add(make_option("multiplier", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
+  options.add_and_parse(new_options);
 
-  if (arg.new_options("Explore evaluation")
-      .critical("explore_eval", "Evaluate explore_eval adf policies")
-      ("multiplier", data->multiplier, "Multiplier used to make all rejection sample probabilities <= 1").missing())
+  if (!explore_eval_option)
     return nullptr;
 
-  data->all = arg.all;
+  data->all = &all;
 
-  if (arg.vm.count("multiplier") > 0)
+  if (options.was_supplied("multiplier") > 0)
     data->fixed_multiplier = true;
   else
     data->multiplier = 1;
 
-  if (count(arg.args.begin(), arg.args.end(), "--cb_explore_adf") == 0)
-    arg.args.push_back("--cb_explore_adf");
+  if (!options.was_supplied("cb_explore_adf"))
+    options.insert("cb_explore_adf", "");
 
-  arg.all->delete_prediction = nullptr;
+  all.delete_prediction = nullptr;
 
-  multi_learner* base = as_multiline(setup_base(arg));
-  arg.all->p->lp = CB::cb_label;
-  arg.all->label_type = label_type::cb;
+  multi_learner* base = as_multiline(setup_base(options, all));
+  all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
 
   learner<explore_eval,multi_ex>& l = init_learner(data, base,
     do_actual_learning<true>, do_actual_learning<false>,

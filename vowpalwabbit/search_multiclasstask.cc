@@ -18,7 +18,7 @@ struct task_data
   v_array<uint32_t> y_allowed;
 };
 
-void initialize(Search::search& sch, size_t& num_actions, arguments& /*vm*/)
+void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i& /*vm*/)
 {
   task_data * my_task_data = new task_data();
   sch.set_options( 0 );

@@ -12,6 +12,7 @@
 using namespace LEARNER;
 using namespace std;
 using namespace COST_SENSITIVE;
+using namespace VW::config;
 
 struct lq_data
 {
@@ -293,63 +294,66 @@ void finish(cs_active& data)
   data.examples_by_queries.delete_v();
 }
 
-base_learner* cs_active_setup(arguments& arg)
+base_learner* cs_active_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cs_active>();
-  if (arg.new_options("Cost-sensitive Active Learning")
-      .critical("cs_active", data->num_classes, "Cost-sensitive active learning with <k> costs")
-      ("simulation", "cost-sensitive active learning simulation mode")
-      (data->is_baseline, "baseline", "cost-sensitive active learning baseline")
-      ("domination", "cost-sensitive active learning use domination. Default 1")
-      ("mellowness",data->c0, 0.1f,"mellowness parameter c_0. Default 0.1.")
-      ("range_c", data->c1, 0.5f,"parameter controlling the threshold for per-label cost uncertainty. Default 0.5.")
-      ("max_labels", data->max_labels, (size_t)-1, "maximum number of label queries.")
-      ("min_labels", data->min_labels, (size_t)-1, "minimum number of label queries.")
-      ("cost_max",data->cost_max, 1.f,"cost upper bound. Default 1.")
-      ("cost_min",data->cost_min, 0.f,"cost lower bound. Default 0.")
-      (data->print_debug_stuff, "csa_debug", "print debug stuff for cs_active").missing())
+
+  bool simulation = false;
+  option_group_definition new_options("Cost-sensitive Active Learning");
+  new_options
+    .add(make_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"))
+    .add(make_option("simulation", simulation).help("cost-sensitive active learning simulation mode"))
+    .add(make_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"))
+    .add(make_option("domination", data->use_domination).default_value(true).help("cost-sensitive active learning use domination. Default true"))
+    .add(make_option("mellowness", data->c0).default_value(0.1f).help("mellowness parameter c_0. Default 0.1."))
+    .add(make_option("range_c", data->c1).default_value(0.5f).help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
+    .add(make_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."))
+    .add(make_option("min_labels", data->min_labels).default_value(-1).help("minimum number of label queries."))
+    .add(make_option("cost_max", data->cost_max).default_value(1.f).help("cost upper bound. Default 1."))
+    .add(make_option("cost_min", data->cost_min).default_value(0.f).help("cost lower bound. Default 0."))
+    // TODO replace with trace and quiet
+    .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
+  options.add_and_parse(new_options);
+
+  if(!options.was_supplied("cs_active"))
     return nullptr;
 
-  data->all = arg.all;
+  data->all = &all;
   data->t = 1;
-  data->use_domination = true;
 
-  if(arg.vm.count("domination") && !arg.vm["domination"].as<int>())
-    data->use_domination = false;
-
-  string loss_function = arg.vm["loss_function"].as<string>();
-  if (loss_function.compare("squared") != 0)
+  auto loss_function_type = all.loss->getType();
+  if (loss_function_type != "squared")
     THROW("error: you can't use non-squared loss with cs_active");
 
-  if (count(arg.args.begin(), arg.args.end(),"--lda") != 0)
+  if (options.was_supplied("lda"))
     THROW("error: you can't combine lda and active learning");
 
-  if (count(arg.args.begin(), arg.args.end(),"--active") != 0)
+  if (options.was_supplied("active"))
     THROW("error: you can't use --cs_active and --active at the same time");
 
-  if (count(arg.args.begin(), arg.args.end(),"--active_cover") != 0)
+  if (options.was_supplied("active_cover"))
     THROW("error: you can't use --cs_active and --active_cover at the same time");
 
-  if (count(arg.args.begin(), arg.args.end(),"--csoaa") != 0)
+  if (options.was_supplied("csoaa"))
     THROW("error: you can't use --cs_active and --csoaa at the same time");
 
-  if (count(arg.args.begin(), arg.args.end(),"--adax") == 0)
-    arg.all->trace_message << "WARNING: --cs_active should be used with --adax" << endl;
+  if (!options.was_supplied("adax"))
+    all.trace_message << "WARNING: --cs_active should be used with --adax" << endl;
 
-  arg.all->p->lp = cs_label; // assigning the label parser
-  arg.all->set_minmax(arg.all->sd,data->cost_max);
-  arg.all->set_minmax(arg.all->sd,data->cost_min);
+  all.p->lp = cs_label; // assigning the label parser
+  all.set_minmax(all.sd,data->cost_max);
+  all.set_minmax(all.sd,data->cost_min);
   for (uint32_t i=0; i<data->num_classes+1; i++)
     data->examples_by_queries.push_back(0);
 
   learner<cs_active,example>& l =
-    (arg.vm.count("simulation") > 0)
-    ? init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
-    : init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
+    simulation
+    ? init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true,true> , predict_or_learn<false,true >, data->num_classes, prediction_type::multilabels)
+    : init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true,false>, predict_or_learn<false,false>, data->num_classes,prediction_type::multilabels);
 
   l.set_finish_example(finish_example);
   l.set_finish(finish);
   base_learner* b = make_base(l);
-  arg.all->cost_sensitive = b;
+  all.cost_sensitive = b;
   return b;
 }

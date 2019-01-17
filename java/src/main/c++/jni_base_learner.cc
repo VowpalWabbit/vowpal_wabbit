@@ -1,4 +1,5 @@
 #include "../../../../vowpalwabbit/vw.h"
+#include "../../../../vowpalwabbit/vw_exception.h"
 
 #include "jni_base_learner.h"
 
@@ -15,12 +16,13 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env)
   catch(const std::bad_alloc& e)
   { throw_java_exception(env, "java/lang/OutOfMemoryError", e.what());
   }
-  catch(const boost::program_options::error& e)
+  catch(const VW::vw_unrecognised_option_exception& e)
   { throw_java_exception(env, "java/lang/IllegalArgumentException", e.what());
   }
   catch(const std::exception& e)
   { throw_java_exception(env, "java/lang/Exception", e.what());
   }
+
   catch (...)
   { throw_java_exception(env, "java/lang/Error", "Unidentified exception => "
                          "rethrow_cpp_exception_as_java_exception "

@@ -5,6 +5,7 @@
 
 using namespace LEARNER;
 using namespace std;
+using namespace VW::config;
 
 struct LRQFAstate
 {
@@ -134,16 +135,21 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
   }
 }
 
-LEARNER::base_learner* lrqfa_setup(arguments& arg)
+LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
-  if (arg.new_options("Low Rank Quadratics FA")
-      .critical<string>("lrqfa", "use low rank quadratic features with field aware weights").missing())
+  std::string lrqfa;
+  option_group_definition new_options("Low Rank Quadratics FA");
+  new_options
+    .add(make_option("lrqfa", lrqfa).keep().help("use low rank quadratic features with field aware weights"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("lrqfa"))
     return nullptr;
 
   auto lrq = scoped_calloc_or_throw<LRQFAstate>();
-  lrq->all = arg.all;
+  lrq->all = &all;
 
-  string lrqopt = spoof_hex_encoded_namespaces( arg.vm["lrqfa"].as<string>() );
+  string lrqopt = spoof_hex_encoded_namespaces(lrqfa);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new(&lrq->field_name) string(lrqopt.substr(0, last_index+1)); // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index+1).c_str());
@@ -152,8 +158,8 @@ LEARNER::base_learner* lrqfa_setup(arguments& arg)
   for (char i : lrq->field_name)
     lrq->field_id[(int)i] = fd_id++;
 
-  arg.all->wpp = arg.all->wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate,example>& l = init_learner(lrq, as_singleline(setup_base(arg)), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
+  all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
+  learner<LRQFAstate,example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
 
   return make_base(l);
 }

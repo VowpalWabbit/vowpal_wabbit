@@ -7,7 +7,10 @@ license as described in the file LICENSE.
 #include <float.h>
 #include "reductions.h"
 #include "v_array.h"
+
 using namespace std;
+using namespace VW::config;
+
 struct interact
 {
   unsigned char n1, n2;  //namespaces to interact
@@ -149,11 +152,15 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
 
 void finish(interact& in) { in.feat_store.delete_v(); }
 
-LEARNER::base_learner* interact_setup(arguments& arg)
+LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   string s;
-  if(arg.new_options("Interact via elementwise multiplication")
-     .critical("interact", s, "Put weights on feature products from namespaces <n1> and <n2>").missing())
+  option_group_definition new_options("Interact via elementwise multiplication");
+  new_options
+    .add(make_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("interact"))
     return nullptr;
 
   if(s.length() != 2)
@@ -166,12 +173,12 @@ LEARNER::base_learner* interact_setup(arguments& arg)
 
   data->n1 = (unsigned char) s[0];
   data->n2 = (unsigned char) s[1];
-  if (!arg.all->quiet)
+  if (!all.quiet)
     cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
-  data->all = arg.all;
+  data->all = &all;
 
   LEARNER::learner<interact,example>* l;
-  l = &LEARNER::init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  l = &LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);
