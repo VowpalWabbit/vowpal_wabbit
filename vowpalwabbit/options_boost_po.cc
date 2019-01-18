@@ -8,17 +8,23 @@
 using namespace VW::config;
 
 template<>
-po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt) {
-  auto value = get_base_boost_value(opt)->implicit_value({ true });
+po::typed_value<internal_option<bool>::type>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt) {
+  auto value = po::bool_switch();
 
   if (opt->default_value_supplied()) {
-    value->default_value({ opt->default_value() });
-  }
-  else {
-    value->default_value({ false });
+    THROW("Using a bool option type acts as a switch, no explicit default value is allowed.")
   }
 
-  return value;
+  return add_notifier(opt, value);
+}
+
+template<>
+po::typed_value<internal_option<bool>::type>* options_boost_po::add_notifier(std::shared_ptr<typed_option<bool>>& opt, po::typed_value<internal_option<bool>::type>* po_value) {
+  return po_value->notifier([this, opt](internal_option<bool>::type final_value) {
+    // Set the value for the listening location.
+    opt->m_location = final_value;
+    opt->value(final_value);
+  });
 }
 
 void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description) {

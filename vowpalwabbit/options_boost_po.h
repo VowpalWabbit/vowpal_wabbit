@@ -29,6 +29,18 @@ template std::ostream& std::operator<< <std::string> (std::ostream &, const std:
 template std::ostream& std::operator<< <float>(std::ostream &, const std::vector<float>&);
 template std::ostream& std::operator<< <bool>(std::ostream &, const std::vector<bool>&);
 
+template<class T>
+struct internal_option
+{
+  using type = std::vector<T>;
+};
+
+template<>
+struct internal_option<bool>
+{
+  using type = bool;
+};
+
 namespace VW {
   namespace config {
     struct options_boost_po : public options_i {
@@ -98,22 +110,22 @@ namespace VW {
 
     private:
       template<typename T>
-      po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
+      typename po::typed_value<typename internal_option<T>::type>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
 
       template<typename T>
-      po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt);
+      po::typed_value<typename internal_option<T>::type>* get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt);
 
       template<typename T>
-      po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_option<T>>& opt);
+      po::typed_value<typename internal_option<T>::type>* convert_to_boost_value(std::shared_ptr<typed_option<T>>& opt);
 
       template<typename T>
-      po::typed_value<std::vector<T>>* convert_to_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt);
+      po::typed_value<typename internal_option<T>::type>* convert_to_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt);
 
       template<typename T>
-      po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_option<T>>& opt, po::typed_value<std::vector<T>>* po_value);
+      po::typed_value<typename internal_option<T>::type>* add_notifier(std::shared_ptr<typed_option<T>>& opt, po::typed_value<typename internal_option<T>::type>* po_value);
 
       template<typename T>
-      po::typed_value<std::vector<T>>* add_notifier(std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<std::vector<T>>* po_value);
+      po::typed_value<typename internal_option<T>::type>* add_notifier(std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<typename internal_option<T>::type>* po_value);
 
       template<typename T>
       bool add_if_t(std::shared_ptr<base_option> opt, po::options_description& options_description);
@@ -143,8 +155,8 @@ namespace VW {
     };
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<T>>& opt) {
-      po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<T>>& opt) {
+      auto value = po::value<std::vector<T>>();
 
       if (opt->default_value_supplied()) {
         value->default_value({ opt->default_value() });
@@ -154,8 +166,8 @@ namespace VW {
     }
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt) {
-      po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt) {
+      auto value = po::value<std::vector<T>>();
 
       if (opt->default_value_supplied()) {
         value->default_value(opt->default_value());
@@ -165,20 +177,20 @@ namespace VW {
     }
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<T>>& opt) {
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<T>>& opt) {
       return get_base_boost_value(opt);
     }
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt) {
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt) {
       return get_base_boost_value(opt)->multitoken();
     }
 
     template<>
-    po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt);
+    po::typed_value<typename internal_option<bool>::type>* options_boost_po::convert_to_boost_value(std::shared_ptr<typed_option<bool>>& opt);
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::add_notifier(std::shared_ptr<typed_option<T>>& opt, po::typed_value<std::vector<T>>* po_value) {
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::add_notifier(std::shared_ptr<typed_option<T>>& opt, po::typed_value<typename internal_option<T>::type>* po_value) {
       return po_value->notifier([this, opt](std::vector<T> final_arguments) {
         T first = final_arguments[0];
         for (auto const& item : final_arguments) {
@@ -196,13 +208,16 @@ namespace VW {
     }
 
     template<typename T>
-    po::typed_value<std::vector<T>>* options_boost_po::add_notifier(std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<std::vector<T>>* po_value) {
+    po::typed_value<typename internal_option<T>::type>* options_boost_po::add_notifier(std::shared_ptr<typed_option<std::vector<T>>>& opt, po::typed_value<typename internal_option<T>::type>* po_value) {
       return po_value->notifier([this, opt](std::vector<T> final_arguments) {
         // Set the value for the listening location.
         opt->m_location = final_arguments;
         opt->value(final_arguments);
       });
     }
+
+    template<>
+    po::typed_value<internal_option<bool>::type>* options_boost_po::add_notifier(std::shared_ptr<typed_option<bool>>& opt, po::typed_value<typename internal_option<bool>::type>* po_value);
 
     template<typename T>
     bool options_boost_po::add_if_t(std::shared_ptr<base_option> opt, po::options_description& options_description) {
