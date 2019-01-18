@@ -10,6 +10,7 @@ namespace po = boost::program_options;
 #include <algorithm>
 
 #include "options.h"
+#include "options_types.h"
 #include "vw_exception.h"
 
 // Boost Program Options requires that all types that have a default option are ostreamable
@@ -120,6 +121,12 @@ namespace VW {
 
       void add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description);
 
+      template<typename TTypes>
+      void add_to_description_impl(std::shared_ptr<base_option> opt, po::options_description& options_description) {
+        if (add_if_t<typename TTypes::head>(opt, options_description)) { return; }
+        add_to_description_impl<typename TTypes::tail>(opt, options_description);
+      }
+
       template<typename T>
       void add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description);
 
@@ -214,6 +221,9 @@ namespace VW {
 
       return false;
     }
+
+    template<>
+    void options_boost_po::add_to_description_impl<typelist<>>(std::shared_ptr<base_option> opt, po::options_description& options_description);
 
     template<typename T>
     void options_boost_po::add_to_description(std::shared_ptr<typed_option<T>> opt, po::options_description& options_description) {

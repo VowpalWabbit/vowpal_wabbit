@@ -22,22 +22,7 @@ po::typed_value<std::vector<bool>>* options_boost_po::convert_to_boost_value(std
 }
 
 void options_boost_po::add_to_description(std::shared_ptr<base_option> opt, po::options_description& options_description) {
-  if (add_if_t<unsigned int>(opt, options_description)) { return; }
-  if (add_if_t<int>(opt, options_description)) { return; }
-  if (add_if_t<size_t>(opt, options_description)) { return; }
-  if (add_if_t<float>(opt, options_description)) { return; }
-  if (add_if_t<double>(opt, options_description)) { return; }
-  if (add_if_t<char>(opt, options_description)) { return; }
-  if (add_if_t<std::string>(opt, options_description)) { return; }
-  if (add_if_t<bool>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<int>>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<size_t>>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<float>>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<double>>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<char>>(opt, options_description)) { return; }
-  if (add_if_t<std::vector<std::string>>(opt, options_description)) { return; }
-
-  THROW("That is an unsupported argument type.");
+  add_to_description_impl<supported_options_types>(opt, options_description);
 }
 
 void options_boost_po::add_and_parse(const option_group_definition& group) {
@@ -144,4 +129,9 @@ void options_boost_po::check_unregistered() {
       THROW_EX(VW::vw_unrecognised_option_exception, "unrecognised option '--" << supplied << "'");
     }
   }
+}
+
+template<>
+void options_boost_po::add_to_description_impl<typelist<>>(std::shared_ptr<base_option> opt, po::options_description& options_description) {
+  THROW("That is an unsupported option type.");
 }
