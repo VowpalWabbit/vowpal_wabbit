@@ -17,6 +17,7 @@ namespace VW {
       unsigned int,
       int,
       size_t,
+      uint64_t,
       float,
       double,
       char,
