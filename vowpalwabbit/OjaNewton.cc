@@ -560,8 +560,8 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
 
   ON->all = &all;
 
-  ON->normalize = normalize != "true";
-  ON->random_init = random_init != "true";
+  ON->normalize = normalize == "true";
+  ON->random_init = random_init == "true";
 
   if (options.was_supplied("alpha_inverse"))
     ON->alpha = 1.f / alpha_inverse;
