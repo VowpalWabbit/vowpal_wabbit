@@ -30,6 +30,7 @@ t_*
 bin
 vw
 .*
+!.pipelines
 vw.1
 *.cache
 *.tgz
