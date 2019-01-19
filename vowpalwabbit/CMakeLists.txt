@@ -22,7 +22,7 @@ set(vw_install_headers
 )
 
 set(vw_all_headers
-  ${vw_install_headers} accumulate.h options.h options_boost_po.h
+  ${vw_install_headers} accumulate.h options.h options_types.h options_boost_po.h
   options_serializer_boost_po.h correctedMath.h rand48.h log_multi.h recall_tree.h active_cover.h
   reductions.h active.h cs_active.h lrqfa.h scorer.h csoaa.h lrq.h search_dep_parser.h
   array_parameters_dense.h ect.h marginal.h search_entityrelationtask.h array_parameters.h

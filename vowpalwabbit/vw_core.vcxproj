@@ -199,6 +199,7 @@
     <ClInclude Include="log_multi.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="options_boost_po.h" />
+    <ClInclude Include="options_types.h" />
     <ClInclude Include="parse_example_json.h" />
     <ClInclude Include="recall_tree.h" />
     <ClInclude Include="global_data.h" />

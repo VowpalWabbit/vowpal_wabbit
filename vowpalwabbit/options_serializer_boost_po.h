@@ -2,6 +2,8 @@
 
 #include "options.h"
 
+#include "options_types.h"
+
 #include "vw_exception.h"
 
 #include <sstream>
@@ -47,10 +49,19 @@ namespace VW {
         }
       }
 
+      template<typename TTypes>
+      void add_impl(base_option& options) {
+        if (serialize_if_t<typename TTypes::head>(options)) { return; }
+        add_impl<typename TTypes::tail>(options);
+      }
+
       std::stringstream m_output_stream;
     };
 
     template <>
     void options_serializer_boost_po::serialize<bool>(typed_option<bool> typed_argument);
+
+    template<>
+    void options_serializer_boost_po::add_impl<typelist<>>(base_option& options);
   }
 }
