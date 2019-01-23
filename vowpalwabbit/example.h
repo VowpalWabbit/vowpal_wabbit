@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "feature_group.h"
 #include "action_score.h"
 #include "example_predict.h"
+#include "conditional_contextual_bandit.h"
 #include <vector>
 
 const unsigned char wap_ldf_namespace = 126;
@@ -40,6 +41,7 @@ typedef union {
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
+  CCB::label conditional_contextual_bandit;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 } polylabel;
@@ -54,6 +56,7 @@ typedef union {
   float scalar;
   v_array<float> scalars;           // a sequence of scalar predictions
   ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  CCB::decision_scores_t decision_scores;
   uint32_t multiclass;
   MULTILABEL::labels multilabels;
   float prob;  // for --probabilities --csoaa_ldf=mc
