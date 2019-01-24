@@ -145,13 +145,18 @@ void predict_or_learn(cbify& data, single_learner& base, example& ec)
   //Create a new cb label
   data.cb_label.costs.push_back(cl);
   ec.l.cb = data.cb_label;
-  base.learn(ec);
+
+  if (is_learn)
+    base.learn(ec);
+
   data.a_s.clear();
   data.a_s = ec.pred.a_s;
+  
   if (use_cs)
     ec.l.cs = csl;
   else
     ec.l.multi = ld;
+
   ec.pred.multiclass = cl.action;
 }
 
@@ -191,7 +196,9 @@ void predict_or_learn_adf(cbify& data, multi_learner& base, example& ec)
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
   lab.costs.push_back(cl);
 
-  base.learn(data.adf_data.ecs);
+  if (is_learn)
+    base.learn(data.adf_data.ecs);
+
   ec.pred.multiclass = cl.action;
 }
 
