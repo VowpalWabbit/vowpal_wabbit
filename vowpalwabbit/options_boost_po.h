@@ -99,7 +99,7 @@ namespace VW {
 
     private:
       template<typename T>
-      po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
+      typename po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<T>>& opt);
 
       template<typename T>
       po::typed_value<std::vector<T>>* get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt);
@@ -151,7 +151,7 @@ namespace VW {
 
     template<typename T>
     po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<T>>& opt) {
-      po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+      auto value = po::value<std::vector<T>>();
 
       if (opt->default_value_supplied()) {
         value->default_value({ opt->default_value() });
@@ -162,7 +162,7 @@ namespace VW {
 
     template<typename T>
     po::typed_value<std::vector<T>>* options_boost_po::get_base_boost_value(std::shared_ptr<typed_option<std::vector<T>>>& opt) {
-      po::typed_value<std::vector<T>>* value = po::value<std::vector<T>>();
+      auto value = po::value<std::vector<T>>();
 
       if (opt->default_value_supplied()) {
         value->default_value(opt->default_value());

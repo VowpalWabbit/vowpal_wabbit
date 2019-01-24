@@ -536,6 +536,13 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
 
   bool oja_newton;
   float alpha_inverse;
+
+  // These two are the only two boolean options that default to true. For now going to do this hack
+  // as the infrastructure doesn't easily support this possibility at the same time providing the
+  // ease of bool switches elsewhere. It seems that the switch behavior is more critical because
+  // of the positional data argument.
+  std::string normalize = "true";
+  std::string random_init  = "true";
   option_group_definition new_options("OjaNewton options");
   new_options
     .add(make_option("OjaNewton", oja_newton).keep().help("Online Newton with Oja's Sketch"))
@@ -544,14 +551,17 @@ base_learner* OjaNewton_setup(options_i& options, vw& all)
     .add(make_option("alpha", ON->alpha).default_value(1.f).help("mutiplicative constant for indentiy"))
     .add(make_option("alpha_inverse", alpha_inverse).help("one over alpha, similar to learning rate"))
     .add(make_option("learning_rate_cnt", ON->learning_rate_cnt).default_value(2.f).help("constant for the learning rate 1/t"))
-    .add(make_option("normalize", ON->normalize).default_value(true).help("normalize the features or not"))
-    .add(make_option("random_init", ON->random_init).default_value(true).help("randomize initialization of Oja or not"));
+    .add(make_option("normalize", normalize).help("normalize the features or not"))
+    .add(make_option("random_init", random_init).help("randomize initialization of Oja or not"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("OjaNewton"))
     return nullptr;
 
   ON->all = &all;
+
+  ON->normalize = normalize == "true";
+  ON->random_init = random_init == "true";
 
   if (options.was_supplied("alpha_inverse"))
     ON->alpha = 1.f / alpha_inverse;

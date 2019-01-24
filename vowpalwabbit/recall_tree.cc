@@ -574,8 +574,8 @@ base_learner* recall_tree_setup(options_i& options, vw& all)
     .add(make_option("max_candidates", tree->max_candidates).keep().help("maximum number of labels per leaf in the tree"))
     .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("recall tree depth penalty"))
     .add(make_option("max_depth", tree->max_depth).keep().help("maximum depth of the tree, default log_2 (#classes)"))
-    .add(make_option("node_only", tree->node_only).default_value(false).keep().help("only use node features, not full path features"))
-    .add(make_option("randomized_routing", tree->randomized_routing).default_value(false).keep().help("randomized routing"));
+    .add(make_option("node_only", tree->node_only).keep().help("only use node features, not full path features"))
+    .add(make_option("randomized_routing", tree->randomized_routing).keep().help("randomized routing"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("recall_tree"))

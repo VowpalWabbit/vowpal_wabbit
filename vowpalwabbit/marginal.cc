@@ -366,8 +366,8 @@ LEARNER::base_learner* marginal_setup(options_i& options, vw& all)
   marginal_options.add(make_option("initial_denominator", d->initial_denominator).default_value(1.f).help("initial denominator"));
   marginal_options.add(make_option("initial_numerator", d->initial_numerator).default_value(0.5f).help("initial numerator"));
   marginal_options.add(make_option("compete", d->compete).help("enable competition with marginal features"));
-  marginal_options.add(make_option("update_before_learn", d->update_before_learn).default_value(false).help("update marginal values before learning"));
-  marginal_options.add(make_option("unweighted_marginals", d->unweighted_marginals).default_value(false).help("ignore importance weights when computing marginals"));
+  marginal_options.add(make_option("update_before_learn", d->update_before_learn).help("update marginal values before learning"));
+  marginal_options.add(make_option("unweighted_marginals", d->unweighted_marginals).help("ignore importance weights when computing marginals"));
   marginal_options.add(make_option("decay", d->decay).default_value(0.f).help("decay multiplier per event (1e-3 for example)"));
   options.add_and_parse(marginal_options);
 
