@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="substring">
+    <DisplayString>substring={begin,[end - begin]s}</DisplayString>
+    <Expand>
+      <Item Name="substring">begin,[end - begin]</Item>
+      <Item Name="length">end - begin</Item>
+    </Expand>
+  </Type>
+  <Type Name="v_array&lt;*&gt;">
+    <Expand>
+      <Item Name="size">_end - _begin</Item>
+      <ArrayItems>
+        <Size>_end - _begin</Size>
+        <ValuePointer>_begin</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>
