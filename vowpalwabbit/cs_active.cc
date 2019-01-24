@@ -299,12 +299,13 @@ base_learner* cs_active_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<cs_active>();
 
   bool simulation = false;
+  int domination;
   option_group_definition new_options("Cost-sensitive Active Learning");
   new_options
     .add(make_option("cs_active", data->num_classes).keep().help("Cost-sensitive active learning with <k> costs"))
     .add(make_option("simulation", simulation).help("cost-sensitive active learning simulation mode"))
     .add(make_option("baseline", data->is_baseline).help("cost-sensitive active learning baseline"))
-    .add(make_option("domination", data->use_domination).default_value(true).help("cost-sensitive active learning use domination. Default true"))
+    .add(make_option("domination", domination).default_value(1).help("cost-sensitive active learning use domination. Default 1"))
     .add(make_option("mellowness", data->c0).default_value(0.1f).help("mellowness parameter c_0. Default 0.1."))
     .add(make_option("range_c", data->c1).default_value(0.5f).help("parameter controlling the threshold for per-label cost uncertainty. Default 0.5."))
     .add(make_option("max_labels", data->max_labels).default_value(-1).help("maximum number of label queries."))
@@ -314,6 +315,10 @@ base_learner* cs_active_setup(options_i& options, vw& all)
     // TODO replace with trace and quiet
     .add(make_option("csa_debug", data->print_debug_stuff).help("print debug stuff for cs_active"));
   options.add_and_parse(new_options);
+
+  data->use_domination = true;
+  if(options.was_supplied("domination") && !domination)
+    data->use_domination = false;
 
   if(!options.was_supplied("cs_active"))
     return nullptr;

@@ -1274,7 +1274,7 @@ LEARNER::base_learner *lda_setup(options_i& options, vw& all)
     .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
     .add(make_option("minibatch", ld->minibatch).default_value(1).help("Minibatch size, for LDA"))
     .add(make_option("math-mode", math_mode).default_value(USE_SIMD).help("Math mode: simd, accuracy, fast-approx"))
-    .add(make_option("metrics", ld->compute_coherence_metrics).default_value(false).help("Compute metrics"));
+    .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
   options.add_and_parse(new_options);
 
   // Convert from int to corresponding enum value.

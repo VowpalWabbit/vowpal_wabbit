@@ -234,7 +234,7 @@ base_learner* active_cover_setup(options_i& options, vw& all)
     .add(make_option("alpha", data->alpha).default_value(1.f).help("active learning variance upper bound parameter alpha. Default 1."))
     .add(make_option("beta_scale", data->beta_scale).default_value(sqrtf(10.f)).help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."))
     .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
-    .add(make_option("oracular", data->oracular).default_value(false).help("Use Oracular-CAL style query or not. Default false."));
+    .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);
 
   if (!active_cover_option)
