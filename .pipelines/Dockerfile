@@ -61,3 +61,9 @@ RUN apt-get clean autoclean && \
 # Set environment variables used by build
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
 ENV JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64/"
+
+# Download clang-format 7.0
+RUN wget http://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz && \
+	tar xvf clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz && \
+	mv clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-14.04/bin/clang-format /usr/local/bin && \
+	rm -rf clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-14.04/
