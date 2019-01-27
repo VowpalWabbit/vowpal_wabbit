@@ -1,8 +1,7 @@
 FROM ubuntu:14.04 AS build
 
 # Upgrade cmake to 3.2
-RUN apt-get update
-RUN apt-get install -y software-properties-common python-software-properties debconf-utils
+RUN apt-get update && apt-get install -y software-properties-common python-software-properties debconf-utils
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN apt-get update
 
