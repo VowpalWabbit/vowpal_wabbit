@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
+#include <thread>
 
 #include "v_array.h"
 #include "array_parameters.h"
@@ -434,11 +435,8 @@ struct vw
 { shared_data* sd;
 
   parser* p;
-#ifndef _WIN32
-  pthread_t parse_thread;
-#else
-  HANDLE parse_thread;
-#endif
+  std::thread parse_thread;
+
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 

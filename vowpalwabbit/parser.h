@@ -8,6 +8,8 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "example.h"
 
+#include <mutex>
+#include <condition_variable>
 
 struct vw;
 struct input_options;
@@ -34,11 +36,12 @@ struct parser
   example* examples;
   uint64_t used_index;
   bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
-  MUTEX examples_lock;
-  CV example_available;
-  CV example_unused;
-  MUTEX output_lock;
-  CV output_done;
+
+  std::mutex examples_lock;
+  std::condition_variable example_available;
+  std::condition_variable example_unused;
+  std::mutex output_lock;
+  std::condition_variable output_done;
 
   bool done;
   v_array<size_t> gram_mask;
