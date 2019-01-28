@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "label_parser.h"
 #include "v_array.h"
 #include "action_score.h"
 
@@ -42,7 +43,7 @@ namespace CCB {
     v_array<conditional_contexual_bandit_outcome> outcomes;
   };
 
-  // TODO implement label parser for CCB
+  extern label_parser ccb_label_parser;
 
   bool ec_is_example_header(example& ec);
   void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores);
