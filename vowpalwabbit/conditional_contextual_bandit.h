@@ -23,14 +23,11 @@ namespace CCB {
     // The action chosen for this decision
     uint32_t action_id;
 
-    // The index of the decision for this label, should this be implicit?
-    uint32_t decision_id;
+    //// The index of the decision for this label, should this be implicit?
+    //uint32_t decision_id;
 
     // This is not well defined, the probability of the action that was chosen for this decision?
     float probability;
-
-    // Is partial prediction required?
-    //float partial_prediction;
   };
 
   enum example_type
@@ -41,6 +38,7 @@ namespace CCB {
   struct label {
     example_type type;
     v_array<conditional_contexual_bandit_outcome> outcomes;
+    v_array<uint32_t> excluded_actions;
   };
 
   extern label_parser ccb_label_parser;
