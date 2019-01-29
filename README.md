@@ -140,7 +140,7 @@ git clone git://github.com/VowpalWabbit/vowpal_wabbit.git
 cd vowpal_wabbit
 mkdir build
 cd build
-cmake .. -DSTATIC_LINK_VW=ON
+cmake ..
 make -j
 make test       # (optional)
 make install
