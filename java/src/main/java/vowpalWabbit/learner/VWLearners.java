@@ -35,7 +35,9 @@ final public class VWLearners {
      * @return A VW Learner
      */
     @SuppressWarnings("unchecked")
-    public static <T extends VWLearner> T create(final String command) {
+    public static <T extends VWLearner> T create(String command) {
+        if(command.indexOf("--no_stdin") == -1)
+            command += " --no_stdin";
         long nativePointer = initialize(command);
         VWReturnType returnType = getReturnType(nativePointer);
 

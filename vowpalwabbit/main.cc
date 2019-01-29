@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
       {
         std::stringstream sstr;
         sstr << line << " -f model." << (line_count++);
+        sstr << " --no_stdin"; //can't use stdin with multiple models
 
         std::cout << sstr.str() << endl;
         string str = sstr.str();
