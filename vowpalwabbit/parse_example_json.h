@@ -13,7 +13,9 @@ license as described in the file LICENSE.
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
 
-// Let MSVC know that it should not even try to compile this as managed
+// Let MSVC know that it should not even try to compile RapidJSON as managed
+// - pragma documentation: https://docs.microsoft.com/en-us/cpp/preprocessor/managed-unmanaged?view=vs-2017
+// - /clr compilation detection: https://docs.microsoft.com/en-us/cpp/dotnet/how-to-detect-clr-compilation?view=vs-2017
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #pragma managed(push,off)
 #endif
