@@ -14,7 +14,16 @@ license as described in the file LICENSE.
 #include <cstdio>
 #include <inttypes.h>
 #include <climits>
+
+#ifdef _M_CEE
+#pragma managed(push,off)
+#	undef _M_CEE 
 #include <thread>
+#	define _M_CEE 001
+#pragma managed(pop)
+#else 
+#include <thread>
+#endif 
 
 #include "v_array.h"
 #include "array_parameters.h"

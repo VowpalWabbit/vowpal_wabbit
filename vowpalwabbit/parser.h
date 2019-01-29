@@ -8,8 +8,17 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "example.h"
 
+#ifdef _M_CEE
+#pragma managed(push,off)
+#	undef _M_CEE
 #include <mutex>
 #include <condition_variable>
+#	define _M_CEE 001
+#pragma managed(pop)
+#else
+#include <mutex>
+#include <condition_variable>
+#endif
 
 struct vw;
 struct input_options;
@@ -70,7 +79,6 @@ bool examples_to_finish();
 
 //only call these from the library form:
 void initialize_parser_datastructures(vw& all);
-void release_parser_datastructures(vw& all);
 void adjust_used_index(vw& all);
 
 //parser control

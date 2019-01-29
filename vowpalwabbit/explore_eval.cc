@@ -201,7 +201,7 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
 
   data->all = &all;
 
-  if (options.was_supplied("multiplier") > 0)
+  if (options.was_supplied("multiplier"))
     data->fixed_multiplier = true;
   else
     data->multiplier = 1;

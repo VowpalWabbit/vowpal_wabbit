@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
@@ -147,7 +147,6 @@ void VowpalWabbitBase::InternalDispose()
   try
   { if (m_vw != nullptr)
     { reset_source(*m_vw, m_vw->num_bits);
-      release_parser_datastructures(*m_vw);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
       vw* vw_tmp = m_vw;
@@ -189,8 +188,6 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
 
     VW::save_predictor(*m_vw, mem_buf);
     mem_buf.flush();
-
-    release_parser_datastructures(*m_vw);
 
     // make sure don't try to free m_vw twice in case VW::finish throws.
     vw* vw_tmp = m_vw;
