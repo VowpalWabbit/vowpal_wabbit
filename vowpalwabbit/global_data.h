@@ -133,7 +133,7 @@ typedef v_hashmap< substring, features* > feature_dict;
 
 struct dictionary_info
 { char* name;
-  unsigned long long file_hash;
+  uint64_t file_hash;
   feature_dict* dict;
 };
 

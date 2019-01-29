@@ -97,9 +97,9 @@ bool ends_with(string const &fullString, string const &ending)
   }
 }
 
-unsigned long long hash_file_contents(io_buf *io, int f)
+uint64_t hash_file_contents(io_buf *io, int f)
 {
-  unsigned long long v = 5289374183516789128;
+  uint64_t v = 5289374183516789128;
   unsigned char buf[1024];
   while (true)
   {
@@ -166,7 +166,7 @@ void parse_dictionary_argument(vw& all, string str)
   if (fd < 0)
     THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed");
 
-  unsigned long long fd_hash = hash_file_contents(io, fd);
+  uint64_t fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
   if (!all.quiet)
