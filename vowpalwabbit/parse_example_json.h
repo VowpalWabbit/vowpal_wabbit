@@ -13,8 +13,18 @@ license as described in the file LICENSE.
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
 
+// Let MSVC know that it should not even try to compile this as managed
+#if (_MANAGED == 1) || (_M_CEE == 1)
+#pragma managed(push,off)
+#endif
+
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+
+#if (_MANAGED == 1) || (_M_CEE == 1)
+#pragma managed(pop)
+#endif
+
 #include "cb.h"
 #include "best_constant.h"
 #include <boost/algorithm/string.hpp>
