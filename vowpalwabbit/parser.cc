@@ -959,27 +959,28 @@ namespace VW
 example* get_example(parser* p)
 {
   std::unique_lock<std::mutex> lock(p->examples_lock);
-
-  if (p->end_parsed_examples != p->used_index)
+  while (true)
   {
-    size_t ring_index = p->used_index++ % p->ring_size;
-    if (!(p->examples+ring_index)->in_use)
-      cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
-    assert((p->examples+ring_index)->in_use);
-    return p->examples + ring_index;
-  }
-  else
-  {
-    if (!p->done)
+    if (p->end_parsed_examples != p->used_index)
     {
-      p->example_available.wait(lock);
-      return get_example(p);
+      size_t ring_index = p->used_index++ % p->ring_size;
+      if (!(p->examples + ring_index)->in_use)
+        cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
+      assert((p->examples + ring_index)->in_use);
+      return p->examples + ring_index;
     }
     else
     {
-      return nullptr;
+      if (!p->done)
+      {
+        p->example_available.wait(lock);
+      }
+      else
+      {
+        return nullptr;
+      }
     }
-  }
+  } 
 }
 
 float get_topic_prediction(example* ec, size_t i)

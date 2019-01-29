@@ -46,9 +46,11 @@ struct parser
   uint64_t used_index;
   bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
 
+  // Both example condition_variables use the same mutex.
   std::mutex examples_lock;
   std::condition_variable example_available;
   std::condition_variable example_unused;
+
   std::mutex output_lock;
   std::condition_variable output_done;
 
