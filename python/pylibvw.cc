@@ -43,7 +43,9 @@ const size_t pMULTICLASSPROBS = 7;
 void dont_delete_me(void*arg) { }
 
 vw_ptr my_initialize(string args)
-{ vw*foo = VW::initialize(args);
+{ if (args.find_first_of("--no_stdin") == string::npos)
+    args += " --no_stdin";
+  vw*foo = VW::initialize(args);
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
