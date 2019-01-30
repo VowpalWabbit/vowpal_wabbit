@@ -15,6 +15,17 @@ license as described in the file LICENSE.
 #include <inttypes.h>
 #include <climits>
 
+// Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
+#ifdef _M_CEE
+#pragma managed(push,off)
+#undef _M_CEE
+#include <thread>
+#define _M_CEE 001
+#pragma managed(pop)
+#else
+#include <thread>
+#endif
+
 #include "v_array.h"
 #include "array_parameters.h"
 #include "parse_primitives.h"
@@ -434,11 +445,8 @@ struct vw
 { shared_data* sd;
 
   parser* p;
-#ifndef _WIN32
-  pthread_t parse_thread;
-#else
-  HANDLE parse_thread;
-#endif
+  std::thread parse_thread;
+
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
