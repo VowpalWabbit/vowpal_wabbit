@@ -8,12 +8,11 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "example.h"
 
+// Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
 #pragma managed(push,off)
-#	undef _M_CEE
 #include <mutex>
 #include <condition_variable>
-#	define _M_CEE 001
 #pragma managed(pop)
 #else
 #include <mutex>
