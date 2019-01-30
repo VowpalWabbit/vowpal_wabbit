@@ -26,19 +26,23 @@ namespace CCB {
     //// The index of the decision for this label, should this be implicit?
     //uint32_t decision_id;
 
-    // This is not well defined, the probability of the action that was chosen for this decision?
-    float probability;
+    // Either probability for top action or for all actions in action set.
+    ACTION_SCORE::action_scores probabilities;
   };
 
-  enum example_type
+  enum example_type : uint8_t
   {
-    shared, action, decision
+    unset = 0,
+    shared = 1,
+    action = 2,
+    decision = 3
   };
 
   struct label {
     example_type type;
-    v_array<conditional_contexual_bandit_outcome> outcomes;
-    v_array<uint32_t> excluded_actions;
+    // Outcome may be unset.
+    conditional_contexual_bandit_outcome* outcome;
+    v_array<uint32_t> explicit_included_actions;
   };
 
   extern label_parser ccb_label_parser;

@@ -3,6 +3,8 @@
 #include "example.h"
 #include "global_data.h"
 
+#include <numeric>
+
 bool CCB::ec_is_example_header(example& ec)
 {
   return ec.l.conditional_contextual_bandit.type == example_type::shared;
@@ -69,29 +71,43 @@ namespace CCB {
 
   void cache_label(void* v, io_buf& cache)
   {
-    /*char* c;
-    CCB::label* ld = static_cast<CCB::label*>(v);
-    cache.buf_write(c, sizeof(size_t) + sizeof(cb_class) * ld->costs.size());
-    bufcache_label(ld, c);*/
+    //char* c;
+    //CCB::label* ld = static_cast<CCB::label*>(v);
+    //cache.buf_write(c, sizeof(uint8_t) + sizeof(bool) + sizeof(float) + sizeof(uint32_t) + sizeof(ACTION_SCORE::action_score) * ld->probabilities.size());
+
+    //// type
+    //*(uint8_t*)c = static_cast<uint8_t>(ld->type);
+    //c += sizeof(uint8_t);
+
+
+    //*(bool*)c = (ld->type);
+    //c += sizeof(uint8_t);
   }
 
   void default_label(void* v)
   {
     CCB::label* ld = static_cast<CCB::label*>(v);
-    ld->outcomes.clear();
-    ld->excluded_actions.clear();
+    ld->outcome = nullptr;
+    ld->explicit_included_actions = v_init<uint32_t>();
+    ld->type = example_type::unset;
   }
 
   bool test_label(void* v)
   {
     CCB::label* ld = static_cast<CCB::label*>(v);
-    return ld->outcomes.size() == 0;
+    return ld->outcome == nullptr;
   }
 
   void delete_label(void* v)
   {
     CCB::label* ld = static_cast<CCB::label*>(v);
-    ld->outcomes.delete_v();
+    if (ld->outcome)
+    {
+      ld->outcome->probabilities.delete_v();
+      delete ld->outcome;
+      ld->outcome = nullptr;
+    }
+    ld->explicit_included_actions.delete_v();
   }
 
   void copy_label(void* dst, void* src)
@@ -99,46 +115,63 @@ namespace CCB {
     CCB::label* ldD = static_cast<CCB::label*>(dst);
     CCB::label* ldS = static_cast<CCB::label*>(src);
 
-    copy_array(ldD->outcomes, ldS->outcomes);
+    // TODO copy outcome
+
+    copy_array(ldD->explicit_included_actions, ldS->explicit_included_actions);
     ldD->type = ldS->type;
   }
 
-  CCB::conditional_contexual_bandit_outcome parse_outcome(v_array<substring>& split_outcome)
+  ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, const substring& probability_str)
   {
-    if (split_outcome.size() != 3)
-      THROW("malformed cost specification: " << split_outcome);
+    auto action_id = static_cast<uint32_t>(int_of_substring(action_id_str));
+    auto probability = float_of_substring(probability_str);
+    if (nanpattern(probability))
+      THROW("error NaN probability: " << probability_str);
 
-    CCB::conditional_contexual_bandit_outcome ccb_outcome;
-
-    ccb_outcome.action_id = int_of_substring(split_outcome[0]);
-    ccb_outcome.cost = float_of_substring(split_outcome[1]);
-    ccb_outcome.probability = float_of_substring(split_outcome[2]);
-
-    if (nanpattern(ccb_outcome.cost))
-      THROW("error NaN cost: " << split_outcome[1]);
-
-    if (nanpattern(ccb_outcome.probability))
-      THROW("error NaN probabilit: " << split_outcome[1]);
-
-    if (ccb_outcome.probability > 1.0)
+    if (probability > 1.0)
     {
       std::cerr << "invalid probability > 1 specified for an outcome, resetting to 1.\n";
-      ccb_outcome.probability = 1.0;
+      probability = 1.0;
     }
-    if (ccb_outcome.probability < 0.0)
+    if (probability < 0.0)
     {
       std::cerr << "invalid probability < 0 specified for an outcome, resetting to 0.\n";
-      ccb_outcome.probability = .0;
+      probability = .0;
     }
 
-    return ccb_outcome;
+    return { action_id , probability };
   }
 
-  void parse_exclusions(CCB::label* ld, v_array<substring>& split_exclusions)
+  //<action>:<probability>:<cost>,<action>:<probability,<action>:<probability>,…
+  CCB::conditional_contexual_bandit_outcome* parse_outcome(v_array<substring>& split_outcome)
   {
-    for (const auto& exclusion : split_exclusions)
+    auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
+    ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
+
+    auto pred_prob = convert_to_score(split_outcome[0], split_outcome[1]);
+    ccb_outcome.probabilities.push_back(pred_prob);
+    ccb_outcome.action_id = pred_prob.action;
+
+    ccb_outcome.cost = float_of_substring(split_outcome[2]);
+    if (nanpattern(ccb_outcome.cost))
+      THROW("error NaN cost: " << split_outcome[2]);
+
+    auto action_scores = v_init<substring>();
+    for (int i = 3; i < split_outcome.size(); i++)
     {
-      ld->excluded_actions.push_back(int_of_substring(exclusion));
+      tokenize(',', split_outcome[i], action_scores);
+      if (action_scores.size() != 2) THROW("Must be action probability pairs");
+      ccb_outcome.probabilities.push_back(convert_to_score(action_scores[0], action_scores[1]));
+    }
+
+    return &ccb_outcome;
+  }
+
+  void parse_explicit_inclusions(CCB::label* ld, v_array<substring>& split_inclusions)
+  {
+    for (const auto& inclusion : split_inclusions)
+    {
+      ld->explicit_included_actions.push_back(int_of_substring(inclusion));
     }
   }
 
@@ -146,41 +179,70 @@ namespace CCB {
   {
     CCB::label* ld = static_cast<CCB::label*>(v);
 
-    if(words.size() < 1) THROW("ccb labels may not be empty");
-
-    if (substring_equal(words[0], "shared"))
+    if(words.size() < 2) THROW("ccb labels may not be empty");
+    if (!substring_equal(words[0], "ccb"))
     {
-      if(words.size() > 1) THROW("shared labels may not have a cost");
+      THROW("ccb labels require the first word to be ccb");
+    }
+
+    auto type = words[1];
+    if (substring_equal(type, "shared"))
+    {
+      if(words.size() > 2) THROW("shared labels may not have a cost");
       ld->type = CCB::example_type::shared;
     }
-    else if (substring_equal(words[0], "action"))
+    else if (substring_equal(type, "action"))
     {
-      if (words.size() > 1) THROW("action labels may not have a cost");
+      if (words.size() > 2) THROW("action labels may not have a cost");
       ld->type = CCB::example_type::action;
     }
-    else if (substring_equal(words[0], "decision"))
+    else if (substring_equal(type, "decision"))
     {
-      if (words.size() > 3) THROW("decision label can only have a type cost and exclude list");
+      if (words.size() > 4) THROW("ccb decision label can only have a type cost and exclude list");
       ld->type = CCB::example_type::decision;
 
       // Skip the first word as that is the type.
-      for (auto i = 1; i < words.size(); i++)
+      for (auto i = 2; i < words.size(); i++)
       {
         tokenize(':', words[i], p->parse_name);
         if (p->parse_name.size() > 1)
         {
-          ld->outcomes.push_back(parse_outcome(p->parse_name));
+          if (ld->outcome != nullptr)
+          {
+            THROW("There may be only 1 outcome associated with a decision.")
+          }
+
+          ld->outcome = parse_outcome(p->parse_name);
         }
         else
         {
           tokenize(',', words[i], p->parse_name);
-          parse_exclusions(ld, p->parse_name);
+          parse_explicit_inclusions(ld, p->parse_name);
+        }
+      }
+
+      // If a full distribution has been given, check if it sums to 1, otherwise throw.
+      if (ld->outcome && ld->outcome->probabilities.size() > 1)
+      {
+        float total_pred =
+          std::accumulate(ld->outcome->probabilities.begin(),
+            ld->outcome->probabilities.end(),
+            0.f,
+            [](float result_so_far, ACTION_SCORE::action_score action_pred)
+            {
+              return result_so_far + action_pred.score;
+            });
+
+        // TODO do a proper comparison here.
+        if (total_pred > 1.1f || total_pred < 0.9f)
+        {
+          THROW("When providing all predicition probabilties they must add up to 1.f");
         }
       }
     }
     else
     {
-      THROW("unknown label type: " << words[0]);
+      THROW("unknown label type: " << type);
     }
   }
 
