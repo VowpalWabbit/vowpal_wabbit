@@ -46,6 +46,7 @@ struct parser
   bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
 
   // Both example condition_variables use the same mutex.
+  // examples_lock protects: p->done, ec.in_use, p->begin_parsed_examples, p->end_parse_examples, and p->used_index.
   std::mutex examples_lock;
   std::condition_variable example_available;
   std::condition_variable example_unused;
