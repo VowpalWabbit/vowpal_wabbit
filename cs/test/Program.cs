@@ -4,6 +4,8 @@ using VW;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using cs_unittest;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace cs_test
 {
@@ -22,10 +24,47 @@ namespace cs_test
             //RunFlatExampleTestEx();
             //RunLDAPredict();
             //RunVWParse_and_VWLearn();
-            RunVWTest();
+            if(args.Length == 0 || args[0] == "-tests")
+                RunVWTest();
             //RunUnitTests();
+            if (args.Length > 0)
+            {
+                if (args[0] == "-parallel")
+                    RunParallelVw();
+            }
         }
 
+        static void RunParallelVw()
+        {
+            int instances = 20;
+            int samples = 200;
+            //Setup some vw-instances
+            List<VowpalWabbit> vwInstances = new List<VowpalWabbit>();
+            for (int i = 0; i < instances; i++)
+            {
+                vwInstances.Add(new VowpalWabbit($"--oaa 3 --cache_file {i}.cache -k --early_terminate 10 --passes 10"));
+            }
+
+            string ex1 = "1 | some features here",
+                   ex2 = "2 | some other features",
+                   ex3 = "3 | some more";
+
+            //Prepare some data
+            for (int i = 0; i < samples; i++)
+            {
+                foreach (var vw in vwInstances)
+                {
+                    vw.Learn(ex1);
+                    vw.Learn(ex2);
+                    vw.Learn(ex3);
+                }
+            }
+            Console.WriteLine("trained models, now closing");
+
+            //The Part causing the Exception
+            var res = Parallel.ForEach(vwInstances, vw => vw.RunMultiPass());
+            Console.WriteLine("done {0}", res.IsCompleted);
+        }
         private static void RunUnitTests()
         {
             TestCbAdfClass tw = new TestCbAdfClass();

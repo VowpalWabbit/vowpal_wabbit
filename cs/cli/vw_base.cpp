@@ -60,7 +60,9 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         m_model->IncrementReference();
       }
       else
-      { if (settings->ModelStream == nullptr)
+      { if (!settings->Arguments->Contains("--no_stdin"))
+		  string += " --no_stdin";
+	    if (settings->ModelStream == nullptr)
         { if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
             string.append(" --quiet");
 
@@ -68,8 +70,6 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         }
         else
         { clr_io_buf model(settings->ModelStream);
-          if (!settings->Arguments->Contains("--no_stdin"))
-            string += " --no_stdin";
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
           delete settings->ModelStream;
 		  settings->ModelStream = nullptr;
@@ -173,7 +173,7 @@ VowpalWabbitArguments^ VowpalWabbitBase::Arguments::get()
 
 void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] String^ args)
 { if (m_settings->ParallelOptions != nullptr)
-  { throw gcnew NotSupportedException("Cannot reload model if AllRecude is enabled.");
+  { throw gcnew NotSupportedException("Cannot reload model if AllReduce is enabled.");
   }
 
   clr_io_memory_buf mem_buf;

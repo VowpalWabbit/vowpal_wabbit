@@ -13,8 +13,20 @@ license as described in the file LICENSE.
 //#define RAPIDJSON_SIMD
 //#define RAPIDJSON_SSE42
 
+// Let MSVC know that it should not even try to compile RapidJSON as managed
+// - pragma documentation: https://docs.microsoft.com/en-us/cpp/preprocessor/managed-unmanaged?view=vs-2017
+// - /clr compilation detection: https://docs.microsoft.com/en-us/cpp/dotnet/how-to-detect-clr-compilation?view=vs-2017
+#if (_MANAGED == 1) || (_M_CEE == 1)
+#pragma managed(push,off)
+#endif
+
 #include <rapidjson/reader.h>
 #include <rapidjson/error/en.h>
+
+#if (_MANAGED == 1) || (_M_CEE == 1)
+#pragma managed(pop)
+#endif
+
 #include "cb.h"
 #include "best_constant.h"
 #include <boost/algorithm/string.hpp>
