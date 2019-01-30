@@ -18,11 +18,13 @@ license as described in the file LICENSE.
 // Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
 #pragma managed(push,off)
+#undef _M_CEE
 #include <thread>
+#define _M_CEE 001
 #pragma managed(pop)
-#else 
+#else
 #include <thread>
-#endif 
+#endif
 
 #include "v_array.h"
 #include "array_parameters.h"
