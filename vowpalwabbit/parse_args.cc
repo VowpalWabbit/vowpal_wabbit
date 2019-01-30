@@ -1693,7 +1693,7 @@ void finish(vw& all, bool delete_all)
   finalize_source(all.p);
   all.p->parse_name.clear();
   all.p->parse_name.delete_v();
-  free(all.p);
+  delete all.p;
   bool seeded;
   if (all.weights.seeded() > 0)
     seeded = true;
