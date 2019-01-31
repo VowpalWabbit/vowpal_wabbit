@@ -16,40 +16,55 @@ void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, boo
   throw std::runtime_error("CCB:print_update not implemented");
 }
 
-//char* bufread_label(CB::label* ld, char* c, io_buf& cache)
-//{
-//  size_t num = *(size_t*)c;
-//  ld->costs.clear();
-//  c += sizeof(size_t);
-//  size_t total = sizeof(cb_class) * num;
-//  if (cache.buf_read(c, total) < total)
-//  {
-//    cout << "error in demarshal of cost data" << endl;
-//    return c;
-//  }
-//  for (size_t i = 0; i < num; i++)
-//  {
-//    cb_class temp = *(cb_class*)c;
-//    c += sizeof(cb_class);
-//    ld->costs.push_back(temp);
-//  }
-//
-//  return c;
-//}
+template <typename T>
+T read_object(io_buf& cache)
+{
+  char* c;
+  size_t next_read_size = sizeof(T);
+  if (cache.buf_read(c, next_read_size) < next_read_size)
+    THROW("Failed to read CCB label cache");
+  return *reinterpret_cast<T*>(c);
+}
 
 namespace CCB {
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    /*CCB::label* ld = static_cast<CCB::label*>(v);
-    ld->costs.clear();
-    char* c;
-    size_t total = sizeof(size_t);
-    if (cache.buf_read(c, total) < total)
-      return 0;
-    bufread_label(ld, c, cache);
+    CCB::label* ld = static_cast<CCB::label*>(v);
+    size_t read_count = 0;
 
-    return total;*/
-    return 0;
+    ld->type = static_cast<example_type>(read_object<uint8_t>(cache));
+    read_count += sizeof(uint8_t);
+
+    bool is_outcome_present = read_object<bool>(cache);
+    read_count += sizeof(bool);
+
+    if (is_outcome_present)
+    {
+      ld->outcome = new CCB::conditional_contexual_bandit_outcome();
+      ld->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
+
+      ld->outcome->cost = read_object<float>(cache);
+      read_count += sizeof(float);
+      auto size_probs = read_object<size_t>(cache);
+      read_count += sizeof(size_t);
+
+      for(auto i = 0; i < size_probs; i++)
+      {
+        ld->outcome->probabilities.push_back(read_object<ACTION_SCORE::action_score>(cache));
+        read_count += sizeof(ACTION_SCORE::action_score);
+      }
+    }
+
+    auto size_includes = read_object<size_t>(cache);
+    read_count += sizeof(size_t);
+
+    for (auto i = 0; i < size_includes; i++)
+    {
+      ld->explicit_included_actions.push_back(read_object<uint32_t>(cache));
+      read_count += sizeof(uint32_t);
+    }
+
+    return read_count;
   }
 
   float ccb_weight(void*)
@@ -57,31 +72,51 @@ namespace CCB {
     return 1.;
   }
 
-  //char* bufcache_label(CB::label * ld, char* c)
-  //{
-  //  *(size_t*)c = ld->costs.size();
-  //  c += sizeof(size_t);
-  //  for (size_t i = 0; i < ld->costs.size(); i++)
-  //  {
-  //    *(cb_class*)c = ld->costs[i];
-  //    c += sizeof(cb_class);
-  //  }
-  //  return c;
-  //}
-
   void cache_label(void* v, io_buf& cache)
   {
-    //char* c;
-    //CCB::label* ld = static_cast<CCB::label*>(v);
-    //cache.buf_write(c, sizeof(uint8_t) + sizeof(bool) + sizeof(float) + sizeof(uint32_t) + sizeof(ACTION_SCORE::action_score) * ld->probabilities.size());
+    char* c;
+    CCB::label* ld = static_cast<CCB::label*>(v);
+    size_t size =
+      sizeof(uint8_t) // type
+      + sizeof(bool) // outcome exists?
+      + (ld->outcome == nullptr ? 0 :
+        sizeof(float) // cost
+        + sizeof(size_t) // probabilities size
+        + sizeof(ACTION_SCORE::action_score) * ld->outcome->probabilities.size()) //probabilities
+      + sizeof(size_t) // explicit_included_actions size
+      + sizeof(uint32_t) * ld->explicit_included_actions.size();
 
-    //// type
-    //*(uint8_t*)c = static_cast<uint8_t>(ld->type);
-    //c += sizeof(uint8_t);
+    cache.buf_write(c, size);
 
+    *(uint8_t*)c = static_cast<uint8_t>(ld->type);
+    c += sizeof(uint8_t);
 
-    //*(bool*)c = (ld->type);
-    //c += sizeof(uint8_t);
+    *(bool*)c = ld->outcome != nullptr;
+    c += sizeof(bool);
+
+    if (ld->outcome != nullptr)
+    {
+      *(float*)c = ld->outcome->cost;
+      c += sizeof(float);
+
+      *(size_t*)c = ld->outcome->probabilities.size();
+      c += sizeof(size_t);
+
+      for (const auto& score : ld->outcome->probabilities)
+      {
+        *(ACTION_SCORE::action_score*)c = score;
+        c += sizeof(ACTION_SCORE::action_score);
+      }
+    }
+
+    *(size_t*)c = ld->explicit_included_actions.size();
+    c += sizeof(size_t);
+
+    for (const auto& included_action : ld->explicit_included_actions)
+    {
+      *(uint32_t*)c = included_action;
+      c += sizeof(uint32_t);
+    }
   }
 
   void default_label(void* v)
@@ -112,13 +147,20 @@ namespace CCB {
 
   void copy_label(void* dst, void* src)
   {
-    CCB::label* ldD = static_cast<CCB::label*>(dst);
-    CCB::label* ldS = static_cast<CCB::label*>(src);
+    CCB::label* ldDst = static_cast<CCB::label*>(dst);
+    CCB::label* ldSrc = static_cast<CCB::label*>(src);
 
-    // TODO copy outcome
+    if (ldSrc->outcome)
+    {
+      ldDst->outcome = new CCB::conditional_contexual_bandit_outcome();
+      ldDst->outcome->probabilities = v_init<ACTION_SCORE::action_score>();
 
-    copy_array(ldD->explicit_included_actions, ldS->explicit_included_actions);
-    ldD->type = ldS->type;
+      ldDst->outcome->cost = ldSrc->outcome->cost;
+      copy_array(ldDst->outcome->probabilities, ldSrc->outcome->probabilities);
+    }
+
+    copy_array(ldDst->explicit_included_actions, ldSrc->explicit_included_actions);
+    ldDst->type = ldSrc->type;
   }
 
   ACTION_SCORE::action_score convert_to_score(const substring& action_id_str, const substring& probability_str)
@@ -147,10 +189,7 @@ namespace CCB {
   {
     auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
     ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
-
-    auto pred_prob = convert_to_score(split_outcome[0], split_outcome[1]);
-    ccb_outcome.probabilities.push_back(pred_prob);
-    ccb_outcome.action_id = pred_prob.action;
+    ccb_outcome.probabilities.push_back(convert_to_score(split_outcome[0], split_outcome[1]));
 
     ccb_outcome.cost = float_of_substring(split_outcome[2]);
     if (nanpattern(ccb_outcome.cost))

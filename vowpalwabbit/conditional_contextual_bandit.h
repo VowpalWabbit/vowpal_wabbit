@@ -20,13 +20,11 @@ namespace CCB {
     // The cost of this class
     float cost;
 
-    // The action chosen for this decision
-    uint32_t action_id;
-
-    //// The index of the decision for this label, should this be implicit?
+    // The index of the decision for this label, should this be implicit?
     //uint32_t decision_id;
 
     // Either probability for top action or for all actions in action set.
+    // Top action is always in first position.
     ACTION_SCORE::action_scores probabilities;
   };
 
