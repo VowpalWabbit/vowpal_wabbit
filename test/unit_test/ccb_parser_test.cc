@@ -59,7 +59,9 @@ BOOST_AUTO_TEST_CASE(ccb_parse_label)
   BOOST_CHECK_EQUAL(label.type, CCB::example_type::decision);
 
   label = parse_label(&p, "ccb decision 1:0.5:-2.0:2,0.25:3,0.25 3,4");
-  BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 0);
+  BOOST_CHECK_EQUAL(label.explicit_included_actions.size(), 2);
+  BOOST_CHECK_EQUAL(label.explicit_included_actions[0], 3);
+  BOOST_CHECK_EQUAL(label.explicit_included_actions[1], 4);
   BOOST_CHECK_CLOSE(label.outcome->cost, -2.0f, .0001f);
   BOOST_CHECK_EQUAL(label.outcome->probabilities.size(), 3);
   BOOST_CHECK_EQUAL(label.outcome->probabilities[0].action, 1);
