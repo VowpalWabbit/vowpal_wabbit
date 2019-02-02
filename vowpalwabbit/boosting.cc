@@ -29,14 +29,14 @@ using namespace VW::config;
 
 inline float sign(float w) { if (w <= 0.) return -1.; else  return 1.;}
 
-long long choose(long long n, long long k)
+int64_t choose(int64_t n, int64_t k)
 {
   if (k > n) return 0;
   if (k<0) return 0;
   if (k==n) return 1;
   if (k==0 && n!=0) return 1;
-  long long r = 1;
-  for (long long d = 1; d <= k; ++d)
+  int64_t r = 1;
+  for (int64_t d = 1; d <= k; ++d)
   {
     r *= n--;
     r /= d;
@@ -50,7 +50,7 @@ struct boosting
   float gamma;
   string alg;
   vw* all;
-  std::vector<std::vector<long long> > C;
+  std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
   int t;
@@ -77,13 +77,13 @@ void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
     {
 
       float k = floorf((float)(o.N-i-s)/2);
-      long long c;
+      int64_t c;
       if (o.N-(i+1)<0) c=0;
       else if (k > o.N-(i+1)) c=0;
       else if (k < 0) c = 0;
-      else if (o.C[o.N-(i+1)][(long long)k] != -1)
-        c = o.C[o.N-(i+1)][(long long)k];
-      else { c = choose(o.N-(i+1),(long long)k); o.C[o.N-(i+1)][(long long)k] = c; }
+      else if (o.C[o.N-(i+1)][(int64_t)k] != -1)
+        c = o.C[o.N-(i+1)][(int64_t)k];
+      else { c = choose(o.N-(i+1),(int64_t)k); o.C[o.N-(i+1)][(int64_t)k] = c; }
 
       float w = c * (float)pow((double)(0.5 + o.gamma), (double)k)
                 * (float)pow((double)0.5 - o.gamma,(double)(o.N-(i+1)-k));
@@ -403,8 +403,8 @@ LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
   if (!all.quiet)
     cerr << "Gamma = " << data->gamma << endl;
 
-  data->C = std::vector<std::vector<long long> >(data->N,
-           std::vector<long long>(data->N,-1));
+  data->C = std::vector<std::vector<int64_t> >(data->N,
+           std::vector<int64_t>(data->N,-1));
   data->t = 0;
   data->all = &all;
   data->alpha = std::vector<float>(data->N,0);

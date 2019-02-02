@@ -74,7 +74,6 @@ VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
 
 VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
 { vw * pointer = static_cast<vw*>(handle);
-  release_parser_datastructures(*pointer);
   VW::finish(*pointer);
 }
 
