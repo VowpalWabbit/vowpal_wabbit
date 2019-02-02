@@ -43,7 +43,9 @@ const size_t pMULTICLASSPROBS = 7;
 void dont_delete_me(void*arg) { }
 
 vw_ptr my_initialize(string args)
-{ vw*foo = VW::initialize(args);
+{ if (args.find_first_of("--no_stdin") == string::npos)
+    args += " --no_stdin";
+  vw*foo = VW::initialize(args);
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
@@ -263,7 +265,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 { // warning: assumes namespace exists!
   char ns_str[2] = { (char)ns, 0 };
-  uint32_t ns_hash = VW::hash_space(*vw, ns_str);
+  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0; float sum_sq = 0.;
   for (ssize_t i=0; i<len(a); i++)
   { feature f = { 1., 0 };
