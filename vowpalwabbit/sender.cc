@@ -86,13 +86,11 @@ void end_examples(sender& s)
 {
   // close our outputs to signal finishing.
   while (s.received_index != s.sent_index) receive_result(s);
-  shutdown(s.buf->files[0], SHUT_WR);
+  shutdown(s.sd, SHUT_WR);
 }
 
 void finish(sender& s)
 {
-  s.buf->files.delete_v();
-  s.buf->space.delete_v();
   free(s.delay_ring);
   delete s.buf;
 }
