@@ -195,7 +195,7 @@ void finish(mwt& c)
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
 
   stringstream msg;

@@ -642,7 +642,7 @@ void finish(stagewise_poly &poly)
 
 void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
 {
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     stringstream msg;
     bin_text_read_write_fixed(

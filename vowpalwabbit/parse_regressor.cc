@@ -192,7 +192,7 @@ void save_load_header(
 
   try
   {
-    if (model_file.files.size() > 0)
+    if (model_file.num_files() > 0)
     {
       size_t bytes_read_write = 0;
 

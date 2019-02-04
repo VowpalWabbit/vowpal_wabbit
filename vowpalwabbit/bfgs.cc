@@ -1069,7 +1069,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
   // bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
   bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     stringstream msg;
     msg << ":" << reg_vector << "\n";

@@ -147,7 +147,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     initialize_regressor(*s.all);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = s.all->save_resume;
     stringstream msg;

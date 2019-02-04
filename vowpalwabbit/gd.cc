@@ -973,7 +973,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       VW::set_weight(all, constant, 0, g.initial_constant);
   }
 
-  if (model_file.files.size() > 0)
+  if (model_file.num_files() > 0)
   {
     bool resume = all.save_resume;
     stringstream msg;

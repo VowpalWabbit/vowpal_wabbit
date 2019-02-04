@@ -201,7 +201,7 @@ void reset_source(vw& all, size_t numbits)
     }
     else
     {
-      for (size_t i = 0; i < input->files.size(); i++)
+      for (size_t i = 0; i < input->num_files(); i++)
       {
         input->reset_file(input->files[i]);
         if (cache_numbits(input, input->files[i]) < numbits)
@@ -218,7 +218,7 @@ void finalize_source(parser* p)
 #else
   int f = fileno(stdin);
 #endif
-  while (!p->input->files.empty() && p->input->files.last() == f) p->input->files.pop();
+  while (p->input->num_files() > 0 && p->input->files.last() == f) p->input->files.pop();
   p->input->close_files();
 
   delete p->input;
@@ -231,7 +231,7 @@ void finalize_source(parser* p)
 void make_write_cache(vw& all, string& newname, bool quiet)
 {
   io_buf* output = all.p->output;
-  if (output->files.size() != 0)
+  if (output->num_files() != 0)
   {
     all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
@@ -512,7 +512,7 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   }
   else
   {
-    if (all.p->input->files.size() > 0)
+    if (all.p->input->num_files() > 0)
     {
       if (!quiet)
         all.trace_message << "ignoring text input in favor of cache input" << endl;
@@ -573,9 +573,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
   if (passes > 1 && !all.p->resettable)
     THROW("need a cache file for multiple passes : try using --cache_file");
 
-  all.p->input->count = all.p->input->files.size();
+  all.p->input->count = all.p->input->num_files();
   if (!quiet && !all.daemon)
-    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->num_files() << endl;
 }
 
 void lock_done(parser& p)

@@ -196,7 +196,7 @@ class io_buf
 
   virtual void flush()
   {
-    if (files.size() > 0)
+    if (num_files() > 0)
     {
       if (write_file(files[0], space.begin(), head - space.begin()) != (int)(head - space.begin()))
         std::cerr << "error, failed to write example\n";
@@ -206,7 +206,7 @@ class io_buf
 
   virtual bool close_file()
   {
-    if (files.size() > 0)
+    if (num_files() > 0)
     {
       close_file_or_socket(files.pop());
       return true;

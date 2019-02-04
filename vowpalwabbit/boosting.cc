@@ -290,7 +290,7 @@ void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, examp
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
@@ -360,7 +360,7 @@ void return_example(vw& all, boosting& /* a */, example& ec)
 
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.files.size() == 0)
+  if (model_file.num_files() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
