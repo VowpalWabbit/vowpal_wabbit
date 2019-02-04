@@ -265,7 +265,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 { // warning: assumes namespace exists!
   char ns_str[2] = { (char)ns, 0 };
-  uint32_t ns_hash = VW::hash_space(*vw, ns_str);
+  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0; float sum_sq = 0.;
   for (ssize_t i=0; i<len(a); i++)
   { feature f = { 1., 0 };
