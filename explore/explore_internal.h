@@ -35,7 +35,7 @@ namespace exploration
   }
 
  template<typename It>
-  int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
+  int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pdf_first, It pdf_last, std::random_access_iterator_tag /* pdf_tag */)
   {
     if (pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
@@ -65,7 +65,7 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, std::input_iterator_tag scores_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
+  int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, std::input_iterator_tag /* scores_tag */, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag /* pdf_tag */)
   {
     if (scores_last < scores_first || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
@@ -118,7 +118,7 @@ namespace exploration
   }
 
   template<typename InputIt, typename OutputIt>
-  int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input_iterator_tag top_actions_tag, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag pdf_tag)
+  int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input_iterator_tag /* top_actions_tag */, OutputIt pdf_first, OutputIt pdf_last, std::random_access_iterator_tag /* pdf_tag */)
   {
     // iterators don't support <= in general
     if (pdf_first == pdf_last || pdf_last < pdf_first)
@@ -154,7 +154,7 @@ namespace exploration
   }
 
   template<typename It>
-  int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag pdf_tag)
+  int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pdf_first, It pdf_last, std::random_access_iterator_tag /* pdf_tag */)
   {
     // iterators don't support <= in general
     if (pdf_first == pdf_last || pdf_last < pdf_first)
@@ -230,7 +230,7 @@ namespace exploration
   }
 
   template<typename It>
-  int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag pdf_category)
+  int sample_after_normalizing(uint64_t seed, It pdf_first, It pdf_last, uint32_t& chosen_index, std::input_iterator_tag /* pdf_category */)
   {
     if (pdf_first == pdf_last || pdf_last < pdf_first)
       return E_EXPLORATION_BAD_RANGE;
@@ -299,7 +299,7 @@ namespace exploration
   }
 
   template<typename ActionIt>
-  int swap_chosen(ActionIt action_first, ActionIt action_last, std::forward_iterator_tag action_category, uint32_t chosen_index)
+  int swap_chosen(ActionIt action_first, ActionIt action_last, std::forward_iterator_tag /* action_category */, uint32_t chosen_index)
   {
     if ( action_last < action_first )
       return E_EXPLORATION_BAD_RANGE;

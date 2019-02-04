@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "baseline.h"
 
 //TODO: extend to handle CSOAA_LDF and WAP_LDF
-LEARNER::base_learner* cb_algs_setup(arguments& arg);
+LEARNER::base_learner* cb_algs_setup(VW::config::options_i& options, vw& all);
 
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1

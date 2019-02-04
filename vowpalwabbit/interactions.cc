@@ -1,6 +1,10 @@
 #include "interactions.h"
+
 #include "vw_exception.h"
+#include <algorithm>
+
 using namespace std;
+
 namespace INTERACTIONS
 {
 
@@ -121,13 +125,13 @@ void sort_and_filter_duplicate_interactions(std::vector<std::string>& vec, bool 
     std::sort(std::begin(sorted_i), std::end(sorted_i));
     vec_sorted.push_back(make_pair(sorted_i, i));
   }
-      
+
   if (filter_duplicates)
   {
-    // remove duplicates 
-    sort(vec_sorted.begin(), vec_sorted.end(), 
+    // remove duplicates
+    sort(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first < b.first; });
-    auto last = unique(vec_sorted.begin(), vec_sorted.end(), 
+    auto last = unique(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
@@ -135,7 +139,7 @@ void sort_and_filter_duplicate_interactions(std::vector<std::string>& vec, bool 
     removed_cnt = vec.size() - vec_sorted.size();
 
     // restore original order
-    sort(vec_sorted.begin(), vec_sorted.end(), 
+    sort(vec_sorted.begin(), vec_sorted.end(),
       [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) { return a.second < b.second; });
   }
 
@@ -184,7 +188,7 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t )
 #endif
 
 // lookup table of factorials up tu 21!
-long long int fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
+int64_t fast_factorial[] = {1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000,
                                   20922789888000,355687428096000,6402373705728000,121645100408832000,2432902008176640000
                                  };
 const size_t size_fast_factorial = sizeof(fast_factorial)/sizeof(*fast_factorial);
@@ -334,7 +338,7 @@ void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, 
           size_t n;
           if (cnt_ft_value_non_1 == 0) // number of generated simple combinations is C(n,k)
           {
-            n = (size_t)choose((long long)ft_size, (long long)order_of_inter);
+            n = (size_t)choose((int64_t)ft_size, (int64_t)order_of_inter);
           }
           else
           {

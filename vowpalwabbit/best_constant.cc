@@ -23,15 +23,7 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
 
   if ( (label1_cnt + label2_cnt) <= 0.) return false;
 
-
-  po::variables_map& vm = all.opts_n_args.vm;
-
-  string funcName;
-  if(vm.count("loss_function"))
-    funcName = vm["loss_function"].as<string>();
-  else
-    funcName = "squared";
-
+  auto funcName = all.loss->getType();
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0 || funcName.compare("classic") == 0)
     best_constant = (float) all.sd->weighted_labels / (float) (all.sd->weighted_labeled_examples);
   else if (all.sd->is_more_than_two_labels_observed)
@@ -62,8 +54,9 @@ bool get_best_constant(vw& all, float& best_constant, float& best_constant_loss)
   {
 
     float tau = 0.5;
-    if(vm.count("quantile_tau"))
-      tau = vm["quantile_tau"].as<float>();
+
+    if(all.options->was_supplied("quantile_tau"))
+      tau =  all.options->get_typed_option<float>("quantile_tau").value();
 
     float q = tau*(label1_cnt + label2_cnt);
     if (q < label2_cnt) best_constant = label2;

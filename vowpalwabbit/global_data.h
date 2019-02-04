@@ -13,8 +13,18 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <cstdio>
 #include <inttypes.h>
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
+#include <climits>
+
+// Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
+#ifdef _M_CEE
+#pragma managed(push,off)
+#undef _M_CEE
+#include <thread>
+#define _M_CEE 001
+#pragma managed(pop)
+#else
+#include <thread>
+#endif
 
 #include "v_array.h"
 #include "array_parameters.h"
@@ -29,7 +39,8 @@ namespace po = boost::program_options;
 #include "hash.h"
 #include "crossplat_compat.h"
 #include "error_reporting.h"
-#include "parser_helper.h"
+
+#include "options.h"
 
 struct version_struct
 { int32_t major;
@@ -133,11 +144,11 @@ typedef v_hashmap< substring, features* > feature_dict;
 
 struct dictionary_info
 { char* name;
-  unsigned long long file_hash;
+  uint64_t file_hash;
   feature_dict* dict;
 };
 
-inline void deleter(substring ss, uint64_t label)
+inline void deleter(substring ss, uint64_t /* label */)
 { free_it(ss.begin); }
 
 class namedlabels
@@ -434,11 +445,8 @@ struct vw
 { shared_data* sd;
 
   parser* p;
-#ifndef _WIN32
-  pthread_t parse_thread;
-#else
-  HANDLE parse_thread;
-#endif
+  std::thread parse_thread;
+
   AllReduceType all_reduce_type;
   AllReduce* all_reduce;
 
@@ -480,15 +488,24 @@ struct vw
 
   version_struct model_file_ver;
   double normalized_sum_norm_x;
-  bool vw_is_main;  // true if vw is executable; false in library mode
+  bool vw_is_main = false;  // true if vw is executable; false in library mode
 
-  arguments opts_n_args;
+  //error reporting
+  vw_ostream trace_message;
+
+  // Flag used when VW internally manages lifetime of options object.
+  bool should_delete_options = false;
+  VW::config::options_i* options;
 
   void* /*Search::search*/ searchstr;
 
   uint32_t wpp;
 
   int stdout_fileno;
+
+  std::vector<std::string> initial_regressors;
+
+  std::string feature_mask;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
@@ -523,7 +540,7 @@ struct vw
   std::vector<std::string> limit_strings; // descriptor of feature limits
   uint32_t limit[256];//count to limit features by
   uint64_t affix_features[256]; // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  bool     spelling_features[256]; // generate spelling features for which namespace
+  bool spelling_features[256]; // generate spelling features for which namespace
   std::vector<std::string> dictionary_path;  // where to look for dictionaries
   std::vector<feature_dict*> namespace_dictionaries[256]; // each namespace has a list of dictionaries attached to it
   std::vector<dictionary_info> loaded_dictionaries; // which dictionaries have we loaded from a file to memory?
@@ -559,7 +576,7 @@ struct vw
 
   size_t length () { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner* (*)(arguments&)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.

@@ -9,7 +9,9 @@ license as described in the file LICENSE.
 
 #include "reductions.h"
 #include "vw.h"
+
 using namespace std;
+using namespace VW::config;
 
 typedef pair<float, v_array<char> > scored_example;
 
@@ -101,13 +103,19 @@ void finish(topk& d)
   d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples >();
 }
 
-LEARNER::base_learner* topk_setup(arguments& arg)
+LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<topk>();
-  if (arg.new_options("Top K").critical("top", data->B, "top k recommendation").missing())
+
+  option_group_definition new_options("Top K");
+  new_options
+    .add(make_option("top", data->B).keep().help("top k recommendation"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("top"))
     return nullptr;
 
-  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(arg)), predict_or_learn<true>,
+  LEARNER::learner<topk,example>& l = init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>,
                               predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

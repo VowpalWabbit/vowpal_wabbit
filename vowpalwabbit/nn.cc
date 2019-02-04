@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 const float hidden_min_activation = -3;
 const float hidden_max_activation = 3;
@@ -409,47 +410,52 @@ void finish(nn& n)
   VW::dealloc_example(nullptr, n.outputweight);
 }
 
-base_learner* nn_setup(arguments& arg)
+base_learner* nn_setup(options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
-  if (arg.new_options("Neural Network")
-      .critical("nn", n->k, "Sigmoidal feedforward network with <k> hidden units")
-      .keep(n->inpass, "inpass", "Train or test sigmoidal feedforward network with input passthrough.")
-      .keep(n->multitask, "multitask", "Share hidden layer across all reduced tasks.")
-      .keep(n->dropout, "dropout", "Train or test sigmoidal feedforward network using dropout.")
-      ("meanfield", "Train or test sigmoidal feedforward network using mean field.").missing())
+  bool meanfield = false;
+  option_group_definition new_options("Neural Network");
+  new_options
+    .add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
+    .add(make_option("inpass", n->inpass).keep().help("Train or test sigmoidal feedforward network with input passthrough."))
+    .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
+    .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
+    .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("nn"))
     return nullptr;
 
-  n->all = arg.all;
+  n->all = &all;
 
-  if (n->multitask && ! arg.all->quiet)
+  if (n->multitask && ! all.quiet)
     std::cerr << "using multitask sharing for neural network "
-              << (arg.all->training ? "training" : "testing")
+              << (all.training ? "training" : "testing")
               << std::endl;
 
-  if ( arg.vm.count("meanfield") )
+  if ( options.was_supplied("meanfield") )
   {
     n->dropout = false;
-    if (! arg.all->quiet)
+    if (! all.quiet)
       std::cerr << "using mean field for neural network "
-                << (arg.all->training ? "training" : "testing")
+                << (all.training ? "training" : "testing")
                 << std::endl;
   }
 
-  if (n->dropout && !arg.all->quiet)
+  if (n->dropout && !all.quiet)
       std::cerr << "using dropout for neural network "
-                << (arg.all->training ? "training" : "testing")
+                << (all.training ? "training" : "testing")
                 << std::endl;
 
-  if (n->inpass && !arg.all->quiet)
+  if (n->inpass && !all.quiet)
     std::cerr << "using input passthrough for neural network "
-              << (arg.all->training ? "training" : "testing")
+              << (all.training ? "training" : "testing")
               << std::endl;
 
   n->finished_setup = false;
-  n->squared_loss = getLossFunction (*arg.all, "squared", 0);
+  n->squared_loss = getLossFunction(all, "squared", 0);
 
-  n->xsubi = arg.all->random_seed;
+  n->xsubi = all.random_seed;
 
   n->save_xsubi = n->xsubi;
 
@@ -458,7 +464,7 @@ base_learner* nn_setup(arguments& arg)
   n->hidden_units_pred = calloc_or_throw<polyprediction>(n->k);
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
-  auto base = as_singleline(setup_base(arg));
+  auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;//Indexing of output layer is odd.
   nn& nv = *n.get();
   learner<nn,example>&l = init_learner(n, base,

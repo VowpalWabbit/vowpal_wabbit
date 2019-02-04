@@ -9,35 +9,35 @@ license as described in the file LICENSE.
 #include <winsock2.h>
 #endif
 
-size_t buf_read(io_buf &i, char* &pointer, size_t n)
+size_t io_buf::buf_read(char* &pointer, size_t n)
 {
   //return a pointer to the next n bytes.  n must be smaller than the maximum size.
-  if (i.head + n <= i.space.end())
+  if (head + n <= space.end())
   {
-    pointer = i.head;
-    i.head += n;
+    pointer = head;
+    head += n;
     return n;
   }
   else // out of bytes, so refill.
   {
-    if (i.head != i.space.begin()) //There exists room to shift.
+    if (head != space.begin()) //There exists room to shift.
     {
       // Out of buffer so swap to beginning.
-      size_t left = i.space.end() - i.head;
-      memmove(i.space.begin(), i.head, left);
-      i.head = i.space.begin();
-      i.space.end() = i.space.begin() + left;
+      size_t left = space.end() - head;
+      memmove(space.begin(), head, left);
+      head = space.begin();
+      space.end() = space.begin() + left;
     }
-    if (i.fill(i.files[i.current]) > 0) // read more bytes from current file if present
-      return buf_read(i, pointer, n);// more bytes are read.
-    else if (++i.current < i.files.size())
-      return buf_read(i, pointer, n);// No more bytes, so go to next file and try again.
+    if (fill(files[current]) > 0) // read more bytes from current file if present
+      return buf_read(pointer, n);// more bytes are read.
+    else if (++current < files.size())
+      return buf_read(pointer, n);// No more bytes, so go to next file and try again.
     else
     {
       //no more bytes to read, return all that we have left.
-      pointer = i.head;
-      i.head = i.space.end();
-      return i.space.end() - pointer;
+      pointer = head;
+      head = space.end();
+      return space.end() - pointer;
     }
   }
 }
@@ -92,25 +92,25 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
   }
 }
 
-void buf_write(io_buf &o, char* &pointer, size_t n)
+void io_buf::buf_write(char* &pointer, size_t n)
 {
   //return a pointer to the next n bytes to write into.
-  if (o.head + n <= o.space.end_array)
+  if (head + n <= space.end_array)
   {
-    pointer = o.head;
-    o.head += n;
+    pointer = head;
+    head += n;
   }
   else // Time to dump the file
   {
-    if (o.head != o.space.begin())
-      o.flush();
+    if (head != space.begin())
+      flush();
     else // Array is short, so increase size.
     {
-      o.space.resize(2*(o.space.end_array - o.space.begin()));
-      o.space.end() = o.space.begin();
-      o.head = o.space.begin();
+      space.resize(2*(space.end_array - space.begin()));
+      space.end() = space.begin();
+      head = space.begin();
     }
-    buf_write (o, pointer,n);
+    buf_write (pointer, n);
   }
 }
 

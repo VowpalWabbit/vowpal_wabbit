@@ -173,7 +173,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label
   {
     CB::label ld = ec_seq[i]->l.cb;
 
-    COST_SENSITIVE::wclass wc = {0, 0};
+    COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
 
     bool keep_example = false;
     if (shared && i == 0)

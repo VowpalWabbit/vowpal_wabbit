@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 struct direction
 {
@@ -353,21 +354,28 @@ void finish(ect& e)
   e.tournaments_won.delete_v();
 }
 
-base_learner* ect_setup(arguments& arg)
+base_learner* ect_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<ect>();
-  if (arg.new_options("Error Correcting Tournament Options").
-      critical("ect", data->k, "Error correcting tournament with <k> labels")
-      .keep("error", data->errors, (uint64_t)0, "errors allowed by ECT").missing())
+  std::string link;
+  option_group_definition new_options("Error Correcting Tournament Options");
+  new_options
+    .add(make_option("ect", data->k).keep().help("Error correcting tournament with <k> labels"))
+    .add(make_option("error", data->errors).keep().default_value(0).help("errors allowed by ECT"))
+    // Used to check value. TODO replace
+    .add(make_option("link", link).default_value("identity").keep().help("Specify the link function: identity, logistic, glf1 or poisson"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("ect"))
     return nullptr;
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors+1);
 
-  base_learner* base = setup_base(arg);
-  if (arg.vm["link"].as<string>().compare("logistic") == 0)
+  base_learner* base = setup_base(options, all);
+  if (link.compare("logistic") == 0)
     data->class_boundary = 0.5; // as --link=logistic maps predictions in [0;1]
 
-  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, arg.all->p, wpp);
+  learner<ect,example>& l = init_multiclass_learner(data, as_singleline(base), learn, predict, all.p, wpp);
   l.set_finish(finish);
 
   return make_base(l);

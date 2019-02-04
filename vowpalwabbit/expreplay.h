@@ -67,7 +67,7 @@ void finish(expreplay& er)
 }
 
 template<char er_level, label_parser& lp>
-LEARNER::base_learner* expreplay_setup(arguments& arg)
+LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
   std::string replay_string = "replay_";
   replay_string += er_level;
@@ -75,12 +75,16 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
   replay_count_string += "_count";
 
   auto er = scoped_calloc_or_throw<expreplay>();
-  if (arg.new_options("Experience Replay")
-      .critical(replay_string.c_str(), er->N, "use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size")
-      (replay_count_string.c_str(), er->replay_count, (size_t)1, "how many times (in expectation) should each example be played (default: 1 = permuting)").missing() || er->N==0)
+  VW::config::option_group_definition new_options("Experience Replay");
+  new_options
+    .add(VW::config::make_option(replay_string, er->N).keep().help("use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost sensitive] with specified buffer size"))
+    .add(VW::config::make_option(replay_count_string, er->replay_count).default_value(1).help("how many times (in expectation) should each example be played (default: 1 = permuting)"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied(replay_string) || er->N==0)
     return nullptr;
 
-  er->all = arg.all;
+  er->all = &all;
   er->buf = VW::alloc_examples(1, er->N);
 
   if (er_level == 'c')
@@ -89,10 +93,10 @@ LEARNER::base_learner* expreplay_setup(arguments& arg)
 
   er->filled = calloc_or_throw<bool>(er->N);
 
-  if (! arg.all->quiet)
+  if (! all.quiet)
     std::cerr << "experience replay level=" << er_level << ", buffer=" << er->N << ", replay count=" << er->replay_count << std::endl;
 
-  er->base = LEARNER::as_singleline(setup_base(arg));
+  er->base = LEARNER::as_singleline(setup_base(options, all));
   LEARNER::learner<expreplay,example>* l = &init_learner(er, er->base, predict_or_learn<true,lp>, predict_or_learn<false,lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);

@@ -57,13 +57,13 @@ inline void generate_interactions(vw& all, example_predict& ec, R& dat)
 
 // C(n,k) = n!/(k!(n-k)!)
 
-inline long long choose(long long n, long long k)
+inline int64_t choose(int64_t n, int64_t k)
 { if (k > n) return 0;
   if (k<0) return 0;
   if (k==n) return 1;
   if (k==0 && n!=0) return 1;
-  long long r = 1;
-  for (long long d = 1; d <= k; ++d)
+  int64_t r = 1;
+  for (int64_t d = 1; d <= k; ++d)
   { r *= n--;
     r /= d;
   }

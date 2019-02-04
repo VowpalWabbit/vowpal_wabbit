@@ -286,9 +286,7 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
-  reduction_stack=v_init<LEARNER::base_learner* (*)(arguments&)>();
-
-  new (&opts_n_args) arguments(*this);
+  reduction_stack=v_init<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>();
 
   data_filename = "";
   delete_prediction = nullptr;

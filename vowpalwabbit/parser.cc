@@ -34,7 +34,6 @@ int getpid()
 #else
 #include <netdb.h>
 #endif
-#include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
@@ -43,7 +42,6 @@ int getpid()
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
-namespace po = boost::program_options;
 
 #include "parse_example.h"
 #include "cache.h"
@@ -54,80 +52,9 @@ namespace po = boost::program_options;
 #include "vw_exception.h"
 #include "parse_example_json.h"
 #include "parse_dispatch_loop.h"
+#include "parse_args.h"
 
 using namespace std;
-
-void initialize_mutex(MUTEX * pm)
-{
-#ifndef _WIN32
-  pthread_mutex_init(pm, nullptr);
-#else
-  ::InitializeCriticalSection(pm);
-#endif
-}
-
-#ifndef _WIN32
-void delete_mutex(MUTEX *) { /* no operation necessary here*/ }
-#else
-void delete_mutex(MUTEX * pm)
-{
-  ::DeleteCriticalSection(pm);
-}
-#endif
-
-void initialize_condition_variable(CV * pcv)
-{
-#ifndef _WIN32
-  pthread_cond_init(pcv, nullptr);
-#else
-  ::InitializeConditionVariable(pcv);
-#endif
-}
-
-void mutex_lock(MUTEX * pm)
-{
-#ifndef _WIN32
-  pthread_mutex_lock(pm);
-#else
-  ::EnterCriticalSection(pm);
-#endif
-}
-
-void mutex_unlock(MUTEX * pm)
-{
-#ifndef _WIN32
-  pthread_mutex_unlock(pm);
-#else
-  ::LeaveCriticalSection(pm);
-#endif
-}
-
-void condition_variable_wait(CV * pcv, MUTEX * pm)
-{
-#ifndef _WIN32
-  pthread_cond_wait(pcv, pm);
-#else
-  ::SleepConditionVariableCS(pcv, pm, INFINITE);
-#endif
-}
-
-void condition_variable_signal(CV * pcv)
-{
-#ifndef _WIN32
-  pthread_cond_signal(pcv);
-#else
-  ::WakeConditionVariable(pcv);
-#endif
-}
-
-void condition_variable_signal_all(CV * pcv)
-{
-#ifndef _WIN32
-  pthread_cond_broadcast(pcv);
-#else
-  ::WakeAllConditionVariable(pcv);
-#endif
-}
 
 //This should not? matter in a library mode.
 bool got_sigterm;
@@ -148,7 +75,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser& ret = calloc_or_throw<parser>();
+  auto& ret = *(new parser());
   ret.input = new io_buf;
   ret.output = new io_buf;
   ret.local_example_number = 0;
@@ -257,10 +184,11 @@ void reset_source(vw& all, size_t numbits)
     if (all.daemon)
     {
       // wait for all predictions to be sent back to client
-      mutex_lock(&all.p->output_lock);
-      while (all.p->local_example_number != all.p->end_parsed_examples)
-        condition_variable_wait(&all.p->output_done, &all.p->output_lock);
-      mutex_unlock(&all.p->output_lock);
+      {
+        std::unique_lock<std::mutex> lock(all.p->output_lock);
+        all.p->output_done.wait(lock,
+          [&] { return all.p->local_example_number == all.p->end_parsed_examples; });
+      }
 
       // close socket, erase final prediction sink and socket
       io_buf::close_file_or_socket(all.p->input->files[0]);
@@ -330,7 +258,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   io_buf* output = all.p->output;
   if (output->files.size() != 0)
   {
-    all.opts_n_args.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -340,7 +268,7 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1)
   {
-    all.opts_n_args.trace_message << "can't create cache file !" << endl;
+    all.trace_message << "can't create cache file !" << endl;
     return;
   }
 
@@ -354,45 +282,38 @@ void make_write_cache(vw& all, string &newname, bool quiet)
   push_many(output->finalname,newname.c_str(),newname.length()+1);
   all.p->write_cache = true;
   if (!quiet)
-    all.opts_n_args.trace_message << "creating cache_file = " << newname << endl;
+    all.trace_message << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(vw& all, po::variables_map &vm, string source,
-                 bool quiet)
+void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
 {
-  vector<string> caches;
-  if (vm.count("cache_file"))
-    caches = vm["cache_file"].as< vector<string> >();
-  if (vm.count("cache"))
-    caches.push_back(source+string(".cache"));
-
   all.p->write_cache = false;
 
-  for (size_t i = 0; i < caches.size(); i++)
+  for (auto& file : cache_files)
   {
     int f = -1;
-    if (!vm.count("kill_cache"))
+    if (!kill_cache)
       try
       {
-        f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
+        f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
       catch (const exception& ) { f = -1; }
     if (f == -1)
-      make_write_cache(all, caches[i], quiet);
+      make_write_cache(all, file, quiet);
     else
     {
       uint64_t c = cache_numbits(all.p->input, f);
       if (c < all.num_bits)
       {
         if (!quiet)
-          all.opts_n_args.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
+          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!" << endl;
         all.p->input->close_file();
-        make_write_cache(all, caches[i], quiet);
+        make_write_cache(all, file, quiet);
       }
       else
       {
         if (!quiet)
-          all.opts_n_args.trace_message << "using cache_file = " << caches[i].c_str() << endl;
+          all.trace_message << "using cache_file = " << file.c_str() << endl;
         all.p->reader = read_cached_features;
         if (c == all.num_bits)
           all.p->sorted_cache = true;
@@ -404,10 +325,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
   }
 
   all.parse_mask = ((uint64_t)1 << all.num_bits) - 1;
-  if (caches.size() == 0)
+  if (cache_files.size() == 0)
   {
     if (!quiet)
-      all.opts_n_args.trace_message << "using no cache" << endl;
+      all.trace_message << "using no cache" << endl;
     all.p->output->space.delete_v();
   }
 }
@@ -417,10 +338,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(vw& all, bool quiet, size_t passes)
+void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
   all.p->input->current = 0;
-  parse_cache(all, all.opts_n_args.vm, all.data_filename, quiet);
+  parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   if (all.daemon || all.active)
   {
@@ -435,25 +356,25 @@ void enable_sources(vw& all, bool quiet, size_t passes)
     {
       stringstream msg;
       msg << "socket: " << strerror(errno);
-      all.opts_n_args.trace_message << msg.str() << endl;
+      all.trace_message << msg.str() << endl;
       THROW(msg.str().c_str());
     }
 
     int on = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      all.opts_n_args.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
     if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
-      all.opts_n_args.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
+      all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     short unsigned int port = 26542;
-    if (all.opts_n_args.vm.count("port"))
-      port = (uint16_t)all.opts_n_args.vm["port"].as<size_t>();
+    if (all.options->was_supplied("port"))
+      port = (uint16_t)input_options.port;
     address.sin_port = htons(port);
 
     // attempt to bind to socket
@@ -465,34 +386,35 @@ void enable_sources(vw& all, bool quiet, size_t passes)
       THROWERRNO("listen");
 
     // write port file
-    if (all.opts_n_args.vm.count("port_file"))
+    if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
       if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
-        all.opts_n_args.trace_message << "getsockname: " << strerror(errno) << endl;
+        all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
       ofstream port_file;
-      port_file.open(all.opts_n_args.vm["port_file"].as<string>().c_str());
+      port_file.open(input_options.port_file.c_str());
       if (!port_file.is_open())
-        THROW("error writing port file: " << all.opts_n_args.vm["port_file"].as<string>());
+        THROW("error writing port file: " << input_options.port_file);
 
       port_file << ntohs(address.sin_port) << endl;
       port_file.close();
     }
 
     // background process (if foreground is not set)
-    if (!all.opts_n_args.vm.count("foreground"))
+    if (!input_options.foreground)
     {
+      //FIXME switch to posix_spawn
       if (!all.active && daemon(1,1))
         THROWERRNO("daemon");
     }
 
     // write pid file
-    if (all.opts_n_args.vm.count("pid_file"))
+    if (all.options->was_supplied("pid_file"))
     {
       ofstream pid_file;
-      pid_file.open(all.opts_n_args.vm["pid_file"].as<string>().c_str());
+      pid_file.open(input_options.pid_file.c_str());
       if (!pid_file.is_open())
         THROW("error writing pid file");
 
@@ -577,7 +499,7 @@ child:
     socklen_t size = sizeof(client_address);
     all.p->max_fd = 0;
     if (!all.quiet)
-      all.opts_n_args.trace_message << "calling accept" << endl;
+      all.trace_message << "calling accept" << endl;
     int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
     if (f < 0)
       THROWERRNO("accept");
@@ -590,7 +512,7 @@ child:
     all.p->input->files.push_back(f);
     all.p->max_fd = max(f, all.p->max_fd);
     if (!all.quiet)
-      all.opts_n_args.trace_message << "reading data from port " << port << endl;
+      all.trace_message << "reading data from port " << port << endl;
 
     all.p->max_fd++;
     if(all.active)
@@ -615,13 +537,13 @@ child:
     if (all.p->input->files.size() > 0)
     {
       if (!quiet)
-        all.opts_n_args.trace_message << "ignoring text input in favor of cache input" << endl;
+        all.trace_message << "ignoring text input in favor of cache input" << endl;
     }
     else
     {
       string temp = all.data_filename;
       if (!quiet)
-        all.opts_n_args.trace_message << "Reading datafile = " << temp << endl;
+        all.trace_message << "Reading datafile = " << temp << endl;
       try
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
@@ -631,7 +553,7 @@ child:
         // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (temp.size() != 0)
         {
-          all.opts_n_args.trace_message << "can't open '" << temp << "', sailing on!" << endl;
+          all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
         }
         else
         {
@@ -639,10 +561,11 @@ child:
         }
       }
 
-      if (all.opts_n_args.vm.count("json") || all.opts_n_args.vm.count("dsjson"))
+      if (input_options.json || input_options.dsjson)
       {
         // TODO: change to class with virtual method
-        if (all.audit)
+        // --invert_hash requires the audit parser version to save the extra information.
+        if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
           all.p->audit = true;
@@ -655,7 +578,7 @@ child:
           all.p->jsonp = new json_parser<false>;
         }
 
-        all.p->decision_service_json = all.opts_n_args.vm.count("dsjson") > 0;
+        all.p->decision_service_json = input_options.dsjson;
       }
       else
         all.p->reader = read_features_string;
@@ -669,16 +592,15 @@ child:
 
   all.p->input->count = all.p->input->files.size();
   if (!quiet && !all.daemon)
-    all.opts_n_args.trace_message << "num sources = " << all.p->input->files.size() << endl;
+    all.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
 void lock_done(parser& p)
 {
-  mutex_lock(&p.examples_lock);
+  std::lock_guard<std::mutex> lock(p.examples_lock);
   p.done = true;
   //in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
-  condition_variable_signal_all(&p.example_available);
-  mutex_unlock(&p.examples_lock);
+  p.example_available.notify_all();
 }
 
 void set_done(vw& all)
@@ -773,17 +695,15 @@ example& get_unused_example(vw* all)
   parser* p = all->p;
   while (true)
   {
-    mutex_lock(&p->examples_lock);
+    std::unique_lock<std::mutex> lock(p->examples_lock);
     if (p->examples[p->begin_parsed_examples % p->ring_size].in_use == false)
     {
       example& ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
       ret.in_use = true;
-      mutex_unlock(&p->examples_lock);
       return ret;
     }
     else
-      condition_variable_wait(&p->example_unused, &p->examples_lock);
-    mutex_unlock(&p->examples_lock);
+      p->example_unused.wait(lock);
   }
 }
 
@@ -969,7 +889,7 @@ void parse_example_label(vw& all, example&ec, string label)
   words.delete_v();
 }
 
-void empty_example(vw& all, example& ec)
+void empty_example(vw& /* all */, example& ec)
 {
   for (features& fs : ec)
     fs.clear();
@@ -989,13 +909,14 @@ void clean_example(vw& all, example& ec, bool rewind)
 
   empty_example(all, ec);
 
-  mutex_lock(&all.p->examples_lock);
-  assert(ec.in_use);
-  ec.in_use = false;
-  condition_variable_signal(&all.p->example_unused);
-  if (all.p->done)
-    condition_variable_signal_all(&all.p->example_available);
-  mutex_unlock(&all.p->examples_lock);
+  {
+    std::lock_guard<std::mutex> lock(all.p->examples_lock);
+    assert(ec.in_use);
+    ec.in_use = false;
+    all.p->example_unused.notify_one();
+    if (all.p->done)
+      all.p->example_available.notify_all();
+  }
 }
 
 void finish_example(vw& all, multi_ex& ec_seq)
@@ -1011,10 +932,11 @@ void finish_example(vw& all, example& ec)
   if (!is_ring_example(all, &ec))
     return;
 
-  mutex_lock(&all.p->output_lock);
-  all.p->local_example_number++;
-  condition_variable_signal(&all.p->output_done);
-  mutex_unlock(&all.p->output_lock);
+  {
+    std::lock_guard<std::mutex> lock(all.p->output_lock);
+    all.p->local_example_number++;
+    all.p->output_done.notify_one();
+  }
 
   clean_example(all, ec, false);
 }
@@ -1022,51 +944,43 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, v_array<example*> examples)
 {
-  mutex_lock(&all.p->examples_lock);
+  std::lock_guard<std::mutex> lock(all.p->examples_lock);
   all.p->end_parsed_examples+=examples.size();
-  condition_variable_signal_all(&all.p->example_available);
-  mutex_unlock(&all.p->examples_lock);
+  all.p->example_available.notify_all();
 }
 
-#ifdef _WIN32
-DWORD WINAPI main_parse_loop(LPVOID in)
-#else
-void *main_parse_loop(void *in)
-#endif
+void main_parse_loop(vw* all)
 {
-  vw* all = (vw*)in;
   parse_dispatch(*all, thread_dispatch);
-  return 0L;
 }
 
 namespace VW
 {
 example* get_example(parser* p)
 {
-  mutex_lock(&p->examples_lock);
-  if (p->end_parsed_examples != p->used_index)
+  std::unique_lock<std::mutex> lock(p->examples_lock);
+  while (true)
   {
-    size_t ring_index = p->used_index++ % p->ring_size;
-    if (!(p->examples+ring_index)->in_use)
-      cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
-    assert((p->examples+ring_index)->in_use);
-    mutex_unlock(&p->examples_lock);
-    return p->examples + ring_index;
-  }
-  else
-  {
-    if (!p->done)
+    if (p->end_parsed_examples != p->used_index)
     {
-      condition_variable_wait(&p->example_available, &p->examples_lock);
-      mutex_unlock(&p->examples_lock);
-      return get_example(p);
+      size_t ring_index = p->used_index++ % p->ring_size;
+      if (!(p->examples + ring_index)->in_use)
+        cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
+      assert((p->examples + ring_index)->in_use);
+      return p->examples + ring_index;
     }
     else
     {
-      mutex_unlock(&p->examples_lock);
-      return nullptr;
+      if (!p->done)
+      {
+        p->example_available.wait(lock);
+      }
+      else
+      {
+        return nullptr;
+      }
     }
-  }
+  } 
 }
 
 float get_topic_prediction(example* ec, size_t i)
@@ -1158,22 +1072,13 @@ void adjust_used_index(vw& all)
 void initialize_parser_datastructures(vw& all)
 {
   initialize_examples(all);
-  initialize_mutex(&all.p->examples_lock);
-  initialize_condition_variable(&all.p->example_available);
-  initialize_condition_variable(&all.p->example_unused);
-  initialize_mutex(&all.p->output_lock);
-  initialize_condition_variable(&all.p->output_done);
 }
 
 namespace VW
 {
 void start_parser(vw& all)
 {
-#ifndef _WIN32
-  pthread_create(&all.parse_thread, nullptr, main_parse_loop, &all);
-#else
-  all.parse_thread = ::CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, 0L, nullptr);
-#endif
+  all.parse_thread = std::thread(main_parse_loop, &all);
 }
 }
 void free_parser(vw& all)
@@ -1203,23 +1108,11 @@ void free_parser(vw& all)
   all.p->counts.delete_v();
 }
 
-void release_parser_datastructures(vw& all)
-{
-  delete_mutex(&all.p->examples_lock);
-  delete_mutex(&all.p->output_lock);
-}
-
 namespace VW
 {
 void end_parser(vw& all)
 {
-#ifndef _WIN32
-  pthread_join(all.parse_thread, nullptr);
-#else
-  ::WaitForSingleObject(all.parse_thread, INFINITE);
-  ::CloseHandle(all.parse_thread);
-#endif
-  release_parser_datastructures(all);
+  all.parse_thread.join();
 }
 
 bool is_ring_example(vw& all, example* ae)

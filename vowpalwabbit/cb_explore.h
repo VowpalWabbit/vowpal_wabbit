@@ -9,4 +9,4 @@ namespace LEARNER
 { template<class T, class E> struct learner;
 }
 
-LEARNER::base_learner* cb_explore_setup(arguments& arg);
+LEARNER::base_learner* cb_explore_setup(VW::config::options_i& options, vw& all);

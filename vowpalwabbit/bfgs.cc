@@ -23,6 +23,7 @@ Implementation by Miro Dudik.
 
 using namespace std;
 using namespace LEARNER;
+using namespace VW::config;
 
 #define CG_EXTRA 1
 
@@ -174,7 +175,7 @@ float dot_with_direction(vw& all, example& ec)
 }
 
 template<class T>
-double regularizer_direction_magnitude(vw& all, bfgs& b, double regularizer, T& weights)
+double regularizer_direction_magnitude(vw& /* all */, bfgs& b, double regularizer, T& weights)
 {
   double ret = 0.;
   if (b.regularizers == nullptr)
@@ -204,7 +205,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
 }
 
 template<class T>
-float direction_magnitude(vw& all, T& weights)
+float direction_magnitude(vw& /* all */, T& weights)
 {
   //compute direction magnitude
   double ret = 0.;
@@ -480,7 +481,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 }
 
 template <class T>
-void finalize_preconditioner(vw& all, bfgs& b, float regularization, T& weights)
+void finalize_preconditioner(vw& /* all */, bfgs& b, float regularization, T& weights)
 {
   float max_hessian = 0.f;
 
@@ -558,7 +559,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 }
 
 template<class T>
-void regularizer_to_weight(vw& all, bfgs& b, T& weights)
+void regularizer_to_weight(vw& /* all */, bfgs& b, T& weights)
 {
   if (b.regularizers != nullptr)
   {
@@ -587,7 +588,7 @@ void zero_state(vw& all)
 }
 
 template<class T>
-double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin, T& weights)
+double derivative_in_direction(vw& /* all */, bfgs& b, float* mem, int &origin, T& weights)
 {
   double ret = 0.;
   for (typename T::iterator w = weights.begin(); w != weights.end();  ++w)
@@ -608,7 +609,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 }
 
 template<class T>
-void update_weight(vw& all, float step_size, T& w)
+void update_weight(vw& /* all */, float step_size, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
     (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR];
@@ -887,13 +888,13 @@ void end_pass(bfgs& b)
       //reaching the max number of passes regardless of convergence
       if(b.final_pass == b.current_pass)
       {
-        b.all->opts_n_args.trace_message<<"Maximum number of passes reached. ";
+        b.all->trace_message<<"Maximum number of passes reached. ";
         if(!b.output_regularizer)
-          b.all->opts_n_args.trace_message<<"If you want to optimize further, increase the number of passes\n";
+          b.all->trace_message<<"If you want to optimize further, increase the number of passes\n";
         if(b.output_regularizer)
         {
-          b.all->opts_n_args.trace_message<<"\nRegular model file has been created. ";
-          b.all->opts_n_args.trace_message<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+          b.all->trace_message<<"\nRegular model file has been created. ";
+          b.all->trace_message<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }
@@ -916,7 +917,7 @@ void end_pass(bfgs& b)
         if(b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
-          b.all->opts_n_args.trace_message<<"Early termination reached w.r.t. holdout set error";
+          b.all->trace_message<<"Early termination reached w.r.t. holdout set error";
         }
       } if (b.final_pass == b.current_pass)
       {
@@ -976,12 +977,12 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
     if (read)
     {
       c++;
-      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+      brw = model_file.bin_read_fixed((char*)&i, sizeof(i),"");
       if (brw > 0)
       {
         assert (i< length);
         v = &(b.regularizers[i]);
-        brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+        brw += model_file.bin_read_fixed((char*)v, sizeof(*v), "");
       }
     }
     else // write binary or text
@@ -1077,54 +1078,69 @@ void init_driver(bfgs& b)
   b.backstep_on = true;
 }
 
-base_learner* bfgs_setup(arguments& arg)
+base_learner* bfgs_setup(options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<bfgs>();
-  if (arg.new_options("LBFGS and Conjugate Gradient options")
-      .critical("conjugate_gradient", "use conjugate gradient based optimization").missing())
-    if (arg.new_options("").critical("bfgs", "use bfgs optimization")
-        (arg.all->hessian_on, "hessian_on", "use second derivative in line search")
-        ("mem", b->m, 15, "memory in bfgs")
-        ("termination", b->rel_threshold, 0.001f,"Termination threshold").missing())
+  bool conjugate_gradient = false;
+  bool bfgs_option = false;
+  option_group_definition bfgs_outer_options("LBFGS and Conjugate Gradient options");
+  bfgs_outer_options.add(make_option("conjugate_gradient", conjugate_gradient).keep().help("use conjugate gradient based optimization"));
+
+  option_group_definition bfgs_inner_options("LBFGS and Conjugate Gradient options");
+  bfgs_inner_options.add(make_option("bfgs", bfgs_option).keep().help("use conjugate gradient based optimization"));
+  bfgs_inner_options.add(make_option("hessian_on", all.hessian_on).help("use second derivative in line search"));
+  bfgs_inner_options.add(make_option("mem", b->m).default_value(15).help("memory in bfgs"));
+  bfgs_inner_options.add(make_option("termination", b->rel_threshold).default_value(0.001f).help("Termination threshold"));
+
+  options.add_and_parse(bfgs_outer_options);
+  if(!conjugate_gradient)
+  {
+    options.add_and_parse(bfgs_inner_options);
+    if(!bfgs_option)
+    {
       return nullptr;
-  b->all = arg.all;
+    }
+  }
+
+
+  b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->backstep_on = false;
-  b->final_pass=arg.all->numpasses;
+  b->final_pass=all.numpasses;
   b->no_win_counter = 0;
 
-  if(!arg.all->holdout_set_off)
+  if(!all.holdout_set_off)
   {
-    arg.all->sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = arg.vm["early_terminate"].as< size_t>();
+    all.sd->holdout_best_loss = FLT_MAX;
+    b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
   if (b->m==0)
-    arg.all->hessian_on = true;
+    all.hessian_on = true;
 
-  if (!arg.all->quiet)
+  if (!all.quiet)
   {
     if (b->m>0)
-      b->all->opts_n_args.trace_message << "enabling BFGS based optimization ";
+      b->all->trace_message << "enabling BFGS based optimization ";
     else
-      b->all->opts_n_args.trace_message << "enabling conjugate gradient optimization via BFGS ";
-    if (arg.all->hessian_on)
-      b->all->opts_n_args.trace_message << "with curvature calculation" << endl;
+      b->all->trace_message << "enabling conjugate gradient optimization via BFGS ";
+    if (all.hessian_on)
+      b->all->trace_message << "with curvature calculation" << endl;
     else
-      b->all->opts_n_args.trace_message << "**without** curvature calculation" << endl;
+      b->all->trace_message << "**without** curvature calculation" << endl;
   }
 
-  if (arg.all->numpasses < 2 && arg.all->training)
+  if (all.numpasses < 2 && all.training)
     THROW("you must make at least 2 passes to use BFGS");
 
-  arg.all->bfgs = true;
-  arg.all->weights.stride_shift(2);
+  all.bfgs = true;
+  all.weights.stride_shift(2);
 
-  learner<bfgs,example>& l = init_learner(b, learn, predict, arg.all->weights.stride());
+  learner<bfgs,example>& l = init_learner(b, learn, predict, all.weights.stride());
   l.set_save_load(save_load);
   l.set_init_driver(init_driver);
   l.set_end_pass(end_pass);

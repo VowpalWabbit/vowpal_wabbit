@@ -11,6 +11,8 @@ license as described in the file LICENSE.
 #include "search.h"
 
 using namespace std;
+using namespace VW::config;
+
 namespace DebugMT
 {
 void run(Search::search& sch, multi_ex& ec);
@@ -47,7 +49,7 @@ void run(Search::search& sch, multi_ex& ec)
 namespace SelectiveBranchingMT
 {
 void run(Search::search& sch, multi_ex& ec);
-void initialize(Search::search& sch, size_t& num_actions, arguments& vm);
+void initialize(Search::search& sch, size_t& num_actions, options_i& options);
 void finish(Search::search& sch);
 Search::search_metatask metatask = { "selective_branching", run, initialize, finish, nullptr, nullptr };
 
@@ -85,14 +87,15 @@ struct task_data
   }
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, arguments& arg)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
   size_t max_branches = 2;
   size_t kbest = 0;
-  if (arg.new_options("selective branching options")
-      ("search_max_branch", po::value<size_t>(&max_branches)->default_value(2), "maximum number of branches to consider")
-      ("search_kbest",      po::value<size_t>(&kbest)->default_value(0), "number of best items to output (0=just like non-selectional-branching, default)").missing())
-    return;
+  option_group_definition new_options("selective branching options");
+  new_options
+    .add(make_option("search_max_branch", max_branches).default_value(2).help("maximum number of branches to consider"))
+    .add(make_option("search_kbest", kbest).default_value(0).help("number of best items to output (0=just like non-selectional-branching, default)"));
+  options.add_and_parse(new_options);
 
   task_data* d = new task_data(max_branches, kbest);
   sch.set_metatask_data(d);

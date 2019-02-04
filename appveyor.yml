@@ -12,16 +12,15 @@ build_script:
 # Temporary workaround: https://github.com/Microsoft/vcpkg/issues/4189#issuecomment-417462822
 - rd /s /q C:\OpenSSL-v11-Win32
 - rd /s /q C:\OpenSSL-v11-Win64
-- cd c:\vowpal_wabbit
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\cs\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\azure\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\azure_worker\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\setup_bundle\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages cs\unittest\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages python\windows27\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages python\windows35\packages.config
-- vowpalwabbit\.nuget\nuget restore -o vowpalwabbit\packages vowpalwabbit\packages.config
-- '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "C:\vowpal_wabbit\vowpalwabbit\vw.sln" /m /verbosity:normal /p:Configuration=Release;Platform=x64'
+# Set up vowpal_wabbit repo root
+- SET vwRoot=C:\vowpal_wabbit
+# Set up toolchain integration
+- SET "msbuildPath=C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe"
+- SET nugetPath=%vwRoot%\vowpalwabbit\.nuget\nuget
+# Restore and build
+- cd %vwRoot%
+- .scripts/restore.cmd
+- .scripts/build.cmd
 test_script:
 - ps: >-
     if($env:PLATFORM -eq "x64")
