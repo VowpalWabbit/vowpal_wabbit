@@ -6,18 +6,7 @@ export PATH="$HOME/miniconda/bin:$PATH"
 
 # Check if any clang-formatting necessary
 
-# TODO: de-dupe with Dockerfile. At time of writing Dockerfile changes
-# did not result in the CI image getting changed.
-
 cd /vw
-sudo apt-get update
-sudo apt-get install -y wget
-sudo echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main" >> /etc/apt/sources.list
-sudo echo "deb-src http://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main" >> /etc/apt/sources.list
-sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-sudo apt-get update
-sudo apt-get install --yes clang-format-3.4
-
 for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
     diff $VW_FILE <(clang-format $VW_FILE);
     if [ $? -ne 0 ]
