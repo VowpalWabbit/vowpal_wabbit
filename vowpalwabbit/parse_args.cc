@@ -1328,11 +1328,11 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 
     bool treat_as_value = false;
     // If the key starts with a digit, this is a mis-interpretation of a value as a key. Pull it into the previous option.
-    // This was found in the case of --lambda -1, misinterpreting -1 as an options. The easy way to fix this requires us to
-    // introduce "identifier-like" semantics for options keys, e.g. "does not beging with a digit". That does not seem like
-    // an unreasonable restriction.
+    // This was found in the case of --lambda -1, misinterpreting -1 as an option key. The easy way to fix this requires
+    // introducing "identifier-like" semantics for options keys, e.g. "does not begin with a digit". That does not seem 
+    // like an unreasonable restriction.
     // The logical check here is: is "string_key" of the form {'-', <digit>, <etc.>}.
-    if (opt.string_key.length() > 1 && //skip empty options and ones without at least two characters in string_key
+    if (opt.string_key.length() > 1 && // Skip empty options and ones without at least two characters in string_key
         opt.string_key[0] == '-' &&
         opt.string_key[1] >= '0' &&
         opt.string_key[1] <= '9')
@@ -1370,7 +1370,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     }
     else {
       // If treat_as_value is set, boost incorrectly interpreted the token as containing an option key
-        // In this case, what should have happened is all original_tokens items should be in value.
+      // In this case, what should have happened is all original_tokens items should be in value.
       auto source = treat_as_value ? opt.original_tokens : opt.value;
       for (auto value : source) {
         options.insert(saved_key, value);
