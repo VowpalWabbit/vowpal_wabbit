@@ -5,11 +5,11 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
-#include "cb_algs.h"
-#include "gen_cs_example.h"
-#include "reductions.h"
 #include "vw.h"
+#include "reductions.h"
+#include "cb_algs.h"
 #include "vw_exception.h"
+#include "gen_cs_example.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -25,17 +25,15 @@ struct cb
   COST_SENSITIVE::label cb_cs_ld;
 };
 
-bool know_all_cost_example(CB::label &ld)
+bool know_all_cost_example(CB::label& ld)
 {
-  if (ld.costs.size() <= 1)  // this means we specified an example where all
-                             // actions are possible but only specified the cost
-                             // for the observed action
+  if (ld.costs.size() <= 1)  // this means we specified an example where all actions are possible but only specified the
+                             // cost for the observed action
     return false;
 
-  // if we specified more than 1 action for this example, i.e. either we have a
-  // limited set of possible actions, or all actions are specified
-  // than check if all actions have a specified cost
-  for (auto &cl : ld.costs)
+  // if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all
+  // actions are specified than check if all actions have a specified cost
+  for (auto& cl : ld.costs)
     if (cl.cost == FLT_MAX)
       return false;
 
@@ -43,10 +41,10 @@ bool know_all_cost_example(CB::label &ld)
 }
 
 template <bool is_learn>
-void predict_or_learn(cb &data, single_learner &base, example &ec)
+void predict_or_learn(cb& data, single_learner& base, example& ec)
 {
   CB::label ld = ec.l.cb;
-  cb_to_cs &c = data.cbcs;
+  cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld);
   if (c.known_cost != nullptr && (c.known_cost->action < 1 || c.known_cost->action > c.num_actions))
     cerr << "invalid action: " << c.known_cost->action << endl;
@@ -69,13 +67,13 @@ void predict_or_learn(cb &data, single_learner &base, example &ec)
   }
 }
 
-void predict_eval(cb &, single_learner &, example &) { THROW("can not use a test label for evaluation"); }
+void predict_eval(cb&, single_learner&, example&) { THROW("can not use a test label for evaluation"); }
 
-void learn_eval(cb &data, single_learner &, example &ec)
+void learn_eval(cb& data, single_learner&, example& ec)
 {
   CB_EVAL::label ld = ec.l.cb_eval;
 
-  cb_to_cs &c = data.cbcs;
+  cb_to_cs& c = data.cbcs;
   c.known_cost = get_observed_cost(ld.event);
   gen_cs_example<true>(c, ec, ld.event, data.cb_cs_ld);
 
@@ -85,11 +83,11 @@ void learn_eval(cb &data, single_learner &, example &ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(vw &all, cb &data, example &ec, CB::label &ld)
+void output_example(vw& all, cb& data, example& ec, CB::label& ld)
 {
   float loss = 0.;
 
-  cb_to_cs &c = data.cbcs;
+  cb_to_cs& c = data.cbcs;
   if (!CB::cb_label.test_label(&ld))
     loss = get_unbiased_cost(c.known_cost, c.pred_scores, ec.pred.multiclass);
 
@@ -113,27 +111,27 @@ void output_example(vw &all, cb &data, example &ec, CB::label &ld)
   print_update(all, CB::cb_label.test_label(&ld), ec, nullptr, false);
 }
 
-void finish(cb &data)
+void finish(cb& data)
 {
-  cb_to_cs &c = data.cbcs;
+  cb_to_cs& c = data.cbcs;
   data.cb_cs_ld.costs.delete_v();
   COST_SENSITIVE::cs_label.delete_label(&c.pred_scores);
 }
 
-void finish_example(vw &all, cb &c, example &ec)
+void finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb);
   VW::finish_example(all, ec);
 }
 
-void eval_finish_example(vw &all, cb &c, example &ec)
+void eval_finish_example(vw& all, cb& c, example& ec)
 {
   output_example(all, c, ec, ec.l.cb_eval.event);
   VW::finish_example(all, ec);
 }
 }  // namespace CB_ALGS
 using namespace CB_ALGS;
-base_learner *cb_algs_setup(options_i &options, vw &all)
+base_learner* cb_algs_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cb>();
   std::string type_string = "dr";
@@ -156,7 +154,7 @@ base_learner *cb_algs_setup(options_i &options, vw &all)
     options.add_and_parse(new_options);
   }
 
-  cb_to_cs &c = data->cbcs;
+  cb_to_cs& c = data->cbcs;
 
   size_t problem_multiplier = 2;  // default for DR
   if (type_string.compare("dr") == 0)
@@ -198,7 +196,7 @@ base_learner *cb_algs_setup(options_i &options, vw &all)
     all.label_type = label_type::cb;
   }
 
-  learner<cb, example> *l;
+  learner<cb, example>* l;
   if (eval)
   {
     l = &init_learner(data, base, learn_eval, predict_eval, problem_multiplier, prediction_type::multiclass);

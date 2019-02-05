@@ -1,5 +1,5 @@
-#include "reductions.h"
 #include <unordered_map>
+#include "reductions.h"
 
 using namespace std;
 using namespace VW::config;
@@ -10,7 +10,7 @@ struct classweights
 {
   std::unordered_map<uint32_t, float> weights;
 
-  void load_string(std::string const &source)
+  void load_string(std::string const& source)
   {
     std::stringstream ss(source);
     std::string item;
@@ -45,7 +45,7 @@ struct classweights
 };
 
 template <bool is_learn, int pred_type>
-static void predict_or_learn(classweights &cweights, LEARNER::single_learner &base, example &ec)
+static void predict_or_learn(classweights& cweights, LEARNER::single_learner& base, example& ec)
 {
   switch (pred_type)
   {
@@ -66,12 +66,12 @@ static void predict_or_learn(classweights &cweights, LEARNER::single_learner &ba
     base.predict(ec);
 }
 
-void finish(classweights &data) { data.weights.~unordered_map(); }
+void finish(classweights& data) { data.weights.~unordered_map(); }
 }  // namespace CLASSWEIGHTS
 
 using namespace CLASSWEIGHTS;
 
-LEARNER::base_learner *classweight_setup(options_i &options, vw &all)
+LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 {
   vector<string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
@@ -82,14 +82,14 @@ LEARNER::base_learner *classweight_setup(options_i &options, vw &all)
   if (!options.was_supplied("classweight"))
     return nullptr;
 
-  for (auto &s : classweight_array) cweights->load_string(s);
+  for (auto& s : classweight_array) cweights->load_string(s);
 
   if (!all.quiet)
     all.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
-  LEARNER::single_learner *base = as_singleline(setup_base(options, all));
+  LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
-  LEARNER::learner<classweights, example> *ret;
+  LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type::scalar)
     ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::scalar>,
         predict_or_learn<false, prediction_type::scalar>);

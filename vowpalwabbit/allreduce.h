@@ -7,12 +7,12 @@ license as described in the file LICENSE.
 // This implements the allreduce function of MPI.
 #pragma once
 
-#include <algorithm>
 #include <string>
+#include <algorithm>
 
 #ifdef _WIN32
-#include <WS2tcpip.h>
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
@@ -29,15 +29,15 @@ class condition_variable;
 class mutex;
 }  // namespace std
 #else
-#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
+#include <netdb.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/socket.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 typedef int socket_t;
 #define CLOSESOCK close
 #include <future>
@@ -67,8 +67,8 @@ struct node_socks
   node_socks() { current_master = ""; }
 };
 
-template <class T, void (*f)(T &, const T &)>
-void addbufs(T *buf1, const T *buf2, const size_t n)
+template <class T, void (*f)(T&, const T&)>
+void addbufs(T* buf1, const T* buf2, const size_t n)
 {
   for (size_t i = 0; i < n; i++) f(buf1[i], buf2[i]);
 }
@@ -86,15 +86,15 @@ class AllReduce
 
 struct Data
 {
-  void *buffer;
+  void* buffer;
   size_t length;
 };
 
 class AllReduceSync
 {
  private:
-  std::mutex *m_mutex;
-  std::condition_variable *m_cv;
+  std::mutex* m_mutex;
+  std::condition_variable* m_cv;
 
   // total number of threads we wait for
   size_t m_total;
@@ -102,8 +102,7 @@ class AllReduceSync
   // number of threads reached the barrier
   uint32_t m_count;
 
-  // current wait-barrier-run required to protect against spurious wakeups of
-  // m_cv->wait(...)
+  // current wait-barrier-run required to protect against spurious wakeups of m_cv->wait(...)
   bool m_run;
 
  public:
@@ -113,26 +112,26 @@ class AllReduceSync
 
   void waitForSynchronization();
 
-  void **buffers;
+  void** buffers;
 };
 
 class AllReduceThreads : public AllReduce
 {
  private:
-  AllReduceSync *m_sync;
+  AllReduceSync* m_sync;
   bool m_syncOwner;
 
  public:
-  AllReduceThreads(AllReduceThreads *root, const size_t ptotal, const size_t pnode);
+  AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode);
 
   AllReduceThreads(const size_t ptotal, const size_t pnode);
 
   virtual ~AllReduceThreads();
 
-  template <class T, void (*f)(T &, const T &)>
-  void all_reduce(T *buffer, const size_t n)
+  template <class T, void (*f)(T&, const T&)>
+  void all_reduce(T* buffer, const size_t n)
   {  // register buffer
-    T **buffers = (T **)m_sync->buffers;
+    T** buffers = (T**)m_sync->buffers;
     buffers[node] = buffer;
     m_sync->waitForSynchronization();
 
@@ -160,7 +159,7 @@ class AllReduceThreads : public AllReduce
 
     for (; index < end; index++)
     {  // Perform transposed AllReduce to help data locallity
-      T &first = buffers[0][index];
+      T& first = buffers[0][index];
 
       for (size_t i = 1; i < total; i++) f(first, buffers[i][index]);
 
@@ -177,13 +176,12 @@ class AllReduceSockets : public AllReduce
  private:
   node_socks socks;
   std::string span_server;
-  size_t unique_id;  // unique id for each node in the network, id == 0 means
-                     // extra io.
+  size_t unique_id;  // unique id for each node in the network, id == 0 means extra io.
 
   void all_reduce_init();
 
   template <class T>
-  void pass_up(char *buffer, size_t left_read_pos, size_t right_read_pos, size_t &parent_sent_pos)
+  void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos)
   {
     size_t my_bufsize =
         (std::min)(ar_buf_size, (std::min)(left_read_pos, right_read_pos) / sizeof(T) * sizeof(T) - parent_sent_pos);
@@ -199,8 +197,8 @@ class AllReduceSockets : public AllReduce
     }
   }
 
-  template <class T, void (*f)(T &, const T &)>
-  void reduce(char *buffer, const size_t n)
+  template <class T, void (*f)(T&, const T&)>
+  void reduce(char* buffer, const size_t n)
   {
     fd_set fds;
     FD_ZERO(&fds);
@@ -211,8 +209,7 @@ class AllReduceSockets : public AllReduce
 
     socket_t max_fd = (std::max)(socks.children[0], socks.children[1]) + 1;
     size_t child_read_pos[2] = {0, 0};  // First unread float from left and right children
-    int child_unprocessed[2] = {0, 0};  // The number of bytes sent by the child
-                                        // but not yet added to the buffer
+    int child_unprocessed[2] = {0, 0};  // The number of bytes sent by the child but not yet added to the buffer
     char child_read_buf[2][ar_buf_size + sizeof(T) - 1];
     size_t parent_sent_pos = 0;  // First unsent float to parent
     // parent_sent_pos <= left_read_pos
@@ -253,7 +250,7 @@ class AllReduceSockets : public AllReduce
             if (read_size == -1)
               THROWERRNO("recv from child");
 
-            addbufs<T, f>((T *)buffer + child_read_pos[i] / sizeof(T), (T *)child_read_buf[i],
+            addbufs<T, f>((T*)buffer + child_read_pos[i] / sizeof(T), (T*)child_read_buf[i],
                 (child_read_pos[i] + read_size) / sizeof(T) - child_read_pos[i] / sizeof(T));
 
             child_read_pos[i] += read_size;
@@ -277,8 +274,8 @@ class AllReduceSockets : public AllReduce
     }
   }
 
-  void pass_down(char *buffer, const size_t parent_read_pos, size_t &children_sent_pos);
-  void broadcast(char *buffer, const size_t n);
+  void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos);
+  void broadcast(char* buffer, const size_t n);
 
  public:
   AllReduceSockets(std::string pspan_server, const size_t punique_id, size_t ptotal, const size_t pnode)
@@ -288,12 +285,12 @@ class AllReduceSockets : public AllReduce
 
   virtual ~AllReduceSockets() {}
 
-  template <class T, void (*f)(T &, const T &)>
-  void all_reduce(T *buffer, const size_t n)
+  template <class T, void (*f)(T&, const T&)>
+  void all_reduce(T* buffer, const size_t n)
   {
     if (span_server != socks.current_master)
       all_reduce_init();
-    reduce<T, f>((char *)buffer, n * sizeof(T));
-    broadcast((char *)buffer, n * sizeof(T));
+    reduce<T, f>((char*)buffer, n * sizeof(T));
+    broadcast((char*)buffer, n * sizeof(T));
   }
 };

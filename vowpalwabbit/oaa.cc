@@ -3,14 +3,14 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include "correctedMath.h"
-#include "rand48.h"
-#include "reductions.h"
-#include "vw.h"
-#include "vw_exception.h"
+#include <sstream>
 #include <float.h>
 #include <math.h>
-#include <sstream>
+#include "correctedMath.h"
+#include "reductions.h"
+#include "rand48.h"
+#include "vw_exception.h"
+#include "vw.h"
 
 using namespace std;
 using namespace VW::config;
@@ -18,15 +18,14 @@ using namespace VW::config;
 struct oaa
 {
   uint64_t k;
-  vw *all;                    // for raw
-  polyprediction *pred;       // for multipredict
+  vw* all;                    // for raw
+  polyprediction* pred;       // for multipredict
   uint64_t num_subsample;     // for randomized subsampling, how many negatives to draw?
-  uint32_t *subsample_order;  // for randomized subsampling, in what order should
-                              // we touch classes
+  uint32_t* subsample_order;  // for randomized subsampling, in what order should we touch classes
   size_t subsample_id;        // for randomized subsampling, where do we live in the list
 };
 
-void learn_randomized(oaa &o, LEARNER::single_learner &base, example &ec)
+void learn_randomized(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t ld = ec.l.multi;
   if (ld.label == 0 || (ld.label > o.k && ld.label != (uint32_t)-1))
@@ -65,7 +64,7 @@ void learn_randomized(oaa &o, LEARNER::single_learner &base, example &ec)
 }
 
 template <bool is_learn, bool print_all, bool scores, bool probabilities>
-void predict_or_learn(oaa &o, LEARNER::single_learner &base, example &ec)
+void predict_or_learn(oaa& o, LEARNER::single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc_label_data = ec.l.multi;
   if (mc_label_data.label == 0 || (mc_label_data.label > o.k && mc_label_data.label != (uint32_t)-1))
@@ -127,7 +126,7 @@ void predict_or_learn(oaa &o, LEARNER::single_learner &base, example &ec)
   ec.l.multi = mc_label_data;
 }
 
-void finish(oaa &o)
+void finish(oaa& o)
 {
   free(o.pred);
   free(o.subsample_order);
@@ -135,14 +134,13 @@ void finish(oaa &o)
 
 // TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
-void finish_example_scores(vw &all, oaa &o, example &ec)
+void finish_example_scores(vw& all, oaa& o, example& ec)
 {
   // === Compute multiclass_log_loss
   // TODO:
   // What to do if the correct label is unknown, i.e. (uint32_t)-1?
   //   Suggestion: increase all.sd->weighted_unlabeled_examples???,
-  //               but not sd.example_number, so the average loss is not
-  //               influenced.
+  //               but not sd.example_number, so the average loss is not influenced.
   // What to do if the correct_class_prob==0?
   //   Suggestion: have some maximal multiclass_log_loss limit, e.g. 999.
   float multiclass_log_loss = 999;  // -log(0) = plus infinity
@@ -160,8 +158,7 @@ void finish_example_scores(vw &all, oaa &o, example &ec)
   }
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
-  // but we cannot store it in ec.pred union because we store ec.pred.probs
-  // there.
+  // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction = 0;
   for (uint32_t i = 1; i < o.k; i++)
     if (ec.pred.scalars[i] > ec.pred.scalars[prediction])
@@ -193,8 +190,7 @@ void finish_example_scores(vw &all, oaa &o, example &ec)
   // === Report updates using zero-one loss
   all.sd->update(ec.test_only, ec.l.multi.label != (uint32_t)-1, zero_one_loss, ec.weight, ec.num_features);
   // Alternatively, we could report multiclass_log_loss.
-  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight,
-  // ec.num_features);
+  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
   // Even better would be to report both losses, but this would mean to increase
   // the number of columns and this would not fit narrow screens.
   // So let's report (average) multiclass_log_loss only in the final resume.
@@ -207,7 +203,7 @@ void finish_example_scores(vw &all, oaa &o, example &ec)
   VW::finish_example(all, ec);
 }
 
-LEARNER::base_learner *oaa_setup(options_i &options, vw &all)
+LEARNER::base_learner* oaa_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<oaa>();
   bool probabilities = false;
@@ -251,8 +247,8 @@ LEARNER::base_learner *oaa_setup(options_i &options, vw &all)
     }
   }
 
-  oaa *data_ptr = data.get();
-  LEARNER::learner<oaa, example> *l;
+  oaa* data_ptr = data.get();
+  LEARNER::learner<oaa, example>* l;
   auto base = as_singleline(setup_base(options, all));
   if (probabilities || scores)
   {
@@ -261,11 +257,8 @@ LEARNER::base_learner *oaa_setup(options_i &options, vw &all)
     {
       auto loss_function_type = all.loss->getType();
       if (loss_function_type != "logistic")
-        all.trace_message << "WARNING: --probabilities should be used only "
-                             "with --loss_function=logistic"
-                          << endl;
-      // the three boolean template parameters are: is_learn, print_all and
-      // scores
+        all.trace_message << "WARNING: --probabilities should be used only with --loss_function=logistic" << endl;
+      // the three boolean template parameters are: is_learn, print_all and scores
       l = &LEARNER::init_multiclass_learner(data, base, predict_or_learn<true, false, true, true>,
           predict_or_learn<false, false, true, true>, all.p, data->k, prediction_type::scalars);
       all.sd->report_multiclass_log_loss = true;

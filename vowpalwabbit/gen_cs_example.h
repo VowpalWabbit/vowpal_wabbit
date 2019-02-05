@@ -6,9 +6,9 @@
 #pragma once
 #include <float.h>
 
-#include "cb_algs.h"
-#include "reductions.h"
 #include "vw.h"
+#include "reductions.h"
+#include "cb_algs.h"
 #include "vw_exception.h"
 
 namespace GEN_CS
@@ -18,13 +18,13 @@ struct cb_to_cs
   size_t cb_type;
   uint32_t num_actions;
   COST_SENSITIVE::label pred_scores;
-  LEARNER::single_learner *scorer;
+  LEARNER::single_learner* scorer;
   float avg_loss_regressors;
   size_t nb_ex_regressors;
   float last_pred_reg;
   float last_correct_cost;
 
-  CB::cb_class *known_cost;
+  CB::cb_class* known_cost;
 };
 
 struct cb_to_cs_adf
@@ -40,18 +40,16 @@ struct cb_to_cs_adf
   // for DR
   COST_SENSITIVE::label pred_scores;
   CB::cb_class known_cost;
-  LEARNER::single_learner *scorer;
+  LEARNER::single_learner* scorer;
 };
 
-CB::cb_class *get_observed_cost(CB::label &ld);
+CB::cb_class* get_observed_cost(CB::label& ld);
 
-void gen_cs_example_ips(cb_to_cs &c, CB::label &ld, COST_SENSITIVE::label &cs_ld);
+void gen_cs_example_ips(cb_to_cs& c, CB::label& ld, COST_SENSITIVE::label& cs_ld);
 
 template <bool is_learn>
-void gen_cs_example_dm(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld)
-{  // this implements the direct estimation
-   // method, where costs are directly
-   // specified by the learned regressor.
+void gen_cs_example_dm(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld)
+{  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
   CB::label ld = ec.l.cb;
 
   float min = FLT_MAX;
@@ -60,12 +58,10 @@ void gen_cs_example_dm(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld)
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
 
-  if (ld.costs.size() == 0 || (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX))  // this is a
-                                                                                      // typical example
-                                                                                      // where we can
-                                                                                      // perform all
-                                                                                      // actions
-  {  // in this case generate cost-sensitive example with all actions
+  if (ld.costs.size() == 0 ||
+      (ld.costs.size() == 1 &&
+          ld.costs[0].cost != FLT_MAX))  // this is a typical example where we can perform all actions
+  {                                      // in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {
       COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
@@ -93,7 +89,7 @@ void gen_cs_example_dm(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld)
   }
   else  // this is an example where we can only perform a subset of the actions
   {     // in this case generate cost-sensitive example with only allowed actions
-    for (auto &cl : ld.costs)
+    for (auto& cl : ld.costs)
     {
       COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
 
@@ -123,7 +119,7 @@ void gen_cs_example_dm(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld)
 }
 
 template <bool is_learn>
-void gen_cs_label(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld, uint32_t action)
+void gen_cs_label(cb_to_cs& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t action)
 {
   COST_SENSITIVE::wclass wc = {0., action, 0., 0.};
 
@@ -146,7 +142,7 @@ void gen_cs_label(cb_to_cs &c, example &ec, COST_SENSITIVE::label &cs_ld, uint32
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs &c, example &ec, CB::label &ld, COST_SENSITIVE::label &cs_ld)
+void gen_cs_example_dr(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {  // this implements the doubly robust method
   cs_ld.costs.clear();
   c.pred_scores.costs.clear();
@@ -162,11 +158,11 @@ void gen_cs_example_dr(cb_to_cs &c, example &ec, CB::label &ld, COST_SENSITIVE::
     for (uint32_t i = 1; i <= c.num_actions; i++) gen_cs_label<is_learn>(c, ec, cs_ld, i);
   else  // this is an example where we can only perform a subset of the actions
     // in this case generate cost-sensitive example with only allowed actions
-    for (auto &cl : ld.costs) gen_cs_label<is_learn>(c, ec, cs_ld, cl.action);
+    for (auto& cl : ld.costs) gen_cs_label<is_learn>(c, ec, cs_ld, cl.action);
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs &c, example &ec, CB::label &ld, COST_SENSITIVE::label &cs_ld)
+void gen_cs_example(cb_to_cs& c, example& ec, CB::label& ld, COST_SENSITIVE::label& cs_ld)
 {
   switch (c.cb_type)
   {
@@ -184,16 +180,16 @@ void gen_cs_example(cb_to_cs &c, example &ec, CB::label &ld, COST_SENSITIVE::lab
   }
 }
 
-void gen_cs_test_example(multi_ex &examples, COST_SENSITIVE::label &cs_labels);
+void gen_cs_test_example(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_ips(multi_ex &examples, COST_SENSITIVE::label &cs_labels);
+void gen_cs_example_ips(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_dm(multi_ex &examples, COST_SENSITIVE::label &cs_labels);
+void gen_cs_example_dm(multi_ex& examples, COST_SENSITIVE::label& cs_labels);
 
-void gen_cs_example_mtr(cb_to_cs_adf &c, multi_ex &ec_seq, COST_SENSITIVE::label &cs_labels);
+void gen_cs_example_mtr(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels);
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs_adf &c, multi_ex &examples, COST_SENSITIVE::label &cs_labels)
+void gen_cs_example_dr(cb_to_cs_adf& c, multi_ex& examples, COST_SENSITIVE::label& cs_labels)
 {  // size_t mysize = examples.size();
   c.pred_scores.costs.clear();
   bool shared = CB::ec_is_example_header(*examples[0]);
@@ -242,7 +238,7 @@ void gen_cs_example_dr(cb_to_cs_adf &c, multi_ex &examples, COST_SENSITIVE::labe
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf &c, multi_ex &ec_seq, COST_SENSITIVE::label &cs_labels)
+void gen_cs_example(cb_to_cs_adf& c, multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
 {
   switch (c.cb_type)
   {
@@ -261,11 +257,11 @@ void gen_cs_example(cb_to_cs_adf &c, multi_ex &ec_seq, COST_SENSITIVE::label &cs
 }
 
 template <bool is_learn>
-void call_cs_ldf(LEARNER::multi_learner &base,
-    multi_ex &examples,
-    v_array<CB::label> &cb_labels,
-    COST_SENSITIVE::label &cs_labels,
-    v_array<COST_SENSITIVE::label> &prepped_cs_labels,
+void call_cs_ldf(LEARNER::multi_learner& base,
+    multi_ex& examples,
+    v_array<CB::label>& cb_labels,
+    COST_SENSITIVE::label& cs_labels,
+    v_array<COST_SENSITIVE::label>& prepped_cs_labels,
     uint64_t offset,
     size_t id = 0)
 {
@@ -276,8 +272,7 @@ void call_cs_ldf(LEARNER::multi_learner &base,
     prepped_cs_labels.end() = prepped_cs_labels.end_array;
   }
 
-  // 1st: save cb_label (into mydata) and store cs_label for each example, which
-  // will be passed into base.learn.
+  // 1st: save cb_label (into mydata) and store cs_label for each example, which will be passed into base.learn.
   // also save offsets
   uint64_t saved_offset = examples[0]->ft_offset;
   size_t index = 0;

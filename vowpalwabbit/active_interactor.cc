@@ -3,29 +3,29 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
 #endif
 
 using namespace std;
 
-int open_socket(const char *host, unsigned short port)
+int open_socket(const char* host, unsigned short port)
 {
-  hostent *he;
+  hostent* he;
   he = gethostbyname(host);
 
   if (he == nullptr)
@@ -46,9 +46,9 @@ int open_socket(const char *host, unsigned short port)
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
-  far_end.sin_addr = *(in_addr *)(he->h_addr);
+  far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0', 8);
-  if (connect(sd, (sockaddr *)&far_end, sizeof(far_end)) == -1)
+  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1)
   {
     stringstream msg;
     msg << "connect(" << host << ':' << port << "): " << strerror(errno);
@@ -58,7 +58,7 @@ int open_socket(const char *host, unsigned short port)
   return sd;
 }
 
-int recvall(int s, char *buf, int n)
+int recvall(int s, char* buf, int n)
 {
   int total = 0;
   int ret = recv(s, buf, n, 0);
@@ -72,12 +72,12 @@ int recvall(int s, char *buf, int n)
   return total;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   char buf[256];
   char *toks, *itok, *ttag;
   string tag;
-  const char *host = "localhost";
+  const char* host = "localhost";
   unsigned short port = ~0;
   ssize_t pos;
   int s, ret, queries = 0;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   ret = send(s, &id, sizeof(id), 0);
   if (ret < 0)
   {
-    const char *msg = "Could not perform handshake!";
+    const char* msg = "Could not perform handshake!";
     cerr << msg << endl;
     throw runtime_error(msg);
   }
@@ -110,19 +110,19 @@ int main(int argc, char *argv[])
   {
     line.append("\n");
     int len = line.size();
-    const char *cstr = line.c_str();
-    const char *sp = strchr(cstr, ' ');
+    const char* cstr = line.c_str();
+    const char* sp = strchr(cstr, ' ');
     ret = send(s, sp + 1, len - (sp + 1 - cstr), 0);
     if (ret < 0)
     {
-      const char *msg = "Could not send unlabeled data!";
+      const char* msg = "Could not send unlabeled data!";
       cerr << msg << endl;
       throw runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char *msg = "Could not receive queries!";
+      const char* msg = "Could not receive queries!";
       cerr << msg << endl;
       throw runtime_error(msg);
     }
@@ -146,14 +146,14 @@ int main(int argc, char *argv[])
     ret = send(s, cstr, len, 0);
     if (ret < 0)
     {
-      const char *msg = "Could not send labeled data!";
+      const char* msg = "Could not send labeled data!";
       cerr << msg << endl;
       throw runtime_error(msg);
     }
     ret = recvall(s, buf, 256);
     if (ret < 0)
     {
-      const char *msg = "Could not receive predictions!";
+      const char* msg = "Could not receive predictions!";
       cerr << msg << endl;
       throw runtime_error(msg);
     }

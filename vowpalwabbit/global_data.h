@@ -5,18 +5,17 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <map>
 #include <cfloat>
-#include <climits>
+#include <stdint.h>
 #include <cstdio>
 #include <inttypes.h>
-#include <iomanip>
-#include <iostream>
-#include <map>
-#include <stdint.h>
-#include <vector>
+#include <climits>
 
-// Thread cannot be used in managed C++, tell the compiler that this is
-// unmanaged even if included in a managed project.
+// Thread cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed project.
 #ifdef _M_CEE
 #pragma managed(push, off)
 #undef _M_CEE
@@ -27,19 +26,19 @@ license as described in the file LICENSE.
 #include <thread>
 #endif
 
-#include "array_parameters.h"
-#include "comp_io.h"
-#include "config.h"
-#include "crossplat_compat.h"
-#include "error_reporting.h"
-#include "example.h"
-#include "hash.h"
-#include "learner.h"
-#include "loss_functions.h"
-#include "parse_primitives.h"
 #include "v_array.h"
+#include "array_parameters.h"
+#include "parse_primitives.h"
+#include "loss_functions.h"
+#include "comp_io.h"
+#include "example.h"
+#include "config.h"
+#include "learner.h"
 #include "v_hashmap.h"
 #include <time.h>
+#include "hash.h"
+#include "crossplat_compat.h"
+#include "error_reporting.h"
 
 #include "options.h"
 
@@ -54,28 +53,28 @@ struct version_struct
     minor = min;
     rev = rv;
   }
-  version_struct(const char *v_str) { from_string(v_str); }
+  version_struct(const char* v_str) { from_string(v_str); }
   void operator=(version_struct v)
   {
     major = v.major;
     minor = v.minor;
     rev = v.rev;
   }
-  version_struct(const version_struct &v)
+  version_struct(const version_struct& v)
   {
     major = v.major;
     minor = v.minor;
     rev = v.rev;
   }
-  void operator=(const char *v_str) { from_string(v_str); }
+  void operator=(const char* v_str) { from_string(v_str); }
   bool operator==(version_struct v) { return (major == v.major && minor == v.minor && rev == v.rev); }
-  bool operator==(const char *v_str)
+  bool operator==(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this == v_tmp);
   }
   bool operator!=(version_struct v) { return !(*this == v); }
-  bool operator!=(const char *v_str)
+  bool operator!=(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this != v_tmp);
@@ -94,7 +93,7 @@ struct version_struct
       return true;
     return false;
   }
-  bool operator>=(const char *v_str)
+  bool operator>=(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this >= v_tmp);
@@ -113,19 +112,19 @@ struct version_struct
       return true;
     return false;
   }
-  bool operator>(const char *v_str)
+  bool operator>(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this > v_tmp);
   }
   bool operator<=(version_struct v) { return !(*this > v); }
-  bool operator<=(const char *v_str)
+  bool operator<=(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this <= v_tmp);
   }
   bool operator<(version_struct v) { return !(*this >= v); }
-  bool operator<(const char *v_str)
+  bool operator<(const char* v_str)
   {
     version_struct v_tmp(v_str);
     return (*this < v_tmp);
@@ -137,7 +136,7 @@ struct version_struct
     std::string s = v_str;
     return s;
   }
-  void from_string(const char *str)
+  void from_string(const char* str)
   {
 #ifdef _WIN32
     sscanf_s(str, "%d.%d.%d", &major, &minor, &rev);
@@ -151,13 +150,13 @@ const version_struct version(PACKAGE_VERSION);
 
 typedef float weight;
 
-typedef v_hashmap<substring, features *> feature_dict;
+typedef v_hashmap<substring, features*> feature_dict;
 
 struct dictionary_info
 {
-  char *name;
+  char* name;
   uint64_t file_hash;
-  feature_dict *dict;
+  feature_dict* dict;
 };
 
 inline void deleter(substring ss, uint64_t /* label */) { free_it(ss.begin); }
@@ -173,7 +172,7 @@ class namedlabels
   namedlabels(std::string label_list)
   {
     id2name = v_init<substring>();
-    char *temp = calloc_or_throw<char>(1 + label_list.length());
+    char* temp = calloc_or_throw<char>(1 + label_list.length());
     memcpy(temp, label_list.c_str(), strlen(label_list.c_str()));
     substring ss = {temp, nullptr};
     ss.end = ss.begin + label_list.length();
@@ -184,8 +183,8 @@ class namedlabels
     name2id.init(4 * K + 1, 0, substring_equal);
     for (size_t k = 0; k < K; k++)
     {
-      substring &l = id2name[k];
-      uint64_t hash = uniform_hash((unsigned char *)l.begin, l.end - l.begin, 378401);
+      substring& l = id2name[k];
+      uint64_t hash = uniform_hash((unsigned char*)l.begin, l.end - l.begin, 378401);
       uint64_t id = name2id.get(l, hash);
       if (id != 0)  // TODO: memory leak: char* temp
         THROW("error: label dictionary initialized with multiple occurances of: " << l);
@@ -208,14 +207,14 @@ class namedlabels
 
   uint32_t getK() { return K; }
 
-  uint64_t get(substring &s)
+  uint64_t get(substring& s)
   {
-    uint64_t hash = uniform_hash((unsigned char *)s.begin, s.end - s.begin, 378401);
+    uint64_t hash = uniform_hash((unsigned char*)s.begin, s.end - s.begin, 378401);
     uint64_t v = name2id.get(s, hash);
     if (v == 0)
     {
       std::cerr << "warning: missing named label '";
-      for (char *c = s.begin; c != s.end; c++) std::cerr << *c;
+      for (char* c = s.begin; c != s.end; c++) std::cerr << *c;
       std::cerr << '\'' << std::endl;
     }
     return v;
@@ -253,7 +252,7 @@ struct shared_data
   float min_label;  // minimum label encountered
   float max_label;  // maximum label encountered
 
-  namedlabels *ldict;
+  namedlabels* ldict;
 
   // for holdout
   double weighted_holdout_examples;
@@ -262,8 +261,7 @@ struct shared_data
   double holdout_sum_loss;
   // for best model selection
   double holdout_best_loss;
-  double weighted_holdout_examples_since_last_pass;  // reserved for best
-                                                     // predictor selection
+  double weighted_holdout_examples_since_last_pass;  // reserved for best predictor selection
   double holdout_sum_loss_since_last_pass;
   size_t holdout_best_pass;
   // for --probabilities
@@ -373,7 +371,7 @@ struct shared_data
 
   void print_update(bool holdout_set_off,
       size_t current_pass,
-      const std::string &label,
+      const std::string& label,
       uint32_t prediction,
       size_t num_features,
       bool progress_add,
@@ -388,8 +386,8 @@ struct shared_data
 
   void print_update(bool holdout_set_off,
       size_t current_pass,
-      const std::string &label,
-      const std::string &prediction,
+      const std::string& label,
+      const std::string& prediction,
       size_t num_features,
       bool progress_add,
       float progress_arg)
@@ -477,27 +475,26 @@ enum label_type_t
 
 struct vw
 {
-  shared_data *sd;
+  shared_data* sd;
 
-  parser *p;
+  parser* p;
   std::thread parse_thread;
 
   AllReduceType all_reduce_type;
-  AllReduce *all_reduce;
+  AllReduce* all_reduce;
 
-  LEARNER::base_learner *l;               // the top level learner
-  LEARNER::single_learner *scorer;        // a scoring function
-  LEARNER::base_learner *cost_sensitive;  // a cost sensitive learning algorithm.
-                                          // can be single or multi line learner
+  LEARNER::base_learner* l;               // the top level learner
+  LEARNER::single_learner* scorer;        // a scoring function
+  LEARNER::base_learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
-  void learn(example &);
-  void learn(multi_ex &);
-  void predict(example &);
-  void predict(multi_ex &);
-  void finish_example(example &);
-  void finish_example(multi_ex &);
+  void learn(example&);
+  void learn(multi_ex&);
+  void predict(example&);
+  void predict(multi_ex&);
+  void finish_example(example&);
+  void finish_example(multi_ex&);
 
-  void (*set_minmax)(shared_data *sd, float label);
+  void (*set_minmax)(shared_data* sd, float label);
 
   uint64_t current_pass;
 
@@ -531,9 +528,9 @@ struct vw
 
   // Flag used when VW internally manages lifetime of options object.
   bool should_delete_options = false;
-  VW::config::options_i *options;
+  VW::config::options_i* options;
 
-  void * /*Search::search*/ searchstr;
+  void* /*Search::search*/ searchstr;
 
   uint32_t wpp;
 
@@ -557,8 +554,7 @@ struct vw
   size_t numpasses;
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
-  bool permutations;    // if true - permutations of features generated instead of
-                        // simple combinations. false by default
+  bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
   std::vector<std::string> interactions;
   std::vector<std::string> pairs;    // pairs of features to cross.
   std::vector<std::string> triples;  // triples of features to cross.
@@ -572,23 +568,17 @@ struct vw
 
   std::vector<std::string> ngram_strings;
   std::vector<std::string> skip_strings;
-  uint32_t ngram[256];                                      // ngrams to generate.
-  uint32_t skips[256];                                      // skips in ngrams.
-  std::vector<std::string> limit_strings;                   // descriptor of feature limits
-  uint32_t limit[256];                                      // count to limit features by
-  uint64_t affix_features[256];                             // affixes to generate (up to 16 per namespace -
-                                                            // 4 bits per affix)
-  bool spelling_features[256];                              // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;                 // where to look for dictionaries
-  std::vector<feature_dict *> namespace_dictionaries[256];  // each namespace has
-                                                            // a list of
-                                                            // dictionaries
-                                                            // attached to it
-  std::vector<dictionary_info> loaded_dictionaries;         // which dictionaries have
-                                                            // we loaded from a file to
-                                                            // memory?
+  uint32_t ngram[256];                       // ngrams to generate.
+  uint32_t skips[256];                       // skips in ngrams.
+  std::vector<std::string> limit_strings;    // descriptor of feature limits
+  uint32_t limit[256];                       // count to limit features by
+  uint64_t affix_features[256];              // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  bool spelling_features[256];               // generate spelling features for which namespace
+  std::vector<std::string> dictionary_path;  // where to look for dictionaries
+  std::vector<feature_dict*> namespace_dictionaries[256];  // each namespace has a list of dictionaries attached to it
+  std::vector<dictionary_info> loaded_dictionaries;        // which dictionaries have we loaded from a file to memory?
 
-  void (*delete_prediction)(void *);
+  void (*delete_prediction)(void*);
   bool audit;     // should I print lots of debugging information?
   bool quiet;     // Should I suppress progress-printing of updates?
   bool training;  // Should I train if lable data is available?
@@ -609,12 +599,10 @@ struct vw
   bool early_terminate;
   uint32_t holdout_period;
   uint32_t holdout_after;
-  size_t check_holdout_every_n_passes;  // default: 1, but search might want to
-                                        // set it higher if you spend multiple
+  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
 
-  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2
-                          // depending on whether adaptive is true)
+  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   uint32_t lda;
 
@@ -623,7 +611,7 @@ struct vw
 
   size_t length() { return ((size_t)1) << num_bits; };
 
-  v_array<LEARNER::base_learner *(*)(VW::config::options_i &, vw &)> reduction_stack;
+  v_array<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)> reduction_stack;
 
   // Prediction output
   v_array<int> final_prediction_sink;  // set to send global predictions to.
@@ -631,9 +619,9 @@ struct vw
 
   void (*print)(int, float, float, v_array<char>);
   void (*print_text)(int, std::string, v_array<char>);
-  loss_function *loss;
+  loss_function* loss;
 
-  char *program_name;
+  char* program_name;
 
   bool stdin_off;
 
@@ -662,15 +650,15 @@ struct vw
 
   vw();
 
-  vw(const vw &);
+  vw(const vw&);
   // private://disable copying.
   // vw& operator=(const vw& );
 };
 
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void noop_mm(shared_data *, float label);
-void get_prediction(int sock, float &res, float &weight);
-void compile_gram(std::vector<std::string> grams, uint32_t *dest, char *descriptor, bool quiet);
-void compile_limits(std::vector<std::string> limits, uint32_t *dest, bool quiet);
-int print_tag(std::stringstream &ss, v_array<char> tag);
+void noop_mm(shared_data*, float label);
+void get_prediction(int sock, float& res, float& weight);
+void compile_gram(std::vector<std::string> grams, uint32_t* dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, uint32_t* dest, bool quiet);
+int print_tag(std::stringstream& ss, v_array<char> tag);

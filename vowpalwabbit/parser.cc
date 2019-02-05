@@ -6,10 +6,10 @@ license as described in the file LICENSE.
 #include <sys/types.h>
 
 #ifndef _WIN32
-#include <netinet/tcp.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <netinet/tcp.h>
 #endif
 
 #include <signal.h>
@@ -17,9 +17,9 @@ license as described in the file LICENSE.
 #include <fstream>
 
 #ifdef _WIN32
+#include <winsock2.h>
 #include <Windows.h>
 #include <io.h>
-#include <winsock2.h>
 typedef int socklen_t;
 
 int daemon(int a, int b)
@@ -36,20 +36,20 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 #include <netinet/in.h>
 #endif
 
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 
-#include "cache.h"
-#include "constant.h"
-#include "interactions.h"
-#include "parse_args.h"
-#include "parse_dispatch_loop.h"
 #include "parse_example.h"
-#include "parse_example_json.h"
+#include "cache.h"
 #include "unique_sort.h"
+#include "constant.h"
 #include "vw.h"
+#include "interactions.h"
 #include "vw_exception.h"
+#include "parse_example_json.h"
+#include "parse_dispatch_loop.h"
+#include "parse_args.h"
 
 using namespace std;
 
@@ -62,9 +62,8 @@ bool is_test_only(uint32_t counter,
     uint32_t period,
     uint32_t after,
     bool holdout_off,
-    uint32_t target_modulus)  // target should be 0 in the normal
-                              // case, or period-1 in the case that
-                              // emptylines separate examples
+    uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate
+                              // examples
 {
   if (holdout_off)
     return false;
@@ -74,9 +73,9 @@ bool is_test_only(uint32_t counter,
     return (counter >= after);
 }
 
-parser *new_parser()
+parser* new_parser()
 {
-  auto &ret = *(new parser());
+  auto& ret = *(new parser());
   ret.input = new io_buf;
   ret.output = new io_buf;
   ret.local_example_number = 0;
@@ -89,21 +88,21 @@ parser *new_parser()
   return &ret;
 }
 
-void set_compressed(parser *par)
+void set_compressed(parser* par)
 {
   finalize_source(par);
   par->input = new comp_io_buf;
   par->output = new comp_io_buf;
 }
 
-uint32_t cache_numbits(io_buf *buf, int filepointer)
+uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
   v_array<char> t = v_init<char>();
 
   try
   {
     size_t v_length;
-    buf->read_file(filepointer, (char *)&v_length, sizeof(v_length));
+    buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
     if (v_length > 61)
       THROW("cache version too long, cache file is probably invalid");
 
@@ -118,8 +117,7 @@ uint32_t cache_numbits(io_buf *buf, int filepointer)
     version_struct v_tmp(t.begin());
     if (v_tmp != version)
     {
-      //      cout << "cache has possibly incompatible version, rebuilding" <<
-      //      endl;
+      //      cout << "cache has possibly incompatible version, rebuilding" << endl;
       t.delete_v();
       return 0;
     }
@@ -155,9 +153,9 @@ bool member(v_array<int> ids, int id)
   return false;
 }
 
-void reset_source(vw &all, size_t numbits)
+void reset_source(vw& all, size_t numbits)
 {
-  io_buf *input = all.p->input;
+  io_buf* input = all.p->input;
   input->current = 0;
   if (all.p->write_cache)
   {
@@ -179,8 +177,8 @@ void reset_source(vw &all, size_t numbits)
         if (!member(all.final_prediction_sink, (size_t)fd))
           io_buf::close_file_or_socket(fd);
       }
-    input->open_file(all.p->output->finalname.begin(), all.stdin_off,
-        io_buf::READ);  // pushing is merged into open_file
+    input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
+                                                                                      // open_file
     all.p->reader = read_cached_features;
   }
   if (all.p->resettable == true)
@@ -200,12 +198,11 @@ void reset_source(vw &all, size_t numbits)
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int f = (int)accept(all.p->bound_sock, (sockaddr *)&client_address, &size);
+      int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
       if (f < 0)
         THROW("accept: " << strerror(errno));
 
-      // note: breaking cluster parallel online learning by dropping support for
-      // id
+      // note: breaking cluster parallel online learning by dropping support for id
 
       all.final_prediction_sink.push_back((size_t)f);
       all.p->input->files.push_back(f);
@@ -233,7 +230,7 @@ void reset_source(vw &all, size_t numbits)
   }
 }
 
-void finalize_source(parser *p)
+void finalize_source(parser* p)
 {
 #ifdef _WIN32
   int f = _fileno(stdin);
@@ -249,21 +246,19 @@ void finalize_source(parser *p)
   if (p->jsonp)
   {
     if (p->audit)
-      delete (json_parser<true> *)p->jsonp;
+      delete (json_parser<true>*)p->jsonp;
     else
-      delete (json_parser<false> *)p->jsonp;
+      delete (json_parser<false>*)p->jsonp;
     p->jsonp = nullptr;
   }
 }
 
-void make_write_cache(vw &all, string &newname, bool quiet)
+void make_write_cache(vw& all, string& newname, bool quiet)
 {
-  io_buf *output = all.p->output;
+  io_buf* output = all.p->output;
   if (output->files.size() != 0)
   {
-    all.trace_message << "Warning: you tried to make two write caches.  Only "
-                         "the first one will be made."
-                      << endl;
+    all.trace_message << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
 
@@ -290,11 +285,11 @@ void make_write_cache(vw &all, string &newname, bool quiet)
     all.trace_message << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(vw &all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
+void parse_cache(vw& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
 {
   all.p->write_cache = false;
 
-  for (auto &file : cache_files)
+  for (auto& file : cache_files)
   {
     int f = -1;
     if (!kill_cache)
@@ -302,7 +297,7 @@ void parse_cache(vw &all, std::vector<std::string> cache_files, bool kill_cache,
       {
         f = all.p->input->open_file(file.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (const exception &)
+      catch (const exception&)
       {
         f = -1;
       }
@@ -314,8 +309,7 @@ void parse_cache(vw &all, std::vector<std::string> cache_files, bool kill_cache,
       if (c < all.num_bits)
       {
         if (!quiet)
-          all.trace_message << "WARNING: cache file is ignored as it's made "
-                               "with less bit precision than required!"
+          all.trace_message << "WARNING: cache file is ignored as it's made with less bit precision than required!"
                             << endl;
         all.p->input->close_file();
         make_write_cache(all, file, quiet);
@@ -348,7 +342,7 @@ void parse_cache(vw &all, std::vector<std::string> cache_files, bool kill_cache,
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_options)
+void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options)
 {
   all.p->input->current = 0;
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
@@ -371,12 +365,12 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
     }
 
     int on = 1;
-    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
+    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
       all.trace_message << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
     // Enable TCP Keep Alive to prevent socket leaks
     int enableTKA = 1;
-    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&enableTKA, sizeof(enableTKA)) < 0)
+    if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&enableTKA, sizeof(enableTKA)) < 0)
       all.trace_message << "setsockopt SO_KEEPALIVE: " << strerror(errno) << endl;
 
     sockaddr_in address;
@@ -388,7 +382,7 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
     address.sin_port = htons(port);
 
     // attempt to bind to socket
-    if (::bind(all.p->bound_sock, (sockaddr *)&address, sizeof(address)) < 0)
+    if (::bind(all.p->bound_sock, (sockaddr*)&address, sizeof(address)) < 0)
       THROWERRNO("bind");
 
     // listen on socket
@@ -399,7 +393,7 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
     if (all.options->was_supplied("port_file"))
     {
       socklen_t address_size = sizeof(address);
-      if (getsockname(all.p->bound_sock, (sockaddr *)&address, &address_size) < 0)
+      if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
       {
         all.trace_message << "getsockname: " << strerror(errno) << endl;
       }
@@ -442,8 +436,8 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data *sd =
-          (shared_data *)mmap(0, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+      shared_data* sd =
+          (shared_data*)mmap(0, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
       memcpy(sd, all.sd, sizeof(shared_data));
       free(all.sd);
       all.sd = sd;
@@ -509,7 +503,7 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
     all.p->max_fd = 0;
     if (!all.quiet)
       all.trace_message << "calling accept" << endl;
-    int f = (int)accept(all.p->bound_sock, (sockaddr *)&client_address, &size);
+    int f = (int)accept(all.p->bound_sock, (sockaddr*)&client_address, &size);
     if (f < 0)
       THROWERRNO("accept");
 
@@ -557,10 +551,9 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
       {
         all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
       }
-      catch (exception const &ex)
+      catch (exception const& ex)
       {
-        // when trying to fix this exception, consider that an empty temp is
-        // valid if all.stdin_off is false
+        // when trying to fix this exception, consider that an empty temp is valid if all.stdin_off is false
         if (temp.size() != 0)
         {
           all.trace_message << "can't open '" << temp << "', sailing on!" << endl;
@@ -574,8 +567,7 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
       if (input_options.json || input_options.dsjson)
       {
         // TODO: change to class with virtual method
-        // --invert_hash requires the audit parser version to save the extra
-        // information.
+        // --invert_hash requires the audit parser version to save the extra information.
         if (all.audit || all.hash_inv)
         {
           all.p->reader = &read_features_json<true>;
@@ -606,27 +598,26 @@ void enable_sources(vw &all, bool quiet, size_t passes, input_options &input_opt
     all.trace_message << "num sources = " << all.p->input->files.size() << endl;
 }
 
-void lock_done(parser &p)
+void lock_done(parser& p)
 {
   std::lock_guard<std::mutex> lock(p.examples_lock);
   p.done = true;
-  // in case get_example() is waiting for a fresh example, wake so it can
-  // realize there are no more.
+  // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.example_available.notify_all();
 }
 
-void set_done(vw &all)
+void set_done(vw& all)
 {
   all.early_terminate = true;
   lock_done(*all.p);
 }
 
-void addgrams(vw &all,
+void addgrams(vw& all,
     size_t ngram,
     size_t skip_gram,
-    features &fs,
+    features& fs,
     size_t initial_length,
-    v_array<size_t> &gram_mask,
+    v_array<size_t>& gram_mask,
     size_t skips)
 {
   if (ngram == 0 && gram_mask.last() < initial_length)
@@ -666,15 +657,13 @@ void addgrams(vw &all,
  * Definition of k-skip-n-grams:
  * Consider a feature vector - a, b, c, d, e, f
  * 2-skip-2-grams would be - ab, ac, ad, bc, bd, be, cd, ce, cf, de, df, ef
- * 1-skip-3-grams would be - abc, abd, acd, ace, bcd, bce, bde, bdf, cde, cdf,
- * cef, def
+ * 1-skip-3-grams would be - abc, abd, acd, ace, bcd, bce, bde, bdf, cde, cdf, cef, def
  * Note that for a n-gram, (n-1)-grams, (n-2)-grams... 2-grams are also appended
  * The k-skip-n-grams are appended to the feature vector.
- * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a
- * random no.
+ * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(vw &all, example *&ex)
+void generateGrams(vw& all, example*& ex)
 {
   for (namespace_index index : ex->indices)
   {
@@ -688,19 +677,19 @@ void generateGrams(vw &all, example *&ex)
   }
 }
 
-void end_pass_example(vw &all, example *ae)
+void end_pass_example(vw& all, example* ae)
 {
   all.p->lp.default_label(&ae->l);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
 }
 
-void feature_limit(vw &all, example *ex)
+void feature_limit(vw& all, example* ex)
 {
   for (namespace_index index : ex->indices)
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features &fs = ex->feature_space[index];
+      features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       unique_features(fs, all.limit[index]);
     }
@@ -708,15 +697,15 @@ void feature_limit(vw &all, example *ex)
 
 namespace VW
 {
-example &get_unused_example(vw *all)
+example& get_unused_example(vw* all)
 {
-  parser *p = all->p;
+  parser* p = all->p;
   while (true)
   {
     std::unique_lock<std::mutex> lock(p->examples_lock);
     if (p->examples[p->begin_parsed_examples % p->ring_size].in_use == false)
     {
-      example &ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
+      example& ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
       ret.in_use = true;
       return ret;
     }
@@ -725,12 +714,12 @@ example &get_unused_example(vw *all)
   }
 }
 
-void setup_examples(vw &all, v_array<example *> &examples)
+void setup_examples(vw& all, v_array<example*>& examples)
 {
-  for (example *ae : examples) setup_example(all, ae);
+  for (example* ae : examples) setup_example(all, ae);
 }
 
-void setup_example(vw &all, example *ae)
+void setup_example(vw& all, example* ae)
 {
   if (all.p->sort_features && ae->sorted == false)
     unique_sort_features(all.parse_mask, ae);
@@ -760,7 +749,7 @@ void setup_example(vw &all, example *ae)
   ae->weight = all.p->lp.get_weight(&ae->l);
 
   if (all.ignore_some)
-    for (unsigned char *i = ae->indices.begin(); i != ae->indices.end(); i++)
+    for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
       if (all.ignore[*i])
       {
         // delete namespace
@@ -782,11 +771,11 @@ void setup_example(vw &all, example *ae)
   uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
 
   if (multiplier != 1)  // make room for per-feature information.
-    for (features &fs : *ae)
-      for (auto &j : fs.indicies) j *= multiplier;
+    for (features& fs : *ae)
+      for (auto& j : fs.indicies) j *= multiplier;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  for (features &fs : *ae)
+  for (features& fs : *ae)
   {
     ae->num_features += fs.size();
     ae->total_sum_feat_sq += fs.sum_feat_sq;
@@ -802,17 +791,17 @@ void setup_example(vw &all, example *ae)
 
 namespace VW
 {
-example *new_unused_example(vw &all)
+example* new_unused_example(vw& all)
 {
-  example *ec = &get_unused_example(&all);
+  example* ec = &get_unused_example(&all);
   all.p->lp.default_label(&ec->l);
   all.p->begin_parsed_examples++;
   ec->example_counter = (size_t)all.p->begin_parsed_examples;
   return ec;
 }
-example *read_example(vw &all, char *example_line)
+example* read_example(vw& all, char* example_line)
 {
-  example *ret = &get_unused_example(&all);
+  example* ret = &get_unused_example(&all);
 
   VW::read_line(all, ret, example_line);
   setup_example(all, ret);
@@ -821,9 +810,9 @@ example *read_example(vw &all, char *example_line)
   return ret;
 }
 
-example *read_example(vw &all, string example_line) { return read_example(all, (char *)example_line.c_str()); }
+example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
 
-void add_constant_feature(vw &vw, example *ec)
+void add_constant_feature(vw& vw, example* ec)
 {
   ec->indices.push_back(constant_namespace);
   ec->feature_space[constant_namespace].push_back(1, constant);
@@ -833,16 +822,16 @@ void add_constant_feature(vw &vw, example *ec)
     ec->feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "Constant")));
 }
 
-void add_label(example *ec, float label, float weight, float base)
+void add_label(example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
   ec->l.simple.initial = base;
   ec->weight = weight;
 }
 
-example *import_example(vw &all, string label, primitive_feature_space *features, size_t len)
+example* import_example(vw& all, string label, primitive_feature_space* features, size_t len)
 {
-  example *ret = &get_unused_example(&all);
+  example* ret = &get_unused_example(&all);
   all.p->lp.default_label(&ret->l);
 
   if (label.length() > 0)
@@ -861,10 +850,10 @@ example *import_example(vw &all, string label, primitive_feature_space *features
   return ret;
 }
 
-primitive_feature_space *export_example(vw &all, example *ec, size_t &len)
+primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
 {
   len = ec->indices.size();
-  primitive_feature_space *fs_ptr = new primitive_feature_space[len];
+  primitive_feature_space* fs_ptr = new primitive_feature_space[len];
 
   int fs_count = 0;
 
@@ -877,7 +866,7 @@ primitive_feature_space *export_example(vw &all, example *ec, size_t &len)
 
     uint32_t stride_shift = all.weights.stride_shift();
     int f_count = 0;
-    for (features::iterator &f : ec->feature_space[i])
+    for (features::iterator& f : ec->feature_space[i])
     {
       feature t = {f.value(), f.index()};
       t.weight_index >>= stride_shift;
@@ -889,16 +878,16 @@ primitive_feature_space *export_example(vw &all, example *ec, size_t &len)
   return fs_ptr;
 }
 
-void releaseFeatureSpace(primitive_feature_space *features, size_t len)
+void releaseFeatureSpace(primitive_feature_space* features, size_t len)
 {
   for (size_t i = 0; i < len; i++) delete[] features[i].fs;
   delete (features);
 }
 
-void parse_example_label(vw &all, example &ec, string label)
+void parse_example_label(vw& all, example& ec, string label)
 {
   v_array<substring> words = v_init<substring>();
-  char *cstr = (char *)label.c_str();
+  char* cstr = (char*)label.c_str();
   substring str = {cstr, cstr + label.length()};
   tokenize(' ', str, words);
   all.p->lp.parse_label(all.p, all.sd, &ec.l, words);
@@ -906,9 +895,9 @@ void parse_example_label(vw &all, example &ec, string label)
   words.delete_v();
 }
 
-void empty_example(vw & /* all */, example &ec)
+void empty_example(vw& /* all */, example& ec)
 {
-  for (features &fs : ec) fs.clear();
+  for (features& fs : ec) fs.clear();
 
   ec.indices.clear();
   ec.tag.clear();
@@ -916,7 +905,7 @@ void empty_example(vw & /* all */, example &ec)
   ec.end_pass = false;
 }
 
-void clean_example(vw &all, example &ec, bool rewind)
+void clean_example(vw& all, example& ec, bool rewind)
 {
   if (rewind)
   {
@@ -936,16 +925,15 @@ void clean_example(vw &all, example &ec, bool rewind)
   }
 }
 
-void finish_example(vw &all, multi_ex &ec_seq)
+void finish_example(vw& all, multi_ex& ec_seq)
 {
   for (auto ec : ec_seq) finish_example(all, *ec);
   ec_seq.clear();
 }
 
-void finish_example(vw &all, example &ec)
+void finish_example(vw& all, example& ec)
 {
-  // only return examples to the pool that are from the pool and not externally
-  // allocated
+  // only return examples to the pool that are from the pool and not externally allocated
   if (!is_ring_example(all, &ec))
     return;
 
@@ -959,18 +947,18 @@ void finish_example(vw &all, example &ec)
 }
 }  // namespace VW
 
-void thread_dispatch(vw &all, v_array<example *> examples)
+void thread_dispatch(vw& all, v_array<example*> examples)
 {
   std::lock_guard<std::mutex> lock(all.p->examples_lock);
   all.p->end_parsed_examples += examples.size();
   all.p->example_available.notify_all();
 }
 
-void main_parse_loop(vw *all) { parse_dispatch(*all, thread_dispatch); }
+void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example *get_example(parser *p)
+example* get_example(parser* p)
 {
   std::unique_lock<std::mutex> lock(p->examples_lock);
   while (true)
@@ -998,28 +986,28 @@ example *get_example(parser *p)
   }
 }
 
-float get_topic_prediction(example *ec, size_t i) { return ec->pred.scalars[i]; }
+float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
-float get_label(example *ec) { return ec->l.simple.label; }
+float get_label(example* ec) { return ec->l.simple.label; }
 
-float get_importance(example *ec) { return ec->weight; }
+float get_importance(example* ec) { return ec->weight; }
 
-float get_initial(example *ec) { return ec->l.simple.initial; }
+float get_initial(example* ec) { return ec->l.simple.initial; }
 
-float get_prediction(example *ec) { return ec->pred.scalar; }
+float get_prediction(example* ec) { return ec->pred.scalar; }
 
-float get_cost_sensitive_prediction(example *ec) { return (float)ec->pred.multiclass; }
+float get_cost_sensitive_prediction(example* ec) { return (float)ec->pred.multiclass; }
 
-v_array<float> &get_cost_sensitive_prediction_confidence_scores(example *ec) { return ec->pred.scalars; }
+v_array<float>& get_cost_sensitive_prediction_confidence_scores(example* ec) { return ec->pred.scalars; }
 
-uint32_t *get_multilabel_predictions(example *ec, size_t &len)
+uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 {
   MULTILABEL::labels labels = ec->pred.multilabels;
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
 
-float get_action_score(example *ec, size_t i)
+float get_action_score(example* ec, size_t i)
 {
   ACTION_SCORE::action_scores scores = ec->pred.a_s;
 
@@ -1033,18 +1021,18 @@ float get_action_score(example *ec, size_t i)
   }
 }
 
-size_t get_action_score_length(example *ec) { return ec->pred.a_s.size(); }
+size_t get_action_score_length(example* ec) { return ec->pred.a_s.size(); }
 
-size_t get_tag_length(example *ec) { return ec->tag.size(); }
+size_t get_tag_length(example* ec) { return ec->tag.size(); }
 
-const char *get_tag(example *ec) { return ec->tag.begin(); }
+const char* get_tag(example* ec) { return ec->tag.begin(); }
 
-size_t get_feature_number(example *ec) { return ec->num_features; }
+size_t get_feature_number(example* ec) { return ec->num_features; }
 
-float get_confidence(example *ec) { return ec->confidence; }
+float get_confidence(example* ec) { return ec->confidence; }
 }  // namespace VW
 
-void initialize_examples(vw &all)
+void initialize_examples(vw& all)
 {
   all.p->used_index = 0;
   all.p->begin_parsed_examples = 0;
@@ -1060,15 +1048,15 @@ void initialize_examples(vw &all)
   }
 }
 
-void adjust_used_index(vw &all) { all.p->used_index = all.p->begin_parsed_examples; }
+void adjust_used_index(vw& all) { all.p->used_index = all.p->begin_parsed_examples; }
 
-void initialize_parser_datastructures(vw &all) { initialize_examples(all); }
+void initialize_parser_datastructures(vw& all) { initialize_examples(all); }
 
 namespace VW
 {
-void start_parser(vw &all) { all.parse_thread = std::thread(main_parse_loop, &all); }
+void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
-void free_parser(vw &all)
+void free_parser(vw& all)
 {
   all.p->channels.delete_v();
   all.p->words.delete_v();
@@ -1085,7 +1073,7 @@ void free_parser(vw &all)
     free(all.p->examples);
   }
 
-  io_buf *output = all.p->output;
+  io_buf* output = all.p->output;
   if (output != nullptr)
   {
     output->finalname.delete_v();
@@ -1097,7 +1085,7 @@ void free_parser(vw &all)
 
 namespace VW
 {
-void end_parser(vw &all) { all.parse_thread.join(); }
+void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw &all, example *ae) { return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size; }
+bool is_ring_example(vw& all, example* ae) { return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size; }
 }  // namespace VW

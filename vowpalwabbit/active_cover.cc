@@ -1,8 +1,8 @@
-#include "float.h"
-#include "rand48.h"
-#include "reductions.h"
-#include "vw.h"
 #include <errno.h>
+#include "reductions.h"
+#include "rand48.h"
+#include "float.h"
+#include "vw.h"
 
 using namespace LEARNER;
 using namespace VW::config;
@@ -24,14 +24,14 @@ struct active_cover
   bool oracular;
   size_t cover_size;
 
-  float *lambda_n;
-  float *lambda_d;
+  float* lambda_n;
+  float* lambda_d;
 
-  vw *all;  // statistics, loss
-  LEARNER::base_learner *l;
+  vw* all;  // statistics, loss
+  LEARNER::base_learner* l;
 };
 
-bool dis_test(vw &all, example &ec, single_learner &base, float /* prediction */, float threshold)
+bool dis_test(vw& all, example& ec, single_learner& base, float /* prediction */, float threshold)
 {
   if (all.sd->t + ec.weight <= 3)
   {
@@ -77,7 +77,7 @@ float get_pmin(float sum_loss, float t)
   return pmin;  // treating n*eps_n = 1
 }
 
-float query_decision(active_cover &a, single_learner &l, example &ec, float prediction, float pmin, bool in_dis)
+float query_decision(active_cover& a, single_learner& l, example& ec, float prediction, float pmin, bool in_dis)
 {
   if (a.all->sd->t + ec.weight <= 3)
   {
@@ -120,13 +120,13 @@ float query_decision(active_cover &a, single_learner &l, example &ec, float pred
 }
 
 template <bool is_learn>
-void predict_or_learn_active_cover(active_cover &a, single_learner &base, example &ec)
+void predict_or_learn_active_cover(active_cover& a, single_learner& base, example& ec)
 {
   base.predict(ec, 0);
 
   if (is_learn)
   {
-    vw &all = *a.all;
+    vw& all = *a.all;
 
     float prediction = ec.pred.scalar;
     float t = (float)a.all->sd->t;
@@ -218,13 +218,13 @@ void predict_or_learn_active_cover(active_cover &a, single_learner &base, exampl
   }
 }
 
-void finish(active_cover &ac)
+void finish(active_cover& ac)
 {
   delete[] ac.lambda_n;
   delete[] ac.lambda_d;
 }
 
-base_learner *active_cover_setup(options_i &options, vw &all)
+base_learner* active_cover_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active_cover>();
   option_group_definition new_options("Active Learning with Cover");
@@ -236,12 +236,10 @@ base_learner *active_cover_setup(options_i &options, vw &all)
                .help("active learning mellowness parameter c_0. Default 8."))
       .add(make_option("alpha", data->alpha)
                .default_value(1.f)
-               .help("active learning variance upper bound parameter alpha. "
-                     "Default 1."))
+               .help("active learning variance upper bound parameter alpha. Default 1."))
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
-               .help("active learning variance upper bound parameter "
-                     "beta_scale. Default sqrt(10)."))
+               .help("active learning variance upper bound parameter beta_scale. Default sqrt(10)."))
       .add(make_option("cover", data->cover_size).keep().default_value(12).help("cover size. Default 12."))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not. Default false."));
   options.add_and_parse(new_options);
@@ -273,7 +271,7 @@ base_learner *active_cover_setup(options_i &options, vw &all)
   }
 
   // Create new learner
-  learner<active_cover, example> &l = init_learner(
+  learner<active_cover, example>& l = init_learner(
       data, base, predict_or_learn_active_cover<true>, predict_or_learn_active_cover<false>, data->cover_size + 1);
   l.set_finish(finish);
 

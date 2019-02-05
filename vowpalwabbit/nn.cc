@@ -5,12 +5,12 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <math.h>
-#include <sstream>
 #include <stdio.h>
+#include <sstream>
 
-#include "gd.h"
-#include "rand48.h"
 #include "reductions.h"
+#include "rand48.h"
+#include "gd.h"
 #include "vw.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ const uint64_t nn_constant = 533357803;
 struct nn
 {
   uint32_t k;
-  loss_function *squared_loss;
+  loss_function* squared_loss;
   example output_layer;
   example hiddenbias;
   example outputweight;
@@ -37,13 +37,13 @@ struct nn
   bool finished_setup;
   bool multitask;
 
-  float *hidden_units;
-  bool *dropped_out;
+  float* hidden_units;
+  bool* dropped_out;
 
-  polyprediction *hidden_units_pred;
-  polyprediction *hiddenbias_pred;
+  polyprediction* hidden_units_pred;
+  polyprediction* hiddenbias_pred;
 
-  vw *all;  // many things
+  vw* all;  // many things
 };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -66,7 +66,7 @@ static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
 static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
-void finish_setup(nn &n, vw &all)
+void finish_setup(nn& n, vw& all)
 {
   // TODO: output_layer audit
 
@@ -74,7 +74,7 @@ void finish_setup(nn &n, vw &all)
   n.output_layer.indices.push_back(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
-  features &fs = n.output_layer.feature_space[nn_output_namespace];
+  features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -112,7 +112,7 @@ void finish_setup(nn &n, vw &all)
 
   memset(&n.outputweight, 0, sizeof(n.outputweight));
   n.outputweight.indices.push_back(nn_output_namespace);
-  features &outfs = n.output_layer.feature_space[nn_output_namespace];
+  features& outfs = n.output_layer.feature_space[nn_output_namespace];
   n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
   if (all.audit || all.hash_inv)
     n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
@@ -126,33 +126,33 @@ void finish_setup(nn &n, vw &all)
   n.finished_setup = true;
 }
 
-void end_pass(nn &n)
+void end_pass(nn& n)
 {
   if (n.all->bfgs)
     n.xsubi = n.save_xsubi;
 }
 
 template <bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn &n, single_learner &base, example &ec)
+void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction > 0;
   if (!n.finished_setup)
     finish_setup(n, *(n.all));
   shared_data sd;
   memcpy(&sd, n.all->sd, sizeof(shared_data));
-  shared_data *save_sd = n.all->sd;
+  shared_data* save_sd = n.all->sd;
   n.all->sd = &sd;
 
   label_data ld = ec.l.simple;
-  void (*save_set_minmax)(shared_data *, float) = n.all->set_minmax;
+  void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
   float save_min_label;
   float save_max_label;
   float dropscale = n.dropout ? 2.0f : 1.0f;
-  loss_function *save_loss = n.all->loss;
+  loss_function* save_loss = n.all->loss;
 
-  polyprediction *hidden_units = n.hidden_units_pred;
-  polyprediction *hiddenbias_pred = n.hiddenbias_pred;
-  bool *dropped_out = n.dropped_out;
+  polyprediction* hidden_units = n.hidden_units_pred;
+  polyprediction* hiddenbias_pred = n.hiddenbias_pred;
+  bool* dropped_out = n.dropped_out;
 
   ostringstream outputStringStream;
 
@@ -232,7 +232,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
   for (unsigned int i = 0; i < n.k; ++i)
   {
     float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
-    features &out_fs = n.output_layer.feature_space[nn_output_namespace];
+    features& out_fs = n.output_layer.feature_space[nn_output_namespace];
     out_fs.values[i] = sigmah;
 
     n.output_layer.total_sum_feat_sq += sigmah * sigmah;
@@ -371,12 +371,12 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn &n,
-    single_learner &base,
-    example &ec,
+void multipredict(nn& n,
+    single_learner& base,
+    example& ec,
     size_t count,
     size_t step,
-    polyprediction *pred,
+    polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)
@@ -394,7 +394,7 @@ void multipredict(nn &n,
   ec.ft_offset -= (uint64_t)(step * count);
 }
 
-void finish_example(vw &all, nn &, example &ec)
+void finish_example(vw& all, nn&, example& ec)
 {
   int save_raw_prediction = all.raw_prediction;
   all.raw_prediction = -1;
@@ -402,7 +402,7 @@ void finish_example(vw &all, nn &, example &ec)
   all.raw_prediction = save_raw_prediction;
 }
 
-void finish(nn &n)
+void finish(nn& n)
 {
   delete n.squared_loss;
   free(n.hidden_units);
@@ -414,7 +414,7 @@ void finish(nn &n)
   VW::dealloc_example(nullptr, n.outputweight);
 }
 
-base_learner *nn_setup(options_i &options, vw &all)
+base_learner* nn_setup(options_i& options, vw& all)
 {
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
@@ -422,16 +422,10 @@ base_learner *nn_setup(options_i &options, vw &all)
   new_options.add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
       .add(make_option("inpass", n->inpass)
                .keep()
-               .help("Train or test "
-                     "sigmoidal feedforward "
-                     "network with input "
-                     "passthrough."))
+               .help("Train or test sigmoidal feedforward network with input passthrough."))
       .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
       .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
-      .add(make_option("meanfield", meanfield)
-               .help("Train or test sigmoidal "
-                     "feedforward network using "
-                     "mean field."));
+      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("nn"))
@@ -469,8 +463,8 @@ base_learner *nn_setup(options_i &options, vw &all)
 
   auto base = as_singleline(setup_base(options, all));
   n->increment = base->increment;  // Indexing of output layer is odd.
-  nn &nv = *n.get();
-  learner<nn, example> &l =
+  nn& nv = *n.get();
+  learner<nn, example>& l =
       init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
   if (nv.multitask)
     l.set_multipredict(multipredict);
@@ -483,9 +477,8 @@ base_learner *nn_setup(options_i &options, vw &all)
 
 /*
 
-  train: ./vw -k -c -d mnist8v9.gz --passes 24 -b 25 --nn 64 -l 0.1 --invariant
---adaptive --holdout_off --random_seed 19 --nnmultipredict -f mnist64
-predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
+  train: ./vw -k -c -d mnist8v9.gz --passes 24 -b 25 --nn 64 -l 0.1 --invariant --adaptive --holdout_off --random_seed
+19 --nnmultipredict -f mnist64 predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
 
                      default   multipredict
   nn  64 train         9.1s         8.1s
@@ -495,9 +488,7 @@ predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
 
 with oaa:
 
-  train: ./vw --oaa 10 -b 25 --adaptive --invariant --holdout_off -l 0.1 --nn 64
---passes 24 -k -c -d mnist-all.gz --random_seed 19 --nnmultipredict -f
-mnist-all64
-predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
+  train: ./vw --oaa 10 -b 25 --adaptive --invariant --holdout_off -l 0.1 --nn 64 --passes 24 -k -c -d mnist-all.gz
+--random_seed 19 --nnmultipredict -f mnist-all64 predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
 
 */

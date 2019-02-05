@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "gd.h"
-#include "reductions.h"
 #include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -25,41 +25,41 @@ struct svrg
   // calculation.
 
   // The VW process' global state.
-  vw *all;
+  vw* all;
 };
 
 // Mimic GD::inline_predict but with offset for predicting with either
 // stable versus inner weights.
 
 template <int offset>
-inline void vec_add(float &p, const float x, float &w)
+inline void vec_add(float& p, const float x, float& w)
 {
-  float *ws = &w;
+  float* ws = &w;
   p += x * ws[offset];
 }
 
 template <int offset>
-inline float inline_predict(vw &all, example &ec)
+inline float inline_predict(vw& all, example& ec)
 {
   float acc = ec.l.simple.initial;
-  GD::foreach_feature<float, vec_add<offset>>(all, ec, acc);
+  GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
 
 // -- Prediction, using inner vs. stable weights --
 
-float predict_stable(const svrg &s, example &ec)
+float predict_stable(const svrg& s, example& ec)
 {
   return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg &s, single_learner &, example &ec)
+void predict(svrg& s, single_learner&, example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
 }
 
-float gradient_scalar(const svrg &s, const example &ec, float pred)
+float gradient_scalar(const svrg& s, const example& ec, float pred)
 {
   return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
 }
@@ -74,19 +74,19 @@ struct update
   float norm;
 };
 
-inline void update_inner_feature(update &u, float x, float &w)
+inline void update_inner_feature(update& u, float x, float& w)
 {
-  float *ws = &w;
+  float* ws = &w;
   w -= u.eta * ((u.g_scalar_inner - u.g_scalar_stable) * x + ws[W_STABLEGRAD] / u.norm);
 }
 
-inline void update_stable_feature(float &g_scalar, float x, float &w)
+inline void update_stable_feature(float& g_scalar, float x, float& w)
 {
-  float *ws = &w;
+  float* ws = &w;
   ws[W_STABLEGRAD] += g_scalar * x;
 }
 
-void update_inner(const svrg &s, example &ec)
+void update_inner(const svrg& s, example& ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
@@ -97,13 +97,13 @@ void update_inner(const svrg &s, example &ec)
   GD::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
 
-void update_stable(const svrg &s, example &ec)
+void update_stable(const svrg& s, example& ec)
 {
   float g = gradient_scalar(s, ec, predict_stable(s, ec));
   GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg &s, single_learner &base, example &ec)
+void learn(svrg& s, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -140,7 +140,7 @@ void learn(svrg &s, single_learner &base, example &ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg &s, io_buf &model_file, bool read, bool text)
+void save_load(svrg& s, io_buf& model_file, bool read, bool text)
 {
   if (read)
   {
@@ -152,7 +152,7 @@ void save_load(svrg &s, io_buf &model_file, bool read, bool text)
     bool resume = s.all->save_resume;
     stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char *)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*s.all, model_file, read, text);
@@ -160,11 +160,12 @@ void save_load(svrg &s, io_buf &model_file, bool read, bool text)
       GD::save_load_regressor(*s.all, model_file, read, text);
   }
 }
+
 }  // namespace SVRG
 
 using namespace SVRG;
 
-base_learner *svrg_setup(options_i &options, vw &all)
+base_learner* svrg_setup(options_i& options, vw& all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
 
@@ -185,7 +186,7 @@ base_learner *svrg_setup(options_i &options, vw &all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg, example> &l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
+  learner<svrg, example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }

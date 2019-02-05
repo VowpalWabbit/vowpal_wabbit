@@ -14,9 +14,9 @@ namespace HookTask
 {
 Search::search_task task = {"hook", run, initialize, finish, run_setup, run_takedown};
 
-void initialize(Search::search &sch, size_t &num_actions, options_i &)
+void initialize(Search::search& sch, size_t& num_actions, options_i&)
 {
-  task_data *td = new task_data;
+  task_data* td = new task_data;
   td->run_f = nullptr;
   td->run_setup_f = nullptr;
   td->run_takedown_f = nullptr;
@@ -29,9 +29,9 @@ void initialize(Search::search &sch, size_t &num_actions, options_i &)
   sch.set_task_data<task_data>(td);
 }
 
-void finish(Search::search &sch)
+void finish(Search::search& sch)
 {
-  task_data *td = sch.get_task_data<task_data>();
+  task_data* td = sch.get_task_data<task_data>();
   if (td->delete_run_object)
   {
     if (td->run_object)
@@ -46,25 +46,25 @@ void finish(Search::search &sch)
   delete td;
 }
 
-void run(Search::search &sch, multi_ex & /*ec*/)
+void run(Search::search& sch, multi_ex& /*ec*/)
 {
-  task_data *td = sch.get_task_data<task_data>();
+  task_data* td = sch.get_task_data<task_data>();
   if (td->run_f)
     td->run_f(sch);
   else
     cerr << "warning: HookTask::structured_predict called before hook is set" << endl;
 }
 
-void run_setup(Search::search &sch, multi_ex & /*ec*/)
+void run_setup(Search::search& sch, multi_ex& /*ec*/)
 {
-  task_data *td = sch.get_task_data<task_data>();
+  task_data* td = sch.get_task_data<task_data>();
   if (td->run_setup_f)
     td->run_setup_f(sch);
 }
 
-void run_takedown(Search::search &sch, multi_ex & /*ec*/)
+void run_takedown(Search::search& sch, multi_ex& /*ec*/)
 {
-  task_data *td = sch.get_task_data<task_data>();
+  task_data* td = sch.get_task_data<task_data>();
   if (td->run_takedown_f)
     td->run_takedown_f(sch);
 }

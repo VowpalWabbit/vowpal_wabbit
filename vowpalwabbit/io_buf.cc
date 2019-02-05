@@ -9,10 +9,9 @@ license as described in the file LICENSE.
 #include <winsock2.h>
 #endif
 
-size_t io_buf::buf_read(char *&pointer, size_t n)
+size_t io_buf::buf_read(char*& pointer, size_t n)
 {
-  // return a pointer to the next n bytes.  n must be smaller than the maximum
-  // size.
+  // return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (head + n <= space.end())
   {
     pointer = head;
@@ -32,8 +31,7 @@ size_t io_buf::buf_read(char *&pointer, size_t n)
     if (fill(files[current]) > 0)   // read more bytes from current file if present
       return buf_read(pointer, n);  // more bytes are read.
     else if (++current < files.size())
-      return buf_read(pointer,
-          n);  // No more bytes, so go to next file and try again.
+      return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
     else
     {
       // no more bytes to read, return all that we have left.
@@ -44,7 +42,7 @@ size_t io_buf::buf_read(char *&pointer, size_t n)
   }
 }
 
-bool isbinary(io_buf &i)
+bool isbinary(io_buf& i)
 {
   if (i.space.end() == i.head)
     if (i.fill(i.files[i.current]) <= 0)
@@ -57,10 +55,9 @@ bool isbinary(io_buf &i)
   return ret;
 }
 
-size_t readto(io_buf &i, char *&pointer, char terminal)
+size_t readto(io_buf& i, char*& pointer, char terminal)
 {
-  // Return a pointer to the bytes before the terminal.  Must be less than the
-  // buffer size.
+  // Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = i.head;
   while (pointer < i.space.end() && *pointer != terminal) pointer++;
   if (pointer != i.space.end())
@@ -94,7 +91,7 @@ size_t readto(io_buf &i, char *&pointer, char terminal)
   }
 }
 
-void io_buf::buf_write(char *&pointer, size_t n)
+void io_buf::buf_write(char*& pointer, size_t n)
 {
   // return a pointer to the next n bytes to write into.
   if (head + n <= space.end_array)
@@ -118,8 +115,7 @@ void io_buf::buf_write(char *&pointer, size_t n)
 
 bool io_buf::is_socket(int f)
 {
-// this appears to work in practice, but could probably be done in a cleaner
-// fashion
+  // this appears to work in practice, but could probably be done in a cleaner fashion
 #ifdef _WIN32
   const int _nhandle = _getmaxstdio() / 2;
   return f >= _nhandle;
@@ -129,11 +125,11 @@ bool io_buf::is_socket(int f)
 #endif
 }
 
-ssize_t io_buf::read_file_or_socket(int f, void *buf, size_t nbytes)
+ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes)
 {
 #ifdef _WIN32
   if (is_socket(f))
-    return recv(f, reinterpret_cast<char *>(buf), static_cast<int>(nbytes), 0);
+    return recv(f, reinterpret_cast<char*>(buf), static_cast<int>(nbytes), 0);
   else
     return _read(f, buf, (unsigned int)nbytes);
 #else
@@ -141,11 +137,11 @@ ssize_t io_buf::read_file_or_socket(int f, void *buf, size_t nbytes)
 #endif
 }
 
-ssize_t io_buf::write_file_or_socket(int f, const void *buf, size_t nbytes)
+ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
 {
 #ifdef _WIN32
   if (is_socket(f))
-    return send(f, reinterpret_cast<const char *>(buf), static_cast<int>(nbytes), 0);
+    return send(f, reinterpret_cast<const char*>(buf), static_cast<int>(nbytes), 0);
   else
     return _write(f, buf, (unsigned int)nbytes);
 #else

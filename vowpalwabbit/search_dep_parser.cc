@@ -4,8 +4,8 @@
   license as described in the file LICENSE.
 */
 #include "search_dep_parser.h"
-#include "cost_sensitive.h"
 #include "gd.h"
+#include "cost_sensitive.h"
 #include "label_dictionary.h"  // for add_example_namespaces_from_example
 #include "vw.h"
 #include "vw_exception.h"
@@ -31,8 +31,7 @@ struct task_data
   v_array<uint32_t> valid_actions, action_loss, gold_heads, gold_tags, stack, heads, tags, temp, valid_action_temp;
   v_array<action> gold_actions, gold_action_temp;
   v_array<pair<action, float>> gold_action_losses;
-  v_array<uint32_t> children[6];  // [0]:num_left_arcs, [1]:num_right_arcs; [2]:
-                                  // leftmost_arc, [3]: second_leftmost_arc,
+  v_array<uint32_t> children[6];  // [0]:num_left_arcs, [1]:num_right_arcs; [2]: leftmost_arc, [3]: second_leftmost_arc,
                                   // [4]:rightmost_arc, [5]: second_rightmost_arc
   example *ec_buf[13];
   bool old_style_labels;
@@ -70,12 +69,10 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
                       .help("1: arc-hybrid 2: arc-eager"));
   new_options.add(make_option("one_learner", data->one_learner)
                       .keep()
-                      .help("Using one learner instead of three learners for "
-                            "labeled parser"));
+                      .help("Using one learner instead of three learners for labeled parser"));
   new_options.add(make_option("cost_to_go", data->cost_to_go)
                       .keep()
-                      .help("Estimating cost-to-go matrix based on dynamic "
-                            "oracle rathan than rolling-out"));
+                      .help("Estimating cost-to-go matrix based on dynamic oracle rathan than rolling-out"));
   new_options.add(
       make_option("old_style_labels", data->old_style_labels).keep().help("Use old hack of label information"));
   options.add_and_parse(new_options);
@@ -267,24 +264,20 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
 
   for (size_t i = 0; i < 13; i++) ec_buf[i] = nullptr;
 
-  // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]:
-  // s2, ec_buf[2]: s3
+  // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
   for (size_t i = 0; i < 3; i++)
     ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : 0;
 
-  // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2,
-  // ec_buf[5]: b3
+  // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
   for (size_t i = 3; i < 6; i++) ec_buf[i] = (idx + (i - 3) - 1 < n) ? ec[idx + i - 3 - 1] : 0;
 
-  // features based on the leftmost and the rightmost children of the top
-  // element stack ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]:
-  // sr2;
+  // features based on the leftmost and the rightmost children of the top element stack ec_buf[6]: sl1, ec_buf[7]: sl2,
+  // ec_buf[8]: sr1, ec_buf[9]: sr2;
   for (size_t i = 6; i < 10; i++)
     if (!empty && last != 0 && children[i - 4][last] != 0)
       ec_buf[i] = ec[children[i - 4][last] - 1];
 
-  // features based on leftmost children of the top element in bufer ec_buf[10]:
-  // bl1, ec_buf[11]: bl2
+  // features based on leftmost children of the top element in bufer ec_buf[10]: bl1, ec_buf[11]: bl2
   for (size_t i = 10; i < 12; i++)
     ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : 0;
   ec_buf[12] = (stack.size() > 1 && *(stack.end() - 2) != 0 && children[2][*(stack.end() - 2)] != 0)
@@ -428,8 +421,7 @@ void get_eager_action_cost(Search::search &sch, uint32_t idx, uint64_t n)
     if (i != idx && gold_heads[last] == i)
       action_loss[REDUCE_LEFT] += 1;
   }
-  // if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0) //should
-  // not fire
+  // if(size>0  && idx <=n && gold_heads[last] == 0 && stack[0] ==0) //should not fire
   //  action_loss[REDUCE_LEFT] +=1;
 
   if (gold_heads[idx] > idx || (gold_heads[idx] == 0 && size > 0 && stack[0] != 0))

@@ -1,7 +1,7 @@
-#include "comp_io.h"
 #include "zlib.h"
+#include "comp_io.h"
 
-int comp_io_buf::open_file(const char *name, bool stdin_off, int flag)
+int comp_io_buf::open_file(const char* name, bool stdin_off, int flag)
 {
   gzFile fil = nullptr;
   int ret = -1;
@@ -48,7 +48,7 @@ void comp_io_buf::reset_file(int f)
   head = space.begin();
 }
 
-ssize_t comp_io_buf::read_file(int f, void *buf, size_t nbytes)
+ssize_t comp_io_buf::read_file(int f, void* buf, size_t nbytes)
 {
   gzFile fil = gz_files[f];
   int num_read = gzread(fil, buf, (unsigned int)nbytes);
@@ -57,7 +57,7 @@ ssize_t comp_io_buf::read_file(int f, void *buf, size_t nbytes)
 
 size_t comp_io_buf::num_files() { return gz_files.size(); }
 
-ssize_t comp_io_buf::write_file(int file, const void *buf, size_t nbytes)
+ssize_t comp_io_buf::write_file(int file, const void* buf, size_t nbytes)
 {
   int num_written = gzwrite(gz_files[file], buf, (unsigned int)nbytes);
   return (num_written > 0) ? num_written : 0;

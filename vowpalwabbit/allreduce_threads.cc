@@ -15,7 +15,7 @@ AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m
 {
   m_mutex = new mutex;
   m_cv = new condition_variable;
-  buffers = new void *[total];
+  buffers = new void*[total];
 }
 
 AllReduceSync::~AllReduceSync()
@@ -46,14 +46,13 @@ void AllReduceSync::waitForSynchronization()
   else
   {
     bool current_run = m_run;
-    // this predicate cannot depend on m_count, as somebody can race ahead and
-    // m_count++
+    // this predicate cannot depend on m_count, as somebody can race ahead and m_count++
     // FYI just wait can spuriously wake-up
     m_cv->wait(l, [this, current_run] { return m_run != current_run; });
   }
 }
 
-AllReduceThreads::AllReduceThreads(AllReduceThreads *root, const size_t ptotal, const size_t pnode)
+AllReduceThreads::AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode)
     : AllReduce(ptotal, pnode), m_sync(root->m_sync), m_syncOwner(false)
 {
 }

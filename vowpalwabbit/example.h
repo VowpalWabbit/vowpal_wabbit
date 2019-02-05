@@ -6,18 +6,18 @@ license as described in the file LICENSE.
 
 #pragma once
 
-#include "action_score.h"
-#include "cb.h"
-#include "constant.h"
-#include "cost_sensitive.h"
-#include "example_predict.h"
-#include "feature_group.h"
-#include "multiclass.h"
-#include "multilabel.h"
+#include <stdint.h>
+#include "v_array.h"
 #include "no_label.h"
 #include "simple_label.h"
-#include "v_array.h"
-#include <stdint.h>
+#include "multiclass.h"
+#include "multilabel.h"
+#include "cost_sensitive.h"
+#include "cb.h"
+#include "constant.h"
+#include "feature_group.h"
+#include "action_score.h"
+#include "example_predict.h"
 #include <vector>
 
 const unsigned char wap_ldf_namespace = 126;
@@ -25,9 +25,8 @@ const unsigned char history_namespace = 127;
 const unsigned char constant_namespace = 128;
 const unsigned char nn_output_namespace = 129;
 const unsigned char autolink_namespace = 130;
-const unsigned char neighbor_namespace = 131;      // this is \x83 -- to do
-                                                   // quadratic, say "-q a`printf
-                                                   // "\x83"` on the command line
+const unsigned char neighbor_namespace =
+    131;  // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
 const unsigned char affix_namespace = 132;         // this is \x84
 const unsigned char spelling_namespace = 133;      // this is \x85
 const unsigned char conditioning_namespace = 134;  // this is \x86
@@ -45,9 +44,9 @@ typedef union {
   MULTILABEL::labels multilabels;
 } polylabel;
 
-inline void delete_scalars(void *v)
+inline void delete_scalars(void* v)
 {
-  v_array<float> *preds = (v_array<float> *)v;
+  v_array<float>* preds = (v_array<float>*)v;
   preds->delete_v();
 }
 
@@ -79,8 +78,8 @@ struct example : public example_predict  // core example datatype.
   float loss;
   float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
   float confidence;
-  features *passthrough;  // if a higher-up reduction wants access to internal
-                          // state of lower-down reductions, they go here
+  features*
+      passthrough;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only;
   bool end_pass;  // special example indicating end of pass.
@@ -95,7 +94,7 @@ struct flat_example
   polylabel l;
 
   size_t tag_len;
-  char *tag;  // An identifier for the example.
+  char* tag;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -106,11 +105,11 @@ struct flat_example
   features fs;              // all the features
 };
 
-flat_example *flatten_example(vw &all, example *ec);
-flat_example *flatten_sort_example(vw &all, example *ec);
-void free_flatten_example(flat_example *fec);
+flat_example* flatten_example(vw& all, example* ec);
+flat_example* flatten_sort_example(vw& all, example* ec);
+void free_flatten_example(flat_example* fec);
 
-inline int example_is_newline(example &ec)
+inline int example_is_newline(example& ec)
 {  // if only index is constant namespace or no index
   if (ec.tag.size() > 0)
     return false;
@@ -119,7 +118,7 @@ inline int example_is_newline(example &ec)
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
-inline void add_passthrough_feature_magic(example &ec, uint64_t magic, uint64_t i, float x)
+inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
   if (ec.passthrough)
     ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
@@ -128,11 +127,11 @@ inline void add_passthrough_feature_magic(example &ec, uint64_t magic, uint64_t 
 #define add_passthrough_feature(ec, i, x) \
   add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
-typedef std::vector<example *> multi_ex;
+typedef std::vector<example*> multi_ex;
 
 namespace VW
 {
-void clear_seq_and_finish_examples(vw &all, multi_ex &ec_seq);
+void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq);
 
-void return_multiple_example(vw &all, v_array<example *> &examples);
+void return_multiple_example(vw& all, v_array<example*>& examples);
 }  // namespace VW

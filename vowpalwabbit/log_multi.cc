@@ -5,8 +5,8 @@ license as described in the file LICENSE.node
 */
 #include <float.h>
 #include <math.h>
-#include <sstream>
 #include <stdio.h>
+#include <sstream>
 
 #include "reductions.h"
 
@@ -54,8 +54,8 @@ typedef struct
   // everyone has
   uint32_t parent;           // the parent node
   v_array<node_pred> preds;  // per-class state
-  uint32_t min_count;        // the number of examples reaching this node (if it's a
-                             // leaf) or the minimum reaching any grandchild.
+  uint32_t
+      min_count;  // the number of examples reaching this node (if it's a leaf) or the minimum reaching any grandchild.
 
   bool internal;  // internal or leaf
 
@@ -87,7 +87,7 @@ struct log_multi
   uint32_t nbofswaps;
 };
 
-inline void init_leaf(node &n)
+inline void init_leaf(node& n)
 {
   n.internal = false;
   n.preds.clear();
@@ -113,18 +113,18 @@ inline node init_node()
   return node;
 }
 
-void init_tree(log_multi &d)
+void init_tree(log_multi& d)
 {
   d.nodes.push_back(init_node());
   d.nbofswaps = 0;
 }
 
-inline uint32_t min_left_right(log_multi &b, const node &n)
+inline uint32_t min_left_right(log_multi& b, const node& n)
 {
   return min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
 }
 
-inline uint32_t find_switch_node(log_multi &b)
+inline uint32_t find_switch_node(log_multi& b)
 {
   uint32_t node = 0;
   while (b.nodes[node].internal)
@@ -135,7 +135,7 @@ inline uint32_t find_switch_node(log_multi &b)
   return node;
 }
 
-inline void update_min_count(log_multi &b, uint32_t node)
+inline void update_min_count(log_multi& b, uint32_t node)
 {
   // Constant time min count update.
   while (node != 0)
@@ -150,7 +150,7 @@ inline void update_min_count(log_multi &b, uint32_t node)
   }
 }
 
-void display_tree_dfs(log_multi &b, const node &node, uint32_t depth)
+void display_tree_dfs(log_multi& b, const node& node, uint32_t depth)
 {
   for (uint32_t i = 0; i < depth; i++) cout << "\t";
   cout << node.min_count << " " << node.left << " " << node.right;
@@ -169,7 +169,7 @@ void display_tree_dfs(log_multi &b, const node &node, uint32_t depth)
   }
 }
 
-bool children(log_multi &b, uint32_t &current, uint32_t &class_index, uint32_t label)
+bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
 {
   class_index = (uint32_t)b.nodes[current].preds.unique_add_sorted(node_pred(label));
   b.nodes[current].preds[class_index].label_count++;
@@ -243,7 +243,7 @@ bool children(log_multi &b, uint32_t &current, uint32_t &class_index, uint32_t l
 }
 
 void train_node(
-    log_multi &b, single_learner &base, example &ec, uint32_t &current, uint32_t &class_index, uint32_t /* depth */)
+    log_multi& b, single_learner& base, example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
     ec.l.simple.label = -1.f;
@@ -265,7 +265,7 @@ void train_node(
       (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
 }
 
-void verify_min_dfs(log_multi &b, const node &node)
+void verify_min_dfs(log_multi& b, const node& node)
 {
   if (node.internal)
   {
@@ -279,7 +279,7 @@ void verify_min_dfs(log_multi &b, const node &node)
   }
 }
 
-size_t sum_count_dfs(log_multi &b, const node &node)
+size_t sum_count_dfs(log_multi& b, const node& node)
 {
   if (node.internal)
     return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);
@@ -287,7 +287,7 @@ size_t sum_count_dfs(log_multi &b, const node &node)
     return node.min_count;
 }
 
-inline uint32_t descend(node &n, float prediction)
+inline uint32_t descend(node& n, float prediction)
 {
   if (prediction < 0)
     return n.left;
@@ -295,7 +295,7 @@ inline uint32_t descend(node &n, float prediction)
     return n.right;
 }
 
-void predict(log_multi &b, single_learner &base, example &ec)
+void predict(log_multi& b, single_learner& base, example& ec)
 {
   MULTICLASS::label_t mc = ec.l.multi;
 
@@ -312,7 +312,7 @@ void predict(log_multi &b, single_learner &base, example &ec)
   ec.l.multi = mc;
 }
 
-void learn(log_multi &b, single_learner &base, example &ec)
+void learn(log_multi& b, single_learner& base, example& ec)
 {
   //    verify_min_dfs(b, b.nodes[0]);
   if (ec.l.multi.label == (uint32_t)-1 || b.progress)
@@ -341,12 +341,12 @@ void learn(log_multi &b, single_learner &base, example &ec)
   }
 }
 
-void save_node_stats(log_multi &d)
+void save_node_stats(log_multi& d)
 {
-  FILE *fp;
+  FILE* fp;
   uint32_t i, j;
   uint32_t total;
-  log_multi *b = &d;
+  log_multi* b = &d;
 
   fp = fopen("atxm_debug.csv", "wt");
 
@@ -388,113 +388,113 @@ void save_node_stats(log_multi &d)
   fclose(fp);
 }
 
-void finish(log_multi &b)
+void finish(log_multi& b)
 {
   // save_node_stats(b);
   for (size_t i = 0; i < b.nodes.size(); i++) b.nodes[i].preds.delete_v();
   b.nodes.delete_v();
 }
 
-void save_load_tree(log_multi &b, io_buf &model_file, bool read, bool text)
+void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() > 0)
   {
     stringstream msg;
     msg << "k = " << b.k;
-    bin_text_read_write_fixed(model_file, (char *)&b.max_predictors, sizeof(b.k), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&b.max_predictors, sizeof(b.k), "", read, msg, text);
 
     msg << "nodes = " << b.nodes.size() << " ";
     uint32_t temp = (uint32_t)b.nodes.size();
-    bin_text_read_write_fixed(model_file, (char *)&temp, sizeof(temp), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
     if (read)
       for (uint32_t j = 1; j < temp; j++) b.nodes.push_back(init_node());
 
     msg << "max predictors = " << b.max_predictors << " ";
-    bin_text_read_write_fixed(model_file, (char *)&b.max_predictors, sizeof(b.max_predictors), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&b.max_predictors, sizeof(b.max_predictors), "", read, msg, text);
 
     msg << "predictors_used = " << b.predictors_used << " ";
-    bin_text_read_write_fixed(model_file, (char *)&b.predictors_used, sizeof(b.predictors_used), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&b.predictors_used, sizeof(b.predictors_used), "", read, msg, text);
 
     msg << "progress = " << b.progress << " ";
-    bin_text_read_write_fixed(model_file, (char *)&b.progress, sizeof(b.progress), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&b.progress, sizeof(b.progress), "", read, msg, text);
 
     msg << "swap_resist = " << b.swap_resist << "\n";
-    bin_text_read_write_fixed(model_file, (char *)&b.swap_resist, sizeof(b.swap_resist), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&b.swap_resist, sizeof(b.swap_resist), "", read, msg, text);
 
     for (size_t j = 0; j < b.nodes.size(); j++)
     {
       // Need to read or write nodes.
-      node &n = b.nodes[j];
+      node& n = b.nodes[j];
 
       msg << " parent = " << n.parent;
-      bin_text_read_write_fixed(model_file, (char *)&n.parent, sizeof(n.parent), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&n.parent, sizeof(n.parent), "", read, msg, text);
 
       uint32_t temp = (uint32_t)n.preds.size();
 
       msg << " preds = " << temp;
-      bin_text_read_write_fixed(model_file, (char *)&temp, sizeof(temp), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&temp, sizeof(temp), "", read, msg, text);
       if (read)
         for (uint32_t k = 0; k < temp; k++) n.preds.push_back(node_pred(1));
 
       msg << " min_count = " << n.min_count;
-      bin_text_read_write_fixed(model_file, (char *)&n.min_count, sizeof(n.min_count), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&n.min_count, sizeof(n.min_count), "", read, msg, text);
 
       msg << " internal = " << n.internal;
-      bin_text_read_write_fixed(model_file, (char *)&n.internal, sizeof(n.internal), "", read, msg, text);
+      bin_text_read_write_fixed(model_file, (char*)&n.internal, sizeof(n.internal), "", read, msg, text);
 
       if (n.internal)
       {
         msg << " base_predictor = " << n.base_predictor;
-        bin_text_read_write_fixed(model_file, (char *)&n.base_predictor, sizeof(n.base_predictor), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.base_predictor, sizeof(n.base_predictor), "", read, msg, text);
 
         msg << " left = " << n.left;
-        bin_text_read_write_fixed(model_file, (char *)&n.left, sizeof(n.left), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.left, sizeof(n.left), "", read, msg, text);
 
         msg << " right = " << n.right;
-        bin_text_read_write_fixed(model_file, (char *)&n.right, sizeof(n.right), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.right, sizeof(n.right), "", read, msg, text);
 
         msg << " norm_Eh = " << n.norm_Eh;
-        bin_text_read_write_fixed(model_file, (char *)&n.norm_Eh, sizeof(n.norm_Eh), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.norm_Eh, sizeof(n.norm_Eh), "", read, msg, text);
 
         msg << " Eh = " << n.Eh;
-        bin_text_read_write_fixed(model_file, (char *)&n.Eh, sizeof(n.Eh), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.Eh, sizeof(n.Eh), "", read, msg, text);
 
         msg << " n = " << n.n << "\n";
-        bin_text_read_write_fixed(model_file, (char *)&n.n, sizeof(n.n), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.n, sizeof(n.n), "", read, msg, text);
       }
       else
       {
         msg << " max_count = " << n.max_count;
-        bin_text_read_write_fixed(model_file, (char *)&n.max_count, sizeof(n.max_count), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&n.max_count, sizeof(n.max_count), "", read, msg, text);
         msg << " max_count_label = " << n.max_count_label << "\n";
         bin_text_read_write_fixed(
-            model_file, (char *)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
+            model_file, (char*)&n.max_count_label, sizeof(n.max_count_label), "", read, msg, text);
       }
 
       for (size_t k = 0; k < n.preds.size(); k++)
       {
-        node_pred &p = n.preds[k];
+        node_pred& p = n.preds[k];
 
         msg << "  Ehk = " << p.Ehk;
-        bin_text_read_write_fixed(model_file, (char *)&p.Ehk, sizeof(p.Ehk), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.Ehk, sizeof(p.Ehk), "", read, msg, text);
 
         msg << " norm_Ehk = " << p.norm_Ehk;
-        bin_text_read_write_fixed(model_file, (char *)&p.norm_Ehk, sizeof(p.norm_Ehk), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.norm_Ehk, sizeof(p.norm_Ehk), "", read, msg, text);
 
         msg << " nk = " << p.nk;
-        bin_text_read_write_fixed(model_file, (char *)&p.nk, sizeof(p.nk), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.nk, sizeof(p.nk), "", read, msg, text);
 
         msg << " label = " << p.label;
-        bin_text_read_write_fixed(model_file, (char *)&p.label, sizeof(p.label), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.label, sizeof(p.label), "", read, msg, text);
 
         msg << " label_count = " << p.label_count << "\n";
-        bin_text_read_write_fixed(model_file, (char *)&p.label_count, sizeof(p.label_count), "", read, msg, text);
+        bin_text_read_write_fixed(model_file, (char*)&p.label_count, sizeof(p.label_count), "", read, msg, text);
       }
     }
   }
 }
 
-base_learner *log_multi_setup(options_i &options, vw &all)  // learner setup
+base_learner* log_multi_setup(options_i& options, vw& all)  // learner setup
 {
   auto data = scoped_calloc_or_throw<log_multi>();
   option_group_definition new_options("Logarithmic Time Multiclass Tree");
@@ -519,7 +519,7 @@ base_learner *log_multi_setup(options_i &options, vw &all)  // learner setup
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  learner<log_multi, example> &l = init_multiclass_learner(
+  learner<log_multi, example>& l = init_multiclass_learner(
       data, as_singleline(setup_base(options, all)), learn, predict, all.p, data->max_predictors);
   l.set_save_load(save_load_tree);
   l.set_finish(finish);

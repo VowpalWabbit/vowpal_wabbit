@@ -2,11 +2,11 @@
 
 #include <functional>
 
-using dispatch_fptr = std::function<void(vw &, v_array<example *> &)>;
+using dispatch_fptr = std::function<void(vw&, v_array<example*>&)>;
 
-inline void parse_dispatch(vw &all, dispatch_fptr dispatch)
+inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 {
-  v_array<example *> examples = v_init<example *>();
+  v_array<example*> examples = v_init<example*>();
   size_t example_number = 0;  // for variable-size batch learning algorithms
 
   try
@@ -37,8 +37,7 @@ inline void parse_dispatch(vw &all, dispatch_fptr dispatch)
           all.passes_complete = 0;
           all.pass_length = all.pass_length * 2 + 1;
         }
-        dispatch(all, examples);  // must be called before lock_done or race
-                                  // condition exists.
+        dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;
@@ -47,12 +46,12 @@ inline void parse_dispatch(vw &all, dispatch_fptr dispatch)
       examples.clear();
     }
   }
-  catch (VW::vw_exception &e)
+  catch (VW::vw_exception& e)
   {
     std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what()
               << std::endl;
   }
-  catch (std::exception &e)
+  catch (std::exception& e)
   {
     std::cerr << "vw: example #" << example_number << e.what() << std::endl;
   }

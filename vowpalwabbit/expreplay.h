@@ -1,25 +1,24 @@
 #pragma once
 #include "learner.h"
+#include "vw.h"
 #include "parse_args.h"
 #include "rand48.h"
-#include "vw.h"
 
 namespace ExpReplay
 {
 struct expreplay
 {
-  vw *all;
+  vw* all;
   size_t N;             // how big is the buffer?
-  example *buf;         // the deep copies of examples (N of them)
-  bool *filled;         // which of buf[] is filled
-  size_t replay_count;  // each time er.learn() is called, how many times do we
-                        // call base.learn()? default=1 (in which case we're just
-                        // permuting)
-  LEARNER::single_learner *base;
+  example* buf;         // the deep copies of examples (N of them)
+  bool* filled;         // which of buf[] is filled
+  size_t replay_count;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in which
+                        // case we're just permuting)
+  LEARNER::single_learner* base;
 };
 
-template <bool is_learn, label_parser &lp>
-void predict_or_learn(expreplay &er, LEARNER::single_learner &base, example &ec)
+template <bool is_learn, label_parser& lp>
+void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
 {  // regardless of what happens, we must predict
   base.predict(ec);
   // if we're not learning, that's all that has to happen
@@ -45,31 +44,30 @@ void predict_or_learn(expreplay &er, LEARNER::single_learner &base, example &ec)
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay &,
-    LEARNER::single_learner &base,
-    example &ec,
+void multipredict(expreplay&,
+    LEARNER::single_learner& base,
+    example& ec,
     size_t count,
     size_t step,
-    polyprediction *pred,
+    polyprediction* pred,
     bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }
 
-void end_pass(expreplay &er)
+void end_pass(expreplay& er)
 {  // we need to go through and learn on everyone who remains
   // also need to clean up remaining examples
   for (size_t n = 0; n < er.N; n++)
     if (er.filled[n])
-    {  // TODO: if er.replay_count > 1 do we need to play these
-       // more?
+    {  // TODO: if er.replay_count > 1 do we need to play these more?
       er.base->learn(er.buf[n]);
       er.filled[n] = false;
     }
 }
 
-template <label_parser &lp>
-void finish(expreplay &er)
+template <label_parser& lp>
+void finish(expreplay& er)
 {
   for (size_t n = 0; n < er.N; n++)
   {
@@ -80,8 +78,8 @@ void finish(expreplay &er)
   free(er.filled);
 }
 
-template <char er_level, label_parser &lp>
-LEARNER::base_learner *expreplay_setup(VW::config::options_i &options, vw &all)
+template <char er_level, label_parser& lp>
+LEARNER::base_learner* expreplay_setup(VW::config::options_i& options, vw& all)
 {
   std::string replay_string = "replay_";
   replay_string += er_level;
@@ -93,13 +91,11 @@ LEARNER::base_learner *expreplay_setup(VW::config::options_i &options, vw &all)
   new_options
       .add(VW::config::make_option(replay_string, er->N)
                .keep()
-               .help("use experience replay at a specified level "
-                     "[b=classification/regression, m=multiclass, c=cost "
+               .help("use experience replay at a specified level [b=classification/regression, m=multiclass, c=cost "
                      "sensitive] with specified buffer size"))
       .add(VW::config::make_option(replay_count_string, er->replay_count)
                .default_value(1)
-               .help("how many times (in expectation) should each example be "
-                     "played (default: 1 = permuting)"));
+               .help("how many times (in expectation) should each example be played (default: 1 = permuting)"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied(replay_string) || er->N == 0)
@@ -118,7 +114,7 @@ LEARNER::base_learner *expreplay_setup(VW::config::options_i &options, vw &all)
               << std::endl;
 
   er->base = LEARNER::as_singleline(setup_base(options, all));
-  LEARNER::learner<expreplay, example> *l =
+  LEARNER::learner<expreplay, example>* l =
       &init_learner(er, er->base, predict_or_learn<true, lp>, predict_or_learn<false, lp>);
   l->set_finish(finish<lp>);
   l->set_end_pass(end_pass);

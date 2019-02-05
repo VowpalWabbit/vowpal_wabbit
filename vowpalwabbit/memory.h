@@ -1,67 +1,67 @@
 #pragma once
-#include "vw_exception.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include <iostream>
 #include <memory>
-#include <stdio.h>
-#include <stdlib.h>
+#include "vw_exception.h"
 
 template <class T>
-T *calloc_or_throw(size_t nmemb)
+T* calloc_or_throw(size_t nmemb)
 {
   if (nmemb == 0)
     return nullptr;
 
-  void *data = calloc(nmemb, sizeof(T));
+  void* data = calloc(nmemb, sizeof(T));
   if (data == nullptr)
   {
-    const char *msg = "internal error: memory allocation failed!\n";
+    const char* msg = "internal error: memory allocation failed!\n";
     // use low-level function since we're already out of memory.
     fputs(msg, stderr);
     THROW(msg);
   }
-  return (T *)data;
+  return (T*)data;
 }
 
 template <class T>
-T &calloc_or_throw()
+T& calloc_or_throw()
 {
   return *calloc_or_throw<T>(1);
 }
 
-typedef void (*free_fn)(void *);
+typedef void (*free_fn)(void*);
 template <class T>
 using free_ptr = std::unique_ptr<T, free_fn>;
 template <class T>
-void destroy_free(void *temp)
+void destroy_free(void* temp)
 {
-  ((T *)temp)->~T();
+  ((T*)temp)->~T();
   free(temp);
 }
 template <class T>
 free_ptr<T> scoped_calloc_or_throw()
 {
-  T *temp = calloc_or_throw<T>(1);
+  T* temp = calloc_or_throw<T>(1);
   new (temp) T();
   return std::unique_ptr<T, free_fn>(temp, destroy_free<T>);
 }
 
 #ifdef MADV_MERGEABLE
 template <class T>
-T *calloc_mergable_or_throw(size_t nmemb)
+T* calloc_mergable_or_throw(size_t nmemb)
 {
   if (nmemb == 0)
     return nullptr;
   size_t length = nmemb * sizeof(T);
-  void *data;
+  void* data;
   if (0 != posix_memalign(&data, sysconf(_SC_PAGE_SIZE), length))
   {
-    const char *msg = "internal error: memory allocation failed!\n";
+    const char* msg = "internal error: memory allocation failed!\n";
     fputs(msg, stderr);
     THROW(msg);
   }
   if (data == nullptr)
   {
-    const char *msg = "internal error: memory allocation failed!\n";
+    const char* msg = "internal error: memory allocation failed!\n";
     fputs(msg, stderr);
     THROW(msg);
   }
@@ -79,16 +79,16 @@ T *calloc_mergable_or_throw(size_t nmemb)
 
   if (0 != madvise(data, length, MADV_MERGEABLE))
   {
-    const char *msg = "internal warning: marking memory as ksm mergeable failed!\n";
+    const char* msg = "internal warning: marking memory as ksm mergeable failed!\n";
     fputs(msg, stderr);
   }
-  return (T *)data;
+  return (T*)data;
 }
 #else
 #define calloc_mergable_or_throw calloc_or_throw
 #endif
 
-inline void free_it(void *ptr)
+inline void free_it(void* ptr)
 {
   if (ptr != nullptr)
     free(ptr);

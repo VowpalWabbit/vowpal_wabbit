@@ -4,11 +4,11 @@ individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
 #pragma once
-#include "floatbits.h"
-#include "v_array.h"
 #include <iostream>
-#include <math.h>
 #include <stdint.h>
+#include <math.h>
+#include "v_array.h"
+#include "floatbits.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -17,19 +17,19 @@ license as described in the file LICENSE.
 
 struct substring
 {
-  char *begin;
-  char *end;
+  char* begin;
+  char* end;
 };
 
-std::ostream &operator<<(std::ostream &os, const substring &ss);
-std::ostream &operator<<(std::ostream &os, const v_array<substring> &ss);
+std::ostream& operator<<(std::ostream& os, const substring& ss);
+std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
 
 // chop up the string into a v_array of substring.
-void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty = false);
+void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty = false);
 
-bool substring_equal(const substring &a, const substring &b);
+bool substring_equal(const substring& a, const substring& b);
 
-inline char *safe_index(char *start, char v, char *max)
+inline char* safe_index(char* start, char v, char* max)
 {
   while (start != max && *start != v) start++;
   return start;
@@ -37,28 +37,27 @@ inline char *safe_index(char *start, char v, char *max)
 
 inline void print_substring(substring s) { std::cout.write(s.begin, s.end - s.begin); }
 
-// can't type as it forces C++/CLI part to include rapidjson, which leads to
-// name clashes...
+// can't type as it forces C++/CLI part to include rapidjson, which leads to name clashes...
 struct example;
 namespace VW
 {
-typedef example &(*example_factory_t)(void *);
+typedef example& (*example_factory_t)(void*);
 }
 
 uint64_t hashstring(substring s, uint64_t h);
 
 typedef uint64_t (*hash_func_t)(substring, uint64_t);
 
-hash_func_t getHasher(const std::string &s);
+hash_func_t getHasher(const std::string& s);
 
 // The following function is a home made strtof. The
 // differences are :
 //  - much faster (around 50% but depends on the string to parse)
 //  - less error control, but utilised inside a very strict parser
 //    in charge of error detection.
-inline float parseFloat(char *p, char **end, char *endLine = nullptr)
+inline float parseFloat(char* p, char** end, char* endLine = nullptr)
 {
-  char *start = p;
+  char* start = p;
   bool endLine_is_null = endLine == nullptr;
 
   if (!*p)
@@ -119,7 +118,7 @@ inline bool infpattern(float value) { return (float_to_bits(value) & 0x7fC00000)
 
 inline float float_of_substring(substring s)
 {
-  char *endptr = s.end;
+  char* endptr = s.end;
   float f = parseFloat(s.begin, &endptr);
   if ((endptr == s.begin && s.begin != s.end) || nanpattern(f))
   {
@@ -132,7 +131,7 @@ inline float float_of_substring(substring s)
 
 inline int int_of_substring(substring s)
 {
-  char *endptr = s.end;
+  char* endptr = s.end;
   int i = strtol(s.begin, &endptr, 10);
   if (endptr == s.begin && s.begin != s.end)
   {

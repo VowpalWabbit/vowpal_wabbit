@@ -3,16 +3,16 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include <assert.h>
-#include <errno.h>
-#include <float.h>
-#include <iostream>
-#include <math.h>
-#include <sstream>
 #include <stdio.h>
+#include <float.h>
+#include <errno.h>
+#include <iostream>
+#include <sstream>
+#include <math.h>
+#include <assert.h>
 
-#include "gd.h"
 #include "global_data.h"
+#include "gd.h"
 #include "vw_exception.h"
 
 using namespace std;
@@ -23,9 +23,9 @@ struct global_prediction
   float weight;
 };
 
-size_t really_read(int sock, void *in, size_t count)
+size_t really_read(int sock, void* in, size_t count)
 {
-  char *buf = (char *)in;
+  char* buf = (char*)in;
   size_t done = 0;
   int r = 0;
   while (done < count)
@@ -51,7 +51,7 @@ size_t really_read(int sock, void *in, size_t count)
   return done;
 }
 
-void get_prediction(int sock, float &res, float &weight)
+void get_prediction(int sock, float& res, float& weight)
 {
   global_prediction p;
   really_read(sock, &p, sizeof(p));
@@ -63,7 +63,7 @@ void send_prediction(int sock, global_prediction p)
 {
   if (
 #ifdef _WIN32
-      send(sock, reinterpret_cast<const char *>(&p), sizeof(p), 0)
+      send(sock, reinterpret_cast<const char*>(&p), sizeof(p), 0)
 #else
       write(sock, &p, sizeof(p))
 #endif
@@ -80,7 +80,7 @@ void binary_print_result(int f, float res, float weight, v_array<char>)
   }
 }
 
-int print_tag(std::stringstream &ss, v_array<char> tag)
+int print_tag(std::stringstream& ss, v_array<char> tag)
 {
   if (tag.begin() != tag.end())
   {
@@ -129,16 +129,16 @@ void print_raw_text(int f, string s, v_array<char> tag)
   }
 }
 
-void set_mm(shared_data *sd, float label)
+void set_mm(shared_data* sd, float label)
 {
   sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data *, float) {}
+void noop_mm(shared_data*, float) {}
 
-void vw::learn(example &ec)
+void vw::learn(example& ec)
 {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
@@ -149,7 +149,7 @@ void vw::learn(example &ec)
     LEARNER::as_singleline(l)->learn(ec);
 }
 
-void vw::learn(multi_ex &ec)
+void vw::learn(multi_ex& ec)
 {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
@@ -160,7 +160,7 @@ void vw::learn(multi_ex &ec)
     LEARNER::as_multiline(l)->learn(ec);
 }
 
-void vw::predict(example &ec)
+void vw::predict(example& ec)
 {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
@@ -168,7 +168,7 @@ void vw::predict(example &ec)
   LEARNER::as_singleline(l)->predict(ec);
 }
 
-void vw::predict(multi_ex &ec)
+void vw::predict(multi_ex& ec)
 {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
@@ -176,7 +176,7 @@ void vw::predict(multi_ex &ec)
   LEARNER::as_multiline(l)->predict(ec);
 }
 
-void vw::finish_example(example &ec)
+void vw::finish_example(example& ec)
 {
   if (l->is_multiline)
     THROW("This reduction does not support single-line examples.");
@@ -184,7 +184,7 @@ void vw::finish_example(example &ec)
   LEARNER::as_singleline(l)->finish_example(*this, ec);
 }
 
-void vw::finish_example(multi_ex &ec)
+void vw::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline)
     THROW("This reduction does not support multi-line example.");
@@ -192,7 +192,7 @@ void vw::finish_example(multi_ex &ec)
   LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void compile_gram(vector<string> grams, uint32_t *dest, char *descriptor, bool quiet)
+void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
 {
   for (size_t i = 0; i < grams.size(); i++)
   {
@@ -216,7 +216,7 @@ void compile_gram(vector<string> grams, uint32_t *dest, char *descriptor, bool q
   }
 }
 
-void compile_limits(vector<string> limits, uint32_t *dest, bool quiet)
+void compile_limits(vector<string> limits, uint32_t* dest, bool quiet)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -240,7 +240,7 @@ void compile_limits(vector<string> limits, uint32_t *dest, bool quiet)
   }
 }
 
-void trace_listener_cerr(void *, const std::string &message)
+void trace_listener_cerr(void*, const std::string& message)
 {
   cerr << message;
   cerr.flush();
@@ -262,7 +262,7 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-vw::vw(const vw &) { THROW("Copy constructor not supported"); }
+vw::vw(const vw&) { THROW("Copy constructor not supported"); }
 
 vw::vw()
 {
@@ -286,7 +286,7 @@ vw::vw()
 
   reg_mode = 0;
   current_pass = 0;
-  reduction_stack = v_init<LEARNER::base_learner *(*)(VW::config::options_i &, vw &)>();
+  reduction_stack = v_init<LEARNER::base_learner* (*)(VW::config::options_i&, vw&)>();
 
   data_filename = "";
   delete_prediction = nullptr;
@@ -309,9 +309,8 @@ vw::vw()
   set_minmax = set_mm;
 
   power_t = 0.5;
-  eta = 0.5;  // default learning rate for normalized adaptive updates, this is
-              // switched to 10 by default for the other updates (see
-              // parse_args.cc)
+  eta = 0.5;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
+              // updates (see parse_args.cc)
   numpasses = 1;
 
   final_prediction_sink.begin() = final_prediction_sink.end() = final_prediction_sink.end_array = nullptr;

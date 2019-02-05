@@ -6,9 +6,9 @@ using namespace std;
 
 namespace MULTILABEL
 {
-char *bufread_label(labels *ld, char *c, io_buf &cache)
+char* bufread_label(labels* ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t *)c;
+  size_t num = *(size_t*)c;
   ld->label_v.clear();
   c += sizeof(size_t);
   size_t total = sizeof(uint32_t) * num;
@@ -19,7 +19,7 @@ char *bufread_label(labels *ld, char *c, io_buf &cache)
   }
   for (size_t i = 0; i < num; i++)
   {
-    uint32_t temp = *(uint32_t *)c;
+    uint32_t temp = *(uint32_t*)c;
     c += sizeof(uint32_t);
     ld->label_v.push_back(temp);
   }
@@ -27,11 +27,11 @@ char *bufread_label(labels *ld, char *c, io_buf &cache)
   return c;
 }
 
-size_t read_cached_label(shared_data *, void *v, io_buf &cache)
+size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
-  labels *ld = (labels *)v;
+  labels* ld = (labels*)v;
   ld->label_v.clear();
-  char *c;
+  char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, (int)total) < total)
     return 0;
@@ -40,60 +40,60 @@ size_t read_cached_label(shared_data *, void *v, io_buf &cache)
   return total;
 }
 
-float weight(void *) { return 1.; }
+float weight(void*) { return 1.; }
 
-char *bufcache_label(labels *ld, char *c)
+char* bufcache_label(labels* ld, char* c)
 {
-  *(size_t *)c = ld->label_v.size();
+  *(size_t*)c = ld->label_v.size();
   c += sizeof(size_t);
   for (unsigned int i = 0; i < ld->label_v.size(); i++)
   {
-    *(uint32_t *)c = ld->label_v[i];
+    *(uint32_t*)c = ld->label_v[i];
     c += sizeof(uint32_t);
   }
   return c;
 }
 
-void cache_label(void *v, io_buf &cache)
+void cache_label(void* v, io_buf& cache)
 {
-  char *c;
-  labels *ld = (labels *)v;
+  char* c;
+  labels* ld = (labels*)v;
   cache.buf_write(c, sizeof(size_t) + sizeof(uint32_t) * ld->label_v.size());
   bufcache_label(ld, c);
 }
 
-void default_label(void *v)
+void default_label(void* v)
 {
-  labels *ld = (labels *)v;
+  labels* ld = (labels*)v;
   ld->label_v.clear();
 }
 
-bool test_label(void *v)
+bool test_label(void* v)
 {
-  labels *ld = (labels *)v;
+  labels* ld = (labels*)v;
   return ld->label_v.size() == 0;
 }
 
-void delete_label(void *v)
+void delete_label(void* v)
 {
-  labels *ld = (labels *)v;
+  labels* ld = (labels*)v;
   if (ld)
     ld->label_v.delete_v();
 }
 
-void copy_label(void *dst, void *src)
+void copy_label(void* dst, void* src)
 {
   if (dst && src)
   {
-    labels *ldD = (labels *)dst;
-    labels *ldS = (labels *)src;
+    labels* ldD = (labels*)dst;
+    labels* ldS = (labels*)src;
     copy_array(ldD->label_v, ldS->label_v);
   }
 }
 
-void parse_label(parser *p, shared_data *, void *v, v_array<substring> &words)
+void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
 {
-  labels *ld = (labels *)v;
+  labels* ld = (labels*)v;
 
   ld->label_v.clear();
   switch (words.size())
@@ -120,7 +120,7 @@ void parse_label(parser *p, shared_data *, void *v, v_array<substring> &words)
 label_parser multilabel = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
     test_label, sizeof(labels)};
 
-void print_update(vw &all, bool is_test, example &ec)
+void print_update(vw& all, bool is_test, example& ec)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -139,9 +139,9 @@ void print_update(vw &all, bool is_test, example &ec)
   }
 }
 
-void output_example(vw &all, example &ec)
+void output_example(vw& all, example& ec)
 {
-  labels &ld = ec.l.multilabels;
+  labels& ld = ec.l.multilabels;
 
   float loss = 0.;
   if (!test_label(&ld))

@@ -14,7 +14,7 @@ namespace INTERACTIONS
 // expand namespace interactions if contain wildcards
 // recursive function used internally in this module
 void expand_namespaces_with_recursion(
-    std::string const &ns, std::vector<std::string> &res, std::string &val, size_t pos)
+    std::string const& ns, std::vector<std::string>& res, std::string& val, size_t pos)
 {
   assert(pos <= ns.size());
 
@@ -56,11 +56,11 @@ void expand_namespaces_with_recursion(
 // process all interactions in a vector
 
 std::vector<std::string> expand_interactions(
-    const vector<string> &vec, const size_t required_length, const string &err_msg)
+    const vector<string>& vec, const size_t required_length, const string& err_msg)
 {
   std::vector<std::string> res;
 
-  for (string const &i : vec)
+  for (string const& i : vec)
   {
     const size_t len = i.length();
     if (required_length > 0 && len != required_length)
@@ -86,7 +86,7 @@ std::vector<std::string> expand_interactions(
 // with one exeption - returns false if interaction made of one namespace
 // like 'aaa' as it has no sense to sort such things.
 
-inline bool must_be_left_sorted(const std::string &oi)
+inline bool must_be_left_sorted(const std::string& oi)
 {
   if (oi.size() <= 1)
     return true;  // one letter in string - no need to sort
@@ -113,11 +113,10 @@ inline bool must_be_left_sorted(const std::string &oi)
 
 // used from parse_args.cc
 // filter duplicate namespaces treating them as unordered sets of namespaces.
-// also sort namespaces in interactions containing duplicate namespaces to make
-// sure they are grouped together.
+// also sort namespaces in interactions containing duplicate namespaces to make sure they are grouped together.
 
 void sort_and_filter_duplicate_interactions(
-    std::vector<std::string> &vec, bool filter_duplicates, size_t &removed_cnt, size_t &sorted_cnt)
+    std::vector<std::string>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
   // 2 out parameters
   removed_cnt = 0;
@@ -136,11 +135,11 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const &a, std::pair<std::string, size_t> const &b) {
+        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
           return a.first < b.first;
         });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const &a, std::pair<std::string, size_t> const &b) {
+        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
           return a.first == b.first;
         });
     vec_sorted.erase(last, vec_sorted.end());
@@ -150,19 +149,16 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::string, size_t> const &a, std::pair<std::string, size_t> const &b) {
+        [](std::pair<std::string, size_t> const& a, std::pair<std::string, size_t> const& b) {
           return a.second < b.second;
         });
   }
 
-  // we have original vector and vector with duplicates removed + corresponding
-  // indexes in original vector
-  // plus second vector's data is sorted. We can reuse it if we need interaction
-  // to be left sorted.
-  // let's make a new vector from these two sources - without dulicates and with
-  // sorted data whenever it's needed.
+  // we have original vector and vector with duplicates removed + corresponding indexes in original vector
+  // plus second vector's data is sorted. We can reuse it if we need interaction to be left sorted.
+  // let's make a new vector from these two sources - without dulicates and with sorted data whenever it's needed.
   std::vector<std::string> res;
-  for (auto &i : vec_sorted)
+  for (auto& i : vec_sorted)
   {
     if (must_be_left_sorted(i.first))
     {
@@ -181,26 +177,24 @@ void sort_and_filter_duplicate_interactions(
  *  Estimation of generated features properties
  */
 
-// the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of
-// implementation of eval_count_of_generated_ft()
-// it just calls generate_interactions() with small function which counts
-// generated features and sums their squared values
-// it's replaced with more fast (?) analytic solution but keeps just in case and
+// the code under DEBUG_EVAL_COUNT_OF_GEN_FT below is an alternative way of implementation of
+// eval_count_of_generated_ft() it just calls generate_interactions() with small function which counts generated
+// features and sums their squared values it's replaced with more fast (?) analytic solution but keeps just in case and
 // for doublecheck.
 
 //#define DEBUG_EVAL_COUNT_OF_GEN_FT
 #ifdef DEBUG_EVAL_COUNT_OF_GEN_FT
 struct eval_gen_data
 {
-  size_t &new_features_cnt;
-  float &new_features_value;
-  eval_gen_data(size_t &features_cnt, float &features_value)
+  size_t& new_features_cnt;
+  float& new_features_value;
+  eval_gen_data(size_t& features_cnt, float& features_value)
       : new_features_cnt(features_cnt), new_features_value(features_value)
   {
   }
 };
 
-void ft_cnt(eval_gen_data &dat, const float fx, const uint64_t)
+void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 {
   ++dat.new_features_cnt;
   dat.new_features_value += fx * fx;
@@ -231,10 +225,9 @@ inline size_t factor(const size_t n, const size_t start_from = 1)
   return res;
 }
 
-// returns number of new features that will be generated for example and sum of
-// their squared values
+// returns number of new features that will be generated for example and sum of their squared values
 
-void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, float &new_features_value)
+void eval_count_of_generated_ft(vw& all, example& ec, size_t& new_features_cnt, float& new_features_value)
 {
   new_features_cnt = 0;
   new_features_value = 0.;
@@ -244,7 +237,7 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
   if (all.permutations)
   {
     // just multiply precomputed values for all namespaces
-    for (std::string &inter : all.interactions)
+    for (std::string& inter : all.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -273,7 +266,7 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
     generate_interactions<eval_gen_data, uint64_t, ft_cnt>(all, ec, dat);
 #endif
 
-    for (std::string &inter : all.interactions)
+    for (std::string& inter : all.interactions)
     {
       size_t num_features_in_inter = 1;
       float sum_feat_sq_in_inter = 1.;
@@ -289,8 +282,7 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
           if (num_features_in_inter == 0)
             break;  // one of namespaces has no features - go to next interaction
         }
-        else  // we are at beginning of a block made of same namespace
-              // (interaction is preliminary sorted)
+        else  // we are at beginning of a block made of same namespace (interaction is preliminary sorted)
         {
           // let's find out real length of this block
           size_t order_of_inter = 2;  // alredy compared ns == ns+1
@@ -300,15 +292,13 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
               ++order_of_inter;
 
           // namespace is same for whole block
-          features &fs = ec.feature_space[(const int)*ns];
+          features& fs = ec.feature_space[(const int)*ns];
 
           // count number of features with value != 1.;
           size_t cnt_ft_value_non_1 = 0;
 
-          // in this block we shall calculate number of generated features and
-          // sum of their values
-          // keeping in mind rules applicable for simple combinations instead of
-          // permutations
+          // in this block we shall calculate number of generated features and sum of their values
+          // keeping in mind rules applicable for simple combinations instead of permutations
 
           // let's calculate sum of their squared value for whole block
 
@@ -341,10 +331,8 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
 
           // let's calculate  the number of a new features
 
-          // if number of features is less than  order of interaction then go to
-          // the next interaction
-          // as you can't make simple combination of interaction 'aaa' if a
-          // contains < 3 features.
+          // if number of features is less than  order of interaction then go to the next interaction
+          // as you can't make simple combination of interaction 'aaa' if a contains < 3 features.
           // unless one of them has value != 1. and we are counting them.
           const size_t ft_size = fs.size();
           if (cnt_ft_value_non_1 == 0 && ft_size < order_of_inter)
@@ -383,8 +371,7 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
       }
 
       if (num_features_in_inter == 0)
-        continue;  // signal that values should be ignored (as default value is
-                   // 1)
+        continue;  // signal that values should be ignored (as default value is 1)
 
       new_features_cnt += num_features_in_inter;
       new_features_value += sum_feat_sq_in_inter;
@@ -402,4 +389,5 @@ void eval_count_of_generated_ft(vw &all, example &ec, size_t &new_features_cnt, 
 
   results.delete_v();
 }
+
 }  // namespace INTERACTIONS

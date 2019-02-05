@@ -3,17 +3,16 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "cache.h"
 #include "accumulate.h"
 #include "best_constant.h"
-#include "cache.h"
 
 using namespace std;
 
-char *bufread_simple_label(shared_data *sd, label_data *ld, char *c)
+char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   memcpy(&ld->label, c, sizeof(ld->label));
-  //  cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " <<
-  //  sd->first_observed_label <<  endl;
+  //  cout << ld->label << " " << sd->is_more_than_two_labels_observed << " " << sd->first_observed_label <<  endl;
   c += sizeof(ld->label);
   memcpy(&ld->weight, c, sizeof(ld->weight));
   c += sizeof(ld->weight);
@@ -24,10 +23,10 @@ char *bufread_simple_label(shared_data *sd, label_data *ld, char *c)
   return c;
 }
 
-size_t read_cached_simple_label(shared_data *sd, void *v, io_buf &cache)
+size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 {
-  label_data *ld = (label_data *)v;
-  char *c;
+  label_data* ld = (label_data*)v;
+  char* c;
   size_t total = sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial);
   if (cache.buf_read(c, total) < total)
     return 0;
@@ -36,13 +35,13 @@ size_t read_cached_simple_label(shared_data *sd, void *v, io_buf &cache)
   return total;
 }
 
-float get_weight(void *v)
+float get_weight(void* v)
 {
-  label_data *ld = (label_data *)v;
+  label_data* ld = (label_data*)v;
   return ld->weight;
 }
 
-char *bufcache_simple_label(label_data *ld, char *c)
+char* bufcache_simple_label(label_data* ld, char* c)
 {
   memcpy(c, &ld->label, sizeof(ld->label));
   c += sizeof(ld->label);
@@ -53,33 +52,33 @@ char *bufcache_simple_label(label_data *ld, char *c)
   return c;
 }
 
-void cache_simple_label(void *v, io_buf &cache)
+void cache_simple_label(void* v, io_buf& cache)
 {
-  char *c;
-  label_data *ld = (label_data *)v;
+  char* c;
+  label_data* ld = (label_data*)v;
   cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial));
   bufcache_simple_label(ld, c);
 }
 
-void default_simple_label(void *v)
+void default_simple_label(void* v)
 {
-  label_data *ld = (label_data *)v;
+  label_data* ld = (label_data*)v;
   ld->label = FLT_MAX;
   ld->weight = 1.;
   ld->initial = 0.;
 }
 
-bool test_label(void *v)
+bool test_label(void* v)
 {
-  label_data *ld = (label_data *)v;
+  label_data* ld = (label_data*)v;
   return ld->label == FLT_MAX;
 }
 
-void delete_simple_label(void *) {}
+void delete_simple_label(void*) {}
 
-void parse_simple_label(parser *, shared_data *sd, void *v, v_array<substring> &words)
+void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& words)
 {
-  label_data *ld = (label_data *)v;
+  label_data* ld = (label_data*)v;
 
   switch (words.size())
   {
@@ -108,7 +107,7 @@ void parse_simple_label(parser *, shared_data *sd, void *v, v_array<substring> &
 label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
     delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
 
-void print_update(vw &all, example &ec)
+void print_update(vw& all, example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
       !all.bfgs)
@@ -118,7 +117,7 @@ void print_update(vw &all, example &ec)
   }
 }
 
-void output_and_account_example(vw &all, example &ec)
+void output_and_account_example(vw& all, example& ec)
 {
   label_data ld = ec.l.simple;
 
@@ -136,13 +135,13 @@ void output_and_account_example(vw &all, example &ec)
   print_update(all, ec);
 }
 
-void return_simple_example(vw &all, void *, example &ec)
+void return_simple_example(vw& all, void*, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
 
-bool summarize_holdout_set(vw &all, size_t &no_win_counter)
+bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
   float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
       ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
@@ -161,9 +160,9 @@ bool summarize_holdout_set(vw &all, size_t &no_win_counter)
     return true;
   }
 
-  if ((thisLoss != FLT_MAX) || (isfinite(all.sd->holdout_best_loss)))  // it's only a loss if we're not
-                                                                       // infinite when the previous one
-                                                                       // wasn't infinite
+  if ((thisLoss != FLT_MAX) ||
+      (isfinite(
+          all.sd->holdout_best_loss)))  // it's only a loss if we're not infinite when the previous one wasn't infinite
     no_win_counter++;
   return false;
 }

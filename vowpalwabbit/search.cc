@@ -3,24 +3,24 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include "active.h"
-#include "csoaa.h"
-#include "gd.h"  // for GD::foreach_feature
-#include "label_dictionary.h"
+#include <float.h>
+#include <string.h>
+#include <math.h>
+#include "vw.h"
 #include "rand48.h"
 #include "reductions.h"
+#include "gd.h"  // for GD::foreach_feature
+#include "search_sequencetask.h"
+#include "search_multiclasstask.h"
 #include "search_dep_parser.h"
 #include "search_entityrelationtask.h"
-#include "search_graph.h"
 #include "search_hooktask.h"
+#include "search_graph.h"
 #include "search_meta.h"
-#include "search_multiclasstask.h"
-#include "search_sequencetask.h"
-#include "vw.h"
+#include "csoaa.h"
+#include "active.h"
+#include "label_dictionary.h"
 #include "vw_exception.h"
-#include <float.h>
-#include <math.h>
-#include <string.h>
 
 using namespace LEARNER;
 using namespace std;
@@ -33,11 +33,11 @@ namespace MC = MULTICLASS;
 
 namespace Search
 {
-search_task *all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
+search_task* all_tasks[] = {&SequenceTask::task, &SequenceSpanTask::task, &SequenceTaskCostToGo::task,
     &ArgmaxTask::task, &SequenceTask_DemoLDF::task, &MulticlassTask::task, &DepParserTask::task,
     &EntityRelationTask::task, &HookTask::task, &GraphTask::task, nullptr};  // must nullptr terminate!
 
-search_metatask *all_metatasks[] = {
+search_metatask* all_metatasks[] = {
     &DebugMT::metatask, &SelectiveBranchingMT::metatask, nullptr};  // must nullptr terminate!
 
 const bool PRINT_UPDATE_EVERY_EXAMPLE = 0;
@@ -71,22 +71,19 @@ struct prediction
 {
   ptag me;        // the id of the current prediction (the one being memoized)
   size_t cnt;     // how many variables are we conditioning on?
-  ptag *tags;     // which variables are they?
-  action *acts;   // and which actions were taken at each?
+  ptag* tags;     // which variables are they?
+  action* acts;   // and which actions were taken at each?
   uint32_t hash;  // a hash of the above
 };
 
 // parameters for auto-conditioning
 struct auto_condition_settings
 {
-  size_t max_bias_ngram_length;  // add a "bias" feature for each ngram up to and
-                                 // including this length. eg., if it's 1, then
-                                 // you get a single feature for each conditional
-  size_t max_quad_ngram_length;  // add bias *times* input features for each
-                                 // ngram up to and including this length
+  size_t max_bias_ngram_length;  // add a "bias" feature for each ngram up to and including this length. eg., if it's 1,
+                                 // then you get a single feature for each conditional
+  size_t max_quad_ngram_length;  // add bias *times* input features for each ngram up to and including this length
   float feature_value;           // how much weight should the conditional features get?
-  bool use_passthrough_repr;     // should we ask lower-level reductions for their
-                                 // internal state?
+  bool use_passthrough_repr;     // should we ask lower-level reductions for their internal state?
 };
 
 struct scored_action
@@ -95,11 +92,10 @@ struct scored_action
   float s;   // the predicted cost of this action
   // v_array<feature> repr;
   scored_action(action _a = (action)-1, float _s = 0) : a(_a), s(_s) {}  // , repr(v_init<feature>()) {}
-  // scored_action(action _a, float _s, v_array<feature>& _repr) : a(_a), s(_s),
-  // repr(_repr) {}
+  // scored_action(action _a, float _s, v_array<feature>& _repr) : a(_a), s(_s), repr(_repr) {}
   // scored_action() { a = (action)-1; s = 0.; }
 };
-std::ostream &operator<<(std::ostream &os, const scored_action &x)
+std::ostream& operator<<(std::ostream& os, const scored_action& x)
 {
   os << x.a << ':' << x.s;
   return os;
@@ -108,8 +104,8 @@ std::ostream &operator<<(std::ostream &os, const scored_action &x)
 struct action_repr
 {
   action a;
-  features *repr;
-  action_repr(action _a, features *_repr) : a(_a)
+  features* repr;
+  action_repr(action _a, features* _repr) : a(_a)
   {
     if (_repr != nullptr)
     {
@@ -133,7 +129,7 @@ struct action_cache
   {
   }
 };
-std::ostream &operator<<(std::ostream &os, const action_cache &x)
+std::ostream& operator<<(std::ostream& os, const action_cache& x)
 {
   os << x.k << ':' << x.cost;
   if (x.is_opt)
@@ -143,70 +139,55 @@ std::ostream &operator<<(std::ostream &os, const action_cache &x)
 
 struct search_private
 {
-  vw *all;
+  vw* all;
 
   uint64_t offset;
-  bool auto_condition_features;  // do you want us to automatically add
-                                 // conditioning features?
-  bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do
-                                 // it for you!
-  bool examples_dont_change;     // set to true if you don't do any internal example
-                                 // munging
+  bool auto_condition_features;  // do you want us to automatically add conditioning features?
+  bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do it for you!
+  bool examples_dont_change;     // set to true if you don't do any internal example munging
   bool is_ldf;                   // user declared ldf
-  bool use_action_costs;         // task promises to define per-action rollout-by-ref
-                                 // costs
+  bool use_action_costs;         // task promises to define per-action rollout-by-ref costs
 
   v_array<int32_t> neighbor_features;  // ugly encoding of neighbor feature requirements
   auto_condition_settings acset;       // settings for auto-conditioning
-  size_t history_length;               // value of --search_history_length, used by some
-                                       // tasks, default 1
+  size_t history_length;               // value of --search_history_length, used by some tasks, default 1
 
-  size_t A;                            // total number of actions, [1..A]; 0 means ldf
-  size_t num_learners;                 // total number of learners;
-  bool cb_learner;                     // do contextual bandit learning on action (was "!
-                                       // rollout_all_actions" which was confusing)
-  SearchState state;                   // current state of learning
-  size_t learn_learner_id;             // we allow user to use different learners for
-                                       // different states
-  int mix_per_roll_policy;             // for MIX_PER_ROLL, we need to choose a policy to
-                                       // use; this is where it's stored (-2 means "not
-                                       // selected yet")
-  bool no_caching;                     // turn off caching
-  size_t rollout_num_steps;            // how many calls of "loss" before we stop really
-                                       // predicting on rollouts and switch to oracle (0
-                                       // means "infinite")
-  bool linear_ordering;                // insist that examples are generated in linear order
-                                       // (rather that the default hoopla permutation)
-  bool (*label_is_test)(polylabel &);  // tell me if the label data from an example is test
+  size_t A;                 // total number of actions, [1..A]; 0 means ldf
+  size_t num_learners;      // total number of learners;
+  bool cb_learner;          // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
+  SearchState state;        // current state of learning
+  size_t learn_learner_id;  // we allow user to use different learners for different states
+  int mix_per_roll_policy;  // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means
+                            // "not selected yet")
+  bool no_caching;          // turn off caching
+  size_t rollout_num_steps;  // how many calls of "loss" before we stop really predicting on rollouts and switch to
+                             // oracle (0 means "infinite")
+  bool linear_ordering;      // insist that examples are generated in linear order (rather that the default hoopla
+                             // permutation)
+  bool (*label_is_test)(polylabel&);  // tell me if the label data from an example is test
 
   size_t t;                                     // current search step
   size_t T;                                     // length of root trajectory
   v_array<example> learn_ec_copy;               // copy of example(s) at learn_t
-  example *learn_ec_ref;                        // reference to example at learn_t, when there's no
-                                                // example munging
+  example* learn_ec_ref;                        // reference to example at learn_t, when there's no example munging
   size_t learn_ec_ref_cnt;                      // how many are there (for LDF mode only; otherwise 1)
-  v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning
-                                                // at the training position
+  v_array<ptag> learn_condition_on;             // a copy of the tags used for conditioning at the training position
   v_array<action_repr> learn_condition_on_act;  // the actions taken
   v_array<char> learn_condition_on_names;       // the names of the actions
   v_array<action> learn_allowed_actions;        // which actions were allowed at training time?
   v_array<action_repr> ptag_to_action;          // tag to action mapping for conditioning
-  vector<action> test_action_sequence;          // if test-mode was run, what was the
-                                                // corresponding action sequence; it's a
-                                                // vector cuz we might expose it to the
-                                                // library
-  action learn_oracle_action;                   // store an oracle action for debugging purposes
+  vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
+                                        // vector cuz we might expose it to the library
+  action learn_oracle_action;           // store an oracle action for debugging purposes
   features last_action_repr;
 
-  polylabel *allowed_actions_cache;
+  polylabel* allowed_actions_cache;
 
-  size_t loss_declared_cnt;                 // how many times did run declare any loss
-                                            // (implicitly or explicitly)?
+  size_t loss_declared_cnt;                 // how many times did run declare any loss (implicitly or explicitly)?
   v_array<scored_action> train_trajectory;  // the training trajectory
   size_t learn_t;                           // what time step are we learning on?
   size_t learn_a_idx;                       // what action index are we trying?
-  bool done_with_all_actions;               // set to true when there are no more learn_a_idx
-                                            // to go
+  bool done_with_all_actions;               // set to true when there are no more learn_a_idx to go
 
   float test_loss;   // loss incurred when run INIT_TEST
   float learn_loss;  // loss incurred when run LEARN
@@ -214,42 +195,34 @@ struct search_private
 
   bool hit_new_pass;     // have we hit a new pass?
   bool force_oracle;     // insist on using the oracle to make predictions
-  float perturb_oracle;  // with this probability, choose a random action instead
-                         // of oracle action
+  float perturb_oracle;  // with this probability, choose a random action instead of oracle action
 
   size_t num_calls_to_run, num_calls_to_run_previous, save_every_k_runs;
 
-  // if we're printing to stderr we need to remember if we've printed the header
-  // yet
+  // if we're printing to stderr we need to remember if we've printed the header yet
   // (i.e., we do this if we're driving)
   bool printed_output_header;
 
   // various strings for different search states
   bool should_produce_string;
-  stringstream *pred_string;
-  stringstream *truth_string;
-  stringstream *bad_string_stream;
+  stringstream* pred_string;
+  stringstream* truth_string;
+  stringstream* bad_string_stream;
 
   // parameters controlling interpolation
   float beta;   // interpolation rate
-  float alpha;  // parameter used to adapt beta for dagger (see above comment),
-                // should be in (0,1)
+  float alpha;  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
 
   RollMethod rollout_method;
   RollMethod rollin_method;
-  float subsample_timesteps;  // train at every time step or just a (random)
-                              // subset?
-  bool xv;                    // train three separate policies -- two for providing examples to the
-                              // other and a third training on the union (which will be used at
-                              // test time -- TODO)
+  float subsample_timesteps;  // train at every time step or just a (random) subset?
+  bool xv;  // train three separate policies -- two for providing examples to the other and a third training on the
+            // union (which will be used at test time -- TODO)
 
-  bool allow_current_policy;  // should the current policy be used for training?
-                              // true for dagger
-  bool adaptive_beta;         // used to implement dagger-like algorithms. if true, beta
-                              // = 1-(1-alpha)^n after n updates, and policy is mixed
-                              // with oracle as \pi' = (1-beta)\pi^* + beta \pi
-  size_t passes_per_policy;   // if we're not in dagger-mode, then we need to know
-                              // how many passes to train a policy
+  bool allow_current_policy;  // should the current policy be used for training? true for dagger
+  bool adaptive_beta;  // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n updates, and
+                       // policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+  size_t passes_per_policy;  // if we're not in dagger-mode, then we need to know how many passes to train a policy
 
   uint32_t current_policy;  // what policy are we training right now?
 
@@ -263,46 +236,42 @@ struct search_private
   size_t total_predictions_made;
   size_t total_cache_hits;
 
-  v_hashmap<unsigned char *, scored_action> cache_hash_map;
+  v_hashmap<unsigned char*, scored_action> cache_hash_map;
 
   // for foreach_feature temporary storage for conditioning
   uint64_t dat_new_feature_idx;
-  example *dat_new_feature_ec;
+  example* dat_new_feature_ec;
   stringstream dat_new_feature_audit_ss;
   size_t dat_new_feature_namespace;
-  string *dat_new_feature_feature_space;
+  string* dat_new_feature_feature_space;
   float dat_new_feature_value;
 
   // to reduce memory allocation
   string rawOutputString;
-  stringstream *rawOutputStringStream;
+  stringstream* rawOutputStringStream;
   CS::label ldf_test_label;
   v_array<action_repr> condition_on_actions;
   v_array<size_t> timesteps;
   polylabel learn_losses;
   polylabel gte_label;
   v_array<pair<float, size_t>> active_uncertainty;
-  v_array<v_array<pair<CS::wclass &, bool>>> active_known;
+  v_array<v_array<pair<CS::wclass&, bool>>> active_known;
   bool force_setup_ec_ref;
   bool active_csoaa;
   float active_csoaa_verify;
 
-  LEARNER::base_learner *base_learner;
+  LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
   CS::label empty_cs_label;
 
-  search_task *task;          // your task!
-  search_metatask *metatask;  // your (optional) metatask
-  BaseTask *metaoverride;
-  size_t meta_t;                                         // the metatask has it's own notion of time. meta_t+t, during a
-                                                         // single run, is the way to think about the "real" decision
-                                                         // step but this really only matters for caching purposes
-  v_array<v_array<action_cache> *> memo_foreach_action;  // when foreach_action
-                                                         // is on, we need to
-                                                         // cache TRAIN
-                                                         // trajectory actions
-                                                         // for LEARN
+  search_task* task;          // your task!
+  search_metatask* metatask;  // your (optional) metatask
+  BaseTask* metaoverride;
+  size_t meta_t;  // the metatask has it's own notion of time. meta_t+t, during a single run, is the way to think about
+                  // the "real" decision step but this really only matters for caching purposes
+  v_array<v_array<action_cache>*>
+      memo_foreach_action;  // when foreach_action is on, we need to cache TRAIN trajectory actions for LEARN
 };
 
 search::search() { priv = &calloc_or_throw<search_private>(); }
@@ -311,7 +280,7 @@ search::~search() { free(priv); }
 string audit_feature_space("conditional");
 uint64_t conditional_constant = 8290743;
 
-void clear_memo_foreach_action(search_private &priv)
+void clear_memo_foreach_action(search_private& priv)
 {
   for (size_t i = 0; i < priv.memo_foreach_action.size(); i++)
     if (priv.memo_foreach_action[i])
@@ -322,14 +291,13 @@ void clear_memo_foreach_action(search_private &priv)
   priv.memo_foreach_action.clear();
 }
 
-inline bool need_memo_foreach_action(search_private &priv)
+inline bool need_memo_foreach_action(search_private& priv)
 {
   return (priv.state == INIT_TRAIN) && (priv.metatask) && (priv.metaoverride);  // &&
-  //        (priv.metaoverride->_foreach_action ||
-  //        priv.metaoverride->_post_prediction);
+  //        (priv.metaoverride->_foreach_action || priv.metaoverride->_post_prediction);
 }
 
-int random_policy(search_private &priv, bool allow_current, bool allow_optimal, bool advance_prng = true)
+int random_policy(search_private& priv, bool allow_current, bool allow_optimal, bool advance_prng = true)
 {
   if (priv.beta >= 1)
   {
@@ -339,9 +307,7 @@ int random_policy(search_private &priv, bool allow_current, bool allow_optimal, 
       return (((int)priv.current_policy) - 1);
     if (allow_optimal)
       return -1;
-    std::cerr << "internal error (bug): no valid policies to choose from!  "
-                 "defaulting to current"
-              << std::endl;
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
     return (int)priv.current_policy;
   }
 
@@ -350,9 +316,7 @@ int random_policy(search_private &priv, bool allow_current, bool allow_optimal, 
 
   if (num_valid_policies == 0)
   {
-    std::cerr << "internal error (bug): no valid policies to choose from!  "
-                 "defaulting to current"
-              << std::endl;
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
     return (int)priv.current_policy;
   }
   else if (num_valid_policies == 1)
@@ -389,7 +353,7 @@ int random_policy(search_private &priv, bool allow_current, bool allow_optimal, 
 // for two-fold cross validation, we double the number of learners
 // and send examples to one or the other depending on the xor of
 // (is_training) and (example_id % 2)
-int select_learner(search_private &priv, int policy, size_t learner_id, bool is_training, bool is_local)
+int select_learner(search_private& priv, int policy, size_t learner_id, bool is_training, bool is_local)
 {
   if (policy < 0)
     return policy;  // optimal policy
@@ -406,7 +370,7 @@ int select_learner(search_private &priv, int policy, size_t learner_id, bool is_
   }
 }
 
-bool should_print_update(vw &all, bool hit_new_pass = false)
+bool should_print_update(vw& all, bool hit_new_pass = false)
 {
   // uncomment to print out final loss after all examples processed
   // commented for now so that outputs matches make test
@@ -418,7 +382,7 @@ bool should_print_update(vw &all, bool hit_new_pass = false)
   return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
-bool might_print_update(vw &all)
+bool might_print_update(vw& all)
 {
   // basically do should_print_update but check me and the next
   // example because of off-by-ones
@@ -430,7 +394,7 @@ bool might_print_update(vw &all)
   return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
 }
 
-bool must_run_test(vw &all, multi_ex &ec, bool is_test_ex)
+bool must_run_test(vw& all, multi_ex& ec, bool is_test_ex)
 {
   return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
       might_print_update(all) ||                    // if we have to print and update to stderr
@@ -456,7 +420,7 @@ float safediv(float a, float b)
     return (a / b);
 }
 
-void to_short_string(string in, size_t max_len, char *out)
+void to_short_string(string in, size_t max_len, char* out)
 {
   for (size_t i = 0; i < max_len; i++)
     out[i] = ((i >= in.length()) || (in[i] == '\n') || (in[i] == '\t')) ? ' ' : in[i];
@@ -469,7 +433,7 @@ void to_short_string(string in, size_t max_len, char *out)
   out[max_len] = 0;
 }
 
-void number_to_natural(size_t big, char *c)
+void number_to_natural(size_t big, char* c)
 {
   if (big > 9999999999)
     sprintf(c, "%dg", (int)(big / 1000000000));
@@ -481,12 +445,12 @@ void number_to_natural(size_t big, char *c)
     sprintf(c, "%d", (int)(big));
 }
 
-void print_update(search_private &priv)
+void print_update(search_private& priv)
 {
-  vw &all = *priv.all;
+  vw& all = *priv.all;
   if (!priv.printed_output_header && !all.quiet)
   {
-    const char *header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
+    const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
         "predic", "cache", "examples", "");
     if (priv.active_csoaa)
@@ -553,13 +517,13 @@ void print_update(search_private &priv)
   all.sd->update_dump_interval(all.progress_add, all.progress_arg);
 }
 
-void add_new_feature(search_private &priv, float val, uint64_t idx)
+void add_new_feature(search_private& priv, float val, uint64_t idx)
 {
   uint64_t mask = priv.all->weights.mask();
   size_t ss = priv.all->weights.stride_shift();
 
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
-  features &fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
+  features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indicies.last() << ':' << fs.values.last() << endl;
   if (priv.all->audit)
@@ -570,26 +534,25 @@ void add_new_feature(search_private &priv, float val, uint64_t idx)
   }
 }
 
-void del_features_in_top_namespace(search_private & /* priv */, example &ec, size_t ns)
+void del_features_in_top_namespace(search_private& /* priv */, example& ec, size_t ns)
 {
   if ((ec.indices.size() == 0) || (ec.indices.last() != ns))
   {
     return;
     // if (ec.indices.size() == 0)
-    //{ THROW("internal error (bug): expecting top namespace to be '" << ns <<
-    //"' but it was empty"); }
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was empty"); }
     // else
-    //{ THROW("internal error (bug): expecting top namespace to be '" << ns <<
-    //"' but it was " << (size_t)ec.indices.last()); }
+    //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " <<
+    //(size_t)ec.indices.last()); }
   }
-  features &fs = ec.feature_space[ns];
+  features& fs = ec.feature_space[ns];
   ec.indices.decr();
   ec.num_features -= fs.size();
   ec.total_sum_feat_sq -= fs.sum_feat_sq;
   fs.clear();
 }
 
-void add_neighbor_features(search_private &priv, multi_ex &ec_seq)
+void add_neighbor_features(search_private& priv, multi_ex& ec_seq)
 {
   if (priv.neighbor_features.size() == 0)
     return;
@@ -597,7 +560,7 @@ void add_neighbor_features(search_private &priv, multi_ex &ec_seq)
   uint32_t stride_shift = priv.all->weights.stride_shift();
   for (size_t n = 0; n < ec_seq.size(); n++)  // iterate over every example in the sequence
   {
-    example &me = *ec_seq[n];
+    example& me = *ec_seq[n];
     for (size_t n_id = 0; n_id < priv.neighbor_features.size(); n_id++)
     {
       int32_t offset = priv.neighbor_features[n_id] >> 24;
@@ -623,12 +586,12 @@ void add_neighbor_features(search_private &priv, multi_ex &ec_seq)
         add_new_feature(priv, 1., (uint64_t)3824917 << stride_shift);
       else  // this is actually a neighbor
       {
-        example &other = *ec_seq[n + offset];
+        example& other = *ec_seq[n + offset];
         GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
-    features &fs = me.feature_space[neighbor_namespace];
+    features& fs = me.feature_space[neighbor_namespace];
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
@@ -641,14 +604,14 @@ void add_neighbor_features(search_private &priv, multi_ex &ec_seq)
   }
 }
 
-void del_neighbor_features(search_private &priv, multi_ex &ec_seq)
+void del_neighbor_features(search_private& priv, multi_ex& ec_seq)
 {
   if (priv.neighbor_features.size() == 0)
     return;
   for (size_t n = 0; n < ec_seq.size(); n++) del_features_in_top_namespace(priv, *ec_seq[n], neighbor_namespace);
 }
 
-void reset_search_structure(search_private &priv)
+void reset_search_structure(search_private& priv)
 {
   // NOTE: make sure do NOT reset priv.learn_a_idx
   priv.t = 0;
@@ -667,13 +630,12 @@ void reset_search_structure(search_private &priv)
     float x = -log1pf(-priv.alpha) * (float)priv.total_examples_generated;
     static const float log_of_2 = (float)0.6931471805599453;
     priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1 - expf(-x));  // numerical stability
-    // float priv_beta = 1.f - powf(1.f - priv.alpha,
-    // (float)priv.total_examples_generated);
+    // float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
     // assert( fabs(priv_beta - priv.beta) < 1e-2 );
     if (priv.beta > 1)
       priv.beta = 1;
   }
-  for (Search::action_repr &ar : priv.ptag_to_action)
+  for (Search::action_repr& ar : priv.ptag_to_action)
   {
     if (ar.repr != nullptr)
     {
@@ -689,7 +651,7 @@ void reset_search_structure(search_private &priv)
   }
 }
 
-void search_declare_loss(search_private &priv, float loss)
+void search_declare_loss(search_private& priv, float loss)
 {
   priv.loss_declared_cnt++;
   switch (priv.state)
@@ -713,23 +675,23 @@ void search_declare_loss(search_private &priv, float loss)
 }
 
 template <class T>
-void cdbg_print_array(string str, v_array<T> &A)
+void cdbg_print_array(string str, v_array<T>& A)
 {
   cdbg << str << " = [";
   for (size_t i = 0; i < A.size(); i++) cdbg << " " << A[i];
   cdbg << " ]" << endl;
 }
 template <class T>
-void cerr_print_array(string str, v_array<T> &A)
+void cerr_print_array(string str, v_array<T>& A)
 {
   std::cerr << str << " = [";
   for (size_t i = 0; i < A.size(); i++) std::cerr << " " << A[i];
   std::cerr << " ]" << endl;
 }
 
-size_t random(uint64_t &v, size_t max) { return (size_t)(merand48(v) * (float)max); }
+size_t random(uint64_t& v, size_t max) { return (size_t)(merand48(v) * (float)max); }
 template <class T>
-bool array_contains(T target, const T *A, size_t n)
+bool array_contains(T target, const T* A, size_t n)
 {
   if (A == nullptr)
     return false;
@@ -740,11 +702,11 @@ bool array_contains(T target, const T *A, size_t n)
 }
 
 // priv.learn_condition_on_act or priv.condition_on_actions
-void add_example_conditioning(search_private &priv,
-    example &ec,
+void add_example_conditioning(search_private& priv,
+    example& ec,
     size_t condition_on_cnt,
-    const char *condition_on_names,
-    action_repr *condition_on_actions)
+    const char* condition_on_names,
+    action_repr* condition_on_actions)
 {
   if (condition_on_cnt == 0)
     return;
@@ -770,8 +732,7 @@ void add_example_conditioning(search_private &priv,
     {
       if (i + n >= I)
         break;  // no more ngrams
-      // we're going to add features for the ngram condition_on_actions[i ..
-      // i+N]
+      // we're going to add features for the ngram condition_on_actions[i .. i+N]
       uint64_t name = condition_on_names[i + n];
       fid = fid * 328901 + 71933 * ((condition_on_actions[i + n].a + 349101) * (name + 38490137));
 
@@ -807,7 +768,7 @@ void add_example_conditioning(search_private &priv,
     {
       if (condition_on_actions[i].repr == nullptr)
         continue;
-      features &fs = *(condition_on_actions[i].repr);
+      features& fs = *(condition_on_actions[i].repr);
       char name = condition_on_names[i];
       for (size_t k = 0; k < fs.size(); k++)
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
@@ -830,7 +791,7 @@ void add_example_conditioning(search_private &priv,
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features &con_fs = ec.feature_space[conditioning_namespace];
+  features& con_fs = ec.feature_space[conditioning_namespace];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
     ec.indices.push_back(conditioning_namespace);
@@ -841,25 +802,25 @@ void add_example_conditioning(search_private &priv,
     con_fs.clear();
 }
 
-void del_example_conditioning(search_private &priv, example &ec)
+void del_example_conditioning(search_private& priv, example& ec)
 {
   if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
-inline size_t cs_get_costs_size(bool isCB, polylabel &ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
+inline size_t cs_get_costs_size(bool isCB, polylabel& ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
 
-inline uint32_t cs_get_cost_index(bool isCB, polylabel &ld, size_t k)
+inline uint32_t cs_get_cost_index(bool isCB, polylabel& ld, size_t k)
 {
   return isCB ? ld.cb.costs[k].action : ld.cs.costs[k].class_index;
 }
 
-inline float cs_get_cost_partial_prediction(bool isCB, polylabel &ld, size_t k)
+inline float cs_get_cost_partial_prediction(bool isCB, polylabel& ld, size_t k)
 {
   return isCB ? ld.cb.costs[k].partial_prediction : ld.cs.costs[k].partial_prediction;
 }
 
-inline void cs_set_cost_loss(bool isCB, polylabel &ld, size_t k, float val)
+inline void cs_set_cost_loss(bool isCB, polylabel& ld, size_t k, float val)
 {
   if (isCB)
     ld.cb.costs[k].cost = val;
@@ -867,7 +828,7 @@ inline void cs_set_cost_loss(bool isCB, polylabel &ld, size_t k, float val)
     ld.cs.costs[k].x = val;
 }
 
-inline void cs_costs_erase(bool isCB, polylabel &ld)
+inline void cs_costs_erase(bool isCB, polylabel& ld)
 {
   if (isCB)
     ld.cb.costs.clear();
@@ -875,7 +836,7 @@ inline void cs_costs_erase(bool isCB, polylabel &ld)
     ld.cs.costs.clear();
 }
 
-inline void cs_costs_resize(bool isCB, polylabel &ld, size_t new_size)
+inline void cs_costs_resize(bool isCB, polylabel& ld, size_t new_size)
 {
   if (isCB)
     ld.cb.costs.resize(new_size);
@@ -883,7 +844,7 @@ inline void cs_costs_resize(bool isCB, polylabel &ld, size_t new_size)
     ld.cs.costs.resize(new_size);
 }
 
-inline void cs_cost_push_back(bool isCB, polylabel &ld, uint32_t index, float value)
+inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float value)
 {
   if (isCB)
   {
@@ -897,14 +858,14 @@ inline void cs_cost_push_back(bool isCB, polylabel &ld, uint32_t index, float va
   }
 }
 
-polylabel &allowed_actions_to_ld(search_private &priv,
+polylabel& allowed_actions_to_ld(search_private& priv,
     size_t ec_cnt,
-    const action *allowed_actions,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost)
+    const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
-  polylabel &ld = *priv.allowed_actions_cache;
+  polylabel& ld = *priv.allowed_actions_cache;
   uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
   if (priv.is_ldf)  // LDF version easier
@@ -937,14 +898,11 @@ polylabel &allowed_actions_to_ld(search_private &priv,
   {
     if ((allowed_actions == nullptr) || (allowed_actions_cnt == 0))  // any action is allowed
     {
-      if (num_costs != priv.A)  // if there are already A-many actions, they must
-                                // be the right ones, unless the user did
-                                // something stupid like putting duplicate
-                                // allowed_actions...
+      if (num_costs != priv.A)  // if there are already A-many actions, they must be the right ones, unless the user did
+                                // something stupid like putting duplicate allowed_actions...
       {
         cs_costs_erase(isCB, ld);
-        for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, ld, k + 1,
-            FLT_MAX);  //+1 because MC is 1-based
+        for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, ld, k + 1, FLT_MAX);  //+1 because MC is 1-based
       }
     }
     else  // we need to peek at allowed_actions
@@ -957,14 +915,14 @@ polylabel &allowed_actions_to_ld(search_private &priv,
   return ld;
 }
 
-void allowed_actions_to_label(search_private &priv,
+void allowed_actions_to_label(search_private& priv,
     size_t ec_cnt,
-    const action *allowed_actions,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost,
-    const action *oracle_actions,
+    const float* allowed_actions_cost,
+    const action* oracle_actions,
     size_t oracle_actions_cnt,
-    polylabel &lab)
+    polylabel& lab)
 {
   bool isCB = priv.cb_learner;
   if (priv.is_ldf)  // LDF version easier
@@ -972,9 +930,8 @@ void allowed_actions_to_label(search_private &priv,
     cs_costs_erase(isCB, lab);
     for (action k = 0; k < ec_cnt; k++)
       cs_cost_push_back(isCB, lab, k, array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
-    // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << '
-    // ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg << "
-    // ]" << endl;
+    // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index << ':'
+    // << lab.cs.costs[i].x; cdbg << " ]" << endl;
   }
   else if (priv.use_action_costs)
   {
@@ -1006,9 +963,8 @@ void allowed_actions_to_label(search_private &priv,
         for (action k = 0; k < priv.A; k++) cs_cost_push_back(isCB, lab, k + 1, 1.);
         set_to_one = true;
       }
-      // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg <<
-      // ' ' << lab.cs.costs[i].class_index << ':' << lab.cs.costs[i].x; cdbg <<
-      // " ]" << endl;
+      // cerr << "lab = ["; for (size_t i=0; i<lab.cs.costs.size(); i++) cdbg << ' ' << lab.cs.costs[i].class_index <<
+      // ':' << lab.cs.costs[i].x; cdbg << " ]" << endl;
       if (oracle_actions_cnt <= 1)  // common case to speed up
       {
         if (!set_to_one)
@@ -1025,8 +981,7 @@ void allowed_actions_to_label(search_private &priv,
     else  // only some actions are allowed
     {
       cs_costs_erase(isCB, lab);
-      float w = 1.;  // array_contains<action>(3, oracle_actions,
-                     // oracle_actions_cnt) ? 5.f : 1.f;
+      float w = 1.;  // array_contains<action>(3, oracle_actions, oracle_actions_cnt) ? 5.f : 1.f;
       for (size_t i = 0; i < allowed_actions_cnt; i++)
       {
         action k = allowed_actions[i];
@@ -1038,7 +993,7 @@ void allowed_actions_to_label(search_private &priv,
 }
 
 template <class T>
-void ensure_size(v_array<T> &A, size_t sz)
+void ensure_size(v_array<T>& A, size_t sz)
 {
   if ((size_t)(A.end_array - A.begin()) < sz)
     A.resize(sz * 2 + 1);
@@ -1046,7 +1001,7 @@ void ensure_size(v_array<T> &A, size_t sz)
 }
 
 template <class T>
-void push_at(v_array<T> &v, T item, size_t pos)
+void push_at(v_array<T>& v, T item, size_t pos)
 {
   if (v.size() > pos)
     v.begin()[pos] = item;
@@ -1069,13 +1024,13 @@ void push_at(v_array<T> &v, T item, size_t pos)
   }
 }
 
-action choose_oracle_action(search_private &priv,
+action choose_oracle_action(search_private& priv,
     size_t ec_cnt,
-    const action *oracle_actions,
+    const action* oracle_actions,
     size_t oracle_actions_cnt,
-    const action *allowed_actions,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost)
+    const float* allowed_actions_cost)
 {
   action a = (action)-1;
   if (priv.use_action_costs)
@@ -1121,7 +1076,7 @@ action choose_oracle_action(search_private &priv,
   cdbg << " ], ret=" << a << endl;
   if (need_memo_foreach_action(priv) && (priv.state == INIT_TRAIN))
   {
-    v_array<action_cache> *this_cache = new v_array<action_cache>();
+    v_array<action_cache>* this_cache = new v_array<action_cache>();
     *this_cache = v_init<action_cache>();
     // TODO we don't really need to construct this polylabel
     polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
@@ -1139,21 +1094,17 @@ action choose_oracle_action(search_private &priv,
   return a;
 }
 
-action single_prediction_notLDF(search_private &priv,
-    example &ec,
+action single_prediction_notLDF(search_private& priv,
+    example& ec,
     int policy,
-    const action *allowed_actions,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost,
-    float &a_cost,
-    action override_action)  // if override_action !=
-                             // -1, then we return it
-                             // as the action and
-                             // a_cost is set to the
-                             // appropriate cost for
-                             // that action
+    const float* allowed_actions_cost,
+    float& a_cost,
+    action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
+                             // appropriate cost for that action
 {
-  vw &all = *priv.all;
+  vw& all = *priv.all;
   polylabel old_label = ec.l;
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1) || priv.active_csoaa;
@@ -1192,7 +1143,7 @@ action single_prediction_notLDF(search_private &priv,
       if (cost < min_cost)
         min_cost = cost;
     }
-    v_array<action_cache> *this_cache = nullptr;
+    v_array<action_cache>* this_cache = nullptr;
     if (need_memo_foreach_action(priv) && (override_action == (action)-1))
     {
       this_cache = new v_array<action_cache>();
@@ -1244,8 +1195,8 @@ action single_prediction_notLDF(search_private &priv,
     size_t cur_t = priv.t + priv.meta_t - 1;
     while (priv.active_known.size() <= cur_t)
     {
-      priv.active_known.push_back(v_array<pair<CS::wclass &, bool>>());
-      priv.active_known[priv.active_known.size() - 1] = v_init<pair<CS::wclass &, bool>>();
+      priv.active_known.push_back(v_array<pair<CS::wclass&, bool>>());
+      priv.active_known[priv.active_known.size() - 1] = v_init<pair<CS::wclass&, bool>>();
       cdbg << "active_known length now " << priv.active_known.size() << endl;
     }
     priv.active_known[cur_t].clear();
@@ -1255,24 +1206,21 @@ action single_prediction_notLDF(search_private &priv,
       /* priv.active_known[cur_t].push_back( ec.l.cs.costs[k].pred_is_certain
                                           ? ec.l.cs.costs[k].partial_prediction
                                           : FLT_MAX );
-                                          cdbg << "active_known[" << cur_t <<
-         "][" << (priv.active_known[cur_t].size() - 1) << "] = certain=" <<
-         ec.l.cs.costs[k].pred_is_certain << ", cost=" <<
-         ec.l.cs.costs[k].partial_prediction << "}" << endl; */
-      CS::wclass &wc = ec.l.cs.costs[k];
+                                          cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() -
+         1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction <<
+         "}" << endl; */
+      CS::wclass& wc = ec.l.cs.costs[k];
       // Get query_needed from pred
       bool query_needed = v_array_contains(ec.pred.multilabels.label_v, wc.class_index);
-      pair<CS::wclass &, bool> p = {wc, query_needed};
+      pair<CS::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
-      // cdbg << "active_known[" << cur_t << "][" <<
-      // (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index <<
-      // ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" <<
-      // wc.query_needed << " max_pred=" << wc.max_pred << " min_pred=" <<
-      // wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << "
+      // cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index
+      // << ':' << wc.x << " pp=" << wc.partial_prediction << " query_needed=" << wc.query_needed << " max_pred=" <<
+      // wc.max_pred << " min_pred=" << wc.min_pred << " is_range_overlapped=" << wc.is_range_overlapped << "
       // is_range_large=" << wc.is_range_large << endl;
-      // query_needed=" << ec.l.cs.costs[k].query_needed << ", cost=" <<
-      // ec.l.cs.costs[k].partial_prediction << "}" << endl;
+      // query_needed=" << ec.l.cs.costs[k].query_needed << ", cost=" << ec.l.cs.costs[k].partial_prediction << "}" <<
+      // endl;
     }
   }
 
@@ -1298,16 +1246,13 @@ action single_prediction_notLDF(search_private &priv,
   return act;
 }
 
-action single_prediction_LDF(search_private &priv,
-    example *ecs,
+action single_prediction_LDF(search_private& priv,
+    example* ecs,
     size_t ec_cnt,
     int policy,
-    float &a_cost,
-    action override_action)  // if override_action !=
-                             // -1, then we return it as
-                             // the action and a_cost is
-                             // set to the appropriate
-                             // cost for that action
+    float& a_cost,
+    action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
+                             // appropriate cost for that action
 {
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != (action)-1);
@@ -1322,7 +1267,7 @@ action single_prediction_LDF(search_private &priv,
 
   size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
 
-  v_array<action_cache> *this_cache = nullptr;
+  v_array<action_cache>* this_cache = nullptr;
   if (need_partial_predictions)
   {
     this_cache = new v_array<action_cache>();
@@ -1375,7 +1320,7 @@ action single_prediction_LDF(search_private &priv,
   {
     for (size_t i = 0; i < this_cache->size(); i++)
     {
-      action_cache &ac = (*this_cache)[i];
+      action_cache& ac = (*this_cache)[i];
       ac.min_cost = a_cost;
       ac.is_opt = (ac.k == best_action);
       if (priv.metaoverride && priv.metaoverride->_foreach_action)
@@ -1396,7 +1341,7 @@ action single_prediction_LDF(search_private &priv,
   return best_action;
 }
 
-int choose_policy(search_private &priv, bool advance_prng = true)
+int choose_policy(search_private& priv, bool advance_prng = true)
 {
   RollMethod method = (priv.state == INIT_TEST) ? POLICY
                                                 : (priv.state == LEARN)
@@ -1424,7 +1369,7 @@ int choose_policy(search_private &priv, bool advance_prng = true)
   }
 }
 
-bool cached_item_equivalent(unsigned char *const &A, unsigned char *const &B)
+bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
 {
   size_t sz_A = *A;
   size_t sz_B = *B;
@@ -1433,26 +1378,25 @@ bool cached_item_equivalent(unsigned char *const &A, unsigned char *const &B)
   return memcmp(A, B, sz_A) == 0;
 }
 
-void free_key(unsigned char *mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
-void clear_cache_hash_map(search_private &priv)
+void free_key(unsigned char* mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
+void clear_cache_hash_map(search_private& priv)
 {
   priv.cache_hash_map.iter(free_key);
   priv.cache_hash_map.clear();
 }
 
-// returns true if found and do_store is false. if do_store is true, always
-// returns true.
-bool cached_action_store_or_find(search_private &priv,
+// returns true if found and do_store is false. if do_store is true, always returns true.
+bool cached_action_store_or_find(search_private& priv,
     ptag mytag,
-    const ptag *condition_on,
-    const char *condition_on_names,
-    action_repr *condition_on_actions,
+    const ptag* condition_on,
+    const char* condition_on_names,
+    action_repr* condition_on_actions,
     size_t condition_on_cnt,
     int policy,
     size_t learner_id,
-    action &a,
+    action& a,
     bool do_store,
-    float &a_cost)
+    float& a_cost)
 {
   if (priv.no_caching)
     return do_store;
@@ -1462,11 +1406,10 @@ bool cached_action_store_or_find(search_private &priv,
   size_t sz = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + sizeof(size_t) +
       condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
   if (sz % 4 != 0)
-    sz += 4 - (sz % 4);  // make sure sz aligns to 4 so that uniform_hash does
-                         // the right thing
+    sz += 4 - (sz % 4);  // make sure sz aligns to 4 so that uniform_hash does the right thing
 
-  unsigned char *item = calloc_or_throw<unsigned char>(sz);
-  unsigned char *here = item;
+  unsigned char* item = calloc_or_throw<unsigned char>(sz);
+  unsigned char* here = item;
   *here = (unsigned char)sz;
   here += sizeof(size_t);
   *here = mytag;
@@ -1503,16 +1446,12 @@ bool cached_action_store_or_find(search_private &priv,
   }
 }
 
-void generate_training_example(search_private &priv,
-    polylabel &losses,
+void generate_training_example(search_private& priv,
+    polylabel& losses,
     float weight,
     bool add_conditioning = true,
-    float min_loss = FLT_MAX)  // min_loss = FLT_MAX
-                               // means "please
-                               // compute it for me as
-                               // the actual min"; any
-                               // other value means to
-                               // use this
+    float min_loss = FLT_MAX)  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value
+                               // means to use this
 {
   // should we really subtract out min-loss?
   // float min_loss = FLT_MAX;
@@ -1529,9 +1468,8 @@ void generate_training_example(search_private &priv,
     for (size_t i = 0; i < losses.cs.costs.size(); i++)
       losses.cs.costs[i].x = (losses.cs.costs[i].x - min_loss) * weight;
   }
-  // cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr
-  // << ' ' << losses.cs.costs[i].class_index << ':' << losses.cs.costs[i].x;
-  // cerr << " ]" << endl;
+  // cerr << "losses = ["; for (size_t i=0; i<losses.cs.costs.size(); i++) cerr << ' ' << losses.cs.costs[i].class_index
+  // << ':' << losses.cs.costs[i].x; cerr << " ]" << endl;
 
   if (!priv.is_ldf)  // not LDF
   {
@@ -1540,7 +1478,7 @@ void generate_training_example(search_private &priv,
     assert(priv.learn_ec_ref_cnt == 1);
     assert(priv.learn_ec_ref != nullptr);
 
-    example &ec = priv.learn_ec_ref[0];
+    example& ec = priv.learn_ec_ref[0];
     polylabel old_label = ec.l;
     ec.l = losses;  // labels;
     if (add_conditioning)
@@ -1568,7 +1506,7 @@ void generate_training_example(search_private &priv,
     if (add_conditioning)
       for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++)
       {
-        example &ec = priv.learn_ec_ref[a];
+        example& ec = priv.learn_ec_ref[a];
         add_example_conditioning(priv, ec, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin(),
             priv.learn_condition_on_act.begin());
       }
@@ -1585,8 +1523,8 @@ void generate_training_example(search_private &priv,
         tmp_offset = priv.learn_ec_ref[start_K].ft_offset;
       for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++)
       {
-        example &ec = priv.learn_ec_ref[a];
-        CS::label &lab = ec.l.cs;
+        example& ec = priv.learn_ec_ref[a];
+        CS::label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
         {
           CS::wclass wc = {0., a - (uint32_t)start_K, 0., 0.};
@@ -1615,13 +1553,13 @@ void generate_training_example(search_private &priv,
     if (add_conditioning)
       for (action a = (uint32_t)start_K; a < priv.learn_ec_ref_cnt; a++)
       {
-        example &ec = priv.learn_ec_ref[a];
+        example& ec = priv.learn_ec_ref[a];
         del_example_conditioning(priv, ec);
       }
   }
 }
 
-bool search_predictNeedsExample(search_private &priv)
+bool search_predictNeedsExample(search_private& priv)
 {
   // this is basically copied from the logic of search_predict()
   switch (priv.state)
@@ -1641,11 +1579,9 @@ bool search_predictNeedsExample(search_private &priv)
       break;
     case LEARN:
       if (priv.t + priv.meta_t < priv.learn_t)
-        return false;  // TODO: in meta search mode with foreach feature we'll need
-                       // it even here
+        return false;  // TODO: in meta search mode with foreach feature we'll need it even here
       if (priv.t + priv.meta_t == priv.learn_t)
-        return true;  // SPEEDUP: we really only need it on the last learn_a, but
-                      // this is hard to know...
+        return true;  // SPEEDUP: we really only need it on the last learn_a, but this is hard to know...
       // t > priv.learn_t
       if ((priv.rollout_num_steps > 0) && (priv.loss_declared_cnt >= priv.rollout_num_steps))
         return false;  // skipping
@@ -1656,38 +1592,37 @@ bool search_predictNeedsExample(search_private &priv)
   return (pol != -1);
 }
 
-void foreach_action_from_cache(search_private &priv, size_t t, action override_a = (action)-1)
+void foreach_action_from_cache(search_private& priv, size_t t, action override_a = (action)-1)
 {
   cdbg << "foreach_action_from_cache: t=" << t << ", memo_foreach_action.size()=" << priv.memo_foreach_action.size()
        << ", override_a=" << override_a << endl;
   assert(t < priv.memo_foreach_action.size());
-  v_array<action_cache> *cached = priv.memo_foreach_action[t];
+  v_array<action_cache>* cached = priv.memo_foreach_action[t];
   if (!cached)
-    return;  // the only way this can happen is if the metatask overrode this
-             // action
+    return;  // the only way this can happen is if the metatask overrode this action
   cdbg << "memo_foreach_action size = " << cached->size() << endl;
   for (size_t id = 0; id < cached->size(); id++)
   {
-    action_cache &ac = (*cached)[id];
+    action_cache& ac = (*cached)[id];
     priv.metaoverride->_foreach_action(*priv.metaoverride->sch, t - priv.meta_t, ac.min_cost, ac.k,
         (override_a == (action)-1) ? ac.is_opt : (ac.k == override_a), ac.cost);
   }
 }
 
 // note: ec_cnt should be 1 if we are not LDF
-action search_predict(search_private &priv,
-    example *ecs,
+action search_predict(search_private& priv,
+    example* ecs,
     size_t ec_cnt,
     ptag mytag,
-    const action *oracle_actions,
+    const action* oracle_actions,
     size_t oracle_actions_cnt,
-    const ptag *condition_on,
-    const char *condition_on_names,
-    const action *allowed_actions,
+    const ptag* condition_on,
+    const char* condition_on_names,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost,
+    const float* allowed_actions_cost,
     size_t learner_id,
-    float &a_cost,
+    float& a_cost,
     float /* weight */)
 {
   size_t condition_on_cnt = condition_on_names ? strlen(condition_on_names) : 0;
@@ -1708,8 +1643,7 @@ action search_predict(search_private &priv,
     action a = choose_oracle_action(
         priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt, allowed_actions_cost);
     // if (priv.metaoverride && priv.metaoverride->_post_prediction)
-    //  priv.metaoverride->_post_prediction(*priv.metaoverride->sch,
-    //  t-priv.meta_t, a, 0.);
+    //  priv.metaoverride->_post_prediction(*priv.metaoverride->sch, t-priv.meta_t, a, 0.);
     a_cost = 0.;
     return a;
   }
@@ -1728,8 +1662,7 @@ action search_predict(search_private &priv,
     return a;
   }
 
-  // for LDF, # of valid actions is ec_cnt; otherwise it's either
-  // allowed_actions_cnt or A
+  // for LDF, # of valid actions is ec_cnt; otherwise it's either allowed_actions_cnt or A
   size_t valid_action_cnt = priv.is_ldf ? ec_cnt : (allowed_actions_cnt > 0) ? allowed_actions_cnt : priv.A;
 
   // if we're in LEARN mode and _at_ learn_t, then:
@@ -1760,7 +1693,7 @@ action search_predict(search_private &priv,
       else
       {
         size_t label_size = priv.is_ldf ? sizeof(CS::label) : sizeof(MC::label_t);
-        void (*label_copy_fn)(void *, void *) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
+        void (*label_copy_fn)(void*, void*) = priv.is_ldf ? CS::cs_label.copy_label : nullptr;
 
         ensure_size(priv.learn_ec_copy, ec_cnt);
         for (size_t i = 0; i < ec_cnt; i++)
@@ -1867,9 +1800,7 @@ action search_predict(search_private &priv,
 
     if ((!skip) && (policy == -1))
       a = choose_oracle_action(priv, ec_cnt, oracle_actions, oracle_actions_cnt, allowed_actions, allowed_actions_cnt,
-          allowed_actions_cost);  // TODO: we probably want
-                                  // to actually get costs
-                                  // for oracle actions???
+          allowed_actions_cost);  // TODO: we probably want to actually get costs for oracle actions???
 
     bool need_fea = (policy == -1) && priv.metaoverride && priv.metaoverride->_foreach_action;
 
@@ -1935,10 +1866,9 @@ action search_predict(search_private &priv,
         if (gte_here)
         {
           cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions, a=" << a << endl;
-          // we can generate a training example _NOW_ because we're not doing
-          // rollouts
-          // allowed_actions_to_losses(priv, ec_cnt, allowed_actions,
-          // allowed_actions_cnt, oracle_actions, oracle_actions_cnt, losses);
+          // we can generate a training example _NOW_ because we're not doing rollouts
+          // allowed_actions_to_losses(priv, ec_cnt, allowed_actions, allowed_actions_cnt, oracle_actions,
+          // oracle_actions_cnt, losses);
           allowed_actions_to_label(priv, ec_cnt, allowed_actions, allowed_actions_cnt, allowed_actions_cost,
               oracle_actions, oracle_actions_cnt, priv.gte_label);
           cdbg << "priv.gte_label = [";
@@ -1950,16 +1880,13 @@ action search_predict(search_private &priv,
           priv.learn_ec_ref_cnt = ec_cnt;
           if (allowed_actions)
           {
-            ensure_size(priv.learn_allowed_actions,
-                allowed_actions_cnt);  // TODO: do we really need this?
+            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);  // TODO: do we really need this?
             memcpy(priv.learn_allowed_actions.begin(), allowed_actions, allowed_actions_cnt * sizeof(action));
           }
           size_t old_learner_id = priv.learn_learner_id;
           priv.learn_learner_id = learner_id;
-          generate_training_example(priv, priv.gte_label, 1.,
-              false);  // this is false because the
-                       // conditioning has already been
-                       // added!
+          generate_training_example(
+              priv, priv.gte_label, 1., false);  // this is false because the conditioning has already been added!
           priv.learn_learner_id = old_learner_id;
         }
 
@@ -1985,26 +1912,25 @@ action search_predict(search_private &priv,
 }
 
 inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
-inline bool cmp_size_t_pair(const pair<size_t, size_t> &a, const pair<size_t, size_t> &b)
+inline bool cmp_size_t_pair(const pair<size_t, size_t>& a, const pair<size_t, size_t>& b)
 {
   return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first);
 }
 
 inline size_t absdiff(size_t a, size_t b) { return (a < b) ? (b - a) : (a - b); }
 
-void hoopla_permute(size_t *B, size_t *end)
+void hoopla_permute(size_t* B, size_t* end)
 {
   // from Curtis IPL 2004, "Darts and hoopla board design"
   // first sort
   size_t N = end - B;
   std::sort(B, end, cmp_size_t);
   // make some temporary space
-  size_t *A = calloc_or_throw<size_t>((N + 1) * 2);
+  size_t* A = calloc_or_throw<size_t>((N + 1) * 2);
   A[N] = B[0];                // arbitrarily choose the maximum in the middle
   A[N + 1] = B[N - 1];        // so the maximum goes next to it
   size_t lo = N, hi = N + 1;  // which parts of A have we filled in? [lo,hi]
-  size_t i = 0,
-         j = N - 1;  // which parts of B have we already covered? [0,i] and [j,N-1]
+  size_t i = 0, j = N - 1;    // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -2028,7 +1954,7 @@ void hoopla_permute(size_t *B, size_t *end)
   free(A);
 }
 
-void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
+void get_training_timesteps(search_private& priv, v_array<size_t>& timesteps)
 {
   timesteps.clear();
 
@@ -2040,12 +1966,9 @@ void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
         timesteps.push_back(priv.active_uncertainty[i].second - 1);
     /*
     float k = (float)priv.total_examples_generated;
-    priv.ec_seq[t]->revert_weight =
-    priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar,
-    priv.all->eta / powf(k, priv.all->power_t));
-    float importance = query_decision(active_str, *priv.ec_seq[t], k);
-    if (importance > 0.)
-    timesteps.push_back(pair<size_t,size_t>(0,t));
+    priv.ec_seq[t]->revert_weight = priv.all->loss->getRevertingWeight(priv.all->sd, priv.ec_seq[t].pred.scalar,
+    priv.all->eta / powf(k, priv.all->power_t)); float importance = query_decision(active_str, *priv.ec_seq[t], k); if
+    (importance > 0.) timesteps.push_back(pair<size_t,size_t>(0,t));
     */
   }
   // if there's no subsampling to do, just return [0,T)
@@ -2056,7 +1979,7 @@ void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
       if (priv.active_csoaa && (t < priv.active_known.size()))
       {
         count = 0;
-        for (pair<CS::wclass &, bool> wcq : priv.active_known[t])
+        for (pair<CS::wclass&, bool> wcq : priv.active_known[t])
           if (wcq.second)
           {
             count++;
@@ -2068,8 +1991,7 @@ void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
         timesteps.push_back(t);
     }
 
-  // if subsample in (0,1) then pick steps with that probability, but ensuring
-  // there's at least one!
+  // if subsample in (0,1) then pick steps with that probability, but ensuring there's at least one!
   else if (priv.subsample_timesteps < 1)
   {
     for (size_t t = 0; t < priv.T; t++)
@@ -2080,8 +2002,8 @@ void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
       timesteps.push_back((size_t)(merand48(priv.all->random_state) * priv.T));
   }
 
-  // finally, if subsample >= 1, then pick (int) that many uniformly at random
-  // without replacement; could use an LFSR but why? :P
+  // finally, if subsample >= 1, then pick (int) that many uniformly at random without replacement; could use an LFSR
+  // but why? :P
   else
   {
     while ((timesteps.size() < (size_t)priv.subsample_timesteps) && (timesteps.size() < priv.T))
@@ -2099,13 +2021,13 @@ void get_training_timesteps(search_private &priv, v_array<size_t> &timesteps)
 
 struct final_item
 {
-  v_array<scored_action> *prefix;
+  v_array<scored_action>* prefix;
   string str;
   float total_cost;
-  final_item(v_array<scored_action> *p, string s, float ic) : prefix(p), str(s), total_cost(ic) {}
+  final_item(v_array<scored_action>* p, string s, float ic) : prefix(p), str(s), total_cost(ic) {}
 };
 
-void free_final_item(final_item *p)
+void free_final_item(final_item* p)
 {
   p->prefix->delete_v();
   delete p->prefix;
@@ -2114,7 +2036,7 @@ void free_final_item(final_item *p)
 
 void BaseTask::Run()
 {
-  search_private &priv = *sch->priv;
+  search_private& priv = *sch->priv;
   // make sure output is correct
   bool old_should_produce_string = priv.should_produce_string;
   if (!_final_run && !_with_output_string)
@@ -2147,9 +2069,9 @@ void BaseTask::Run()
   }
 }
 
-void run_task(search &sch, multi_ex &ec)
+void run_task(search& sch, multi_ex& ec)
 {
-  search_private &priv = *sch.priv;
+  search_private& priv = *sch.priv;
   priv.num_calls_to_run++;
   if (priv.metatask && (priv.state != GET_TRUTH_STRING))
     priv.metatask->run(sch, ec);
@@ -2158,15 +2080,15 @@ void run_task(search &sch, multi_ex &ec)
 }
 
 void verify_active_csoaa(
-    COST_SENSITIVE::label &losses, v_array<pair<CS::wclass &, bool>> &known, size_t t, float multiplier)
+    COST_SENSITIVE::label& losses, v_array<pair<CS::wclass&, bool>>& known, size_t t, float multiplier)
 {
   float threshold = multiplier / sqrt((float)t);
   cdbg << "verify_active_csoaa, losses = [";
-  for (COST_SENSITIVE::wclass &wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
+  for (COST_SENSITIVE::wclass& wc : losses.costs) cdbg << " " << wc.class_index << ":" << wc.x;
   cdbg << " ]" << endl;
   // cdbg_print_array("verify_active_csoaa,  known", known);
   size_t i = 0;
-  for (COST_SENSITIVE::wclass &wc : losses.costs)
+  for (COST_SENSITIVE::wclass& wc : losses.costs)
   {
     if (!known[i].second)
     {
@@ -2182,7 +2104,7 @@ void verify_active_csoaa(
   }
 }
 
-void advance_from_known_actions(search_private &priv)
+void advance_from_known_actions(search_private& priv)
 {
   size_t t = priv.learn_t;
   if (!priv.active_csoaa)
@@ -2196,8 +2118,7 @@ void advance_from_known_actions(search_private &priv)
   // cdbg_print_array(" active_known[t]", priv.active_known[t]);
   if (priv.learn_a_idx >= priv.active_known[t].size())
   {
-    cdbg << "advance_from_known_actions setting done_with_all_actions=true "
-            "(active_known[t].size()="
+    cdbg << "advance_from_known_actions setting done_with_all_actions=true (active_known[t].size()="
          << priv.active_known[t].size() << ")" << endl;
     priv.done_with_all_actions = true;
     return;
@@ -2210,8 +2131,7 @@ void advance_from_known_actions(search_private &priv)
   /*
   cs_cost_push_back(priv.cb_learner,
                     priv.learn_losses,
-                    priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) :
-  (uint32_t)priv.learn_a_idx,
+                    priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx,
                     priv.active_known[t][priv.learn_a_idx],
                     true);
   */
@@ -2222,12 +2142,11 @@ void advance_from_known_actions(search_private &priv)
 }
 
 template <bool is_learn>
-void train_single_example(search &sch, bool is_test_ex, bool is_holdout_ex, multi_ex &ec_seq)
+void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, multi_ex& ec_seq)
 {
-  search_private &priv = *sch.priv;
-  vw &all = *priv.all;
-  bool ran_test = false;  // we must keep track so that even if we skip test, we
-                          // still update # of examples seen
+  search_private& priv = *sch.priv;
+  vw& all = *priv.all;
+  bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
   // if (! priv.no_caching)
   clear_cache_hash_map(priv);
@@ -2281,8 +2200,7 @@ void train_single_example(search &sch, bool is_test_ex, bool is_holdout_ex, mult
   priv.train_trajectory.clear();  // this is where we'll store the training sequence
   run_task(sch, ec_seq);
 
-  if (!ran_test)  // was  && !priv.ec_seq[0]->test_only) { but we know it's not
-                  // test_only
+  if (!ran_test)  // was  && !priv.ec_seq[0]->test_only) { but we know it's not test_only
     all.sd->update(ec_seq[0]->test_only, true, priv.test_loss, 1.f, priv.num_features);
 
   // if there's nothing to train on, we're done!
@@ -2345,21 +2263,16 @@ void train_single_example(search &sch, bool is_test_ex, bool is_holdout_ex, mult
 
       priv.state = LEARN;
       priv.learn_t = priv.timesteps[tid];
-      cdbg << "----------------------------------------------------------------"
-              "---------------------"
-           << endl;
+      cdbg << "-------------------------------------------------------------------------------------" << endl;
       cdbg << "learn_t = " << priv.learn_t << ", learn_a_idx = " << priv.learn_a_idx << endl;
-      // cdbg_print_array("priv.active_known[learn_t]",
-      // priv.active_known[priv.learn_t]);
+      // cdbg_print_array("priv.active_known[learn_t]", priv.active_known[priv.learn_t]);
       run_task(sch, ec_seq);
-      // cerr_print_array("in GENER, learn_allowed_actions",
-      // priv.learn_allowed_actions);
+      // cerr_print_array("in GENER, learn_allowed_actions", priv.learn_allowed_actions);
       float this_loss = priv.learn_loss;
       cs_cost_push_back(priv.cb_learner, priv.learn_losses,
           priv.is_ldf ? (uint32_t)(priv.learn_a_idx - 1) : (uint32_t)priv.learn_a_idx, this_loss);
       //                          (priv.learn_allowed_actions.size() > 0) ?
-      //                          priv.learn_allowed_actions[priv.learn_a_idx-1]
-      //                          : priv.is_ldf ? (priv.learn_a_idx-1) :
+      //                          priv.learn_allowed_actions[priv.learn_a_idx-1] : priv.is_ldf ? (priv.learn_a_idx-1) :
       //                          (priv.learn_a_idx),
       //                           priv.learn_loss);
     }
@@ -2392,14 +2305,12 @@ void train_single_example(search &sch, bool is_test_ex, bool is_holdout_ex, mult
     // float min_loss = 0.;
     // if (priv.metatask)
     //  for (size_t aid=0; aid<priv.memo_foreach_action[tid]->size(); aid++)
-    //    min_loss = MIN(min_loss,
-    //    priv.memo_foreach_action[tid]->get(aid).cost);
+    //    min_loss = MIN(min_loss, priv.memo_foreach_action[tid]->get(aid).cost);
     cdbg << "priv.learn_losses = [";
-    for (auto &wc : priv.learn_losses.cs.costs) cdbg << " " << wc.class_index << ":" << wc.x;
+    for (auto& wc : priv.learn_losses.cs.costs) cdbg << " " << wc.class_index << ":" << wc.x;
     cdbg << " ]" << endl;
     cdbg << "gte" << endl;
-    generate_training_example(priv, priv.learn_losses, 1.,
-        true);  // , min_loss);  // TODO: weight
+    generate_training_example(priv, priv.learn_losses, 1., true);  // , min_loss);  // TODO: weight
     if (!priv.examples_dont_change)
       for (size_t n = 0; n < priv.learn_ec_copy.size(); n++)
       {
@@ -2424,23 +2335,21 @@ void train_single_example(search &sch, bool is_test_ex, bool is_holdout_ex, mult
   }
 }
 
-void inline adjust_auto_condition(search_private &priv)
+void inline adjust_auto_condition(search_private& priv)
 {
   if (priv.auto_condition_features)
   {
     // turn off auto-condition if it's irrelevant
     if ((priv.history_length == 0) || (priv.acset.feature_value == 0.f))
     {
-      std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because "
-                   "settings make it useless"
-                << endl;
+      std::cerr << "warning: turning off AUTO_CONDITION_FEATURES because settings make it useless" << endl;
       priv.auto_condition_features = false;
     }
   }
 }
 
 template <bool is_learn>
-void do_actual_learning(search &sch, base_learner &base, multi_ex &ec_seq)
+void do_actual_learning(search& sch, base_learner& base, multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
     return;  // nothing to do :)
@@ -2448,7 +2357,7 @@ void do_actual_learning(search &sch, base_learner &base, multi_ex &ec_seq)
   bool is_test_ex = false;
   bool is_holdout_ex = false;
 
-  search_private &priv = *sch.priv;
+  search_private& priv = *sch.priv;
   priv.offset = ec_seq[0]->ft_offset;
   priv.base_learner = &base;
 
@@ -2495,10 +2404,10 @@ void do_actual_learning(search &sch, base_learner &base, multi_ex &ec_seq)
     priv.task->run_takedown(sch, ec_seq);
 }
 
-void end_pass(search &sch)
+void end_pass(search& sch)
 {
-  search_private &priv = *sch.priv;
-  vw *all = priv.all;
+  search_private& priv = *sch.priv;
+  vw* all = priv.all;
   priv.hit_new_pass = true;
   priv.read_example_last_pass++;
   priv.passes_since_new_policy++;
@@ -2513,47 +2422,44 @@ void end_pass(search &sch)
       std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
       priv.current_policy = priv.total_number_of_policies;
     }
-    // reset search_trained_nb_policies in options_from_file so it is saved to
-    // regressor file later
-    // TODO work out a better system to update state that will be saved in the
-    // model.
+    // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
+    // TODO work out a better system to update state that will be saved in the model.
     all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
     all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
   }
 }
 
-void finish_multiline_example(vw &all, search &sch, multi_ex &ec_seq)
+void finish_multiline_example(vw& all, search& sch, multi_ex& ec_seq)
 {
   print_update(*sch.priv);
   VW::finish_example(all, ec_seq);
 }
 
-void end_examples(search &sch)
+void end_examples(search& sch)
 {
-  search_private &priv = *sch.priv;
-  vw *all = priv.all;
+  search_private& priv = *sch.priv;
+  vw* all = priv.all;
 
   if (all->training)
   {
-    // TODO work out a better system to update state that will be saved in the
-    // model.
-    // Dig out option and change it in case we already loaded a predictor which
-    // had a value stored for --search_trained_nb_policies
+    // TODO work out a better system to update state that will be saved in the model.
+    // Dig out option and change it in case we already loaded a predictor which had a value stored for
+    // --search_trained_nb_policies
     auto val = (priv.passes_since_new_policy == 0) ? priv.current_policy : (priv.current_policy + 1);
     all->options->replace("search_trained_nb_policies", std::to_string(val));
     all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(val);
-    // Dig out option and change it in case we already loaded a predictor which
-    // had a value stored for --search_total_nb_policies
+    // Dig out option and change it in case we already loaded a predictor which had a value stored for
+    // --search_total_nb_policies
     all->options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
     all->options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
   }
 }
 
-bool mc_label_is_test(polylabel &lab) { return MC::mc_label.test_label(&lab.multi); }
+bool mc_label_is_test(polylabel& lab) { return MC::mc_label.test_label(&lab.multi); }
 
-void search_initialize(vw *all, search &sch)
+void search_initialize(vw* all, search& sch)
 {
-  search_private &priv = *sch.priv;  // priv is zero initialized by default
+  search_private& priv = *sch.priv;  // priv is zero initialized by default
   priv.all = all;
 
   priv.active_csoaa = false;
@@ -2581,14 +2487,14 @@ void search_initialize(vw *all, search &sch)
   priv.acset.feature_value = 1.;
 
   scored_action sa((action)-1, 0.);
-  new (&priv.cache_hash_map) v_hashmap<unsigned char *, scored_action>();
+  new (&priv.cache_hash_map) v_hashmap<unsigned char*, scored_action>();
   priv.cache_hash_map.set_default_value(sa);
   priv.cache_hash_map.set_equivalent(cached_item_equivalent);
 
   sch.task_data = nullptr;
 
   priv.active_uncertainty = v_init<pair<float, size_t>>();
-  priv.active_known = v_init<v_array<pair<CS::wclass &, bool>>>();
+  priv.active_known = v_init<v_array<pair<CS::wclass&, bool>>>();
 
   CS::cs_label.default_label(&priv.empty_cs_label);
 
@@ -2598,9 +2504,9 @@ void search_initialize(vw *all, search &sch)
   new (&priv.dat_new_feature_audit_ss) stringstream();
 }
 
-void search_finish(search &sch)
+void search_finish(search& sch)
 {
-  search_private &priv = *sch.priv;
+  search_private& priv = *sch.priv;
   cdbg << "search_finish" << endl;
 
   clear_cache_hash_map(priv);
@@ -2608,7 +2514,7 @@ void search_finish(search &sch)
   delete priv.truth_string;
   delete priv.pred_string;
   delete priv.bad_string_stream;
-  priv.cache_hash_map.~v_hashmap<unsigned char *, scored_action>();
+  priv.cache_hash_map.~v_hashmap<unsigned char*, scored_action>();
   priv.rawOutputString.~string();
   priv.test_action_sequence.~vector<action>();
   priv.dat_new_feature_audit_ss.~stringstream();
@@ -2637,7 +2543,7 @@ void search_finish(search &sch)
     priv.allowed_actions_cache->cs.costs.delete_v();
 
   priv.train_trajectory.delete_v();
-  for (Search::action_repr &ar : priv.ptag_to_action)
+  for (Search::action_repr& ar : priv.ptag_to_action)
   {
     if (ar.repr != nullptr)
     {
@@ -2653,8 +2559,8 @@ void search_finish(search &sch)
   // destroy copied examples if we needed them
   if (!priv.examples_dont_change)
   {
-    void (*delete_label)(void *) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
-    for (example &ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
+    void (*delete_label)(void*) = priv.is_ldf ? CS::cs_label.delete_label : MC::mc_label.delete_label;
+    for (example& ec : priv.learn_ec_copy) VW::dealloc_example(delete_label, ec);
     priv.learn_ec_copy.delete_v();
   }
   priv.learn_condition_on_names.delete_v();
@@ -2674,7 +2580,7 @@ void search_finish(search &sch)
   free(sch.priv);
 }
 
-void ensure_param(float &v, float lo, float hi, float def, const char *string)
+void ensure_param(float& v, float lo, float hi, float def, const char* string)
 {
   if ((v < lo) || (v > hi))
   {
@@ -2683,40 +2589,36 @@ void ensure_param(float &v, float lo, float hi, float def, const char *string)
   }
 }
 
-void handle_condition_options(vw &all, auto_condition_settings &acset)
+void handle_condition_options(vw& all, auto_condition_settings& acset)
 {
   option_group_definition new_options("Search Auto-conditioning Options");
   new_options.add(make_option("search_max_bias_ngram_length", acset.max_bias_ngram_length)
                       .keep()
                       .default_value(1)
-                      .help("add a \"bias\" feature for each ngram up to and including "
-                            "this length. eg., if it's 1 (default), then you get a single "
-                            "feature for each conditional"));
+                      .help("add a \"bias\" feature for each ngram up to and including this length. eg., if it's 1 "
+                            "(default), then you get a single feature for each conditional"));
   new_options.add(make_option("search_max_quad_ngram_length", acset.max_quad_ngram_length)
                       .keep()
                       .default_value(0)
-                      .help("add bias *times* input features for each ngram up to and "
-                            "including this length (def: 0)"));
+                      .help("add bias *times* input features for each ngram up to and including this length (def: 0)"));
   new_options.add(make_option("search_condition_feature_value", acset.feature_value)
                       .keep()
                       .default_value(1.f)
-                      .help("how much weight should the conditional features get? (def: "
-                            "1.)"));
+                      .help("how much weight should the conditional features get? (def: 1.)"));
   new_options.add(make_option("search_use_passthrough_repr", acset.use_passthrough_repr)
                       .keep()
-                      .help("should we use lower-level reduction _internal state_ as "
-                            "additional features? (def: no)"));
+                      .help("should we use lower-level reduction _internal state_ as additional features? (def: no)"));
   all.options->add_and_parse(new_options);
 }
 
-v_array<CS::label> read_allowed_transitions(action A, const char *filename)
+v_array<CS::label> read_allowed_transitions(action A, const char* filename)
 {
-  FILE *f = fopen(filename, "r");
+  FILE* f = fopen(filename, "r");
   if (f == nullptr)
     THROW("error: could not read file " << filename << " (" << strerror(errno)
                                         << "); assuming all transitions are valid");
 
-  bool *bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
+  bool* bg = calloc_or_throw<bool>(((size_t)(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
   while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0)
   {
@@ -2757,18 +2659,18 @@ v_array<CS::label> read_allowed_transitions(action A, const char *filename)
   return allowed;
 }
 
-void parse_neighbor_features(string &nf_string, search &sch)
+void parse_neighbor_features(string& nf_string, search& sch)
 {
-  search_private &priv = *sch.priv;
+  search_private& priv = *sch.priv;
   priv.neighbor_features.clear();
   size_t len = nf_string.length();
   if (len == 0)
     return;
 
-  char *cstr = new char[len + 1];
+  char* cstr = new char[len + 1];
   strcpy(cstr, nf_string.c_str());
 
-  char *p = strtok(cstr, ",");
+  char* p = strtok(cstr, ",");
   v_array<substring> cmd = v_init<substring>();
   while (p != 0)
   {
@@ -2802,10 +2704,10 @@ void parse_neighbor_features(string &nf_string, search &sch)
   delete[] cstr;
 }
 
-base_learner *setup(options_i &options, vw &all)
+base_learner* setup(options_i& options, vw& all)
 {
   free_ptr<search> sch = scoped_calloc_or_throw<search>();
-  search_private &priv = *sch->priv;
+  search_private& priv = *sch->priv;
   std::string task_string;
   std::string metatask_string;
   std::string interpolation_string = "data";
@@ -2818,88 +2720,70 @@ base_learner *setup(options_i &options, vw &all)
 
   priv.A = 1;
   option_group_definition new_options("Search options");
-  new_options.add(make_option("search", priv.A)
-                      .keep()
-                      .help("Use learning to search, "
-                            "argument=maximum action id or "
-                            "0 for LDF"));
+  new_options.add(
+      make_option("search", priv.A).keep().help("Use learning to search, argument=maximum action id or 0 for LDF"));
   new_options.add(make_option("search_task", task_string)
                       .keep()
-                      .help("the search task (use \"--search_task list\" to "
-                            "get a list of available tasks)"));
-  new_options.add(make_option("search_metatask", metatask_string)
-                      .keep()
-                      .help("the search metatask (use \"--search_metatask "
-                            "list\" to get a list of available metatasks)"));
+                      .help("the search task (use \"--search_task list\" to get a list of available tasks)"));
+  new_options.add(
+      make_option("search_metatask", metatask_string)
+          .keep()
+          .help("the search metatask (use \"--search_metatask list\" to get a list of available metatasks)"));
   new_options.add(make_option("search_interpolation", interpolation_string)
                       .keep()
                       .help("at what level should interpolation happen? [*data|policy]"));
-  new_options.add(make_option("search_rollout", rollout_string)
-                      .help("how should rollouts be executed?           "
-                            "[policy|oracle|*mix_per_state|mix_per_roll|none]"));
+  new_options.add(
+      make_option("search_rollout", rollout_string)
+          .help("how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]"));
   new_options.add(make_option("search_rollin", rollin_string)
-                      .help("how should past trajectories be generated? "
-                            "[policy|oracle|*mix_per_state|mix_per_roll]"));
+                      .help("how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]"));
   new_options.add(make_option("search_passes_per_policy", priv.passes_per_policy)
                       .default_value(1)
-                      .help("number of passes per policy (only valid for "
-                            "search_interpolation=policy)"));
+                      .help("number of passes per policy (only valid for search_interpolation=policy)"));
   new_options.add(make_option("search_beta", priv.beta)
                       .default_value(0.5f)
-                      .help("interpolation rate for policies (only valid for "
-                            "search_interpolation=policy)"));
+                      .help("interpolation rate for policies (only valid for search_interpolation=policy)"));
   new_options.add(make_option("search_alpha", priv.alpha)
                       .default_value(1e-10f)
-                      .help("annealed beta = 1-(1-alpha)^t (only valid for "
-                            "search_interpolation=data)"));
+                      .help("annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)"));
   new_options.add(make_option("search_total_nb_policies", priv.total_number_of_policies)
-                      .help("if we are going to train the policies through multiple "
-                            "separate calls to vw, we need to specify this parameter and "
-                            "tell vw how many policies are eventually going to be "
-                            "trained"));
+                      .help("if we are going to train the policies through multiple separate calls to vw, we need to "
+                            "specify this parameter and tell vw how many policies are eventually going to be trained"));
   new_options.add(make_option("search_trained_nb_policies", search_trained_nb_policies)
                       .help("the number of trained policies in a file"));
   new_options.add(make_option("search_allowed_transitions", search_allowed_transitions)
-                      .help("read file of allowed transitions [def: all transitions are "
-                            "allowed]"));
+                      .help("read file of allowed transitions [def: all transitions are allowed]"));
   new_options.add(make_option("search_subsample_time", priv.subsample_timesteps)
-                      .help("instead of training at all timesteps, use a subset. if value "
-                            "in (0,1), train on a random v%. if v>=1, train on precisely v "
-                            "steps per example, if v<=-1, use active learning"));
-  new_options.add(make_option("search_neighbor_features", neighbor_features_string)
-                      .keep()
-                      .help("copy features from neighboring lines. argument looks like: "
-                            "'-1:a,+2' meaning copy previous line namespace a and next "
-                            "next line from namespace _unnamed_, where ',' separates "
-                            "them"));
+                      .help("instead of training at all timesteps, use a subset. if value in (0,1), train on a random "
+                            "v%. if v>=1, train on precisely v steps per example, if v<=-1, use active learning"));
+  new_options.add(
+      make_option("search_neighbor_features", neighbor_features_string)
+          .keep()
+          .help("copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line "
+                "namespace a and next next line from namespace _unnamed_, where ',' separates them"));
   new_options.add(make_option("search_rollout_num_steps", priv.rollout_num_steps)
-                      .help("how many calls of \"loss\" before we stop really predicting "
-                            "on rollouts and switch to oracle (default means "
-                            "\"infinite\")"));
+                      .help("how many calls of \"loss\" before we stop really predicting on rollouts and switch to "
+                            "oracle (default means \"infinite\")"));
   new_options.add(make_option("search_history_length", priv.history_length)
                       .keep()
                       .default_value(1)
-                      .help("some tasks allow you to specify how much history "
-                            "their depend on; specify that here"));
+                      .help("some tasks allow you to specify how much history their depend on; specify that here"));
   new_options.add(make_option("search_no_caching", priv.no_caching)
-                      .help("turn off the built-in caching ability (makes "
-                            "things slower, but technically more safe)"));
+                      .help("turn off the built-in caching ability (makes things slower, but technically more safe)"));
   new_options.add(
       make_option("search_xv", priv.xv).help("train two separate policies, alternating prediction/learning"));
   new_options.add(make_option("search_perturb_oracle", priv.perturb_oracle)
                       .default_value(0.f)
                       .help("perturb the oracle on rollin with this probability"));
   new_options.add(make_option("search_linear_ordering", priv.linear_ordering)
-                      .help("insist on generating examples in linear order "
-                            "(def: hoopla permutation)"));
+                      .help("insist on generating examples in linear order (def: hoopla permutation)"));
   new_options.add(make_option("search_active_verify", priv.active_csoaa_verify)
-                      .help("verify that active learning is doing the right thing (arg = "
-                            "multiplier, should be = cost_range * range_c)"));
+                      .help("verify that active learning is doing the right thing (arg = multiplier, should be = "
+                            "cost_range * range_c)"));
   new_options.add(make_option("search_save_every_k_runs", priv.save_every_k_runs).help("save model every k runs"));
   options.add_and_parse(new_options);
 
-  // If hook was passed as the search_task then do not activate reduction. This
-  // task can only be used in library form.
+  // If hook was passed as the search_task then do not activate reduction. This task can only be used in library form.
   if (!options.was_supplied("search_task") || task_string == "hook")
     return nullptr;
 
@@ -2934,9 +2818,7 @@ base_learner *setup(options_i &options, vw &all)
     priv.no_caching = true;
   }
   else
-    THROW(
-        "error: --search_rollout must be 'learn', 'ref', 'mix', "
-        "'mix_per_state' or 'none'");
+    THROW("error: --search_rollout must be 'learn', 'ref', 'mix', 'mix_per_state' or 'none'");
 
   if ((rollin_string.compare("policy") == 0) || (rollin_string.compare("learn") == 0))
     priv.rollin_method = POLICY;
@@ -2947,12 +2829,9 @@ base_learner *setup(options_i &options, vw &all)
   else if ((rollin_string.compare("mix_per_roll") == 0) || (rollin_string.compare("mix") == 0))
     priv.rollin_method = MIX_PER_ROLL;
   else
-    THROW(
-        "error: --search_rollin must be 'learn', 'ref', 'mix' or "
-        "'mix_per_state'");
+    THROW("error: --search_rollin must be 'learn', 'ref', 'mix' or 'mix_per_state'");
 
-  // check if the base learner is contextual bandit, in which case, we dont
-  // rollout all actions.
+  // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
   priv.allowed_actions_cache = &calloc_or_throw<polylabel>();
   if (options.was_supplied("cb"))
   {
@@ -2975,33 +2854,28 @@ base_learner *setup(options_i &options, vw &all)
   priv.num_calls_to_run = 0;
 
   // compute total number of policies we will have at end of training
-  // we add current_policy for cases where we start from an initial set of
-  // policies loaded through -i option
+  // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
   if (all.training)
     tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)priv.passes_per_policy));
 
-  // the user might have specified the number of policies that will eventually
-  // be trained through multiple vw calls,
+  // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
   // so only set total_number_of_policies to computed value if it is larger
   cdbg << "current_policy=" << priv.current_policy << " tmp_number_of_policies=" << tmp_number_of_policies
        << " total_number_of_policies=" << priv.total_number_of_policies << endl;
   if (tmp_number_of_policies > priv.total_number_of_policies)
   {
     priv.total_number_of_policies = tmp_number_of_policies;
-    if (priv.current_policy > 0)  // we loaded a file but total number of
-                                  // policies didn't match what is needed for
-                                  // training
-      std::cerr << "warning: you're attempting to train more classifiers than "
-                   "was allocated initially. Likely to cause bad performance."
+    if (priv.current_policy >
+        0)  // we loaded a file but total number of policies didn't match what is needed for training
+      std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause "
+                   "bad performance."
                 << endl;
   }
 
   // current policy currently points to a new policy we would train
-  // if we are not training and loaded a bunch of policies for testing, we need
-  // to subtract 1 from current policy
-  // so that we only use those loaded when testing (as run_prediction is called
-  // with allow_current to true)
+  // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+  // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
   if (!all.training && priv.current_policy > 0)
     priv.current_policy--;
 
@@ -3017,7 +2891,7 @@ base_learner *setup(options_i &options, vw &all)
   if (task_string.compare("list") == 0)
   {
     std::cerr << endl << "available search tasks:" << endl;
-    for (search_task **mytask = all_tasks; *mytask != nullptr; mytask++)
+    for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
       std::cerr << "  " << (*mytask)->task_name << endl;
     std::cerr << endl;
     exit(0);
@@ -3025,12 +2899,12 @@ base_learner *setup(options_i &options, vw &all)
   if (metatask_string.compare("list") == 0)
   {
     std::cerr << endl << "available search metatasks:" << endl;
-    for (search_metatask **mytask = all_metatasks; *mytask != nullptr; mytask++)
+    for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
       std::cerr << "  " << (*mytask)->metatask_name << endl;
     std::cerr << endl;
     exit(0);
   }
-  for (search_task **mytask = all_tasks; *mytask != nullptr; mytask++)
+  for (search_task** mytask = all_tasks; *mytask != nullptr; mytask++)
     if (task_string.compare((*mytask)->task_name) == 0)
     {
       priv.task = *mytask;
@@ -3043,7 +2917,7 @@ base_learner *setup(options_i &options, vw &all)
       THROW("fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list");
   }
   priv.metatask = nullptr;
-  for (search_metatask **mytask = all_metatasks; *mytask != nullptr; mytask++)
+  for (search_metatask** mytask = all_metatasks; *mytask != nullptr; mytask++)
     if (metatask_string.compare((*mytask)->metatask_name) == 0)
     {
       priv.metatask = *mytask;
@@ -3066,10 +2940,9 @@ base_learner *setup(options_i &options, vw &all)
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  base_learner *base = setup_base(*all.options, all);
+  base_learner* base = setup_base(*all.options, all);
 
-  // default to OAA labels unless the task wants to override this (which they
-  // can do in initialize)
+  // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.p->lp = MC::mc_label;
   all.label_type = label_type::mc;
   if (priv.task && priv.task->initialize)
@@ -3081,8 +2954,7 @@ base_learner *setup(options_i &options, vw &all)
   if (options.was_supplied("search_allowed_transitions"))
     read_allowed_transitions((action)priv.A, search_allowed_transitions.c_str());
 
-  // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was
-  // on, but that doesn't work for hooktask)
+  // set up auto-history (used to only do this if AUTO_CONDITION_FEATURES was on, but that doesn't work for hooktask)
   handle_condition_options(all, priv.acset);
 
   if (!priv.allow_current_policy)  // if we're not dagger
@@ -3097,7 +2969,7 @@ base_learner *setup(options_i &options, vw &all)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  learner<search, multi_ex> &l = init_learner(sch, make_base(*base), do_actual_learning<true>,
+  learner<search, multi_ex>& l = init_learner(sch, make_base(*base), do_actual_learning<true>,
       do_actual_learning<false>, priv.total_number_of_policies * priv.num_learners);
   l.set_finish_example(finish_multiline_example);
   l.set_end_examples(end_examples);
@@ -3106,7 +2978,7 @@ base_learner *setup(options_i &options, vw &all)
   return make_base(l);
 }
 
-float action_hamming_loss(action a, const action *A, size_t sz)
+float action_hamming_loss(action a, const action* A, size_t sz)
 {
   if (sz == 0)
     return 0.;  // latent variables have zero loss
@@ -3116,7 +2988,7 @@ float action_hamming_loss(action a, const action *A, size_t sz)
   return 1.;
 }
 
-float action_cost_loss(action a, const action *act, const float *costs, size_t sz)
+float action_cost_loss(action a, const action* act, const float* costs, size_t sz)
 {
   if (act == nullptr)
     return costs[a - 1];
@@ -3129,15 +3001,15 @@ float action_cost_loss(action a, const action *act, const float *costs, size_t s
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
 
-action search::predict(example &ec,
+action search::predict(example& ec,
     ptag mytag,
-    const action *oracle_actions,
+    const action* oracle_actions,
     size_t oracle_actions_cnt,
-    const ptag *condition_on,
-    const char *condition_on_names,
-    const action *allowed_actions,
+    const ptag* condition_on,
+    const char* condition_on_names,
+    const action* allowed_actions,
     size_t allowed_actions_cnt,
-    const float *allowed_actions_cost,
+    const float* allowed_actions_cost,
     size_t learner_id,
     float weight)
 {
@@ -3163,7 +3035,7 @@ action search::predict(example &ec,
       push_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
     else
-      push_at(priv->ptag_to_action, action_repr(a, (features *)nullptr), mytag);
+      push_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag);
     cdbg << "push_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
@@ -3173,13 +3045,13 @@ action search::predict(example &ec,
   return a;
 }
 
-action search::predictLDF(example *ecs,
+action search::predictLDF(example* ecs,
     size_t ec_cnt,
     ptag mytag,
-    const action *oracle_actions,
+    const action* oracle_actions,
     size_t oracle_actions_cnt,
-    const ptag *condition_on,
-    const char *condition_on_names,
+    const ptag* condition_on,
+    const char* condition_on_names,
     size_t learner_id,
     float weight)
 {
@@ -3203,8 +3075,7 @@ action search::predictLDF(example *ecs,
     push_at(priv->ptag_to_action, action_repr(ecs[a].l.cs.costs[0].class_index, &(priv->last_action_repr)), mytag);
   }
   if (priv->auto_hamming_loss)
-    loss(action_hamming_loss(a, oracle_actions,
-        oracle_actions_cnt));  // TODO: action costs
+    loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));  // TODO: action costs
   cdbg << "predict returning " << a << endl;
   return a;
 }
@@ -3213,7 +3084,7 @@ void search::loss(float loss) { search_declare_loss(*this->priv, loss); }
 
 bool search::predictNeedsExample() { return search_predictNeedsExample(*this->priv); }
 
-stringstream &search::output()
+stringstream& search::output()
 {
   if (!this->priv->should_produce_string)
     return *(this->priv->bad_string_stream);
@@ -3241,28 +3112,24 @@ void search::set_options(uint32_t opts)
     this->priv->use_action_costs = true;
 
   if (this->priv->is_ldf && this->priv->use_action_costs)
-    THROW(
-        "using LDF and actions costs is not yet implemented; turn off action "
-        "costs");  // TODO fix
+    THROW("using LDF and actions costs is not yet implemented; turn off action costs");  // TODO fix
 
   if (this->priv->use_action_costs && (this->priv->rollout_method != NO_ROLLOUT))
-    std::cerr << "warning: task is designed to use rollout costs, but this "
-                 "only works when --search_rollout none is specified"
-              << endl;
+    std::cerr
+        << "warning: task is designed to use rollout costs, but this only works when --search_rollout none is specified"
+        << endl;
 }
 
-void search::set_label_parser(label_parser &lp, bool (*is_test)(polylabel &))
+void search::set_label_parser(label_parser& lp, bool (*is_test)(polylabel&))
 {
   if (this->priv->all->vw_is_main && (this->priv->state != INITIALIZE))
-    std::cerr << "warning: task should not set label parser except in "
-                 "initialize function!"
-              << endl;
+    std::cerr << "warning: task should not set label parser except in initialize function!" << endl;
   this->priv->all->p->lp = lp;
-  this->priv->all->p->lp.test_label = (bool (*)(void *))is_test;
+  this->priv->all->p->lp.test_label = (bool (*)(void*))is_test;
   this->priv->label_is_test = is_test;
 }
 
-void search::get_test_action_sequence(vector<action> &V)
+void search::get_test_action_sequence(vector<action>& V)
 {
   V.clear();
   for (size_t i = 0; i < this->priv->test_action_sequence.size(); i++) V.push_back(this->priv->test_action_sequence[i]);
@@ -3289,11 +3156,11 @@ string search::pretty_label(action a)
   }
 }
 
-vw &search::get_vw_pointer_unsafe() { return *this->priv->all; }
+vw& search::get_vw_pointer_unsafe() { return *this->priv->all; }
 void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
-predictor::predictor(search &sch, ptag my_tag)
+predictor::predictor(search& sch, ptag my_tag)
     : is_ldf(false)
     , my_tag(my_tag)
     , ec(nullptr)
@@ -3337,7 +3204,7 @@ predictor::~predictor()
   condition_on_tags.delete_v();
   condition_on_names.delete_v();
 }
-predictor &predictor::reset()
+predictor& predictor::reset()
 {
   this->erase_oracles();
   this->erase_alloweds();
@@ -3347,7 +3214,7 @@ predictor &predictor::reset()
   return *this;
 }
 
-predictor &predictor::set_input(example &input_example)
+predictor& predictor::set_input(example& input_example)
 {
   free_ec();
   is_ldf = false;
@@ -3357,7 +3224,7 @@ predictor &predictor::set_input(example &input_example)
   return *this;
 }
 
-predictor &predictor::set_input(example *input_example, size_t input_length)
+predictor& predictor::set_input(example* input_example, size_t input_length)
 {
   free_ec();
   is_ldf = true;
@@ -3372,7 +3239,7 @@ void predictor::set_input_length(size_t input_length)
   is_ldf = true;
   if (ec_alloced)
   {
-    example *temp = (example *)realloc(ec, input_length * sizeof(example));
+    example* temp = (example*)realloc(ec, input_length * sizeof(example));
     if (temp != nullptr)
       ec = temp;
     else
@@ -3383,7 +3250,7 @@ void predictor::set_input_length(size_t input_length)
   ec_cnt = input_length;
   ec_alloced = true;
 }
-void predictor::set_input_at(size_t posn, example &ex)
+void predictor::set_input_at(size_t posn, example& ex)
 {
   if (!ec_alloced)
     THROW("call to set_input_at without previous call to set_input_length");
@@ -3391,15 +3258,15 @@ void predictor::set_input_at(size_t posn, example &ex)
   if (posn >= ec_cnt)
     THROW("call to set_input_at with too large a position: posn (" << posn << ") >= ec_cnt(" << ec_cnt << ")");
 
-  VW::copy_example_data(false, ec + posn, &ex, CS::cs_label.label_size,
-      CS::cs_label.copy_label);  // TODO: the false is "audit"
+  VW::copy_example_data(
+      false, ec + posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label);  // TODO: the false is "audit"
 }
 
 template <class T>
-void predictor::make_new_pointer(v_array<T> &A, size_t new_size)
+void predictor::make_new_pointer(v_array<T>& A, size_t new_size)
 {
   size_t old_size = A.size();
-  T *old_pointer = A.begin();
+  T* old_pointer = A.begin();
   A.begin() = calloc_or_throw<T>(new_size);
   A.end() = A.begin() + new_size;
   A.end_array = A.end();
@@ -3407,7 +3274,7 @@ void predictor::make_new_pointer(v_array<T> &A, size_t new_size)
 }
 
 template <class T>
-predictor &predictor::add_to(v_array<T> &A, bool &A_is_ptr, T a, bool clear_first)
+predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T a, bool clear_first)
 {
   if (A_is_ptr)  // we need to make our own memory
   {
@@ -3428,7 +3295,7 @@ predictor &predictor::add_to(v_array<T> &A, bool &A_is_ptr, T a, bool clear_firs
 }
 
 template <class T>
-predictor &predictor::add_to(v_array<T> &A, bool &A_is_ptr, T *a, size_t count, bool clear_first)
+predictor& predictor::add_to(v_array<T>& A, bool& A_is_ptr, T* a, size_t count, bool clear_first)
 {
   size_t old_size = A.size();
   if (old_size > 0)
@@ -3470,7 +3337,7 @@ predictor &predictor::add_to(v_array<T> &A, bool &A_is_ptr, T *a, size_t count, 
   return *this;
 }
 
-predictor &predictor::erase_oracles()
+predictor& predictor::erase_oracles()
 {
   if (oracle_is_pointer)
     oracle_actions.end() = oracle_actions.begin();
@@ -3478,33 +3345,33 @@ predictor &predictor::erase_oracles()
     oracle_actions.clear();
   return *this;
 }
-predictor &predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
-predictor &predictor::add_oracle(action *a, size_t action_count)
+predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
+predictor& predictor::add_oracle(action* a, size_t action_count)
 {
   return add_to(oracle_actions, oracle_is_pointer, a, action_count, false);
 }
-predictor &predictor::add_oracle(v_array<action> &a)
+predictor& predictor::add_oracle(v_array<action>& a)
 {
   return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false);
 }
 
-predictor &predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
-predictor &predictor::set_oracle(action *a, size_t action_count)
+predictor& predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
+predictor& predictor::set_oracle(action* a, size_t action_count)
 {
   return add_to(oracle_actions, oracle_is_pointer, a, action_count, true);
 }
-predictor &predictor::set_oracle(v_array<action> &a)
+predictor& predictor::set_oracle(v_array<action>& a)
 {
   return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), true);
 }
 
-predictor &predictor::set_weight(float w)
+predictor& predictor::set_weight(float w)
 {
   weight = w;
   return *this;
 }
 
-predictor &predictor::erase_alloweds()
+predictor& predictor::erase_alloweds()
 {
   if (allowed_is_pointer)
     allowed_actions.end() = allowed_actions.begin();
@@ -3516,38 +3383,38 @@ predictor &predictor::erase_alloweds()
     allowed_actions_cost.clear();
   return *this;
 }
-predictor &predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
-predictor &predictor::add_allowed(action *a, size_t action_count)
+predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
+predictor& predictor::add_allowed(action* a, size_t action_count)
 {
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
 }
-predictor &predictor::add_allowed(v_array<action> &a)
+predictor& predictor::add_allowed(v_array<action>& a)
 {
   return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), false);
 }
 
-predictor &predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
-predictor &predictor::set_allowed(action *a, size_t action_count)
+predictor& predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
+predictor& predictor::set_allowed(action* a, size_t action_count)
 {
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
-predictor &predictor::set_allowed(v_array<action> &a)
+predictor& predictor::set_allowed(v_array<action>& a)
 {
   return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), true);
 }
 
-predictor &predictor::add_allowed(action a, float cost)
+predictor& predictor::add_allowed(action a, float cost)
 {
   add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, false);
   return add_to(allowed_actions, allowed_is_pointer, a, false);
 }
 
-predictor &predictor::add_allowed(action *a, float *costs, size_t action_count)
+predictor& predictor::add_allowed(action* a, float* costs, size_t action_count)
 {
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, false);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
 }
-predictor &predictor::add_allowed(v_array<pair<action, float>> &a)
+predictor& predictor::add_allowed(v_array<pair<action, float>>& a)
 {
   for (size_t i = 0; i < a.size(); i++)
   {
@@ -3556,7 +3423,7 @@ predictor &predictor::add_allowed(v_array<pair<action, float>> &a)
   }
   return *this;
 }
-predictor &predictor::add_allowed(vector<pair<action, float>> &a)
+predictor& predictor::add_allowed(vector<pair<action, float>>& a)
 {
   for (size_t i = 0; i < a.size(); i++)
   {
@@ -3566,42 +3433,42 @@ predictor &predictor::add_allowed(vector<pair<action, float>> &a)
   return *this;
 }
 
-predictor &predictor::set_allowed(action a, float cost)
+predictor& predictor::set_allowed(action a, float cost)
 {
   add_to(allowed_actions_cost, allowed_cost_is_pointer, cost, true);
   return add_to(allowed_actions, allowed_is_pointer, a, true);
 }
 
-predictor &predictor::set_allowed(action *a, float *costs, size_t action_count)
+predictor& predictor::set_allowed(action* a, float* costs, size_t action_count)
 {
   add_to(allowed_actions_cost, allowed_cost_is_pointer, costs, action_count, true);
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);
 }
-predictor &predictor::set_allowed(v_array<pair<action, float>> &a)
+predictor& predictor::set_allowed(v_array<pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
-predictor &predictor::set_allowed(vector<pair<action, float>> &a)
+predictor& predictor::set_allowed(vector<pair<action, float>>& a)
 {
   erase_alloweds();
   return add_allowed(a);
 }
 
-predictor &predictor::add_condition(ptag tag, char name)
+predictor& predictor::add_condition(ptag tag, char name)
 {
   condition_on_tags.push_back(tag);
   condition_on_names.push_back(name);
   return *this;
 }
-predictor &predictor::set_condition(ptag tag, char name)
+predictor& predictor::set_condition(ptag tag, char name)
 {
   condition_on_tags.clear();
   condition_on_names.clear();
   return add_condition(tag, name);
 }
 
-predictor &predictor::add_condition_range(ptag hi, ptag count, char name0)
+predictor& predictor::add_condition_range(ptag hi, ptag count, char name0)
 {
   if (count == 0)
     return *this;
@@ -3615,20 +3482,20 @@ predictor &predictor::add_condition_range(ptag hi, ptag count, char name0)
   }
   return *this;
 }
-predictor &predictor::set_condition_range(ptag hi, ptag count, char name0)
+predictor& predictor::set_condition_range(ptag hi, ptag count, char name0)
 {
   condition_on_tags.clear();
   condition_on_names.clear();
   return add_condition_range(hi, count, name0);
 }
 
-predictor &predictor::set_learner_id(size_t id)
+predictor& predictor::set_learner_id(size_t id)
 {
   learner_id = id;
   return *this;
 }
 
-predictor &predictor::set_tag(ptag tag)
+predictor& predictor::set_tag(ptag tag)
 {
   my_tag = tag;
   return *this;
@@ -3636,16 +3503,16 @@ predictor &predictor::set_tag(ptag tag)
 
 action predictor::predict()
 {
-  const action *orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin();
-  const ptag *cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin();
-  const char *cNa = nullptr;
+  const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin();
+  const ptag* cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin();
+  const char* cNa = nullptr;
   if (condition_on_names.size() > 0)
   {
     condition_on_names.push_back((char)0);  // null terminate
     cNa = condition_on_names.begin();
   }
-  const action *alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin();
-  const float *alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin();
+  const action* alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin();
+  const float* alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin();
   size_t numAlA = max(allowed_actions.size(), allowed_actions_cost.size());
   action p = is_ldf
       ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)
@@ -3657,6 +3524,5 @@ action predictor::predict()
 }
 }  // namespace Search
 
-// TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1
-// --search_task sequence -d test_beam --holdout_off --search_rollin policy
-// --search_metatask selective_branching 2>&1 | less
+// TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off
+// --search_rollin policy --search_metatask selective_branching 2>&1 | less

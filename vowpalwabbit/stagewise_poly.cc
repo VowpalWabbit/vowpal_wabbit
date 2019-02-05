@@ -1,8 +1,8 @@
-#include <cassert>
 #include <float.h>
+#include <cassert>
 
-#include "accumulate.h"
 #include "gd.h"
+#include "accumulate.h"
 #include "reductions.h"
 #include "vw.h"
 #include "vw_allreduce.h"
@@ -36,8 +36,7 @@ struct stagewise_poly
 
   sort_data *sd;
   size_t sd_len;
-  uint8_t *depthsbits;  // interleaved array storing depth information and
-                        // parent/cycle bits
+  uint8_t *depthsbits;  // interleaved array storing depth information and parent/cycle bits
 
   uint64_t sum_sparsity;        // of synthetic example
   uint64_t sum_input_sparsity;  // of input example
@@ -80,8 +79,7 @@ inline uint64_t stride_un_shift(const stagewise_poly &poly, uint64_t idx)
 
 inline uint64_t do_ft_offset(const stagewise_poly &poly, uint64_t idx)
 {
-  // cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset <<
-  // endl;
+  // cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
   assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
   return idx + poly.synth_ec.ft_offset;
 }
@@ -186,8 +184,7 @@ void sanity_check_state(stagewise_poly &poly)
       assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.sparse_weights[wid]) > 0));
     else
       assert(!(min_depths_get(poly, wid) == default_depth && fabsf(poly.all->weights.dense_weights[wid]) > 0));
-    // assert( min_depths_get(poly, wid) != default_depth &&
-    // fabsf(poly.all->weights[wid]) < tolerance );
+    // assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->weights[wid]) < tolerance );
 
     assert(!(poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)));
   }
@@ -209,14 +206,10 @@ inline uint64_t child_wid(const stagewise_poly &poly, uint64_t wi_atomic, uint64
     return wi_atomic;
   else
   {
-    // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be
-    // invariant
-    // to the monomial, whereas this here is sensitive to the path followed, but
-    // whatever.
-    // the two main big differences with FNV are: (1) the "*constant" case
-    // should also have
-    // a big prime (so the default hash shouldn't be identity on small things,
-    // and (2) the
+    // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
+    // to the monomial, whereas this here is sensitive to the path followed, but whatever.
+    // the two main big differences with FNV are: (1) the "*constant" case should also have
+    // a big prime (so the default hash shouldn't be identity on small things, and (2) the
     // size should not just be a power of 2, but some big prime.
     return wid_mask(
         poly, stride_shift(poly, stride_un_shift(poly, wi_atomic) ^ (16777619 * stride_un_shift(poly, wi_general))));
@@ -275,8 +268,7 @@ void sort_data_update_support(stagewise_poly &poly)
 {
   assert(poly.num_examples);
 
-  // ft_offset affects parent_set / parent_get.  This state must be reset at
-  // end.
+  // ft_offset affects parent_set / parent_get.  This state must be reset at end.
   uint64_t pop_ft_offset = poly.original_ec->ft_offset;
   poly.synth_ec.ft_offset = 0;
   assert(poly.original_ec);
@@ -300,8 +292,7 @@ void sort_data_update_support(stagewise_poly &poly)
        * a nontrivial computational hit, thus commented out.
        *
        * - poly.magic_argument
-       * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 /
-       * poly.num_examples)
+       * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
        */
       ;
       if (weightsal > tolerance)
@@ -357,8 +348,7 @@ void sort_data_update_support(stagewise_poly &poly)
   cout << "done" << endl;
 #endif  // DEBUG
 
-  // it's okay that these may have been initially unequal; synth_ec value
-  // irrelevant so far.
+  // it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
   poly.original_ec->ft_offset = pop_ft_offset;
   poly.synth_ec.ft_offset = pop_ft_offset;
 }
@@ -385,8 +375,7 @@ void synthetic_reset(stagewise_poly &poly, example &ec)
    * Anyway, so here is how ft_offset matters:
    *   - synthetic_create_rec must "normalize it out" of the fed weight value
    *   - parent and min_depths set/get are adjusted for it.
-   *   - cycle set/get are not adjusted for it, since it doesn't matter for
-   *them.
+   *   - cycle set/get are not adjusted for it, since it doesn't matter for them.
    *   - operations on the whole weight vector (sorting, save_load, all_reduce)
    *     ignore ft_offset, just treat the thing as a flat vector.
    **/
@@ -481,8 +470,7 @@ void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   poly.training = training;
   /*
    * Another choice is to mark the constant feature as the single initial
-   * parent, and recurse just on that feature (which arguably correctly
-   * interprets poly.cur_depth).
+   * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
    * Problem with this is if there is a collision with the root...
    */
   GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
@@ -527,10 +515,8 @@ void learn(stagewise_poly &poly, single_learner &base, example &ec)
     ec.pred.scalar = poly.synth_ec.pred.scalar;
 
     if (ec.example_counter
-        // following line is to avoid repeats when multiple reductions on same
-        // example.
-        // XXX ideally, would get all "copies" of an example before scheduling
-        // the support
+        // following line is to avoid repeats when multiple reductions on same example.
+        // XXX ideally, would get all "copies" of an example before scheduling the support
         // update, but how do we know?
         && poly.last_example_counter != ec.example_counter && poly.batch_sz &&
         ((poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz)) ||
@@ -662,8 +648,7 @@ void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
     bin_text_read_write_fixed(
         model_file, (char *)poly.depthsbits, (uint32_t)depthsbits_sizeof(poly), "", read, msg, text);
   }
-  // unfortunately, following can't go here since save_load called before
-  // gd::save_load and thus
+  // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
   //#ifdef DEBUG
   //      cout << "Sanity check after save_load... " << flush;

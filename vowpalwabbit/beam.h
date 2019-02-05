@@ -5,10 +5,10 @@ license as described in the file LICENSE.
 */
 #pragma once
 
-#include "v_array.h"
-#include <float.h>
 #include <stdio.h>
+#include <float.h>
 #include <stdlib.h>
+#include "v_array.h"
 
 // TODO: special case the version where beam_size == 1
 // TODO: *maybe* special case the version where beam_size <= 10
@@ -24,11 +24,9 @@ struct beam_element
   float cost;     // cost of this element
   T *data;        // pointer to element data -- rarely accessed!
   bool active;    // is this currently active
-  //  bool     recombined;                 // if we're not the BEST then we've
-  //  been recombined
-  //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements),
-  //  then recomb_friends is everything that's equivalent to us but worse... NOT
-  //  USED if we're not doing k-best predictions
+  //  bool     recombined;                 // if we're not the BEST then we've been recombined
+  //  v_array<T*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's
+  //  equivalent to us but worse... NOT USED if we're not doing k-best predictions
 };
 
 inline int compare_on_cost(const void *void_a, const void *void_b)
@@ -80,13 +78,10 @@ class beam
 {
  private:
   size_t beam_size;           // the beam size -- how many active elements can we have
-  size_t count;               // how many elements do we have currently -- should be == to
-                              // A.size()
-  float pruning_coefficient;  // prune anything with cost >= pruning_coefficient
-                              // * best, set to FLT_MAX to not do
+  size_t count;               // how many elements do we have currently -- should be == to A.size()
+  float pruning_coefficient;  // prune anything with cost >= pruning_coefficient * best, set to FLT_MAX to not do
                               // coefficient-based pruning
-  float worst_cost;           // what is the cost of the worst (highest cost) item in the
-                              // beam
+  float worst_cost;           // what is the cost of the worst (highest cost) item in the beam
   float best_cost;            // what is the cost of the best (lowest cost) item in the beam
   float prune_if_gt;          // prune any element with cost greater than this
   T *best_cost_data;          // easy access to best-cost item
@@ -96,8 +91,7 @@ class beam
 
   //  static size_t NUM_RECOMB_BUCKETS = 10231;
 
-  bool (*is_equivalent)(T *, T *);  // test if two items are equivalent; nullptr
-                                    // means don't do hypothesis recombination
+  bool (*is_equivalent)(T *, T *);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
 
  public:
   beam(size_t beam_size, float prune_coeff = FLT_MAX, bool (*test_equiv)(T *, T *) = nullptr, bool kbest = false)
@@ -119,8 +113,7 @@ class beam
 
   inline bool might_insert(float cost) { return (cost <= prune_if_gt) && ((count < beam_size) || (cost < worst_cost)); }
 
-  bool insert(T *data, float cost,
-      uint32_t hash)  // returns TRUE iff element was actually added
+  bool insert(T *data, float cost, uint32_t hash)  // returns TRUE iff element was actually added
   {
     if (!might_insert(cost))
       return false;
@@ -129,16 +122,14 @@ class beam
     // if (is_equivalent) {
     //   size_t mod = recomb_buckets.size();
     //   size_t id  = hash % mod;
-    //   size_t equiv_pos = bucket_contains_equiv(recomb_buckets[i], data,
-    //   hash);
+    //   size_t equiv_pos = bucket_contains_equiv(recomb_buckets[i], data, hash);
     //   if (equiv_pos != (size_t) -1) { // we can recombing at equiv_pos
     //     if (cost >= recomb_buckets[i][equiv_pos].cost) {
     //       // we are more expensive, so ignore
     //       we_were_worse = true;
     //       beam_element<T> * be = new beam_element<T>;
-    //       be->hash = hash; be->cost = cost; be->data = data; be->active =
-    //       true; be->recombined = false; be->recomb_friends = nullptr;
-    //       add_recomb_friend(recomb_buckets[i][equiv_pos], be);
+    //       be->hash = hash; be->cost = cost; be->data = data; be->active = true; be->recombined = false;
+    //       be->recomb_friends = nullptr; add_recomb_friend(recomb_buckets[i][equiv_pos], be);
     //   }
     // }
 
@@ -162,8 +153,7 @@ class beam
       A[worst_idx].data = data;
       A[worst_idx].active = true;
       // A[worst_idx].recombined = false;
-      // A[worst_idx].recomb_friends = nullptr;  // TODO: free it if it isn't
-      // nullptr
+      // A[worst_idx].recomb_friends = nullptr;  // TODO: free it if it isn't nullptr
       worst_cost = cost;
     }
     else
@@ -262,8 +252,8 @@ class beam
           if (is_equivalent(A[i].data, A[j].data))
           {
             A[j].active = false;  // TODO: if kbest is on, do recomb_friends
-            // cerr << "equivalent " << i << "," << j << ": " <<
-            // ((size_t)A[i].data) << " and " << ((size_t)A[j].data) << endl;
+            // cerr << "equivalent " << i << "," << j << ": " << ((size_t)A[i].data) << " and " << ((size_t)A[j].data)
+            // << endl;
           }
         }
       }
@@ -275,8 +265,7 @@ class beam
   {
     if (is_equivalent)
       do_recombination();
-    qsort(A.begin, A.size(), sizeof(beam_element<T>),
-        compare_on_cost);  // TODO: quick select
+    qsort(A.begin, A.size(), sizeof(beam_element<T>), compare_on_cost);  // TODO: quick select
 
     if (count <= beam_size)
       return;
@@ -340,4 +329,5 @@ class beam
   //   }
   // }
 };
+
 }  // namespace Beam

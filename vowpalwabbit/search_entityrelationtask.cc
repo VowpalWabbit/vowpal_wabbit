@@ -22,7 +22,7 @@ namespace EntityRelationTask
 using namespace Search;
 namespace CS = COST_SENSITIVE;
 
-void update_example_indicies(bool audit, example *ec, uint64_t mult_amount, uint64_t plus_amount);
+void update_example_indicies(bool audit, example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
 struct task_data
 {
@@ -35,13 +35,13 @@ struct task_data
   v_array<uint32_t> y_allowed_entity;
   v_array<uint32_t> y_allowed_relation;
   size_t search_order;
-  example *ldf_entity;
-  example *ldf_relation;
+  example* ldf_entity;
+  example* ldf_relation;
 };
 
-void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &options)
+void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
-  task_data *my_task_data = new task_data();
+  task_data* my_task_data = new task_data();
   sch.set_task_data<task_data>(my_task_data);
 
   option_group_definition new_options("Entity Relation Options");
@@ -60,14 +60,12 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
       .add(make_option("search_order", my_task_data->search_order)
                .keep()
                .default_value(0)
-               .help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: "
-                     "EntityFirst(LDF)"));
+               .help("Search Order 0: EntityFirst 1: Mix 2: Skip 3: EntityFirst(LDF)"));
   options.add_and_parse(new_options);
 
   // setup entity and relation labels
   // Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
-  // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For
-  // 9:R_Kill 10:R_None
+  // Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
   for (int i = 1; i < 5; i++) my_task_data->y_allowed_entity.push_back(i);
 
   for (int i = 5; i < 11; i++) my_task_data->y_allowed_relation.push_back(i);
@@ -80,7 +78,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   }
   else
   {
-    example *ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
+    example* ldf_examples = VW::alloc_examples(sizeof(CS::label), 10);
     CS::wclass default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < 10; a++)
     {
@@ -96,9 +94,9 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
     sch.set_num_learners(3);
 }
 
-void finish(Search::search &sch)
+void finish(Search::search& sch)
 {
-  task_data *my_task_data = sch.get_task_data<task_data>();
+  task_data* my_task_data = sch.get_task_data<task_data>();
   my_task_data->y_allowed_entity.delete_v();
   my_task_data->y_allowed_relation.delete_v();
   if (my_task_data->search_order == 3)
@@ -120,7 +118,7 @@ bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
   return false;
 }
 
-void decode_tag(v_array<char> tag, char &type, int &id1, int &id2)
+void decode_tag(v_array<char> tag, char& type, int& id1, int& id2)
 {
   string s1;
   string s2;
@@ -143,9 +141,9 @@ void decode_tag(v_array<char> tag, char &type, int &id1, int &id2)
 }
 
 size_t predict_entity(
-    Search::search &sch, example *ex, v_array<size_t> & /*predictions*/, ptag my_tag, bool isLdf = false)
+    Search::search& sch, example* ex, v_array<size_t>& /*predictions*/, ptag my_tag, bool isLdf = false)
 {
-  task_data *my_task_data = sch.get_task_data<task_data>();
+  task_data* my_task_data = sch.get_task_data<task_data>();
   size_t prediction;
   if (my_task_data->allow_skip)
   {
@@ -169,7 +167,7 @@ size_t predict_entity(
       {
         VW::copy_example_data(false, &my_task_data->ldf_entity[a], ex);
         update_example_indicies(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * (uint64_t)(a + 1));
-        CS::label &lab = my_task_data->ldf_entity[a].l.cs;
+        CS::label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
         lab.costs[0].partial_prediction = 0.f;
@@ -204,11 +202,11 @@ size_t predict_entity(
   sch.loss(loss);
   return prediction;
 }
-size_t predict_relation(Search::search &sch, example *ex, v_array<size_t> &predictions, ptag my_tag, bool isLdf = false)
+size_t predict_relation(Search::search& sch, example* ex, v_array<size_t>& predictions, ptag my_tag, bool isLdf = false)
 {
   char type;
   int id1, id2;
-  task_data *my_task_data = sch.get_task_data<task_data>();
+  task_data* my_task_data = sch.get_task_data<task_data>();
   size_t hist[2];
   decode_tag(ex->tag, type, id1, id2);
   v_array<uint32_t> constrained_relation_labels = v_init<uint32_t>();
@@ -256,7 +254,7 @@ size_t predict_relation(Search::search &sch, example *ex, v_array<size_t> &predi
         VW::copy_example_data(false, &my_task_data->ldf_relation[a], ex);
         update_example_indicies(
             true, &my_task_data->ldf_relation[a], 28904713, 4832917 * (uint64_t)(constrained_relation_labels[a]));
-        CS::label &lab = my_task_data->ldf_relation[a].l.cs;
+        CS::label& lab = my_task_data->ldf_relation[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;
@@ -305,7 +303,7 @@ size_t predict_relation(Search::search &sch, example *ex, v_array<size_t> &predi
   return prediction;
 }
 
-void entity_first_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &predictions, bool isLdf = false)
+void entity_first_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions, bool isLdf = false)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
@@ -319,7 +317,7 @@ void entity_first_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &p
   }
 }
 
-void er_mixed_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &predictions)
+void er_mixed_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
   // ec.size = #entity + #entity*(#entity-1)/2
   uint32_t n_ent = (uint32_t)((sqrt(ec.size() * 8 + 1) - 1) / 2);
@@ -349,9 +347,9 @@ void er_mixed_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &predi
   }
 }
 
-void er_allow_skip_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &predictions)
+void er_allow_skip_decoding(Search::search& sch, multi_ex& ec, v_array<size_t>& predictions)
 {
-  task_data *my_task_data = sch.get_task_data<task_data>();
+  task_data* my_task_data = sch.get_task_data<task_data>();
   // ec.size = #entity + #entity*(#entity-1)/2
   size_t n_ent = (size_t)(sqrt(ec.size() * 8 + 1) - 1) / 2;
 
@@ -407,9 +405,9 @@ void er_allow_skip_decoding(Search::search &sch, multi_ex &ec, v_array<size_t> &
   }
 }
 
-void run(Search::search &sch, multi_ex &ec)
+void run(Search::search& sch, multi_ex& ec)
 {
-  task_data *my_task_data = sch.get_task_data<task_data>();
+  task_data* my_task_data = sch.get_task_data<task_data>();
 
   v_array<size_t> predictions = v_init<size_t>();
   for (size_t i = 0; i < ec.size(); i++)
@@ -443,9 +441,9 @@ void run(Search::search &sch, multi_ex &ec)
   predictions.delete_v();
 }
 // this is totally bogus for the example -- you'd never actually do this!
-void update_example_indicies(bool /* audit */, example *ec, uint64_t mult_amount, uint64_t plus_amount)
+void update_example_indicies(bool /* audit */, example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
-  for (features &fs : *ec)
-    for (feature_index &idx : fs.indicies) idx = ((idx * mult_amount) + plus_amount);
+  for (features& fs : *ec)
+    for (feature_index& idx : fs.indicies) idx = ((idx * mult_amount) + plus_amount);
 }
 }  // namespace EntityRelationTask

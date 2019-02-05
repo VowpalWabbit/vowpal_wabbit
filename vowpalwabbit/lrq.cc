@@ -1,9 +1,9 @@
-#include "parse_args.h"  // for spoof_hex_encoded_namespaces
-#include "rand48.h"
-#include "reductions.h"
-#include "vw_exception.h"
-#include <float.h>
 #include <string.h>
+#include <float.h>
+#include "reductions.h"
+#include "rand48.h"
+#include "vw_exception.h"
+#include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
 using namespace std;
@@ -11,7 +11,7 @@ using namespace VW::config;
 
 struct LRQstate
 {
-  vw *all;  // feature creation, audit, hash_inv
+  vw* all;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];
   std::set<std::string> lrpairs;
@@ -20,9 +20,9 @@ struct LRQstate
   uint64_t initial_seed;
 };
 
-bool valid_int(const char *s)
+bool valid_int(const char* s)
 {
-  char *endptr;
+  char* endptr;
 
   int v = strtoul(s, &endptr, 0);
   (void)v;
@@ -30,7 +30,7 @@ bool valid_int(const char *s)
   return (*s != '\0' && *endptr == '\0');
 }
 
-inline bool cheesyrbit(uint64_t &seed) { return merand48(seed) > 0.5; }
+inline bool cheesyrbit(uint64_t& seed) { return merand48(seed) > 0.5; }
 
 inline float cheesyrand(uint64_t x)
 {
@@ -39,18 +39,18 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-inline bool example_is_test(example &ec) { return ec.l.simple.label == FLT_MAX; }
+inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
 
-void reset_seed(LRQstate &lrq)
+void reset_seed(LRQstate& lrq)
 {
   if (lrq.all->bfgs)
     lrq.seed = lrq.initial_seed;
 }
 
 template <bool is_learn>
-void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
+void predict_or_learn(LRQstate& lrq, single_learner& base, example& ec)
 {
-  vw &all = *lrq.all;
+  vw& all = *lrq.all;
 
   // Remember original features
 
@@ -78,13 +78,13 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
     // TODO: what happens with --lrq ab2 --lrq ac2
     //       i.e. namespace occurs multiple times (?)
 
-    for (string const &i : lrq.lrpairs)
+    for (string const& i : lrq.lrpairs)
     {
       unsigned char left = i[which % 2];
       unsigned char right = i[(which + 1) % 2];
       unsigned int k = atoi(i.c_str() + 2);
 
-      features &left_fs = ec.feature_space[left];
+      features& left_fs = ec.feature_space[left];
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
       {
         float lfx = left_fs.values[lfn];
@@ -94,13 +94,13 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
           if (!do_dropout || cheesyrbit(lrq.seed))
           {
             uint64_t lwindex = (lindex + ((uint64_t)n << stride_shift));
-            weight *lw = &lrq.all->weights[lwindex];
+            weight* lw = &lrq.all->weights[lwindex];
 
             // perturb away from saddle point at (0, 0)
             if (is_learn && !example_is_test(ec) && *lw == 0)
               *lw = cheesyrand(lwindex);  // not sure if lw needs a weight mask?
 
-            features &right_fs = ec.feature_space[right];
+            features& right_fs = ec.feature_space[right];
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
               // NB: ec.ft_offset added by base learner
@@ -116,11 +116,11 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
                 new_feature_buffer << right << '^' << right_fs.space_names[rfn].get()->second << '^' << n;
 
 #ifdef _WIN32
-                char *new_space = _strdup("lrq");
-                char *new_feature = _strdup(new_feature_buffer.str().c_str());
+                char* new_space = _strdup("lrq");
+                char* new_feature = _strdup(new_feature_buffer.str().c_str());
 #else
-                char *new_space = strdup("lrq");
-                char *new_feature = strdup(new_feature_buffer.str().c_str());
+                char* new_space = strdup("lrq");
+                char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
                 right_fs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
               }
@@ -149,7 +149,7 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
       ec.confidence = first_uncertainty;
     }
 
-    for (string const &i : lrq.lrpairs)
+    for (string const& i : lrq.lrpairs)
     {
       unsigned char right = i[(which + 1) % 2];
       ec.feature_space[right].truncate_to(lrq.orig_size[right]);
@@ -157,9 +157,9 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
   }
 }
 
-void finish(LRQstate &lrq) { lrq.lrpairs.~set<string>(); }
+void finish(LRQstate& lrq) { lrq.lrpairs.~set<string>(); }
 
-base_learner *lrq_setup(options_i &options, vw &all)
+base_learner* lrq_setup(options_i& options, vw& all)
 {
   auto lrq = scoped_calloc_or_throw<LRQstate>();
   vector<string> lrq_names;
@@ -187,14 +187,12 @@ base_learner *lrq_setup(options_i &options, vw &all)
       all.trace_message << "(using dropout) ";
   }
 
-  for (string const &i : lrq->lrpairs)
+  for (string const& i : lrq->lrpairs)
   {
     if (!all.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
-        THROW(
-            "error, low-rank quadratic features must involve two sets and a "
-            "rank.");
+        THROW("error, low-rank quadratic features must involve two sets and a rank.");
 
       all.trace_message << i << " ";
     }
@@ -212,7 +210,7 @@ base_learner *lrq_setup(options_i &options, vw &all)
     all.trace_message << endl;
 
   all.wpp = all.wpp * (uint64_t)(1 + maxk);
-  learner<LRQstate, example> &l = init_learner(
+  learner<LRQstate, example>& l = init_learner(
       lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, 1 + maxk);
   l.set_end_pass(reset_seed);
   l.set_finish(finish);

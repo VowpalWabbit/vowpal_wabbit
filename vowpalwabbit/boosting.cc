@@ -6,23 +6,22 @@
 
 /*
  * Implementation of online boosting algorithms from
- *    Beygelzimer, Kale, Luo: Optimal and adaptive algorithms for online
- * boosting,
+ *    Beygelzimer, Kale, Luo: Optimal and adaptive algorithms for online boosting,
  *    ICML-2015.
  */
 
-#include "correctedMath.h"
 #include <float.h>
 #include <limits.h>
 #include <math.h>
-#include <sstream>
+#include "correctedMath.h"
 #include <stdio.h>
 #include <string>
+#include <sstream>
 #include <vector>
 
-#include "rand48.h"
 #include "reductions.h"
 #include "vw.h"
+#include "rand48.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -60,8 +59,8 @@ struct boosting
   int N;
   float gamma;
   string alg;
-  vw *all;
-  std::vector<std::vector<int64_t>> C;
+  vw* all;
+  std::vector<std::vector<int64_t> > C;
   std::vector<float> alpha;
   std::vector<float> v;
   int t;
@@ -71,9 +70,9 @@ struct boosting
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting &o, LEARNER::single_learner &base, example &ec)
+void predict_or_learn(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data &ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -139,9 +138,9 @@ void predict_or_learn(boosting &o, LEARNER::single_learner &base, example &ec)
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting &o, LEARNER::single_learner &base, example &ec)
+void predict_or_learn_logistic(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data &ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -197,9 +196,9 @@ void predict_or_learn_logistic(boosting &o, LEARNER::single_learner &base, examp
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting &o, LEARNER::single_learner &base, example &ec)
+void predict_or_learn_adaptive(boosting& o, LEARNER::single_learner& base, example& ec)
 {
-  label_data &ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
 
   float final_prediction = 0, partial_prediction = 0;
 
@@ -289,13 +288,13 @@ void predict_or_learn_adaptive(boosting &o, LEARNER::single_learner &base, examp
     ec.loss = ec.weight;
 }
 
-void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
+void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, (char *)&(o.N), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
   if (read)
   {
@@ -307,28 +306,28 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char *)&f, sizeof(f), "");
+      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
       o.alpha[i] = f;
     }
     else
     {
       stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, (char *)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
+      bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
   for (int i = 0; i < o.N; i++)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char *)&f, sizeof(f), "");
+      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
       o.v[i] = f;
     }
     else
     {
       stringstream os2;
       os2 << "v " << o.v[i] << endl;
-      bin_text_write_fixed(model_file, (char *)&(o.v[i]), sizeof(o.v[i]), os2, text);
+      bin_text_write_fixed(model_file, (char*)&(o.v[i]), sizeof(o.v[i]), os2, text);
     }
 
   if (read)
@@ -347,25 +346,25 @@ void save_load_sampling(boosting &o, io_buf &model_file, bool read, bool text)
   cerr << endl;
 }
 
-void finish(boosting &o)
+void finish(boosting& o)
 {
   o.C.~vector();
   o.alpha.~vector();
 }
 
-void return_example(vw &all, boosting & /* a */, example &ec)
+void return_example(vw& all, boosting& /* a */, example& ec)
 {
   output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
 
-void save_load(boosting &o, io_buf &model_file, bool read, bool text)
+void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.files.size() == 0)
     return;
   stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, (char *)&(o.N), sizeof(o.N), "", read, os, text);
+  bin_text_read_write_fixed(model_file, (char*)&(o.N), sizeof(o.N), "", read, os, text);
 
   if (read)
     o.alpha.resize(o.N);
@@ -374,14 +373,14 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
     if (read)
     {
       float f;
-      model_file.bin_read_fixed((char *)&f, sizeof(f), "");
+      model_file.bin_read_fixed((char*)&f, sizeof(f), "");
       o.alpha[i] = f;
     }
     else
     {
       stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, (char *)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
+      bin_text_write_fixed(model_file, (char*)&(o.alpha[i]), sizeof(o.alpha[i]), os2, text);
     }
 
   if (!o.all->quiet)
@@ -396,7 +395,7 @@ void save_load(boosting &o, io_buf &model_file, bool read, bool text)
   }
 }
 
-LEARNER::base_learner *boosting_setup(options_i &options, vw &all)
+LEARNER::base_learner* boosting_setup(options_i& options, vw& all)
 {
   free_ptr<boosting> data = scoped_calloc_or_throw<boosting>();
   option_group_definition new_options("Boosting");
@@ -404,11 +403,11 @@ LEARNER::base_learner *boosting_setup(options_i &options, vw &all)
       .add(make_option("gamma", data->gamma)
                .default_value(0.1f)
                .help("weak learner's edge (=0.1), used only by online BBM"))
-      .add(make_option("alg", data->alg)
-               .keep()
-               .default_value("BBM")
-               .help("specify the boosting algorithm: BBM (default), logistic "
-                     "(AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
+      .add(
+          make_option("alg", data->alg)
+              .keep()
+              .default_value("BBM")
+              .help("specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("boosting"))
@@ -426,13 +425,13 @@ LEARNER::base_learner *boosting_setup(options_i &options, vw &all)
   if (!all.quiet)
     cerr << "Gamma = " << data->gamma << endl;
 
-  data->C = std::vector<std::vector<int64_t>>(data->N, std::vector<int64_t>(data->N, -1));
+  data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
-  learner<boosting, example> *l;
+  learner<boosting, example>* l;
   if (data->alg == "BBM")
     l = &init_learner<boosting, example>(
         data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>, data->N);

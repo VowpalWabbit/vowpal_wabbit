@@ -1,10 +1,10 @@
-#include "active.h"
-#include "float.h"
-#include "rand48.h"
-#include "reductions.h"
-#include "vw.h"
-#include "vw_exception.h"
 #include <errno.h>
+#include "reductions.h"
+#include "rand48.h"
+#include "float.h"
+#include "vw.h"
+#include "active.h"
+#include "vw_exception.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -24,7 +24,7 @@ float get_active_coin_bias(float k, float avg_loss, float g, float c0)
   return b * rs * rs;
 }
 
-float query_decision(active &a, float ec_revert_weight, float k)
+float query_decision(active& a, float ec_revert_weight, float k)
 {
   float bias, avg_loss, weighted_queries;
   if (k <= 1.)
@@ -42,13 +42,13 @@ float query_decision(active &a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active &a, single_learner &base, example &ec)
+void predict_or_learn_simulation(active& a, single_learner& base, example& ec)
 {
   base.predict(ec);
 
   if (is_learn)
   {
-    vw &all = *a.all;
+    vw& all = *a.all;
 
     float k = (float)all.sd->t;
     float threshold = 0.f;
@@ -71,7 +71,7 @@ void predict_or_learn_simulation(active &a, single_learner &base, example &ec)
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active &a, single_learner &base, example &ec)
+void predict_or_learn_active(active& a, single_learner& base, example& ec)
 {
   if (is_learn)
     base.learn(ec);
@@ -108,9 +108,9 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
   }
 }
 
-void output_and_account_example(vw &all, active &a, example &ec)
+void output_and_account_example(vw& all, active& a, example& ec)
 {
-  label_data &ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -131,13 +131,13 @@ void output_and_account_example(vw &all, active &a, example &ec)
   print_update(all, ec);
 }
 
-void return_active_example(vw &all, active &a, example &ec)
+void return_active_example(vw& all, active& a, example& ec)
 {
   output_and_account_example(all, a, ec);
   VW::finish_example(all, ec);
 }
 
-base_learner *active_setup(options_i &options, vw &all)
+base_learner* active_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<active>();
 
@@ -162,7 +162,7 @@ base_learner *active_setup(options_i &options, vw &all)
   auto base = as_singleline(setup_base(options, all));
 
   // Create new learner
-  learner<active, example> *l;
+  learner<active, example>* l;
   if (options.was_supplied("simulation"))
     l = &init_learner(data, base, predict_or_learn_simulation<true>, predict_or_learn_simulation<false>);
   else

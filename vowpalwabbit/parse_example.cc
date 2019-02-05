@@ -4,17 +4,17 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 
+#include <math.h>
+#include <ctype.h>
 #include "parse_example.h"
-#include "constant.h"
-#include "global_data.h"
 #include "hash.h"
 #include "unique_sort.h"
-#include <ctype.h>
-#include <math.h>
+#include "global_data.h"
+#include "constant.h"
 
 using namespace std;
 
-size_t read_features(vw *all, char *&line, size_t &num_chars)
+size_t read_features(vw* all, char*& line, size_t& num_chars)
 {
   line = nullptr;
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
@@ -33,9 +33,9 @@ size_t read_features(vw *all, char *&line, size_t &num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(vw *all, v_array<example *> &examples)
+int read_features_string(vw* all, v_array<example*>& examples)
 {
-  char *line;
+  char* line;
   size_t num_chars;
   size_t num_chars_initial = read_features(all, line, num_chars);
   if (num_chars_initial < 1)
@@ -51,30 +51,30 @@ template <bool audit>
 class TC_parser
 {
  public:
-  char *beginLine;
-  char *reading_head;
-  char *endLine;
+  char* beginLine;
+  char* reading_head;
+  char* endLine;
   float cur_channel_v;
   bool new_index;
   size_t anon;
   uint64_t channel_hash;
-  char *base;
+  char* base;
   unsigned char index;
   float v;
   bool redefine_some;
   unsigned char (*redefine)[256];
-  parser *p;
-  example *ae;
-  uint64_t *affix_features;
-  bool *spelling_features;
+  parser* p;
+  example* ae;
+  uint64_t* affix_features;
+  bool* spelling_features;
   v_array<char> spelling;
   uint32_t hash_seed;
 
-  vector<feature_dict *> *namespace_dictionaries;
+  vector<feature_dict*>* namespace_dictionaries;
 
   ~TC_parser() {}
 
-  inline void parserWarning(const char *message, char *begin, char *pos, const char *message2)
+  inline void parserWarning(const char* message, char* begin, char* pos, const char* message2)
   {
     cerr << message << std::string(begin, pos - begin).c_str() << message2 << "in Example #"
          << this->p->end_parsed_examples << ": \"" << std::string(this->beginLine, this->endLine).c_str() << "\""
@@ -90,7 +90,7 @@ class TC_parser
     {
       // featureValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = nullptr;
+      char* end_read = nullptr;
       v = parseFloat(reading_head, &end_read, endLine);
       if (end_read == reading_head)
       {
@@ -143,7 +143,7 @@ class TC_parser
         word_hash = channel_hash + anon++;
       if (v == 0)
         return;  // dont add 0 valued features to list of features
-      features &fs = ae->feature_space[index];
+      features& fs = ae->feature_space[index];
       fs.push_back(v, word_hash);
       if (audit)
       {
@@ -155,7 +155,7 @@ class TC_parser
       }
       if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin))
       {
-        features &affix_fs = ae->feature_space[affix_namespace];
+        features& affix_fs = ae->feature_space[affix_namespace];
         if (affix_fs.size() == 0)
           ae->indices.push_back(affix_namespace);
         uint64_t affix = affix_features[index];
@@ -191,12 +191,12 @@ class TC_parser
       }
       if (spelling_features[index])
       {
-        features &spell_fs = ae->feature_space[spelling_namespace];
+        features& spell_fs = ae->feature_space[spelling_namespace];
         if (spell_fs.size() == 0)
           ae->indices.push_back(spelling_namespace);
         // v_array<char> spelling;
         spelling.clear();
-        for (char *c = feature_name.begin; c != feature_name.end; ++c)
+        for (char* c = feature_name.begin; c != feature_name.end; ++c)
         {
           char d = 0;
           if ((*c >= '0') && (*c <= '9'))
@@ -232,12 +232,12 @@ class TC_parser
       {
         for (size_t dict = 0; dict < namespace_dictionaries[index].size(); dict++)
         {
-          feature_dict *map = namespace_dictionaries[index][dict];
+          feature_dict* map = namespace_dictionaries[index][dict];
           uint64_t hash = uniform_hash(feature_name.begin, feature_name.end - feature_name.begin, quadratic_constant);
-          features *feats = map->get(feature_name, hash);
+          features* feats = map->get(feature_name, hash);
           if ((feats != nullptr) && (feats->values.size() > 0))
           {
-            features &dict_fs = ae->feature_space[dictionary_namespace];
+            features& dict_fs = ae->feature_space[dictionary_namespace];
             if (dict_fs.size() == 0)
               ae->indices.push_back(dictionary_namespace);
             push_many(dict_fs.values, feats->values.begin(), feats->values.size());
@@ -249,7 +249,7 @@ class TC_parser
                 uint64_t id = feats->indicies[i];
                 stringstream ss;
                 ss << index << '_';
-                for (char *fc = feature_name.begin; fc != feature_name.end; ++fc) ss << *fc;
+                for (char* fc = feature_name.begin; fc != feature_name.end; ++fc) ss << *fc;
                 ss << '=' << id;
                 dict_fs.space_names.push_back(audit_strings_ptr(new audit_strings("dictionary", ss.str())));
               }
@@ -270,7 +270,7 @@ class TC_parser
     {
       // nameSpaceInfoValue --> ':' 'Float'
       ++reading_head;
-      char *end_read = nullptr;
+      char* end_read = nullptr;
       cur_channel_v = parseFloat(reading_head, &end_read);
       if (end_read == reading_head)
       {
@@ -390,7 +390,7 @@ class TC_parser
     }
   }
 
-  TC_parser(char *reading_head, char *endLine, vw &all, example *ae)
+  TC_parser(char* reading_head, char* endLine, vw& all, example* ae)
   {
     spelling = v_init<char>();
     if (endLine != reading_head)
@@ -414,11 +414,11 @@ class TC_parser
   }
 };
 
-void substring_to_example(vw *all, example *ae, substring example)
+void substring_to_example(vw* all, example* ae, substring example)
 {
   all->p->lp.default_label(&ae->l);
-  char *bar_location = safe_index(example.begin, '|', example.end);
-  char *tab_location = safe_index(example.begin, '\t', bar_location);
+  char* bar_location = safe_index(example.begin, '|', example.end);
+  char* tab_location = safe_index(example.begin, '\t', bar_location);
   substring label_space;
   if (tab_location != bar_location)
   {
@@ -459,7 +459,7 @@ void substring_to_example(vw *all, example *ae, substring example)
 
 namespace VW
 {
-void read_line(vw &all, example *ex, char *line)
+void read_line(vw& all, example* ex, char* line)
 {
   substring ss = {line, line + strlen(line)};
   while ((ss.end >= ss.begin) && (*(ss.end - 1) == '\n')) ss.end--;

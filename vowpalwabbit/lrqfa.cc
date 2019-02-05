@@ -1,7 +1,7 @@
-#include "parse_args.h"  // for spoof_hex_encoded_namespaces
-#include "rand48.h"
-#include "reductions.h"
 #include <string>
+#include "reductions.h"
+#include "rand48.h"
+#include "parse_args.h"  // for spoof_hex_encoded_namespaces
 
 using namespace LEARNER;
 using namespace std;
@@ -9,7 +9,7 @@ using namespace VW::config;
 
 struct LRQFAstate
 {
-  vw *all;
+  vw* all;
   string field_name;
   int k;
   int field_id[256];
@@ -23,12 +23,12 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-inline bool example_is_test(example &ec) { return ec.l.simple.label == FLT_MAX; }
+inline bool example_is_test(example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate &lrq, single_learner &base, example &ec)
+void predict_or_learn(LRQFAstate& lrq, single_learner& base, example& ec)
 {
-  vw &all = *lrq.all;
+  vw& all = *lrq.all;
 
   memset(lrq.orig_size, 0, sizeof(lrq.orig_size));
   for (namespace_index i : ec.indices) lrq.orig_size[i] = ec.feature_space[i].size();
@@ -57,21 +57,21 @@ void predict_or_learn(LRQFAstate &lrq, single_learner &base, example &ec)
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
         {
-          features &fs = ec.feature_space[left];
+          features& fs = ec.feature_space[left];
           float lfx = fs.values[lfn];
           uint64_t lindex = fs.indicies[lfn];
           for (unsigned int n = 1; n <= k; ++n)
           {
             uint64_t lwindex =
                 (lindex + ((uint64_t)(rfd_id * k + n) << stride_shift));  // a feature has k weights in each field
-            float *lw = &all.weights[lwindex & weight_mask];
+            float* lw = &all.weights[lwindex & weight_mask];
             // perturb away from saddle point at (0, 0)
             if (is_learn && !example_is_test(ec) && *lw == 0)
               *lw = cheesyrand(lwindex) * 0.5f / sqrtk;
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
-              features &rfs = ec.feature_space[right];
+              features& rfs = ec.feature_space[right];
               //                    feature* rf = ec.atomics[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
@@ -84,11 +84,11 @@ void predict_or_learn(LRQFAstate &lrq, single_learner &base, example &ec)
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << rfs.space_names[rfn].get()->second << '^' << n;
 #ifdef _WIN32
-                char *new_space = _strdup("lrqfa");
-                char *new_feature = _strdup(new_feature_buffer.str().c_str());
+                char* new_space = _strdup("lrqfa");
+                char* new_feature = _strdup(new_feature_buffer.str().c_str());
 #else
-                char *new_space = strdup("lrqfa");
-                char *new_feature = strdup(new_feature_buffer.str().c_str());
+                char* new_space = strdup("lrqfa");
+                char* new_feature = strdup(new_feature_buffer.str().c_str());
 #endif
                 rfs.space_names.push_back(audit_strings_ptr(new audit_strings(new_space, new_feature)));
               }
@@ -118,7 +118,7 @@ void predict_or_learn(LRQFAstate &lrq, single_learner &base, example &ec)
     for (char i : lrq.field_name)
     {
       namespace_index right = i;
-      features &rfs = ec.feature_space[right];
+      features& rfs = ec.feature_space[right];
       rfs.values.end() = rfs.values.begin() + lrq.orig_size[right];
 
       if (all.audit || all.hash_inv)
@@ -131,7 +131,7 @@ void predict_or_learn(LRQFAstate &lrq, single_learner &base, example &ec)
   }
 }
 
-LEARNER::base_learner *lrqfa_setup(options_i &options, vw &all)
+LEARNER::base_learner* lrqfa_setup(options_i& options, vw& all)
 {
   std::string lrqfa;
   option_group_definition new_options("Low Rank Quadratics FA");
@@ -153,7 +153,7 @@ LEARNER::base_learner *lrqfa_setup(options_i &options, vw &all)
   for (char i : lrq->field_name) lrq->field_id[(int)i] = fd_id++;
 
   all.wpp = all.wpp * (uint64_t)(1 + lrq->k);
-  learner<LRQFAstate, example> &l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
+  learner<LRQFAstate, example>& l = init_learner(lrq, as_singleline(setup_base(options, all)), predict_or_learn<true>,
       predict_or_learn<false>, 1 + lrq->field_name.size() * lrq->k);
 
   return make_base(l);

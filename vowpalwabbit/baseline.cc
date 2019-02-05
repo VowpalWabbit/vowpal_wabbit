@@ -3,8 +3,8 @@
   individual contributors. All rights reserved.  Released under a BSD (revised)
   license as described in the file LICENSE.
 */
-#include <errno.h>
 #include <float.h>
+#include <errno.h>
 
 #include "reductions.h"
 #include "vw.h"
@@ -21,10 +21,10 @@ const size_t baseline_enabled_idx = 1357;  // feature index for enabling baselin
 
 namespace BASELINE
 {
-void set_baseline_enabled(example *ec)
+void set_baseline_enabled(example* ec)
 {
-  auto &fs = ec->feature_space[message_namespace];
-  for (auto &f : fs)
+  auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
   {
     if (f.index() == baseline_enabled_idx)
     {
@@ -36,10 +36,10 @@ void set_baseline_enabled(example *ec)
   fs.push_back(1, baseline_enabled_idx);
 }
 
-void reset_baseline_disabled(example *ec)
+void reset_baseline_disabled(example* ec)
 {
-  auto &fs = ec->feature_space[message_namespace];
-  for (auto &f : fs)
+  auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
   {
     if (f.index() == baseline_enabled_idx)
     {
@@ -49,10 +49,10 @@ void reset_baseline_disabled(example *ec)
   }
 }
 
-bool baseline_enabled(example *ec)
+bool baseline_enabled(example* ec)
 {
-  auto &fs = ec->feature_space[message_namespace];
-  for (auto &f : fs)
+  auto& fs = ec->feature_space[message_namespace];
+  for (auto& f : fs)
   {
     if (f.index() == baseline_enabled_idx)
       return f.value() == 1;
@@ -63,8 +63,8 @@ bool baseline_enabled(example *ec)
 
 struct baseline
 {
-  example *ec;
-  vw *all;
+  example* ec;
+  vw* all;
   bool lr_scaling;  // whether to scale baseline learning rate based on max label
   float lr_multiplier;
   bool global_only;  // only use a global constant for the baseline
@@ -72,7 +72,7 @@ struct baseline
   bool check_enabled;  // only use baseline when the example contains enabled flag
 };
 
-void init_global(baseline &data)
+void init_global(baseline& data)
 {
   if (!data.global_only)
     return;
@@ -86,7 +86,7 @@ void init_global(baseline &data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline &data, single_learner &base, example &ec)
+void predict_or_learn(baseline& data, single_learner& base, example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
@@ -159,7 +159,7 @@ void predict_or_learn(baseline &data, single_learner &base, example &ec)
   }
 }
 
-float sensitivity(baseline &data, base_learner &base, example &ec)
+float sensitivity(baseline& data, base_learner& base, example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !BASELINE::baseline_enabled(&ec))
@@ -184,13 +184,13 @@ float sensitivity(baseline &data, base_learner &base, example &ec)
   return baseline_sens + sens;
 }
 
-void finish(baseline &data)
+void finish(baseline& data)
 {
   VW::dealloc_example(simple_label.delete_label, *data.ec);
   free(data.ec);
 }
 
-base_learner *baseline_setup(options_i &options, vw &all)
+base_learner* baseline_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<baseline>();
   bool baseline_option = false;
@@ -200,13 +200,11 @@ base_learner *baseline_setup(options_i &options, vw &all)
   new_options
       .add(make_option("baseline", baseline_option)
                .keep()
-               .help("Learn an additive baseline (from constant features) and "
-                     "a residual separately in regression."))
+               .help("Learn an additive baseline (from constant features) and a residual separately in regression."))
       .add(make_option("lr_multiplier", data->lr_multiplier).help("learning rate multiplier for baseline model"))
       .add(make_option("global_only", data->global_only)
                .keep()
-               .help("use separate example with only global constant for "
-                     "baseline predictions"))
+               .help("use separate example with only global constant for baseline predictions"))
       .add(make_option("check_enabled", data->check_enabled)
                .keep()
                .help("only use baseline when the example contains enabled flag"));
@@ -226,7 +224,7 @@ base_learner *baseline_setup(options_i &options, vw &all)
 
   auto base = as_singleline(setup_base(options, all));
 
-  learner<baseline, example> &l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
+  learner<baseline, example>& l = init_learner(data, base, predict_or_learn<true>, predict_or_learn<false>);
 
   l.set_sensitivity(sensitivity);
   l.set_finish(finish);

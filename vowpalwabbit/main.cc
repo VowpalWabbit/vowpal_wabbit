@@ -6,16 +6,16 @@ license as described in the file LICENSE.
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
-#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #endif
-#include "accumulate.h"
-#include "best_constant.h"
+#include <sys/timeb.h>
 #include "parse_args.h"
 #include "parse_regressor.h"
+#include "accumulate.h"
+#include "best_constant.h"
 #include "vw_exception.h"
 #include <fstream>
-#include <sys/timeb.h>
 
 #include "options.h"
 #include "options_boost_po.h"
@@ -23,14 +23,14 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace VW::config;
 
-vw *setup(options_i &options)
+vw* setup(options_i& options)
 {
-  vw *all = nullptr;
+  vw* all = nullptr;
   try
   {
     all = VW::initialize(options);
   }
-  catch (const exception &ex)
+  catch (const exception& ex)
   {
     cout << ex.what() << endl;
     throw;
@@ -63,7 +63,7 @@ vw *setup(options_i &options)
   return all;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   bool should_use_onethread = false;
   option_group_definition driver_config("driver");
@@ -71,10 +71,9 @@ int main(int argc, char *argv[])
 
   try
   {
-    // support multiple vw instances for training of the same datafile for the
-    // same instance
+    // support multiple vw instances for training of the same datafile for the same instance
     vector<std::unique_ptr<options_boost_po>> arguments;
-    vector<vw *> alls;
+    vector<vw*> alls;
     if (argc == 3 && !strcmp(argv[1], "--args"))
     {
       std::fstream arg_file(argv[2]);
@@ -89,10 +88,10 @@ int main(int argc, char *argv[])
 
         std::cout << sstr.str() << endl;
         string str = sstr.str();
-        const char *new_args = str.c_str();
+        const char* new_args = str.c_str();
 
         int l_argc;
-        char **l_argv = VW::get_argv_from_string(new_args, l_argc);
+        char** l_argv = VW::get_argv_from_string(new_args, l_argc);
 
         std::unique_ptr<options_boost_po> ptr(new options_boost_po(argc, argv));
         ptr->add_and_parse(driver_config);
@@ -108,7 +107,7 @@ int main(int argc, char *argv[])
       arguments.push_back(std::move(ptr));
     }
 
-    vw &all = *alls[0];
+    vw& all = *alls[0];
 
     // struct timeb t_start, t_end;
     // ftime(&t_start);
@@ -130,17 +129,17 @@ int main(int argc, char *argv[])
       VW::end_parser(all);
     }
 
-    for (vw *v : alls)
+    for (vw* v : alls)
     {
       VW::sync_stats(*v);
       VW::finish(*v);
     }
   }
-  catch (VW::vw_exception &e)
+  catch (VW::vw_exception& e)
   {
     cerr << "vw (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << endl;
   }
-  catch (exception &e)
+  catch (exception& e)
   {
     // vw is implemented as a library, so we use 'throw runtime_error()'
     // error 'handling' everywhere.  To reduce stderr pollution

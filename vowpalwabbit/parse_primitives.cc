@@ -9,23 +9,23 @@ license as described in the file LICENSE.
 #else
 #include <string>
 #endif
-#include <sstream>
 #include <stdexcept>
+#include <sstream>
 
-#include "hash.h"
 #include "parse_primitives.h"
+#include "hash.h"
 #include "vw_exception.h"
 
-bool substring_equal(const substring &a, const substring &b)
+bool substring_equal(const substring& a, const substring& b)
 {
   return (a.end - a.begin == b.end - b.begin)  // same length
       && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }
 
-void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty)
+void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
   ret.clear();
-  char *last = s.begin;
+  char* last = s.begin;
   for (; s.begin != s.end; s.begin++)
   {
     if (*s.begin == delim)
@@ -55,19 +55,19 @@ uint64_t hashstring(substring s, uint64_t h)
     ;
 
   size_t ret = 0;
-  char *p = s.begin;
+  char* p = s.begin;
   while (p != s.end)
     if (*p >= '0' && *p <= '9')
       ret = 10 * ret + *(p++) - '0';
     else
-      return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
+      return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h);
 
   return ret + h;
 }
 
-uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
+uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
 
-hash_func_t getHasher(const std::string &s)
+hash_func_t getHasher(const std::string& s)
 {
   if (s == "strings")
     return hashstring;
@@ -77,15 +77,15 @@ hash_func_t getHasher(const std::string &s)
     THROW("Unknown hash function: " << s);
 }
 
-std::ostream &operator<<(std::ostream &os, const substring &ss)
+std::ostream& operator<<(std::ostream& os, const substring& ss)
 {
   std::string s(ss.begin, ss.end - ss.begin);
   return os << s;
 }
 
-std::ostream &operator<<(std::ostream &os, const v_array<substring> &ss)
+std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss)
 {
-  substring *it = ss.cbegin();
+  substring* it = ss.cbegin();
 
   if (it == ss.cend())
   {

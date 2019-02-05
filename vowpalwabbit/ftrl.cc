@@ -3,19 +3,17 @@
    individual contributors. All rights reserved.  Released under a BSD (revised)
    license as described in the file LICENSE.
    */
+#include <string>
 #include "correctedMath.h"
 #include "gd.h"
 #include "reductions.h"
-#include <string>
 
 using namespace std;
 using namespace LEARNER;
 using namespace VW::config;
 
 #define W_XT 0  // current parameter
-#define W_ZT \
-  1             // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in
-                // general is the dual weight vector
+#define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
 #define W_G2 2  // accumulated gradient information
 #define W_MX 3  // maximum absolute value
 
@@ -31,7 +29,7 @@ struct update_data
 
 struct ftrl
 {
-  vw *all;  // features, finalize, l1, l2,
+  vw* all;  // features, finalize, l1, l2,
   float ftrl_alpha;
   float ftrl_beta;
   struct update_data data;
@@ -43,8 +41,8 @@ struct uncertainty
 {
   float pred;
   float score;
-  ftrl &b;
-  uncertainty(ftrl &ftrlb) : b(ftrlb)
+  ftrl& b;
+  uncertainty(ftrl& ftrlb) : b(ftrlb)
   {
     pred = 0;
     score = 0;
@@ -59,23 +57,23 @@ inline float sign(float w)
     return 1.;
 }
 
-inline void predict_with_confidence(uncertainty &d, const float fx, float &fw)
+inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 {
-  float *w = &fw;
+  float* w = &fw;
   d.pred += w[W_XT] * fx;
   float sqrtf_ng2 = sqrtf(w[W_G2]);
   float uncertain = ((d.b.data.ftrl_beta + sqrtf_ng2) / d.b.data.ftrl_alpha + d.b.data.l2_lambda);
   d.score += (1 / uncertain) * sign(fx);
 }
 
-float sensitivity(ftrl &b, base_learner & /* base */, example &ec)
+float sensitivity(ftrl& b, base_learner& /* base */, example& ec)
 {
   uncertainty uncetain(b);
   GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
   return uncetain.score;
 }
 template <bool audit>
-void predict(ftrl &b, single_learner &, example &ec)
+void predict(ftrl& b, single_learner&, example& ec)
 {
   ec.partial_prediction = GD::inline_predict(*b.all, ec);
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
@@ -85,9 +83,9 @@ void predict(ftrl &b, single_learner &, example &ec)
 
 template <bool audit>
 void multipredict(
-    ftrl &b, base_learner &, example &ec, size_t count, size_t step, polyprediction *pred, bool finalize_predictions)
+    ftrl& b, base_learner&, example& ec, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
 {
-  vw &all = *b.all;
+  vw& all = *b.all;
   for (size_t c = 0; c < count; c++) pred[c].scalar = ec.l.simple.initial;
   if (b.all->weights.sparse)
   {
@@ -116,9 +114,9 @@ void multipredict(
   }
 }
 
-void inner_update_proximal(update_data &d, float x, float &wref)
+void inner_update_proximal(update_data& d, float x, float& wref)
 {
-  float *w = &wref;
+  float* w = &wref;
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
   float sqrt_ng2 = sqrtf(ng2);
@@ -138,9 +136,9 @@ void inner_update_proximal(update_data &d, float x, float &wref)
   }
 }
 
-void inner_update_pistol_state_and_predict(update_data &d, float x, float &wref)
+void inner_update_pistol_state_and_predict(update_data& d, float x, float& wref)
 {
-  float *w = &wref;
+  float* w = &wref;
 
   float fabs_x = fabs(x);
   if (fabs_x > w[W_MX])
@@ -153,16 +151,16 @@ void inner_update_pistol_state_and_predict(update_data &d, float x, float &wref)
   d.predict += w[W_XT] * x;
 }
 
-void inner_update_pistol_post(update_data &d, float x, float &wref)
+void inner_update_pistol_post(update_data& d, float x, float& wref)
 {
-  float *w = &wref;
+  float* w = &wref;
   float gradient = d.update * x;
 
   w[W_ZT] += -gradient;
   w[W_G2] += fabs(gradient);
 }
 
-void update_state_and_predict_pistol(ftrl &b, single_learner &, example &ec)
+void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
 
@@ -171,14 +169,14 @@ void update_state_and_predict_pistol(ftrl &b, single_learner &, example &ec)
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
 }
 
-void update_after_prediction_proximal(ftrl &b, example &ec)
+void update_after_prediction_proximal(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
   GD::foreach_feature<update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
-void update_after_prediction_pistol(ftrl &b, example &ec)
+void update_after_prediction_pistol(ftrl& b, example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
 
@@ -186,7 +184,7 @@ void update_after_prediction_pistol(ftrl &b, example &ec)
 }
 
 template <bool audit>
-void learn_proximal(ftrl &a, single_learner &base, example &ec)
+void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -197,7 +195,7 @@ void learn_proximal(ftrl &a, single_learner &base, example &ec)
   update_after_prediction_proximal(a, ec);
 }
 
-void learn_pistol(ftrl &a, single_learner &base, example &ec)
+void learn_pistol(ftrl& a, single_learner& base, example& ec)
 {
   assert(ec.in_use);
 
@@ -208,9 +206,9 @@ void learn_pistol(ftrl &a, single_learner &base, example &ec)
   update_after_prediction_pistol(a, ec);
 }
 
-void save_load(ftrl &b, io_buf &model_file, bool read, bool text)
+void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 {
-  vw *all = b.all;
+  vw* all = b.all;
   if (read)
     initialize_regressor(*all);
 
@@ -219,7 +217,7 @@ void save_load(ftrl &b, io_buf &model_file, bool read, bool text)
     bool resume = all->save_resume;
     stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char *)&resume, sizeof(resume), "", read, msg, text);
+    bin_text_read_write_fixed(model_file, (char*)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*all, model_file, read, text);
@@ -228,9 +226,9 @@ void save_load(ftrl &b, io_buf &model_file, bool read, bool text)
   }
 }
 
-void end_pass(ftrl &g)
+void end_pass(ftrl& g)
 {
-  vw &all = *g.all;
+  vw& all = *g.all;
 
   if (!all.holdout_set_off)
   {
@@ -242,7 +240,7 @@ void end_pass(ftrl &g)
   }
 }
 
-base_learner *ftrl_setup(options_i &options, vw &all)
+base_learner* ftrl_setup(options_i& options, vw& all)
 {
   auto b = scoped_calloc_or_throw<ftrl>();
   bool ftrl_option = false;
@@ -275,7 +273,7 @@ base_learner *ftrl_setup(options_i &options, vw &all)
   b->all = &all;
   b->no_win_counter = 0;
 
-  void (*learn_ptr)(ftrl &, single_learner &, example &) = nullptr;
+  void (*learn_ptr)(ftrl&, single_learner&, example&) = nullptr;
 
   string algorithm_name;
   if (ftrl_option)
@@ -312,7 +310,7 @@ base_learner *ftrl_setup(options_i &options, vw &all)
     b->early_stop_thres = options.get_typed_option<size_t>("early_terminate").value();
   }
 
-  learner<ftrl, example> *l;
+  learner<ftrl, example>* l;
   if (all.audit || all.hash_inv)
     l = &init_learner(b, learn_ptr, predict<true>, UINT64_ONE << all.weights.stride_shift());
   else

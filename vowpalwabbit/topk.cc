@@ -4,8 +4,8 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
-#include <queue>
 #include <sstream>
+#include <queue>
 
 #include "reductions.h"
 #include "vw.h"
@@ -13,11 +13,11 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace VW::config;
 
-typedef pair<float, v_array<char>> scored_example;
+typedef pair<float, v_array<char> > scored_example;
 
 struct compare_scored_examples
 {
-  bool operator()(scored_example const &a, scored_example const &b) const { return a.first > b.first; }
+  bool operator()(scored_example const& a, scored_example const& b) const { return a.first > b.first; }
 };
 
 struct topk
@@ -26,7 +26,7 @@ struct topk
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples> pr_queue;
 };
 
-void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples> &pr_queue)
+void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
 {
   if (f >= 0)
   {
@@ -56,9 +56,9 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
   }
 }
 
-void output_example(vw &all, topk &d, example &ec)
+void output_example(vw& all, topk& d, example& ec)
 {
-  label_data &ld = ec.l.simple;
+  label_data& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
   if (ld.label != FLT_MAX)
@@ -71,7 +71,7 @@ void output_example(vw &all, topk &d, example &ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(topk &d, LEARNER::single_learner &base, example &ec)
+void predict_or_learn(topk& d, LEARNER::single_learner& base, example& ec)
 {
   if (example_is_newline(ec))
     return;  // do not predict newline
@@ -91,15 +91,15 @@ void predict_or_learn(topk &d, LEARNER::single_learner &base, example &ec)
   }
 }
 
-void finish_example(vw &all, topk &d, example &ec)
+void finish_example(vw& all, topk& d, example& ec)
 {
   output_example(all, d, ec);
   VW::finish_example(all, ec);
 }
 
-void finish(topk &d) { d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>(); }
+void finish(topk& d) { d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>(); }
 
-LEARNER::base_learner *topk_setup(options_i &options, vw &all)
+LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<topk>();
 
@@ -110,7 +110,7 @@ LEARNER::base_learner *topk_setup(options_i &options, vw &all)
   if (!options.was_supplied("top"))
     return nullptr;
 
-  LEARNER::learner<topk, example> &l =
+  LEARNER::learner<topk, example>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
   l.set_finish_example(finish_example);
   l.set_finish(finish);

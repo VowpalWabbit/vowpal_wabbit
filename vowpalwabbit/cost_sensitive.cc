@@ -6,7 +6,7 @@
 using namespace std;
 namespace COST_SENSITIVE
 {
-void name_value(substring &s, v_array<substring> &name, float &v)
+void name_value(substring& s, v_array<substring>& name, float& v)
 {
   tokenize(':', s, name);
 
@@ -28,9 +28,9 @@ void name_value(substring &s, v_array<substring> &name, float &v)
   }
 }
 
-char *bufread_label(label *ld, char *c, io_buf &cache)
+char* bufread_label(label* ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t *)c;
+  size_t num = *(size_t*)c;
   ld->costs.clear();
   c += sizeof(size_t);
   size_t total = sizeof(wclass) * num;
@@ -41,7 +41,7 @@ char *bufread_label(label *ld, char *c, io_buf &cache)
   }
   for (size_t i = 0; i < num; i++)
   {
-    wclass temp = *(wclass *)c;
+    wclass temp = *(wclass*)c;
     c += sizeof(wclass);
     ld->costs.push_back(temp);
   }
@@ -49,11 +49,11 @@ char *bufread_label(label *ld, char *c, io_buf &cache)
   return c;
 }
 
-size_t read_cached_label(shared_data *, void *v, io_buf &cache)
+size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
-  label *ld = (label *)v;
+  label* ld = (label*)v;
   ld->costs.clear();
-  char *c;
+  char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, (int)total) < total)
     return 0;
@@ -62,37 +62,37 @@ size_t read_cached_label(shared_data *, void *v, io_buf &cache)
   return total;
 }
 
-float weight(void *) { return 1.; }
+float weight(void*) { return 1.; }
 
-char *bufcache_label(label *ld, char *c)
+char* bufcache_label(label* ld, char* c)
 {
-  *(size_t *)c = ld->costs.size();
+  *(size_t*)c = ld->costs.size();
   c += sizeof(size_t);
   for (unsigned int i = 0; i < ld->costs.size(); i++)
   {
-    *(wclass *)c = ld->costs[i];
+    *(wclass*)c = ld->costs[i];
     c += sizeof(wclass);
   }
   return c;
 }
 
-void cache_label(void *v, io_buf &cache)
+void cache_label(void* v, io_buf& cache)
 {
-  char *c;
-  label *ld = (label *)v;
+  char* c;
+  label* ld = (label*)v;
   cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld->costs.size());
   bufcache_label(ld, c);
 }
 
-void default_label(void *v)
+void default_label(void* v)
 {
-  label *ld = (label *)v;
+  label* ld = (label*)v;
   ld->costs.clear();
 }
 
-bool test_label(void *v)
+bool test_label(void* v)
 {
-  label *ld = (label *)v;
+  label* ld = (label*)v;
   if (ld->costs.size() == 0)
     return true;
   for (unsigned int i = 0; i < ld->costs.size(); i++)
@@ -101,24 +101,24 @@ bool test_label(void *v)
   return true;
 }
 
-void delete_label(void *v)
+void delete_label(void* v)
 {
-  label *ld = (label *)v;
+  label* ld = (label*)v;
   if (ld)
     ld->costs.delete_v();
 }
 
-void copy_label(void *dst, void *src)
+void copy_label(void* dst, void* src)
 {
   if (dst && src)
   {
-    label *ldD = (label *)dst;
-    label *ldS = (label *)src;
+    label* ldD = (label*)dst;
+    label* ldS = (label*)src;
     copy_array(ldD->costs, ldS->costs);
   }
 }
 
-bool substring_eq(substring ss, const char *str)
+bool substring_eq(substring ss, const char* str)
 {
   size_t len_ss = ss.end - ss.begin;
   size_t len_str = strlen(str);
@@ -127,9 +127,9 @@ bool substring_eq(substring ss, const char *str)
   return (strncmp(ss.begin, str, len_ss) == 0);
 }
 
-void parse_label(parser *p, shared_data *sd, void *v, v_array<substring> &words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 {
-  label *ld = (label *)v;
+  label* ld = (label*)v;
   ld->costs.clear();
 
   // handle shared and label first
@@ -196,7 +196,7 @@ void parse_label(parser *p, shared_data *sd, void *v, v_array<substring> &words)
 label_parser cs_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
     test_label, sizeof(label)};
 
-void print_update(vw &all, bool is_test, example &ec, multi_ex *ec_seq, bool action_scores, uint32_t prediction)
+void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -207,11 +207,10 @@ void print_update(vw &all, bool is_test, example &ec, multi_ex *ec_seq, bool act
     {
       num_current_features = 0;
       // If the first example is "shared", don't include its features.
-      // These should be already included in each example (TODO: including
-      // quadratic and cubic).
+      // These should be already included in each example (TODO: including quadratic and cubic).
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
-      example **ecc = &((*ec_seq)[0]);
-      const example &first_ex = *(*ec_seq)[0];
+      example** ecc = &((*ec_seq)[0]);
+      const example& first_ex = *(*ec_seq)[0];
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
       if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0)
@@ -252,9 +251,9 @@ void print_update(vw &all, bool is_test, example &ec, multi_ex *ec_seq, bool act
   }
 }
 
-void output_example(vw &all, example &ec)
+void output_example(vw& all, example& ec)
 {
-  label &ld = ec.l.cs;
+  label& ld = ec.l.cs;
 
   float loss = 0.;
   if (!test_label(&ld))
@@ -264,7 +263,7 @@ void output_example(vw &all, example &ec)
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
-    for (auto &cl : ld.costs)
+    for (auto& cl : ld.costs)
     {
       if (cl.class_index == pred)
         chosen_loss = cl.x;
@@ -272,9 +271,7 @@ void output_example(vw &all, example &ec)
         min = cl.x;
     }
     if (chosen_loss == FLT_MAX)
-      cerr << "warning: csoaa predicted an invalid class. Are all multi-class "
-              "labels in the {1..k} range?"
-           << endl;
+      cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
 
     loss = chosen_loss - min;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
@@ -308,13 +305,13 @@ void output_example(vw &all, example &ec)
   print_update(all, test_label(&ec.l.cs), ec, nullptr, false, ec.pred.multiclass);
 }
 
-void finish_example(vw &all, example &ec)
+void finish_example(vw& all, example& ec)
 {
   output_example(all, ec);
   VW::finish_example(all, ec);
 }
 
-bool example_is_test(example &ec)
+bool example_is_test(example& ec)
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
   if (costs.size() == 0)
@@ -325,7 +322,7 @@ bool example_is_test(example &ec)
   return true;
 }
 
-bool ec_is_example_header(example &ec)  // example headers look like "0:-1" or just "shared"
+bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
   if (costs.size() != 1)
