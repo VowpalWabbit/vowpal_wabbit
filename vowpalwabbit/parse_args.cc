@@ -1417,6 +1417,17 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
       }
     }
 
+    bool treat_as_value = false;
+    // If the key starts with a digit, this is a mis-interpretation of a value as a key. Pull it into the previous
+    // option. This was found in the case of --lambda -1, misinterpreting -1 as an option key. The easy way to fix this
+    // requires introducing "identifier-like" semantics for options keys, e.g. "does not begin with a digit". That does
+    // not seem like an unreasonable restriction. The logical check here is: is "string_key" of the form {'-', <digit>,
+    // <etc.>}.
+    if (opt.string_key.length() > 1 && opt.string_key[0] == '-' && opt.string_key[1] >= '0' && opt.string_key[1] <= '9')
+    {
+      treat_as_value = true;
+    }
+
     // If the interaction settings are doubled, the copy in the model file is ignored.
     if (interactions_settings_doubled &&
         (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
@@ -1429,7 +1440,7 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
-    if (opt.string_key != "")
+    if (!treat_as_value && opt.string_key != "")
     {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
       if (count == 0 && first_seen)
@@ -1452,7 +1463,10 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     }
     else
     {
-      for (auto value : opt.value)
+      // If treat_as_value is set, boost incorrectly interpreted the token as containing an option key
+      // In this case, what should have happened is all original_tokens items should be in value.
+      auto source = treat_as_value ? opt.original_tokens : opt.value;
+      for (auto value : source)
       {
         options.insert(saved_key, value);
         count++;
@@ -1535,11 +1549,16 @@ void cmd_string_replace_value(std::stringstream*& ss, string flag_to_replace, st
     // find position of next space
     size_t pos_after_value = cmd.find(" ", pos);
     if (pos_after_value == string::npos)
+    {
       // we reach the end of the string, so replace the all characters after pos by new_value
       cmd.replace(pos, cmd.size() - pos, new_value);
+    }
     else
+    {
       // replace characters between pos and pos_after_value by new_value
       cmd.replace(pos, pos_after_value - pos, new_value);
+    }
+
     ss->str(cmd);
   }
 }
