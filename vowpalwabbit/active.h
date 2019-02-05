@@ -1,8 +1,9 @@
 #pragma once
 
 struct active
-{ float active_c0;
-  vw* all;//statistics, loss
+{
+  float active_c0;
+  vw* all;  // statistics, loss
 };
 
 float query_decision(active& a, example& ec, float k);

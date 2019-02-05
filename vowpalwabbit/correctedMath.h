@@ -8,13 +8,16 @@
 
 #ifdef _WIN32
 // this is a bug in VS2013, fixed in VS2015 runtime
-template<typename T>
+template <typename T>
 T correctedExp(T exponent)
-{ if (isinf(exponent) && exponent < T(0))
-  { return T(0);
+{
+  if (isinf(exponent) && exponent < T(0))
+  {
+    return T(0);
   }
   else
-  { return exp(exponent);
+  {
+    return exp(exponent);
   }
 }
 #else

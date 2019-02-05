@@ -7,35 +7,35 @@ int comp_io_buf::open_file(const char* name, bool stdin_off, int flag)
   int ret = -1;
   switch (flag)
   {
-  case READ:
-    if (*name != '\0')
-      fil = gzopen(name, "rb");
-    else if (!stdin_off)
+    case READ:
+      if (*name != '\0')
+        fil = gzopen(name, "rb");
+      else if (!stdin_off)
 #ifdef _WIN32
-      fil = gzdopen(_fileno(stdin), "rb");
+        fil = gzdopen(_fileno(stdin), "rb");
 #else
-      fil = gzdopen(fileno(stdin), "rb");
+        fil = gzdopen(fileno(stdin), "rb");
 #endif
-    if (fil != nullptr)
-    {
-      gz_files.push_back(fil);
-      ret = (int)gz_files.size() - 1;
-      files.push_back(ret);
-    }
-    break;
+      if (fil != nullptr)
+      {
+        gz_files.push_back(fil);
+        ret = (int)gz_files.size() - 1;
+        files.push_back(ret);
+      }
+      break;
 
-  case WRITE:
-    fil = gzopen(name, "wb");
-    if (fil != nullptr)
-    {
-      gz_files.push_back(fil);
-      ret = (int)gz_files.size() - 1;
-      files.push_back(ret);
-    }
-    break;
+    case WRITE:
+      fil = gzopen(name, "wb");
+      if (fil != nullptr)
+      {
+        gz_files.push_back(fil);
+        ret = (int)gz_files.size() - 1;
+        files.push_back(ret);
+      }
+      break;
 
-  default:
-    std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
+    default:
+      std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
   }
   return ret;
 }
@@ -74,7 +74,7 @@ void comp_io_buf::flush()
 
 bool comp_io_buf::close_file()
 {
-  if (gz_files.size()>0)
+  if (gz_files.size() > 0)
   {
     gzclose(gz_files.back());
     gz_files.pop_back();

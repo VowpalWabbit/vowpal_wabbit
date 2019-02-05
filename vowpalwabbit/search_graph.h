@@ -14,4 +14,4 @@ void setup(Search::search&, multi_ex&);
 void run(Search::search&, multi_ex&);
 void takedown(Search::search&, multi_ex&);
 extern Search::search_task task;
-}
+}  // namespace GraphTask

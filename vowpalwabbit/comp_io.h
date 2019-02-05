@@ -13,12 +13,12 @@ license as described in the file LICENSE.
 typedef void* gzFile;
 #else
 struct gzFile_s;
-typedef struct gzFile_s *gzFile;
+typedef struct gzFile_s* gzFile;
 #endif
 
 class comp_io_buf : public io_buf
 {
-public:
+ public:
   std::vector<gzFile> gz_files;
 
   virtual int open_file(const char* name, bool stdin_off, int flag = READ);

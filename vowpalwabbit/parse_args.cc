@@ -85,7 +85,7 @@ using namespace VW::config;
 //
 // Does string end with a certain substring?
 //
-bool ends_with(string const &fullString, string const &ending)
+bool ends_with(string const& fullString, string const& ending)
 {
   if (fullString.length() > ending.length())
   {
@@ -97,15 +97,16 @@ bool ends_with(string const &fullString, string const &ending)
   }
 }
 
-uint64_t hash_file_contents(io_buf *io, int f)
+uint64_t hash_file_contents(io_buf* io, int f)
 {
   uint64_t v = 5289374183516789128;
   unsigned char buf[1024];
   while (true)
   {
     ssize_t n = io->read_file(f, buf, 1024);
-    if (n <= 0) break;
-    for (ssize_t i=0; i<n; i++)
+    if (n <= 0)
+      break;
+    for (ssize_t i = 0; i < n; i++)
     {
       v *= 341789041;
       v += buf[i];
@@ -144,16 +145,17 @@ string find_in_path(vector<string> paths, string fname)
 
 void parse_dictionary_argument(vw& all, string str)
 {
-  if (str.length() == 0) return;
+  if (str.length() == 0)
+    return;
   // expecting 'namespace:file', for instance 'w:foo.txt'
   // in the case of just 'foo.txt' it's applied to the default namespace
 
   char ns = ' ';
-  const char*s  = str.c_str();
+  const char* s = str.c_str();
   if ((str.length() > 2) && (str[1] == ':'))
   {
     ns = str[0];
-    s  += 2;
+    s += 2;
   }
 
   string fname = find_in_path(all.dictionary_path, string(s));
@@ -164,16 +166,18 @@ void parse_dictionary_argument(vw& all, string str)
   io_buf* io = is_gzip ? new comp_io_buf : new io_buf;
   int fd = io->open_file(fname.c_str(), all.stdin_off, io_buf::READ);
   if (fd < 0)
-    THROW("error: cannot read dictionary from file '" << fname << "'" << ", opening failed");
+    THROW("error: cannot read dictionary from file '" << fname << "'"
+                                                      << ", opening failed");
 
   uint64_t fd_hash = hash_file_contents(io, fd);
   io->close_file();
 
   if (!all.quiet)
-    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec << endl;
+    all.trace_message << "scanned dictionary '" << s << "' from '" << fname << "', hash=" << hex << fd_hash << dec
+                      << endl;
 
   // see if we've already read this dictionary
-  for (size_t id=0; id<all.loaded_dictionaries.size(); id++)
+  for (size_t id = 0; id < all.loaded_dictionaries.size(); id++)
     if (all.loaded_dictionaries[id].file_hash == fd_hash)
     {
       all.namespace_dictionaries[(size_t)ns].push_back(all.loaded_dictionaries[id].dict);
@@ -186,25 +190,27 @@ void parse_dictionary_argument(vw& all, string str)
   if (fd < 0)
   {
     delete io;
-    THROW("error: cannot re-read dictionary from file '" << fname << "'" << ", opening failed");
+    THROW("error: cannot re-read dictionary from file '" << fname << "'"
+                                                         << ", opening failed");
   }
 
   feature_dict* map = &calloc_or_throw<feature_dict>();
   map->init(1023, nullptr, substring_equal);
-  example *ec = VW::alloc_examples(all.p->lp.label_size, 1);
+  example* ec = VW::alloc_examples(all.p->lp.label_size, 1);
 
   size_t def = (size_t)' ';
 
   ssize_t size = 2048, pos, nread;
   char rc;
-  char*buffer = calloc_or_throw<char>(size);
+  char* buffer = calloc_or_throw<char>(size);
   do
   {
     pos = 0;
     do
     {
       nread = io->read_file(fd, &rc, 1);
-      if ((rc != EOF) && (nread > 0)) buffer[pos++] = rc;
+      if ((rc != EOF) && (nread > 0))
+        buffer[pos++] = rc;
       if (pos >= size - 1)
       {
         size *= 2;
@@ -222,22 +228,23 @@ void parse_dictionary_argument(vw& all, string str)
         else
           buffer = new_buffer;
       }
-    }
-    while ( (rc != EOF) && (rc != '\n') && (nread > 0) );
+    } while ((rc != EOF) && (rc != '\n') && (nread > 0));
     buffer[pos] = 0;
 
     // we now have a line in buffer
     char* c = buffer;
-    while (*c == ' ' || *c == '\t') ++c; // skip initial whitespace
+    while (*c == ' ' || *c == '\t') ++c;  // skip initial whitespace
     char* d = c;
-    while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d; // gobble up initial word
-    if (d == c) continue; // no word
-    if (*d != ' ' && *d != '\t') continue; // reached end of line
-    char* word = calloc_or_throw<char>(d-c);
-    memcpy(word, c, d-c);
-    substring ss = { word, word + (d - c) };
-    uint64_t hash = uniform_hash( ss.begin, ss.end-ss.begin, quadratic_constant);
-    if (map->get(ss, hash) != nullptr)   // don't overwrite old values!
+    while (*d != ' ' && *d != '\t' && *d != '\n' && *d != '\0') ++d;  // gobble up initial word
+    if (d == c)
+      continue;  // no word
+    if (*d != ' ' && *d != '\t')
+      continue;  // reached end of line
+    char* word = calloc_or_throw<char>(d - c);
+    memcpy(word, c, d - c);
+    substring ss = {word, word + (d - c)};
+    uint64_t hash = uniform_hash(ss.begin, ss.end - ss.begin, quadratic_constant);
+    if (map->get(ss, hash) != nullptr)  // don't overwrite old values!
     {
       free(word);
       continue;
@@ -256,10 +263,13 @@ void parse_dictionary_argument(vw& all, string str)
     map->put(ss, hash, arr);
 
     // clear up ec
-    ec->tag.clear(); ec->indices.clear();
-    for (size_t i=0; i<256; i++) { ec->feature_space[i].clear();}
-  }
-  while ((rc != EOF) && (nread > 0));
+    ec->tag.clear();
+    ec->indices.clear();
+    for (size_t i = 0; i < 256; i++)
+    {
+      ec->feature_space[i].clear();
+    }
+  } while ((rc != EOF) && (nread > 0));
   free(buffer);
   io->close_file();
   delete io;
@@ -267,30 +277,39 @@ void parse_dictionary_argument(vw& all, string str)
   free(ec);
 
   if (!all.quiet)
-    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s") << endl;
+    all.trace_message << "dictionary " << s << " contains " << map->size() << " item" << (map->size() == 1 ? "" : "s")
+                      << endl;
 
   all.namespace_dictionaries[(size_t)ns].push_back(map);
-  dictionary_info info = { calloc_or_throw<char>(strlen(s)+1), fd_hash, map };
+  dictionary_info info = {calloc_or_throw<char>(strlen(s) + 1), fd_hash, map};
   strcpy(info.name, s);
   all.loaded_dictionaries.push_back(info);
 }
 
-void parse_affix_argument(vw&all, string str)
+void parse_affix_argument(vw& all, string str)
 {
-  if (str.length() == 0) return;
-  char* cstr = calloc_or_throw<char>(str.length()+1);
+  if (str.length() == 0)
+    return;
+  char* cstr = calloc_or_throw<char>(str.length() + 1);
   strcpy(cstr, str.c_str());
 
-  char*p = strtok(cstr, ",");
+  char* p = strtok(cstr, ",");
 
   try
   {
     while (p != 0)
     {
-      char*q = p;
+      char* q = p;
       uint16_t prefix = 1;
-      if (q[0] == '+') { q++; }
-      else if (q[0] == '-') { prefix = 0; q++; }
+      if (q[0] == '+')
+      {
+        q++;
+      }
+      else if (q[0] == '-')
+      {
+        prefix = 0;
+        q++;
+      }
       if ((q[0] < '1') || (q[0] > '7'))
         THROW("malformed affix argument (length must be 1..7): " << p);
 
@@ -309,12 +328,12 @@ void parse_affix_argument(vw&all, string str)
 
       uint16_t afx = (len << 1) | (prefix & 0x1);
       all.affix_features[ns] <<= 4;
-      all.affix_features[ns] |=  afx;
+      all.affix_features[ns] |= afx;
 
       p = strtok(nullptr, ",");
     }
   }
-  catch(...)
+  catch (...)
   {
     free(cstr);
     throw;
@@ -329,12 +348,13 @@ void parse_diagnostics(options_i& options, vw& all)
   bool help = false;
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic options");
-  diagnostic_group
-    .add(make_option("version", version_arg).help("Version information"))
-    .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
-    .add(make_option("progress", progress_arg).short_name("P").help("Progress update frequency. int: additive, float: multiplicative"))
-    .add(make_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
-    .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
+  diagnostic_group.add(make_option("version", version_arg).help("Version information"))
+      .add(make_option("audit", all.audit).short_name("a").help("print weights of features"))
+      .add(make_option("progress", progress_arg)
+               .short_name("P")
+               .help("Progress update frequency. int: additive, float: multiplicative"))
+      .add(make_option("quiet", all.quiet).help("Don't output disgnostics and progress updates"))
+      .add(make_option("help", help).short_name("h").help("Look here: http://hunch.net/~vw/ and click on Tutorial."));
 
   options.add_and_parse(diagnostic_group);
 
@@ -355,30 +375,27 @@ void parse_diagnostics(options_i& options, vw& all)
       all.progress_add = true;
       if (all.progress_arg < 1)
       {
-        all.trace_message    << "warning: additive --progress <int>"
-                              << " can't be < 1: forcing to 1" << endl;
+        all.trace_message << "warning: additive --progress <int>"
+                          << " can't be < 1: forcing to 1" << endl;
         all.progress_arg = 1;
       }
       all.sd->dump_interval = all.progress_arg;
     }
     else
     {
-        // A "." in arg: assume floating-point -> multiplicative
+      // A "." in arg: assume floating-point -> multiplicative
       all.progress_add = false;
 
       if (all.progress_arg <= 1.0)
       {
-        all.trace_message    << "warning: multiplicative --progress <float>: "
-                                << progress_arg
-                                << " is <= 1.0: adding 1.0"
-                                << endl;
+        all.trace_message << "warning: multiplicative --progress <float>: " << progress_arg << " is <= 1.0: adding 1.0"
+                          << endl;
         all.progress_arg += 1.0;
       }
       else if (all.progress_arg > 9.0)
       {
-        all.trace_message    << "warning: multiplicative --progress <float>"
-                                << " is > 9.0: you probably meant to use an integer"
-                                << endl;
+        all.trace_message << "warning: multiplicative --progress <float>"
+                          << " is > 9.0: you probably meant to use an integer" << endl;
       }
       all.sd->dump_interval = 1.0;
     }
@@ -390,21 +407,27 @@ input_options parse_source(vw& all, options_i& options)
   input_options parsed_options;
 
   option_group_definition input_options("Input options");
-  input_options
-    .add(make_option("data", all.data_filename).short_name("d").help("Example set"))
-    .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
-    .add(make_option("foreground", parsed_options.foreground).help("in persistent daemon mode, do not run in the background"))
-    .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
-    .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
-    .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
-    .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
-    .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
-    .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."))
-    .add(make_option("json", parsed_options.json).help("Enable JSON parsing."))
-    .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."))
-    .add(make_option("kill_cache", parsed_options.kill_cache).short_name("k").help("do not reuse existing cache: create a new one always"))
-    .add(make_option("compressed", parsed_options.compressed).help("use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-    .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
+  input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
+      .add(make_option("daemon", parsed_options.daemon).help("persistent daemon mode on port 26542"))
+      .add(make_option("foreground", parsed_options.foreground)
+               .help("in persistent daemon mode, do not run in the background"))
+      .add(make_option("port", parsed_options.port).help("port to listen on; use 0 to pick unused port"))
+      .add(make_option("num_children", all.num_children).help("number of children for persistent daemon mode"))
+      .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
+      .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
+      .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
+      .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file."))
+      .add(make_option("json", parsed_options.json).help("Enable JSON parsing."))
+      .add(make_option("dsjson", parsed_options.dsjson).help("Enable Decision Service JSON parsing."))
+      .add(make_option("kill_cache", parsed_options.kill_cache)
+               .short_name("k")
+               .help("do not reuse existing cache: create a new one always"))
+      .add(
+          make_option("compressed", parsed_options.compressed)
+              .help(
+                  "use gzip format whenever possible. If a cache file is being created, this option creates a "
+                  "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
+      .add(make_option("no_stdin", all.stdin_off).help("do not default to reading from stdin"));
 
   options.add_and_parse(input_options);
 
@@ -416,7 +439,8 @@ input_options parse_source(vw& all, options_i& options)
     std::string data;
     if (boost_options->try_get_positional_option_token("data", data, -1))
     {
-      if (all.data_filename != data) {
+      if (all.data_filename != data)
+      {
         all.data_filename = data;
       }
     }
@@ -426,11 +450,12 @@ input_options parse_source(vw& all, options_i& options)
   {
     all.daemon = true;
     // allow each child to process up to 1e5 connections
-    all.numpasses = (size_t) 1e5;
+    all.numpasses = (size_t)1e5;
   }
 
   // Add an implicit cache file based on the data filename.
-  if(parsed_options.cache) {
+  if (parsed_options.cache)
+  {
     parsed_options.cache_files.push_back(all.data_filename + ".cache");
   }
 
@@ -443,16 +468,18 @@ input_options parse_source(vw& all, options_i& options)
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.");
 
-  if(!all.holdout_set_off && (options.was_supplied("output_feature_regularizer_binary") || options.was_supplied("output_feature_regularizer_text")))
+  if (!all.holdout_set_off &&
+      (options.was_supplied("output_feature_regularizer_binary") ||
+          options.was_supplied("output_feature_regularizer_text")))
   {
     all.holdout_set_off = true;
-    all.trace_message<<"Making holdout_set_off=true since output regularizer specified" << endl;
+    all.trace_message << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
   return parsed_options;
 }
 
-bool interactions_settings_doubled = false; // local setting setted in parse_modules()
+bool interactions_settings_doubled = false;  // local setting setted in parse_modules()
 namespace VW
 {
 const char* are_features_compatible(vw& vw1, vw& vw2)
@@ -460,10 +487,12 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.p->hasher != vw2.p->hasher)
     return "hasher";
 
-  if (!equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)), vw2.spelling_features))
+  if (!equal(vw1.spelling_features, vw1.spelling_features + (sizeof(vw1.spelling_features) / sizeof(bool)),
+          vw2.spelling_features))
     return "spelling_features";
 
-  if (!equal(vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
+  if (!equal(
+          vw1.affix_features, vw1.affix_features + (sizeof(vw1.affix_features) / sizeof(uint32_t)), vw2.affix_features))
     return "affix_features";
 
   if (!equal(vw1.ngram, vw1.ngram + (sizeof(vw1.ngram) / sizeof(uint32_t)), vw2.ngram))
@@ -493,13 +522,15 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (vw1.ignore_some_linear != vw2.ignore_some_linear)
     return "ignore_some_linear";
 
-  if (vw1.ignore_some_linear && !equal(vw1.ignore_linear, vw1.ignore_linear + (sizeof(vw1.ignore_linear) / sizeof(bool)), vw2.ignore_linear))
+  if (vw1.ignore_some_linear &&
+      !equal(vw1.ignore_linear, vw1.ignore_linear + (sizeof(vw1.ignore_linear) / sizeof(bool)), vw2.ignore_linear))
     return "ignore_linear";
 
   if (vw1.redefine_some != vw2.redefine_some)
     return "redefine_some";
 
-  if (vw1.redefine_some && !equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
+  if (vw1.redefine_some &&
+      !equal(vw1.redefine, vw1.redefine + (sizeof(vw1.redefine) / sizeof(unsigned char)), vw2.redefine))
     return "redefine";
 
   if (vw1.add_constant != vw2.add_constant)
@@ -511,25 +542,26 @@ const char* are_features_compatible(vw& vw1, vw& vw2)
   if (!equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
     return "dictionary_path";
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions); ++i, ++j)
+  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
+       ++i, ++j)
     if (*i != *j)
       return "interaction mismatch";
 
   return nullptr;
 }
-}
+}  // namespace VW
 // return a copy of string replacing \x00 sequences in it
 string spoof_hex_encoded_namespaces(const string& arg)
 {
   string res;
   int pos = 0;
-  while (pos < (int)arg.size()-3)
+  while (pos < (int)arg.size() - 3)
   {
-    if (arg[pos] == '\\' && arg[pos+1] == 'x')
+    if (arg[pos] == '\\' && arg[pos + 1] == 'x')
     {
-      string substr = arg.substr(pos+2,2);
+      string substr = arg.substr(pos + 2, 2);
       char* p;
-      unsigned char c = (unsigned char) strtoul(substr.c_str(), &p, 16);
+      unsigned char c = (unsigned char)strtoul(substr.c_str(), &p, 16);
       if (*p == '\0')
       {
         res.push_back(c);
@@ -545,7 +577,7 @@ string spoof_hex_encoded_namespaces(const string& arg)
       res.push_back(arg[pos++]);
   }
 
-  while (pos < (int)arg.size()) //copy last 2 characters
+  while (pos < (int)arg.size())  // copy last 2 characters
     res.push_back(arg[pos++]);
 
   return res;
@@ -574,50 +606,76 @@ void parse_feature_tweaks(options_i& options, vw& all)
 
   option_group_definition feature_options("Feature options");
   feature_options
-    .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
-    .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
-    .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
-    .add(make_option("ignore_linear", ignore_linears).keep().help("ignore namespaces beginning with character <arg> for linear terms only"))
-    .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
-    .add(make_option("redefine", redefines).keep().help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form 'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a wildcard in S.").keep())
-    .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
-    .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
-    .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
-    .add(make_option("ngram", all.ngram_strings).help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
-    .add(make_option("skips", all.skip_strings).help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
-    .add(make_option("feature_limit", all.limit_strings).help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
-    .add(make_option("affix", affix).keep().help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
-    .add(make_option("spelling", spelling_ns).keep().help("compute spelling features for a give namespace (use '_' for default namespace)"))
-    .add(make_option("dictionary", dictionary_nses).keep().help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
-    .add(make_option("dictionary_path", dictionary_path).help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
-    .add(make_option("interactions", interactions).keep().help("Create feature interactions of any level between namespaces."))
-    .add(make_option("permutations", all.permutations).help("Use permutations instead of combinations for feature interactions of same namespace."))
-    .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions).help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
-    .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-    // TODO this option is unused - remove?
-    .add(make_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
-    .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
+      .add(make_option("hash", hash_function).keep().help("how to hash the features. Available options: strings, all"))
+      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("seed for hash function"))
+      .add(make_option("ignore", ignores).keep().help("ignore namespaces beginning with character <arg>"))
+      .add(make_option("ignore_linear", ignore_linears)
+               .keep()
+               .help("ignore namespaces beginning with character <arg> for linear terms only"))
+      .add(make_option("keep", keeps).keep().help("keep namespaces beginning with character <arg>"))
+      .add(make_option("redefine", redefines)
+               .keep()
+               .help("redefine namespaces beginning with characters of string S as namespace N. <arg> shall be in form "
+                     "'N:=S' where := is operator. Empty N or S are treated as default namespace. Use ':' as a "
+                     "wildcard in S.")
+               .keep())
+      .add(make_option("bit_precision", new_bits).short_name("b").help("number of bits in the feature table"))
+      .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
+      .add(make_option("constant", all.initial_constant).short_name("C").help("Set initial value of constant"))
+      .add(make_option("ngram", all.ngram_strings)
+               .help("Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN."))
+      .add(make_option("skips", all.skip_strings)
+               .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
+                     "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
+      .add(make_option("feature_limit", all.limit_strings)
+               .help("limit to N features. To apply to a single namespace 'foo', arg should be fN"))
+      .add(make_option("affix", affix)
+               .keep()
+               .help("generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for "
+                     "namespace a, 3-char suffixes for b and 1 char prefixes for default namespace"))
+      .add(make_option("spelling", spelling_ns)
+               .keep()
+               .help("compute spelling features for a give namespace (use '_' for default namespace)"))
+      .add(make_option("dictionary", dictionary_nses)
+               .keep()
+               .help("read a dictionary for additional features (arg either 'x:file' or just 'file')"))
+      .add(make_option("dictionary_path", dictionary_path)
+               .help("look in this directory for dictionaries; defaults to current directory or env{PATH}"))
+      .add(make_option("interactions", interactions)
+               .keep()
+               .help("Create feature interactions of any level between namespaces."))
+      .add(make_option("permutations", all.permutations)
+               .help("Use permutations instead of combinations for feature interactions of same namespace."))
+      .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
+               .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
+                     "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
+      .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
+      // TODO this option is unused - remove?
+      .add(make_option("q:", q_colon).help(": corresponds to a wildcard for all printable characters"))
+      .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
   options.add_and_parse(feature_options);
 
-  //feature manipulation
+  // feature manipulation
   all.p->hasher = getHasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
-    for (size_t id=0; id<spelling_ns.size(); id++)
+    for (size_t id = 0; id < spelling_ns.size(); id++)
     {
       spelling_ns[id] = spoof_hex_encoded_namespaces(spelling_ns[id]);
-      if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
-      else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+      if (spelling_ns[id][0] == '_')
+        all.spelling_features[(unsigned char)' '] = true;
+      else
+        all.spelling_features[(size_t)spelling_ns[id][0]] = true;
     }
   }
 
   if (options.was_supplied("affix"))
     parse_affix_argument(all, spoof_hex_encoded_namespaces(affix));
 
-  if(options.was_supplied("ngram"))
+  if (options.was_supplied("ngram"))
   {
-    if(options.was_supplied("sort_features"))
+    if (options.was_supplied("sort_features"))
       THROW("ngram is incompatible with sort_features.");
 
     for (size_t i = 0; i < all.ngram_strings.size(); i++)
@@ -625,9 +683,9 @@ void parse_feature_tweaks(options_i& options, vw& all)
     compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
 
-  if(options.was_supplied("skips"))
+  if (options.was_supplied("skips"))
   {
-    if(!options.was_supplied("ngram"))
+    if (!options.was_supplied("ngram"))
       THROW("You can not skip unless ngram is > 1");
 
     for (size_t i = 0; i < all.skip_strings.size(); i++)
@@ -635,13 +693,14 @@ void parse_feature_tweaks(options_i& options, vw& all)
     compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
   }
 
-  if(options.was_supplied("feature_limit"))
+  if (options.was_supplied("feature_limit"))
     compile_limits(all.limit_strings, all.limit, all.quiet);
 
   if (options.was_supplied("bit_precision"))
   {
     if (all.default_bits == false && new_bits != all.num_bits)
-      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work.");
+      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits
+                                        << " by argument and model.  That does not work.");
 
     all.default_bits = false;
     all.num_bits = new_bits;
@@ -657,12 +716,17 @@ void parse_feature_tweaks(options_i& options, vw& all)
        ||
        interactions_settings_doubled /*settings were restored from model file to file_options and overriden by params from command line*/)
   {
-    all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line." << endl;
+    all.trace_message << "WARNING: model file has set of {-q, --cubic, --interactions} settings stored, but they'll be "
+                         "OVERRIDEN by set of {-q, --cubic, --interactions} settings from command line."
+                      << endl;
 
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.pairs.empty()) all.pairs.clear();
-    if (!all.triples.empty()) all.triples.clear();
-    if (!all.interactions.empty()) all.interactions.clear();
+    if (!all.pairs.empty())
+      all.pairs.clear();
+    if (!all.triples.empty())
+      all.triples.clear();
+    if (!all.interactions.empty())
+      all.interactions.clear();
   }
 
   if (options.was_supplied("quadratic"))
@@ -677,7 +741,8 @@ void parse_feature_tweaks(options_i& options, vw& all)
         all.trace_message << *i << " ";
     }
 
-    expanded_interactions = INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
+    expanded_interactions =
+        INTERACTIONS::expand_interactions(quadratics, 2, "error, quadratic features must involve two sets.");
 
     if (!all.quiet)
       all.trace_message << endl;
@@ -694,7 +759,8 @@ void parse_feature_tweaks(options_i& options, vw& all)
         all.trace_message << *i << " ";
     }
 
-    std::vector<std::string> exp_cubic = INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
+    std::vector<std::string> exp_cubic =
+        INTERACTIONS::expand_interactions(cubics, 3, "error, cubic features must involve three sets.");
     expanded_interactions.insert(std::begin(expanded_interactions), std::begin(exp_cubic), std::end(exp_cubic));
 
     if (!all.quiet)
@@ -721,16 +787,19 @@ void parse_feature_tweaks(options_i& options, vw& all)
 
   if (expanded_interactions.size() > 0)
   {
-
     size_t removed_cnt;
     size_t sorted_cnt;
-    INTERACTIONS::sort_and_filter_duplicate_interactions(expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
+    INTERACTIONS::sort_and_filter_duplicate_interactions(
+        expanded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0)
-      all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.' << endl << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
+      all.trace_message << "WARNING: duplicate namespace interactions were found. Removed: " << removed_cnt << '.'
+                        << endl
+                        << "You can use --leave_duplicate_interactions to disable this behaviour." << endl;
     if (sorted_cnt > 0)
-      all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has been changed. Interactions affected: " << sorted_cnt << '.' << endl;
-
+      all.trace_message << "WARNING: some interactions contain duplicate characters and their characters order has "
+                           "been changed. Interactions affected: "
+                        << sorted_cnt << '.' << endl;
 
     if (all.interactions.size() > 0)
     {
@@ -766,16 +835,14 @@ void parse_feature_tweaks(options_i& options, vw& all)
     for (vector<string>::iterator i = ignores.begin(); i != ignores.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore[(size_t)(unsigned char)*j] = true;
+      for (string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = true;
     }
 
     if (!all.quiet)
     {
       all.trace_message << "ignoring namespaces beginning with: ";
       for (auto const& ignore : ignores)
-        for (auto const character : ignore)
-          all.trace_message << character << " ";
+        for (auto const character : ignore) all.trace_message << character << " ";
 
       all.trace_message << endl;
     }
@@ -796,8 +863,7 @@ void parse_feature_tweaks(options_i& options, vw& all)
     {
       all.trace_message << "ignoring linear terms for namespaces beginning with: ";
       for (auto const& ignore : ignore_linears)
-        for (auto const character : ignore)
-          all.trace_message << character << " ";
+        for (auto const character : ignore) all.trace_message << character << " ";
 
       all.trace_message << endl;
     }
@@ -805,37 +871,33 @@ void parse_feature_tweaks(options_i& options, vw& all)
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < 256; i++)
-      all.ignore[i] = true;
+    for (size_t i = 0; i < 256; i++) all.ignore[i] = true;
 
     all.ignore_some = true;
 
     for (vector<string>::iterator i = keeps.begin(); i != keeps.end(); i++)
     {
       *i = spoof_hex_encoded_namespaces(*i);
-      for (string::const_iterator j = i->begin(); j != i->end(); j++)
-        all.ignore[(size_t)(unsigned char)*j] = false;
+      for (string::const_iterator j = i->begin(); j != i->end(); j++) all.ignore[(size_t)(unsigned char)*j] = false;
     }
 
     if (!all.quiet)
     {
       all.trace_message << "using namespaces beginning with: ";
       for (auto const& keep : keeps)
-        for (auto const character : keep)
-          all.trace_message << character << " ";
+        for (auto const character : keep) all.trace_message << character << " ";
 
       all.trace_message << endl;
     }
   }
 
   // --redefine param code
-  all.redefine_some = false; // false by default
+  all.redefine_some = false;  // false by default
 
   if (options.was_supplied("redefine"))
   {
     // initail values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < 256; i++)
-      all.redefine[i] = (unsigned char)i;
+    for (size_t i = 0; i < 256; i++) all.redefine[i] = (unsigned char)i;
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -845,7 +907,7 @@ void parse_feature_tweaks(options_i& options, vw& all)
       string argument = spoof_hex_encoded_namespaces(*arg_iter);
       size_t arg_len = argument.length();
 
-      size_t operator_pos = 0; //keeps operator pos + 1 to stay unsigned type
+      size_t operator_pos = 0;  // keeps operator pos + 1 to stay unsigned type
       bool operator_found = false;
       unsigned char new_namespace = ' ';
 
@@ -854,27 +916,32 @@ void parse_feature_tweaks(options_i& options, vw& all)
       {
         if (operator_found)
         {
-          if (i > 2) { new_namespace = argument[0];} //N is not empty
+          if (i > 2)
+          {
+            new_namespace = argument[0];
+          }  // N is not empty
           break;
         }
         else if (argument[i] == ':')
-          operator_pos = i+1;
-        else if ( (argument[i] == '=') && (operator_pos == i) )
+          operator_pos = i + 1;
+        else if ((argument[i] == '=') && (operator_pos == i))
           operator_found = true;
       }
 
       if (!operator_found)
         THROW("argument of --redefine is malformed. Valid format is N:=S, :=S or N:=");
 
-      if (++operator_pos > 3) // seek operator end
-        all.trace_message << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('" << new_namespace << "') will be used as target namespace." << endl;
+      if (++operator_pos > 3)  // seek operator end
+        all.trace_message
+            << "WARNING: multiple namespaces are used in target part of --redefine argument. Only first one ('"
+            << new_namespace << "') will be used as target namespace." << endl;
 
       all.redefine_some = true;
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
-      if (operator_pos == arg_len) // S is empty, default namespace shall be used
-        all.redefine[(int) ' '] = new_namespace;
+      if (operator_pos == arg_len)  // S is empty, default namespace shall be used
+        all.redefine[(int)' '] = new_namespace;
       else
         for (size_t i = operator_pos; i < arg_len; i++)
         {
@@ -885,12 +952,10 @@ void parse_feature_tweaks(options_i& options, vw& all)
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t i = 0; i < 256; i++)
-              all.redefine[i] = new_namespace;
-            break; //break processing S
+            for (size_t i = 0; i < 256; i++) all.redefine[i] = new_namespace;
+            break;  // break processing S
           }
         }
-
     }
   }
 
@@ -903,27 +968,26 @@ void parse_feature_tweaks(options_i& options, vw& all)
     if (directory_exists("."))
       all.dictionary_path.push_back(".");
 
-    const std::string PATH = getenv( "PATH" );
+    const std::string PATH = getenv("PATH");
 #if _WIN32
     const char delimiter = ';';
 #else
     const char delimiter = ':';
 #endif
-    if(!PATH.empty())
+    if (!PATH.empty())
     {
       size_t previous = 0;
-      size_t index = PATH.find( delimiter );
-      while( index != string::npos )
+      size_t index = PATH.find(delimiter);
+      while (index != string::npos)
       {
-        all.dictionary_path.push_back( PATH.substr(previous, index-previous));
-        previous=index+1;
-        index = PATH.find( delimiter, previous );
+        all.dictionary_path.push_back(PATH.substr(previous, index - previous));
+        previous = index + 1;
+        index = PATH.find(delimiter, previous);
       }
-      all.dictionary_path.push_back( PATH.substr(previous) );
+      all.dictionary_path.push_back(PATH.substr(previous));
     }
 
-    for (size_t id=0; id<dictionary_nses.size(); id++)
-      parse_dictionary_argument(all, dictionary_nses[id]);
+    for (size_t id = 0; id < dictionary_nses.size(); id++) parse_dictionary_argument(all, dictionary_nses[id]);
   }
 
   if (noconstant)
@@ -939,24 +1003,38 @@ void parse_example_tweaks(options_i& options, vw& all)
   bool test_only = false;
 
   option_group_definition example_options("Example options");
-  example_options
-    .add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-    .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
-    .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
-    .add(make_option("holdout_after", all.holdout_after).help("holdout after n training examples, default off (disables holdout_period)"))
-    .add(make_option("early_terminate", early_terminate_passes).default_value(3).help("Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
-    .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
-    .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
-    .add(make_option("examples", all.max_examples).help("number of examples to parse"))
-    .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
-    .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-    .add(make_option("sort_features", all.p->sort_features).help("turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes"))
-    .add(make_option("loss_function", loss_function).default_value("squared").help("Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic, quantile and poisson."))
-    .add(make_option("quantile_tau", loss_parameter).default_value(0.5f).help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
-    .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
-    .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
-    .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
-    .add(make_option("named_labels", named_labels).keep().help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
+  example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
+      .add(make_option("holdout_off", all.holdout_set_off).help("no holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.holdout_period).default_value(10).help("holdout period for test only"))
+      .add(make_option("holdout_after", all.holdout_after)
+               .help("holdout after n training examples, default off (disables holdout_period)"))
+      .add(
+          make_option("early_terminate", early_terminate_passes)
+              .default_value(3)
+              .help(
+                  "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination"))
+      .add(make_option("passes", all.numpasses).help("Number of Training Passes"))
+      .add(make_option("initial_pass_length", all.pass_length).help("initial number of examples per pass"))
+      .add(make_option("examples", all.max_examples).help("number of examples to parse"))
+      .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
+      .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
+      .add(make_option("sort_features", all.p->sort_features)
+               .help("turn this on to disregard order in which features have been defined. This will lead to smaller "
+                     "cache sizes"))
+      .add(make_option("loss_function", loss_function)
+               .default_value("squared")
+               .help("Specify the loss function to be used, uses squared by default. Currently available ones are "
+                     "squared, classic, hinge, logistic, quantile and poisson."))
+      .add(make_option("quantile_tau", loss_parameter)
+               .default_value(0.5f)
+               .help("Parameter \\tau associated with Quantile loss. Defaults to 0.5"))
+      .add(make_option("l1", all.l1_lambda).help("l_1 lambda"))
+      .add(make_option("l2", all.l2_lambda).help("l_2 lambda"))
+      .add(make_option("no_bias_regularization", all.no_bias).help("no bias in regularization"))
+      .add(make_option("named_labels", named_labels)
+               .keep()
+               .help("use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
+                     "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
   if (test_only || all.eta == 0.)
@@ -970,8 +1048,8 @@ void parse_example_tweaks(options_i& options, vw& all)
   else
     all.training = true;
 
-  if((all.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
-    all.holdout_set_off = false;//holdout is on unless explicitly off
+  if ((all.numpasses > 1 || all.holdout_after > 0) && !all.holdout_set_off)
+    all.holdout_set_off = false;  // holdout is on unless explicitly off
   else
     all.holdout_set_off = true;
 
@@ -1002,7 +1080,7 @@ void parse_example_tweaks(options_i& options, vw& all)
   all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
   if (!all.quiet)
   {
-    if (all.reg_mode %2 && !options.was_supplied("bfgs"))
+    if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
       all.trace_message << "using l1 regularization = " << all.l1_lambda << endl;
     if (all.reg_mode > 1)
       all.trace_message << "using l2 regularization = " << all.l2_lambda << endl;
@@ -1015,19 +1093,20 @@ void parse_output_preds(options_i& options, vw& all)
   std::string raw_predictions;
 
   option_group_definition output_options("Output options");
-  output_options
-    .add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
-    .add(make_option("raw_predictions", raw_predictions).short_name("r").help("File to output unnormalized predictions to"));
+  output_options.add(make_option("predictions", predictions).short_name("p").help("File to output predictions to"))
+      .add(make_option("raw_predictions", raw_predictions)
+               .short_name("r")
+               .help("File to output unnormalized predictions to"));
   options.add_and_parse(output_options);
 
   if (options.was_supplied("predictions"))
   {
     if (!all.quiet)
-      all.trace_message << "predictions = " <<  predictions << endl;
+      all.trace_message << "predictions = " << predictions << endl;
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back((size_t) 1);//stdout
+      all.final_prediction_sink.push_back((size_t)1);  // stdout
     }
     else
     {
@@ -1035,13 +1114,13 @@ void parse_output_preds(options_i& options, vw& all)
       int f;
       // TODO can we migrate files to fstreams?
 #ifdef _WIN32
-      _sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+      _sopen_s(&f, fstr, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
 #else
-      f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+      f = open(fstr, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
 #endif
       if (f < 0)
         all.trace_message << "Error opening the predictions file: " << fstr << endl;
-      all.final_prediction_sink.push_back((size_t) f);
+      all.final_prediction_sink.push_back((size_t)f);
     }
   }
 
@@ -1049,20 +1128,21 @@ void parse_output_preds(options_i& options, vw& all)
   {
     if (!all.quiet)
     {
-      all.trace_message << "raw predictions = " <<  raw_predictions << endl;
+      all.trace_message << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
-        all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output" << endl;
+        all.trace_message << "Warning: --raw_predictions has no defined value when --binary specified, expect no output"
+                          << endl;
     }
     if (raw_predictions == "stdout")
-      all.raw_prediction = 1; //stdout
+      all.raw_prediction = 1;  // stdout
     else
     {
       const char* t = raw_predictions.c_str();
       int f;
 #ifdef _WIN32
-      _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+      _sopen_s(&f, t, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
 #else
-      f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+      f = open(t, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
 #endif
       all.raw_prediction = f;
     }
@@ -1073,15 +1153,21 @@ void parse_output_model(options_i& options, vw& all)
 {
   option_group_definition output_model_options("Output model");
   output_model_options
-    .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
-    .add(make_option("readable_model", all.text_regressor_name).help("Output human-readable final regressor with numeric features"))
-    .add(make_option("invert_hash", all.inv_hash_regressor_name).help("Output human-readable final regressor with feature names.  Computationally expensive."))
-    .add(make_option("save_resume", all.save_resume).help("save extra state so learning can be resumed later with new data"))
-    .add(make_option("preserve_performance_counters", all.preserve_performance_counters).help("reset performance counters when warmstarting"))
-    .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
-    .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output).help("Per feature regularization output file"))
-    .add(make_option("output_feature_regularizer_text", all.per_feature_regularizer_text).help("Per feature regularization output file, in text"))
-    .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
+      .add(make_option("final_regressor", all.final_regressor_name).short_name("f").help("Final regressor"))
+      .add(make_option("readable_model", all.text_regressor_name)
+               .help("Output human-readable final regressor with numeric features"))
+      .add(make_option("invert_hash", all.inv_hash_regressor_name)
+               .help("Output human-readable final regressor with feature names.  Computationally expensive."))
+      .add(make_option("save_resume", all.save_resume)
+               .help("save extra state so learning can be resumed later with new data"))
+      .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
+               .help("reset performance counters when warmstarting"))
+      .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
+      .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
+               .help("Per feature regularization output file"))
+      .add(make_option("output_feature_regularizer_text", all.per_feature_regularizer_text)
+               .help("Per feature regularization output file, in text"))
+      .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
   if (all.final_regressor_name.compare("") && !all.quiet)
@@ -1111,7 +1197,7 @@ void load_input_model(vw& all, io_buf& io_temp)
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
   }
   else
-  { // load mask first
+  {  // load mask first
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
 
     // load rest of regressor
@@ -1131,7 +1217,7 @@ LEARNER::base_learner* setup_base(options_i& options, vw& all)
 
 void parse_reductions(options_i& options, vw& all)
 {
-  //Base algorithms
+  // Base algorithms
   all.reduction_stack.push_back(GD::setup);
   all.reduction_stack.push_back(kernel_svm_setup);
   all.reduction_stack.push_back(ftrl_setup);
@@ -1145,7 +1231,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push_back(OjaNewton_setup);
   // all.reduction_stack.push_back(VW_CNTK::setup);
 
-  //Score Users
+  // Score Users
   all.reduction_stack.push_back(baseline_setup);
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'b', simple_label>);
   all.reduction_stack.push_back(active_setup);
@@ -1159,7 +1245,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push_back(lrqfa_setup);
   all.reduction_stack.push_back(stagewise_poly_setup);
   all.reduction_stack.push_back(scorer_setup);
-  //Reductions
+  // Reductions
   all.reduction_stack.push_back(bs_setup);
   all.reduction_stack.push_back(binary_setup);
 
@@ -1191,7 +1277,8 @@ void parse_reductions(options_i& options, vw& all)
   all.l = setup_base(options, all);
 }
 
-vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context) {
+vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_context)
+{
   vw& all = *(new vw());
   all.options = &options;
 
@@ -1206,47 +1293,50 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     time(&all.init_time);
 
     option_group_definition vw_args("VW options");
-    vw_args
-      .add(make_option("ring_size", all.p->ring_size).help("size of example ring"));
+    vw_args.add(make_option("ring_size", all.p->ring_size).help("size of example ring"));
     options.add_and_parse(vw_args);
 
     option_group_definition update_args("Update options");
-    update_args
-      .add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
-      .add(make_option("power_t", all.power_t).help("t power value"))
-      .add(make_option("decay_learning_rate", all.eta_decay_rate).help("Set Decay factor for learning_rate between passes"))
-      .add(make_option("initial_t", all.sd->t).help("initial t value"))
-      .add(make_option("feature_mask", all.feature_mask).help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights."));
+    update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
+        .add(make_option("power_t", all.power_t).help("t power value"))
+        .add(make_option("decay_learning_rate", all.eta_decay_rate)
+                 .help("Set Decay factor for learning_rate between passes"))
+        .add(make_option("initial_t", all.sd->t).help("initial t value"))
+        .add(make_option("feature_mask", all.feature_mask)
+                 .help("Use existing regressor to determine which parameters may be updated.  If no initial_regressor "
+                       "given, also used for initial weights."));
     options.add_and_parse(update_args);
 
     option_group_definition weight_args("Weight options");
     weight_args
-      .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
-      .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
-      .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
-      .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
-      .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
-      .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
-      .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input).help("Per feature regularization input file"));
+        .add(make_option("initial_regressor", all.initial_regressors).help("Initial regressor(s)").short_name("i"))
+        .add(make_option("initial_weight", all.initial_weight).help("Set all weights to an initial value of arg."))
+        .add(make_option("random_weights", all.random_weights).help("make initial weights random"))
+        .add(make_option("normal_weights", all.normal_weights).help("make initial weights normal"))
+        .add(make_option("truncated_normal_weights", all.tnormal_weights).help("make initial weights truncated normal"))
+        .add(make_option("sparse_weights", all.weights.sparse).help("Use a sparse datastructure for weights"))
+        .add(make_option("input_feature_regularizer", all.per_feature_regularizer_input)
+                 .help("Per feature regularization input file"));
     options.add_and_parse(weight_args);
 
     std::string span_server_arg;
-    //bool threads_arg;
+    // bool threads_arg;
     size_t unique_id_arg;
     size_t total_arg;
     size_t node_arg;
     option_group_definition parallelization_args("Parallelization options");
     parallelization_args
-      .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
-      //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
-      .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
-      .add(make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
-      .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
+        .add(make_option("span_server", span_server_arg).help("Location of server for setting up spanning tree"))
+        //(make_option("threads", threads_arg).help("Enable multi-threading")) Unused option?
+        .add(make_option("unique_id", unique_id_arg).default_value(0).help("unique id used for cluster parallel jobs"))
+        .add(
+            make_option("total", total_arg).default_value(1).help("total number of nodes used in cluster parallel job"))
+        .add(make_option("node", node_arg).default_value(0).help("node number in cluster parallel job"));
     options.add_and_parse(parallelization_args);
 
     // total, unique_id and node must be specified together.
-    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id"))
-      && !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
+    if ((options.was_supplied("total") || options.was_supplied("node") || options.was_supplied("unique_id")) &&
+        !(options.was_supplied("total") && options.was_supplied("node") && options.was_supplied("unique_id")))
     {
       THROW("you must specificy unique_id, total, and node if you specify any");
     }
@@ -1271,22 +1361,20 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
 
 bool check_interaction_settings_collision(options_i& options, std::string file_options)
 {
-  bool command_line_has_interaction =
-    options.was_supplied("q") ||
-    options.was_supplied("quadratic") ||
-    options.was_supplied("cubic") ||
-    options.was_supplied("interactions");
+  bool command_line_has_interaction = options.was_supplied("q") || options.was_supplied("quadratic") ||
+      options.was_supplied("cubic") || options.was_supplied("interactions");
 
-  if (!command_line_has_interaction) return false;
+  if (!command_line_has_interaction)
+    return false;
 
   // we don't use -q to save pairs in all.file_options, so only 3 options checked
   bool file_options_has_interaction = file_options.find("--quadratic") != std::string::npos;
   file_options_has_interaction = file_options_has_interaction || (file_options.find("--cubic") != std::string::npos);
-  file_options_has_interaction = file_options_has_interaction || (file_options.find("--interactions") != std::string::npos);
+  file_options_has_interaction =
+      file_options_has_interaction || (file_options.find("--interactions") != std::string::npos);
 
   return file_options_has_interaction;
 }
-
 
 options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 {
@@ -1302,33 +1390,37 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
   po::options_description desc("");
 
   // Get list of options in file options string
-  po::parsed_options pos = po::command_line_parser(container).
-    options(desc)
-    .allow_unregistered().run();
+  po::parsed_options pos = po::command_line_parser(container).options(desc).allow_unregistered().run();
 
   bool skipping = false;
   std::string saved_key = "";
   unsigned int count = 0;
   bool first_seen = false;
-  for (auto opt : pos.options) {
-
+  for (auto opt : pos.options)
+  {
     // If we previously encountered an option we want to skip, ignore tokens without --.
-    if (skipping) {
-      for (auto token : opt.original_tokens) {
+    if (skipping)
+    {
+      for (auto token : opt.original_tokens)
+      {
         auto found = token.find("--");
-        if (found != std::string::npos) {
+        if (found != std::string::npos)
+        {
           skipping = false;
         }
       }
 
-      if (skipping) {
+      if (skipping)
+      {
         saved_key = "";
         continue;
       }
     }
 
     // If the interaction settings are doubled, the copy in the model file is ignored.
-    if (interactions_settings_doubled && (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions")) {
+    if (interactions_settings_doubled &&
+        (opt.string_key == "quadratic" || opt.string_key == "cubic" || opt.string_key == "interactions"))
+    {
       // skip this option.
       skipping = true;
       continue;
@@ -1337,9 +1429,11 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
     // File options should always use long form.
 
     // If the key is empty this must be a value, otherwise set the key.
-    if (opt.string_key != "") {
+    if (opt.string_key != "")
+    {
       // If the new token is a new option and there were no values previously it was a bool option. Add it as a switch.
-      if (count == 0 && first_seen) {
+      if (count == 0 && first_seen)
+      {
         options.insert(saved_key, "");
       }
 
@@ -1349,27 +1443,30 @@ options_i& load_header_merge_options(options_i& options, vw& all, io_buf& model)
 
       if (opt.value.size() > 0)
       {
-        for (auto value : opt.value) {
+        for (auto value : opt.value)
+        {
           options.insert(saved_key, value);
           count++;
         }
       }
     }
-    else {
-      for (auto value : opt.value) {
+    else
+    {
+      for (auto value : opt.value)
+      {
         options.insert(saved_key, value);
         count++;
       }
     }
   }
 
-  if (count == 0 && saved_key != "") {
+  if (count == 0 && saved_key != "")
+  {
     options.insert(saved_key, "");
   }
 
   return options;
 }
-
 
 void parse_modules(options_i& options, vw& all)
 {
@@ -1378,9 +1475,9 @@ void parse_modules(options_i& options, vw& all)
   options.add_and_parse(rand_options);
   all.random_state = all.random_seed;
 
-  parse_feature_tweaks(options, all); //feature tweaks
+  parse_feature_tweaks(options, all);  // feature tweaks
 
-  parse_example_tweaks(options, all); //example manipulation
+  parse_example_tweaks(options, all);  // example manipulation
 
   parse_output_model(options, all);
 
@@ -1412,48 +1509,48 @@ void parse_sources(options_i& options, vw& all, io_buf& model, bool skipModelLoa
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   size_t params_per_problem = all.l->increment;
-  while (params_per_problem > ((uint64_t)1 << i))
-    i++;
+  while (params_per_problem > ((uint64_t)1 << i)) i++;
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
 namespace VW
 {
-void cmd_string_replace_value( std::stringstream*& ss, string flag_to_replace, string new_value )
+void cmd_string_replace_value(std::stringstream*& ss, string flag_to_replace, string new_value)
 {
-  flag_to_replace.append(" "); //add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
+  flag_to_replace.append(
+      " ");  // add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
   string cmd = ss->str();
   size_t pos = cmd.find(flag_to_replace);
-  if( pos == string::npos )
-    //flag currently not present in command string, so just append it to command string
+  if (pos == string::npos)
+    // flag currently not present in command string, so just append it to command string
     *ss << " " << flag_to_replace << new_value;
   else
   {
-    //flag is present, need to replace old value with new value
+    // flag is present, need to replace old value with new value
 
-    //compute position after flag_to_replace
+    // compute position after flag_to_replace
     pos += flag_to_replace.size();
 
-    //now pos is position where value starts
-    //find position of next space
-    size_t pos_after_value = cmd.find(" ",pos);
-    if(pos_after_value == string::npos)
-      //we reach the end of the string, so replace the all characters after pos by new_value
-      cmd.replace(pos,cmd.size()-pos,new_value);
+    // now pos is position where value starts
+    // find position of next space
+    size_t pos_after_value = cmd.find(" ", pos);
+    if (pos_after_value == string::npos)
+      // we reach the end of the string, so replace the all characters after pos by new_value
+      cmd.replace(pos, cmd.size() - pos, new_value);
     else
-      //replace characters between pos and pos_after_value by new_value
-      cmd.replace(pos,pos_after_value-pos,new_value);
+      // replace characters between pos and pos_after_value by new_value
+      cmd.replace(pos, pos_after_value - pos, new_value);
     ss->str(cmd);
   }
 }
 
 char** get_argv_from_string(string s, int& argc)
 {
-  char* c = calloc_or_throw<char>(s.length()+3);
+  char* c = calloc_or_throw<char>(s.length() + 3);
   c[0] = 'b';
   c[1] = ' ';
-  strcpy(c+2, s.c_str());
-  substring ss = {c, c+s.length()+2};
+  strcpy(c + 2, s.c_str());
+  substring ss = {c, c + s.length() + 2};
   v_array<substring> foo = v_init<substring>();
   tokenize(' ', ss, foo);
 
@@ -1461,8 +1558,8 @@ char** get_argv_from_string(string s, int& argc)
   for (size_t i = 0; i < foo.size(); i++)
   {
     *(foo[i].end) = '\0';
-    argv[i] = calloc_or_throw<char>(foo[i].end-foo[i].begin+1);
-    sprintf(argv[i],"%s",foo[i].begin);
+    argv[i] = calloc_or_throw<char>(foo[i].end - foo[i].begin + 1);
+    sprintf(argv[i], "%s", foo[i].begin);
   }
 
   argc = (int)foo.size();
@@ -1473,12 +1570,12 @@ char** get_argv_from_string(string s, int& argc)
 
 void free_args(int argc, char* argv[])
 {
-  for (int i = 0; i < argc; i++)
-    free(argv[i]);
+  for (int i = 0; i < argc; i++) free(argv[i]);
   free(argv);
 }
 
-vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    options_i& options, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   vw& all = parse_args(options, trace_listener, trace_context);
 
@@ -1489,7 +1586,7 @@ vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_mess
     if (!model)
     {
       std::vector<std::string> all_initial_regressor_files(all.initial_regressors);
-      if(options.was_supplied("input_feature_regularizer"))
+      if (options.was_supplied("input_feature_regularizer"))
       {
         all_initial_regressor_files.push_back(all.per_feature_regularizer_input);
       }
@@ -1507,9 +1604,10 @@ vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_mess
     options.check_unregistered();
 
     // upon direct query for help -- spit it out to stdout;
-    if (options.get_typed_option<bool>("help").value()) {
-        cout << options.help();
-        exit(0);
+    if (options.get_typed_option<bool>("help").value())
+    {
+      cout << options.help();
+      exit(0);
     }
 
     initialize_parser_datastructures(all);
@@ -1533,12 +1631,14 @@ vw* initialize(options_i& options, io_buf* model, bool skipModelLoad, trace_mess
 vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
-  char** argv = get_argv_from_string(s,argc);
+  char** argv = get_argv_from_string(s, argc);
   vw* ret = nullptr;
 
   try
-  { ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context); }
-  catch(...)
+  {
+    ret = initialize(argc, argv, model, skipModelLoad, trace_listener, trace_context);
+  }
+  catch (...)
   {
     free_args(argc, argv);
     throw;
@@ -1548,7 +1648,8 @@ vw* initialize(string s, io_buf* model, bool skipModelLoad, trace_message_t trac
   return ret;
 }
 
-vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
+vw* initialize(
+    int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_message_t trace_listener, void* trace_context)
 {
   options_i* options = new config::options_boost_po(argc, argv);
   vw* all = initialize(*options, model, skipModelLoad, trace_listener, trace_context);
@@ -1563,10 +1664,12 @@ vw* initialize(int argc, char* argv[], io_buf* model, bool skipModelLoad, trace_
 vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_listener, void* trace_context)
 {
   options_serializer_boost_po serializer;
-  for(auto const& option : vw_model->options->get_all_options())
+  for (auto const& option : vw_model->options->get_all_options())
   {
-    if (vw_model->options->was_supplied(option->m_name)) {
-      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the model.
+    if (vw_model->options->was_supplied(option->m_name))
+    {
+      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
+      // model.
       if (option->m_name == "no_stdin" || option->m_name == "initial_regressor")
       {
         continue;
@@ -1579,12 +1682,13 @@ vw* seed_vw_model(vw* vw_model, const string extra_args, trace_message_t trace_l
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
-  vw* new_model = VW::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
+  vw* new_model =
+      VW::initialize(serialized_options.c_str(), nullptr, true /* skipModelLoad */, trace_listener, trace_context);
   free_it(new_model->sd);
 
   // reference model states stored in the specified VW instance
-  new_model->weights.shallow_copy(vw_model->weights); // regressor
-  new_model->sd = vw_model->sd; // shared data
+  new_model->weights.shallow_copy(vw_model->weights);  // regressor
+  new_model->sd = vw_model->sd;                        // shared data
 
   return new_model;
 }
@@ -1623,7 +1727,7 @@ void finish(vw& all, bool delete_all)
     all.trace_message.precision(6);
     all.trace_message << std::fixed;
     all.trace_message << endl << "finished run";
-    if(all.current_pass == 0 || all.current_pass == 1)
+    if (all.current_pass == 0 || all.current_pass == 1)
       all.trace_message << endl << "number of examples = " << all.sd->example_number;
     else
     {
@@ -1633,24 +1737,29 @@ void finish(vw& all, bool delete_all)
     all.trace_message << endl << "weighted example sum = " << all.sd->weighted_examples();
     all.trace_message << endl << "weighted label sum = " << all.sd->weighted_labels;
     all.trace_message << endl << "average loss = ";
-    if(all.holdout_set_off)
+    if (all.holdout_set_off)
       if (all.sd->weighted_labeled_examples > 0)
         all.trace_message << all.sd->sum_loss / all.sd->weighted_labeled_examples;
       else
         all.trace_message << "n.a.";
-    else if  ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
+    else if ((all.sd->holdout_best_loss == FLT_MAX) || (all.sd->holdout_best_loss == FLT_MAX * 0.5))
       all.trace_message << "undefined (no holdout)";
     else
       all.trace_message << all.sd->holdout_best_loss << " h";
     if (all.sd->report_multiclass_log_loss)
     {
       if (all.holdout_set_off)
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
+        all.trace_message << endl
+                          << "average multiclass log loss = "
+                          << all.sd->multiclass_log_loss / all.sd->weighted_labeled_examples;
       else
-        all.trace_message << endl << "average multiclass log loss = " << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
+        all.trace_message << endl
+                          << "average multiclass log loss = "
+                          << all.sd->holdout_multiclass_log_loss / all.sd->weighted_labeled_examples << " h";
     }
 
-    float best_constant; float best_constant_loss;
+    float best_constant;
+    float best_constant_loss;
     if (get_best_constant(all, best_constant, best_constant_loss))
     {
       all.trace_message << endl << "best constant = " << best_constant;
@@ -1702,10 +1811,10 @@ void finish(vw& all, bool delete_all)
   if (!seeded)
   {
     if (all.sd->ldict)
-      {
-        all.sd->ldict->~namedlabels();
-        free(all.sd->ldict);
-      }
+    {
+      all.sd->ldict->~namedlabels();
+      free(all.sd->ldict);
+    }
     free(all.sd);
   }
   all.reduction_stack.delete_v();
@@ -1713,13 +1822,14 @@ void finish(vw& all, bool delete_all)
     if (all.final_prediction_sink[i] != 1)
       io_buf::close_file_or_socket(all.final_prediction_sink[i]);
   all.final_prediction_sink.delete_v();
-  for (size_t i=0; i<all.loaded_dictionaries.size(); i++)
+  for (size_t i = 0; i < all.loaded_dictionaries.size(); i++)
   {
     // Warning C6001 is triggered by the following:
-    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using 'free(all.loaded_dictionaries[i].name)'
+    // (a) dictionary_info.name is allocated using 'calloc_or_throw<char>(strlen(s)+1)' and (b) freed using
+    // 'free(all.loaded_dictionaries[i].name)'
     //
-    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the warning goes away.
-    // Disable SDL warning.
+    // When the call to allocation is replaced by (a) 'new char[strlen(s)+1]' and deallocated using (b) 'delete []', the
+    // warning goes away. Disable SDL warning.
     //    #pragma warning(disable:6001)
     free_it(all.loaded_dictionaries[i].name);
     //#pragma warning(default:6001)
@@ -1732,9 +1842,10 @@ void finish(vw& all, bool delete_all)
 
   delete all.all_reduce;
 
-  if (delete_all) delete &all;
+  if (delete_all)
+    delete &all;
 
   if (finalize_regressor_exception_thrown)
     throw finalize_regressor_exception;
 }
-}
+}  // namespace VW

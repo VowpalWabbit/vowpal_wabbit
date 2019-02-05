@@ -37,10 +37,10 @@ float collision_cleanup(features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, size_t, void(*copy_label)(void*,void*))
+void copy_example_label(example* dst, example* src, size_t, void (*copy_label)(void*, void*))
 {
   if (copy_label)
-    copy_label(&dst->l, &src->l);   // TODO: we really need to delete_label on dst :(
+    copy_label(&dst->l, &src->l);  // TODO: we really need to delete_label on dst :(
   else
     dst->l = src->l;
 }
@@ -53,7 +53,8 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
   dst->ft_offset = src->ft_offset;
 
   dst->partial_prediction = src->partial_prediction;
-  if (src->passthrough == nullptr) dst->passthrough = nullptr;
+  if (src->passthrough == nullptr)
+    dst->passthrough = nullptr;
   else
   {
     dst->passthrough = new features;
@@ -70,19 +71,18 @@ void copy_example_metadata(bool /* audit */, example* dst, example* src)
 
 void copy_example_data(bool audit, example* dst, example* src)
 {
-  //std::cerr << "copy_example_data dst = " << dst << std::endl;
+  // std::cerr << "copy_example_data dst = " << dst << std::endl;
   copy_example_metadata(audit, dst, src);
 
   // copy feature data
   copy_array(dst->indices, src->indices);
-  for (namespace_index c : src->indices)
-    dst->feature_space[c].deep_copy_from(src->feature_space[c]);
-  //copy_array(dst->atomics[i], src->atomics[i]);
+  for (namespace_index c : src->indices) dst->feature_space[c].deep_copy_from(src->feature_space[c]);
+  // copy_array(dst->atomics[i], src->atomics[i]);
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
 }
 
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*,void*))
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void (*copy_label)(void*, void*))
 {
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
@@ -91,7 +91,7 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
 void move_feature_namespace(example* dst, example* src, namespace_index c)
 {
   if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
-    return; // index not present in src
+    return;  // index not present in src
   if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end())
     dst->indices.push_back(c);
 
@@ -105,17 +105,19 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
   dst->total_sum_feat_sq += fdst.sum_feat_sq;
 }
 
-}
+}  // namespace VW
 
 struct features_and_source
 {
-  v_array<feature> feature_map; //map to store sparse feature vectors
+  v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
-{ p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask)); }
+{
+  p.feature_map.push_back(feature(fx, (uint64_t)(fi >> p.stride_shift) & p.mask));
+}
 
 namespace VW
 {
@@ -131,9 +133,8 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   return fs.feature_map.begin();
 }
 
-void return_features(feature* f)
-{ free_it (f); }
-}
+void return_features(feature* f) { free_it(f); }
+}  // namespace VW
 
 struct full_features_and_source
 {
@@ -143,19 +144,21 @@ struct full_features_and_source
 };
 
 void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
-{ p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask); }
+{
+  p.fs.push_back(fx, (uint64_t)(fi >> p.stride_shift) & p.mask);
+}
 
-flat_example* flatten_example(vw& all, example *ec)
+flat_example* flatten_example(vw& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
   fec.l.simple.weight = ec->weight;
 
   fec.tag_len = ec->tag.size();
-  if (fec.tag_len >0)
+  if (fec.tag_len > 0)
   {
-    fec.tag = calloc_or_throw<char>(fec.tag_len+1);
-    memcpy(fec.tag,ec->tag.begin(), fec.tag_len);
+    fec.tag = calloc_or_throw<char>(fec.tag_len + 1);
+    memcpy(fec.tag, ec->tag.begin(), fec.tag_len);
   }
 
   fec.example_counter = ec->example_counter;
@@ -164,7 +167,7 @@ flat_example* flatten_example(vw& all, example *ec)
 
   full_features_and_source ffs;
   ffs.stride_shift = all.weights.stride_shift();
-  if (all.weights.not_null())  //TODO:temporary fix. all.weights is not initialized at this point in some cases.
+  if (all.weights.not_null())  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = (uint64_t)all.weights.mask() >> all.weights.stride_shift();
   else
     ffs.mask = (uint64_t)LONG_MAX >> all.weights.stride_shift();
@@ -175,7 +178,7 @@ flat_example* flatten_example(vw& all, example *ec)
   return &fec;
 }
 
-flat_example* flatten_sort_example(vw& all, example *ec)
+flat_example* flatten_sort_example(vw& all, example* ec)
 {
   flat_example* fec = flatten_example(all, ec);
   fec->fs.sort(all.parse_mask);
@@ -185,7 +188,7 @@ flat_example* flatten_sort_example(vw& all, example *ec)
 
 void free_flatten_example(flat_example* fec)
 {
-  //note: The label memory should be freed by by freeing the original example.
+  // note: The label memory should be freed by by freeing the original example.
   if (fec)
   {
     fec->fs.delete_v();
@@ -197,20 +200,22 @@ void free_flatten_example(flat_example* fec)
 
 namespace VW
 {
-example *alloc_examples(size_t, size_t count = 1)
+example* alloc_examples(size_t, size_t count = 1)
 {
   example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr) return nullptr;
-  for (size_t i=0; i<count; i++)
+  if (ec == nullptr)
+    return nullptr;
+  for (size_t i = 0; i < count; i++)
   {
     ec[i].in_use = true;
     ec[i].ft_offset = 0;
-    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+    //  std::cerr << "  alloc_example.indices.begin()=" << ec->indices.begin() << " end=" << ec->indices.end() << " //
+    //  ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   }
   return ec;
 }
 
-void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_prediction)(void*))
+void dealloc_example(void (*delete_label)(void*), example& ec, void (*delete_prediction)(void*))
 {
   if (delete_label)
     delete_label(&ec.l);
@@ -226,8 +231,7 @@ void dealloc_example(void(*delete_label)(void*), example&ec, void(*delete_predic
     delete ec.passthrough;
   }
 
-  for (size_t j = 0; j < 256; j++)
-    ec.feature_space[j].delete_v();
+  for (size_t j = 0; j < 256; j++) ec.feature_space[j].delete_v();
 
   ec.indices.delete_v();
 }
@@ -246,9 +250,10 @@ void clear_seq_and_finish_examples(vw& all, multi_ex& ec_seq)
 
 void return_multiple_example(vw& all, v_array<example*>& examples)
 {
-  for (auto ec : examples) {
+  for (auto ec : examples)
+  {
     clean_example(all, *ec, true);
   }
   examples.clear();
 }
-}
+}  // namespace VW

@@ -15,26 +15,26 @@ using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
 
-//All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities are the probability with which each action should be replaced to the top of the list.
+// All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
+// are the probability with which each action should be replaced to the top of the list.
 
-//tau first
+// tau first
 #define EXPLORE_FIRST 0
-//epsilon greedy
+// epsilon greedy
 #define EPS_GREEDY 1
 // bagging explorer
 #define BAG_EXPLORE 2
-//softmax
+// softmax
 #define SOFTMAX 3
-//cover
+// cover
 #define COVER 4
-//regcb
+// regcb
 #define REGCB 5
 
 #define B_SEARCH_MAX_ITER 20
 
 namespace CB_EXPLORE_ADF
 {
-
 struct cb_explore_adf
 {
   v_array<action_score> action_probs;
@@ -53,8 +53,8 @@ struct cb_explore_adf
   uint64_t offset;
   bool greedify;
   bool first_only;
-  bool regcbopt; // use optimistic variant of RegCB
-  float c0; // mellowness parameter for RegCB
+  bool regcbopt;  // use optimistic variant of RegCB
+  float c0;       // mellowness parameter for RegCB
 
   float min_cb_cost;
   float max_cb_cost;
@@ -85,7 +85,8 @@ struct cb_explore_adf
   std::vector<v_array<CB::cb_class>> ex_costs;
 };
 
-template<class T> void swap(T& ele1, T& ele2)
+template <class T>
+void swap(T& ele1, T& ele2)
 {
   T temp = ele2;
   ele2 = ele1;
@@ -102,7 +103,7 @@ example* test_adf_sequence(multi_ex& ec_seq)
   example* ret = nullptr;
   for (size_t k = 0; k < ec_seq.size(); k++)
   {
-    example *ec = ec_seq[k];
+    example* ec = ec_seq[k];
 
     // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
@@ -127,7 +128,7 @@ example* test_adf_sequence(multi_ex& ec_seq)
 }
 
 // TODO: same as cs_active.cc, move to shared place
-float binary_search(float fhat, float delta, float sens, float tol=1e-6)
+float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
 {
   const float maxw = min(fhat / sens, FLT_MAX);
 
@@ -153,10 +154,8 @@ float binary_search(float fhat, float delta, float sens, float tol=1e-6)
   return l;
 }
 
-void get_cost_ranges(std::vector<float> &min_costs,
-                     std::vector<float> &max_costs, float delta,
-                     cb_explore_adf &data, multi_learner &base,
-                     multi_ex& examples, bool min_only)
+void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_costs, float delta, cb_explore_adf& data,
+    multi_learner& base, multi_ex& examples, bool min_only)
 {
   const bool shared = CB::ec_is_example_header(*examples[0]);
   const size_t num_actions = examples[0]->pred.a_s.size();
@@ -189,7 +188,7 @@ void get_cost_ranges(std::vector<float> &min_costs,
     example* ec = examples[shared + a];
     ec->l.simple.label = cmin - 1;
     float sens = base.sensitivity(*ec);
-    float w = 0; // importance weight
+    float w = 0;  // importance weight
 
     if (ec->pred.scalar < cmin || nanpattern(sens) || infpattern(sens))
       min_costs[a] = cmin;
@@ -221,14 +220,15 @@ void get_cost_ranges(std::vector<float> &min_costs,
 
   // reset cb example data
   for (size_t i = 0; i < examples.size(); ++i)
-  { examples[i]->pred.a_s = ex_as[i];
+  {
+    examples[i]->pred.a_s = ex_as[i];
     examples[i]->l.cb.costs = ex_costs[i];
   }
 }
 
 size_t fill_tied(cb_explore_adf& /* data */, v_array<action_score>& preds)
 {
-  if (preds.size() == 0 )
+  if (preds.size() == 0)
     return 0;
   size_t ret = 1;
   for (size_t i = 1; i < preds.size(); ++i)
@@ -242,7 +242,7 @@ size_t fill_tied(cb_explore_adf& /* data */, v_array<action_score>& preds)
 template <bool is_learn>
 void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  //Explore tau times, then act according to optimal.
+  // Explore tau times, then act according to optimal.
   if (is_learn && data.gen_cs.known_cost.probability < 1 && test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
@@ -254,14 +254,12 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
   if (data.tau)
   {
     float prob = 1.f / (float)num_actions;
-    for (size_t i = 0; i < num_actions; i++)
-      preds[i].score = prob;
+    for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
     data.tau--;
   }
   else
   {
-    for (size_t i = 1; i < num_actions; i++)
-      preds[i].score = 0.;
+    for (size_t i = 1; i < num_actions; i++) preds[i].score = 0.;
     preds[0].score = 1.0;
   }
 
@@ -271,7 +269,7 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  //Explore uniform random an epsilon fraction of the time.
+  // Explore uniform random an epsilon fraction of the time.
   if (is_learn && test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else
@@ -281,16 +279,14 @@ void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex
 
   uint32_t num_actions = (uint32_t)preds.size();
 
-  size_t tied_actions = fill_tied(data,preds);
+  size_t tied_actions = fill_tied(data, preds);
 
   const float prob = data.epsilon / num_actions;
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i].score = prob;
+  for (size_t i = 0; i < num_actions; i++) preds[i].score = prob;
   if (!data.first_only)
-    {
-      for (size_t i = 0; i < tied_actions; ++i)
-        preds[i].score += (1.f - data.epsilon) / tied_actions;
-    }
+  {
+    for (size_t i = 0; i < tied_actions; ++i) preds[i].score += (1.f - data.epsilon) / tied_actions;
+  }
   else
     preds[0].score += 1.f - data.epsilon;
 }
@@ -305,7 +301,7 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
     {
       CB::label& ld = examples[i]->l.cb;
       if (ld.costs.size() == 1)
-        ld.costs[0].probability = 1.f; // no importance weighting
+        ld.costs[0].probability = 1.f;  // no importance weighting
     }
 
     multiline_learn_or_predict<true>(base, examples, data.offset);
@@ -319,15 +315,14 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
 
   const float max_range = data.max_cb_cost - data.min_cb_cost;
   // threshold on empirical loss difference
-  const float delta =
-      data.c0 * log((float)(num_actions * data.counter)) * pow(max_range, 2);
+  const float delta = data.c0 * log((float)(num_actions * data.counter)) * pow(max_range, 2);
 
   if (!is_learn)
   {
     get_cost_ranges(data.min_costs, data.max_costs, delta, data, base, examples,
-                    /*min_only=*/data.regcbopt);
+        /*min_only=*/data.regcbopt);
 
-    if (data.regcbopt) // optimistic variant
+    if (data.regcbopt)  // optimistic variant
     {
       float min_cost = FLT_MAX;
       size_t a_opt = 0;  // optimistic action
@@ -341,14 +336,13 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
       }
       for (size_t i = 0; i < preds.size(); ++i)
       {
-        if (preds[i].action == a_opt ||
-            (!data.first_only && data.min_costs[preds[i].action] == min_cost))
+        if (preds[i].action == a_opt || (!data.first_only && data.min_costs[preds[i].action] == min_cost))
           preds[i].score = 1;
         else
           preds[i].score = 0;
       }
     }
-    else // elimination variant
+    else  // elimination variant
     {
       float min_max_cost = FLT_MAX;
       for (size_t a = 0; a < num_actions; ++a)
@@ -361,39 +355,35 @@ void predict_or_learn_regcb(cb_explore_adf& data, multi_learner& base, multi_ex&
         else
           preds[i].score = 0;
         // explore uniformly on support
-        enforce_minimum_probability(1.0, /*update_zero_elements=*/false,
-            begin_scores(preds), end_scores(preds));
+        enforce_minimum_probability(1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
       }
     }
   }
 }
 
-  void do_sort(cb_explore_adf& data)
-  {
-    //We want to preserve the score order in the returned action_probs if possible.  To do this,
-    //sort top_actions and data.action_probs by the order induced in data.scores.
-    sort(data.action_probs.begin(), data.action_probs.end(),
-         [data] (action_score as1, action_score as2)
-         {
-           if (as1.score > as2.score)
-             return true;
-           else if (as1.score < as2.score)
-             return false;
-           //equal probabilities
-           if (data.scores[as1.action] < data.scores[as2.action])
-             return true;
-           else if (data.scores[as1.action] > data.scores[as2.action])
-             return false;
-           //equal probabilities and equal cost estimates
-           return as1.action < as2.action;
-         }
-         );
-  }
+void do_sort(cb_explore_adf& data)
+{
+  // We want to preserve the score order in the returned action_probs if possible.  To do this,
+  // sort top_actions and data.action_probs by the order induced in data.scores.
+  sort(data.action_probs.begin(), data.action_probs.end(), [data](action_score as1, action_score as2) {
+    if (as1.score > as2.score)
+      return true;
+    else if (as1.score < as2.score)
+      return false;
+    // equal probabilities
+    if (data.scores[as1.action] < data.scores[as2.action])
+      return true;
+    else if (data.scores[as1.action] > data.scores[as2.action])
+      return false;
+    // equal probabilities and equal cost estimates
+    return as1.action < as2.action;
+  });
+}
 
 template <bool is_learn>
 void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  //Randomize over predictions from a base set of predictors
+  // Randomize over predictions from a base set of predictors
   v_array<action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = (uint32_t)examples.size();
   if (CB::ec_is_example_header(*examples[0]))
@@ -405,8 +395,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
   }
 
   data.scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++)
-    data.scores.push_back(0.f);
+  for (uint32_t i = 0; i < num_actions; i++) data.scores.push_back(0.f);
   vector<float>& top_actions = data.top_actions;
   top_actions.assign(num_actions, 0);
   bool test_sequence = test_adf_sequence(examples) == nullptr;
@@ -414,9 +403,7 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
   {
     // avoid updates to the random num generator
     // for greedify, always update first policy once
-    uint32_t count = is_learn
-                     ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all))
-                     : 0;
+    uint32_t count = is_learn ? ((data.greedify && i == 0) ? 1 : BS::weight_gen(*data.all)) : 0;
 
     if (is_learn && count > 0 && !test_sequence)
       multiline_learn_or_predict<true>(base, examples, data.offset, i);
@@ -424,46 +411,42 @@ void predict_or_learn_bag(cb_explore_adf& data, multi_learner& base, multi_ex& e
       multiline_learn_or_predict<false>(base, examples, data.offset, i);
 
     assert(preds.size() == num_actions);
-    for (auto e : preds)
-      data.scores[e.action] += e.score;
+    for (auto e : preds) data.scores[e.action] += e.score;
 
     if (!data.first_only)
     {
       size_t tied_actions = fill_tied(data, preds);
-      for (size_t i = 0; i < tied_actions; ++i)
-        top_actions[preds[i].action] += 1.f / tied_actions;
+      for (size_t i = 0; i < tied_actions; ++i) top_actions[preds[i].action] += 1.f / tied_actions;
     }
     else
       top_actions[preds[0].action] += 1.f;
     if (is_learn && !test_sequence)
-      for (uint32_t j = 1; j < count; j++)
-        multiline_learn_or_predict<true>(base, examples, data.offset, i);
+      for (uint32_t j = 1; j < count; j++) multiline_learn_or_predict<true>(base, examples, data.offset, i);
   }
 
   data.action_probs.clear();
-  for (uint32_t i=0; i < data.scores.size(); i++)
-    data.action_probs.push_back({i, 0.});
+  for (uint32_t i = 0; i < data.scores.size(); i++) data.action_probs.push_back({i, 0.});
 
   // generate distribution over actions
-  generate_bag(begin(data.top_actions), end(data.top_actions), begin_scores(data.action_probs), end_scores(data.action_probs));
+  generate_bag(
+      begin(data.top_actions), end(data.top_actions), begin_scores(data.action_probs), end_scores(data.action_probs));
 
   enforce_minimum_probability(data.epsilon, true, begin_scores(data.action_probs), end_scores(data.action_probs));
 
   do_sort(data);
 
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i] = data.action_probs[i];
+  for (size_t i = 0; i < num_actions; i++) preds[i] = data.action_probs[i];
 }
 
 template <bool is_learn>
 void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-  //Randomize over predictions from a base set of predictors
-  //Use cost sensitive oracle to cover actions to form distribution.
+  // Randomize over predictions from a base set of predictors
+  // Use cost sensitive oracle to cover actions to form distribution.
   const bool is_mtr = data.gen_cs.cb_type == CB_TYPE_MTR;
   if (is_learn)
   {
-    if (is_mtr) // use DR estimates for non-ERM policies in MTR
+    if (is_mtr)  // use DR estimates for non-ERM policies in MTR
       GEN_CS::gen_cs_example_dr<true>(data.gen_cs, examples, data.cs_labels);
     else
       GEN_CS::gen_cs_example<false>(data.gen_cs, examples, data.cs_labels);
@@ -482,17 +465,14 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   const float min_prob = min(1.f / num_actions, 1.f / (float)sqrt(data.counter * num_actions));
   v_array<action_score>& probs = data.action_probs;
   probs.clear();
-  for(uint32_t i = 0; i < num_actions; i++)
-    probs.push_back({i,0.});
+  for (uint32_t i = 0; i < num_actions; i++) probs.push_back({i, 0.});
   data.scores.clear();
-  for (uint32_t i = 0; i < num_actions; i++)
-    data.scores.push_back(preds[i].score);
+  for (uint32_t i = 0; i < num_actions; i++) data.scores.push_back(preds[i].score);
 
   if (!data.first_only)
   {
     size_t tied_actions = fill_tied(data, preds);
-    for (size_t i = 0; i < tied_actions; ++i)
-      probs[preds[i].action].score += additive_probability / tied_actions;
+    for (size_t i = 0; i < tied_actions; ++i) probs[preds[i].action].score += additive_probability / tied_actions;
   }
   else
     probs[preds[0].action].score += additive_probability;
@@ -502,7 +482,7 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < data.cover_size; i++)
   {
-    //Create costs of each action based on online cover
+    // Create costs of each action based on online cover
     if (is_learn)
     {
       data.cs_labels_2.costs.clear();
@@ -510,45 +490,46 @@ void predict_or_learn_cover(cb_explore_adf& data, multi_learner& base, multi_ex&
         data.cs_labels_2.costs.push_back(data.cs_labels.costs[0]);
       for (uint32_t j = 0; j < num_actions; j++)
       {
-        float pseudo_cost = data.cs_labels.costs[j+shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
-        data.cs_labels_2.costs.push_back({pseudo_cost,j,0.,0.});
+        float pseudo_cost =
+            data.cs_labels.costs[j + shared].x - data.psi * min_prob / (max(probs[j].score, min_prob) / norm);
+        data.cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
-      GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2, data.prepped_cs_labels, data.offset, i+1);
+      GEN_CS::call_cs_ldf<true>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels_2,
+          data.prepped_cs_labels, data.offset, i + 1);
     }
     else
-      GEN_CS::call_cs_ldf<false>(*(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset, i+1);
+      GEN_CS::call_cs_ldf<false>(
+          *(data.cs_ldf_learner), examples, data.cb_labels, data.cs_labels, data.prepped_cs_labels, data.offset, i + 1);
 
-    for (uint32_t i = 0; i < num_actions; i++)
-      data.scores[i] += preds[i].score;
+    for (uint32_t i = 0; i < num_actions; i++) data.scores[i] += preds[i].score;
     if (!data.first_only)
     {
       size_t tied_actions = fill_tied(data, preds);
       const float add_prob = additive_probability / tied_actions;
       for (size_t i = 0; i < tied_actions; ++i)
-        {
-          if (probs[preds[i].action].score < min_prob)
-            norm += max(0, add_prob - (min_prob - probs[preds[i].action].score));
-          else
-            norm += add_prob;
-          probs[preds[i].action].score += add_prob;
-        }
+      {
+        if (probs[preds[i].action].score < min_prob)
+          norm += max(0, add_prob - (min_prob - probs[preds[i].action].score));
+        else
+          norm += add_prob;
+        probs[preds[i].action].score += add_prob;
+      }
     }
     else
-      {
-        uint32_t action = preds[0].action;
-        if (probs[action].score < min_prob)
-          norm += max(0, additive_probability - (min_prob - probs[action].score));
-        else
-          norm += additive_probability;
-        probs[action].score += additive_probability;
-      }
+    {
+      uint32_t action = preds[0].action;
+      if (probs[action].score < min_prob)
+        norm += max(0, additive_probability - (min_prob - probs[action].score));
+      else
+        norm += additive_probability;
+      probs[action].score += additive_probability;
+    }
   }
 
   enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 
   do_sort(data);
-  for (size_t i = 0; i < num_actions; i++)
-    preds[i] = probs[i];
+  for (size_t i = 0; i < num_actions; i++) preds[i] = probs[i];
 
   ++data.counter;
 }
@@ -579,21 +560,20 @@ void finish(cb_explore_adf& data)
   data.cs_labels.costs.delete_v();
   data.cs_labels_2.costs.delete_v();
   data.cb_labels.delete_v();
-  for(size_t i = 0; i < data.prepped_cs_labels.size(); i++)
-    data.prepped_cs_labels[i].costs.delete_v();
+  for (size_t i = 0; i < data.prepped_cs_labels.size(); i++) data.prepped_cs_labels[i].costs.delete_v();
   data.prepped_cs_labels.delete_v();
   data.gen_cs.pred_scores.costs.delete_v();
   data.gen_cs.mtr_ec_seq.~vector();
 }
 
-
-//Semantics: Currently we compute the IPS loss no matter what flags
-//are specified. We print the first action and probability, based on
-//ordering by scores in the final output.
+// Semantics: Currently we compute the IPS loss no matter what flags
+// are specified. We print the first action and probability, based on
+// ordering by scores in the final output.
 
 void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
 {
-  if (ec_seq.size() <= 0) return;
+  if (ec_seq.size() <= 0)
+    return;
 
   size_t num_features = 0;
 
@@ -606,26 +586,24 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
     if (!CB::ec_is_example_header(*ec_seq[i]))
       num_features += ec_seq[i]->num_features;
 
-  bool labeled_example= true;
+  bool labeled_example = true;
   if (c.gen_cs.known_cost.probability > 0)
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
       float l = get_unbiased_cost(&c.gen_cs.known_cost, preds[i].action);
-      loss += l*preds[i].score;
+      loss += l * preds[i].score;
     }
   }
   else
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq.size(); i++)
-    holdout_example &= ec_seq[i]->test_only;
+  for (size_t i = 0; i < ec_seq.size(); i++) holdout_example &= ec_seq[i]->test_only;
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (int sink : all.final_prediction_sink)
-    print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -635,7 +613,8 @@ void output_example(vw& all, cb_explore_adf& c, multi_ex& ec_seq)
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0)
+        outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
@@ -672,35 +651,35 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
 
   if (label_example == nullptr || !is_learn)
   {
-    if (label_example != nullptr)//extract label
+    if (label_example != nullptr)  // extract label
     {
       data.action_label = label_example->l.cb;
       label_example->l.cb = data.empty_label;
     }
     switch (data.explore_type)
     {
-    case EXPLORE_FIRST:
-      predict_or_learn_first<false>(data, base, ec_seq);
-      break;
-    case EPS_GREEDY:
-      predict_or_learn_greedy<false>(data, base, ec_seq);
-      break;
-    case SOFTMAX:
-      predict_or_learn_softmax<false>(data, base, ec_seq);
-      break;
-    case BAG_EXPLORE:
-      predict_or_learn_bag<false>(data, base, ec_seq);
-      break;
-    case COVER:
-      predict_or_learn_cover<false>(data, base, ec_seq);
-      break;
-    case REGCB:
-      predict_or_learn_regcb<false>(data, base, ec_seq);
-      break;
-    default:
-      THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+      case EXPLORE_FIRST:
+        predict_or_learn_first<false>(data, base, ec_seq);
+        break;
+      case EPS_GREEDY:
+        predict_or_learn_greedy<false>(data, base, ec_seq);
+        break;
+      case SOFTMAX:
+        predict_or_learn_softmax<false>(data, base, ec_seq);
+        break;
+      case BAG_EXPLORE:
+        predict_or_learn_bag<false>(data, base, ec_seq);
+        break;
+      case COVER:
+        predict_or_learn_cover<false>(data, base, ec_seq);
+        break;
+      case REGCB:
+        predict_or_learn_regcb<false>(data, base, ec_seq);
+        break;
+      default:
+        THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
-    if (label_example != nullptr)	//restore label
+    if (label_example != nullptr)  // restore label
       label_example->l.cb = data.action_label;
   }
   else
@@ -713,35 +692,35 @@ void do_actual_learning(cb_explore_adf& data, multi_learner& base, multi_ex& ec_
 
     switch (data.explore_type)
     {
-    case EXPLORE_FIRST:
-      predict_or_learn_first<is_learn>(data, base, ec_seq);
-      break;
-    case EPS_GREEDY:
-      predict_or_learn_greedy<is_learn>(data, base, ec_seq);
-      break;
-    case SOFTMAX:
-      predict_or_learn_softmax<is_learn>(data, base, ec_seq);
-      break;
-    case BAG_EXPLORE:
-      predict_or_learn_bag<is_learn>(data, base, ec_seq);
-      break;
-    case COVER:
-      predict_or_learn_cover<is_learn>(data, base, ec_seq);
-      break;
-    case REGCB:
-      predict_or_learn_regcb<is_learn>(data, base, ec_seq);
-      break;
-    default:
-      THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
+      case EXPLORE_FIRST:
+        predict_or_learn_first<is_learn>(data, base, ec_seq);
+        break;
+      case EPS_GREEDY:
+        predict_or_learn_greedy<is_learn>(data, base, ec_seq);
+        break;
+      case SOFTMAX:
+        predict_or_learn_softmax<is_learn>(data, base, ec_seq);
+        break;
+      case BAG_EXPLORE:
+        predict_or_learn_bag<is_learn>(data, base, ec_seq);
+        break;
+      case COVER:
+        predict_or_learn_cover<is_learn>(data, base, ec_seq);
+        break;
+      case REGCB:
+        predict_or_learn_regcb<is_learn>(data, base, ec_seq);
+        break;
+      default:
+        THROW("Unknown explorer type specified for contextual bandit learning: " << data.explore_type);
     }
 
     /*	for (size_t i = 0; i < temp_probs.size(); i++)
       if (temp_probs[i] != data.ec_seq[0]->pred.a_s[i].score)
-        cout << "problem! " << temp_probs[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " << data.ec_seq[0]->pred.a_s[i].action << endl;
-        temp_probs.delete_v();*/
+        cout << "problem! " << temp_probs[i] << " != " << data.ec_seq[0]->pred.a_s[i].score << " for " <<
+      data.ec_seq[0]->pred.a_s[i].action << endl; temp_probs.delete_v();*/
   }
 }
-}
+}  // namespace CB_EXPLORE_ADF
 
 using namespace CB_EXPLORE_ADF;
 
@@ -754,40 +733,49 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   std::string type_string = "ips";
   option_group_definition new_options("Contextual Bandit Exploration with Action Dependent Features");
   new_options
-    .add(make_option("cb_explore_adf", cb_explore_adf_option).keep().help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-    .add(make_option("first", data->tau).keep().help("tau-first exploration"))
-    .add(make_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"))
-    .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
-    .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
-    .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
-    .add(make_option("nounif", data->nounif).keep().help("do not explore uniformly on zero-probability actions in cover"))
-    .add(make_option("softmax", softmax).keep().help("softmax exploration"))
-    .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
-    .add(make_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"))
-    .add(make_option("mellowness", data->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-    .add(make_option("greedify", data->greedify).keep().help("always update first policy once in bagging"))
-    .add(make_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
-    .add(make_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
-    .add(make_option("first_only", data->first_only).keep().help("Only explore the first action in a tie-breaking event"))
-    .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
-    .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
+      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+               .keep()
+               .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+      .add(make_option("first", data->tau).keep().help("tau-first exploration"))
+      .add(make_option("epsilon", data->epsilon).keep().help("epsilon-greedy exploration"))
+      .add(make_option("bag", data->bag_size).keep().help("bagging-based exploration"))
+      .add(make_option("cover", data->cover_size).keep().help("Online cover based exploration"))
+      .add(make_option("psi", data->psi).keep().default_value(1.0f).help("disagreement parameter for cover"))
+      .add(make_option("nounif", data->nounif)
+               .keep()
+               .help("do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("softmax", softmax).keep().help("softmax exploration"))
+      .add(make_option("regcb", regcb).keep().help("RegCB-elim exploration"))
+      .add(make_option("regcbopt", data->regcbopt).keep().help("RegCB optimistic exploration"))
+      .add(make_option("mellowness", data->c0)
+               .keep()
+               .default_value(0.1f)
+               .help("RegCB mellowness parameter c_0. Default 0.1"))
+      .add(make_option("greedify", data->greedify).keep().help("always update first policy once in bagging"))
+      .add(make_option("cb_min_cost", data->min_cb_cost).keep().default_value(0.f).help("lower bound on cost"))
+      .add(make_option("cb_max_cost", data->max_cb_cost).keep().default_value(1.f).help("upper bound on cost"))
+      .add(make_option("first_only", data->first_only)
+               .keep()
+               .help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("lambda", data->lambda).keep().default_value(-1.f).help("parameter for softmax"))
+      .add(make_option("cb_type", type_string).keep().help("contextual bandit method to use in {ips,dm,dr}"));
   options.add_and_parse(new_options);
 
-  if(!cb_explore_adf_option)
+  if (!cb_explore_adf_option)
     return nullptr;
 
   // Ensure serialization of this option in all cases.
-  if(!options.was_supplied("cb_type"))
+  if (!options.was_supplied("cb_type"))
   {
     options.insert("cb_type", type_string);
     options.add_and_parse(new_options);
   }
 
   data->all = &all;
-  if (data->lambda > 0)//Lambda should always be negative because we are using a cost basis.
+  if (data->lambda > 0)  // Lambda should always be negative because we are using a cost basis.
     data->lambda = -data->lambda;
 
-  if(!options.was_supplied("cb_adf"))
+  if (!options.was_supplied("cb_adf"))
   {
     options.insert("cb_adf", "");
   }
@@ -799,7 +787,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   if (options.was_supplied("cover"))
   {
     data->explore_type = COVER;
-    problem_multiplier = data->cover_size+1;
+    problem_multiplier = data->cover_size + 1;
   }
   else if (options.was_supplied("bag"))
   {
@@ -814,7 +802,8 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     data->explore_type = REGCB;
   else
   {
-    if (!options.was_supplied("epsilon")) data->epsilon = 0.05f;
+    if (!options.was_supplied("epsilon"))
+      data->epsilon = 0.05f;
     data->explore_type = EPS_GREEDY;
   }
 
@@ -822,7 +811,7 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  //Extract from lower level reductions.
+  // Extract from lower level reductions.
   data->gen_cs.scorer = all.scorer;
   data->cs_ldf_learner = as_multiline(all.cost_sensitive);
   data->gen_cs.cb_type = CB_TYPE_IPS;
@@ -835,7 +824,8 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
     else if (type_string.compare("mtr") == 0)
     {
       if (options.was_supplied("cover"))
-        all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr" << endl;
+        all.trace_message << "warning: currently, mtr is only used for the first policy in cover, other policies use dr"
+                          << endl;
       data->gen_cs.cb_type = CB_TYPE_MTR;
     }
     else
@@ -845,11 +835,8 @@ base_learner* cb_explore_adf_setup(options_i& options, vw& all)
       all.trace_message << "warning: bad cb_type, RegCB only supports mtr!" << std::endl;
   }
 
-  learner<cb_explore_adf,multi_ex>& l = init_learner(data, base,
-    CB_EXPLORE_ADF::do_actual_learning<true>,
-    CB_EXPLORE_ADF::do_actual_learning<false>,
-    problem_multiplier,
-    prediction_type::action_probs);
+  learner<cb_explore_adf, multi_ex>& l = init_learner(data, base, CB_EXPLORE_ADF::do_actual_learning<true>,
+      CB_EXPLORE_ADF::do_actual_learning<false>, problem_multiplier, prediction_type::action_probs);
 
   l.set_finish_example(CB_EXPLORE_ADF::finish_multiline_example);
   l.set_finish(CB_EXPLORE_ADF::finish);

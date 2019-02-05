@@ -1,8 +1,8 @@
 #pragma once
 namespace LabelDict
 {
-typedef v_hashmap< size_t, features > label_feature_map;
-inline bool size_t_eq(const size_t &a, const size_t &b) { return (a==b); }
+typedef v_hashmap<size_t, features> label_feature_map;
+inline bool size_t_eq(const size_t& a, const size_t& b) { return (a == b); }
 
 void add_example_namespace(example& ec, char ns, features& fs);
 void del_example_namespace(example& ec, char ns, features& fs);
@@ -15,4 +15,4 @@ void add_example_namespace_from_memory(label_feature_map& lfm, example& ec, size
 void del_example_namespace_from_memory(label_feature_map& lfm, example& ec, size_t lab);
 
 void free_label_features(label_feature_map& lfm);
-}
+}  // namespace LabelDict
