@@ -42,13 +42,12 @@ inline void dummy_func(R&, const audit_strings*)
 
 template <class R, class S, void (*T)(R&, float, S), class W>  // nullptr func can't be used as template param in old
                                                                // compilers
-                                                               inline void generate_interactions(
-                                                                   std::vector<std::string>& interactions,
-                                                                   bool permutations,
-                                                                   example_predict& ec,
-                                                                   R& dat,
-                                                                   W& weights)  // default value removed to eliminate
-                                                                                // ambiguity in old complers
+inline void generate_interactions(std::vector<std::string>& interactions,
+    bool permutations,
+    example_predict& ec,
+    R& dat,
+    W& weights)  // default value removed to eliminate
+                 // ambiguity in old complers
 {
   INTERACTIONS::generate_interactions<R, S, T, false, dummy_func<R>, W>(interactions, permutations, ec, dat, weights);
 }

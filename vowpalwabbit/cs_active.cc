@@ -253,7 +253,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, example& ec)
       // large_range = large_range || (cl.is_range_overlapped && cl.is_range_large);
       // if(cl.is_range_overlapped && is_learn)
       //{ cout << "label " << cl.class_index << ", min_pred = " << cl.min_pred << ", max_pred = " << cl.max_pred << ",
-      //is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
+      // is_range_large = " << cl.is_range_large << ", eta = " << eta << ", min_max_cost = " << min_max_cost << endl;
       //}
       cs_a.overlapped_and_range_small += (size_t)(lqd.is_range_overlapped && !lqd.is_range_large);
       if (lqd.cl.x > lqd.max_pred || lqd.cl.x < lqd.min_pred)
