@@ -6,20 +6,17 @@
 
 namespace VW
 {
-
 vw_exception::vw_exception(const char* pfile, int plineNumber, std::string pmessage)
-  : file(pfile), message(pmessage), lineNumber(plineNumber)
+    : file(pfile), message(pmessage), lineNumber(plineNumber)
 {
 }
 
-vw_exception::vw_exception(const vw_exception& ex)
-  : file(ex.file), message(ex.message), lineNumber(ex.lineNumber)
-{
-}
+vw_exception::vw_exception(const vw_exception& ex) : file(ex.file), message(ex.message), lineNumber(ex.lineNumber) {}
 
-vw_exception& vw_exception::operator=(const vw_exception& other) {
+vw_exception& vw_exception::operator=(const vw_exception& other)
+{
   // check for self-assignment
-  if(&other == this)
+  if (&other == this)
     return *this;
 
   file = other.file;
@@ -29,9 +26,7 @@ vw_exception& vw_exception::operator=(const vw_exception& other) {
   return *this;
 }
 
-vw_exception::~vw_exception() _NOEXCEPT
-{
-}
+vw_exception::~vw_exception() _NOEXCEPT {}
 
 const char* vw_exception::what() const _NOEXCEPT
 {
@@ -73,7 +68,8 @@ struct StopWatchData
 
 StopWatch::StopWatch() : data(new StopWatchData())
 {
-  if (!::QueryPerformanceFrequency(&data->frequency_)) throw "Error with QueryPerformanceFrequency";
+  if (!::QueryPerformanceFrequency(&data->frequency_))
+    throw "Error with QueryPerformanceFrequency";
   ::QueryPerformanceCounter(&data->startTime_);
 }
 
@@ -95,7 +91,8 @@ bool launchDebugger()
   // Get System directory, typically c:\windows\system32
   std::wstring systemDir(MAX_PATH + 1, '\0');
   UINT nChars = GetSystemDirectoryW(&systemDir[0], (UINT)systemDir.length());
-  if (nChars == 0) return false; // failed to get system directory
+  if (nChars == 0)
+    return false;  // failed to get system directory
   systemDir.resize(nChars);
 
   // Get process ID and create the command line
@@ -112,7 +109,8 @@ bool launchDebugger()
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
 
-  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) return false;
+  if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    return false;
 
   // Close debugger process handles to eliminate resource leak
   CloseHandle(pi.hThread);
@@ -126,4 +124,4 @@ bool launchDebugger()
   return true;
 }
 #endif
-}
+}  // namespace VW

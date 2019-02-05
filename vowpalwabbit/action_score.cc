@@ -1,11 +1,10 @@
-#include "v_array.h"
 #include "action_score.h"
 #include "io_buf.h"
+#include "v_array.h"
 using namespace std;
 namespace ACTION_SCORE
 {
-
-void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
+void print_action_score(int f, v_array<action_score> &a_s, v_array<char> &)
 {
   if (f >= 0)
   {
@@ -25,10 +24,9 @@ void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
   }
 }
 
-void delete_action_scores(void* v)
+void delete_action_scores(void *v)
 {
-  v_array<action_score>* cs = (v_array<action_score>*)v;
+  v_array<action_score> *cs = (v_array<action_score> *)v;
   cs->delete_v();
 }
-
-}
+}  // namespace ACTION_SCORE

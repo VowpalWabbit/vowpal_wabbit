@@ -3,10 +3,10 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#include "example.h"
 #include "unique_sort.h"
+#include "example.h"
 
-void unique_features(features& fs, int max)
+void unique_features(features &fs, int max)
 {
   if (fs.indicies.empty())
     return;
@@ -29,11 +29,11 @@ void unique_features(features& fs, int max)
   fs.truncate_to(last_index);
 }
 
-void unique_sort_features(uint64_t parse_mask, example* ae)
+void unique_sort_features(uint64_t parse_mask, example *ae)
 {
-  for (features& fs : *ae)
+  for (features &fs : *ae)
     if (fs.sort(parse_mask))
       unique_features(fs);
 
-  ae->sorted=true;
+  ae->sorted = true;
 }

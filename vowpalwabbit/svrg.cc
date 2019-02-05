@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "gd.h"
-#include "vw.h"
 #include "reductions.h"
+#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -12,58 +12,56 @@ using namespace VW::config;
 
 namespace SVRG
 {
-
-#define W_INNER      0   // working "inner-loop" weights, updated per example
-#define W_STABLE     1   // stable weights, updated per stage
-#define W_STABLEGRAD 2   // gradient corresponding to stable weights
+#define W_INNER 0       // working "inner-loop" weights, updated per example
+#define W_STABLE 1      // stable weights, updated per stage
+#define W_STABLEGRAD 2  // gradient corresponding to stable weights
 
 struct svrg
 {
-  int stage_size;               // Number of data passes per stage.
-  int prev_pass;                // To detect that we're in a new pass.
-  int stable_grad_count;        // Number of data points that
+  int stage_size;         // Number of data passes per stage.
+  int prev_pass;          // To detect that we're in a new pass.
+  int stable_grad_count;  // Number of data points that
   // contributed to the stable gradient
   // calculation.
 
   // The VW process' global state.
-  vw* all;
+  vw *all;
 };
 
 // Mimic GD::inline_predict but with offset for predicting with either
 // stable versus inner weights.
 
-template<int offset>
-inline void vec_add(float& p, const float x, float& w)
+template <int offset>
+inline void vec_add(float &p, const float x, float &w)
 {
-  float* ws = &w;
+  float *ws = &w;
   p += x * ws[offset];
 }
 
-template<int offset>
-inline float inline_predict(vw& all, example& ec)
+template <int offset>
+inline float inline_predict(vw &all, example &ec)
 {
   float acc = ec.l.simple.initial;
-  GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
+  GD::foreach_feature<float, vec_add<offset>>(all, ec, acc);
   return acc;
 }
 
 // -- Prediction, using inner vs. stable weights --
 
-float predict_stable(const svrg& s, example& ec)
+float predict_stable(const svrg &s, example &ec)
 {
   return GD::finalize_prediction(s.all->sd, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, single_learner&, example& ec)
+void predict(svrg &s, single_learner &, example &ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = GD::finalize_prediction(s.all->sd, ec.partial_prediction);
 }
 
-float gradient_scalar(const svrg& s, const example& ec, float pred)
+float gradient_scalar(const svrg &s, const example &ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label)
-         * ec.weight;
+  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
@@ -76,44 +74,44 @@ struct update
   float norm;
 };
 
-inline void update_inner_feature(update& u, float x, float& w)
+inline void update_inner_feature(update &u, float x, float &w)
 {
-  float* ws = &w;
+  float *ws = &w;
   w -= u.eta * ((u.g_scalar_inner - u.g_scalar_stable) * x + ws[W_STABLEGRAD] / u.norm);
 }
 
-inline void update_stable_feature(float& g_scalar, float x, float& w)
+inline void update_stable_feature(float &g_scalar, float x, float &w)
 {
-  float* ws = &w;
+  float *ws = &w;
   ws[W_STABLEGRAD] += g_scalar * x;
 }
 
-void update_inner(const svrg& s, example& ec)
+void update_inner(const svrg &s, example &ec)
 {
   update u;
   // |ec| already has prediction according to inner weights.
   u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
-  u.norm = (float) s.stable_grad_count;
+  u.norm = (float)s.stable_grad_count;
   GD::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
 
-void update_stable(const svrg& s, example& ec)
+void update_stable(const svrg &s, example &ec)
 {
   float g = gradient_scalar(s, ec, predict_stable(s, ec));
   GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, single_learner& base, example& ec)
+void learn(svrg &s, single_learner &base, example &ec)
 {
   assert(ec.in_use);
 
   predict(s, base, ec);
 
-  const int pass = (int) s.all->passes_complete;
+  const int pass = (int)s.all->passes_complete;
 
-  if (pass % (s.stage_size + 1) == 0)   // Compute exact gradient
+  if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
@@ -130,7 +128,7 @@ void learn(svrg& s, single_learner& base, example& ec)
     update_stable(s, ec);
     s.stable_grad_count++;
   }
-  else                          // Perform updates
+  else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->quiet)
     {
@@ -142,7 +140,7 @@ void learn(svrg& s, single_learner& base, example& ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg& s, io_buf& model_file, bool read, bool text)
+void save_load(svrg &s, io_buf &model_file, bool read, bool text)
 {
   if (read)
   {
@@ -154,33 +152,29 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     bool resume = s.all->save_resume;
     stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, (char*) &resume, sizeof(resume), "",
-                              read, msg, text);
+    bin_text_read_write_fixed(model_file, (char *)&resume, sizeof(resume), "", read, msg, text);
 
     if (resume)
       GD::save_load_online_state(*s.all, model_file, read, text);
     else
       GD::save_load_regressor(*s.all, model_file, read, text);
-
   }
 }
-
-}
+}  // namespace SVRG
 
 using namespace SVRG;
 
-base_learner* svrg_setup(options_i& options, vw& all)
+base_learner *svrg_setup(options_i &options, vw &all)
 {
   auto s = scoped_calloc_or_throw<svrg>();
 
   bool svrg_option = false;
   option_group_definition new_options("Stochastic Variance Reduced Gradient");
-  new_options
-    .add(make_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
-    .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
+  new_options.add(make_option("svrg", svrg_option).keep().help("Streaming Stochastic Variance Reduced Gradient"))
+      .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
   options.add_and_parse(new_options);
 
-  if(!svrg_option)
+  if (!svrg_option)
   {
     return nullptr;
   }
@@ -191,7 +185,7 @@ base_learner* svrg_setup(options_i& options, vw& all)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  learner<svrg,example>& l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
+  learner<svrg, example> &l = init_learner(s, learn, predict, UINT64_ONE << all.weights.stride_shift());
   l.set_save_load(save_load);
   return make_base(l);
 }

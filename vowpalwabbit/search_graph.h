@@ -8,10 +8,10 @@ license as described in the file LICENSE.
 
 namespace GraphTask
 {
-void initialize(Search::search&, size_t&, VW::config::options_i&);
-void finish(Search::search&);
-void setup(Search::search&, multi_ex&);
-void run(Search::search&, multi_ex&);
-void takedown(Search::search&, multi_ex&);
+void initialize(Search::search &, size_t &, VW::config::options_i &);
+void finish(Search::search &);
+void setup(Search::search &, multi_ex &);
+void run(Search::search &, multi_ex &);
+void takedown(Search::search &, multi_ex &);
 extern Search::search_task task;
-}
+}  // namespace GraphTask
