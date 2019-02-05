@@ -24,20 +24,8 @@ struct typelist
   using tail = typename tail_impl<Types...>::type;
 };
 
-using supported_options_types = typelist<unsigned int,
-    int,
-    size_t,
-    uint64_t,
-    float,
-    double,
-    char,
-    std::string,
-    bool,
-    std::vector<int>,
-    std::vector<size_t>,
-    std::vector<float>,
-    std::vector<double>,
-    std::vector<char>,
-    std::vector<std::string> >;
+using supported_options_types =
+    typelist<unsigned int, int, size_t, uint64_t, float, double, char, std::string, bool, std::vector<int>,
+        std::vector<size_t>, std::vector<float>, std::vector<double>, std::vector<char>, std::vector<std::string> >;
 }  // namespace config
 }  // namespace VW

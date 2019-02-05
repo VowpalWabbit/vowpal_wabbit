@@ -1069,12 +1069,8 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 {
   Context<audit> ctx;
 
-  void init(vw* all,
-      v_array<example*>* examples,
-      rapidjson::InsituStringStream* stream,
-      const char* stream_end,
-      VW::example_factory_t example_factory,
-      void* example_factory_context)
+  void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+      VW::example_factory_t example_factory, void* example_factory_context)
   {
     ctx.init(all);
     ctx.examples = examples;
@@ -1156,14 +1152,8 @@ void read_line_json(
 }
 
 template <bool audit>
-void read_line_decision_service_json(vw& all,
-    v_array<example*>& examples,
-    char* line,
-    size_t length,
-    bool copy_line,
-    example_factory_t example_factory,
-    void* ex_factory_context,
-    DecisionServiceInteraction* data)
+void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+    example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
 {
   std::vector<char> line_vec;
   if (copy_line)

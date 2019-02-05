@@ -154,13 +154,8 @@ float binary_search(float fhat, float delta, float sens, float tol = 1e-6)
   return l;
 }
 
-void get_cost_ranges(std::vector<float>& min_costs,
-    std::vector<float>& max_costs,
-    float delta,
-    cb_explore_adf& data,
-    multi_learner& base,
-    multi_ex& examples,
-    bool min_only)
+void get_cost_ranges(std::vector<float>& min_costs, std::vector<float>& max_costs, float delta, cb_explore_adf& data,
+    multi_learner& base, multi_ex& examples, bool min_only)
 {
   const bool shared = CB::ec_is_example_header(*examples[0]);
   const size_t num_actions = examples[0]->pred.a_s.size();

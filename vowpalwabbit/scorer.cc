@@ -27,13 +27,8 @@ void predict_or_learn(scorer& s, LEARNER::single_learner& base, example& ec)
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer&,
-    LEARNER::single_learner& base,
-    example& ec,
-    size_t count,
-    size_t,
-    polyprediction* pred,
-    bool finalize_predictions)
+inline void multipredict(scorer&, LEARNER::single_learner& base, example& ec, size_t count, size_t,
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
   for (size_t c = 0; c < count; c++) pred[c].scalar = link(pred[c].scalar);

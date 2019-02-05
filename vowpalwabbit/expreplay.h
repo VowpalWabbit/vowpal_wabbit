@@ -44,13 +44,8 @@ void predict_or_learn(expreplay& er, LEARNER::single_learner& base, example& ec)
     er.buf[n].l = ec.l;
 }
 
-void multipredict(expreplay&,
-    LEARNER::single_learner& base,
-    example& ec,
-    size_t count,
-    size_t step,
-    polyprediction* pred,
-    bool finalize_predictions)
+void multipredict(expreplay&, LEARNER::single_learner& base, example& ec, size_t count, size_t step,
+    polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
 }

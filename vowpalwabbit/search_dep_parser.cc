@@ -133,13 +133,8 @@ void inline add_feature(
   ex.feature_space[(int)ns].push_back(1.0f, (idx * multiplier) & mask);
 }
 
-void add_all_features(example &ex,
-    example &src,
-    unsigned char tgt_ns,
-    uint64_t mask,
-    uint64_t multiplier,
-    uint64_t offset,
-    bool /* audit */ = false)
+void add_all_features(example &ex, example &src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
+    uint64_t offset, bool /* audit */ = false)
 {
   features &tgt_fs = ex.feature_space[tgt_ns];
   for (namespace_index ns : src.indices)
@@ -324,12 +319,8 @@ void extract_features(Search::search &sch, uint32_t idx, multi_ex &ec)
   data->ex->total_sum_feat_sq = (float)count + new_weight;
 }
 
-void get_valid_actions(Search::search &sch,
-    v_array<uint32_t> &valid_action,
-    uint64_t idx,
-    uint64_t n,
-    uint64_t stack_depth,
-    uint64_t state)
+void get_valid_actions(Search::search &sch, v_array<uint32_t> &valid_action, uint64_t idx, uint64_t n,
+    uint64_t stack_depth, uint64_t state)
 {
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;
@@ -537,11 +528,8 @@ void get_gold_actions(Search::search &sch, uint32_t idx, uint64_t /* n */, v_arr
   }
 }
 
-void convert_to_onelearner_actions(Search::search &sch,
-    v_array<action> &actions,
-    v_array<action> &actions_onelearner,
-    uint32_t left_label,
-    uint32_t right_label)
+void convert_to_onelearner_actions(Search::search &sch, v_array<action> &actions, v_array<action> &actions_onelearner,
+    uint32_t left_label, uint32_t right_label)
 {
   task_data *data = sch.get_task_data<task_data>();
   uint32_t &sys = data->transition_system;

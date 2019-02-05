@@ -324,13 +324,8 @@ struct shared_data
       dump_interval = (float)weighted_examples() * progress_arg;
   }
 
-  void print_update(bool holdout_set_off,
-      size_t current_pass,
-      float label,
-      float prediction,
-      size_t num_features,
-      bool progress_add,
-      float progress_arg)
+  void print_update(bool holdout_set_off, size_t current_pass, float label, float prediction, size_t num_features,
+      bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
@@ -347,13 +342,8 @@ struct shared_data
         holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
   }
 
-  void print_update(bool holdout_set_off,
-      size_t current_pass,
-      uint32_t label,
-      uint32_t prediction,
-      size_t num_features,
-      bool progress_add,
-      float progress_arg)
+  void print_update(bool holdout_set_off, size_t current_pass, uint32_t label, uint32_t prediction, size_t num_features,
+      bool progress_add, float progress_arg)
   {
     std::ostringstream label_buf, pred_buf;
 
@@ -369,13 +359,8 @@ struct shared_data
         holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features, progress_add, progress_arg);
   }
 
-  void print_update(bool holdout_set_off,
-      size_t current_pass,
-      const std::string& label,
-      uint32_t prediction,
-      size_t num_features,
-      bool progress_add,
-      float progress_arg)
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string& label, uint32_t prediction,
+      size_t num_features, bool progress_add, float progress_arg)
   {
     std::ostringstream pred_buf;
 
@@ -384,13 +369,8 @@ struct shared_data
     print_update(holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
   }
 
-  void print_update(bool holdout_set_off,
-      size_t current_pass,
-      const std::string& label,
-      const std::string& prediction,
-      size_t num_features,
-      bool progress_add,
-      float progress_arg)
+  void print_update(bool holdout_set_off, size_t current_pass, const std::string& label, const std::string& prediction,
+      size_t num_features, bool progress_add, float progress_arg)
   {
     std::streamsize saved_w = std::cerr.width();
     std::streamsize saved_prec = std::cerr.precision();

@@ -151,18 +151,12 @@ struct search
   //                           it should be of length allowed_actions_cnt. only valid
   //                           if ACTION_COSTS is specified as an option.
   //   learner_id            the id for the underlying learner to use (via set_num_learners)
-  action predict(example& ec,
-      ptag my_tag,
-      const action* oracle_actions,
-      size_t oracle_actions_cnt = 1,
+  action predict(example& ec, ptag my_tag, const action* oracle_actions, size_t oracle_actions_cnt = 1,
       const ptag* condition_on = nullptr,
       const char* condition_on_names = nullptr  // strlen(condition_on_names) should == |condition_on|
       ,
-      const action* allowed_actions = nullptr,
-      size_t allowed_actions_cnt = 0,
-      const float* allowed_actions_cost = nullptr,
-      size_t learner_id = 0,
-      float weight = 0.);
+      const action* allowed_actions = nullptr, size_t allowed_actions_cnt = 0,
+      const float* allowed_actions_cost = nullptr, size_t learner_id = 0, float weight = 0.);
 
   // make an LDF prediction on a list of examples. arguments are identical to predict(...)
   // with the following exceptions:
@@ -171,15 +165,9 @@ struct search
   //   * there are no more "allowed_actions" because that is implicit in the LDF
   //     example structure. additionally, allowed_actions_cost should be stored
   //     in the label structure for ecs (if ACTION_COSTS is set as an option)
-  action predictLDF(example* ecs,
-      size_t ec_cnt,
-      ptag my_tag,
-      const action* oracle_actions,
-      size_t oracle_actions_cnt = 1,
-      const ptag* condition_on = nullptr,
-      const char* condition_on_names = nullptr,
-      size_t learner_id = 0,
-      float weight = 0.);
+  action predictLDF(example* ecs, size_t ec_cnt, ptag my_tag, const action* oracle_actions,
+      size_t oracle_actions_cnt = 1, const ptag* condition_on = nullptr, const char* condition_on_names = nullptr,
+      size_t learner_id = 0, float weight = 0.);
 
   // some times during training, a call to "predict" doesn't
   // actually use the example you pass (*), and for efficiency you

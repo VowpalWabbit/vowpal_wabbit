@@ -371,12 +371,7 @@ CONVERSE:  // That's right, I'm using goto.  So sue me.
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n,
-    single_learner& base,
-    example& ec,
-    size_t count,
-    size_t step,
-    polyprediction* pred,
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)

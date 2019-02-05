@@ -82,16 +82,8 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a,
-    single_learner& base,
-    example& ec,
-    uint32_t i,
-    float cost,
-    uint32_t& prediction,
-    float& score,
-    float& partial_prediction,
-    bool query_this_label,
-    bool& query_needed)
+inline void inner_loop(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction,
+    float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
   // cerr << "base.predict ==> partial_prediction=" << ec.partial_prediction << endl;
@@ -144,15 +136,8 @@ inline void inner_loop(cs_active& cs_a,
   add_passthrough_feature(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a,
-    single_learner& base,
-    example& ec,
-    uint32_t i,
-    float delta,
-    float eta,
-    float& min_pred,
-    float& max_pred,
-    bool& is_range_large)
+inline void find_cost_range(cs_active& cs_a, single_learner& base, example& ec, uint32_t i, float delta, float eta,
+    float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6f;
 

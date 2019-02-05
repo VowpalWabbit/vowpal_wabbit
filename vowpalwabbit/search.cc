@@ -702,11 +702,8 @@ bool array_contains(T target, const T* A, size_t n)
 }
 
 // priv.learn_condition_on_act or priv.condition_on_actions
-void add_example_conditioning(search_private& priv,
-    example& ec,
-    size_t condition_on_cnt,
-    const char* condition_on_names,
-    action_repr* condition_on_actions)
+void add_example_conditioning(search_private& priv, example& ec, size_t condition_on_cnt,
+    const char* condition_on_names, action_repr* condition_on_actions)
 {
   if (condition_on_cnt == 0)
     return;
@@ -858,11 +855,8 @@ inline void cs_cost_push_back(bool isCB, polylabel& ld, uint32_t index, float va
   }
 }
 
-polylabel& allowed_actions_to_ld(search_private& priv,
-    size_t ec_cnt,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
-    const float* allowed_actions_cost)
+polylabel& allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions,
+    size_t allowed_actions_cnt, const float* allowed_actions_cost)
 {
   bool isCB = priv.cb_learner;
   polylabel& ld = *priv.allowed_actions_cache;
@@ -915,14 +909,9 @@ polylabel& allowed_actions_to_ld(search_private& priv,
   return ld;
 }
 
-void allowed_actions_to_label(search_private& priv,
-    size_t ec_cnt,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
-    const float* allowed_actions_cost,
-    const action* oracle_actions,
-    size_t oracle_actions_cnt,
-    polylabel& lab)
+void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action* allowed_actions,
+    size_t allowed_actions_cnt, const float* allowed_actions_cost, const action* oracle_actions,
+    size_t oracle_actions_cnt, polylabel& lab)
 {
   bool isCB = priv.cb_learner;
   if (priv.is_ldf)  // LDF version easier
@@ -1024,12 +1013,8 @@ void push_at(v_array<T>& v, T item, size_t pos)
   }
 }
 
-action choose_oracle_action(search_private& priv,
-    size_t ec_cnt,
-    const action* oracle_actions,
-    size_t oracle_actions_cnt,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
+action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* oracle_actions,
+    size_t oracle_actions_cnt, const action* allowed_actions, size_t allowed_actions_cnt,
     const float* allowed_actions_cost)
 {
   action a = (action)-1;
@@ -1094,13 +1079,8 @@ action choose_oracle_action(search_private& priv,
   return a;
 }
 
-action single_prediction_notLDF(search_private& priv,
-    example& ec,
-    int policy,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
-    const float* allowed_actions_cost,
-    float& a_cost,
+action single_prediction_notLDF(search_private& priv, example& ec, int policy, const action* allowed_actions,
+    size_t allowed_actions_cnt, const float* allowed_actions_cost, float& a_cost,
     action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
                              // appropriate cost for that action
 {
@@ -1246,11 +1226,7 @@ action single_prediction_notLDF(search_private& priv,
   return act;
 }
 
-action single_prediction_LDF(search_private& priv,
-    example* ecs,
-    size_t ec_cnt,
-    int policy,
-    float& a_cost,
+action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy, float& a_cost,
     action override_action)  // if override_action != -1, then we return it as the action and a_cost is set to the
                              // appropriate cost for that action
 {
@@ -1386,17 +1362,9 @@ void clear_cache_hash_map(search_private& priv)
 }
 
 // returns true if found and do_store is false. if do_store is true, always returns true.
-bool cached_action_store_or_find(search_private& priv,
-    ptag mytag,
-    const ptag* condition_on,
-    const char* condition_on_names,
-    action_repr* condition_on_actions,
-    size_t condition_on_cnt,
-    int policy,
-    size_t learner_id,
-    action& a,
-    bool do_store,
-    float& a_cost)
+bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on,
+    const char* condition_on_names, action_repr* condition_on_actions, size_t condition_on_cnt, int policy,
+    size_t learner_id, action& a, bool do_store, float& a_cost)
 {
   if (priv.no_caching)
     return do_store;
@@ -1446,10 +1414,7 @@ bool cached_action_store_or_find(search_private& priv,
   }
 }
 
-void generate_training_example(search_private& priv,
-    polylabel& losses,
-    float weight,
-    bool add_conditioning = true,
+void generate_training_example(search_private& priv, polylabel& losses, float weight, bool add_conditioning = true,
     float min_loss = FLT_MAX)  // min_loss = FLT_MAX means "please compute it for me as the actual min"; any other value
                                // means to use this
 {
@@ -1610,20 +1575,9 @@ void foreach_action_from_cache(search_private& priv, size_t t, action override_a
 }
 
 // note: ec_cnt should be 1 if we are not LDF
-action search_predict(search_private& priv,
-    example* ecs,
-    size_t ec_cnt,
-    ptag mytag,
-    const action* oracle_actions,
-    size_t oracle_actions_cnt,
-    const ptag* condition_on,
-    const char* condition_on_names,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
-    const float* allowed_actions_cost,
-    size_t learner_id,
-    float& a_cost,
-    float /* weight */)
+action search_predict(search_private& priv, example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
+    size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions,
+    size_t allowed_actions_cnt, const float* allowed_actions_cost, size_t learner_id, float& a_cost, float /* weight */)
 {
   size_t condition_on_cnt = condition_on_names ? strlen(condition_on_names) : 0;
   size_t t = priv.t + priv.meta_t;
@@ -3001,17 +2955,9 @@ float action_cost_loss(action a, const action* act, const float* costs, size_t s
 // the interface:
 bool search::is_ldf() { return priv->is_ldf; }
 
-action search::predict(example& ec,
-    ptag mytag,
-    const action* oracle_actions,
-    size_t oracle_actions_cnt,
-    const ptag* condition_on,
-    const char* condition_on_names,
-    const action* allowed_actions,
-    size_t allowed_actions_cnt,
-    const float* allowed_actions_cost,
-    size_t learner_id,
-    float weight)
+action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt,
+    const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt,
+    const float* allowed_actions_cost, size_t learner_id, float weight)
 {
   float a_cost = 0.;
   action a = search_predict(*priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names,
@@ -3045,14 +2991,8 @@ action search::predict(example& ec,
   return a;
 }
 
-action search::predictLDF(example* ecs,
-    size_t ec_cnt,
-    ptag mytag,
-    const action* oracle_actions,
-    size_t oracle_actions_cnt,
-    const ptag* condition_on,
-    const char* condition_on_names,
-    size_t learner_id,
+action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions,
+    size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id,
     float weight)
 {
   float a_cost = 0.;

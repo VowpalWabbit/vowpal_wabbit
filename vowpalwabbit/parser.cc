@@ -58,10 +58,7 @@ bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
 
-bool is_test_only(uint32_t counter,
-    uint32_t period,
-    uint32_t after,
-    bool holdout_off,
+bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off,
     uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate
                               // examples
 {
@@ -612,12 +609,7 @@ void set_done(vw& all)
   lock_done(*all.p);
 }
 
-void addgrams(vw& all,
-    size_t ngram,
-    size_t skip_gram,
-    features& fs,
-    size_t initial_length,
-    v_array<size_t>& gram_mask,
+void addgrams(vw& all, size_t ngram, size_t skip_gram, features& fs, size_t initial_length, v_array<size_t>& gram_mask,
     size_t skips)
 {
   if (ngram == 0 && gram_mask.last() < initial_length)

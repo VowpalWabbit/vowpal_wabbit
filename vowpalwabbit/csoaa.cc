@@ -30,12 +30,7 @@ struct csoaa
 };
 
 template <bool is_learn>
-inline void inner_loop(single_learner& base,
-    example& ec,
-    uint32_t i,
-    float cost,
-    uint32_t& prediction,
-    float& score,
+inline void inner_loop(single_learner& base, example& ec, uint32_t i, float cost, uint32_t& prediction, float& score,
     float& partial_prediction)
 {
   if (is_learn)

@@ -536,12 +536,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
 }
 
 bool global_print_features = false;
-template <bool sqrt_rate,
-    bool feature_mask_off,
-    bool adax,
-    size_t adaptive,
-    size_t normalized,
-    size_t spare,
+template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare,
     bool stateless>
 float get_pred_per_update(gd& g, example& ec)
 {
@@ -579,12 +574,7 @@ float get_pred_per_update(gd& g, example& ec)
   return nd.pred_per_update;
 }
 
-template <bool sqrt_rate,
-    bool feature_mask_off,
-    bool adax,
-    size_t adaptive,
-    size_t normalized,
-    size_t spare,
+template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare,
     bool stateless>
 float sensitivity(gd& g, example& ec)
 {
@@ -613,14 +603,8 @@ float sensitivity(gd& g, base_learner& /* base */, example& ec)
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
 }
 
-template <bool sparse_l2,
-    bool invariant,
-    bool sqrt_rate,
-    bool feature_mask_off,
-    bool adax,
-    size_t adaptive,
-    size_t normalized,
-    size_t spare>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
+    size_t normalized, size_t spare>
 float compute_update(gd& g, example& ec)
 {
   // invariant: not a test label, importance weight > 0
@@ -657,14 +641,8 @@ float compute_update(gd& g, example& ec)
   return update;
 }
 
-template <bool sparse_l2,
-    bool invariant,
-    bool sqrt_rate,
-    bool feature_mask_off,
-    bool adax,
-    size_t adaptive,
-    size_t normalized,
-    size_t spare>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
+    size_t normalized, size_t spare>
 void update(gd& g, base_learner&, example& ec)
 {
   // invariant: not a test label, importance weight > 0
@@ -677,14 +655,8 @@ void update(gd& g, base_learner&, example& ec)
     sync_weights(*g.all);
 }
 
-template <bool sparse_l2,
-    bool invariant,
-    bool sqrt_rate,
-    bool feature_mask_off,
-    bool adax,
-    size_t adaptive,
-    size_t normalized,
-    size_t spare>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
+    size_t normalized, size_t spare>
 void learn(gd& g, base_learner& base, example& ec)
 {
   // invariant: not a test label, importance weight > 0
@@ -1026,14 +998,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     sync_weights(all);
 }
 
-template <bool sparse_l2,
-    bool invariant,
-    bool sqrt_rate,
-    bool feature_mask_off,
-    uint64_t adaptive,
-    uint64_t normalized,
-    uint64_t spare,
-    uint64_t next>
+template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, uint64_t adaptive, uint64_t normalized,
+    uint64_t spare, uint64_t next>
 uint64_t set_learn(vw& all, gd& g)
 {
   all.normalized_idx = normalized;
@@ -1053,12 +1019,7 @@ uint64_t set_learn(vw& all, gd& g)
   }
 }
 
-template <bool sparse_l2,
-    bool invariant,
-    bool sqrt_rate,
-    uint64_t adaptive,
-    uint64_t normalized,
-    uint64_t spare,
+template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare,
     uint64_t next>
 uint64_t set_learn(vw& all, bool feature_mask_off, gd& g)
 {

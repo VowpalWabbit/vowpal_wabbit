@@ -57,12 +57,7 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
 struct learn_data
 {
   using fn = void (*)(void* data, base_learner& base, void* ex);
-  using multi_fn = void (*)(void* data,
-      base_learner& base,
-      void* ex,
-      size_t count,
-      size_t step,
-      polyprediction* pred,
+  using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
 
   void* data;
@@ -312,11 +307,7 @@ struct learner
   }
 
   template <class L>
-  static learner<T, E>& init_learner(T* dat,
-      L* base,
-      void (*learn)(T&, L&, E&),
-      void (*predict)(T&, L&, E&),
-      size_t ws,
+  static learner<T, E>& init_learner(T* dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&), size_t ws,
       prediction_type::prediction_type_t pred_type)
   {
     learner<T, E>& ret = calloc_or_throw<learner<T, E> >();
@@ -360,12 +351,8 @@ struct learner
 };
 
 template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat,
-    L* base,
-    void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&),
-    size_t ws,
-    prediction_type::prediction_type_t pred_type)
+learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t ws, prediction_type::prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
 
@@ -394,11 +381,8 @@ learner<T, E>& init_learner(void (*predict)(T&, L&, E&), size_t params_per_weigh
 }
 
 template <class T, class E, class L>
-learner<T, E>& init_learner(free_ptr<T>& dat,
-    void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&),
-    size_t params_per_weight,
-    prediction_type::prediction_type_t pred_type)
+learner<T, E>& init_learner(free_ptr<T>& dat, void (*learn)(T&, L&, E&), void (*predict)(T&, L&, E&),
+    size_t params_per_weight, prediction_type::prediction_type_t pred_type)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), (L*)nullptr, learn, predict, params_per_weight, pred_type);
   dat.release();
@@ -435,12 +419,8 @@ learner<T, E>& init_learner(L* base, void (*learn)(T&, L&, E&), void (*predict)(
 
 // multiclass reduction
 template <class T, class E, class L>
-learner<T, E>& init_multiclass_learner(free_ptr<T>& dat,
-    L* base,
-    void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&),
-    parser* p,
-    size_t ws,
+learner<T, E>& init_multiclass_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
+    void (*predict)(T&, L&, E&), parser* p, size_t ws,
     prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);
@@ -452,12 +432,8 @@ learner<T, E>& init_multiclass_learner(free_ptr<T>& dat,
 }
 
 template <class T, class E, class L>
-learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat,
-    L* base,
-    void (*learn)(T&, L&, E&),
-    void (*predict)(T&, L&, E&),
-    parser* p,
-    size_t ws,
+learner<T, E>& init_cost_sensitive_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&),
+    void (*predict)(T&, L&, E&), parser* p, size_t ws,
     prediction_type::prediction_type_t pred_type = prediction_type::multiclass)
 {
   learner<T, E>& l = learner<T, E>::init_learner(dat.get(), base, learn, predict, ws, pred_type);

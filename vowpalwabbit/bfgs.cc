@@ -397,16 +397,8 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 }
 
 template <class T>
-double wolfe_eval(vw& all,
-    bfgs& b,
-    float* mem,
-    double loss_sum,
-    double previous_loss_sum,
-    double step_size,
-    double importance_weight_sum,
-    int& origin,
-    double& wolfe1,
-    T& weights)
+double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size,
+    double importance_weight_sum, int& origin, double& wolfe1, T& weights)
 {
   double g0_d = 0.;
   double g1_d = 0.;
@@ -432,15 +424,8 @@ double wolfe_eval(vw& all,
   return 0.5 * step_size;
 }
 
-double wolfe_eval(vw& all,
-    bfgs& b,
-    float* mem,
-    double loss_sum,
-    double previous_loss_sum,
-    double step_size,
-    double importance_weight_sum,
-    int& origin,
-    double& wolfe1)
+double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size,
+    double importance_weight_sum, int& origin, double& wolfe1)
 {
   if (all.weights.sparse)
     return wolfe_eval(all, b, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1,
