@@ -7,14 +7,7 @@ export PATH="$HOME/miniconda/bin:$PATH"
 # Check if any clang-formatting necessary
 
 cd /vw
-for VW_FILE in $(find vowpalwabbit -type f -name '*.cc' -o -name '*.h'); do
-    diff $VW_FILE <(clang-format $VW_FILE);
-    if [ $? -ne 0 ]
-    then
-	echo "Run clang-format on all .cc and .h files under vowpalwabbit."
-	exit 1
-    fi
-done
+./utl/clang-format check
 
 sudo apt remove --yes --force-yes cmake
 
