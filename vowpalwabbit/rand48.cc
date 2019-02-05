@@ -21,7 +21,4 @@ float merand48(uint64_t &initial)
   return bits_to_float(temp) - 1;
 }
 
-float merand48_noadvance(uint64_t v)
-{
-  return merand48(v);
-}
+float merand48_noadvance(uint64_t v) { return merand48(v); }

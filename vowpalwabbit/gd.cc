@@ -194,10 +194,7 @@ struct string_value
   friend bool operator<(const string_value& first, const string_value& second);
 };
 
-bool operator<(const string_value& first, const string_value& second)
-{
-  return fabsf(first.v) > fabsf(second.v);
-}
+bool operator<(const string_value& first, const string_value& second) { return fabsf(first.v) > fabsf(second.v); }
 
 struct audit_results
 {
@@ -995,8 +992,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
         all.weights.dense_weights.set_default<pair<float, float>, set_initial_gd_wrapper<dense_parameters> >(p);
       // for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared
       // gradient=1 NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since
-      // scaling the data scales the gradient, this should ideally be feature_range*initial_t, or something like that. We
-      // could potentially fix this by just adding this base quantity times the current range to the sum of gradients
+      // scaling the data scales the gradient, this should ideally be feature_range*initial_t, or something like that.
+      // We could potentially fix this by just adding this base quantity times the current range to the sum of gradients
       // stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions
       // and multiplications during the update...
     }

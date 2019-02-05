@@ -4,10 +4,7 @@
 
 namespace LabelDict
 {
-size_t hash_lab(size_t lab)
-{
-  return 328051 + 94389193 * lab;
-}
+size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
 
 void del_example_namespace(example &ec, char ns, features &fs)
 {

@@ -112,15 +112,9 @@ const char *curv_message =
     "It is also possible that you have reached numerical accuracy\n"
     "and further decrease in the objective cannot be reliably detected.\n";
 
-void zero_derivative(vw &all)
-{
-  all.weights.set_zero(W_GT);
-}
+void zero_derivative(vw &all) { all.weights.set_zero(W_GT); }
 
-void zero_preconditioner(vw &all)
-{
-  all.weights.set_zero(W_COND);
-}
+void zero_preconditioner(vw &all) { all.weights.set_zero(W_COND); }
 
 void reset_state(vw &all, bfgs &b, bool zero)
 {
@@ -143,10 +137,7 @@ void reset_state(vw &all, bfgs &b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example &ec)
-{
-  return ec.l.simple.label == FLT_MAX;
-}
+bool test_example(example &ec) { return ec.l.simple.label == FLT_MAX; }
 
 float bfgs_predict(vw &all, example &ec)
 {
@@ -154,10 +145,7 @@ float bfgs_predict(vw &all, example &ec)
   return GD::finalize_prediction(all.sd, ec.partial_prediction);
 }
 
-inline void add_grad(float &d, float f, float &fw)
-{
-  (&fw)[W_GT] += d * f;
-}
+inline void add_grad(float &d, float f, float &fw) { (&fw)[W_GT] += d * f; }
 
 float predict_and_gradient(vw &all, example &ec)
 {
@@ -171,10 +159,7 @@ float predict_and_gradient(vw &all, example &ec)
   return fp;
 }
 
-inline void add_precond(float &d, float f, float &fw)
-{
-  (&fw)[W_COND] += d * f * f;
-}
+inline void add_precond(float &d, float f, float &fw) { (&fw)[W_COND] += d * f * f; }
 
 void update_preconditioner(vw &all, example &ec)
 {
@@ -182,10 +167,7 @@ void update_preconditioner(vw &all, example &ec)
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
-inline void add_DIR(float &p, const float fx, float &fw)
-{
-  p += (&fw)[W_DIR] * fx;
-}
+inline void add_DIR(float &p, const float fx, float &fw) { p += (&fw)[W_DIR] * fx; }
 
 float dot_with_direction(vw &all, example &ec)
 {
@@ -1124,10 +1106,7 @@ void save_load(bfgs &b, io_buf &model_file, bool read, bool text)
   }
 }
 
-void init_driver(bfgs &b)
-{
-  b.backstep_on = true;
-}
+void init_driver(bfgs &b) { b.backstep_on = true; }
 
 base_learner *bfgs_setup(options_i &options, vw &all)
 {

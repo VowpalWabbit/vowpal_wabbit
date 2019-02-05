@@ -565,15 +565,9 @@ void copy_char(char &c1, const char &c2)
     c1 = c2;
 }
 
-void add_size_t(size_t &t1, const size_t &t2)
-{
-  t1 += t2;
-}
+void add_size_t(size_t &t1, const size_t &t2) { t1 += t2; }
 
-void add_double(double &t1, const double &t2)
-{
-  t1 += t2;
-}
+void add_double(double &t1, const double &t2) { t1 += t2; }
 
 void sync_queries(vw &all, svm_params &params, bool *train_pool)
 {

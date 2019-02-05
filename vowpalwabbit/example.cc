@@ -133,10 +133,7 @@ feature* get_features(vw& all, example* ec, size_t& feature_map_len)
   return fs.feature_map.begin();
 }
 
-void return_features(feature* f)
-{
-  free_it(f);
-}
+void return_features(feature* f) { free_it(f); }
 }  // namespace VW
 
 struct full_features_and_source

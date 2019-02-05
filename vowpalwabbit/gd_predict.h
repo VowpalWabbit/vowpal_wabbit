@@ -84,10 +84,7 @@ inline void foreach_feature(W &weights,
   generate_interactions<R, S, T, W>(interactions, permutations, ec, dat, weights);
 }
 
-inline void vec_add(float &p, const float fx, const float &fw)
-{
-  p += fw * fx;
-}
+inline void vec_add(float &p, const float fx, const float &fw) { p += fw * fx; }
 
 template <class W>
 inline float inline_predict(W &weights,

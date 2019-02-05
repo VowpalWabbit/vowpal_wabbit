@@ -120,10 +120,7 @@ bool options_boost_po::was_supplied(const std::string &key)
   return it != m_command_line.end();
 }
 
-std::string options_boost_po::help()
-{
-  return m_help_stringstream.str();
-}
+std::string options_boost_po::help() { return m_help_stringstream.str(); }
 
 std::vector<std::shared_ptr<base_option>> options_boost_po::get_all_options()
 {

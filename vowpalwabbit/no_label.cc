@@ -11,34 +11,19 @@ using namespace std;
 
 namespace no_label
 {
-char* bufread_no_label(shared_data*, label_data*, char* c)
-{
-  return c;
-}
+char* bufread_no_label(shared_data*, label_data*, char* c) { return c; }
 
-size_t read_cached_no_label(shared_data*, void*, io_buf&)
-{
-  return 1;
-}
+size_t read_cached_no_label(shared_data*, void*, io_buf&) { return 1; }
 
-float get_weight(void*)
-{
-  return 1.;
-}
+float get_weight(void*) { return 1.; }
 
-char* bufcache_no_label(label_data*, char* c)
-{
-  return c;
-}
+char* bufcache_no_label(label_data*, char* c) { return c; }
 
 void cache_no_label(void*, io_buf&) {}
 
 void default_no_label(void*) {}
 
-bool test_label(void*)
-{
-  return false;
-}
+bool test_label(void*) { return false; }
 
 void delete_no_label(void*) {}
 

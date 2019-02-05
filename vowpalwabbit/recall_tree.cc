@@ -160,10 +160,7 @@ void compute_recall_lbest(recall_tree &b, node *n)
   n->recall_lbest = (std::max)(0.f, f - sqrt(b.bern_hyper) * stdf - b.bern_hyper * diamf);
 }
 
-double plogp(double c, double n)
-{
-  return (c == 0) ? 0 : (c / n) * log(c / n);
-}
+double plogp(double c, double n) { return (c == 0) ? 0 : (c / n) * log(c / n); }
 
 double updated_entropy(recall_tree &b, uint32_t cn, example &ec)
 {
@@ -290,10 +287,7 @@ bool is_candidate(recall_tree &b, uint32_t cn, example &ec)
   return false;
 }
 
-inline uint32_t descend(node &n, float prediction)
-{
-  return prediction < 0 ? n.left : n.right;
-}
+inline uint32_t descend(node &n, float prediction) { return prediction < 0 ? n.left : n.right; }
 
 struct predict_type
 {

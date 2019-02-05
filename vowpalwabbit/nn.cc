@@ -62,15 +62,9 @@ static inline float fastpow2(float p)
   return v.f;
 }
 
-static inline float fastexp(float p)
-{
-  return fastpow2(1.442695040f * p);
-}
+static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
-static inline float fasttanh(float p)
-{
-  return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p));
-}
+static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
 void finish_setup(nn &n, vw &all)
 {

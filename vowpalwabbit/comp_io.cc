@@ -55,10 +55,7 @@ ssize_t comp_io_buf::read_file(int f, void *buf, size_t nbytes)
   return (num_read > 0) ? num_read : 0;
 }
 
-size_t comp_io_buf::num_files()
-{
-  return gz_files.size();
-}
+size_t comp_io_buf::num_files() { return gz_files.size(); }
 
 ssize_t comp_io_buf::write_file(int file, const void *buf, size_t nbytes)
 {
@@ -66,10 +63,7 @@ ssize_t comp_io_buf::write_file(int file, const void *buf, size_t nbytes)
   return (num_written > 0) ? num_written : 0;
 }
 
-bool comp_io_buf::compressed()
-{
-  return true;
-}
+bool comp_io_buf::compressed() { return true; }
 
 void comp_io_buf::flush()
 {

@@ -135,10 +135,7 @@ inline float fastlog2(float x)
   return y - 124.22544637f - 1.498030302f * mx_f - 1.72587999f / (0.3520887068f + mx_f);
 }
 
-inline float fastlog(float x)
-{
-  return 0.69314718f * fastlog2(x);
-}
+inline float fastlog(float x) { return 0.69314718f * fastlog2(x); }
 
 inline float fastpow2(float p)
 {
@@ -153,15 +150,9 @@ inline float fastpow2(float p)
   return v;
 }
 
-inline float fastexp(float p)
-{
-  return fastpow2(1.442695040f * p);
-}
+inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
-inline float fastpow(float x, float p)
-{
-  return fastpow2(p * fastlog2(x));
-}
+inline float fastpow(float x, float p) { return fastpow2(p * fastlog2(x)); }
 
 inline float fastlgamma(float x)
 {
@@ -199,15 +190,9 @@ inline float fastdigamma(float x)
 typedef __m128 v4sf;
 typedef __m128i v4si;
 
-inline v4sf v4si_to_v4sf(v4si x)
-{
-  return _mm_cvtepi32_ps(x);
-}
+inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
 
-inline v4si v4sf_to_v4si(v4sf x)
-{
-  return _mm_cvttps_epi32(x);
-}
+inline v4si v4sf_to_v4si(v4sf x) { return _mm_cvttps_epi32(x); }
 
 // Extract v[idx]
 template <const int idx>
@@ -234,37 +219,19 @@ float v4sf_index<0>(const v4sf x)
   return _mm_cvtss_f32(x);
 }
 
-inline v4sf v4sfl(const float x)
-{
-  return _mm_set1_ps(x);
-}
+inline v4sf v4sfl(const float x) { return _mm_set1_ps(x); }
 
-inline v4si v4sil(const uint32_t x)
-{
-  return _mm_set1_epi32(x);
-}
+inline v4si v4sil(const uint32_t x) { return _mm_set1_epi32(x); }
 
 #ifdef WIN32
 
-inline __m128 operator+(const __m128 a, const __m128 b)
-{
-  return _mm_add_ps(a, b);
-}
+inline __m128 operator+(const __m128 a, const __m128 b) { return _mm_add_ps(a, b); }
 
-inline __m128 operator-(const __m128 a, const __m128 b)
-{
-  return _mm_sub_ps(a, b);
-}
+inline __m128 operator-(const __m128 a, const __m128 b) { return _mm_sub_ps(a, b); }
 
-inline __m128 operator*(const __m128 a, const __m128 b)
-{
-  return _mm_mul_ps(a, b);
-}
+inline __m128 operator*(const __m128 a, const __m128 b) { return _mm_mul_ps(a, b); }
 
-inline __m128 operator/(const __m128 a, const __m128 b)
-{
-  return _mm_div_ps(a, b);
-}
+inline __m128 operator/(const __m128 a, const __m128 b) { return _mm_div_ps(a, b); }
 
 #endif
 
@@ -1063,14 +1030,8 @@ void learn_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
 }
 
 // placeholder
-void predict(lda &l, LEARNER::single_learner &base, example &ec)
-{
-  learn(l, base, ec);
-}
-void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec)
-{
-  learn_with_metrics(l, base, ec);
-}
+void predict(lda &l, LEARNER::single_learner &base, example &ec) { learn(l, base, ec); }
+void predict_with_metrics(lda &l, LEARNER::single_learner &base, example &ec) { learn_with_metrics(l, base, ec); }
 
 struct word_doc_frequency
 {

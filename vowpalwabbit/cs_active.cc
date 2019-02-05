@@ -327,15 +327,9 @@ void predict_or_learn(cs_active &cs_a, single_learner &base, example &ec)
   ec.l.cs = ld;
 }
 
-void finish_example(vw &all, cs_active &cs_a, example &ec)
-{
-  CSOAA::finish_example(all, *(CSOAA::csoaa *)&cs_a, ec);
-}
+void finish_example(vw &all, cs_active &cs_a, example &ec) { CSOAA::finish_example(all, *(CSOAA::csoaa *)&cs_a, ec); }
 
-void finish(cs_active &data)
-{
-  data.examples_by_queries.delete_v();
-}
+void finish(cs_active &data) { data.examples_by_queries.delete_v(); }
 
 base_learner *cs_active_setup(options_i &options, vw &all)
 {

@@ -65,10 +65,7 @@ uint64_t hashstring(substring s, uint64_t h)
   return ret + h;
 }
 
-uint64_t hashall(substring s, uint64_t h)
-{
-  return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
-}
+uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
 
 hash_func_t getHasher(const std::string &s)
 {

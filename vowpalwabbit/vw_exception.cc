@@ -28,20 +28,11 @@ vw_exception& vw_exception::operator=(const vw_exception& other)
 
 vw_exception::~vw_exception() _NOEXCEPT {}
 
-const char* vw_exception::what() const _NOEXCEPT
-{
-  return message.c_str();
-}
+const char* vw_exception::what() const _NOEXCEPT { return message.c_str(); }
 
-const char* vw_exception::Filename() const
-{
-  return file;
-}
+const char* vw_exception::Filename() const { return file; }
 
-int vw_exception::LineNumber() const
-{
-  return lineNumber;
-}
+int vw_exception::LineNumber() const { return lineNumber; }
 
 #ifdef _WIN32
 
@@ -73,10 +64,7 @@ StopWatch::StopWatch() : data(new StopWatchData())
   ::QueryPerformanceCounter(&data->startTime_);
 }
 
-StopWatch::~StopWatch()
-{
-  delete data;
-}
+StopWatch::~StopWatch() { delete data; }
 
 double StopWatch::MilliSeconds() const
 {

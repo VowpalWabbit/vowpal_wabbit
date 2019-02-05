@@ -233,10 +233,7 @@ void finish_example(vw& all, bs& d, example& ec)
   VW::finish_example(all, ec);
 }
 
-void finish(bs& d)
-{
-  delete d.pred_vec;
-}
+void finish(bs& d) { delete d.pred_vec; }
 
 base_learner* bs_setup(options_i& options, vw& all)
 {

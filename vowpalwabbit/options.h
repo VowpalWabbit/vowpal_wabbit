@@ -163,10 +163,7 @@ inline bool operator==(const base_option& lhs, const base_option& rhs)
       lhs.m_short_name == rhs.m_short_name && lhs.m_keep == rhs.m_keep;
 }
 
-inline bool operator!=(const base_option& lhs, const base_option& rhs)
-{
-  return !(lhs == rhs);
-}
+inline bool operator!=(const base_option& lhs, const base_option& rhs) { return !(lhs == rhs); }
 
 }  // namespace config
 }  // namespace VW

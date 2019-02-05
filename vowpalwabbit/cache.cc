@@ -36,10 +36,7 @@ inline char *run_len_encode(char *p, uint64_t i)
   return p;
 }
 
-inline int64_t ZigZagDecode(uint64_t n)
-{
-  return (n >> 1) ^ -static_cast<int64_t>(n & 1);
-}
+inline int64_t ZigZagDecode(uint64_t n) { return (n >> 1) ^ -static_cast<int64_t>(n & 1); }
 
 size_t read_cached_tag(io_buf &cache, example *ae)
 {

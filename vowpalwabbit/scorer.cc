@@ -46,24 +46,15 @@ void update(scorer& s, LEARNER::single_learner& base, example& ec)
 }
 
 // y = f(x) -> [0, 1]
-inline float logistic(float in)
-{
-  return 1.f / (1.f + correctedExp(-in));
-}
+inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
 
 // http://en.wikipedia.org/wiki/Generalized_logistic_curve
 // where the lower & upper asymptotes are -1 & 1 respectively
 // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
 //    y = f(x) -> [-1, 1]
-inline float glf1(float in)
-{
-  return 2.f / (1.f + correctedExp(-in)) - 1.f;
-}
+inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
-inline float id(float in)
-{
-  return in;
-}
+inline float id(float in) { return in; }
 
 LEARNER::base_learner* scorer_setup(options_i& options, vw& all)
 {

@@ -101,30 +101,18 @@ inline uint64_t un_ft_offset(const stagewise_poly &poly, uint64_t idx)
   }
 }
 
-inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid)
-{
-  return wid & poly.all->weights.mask();
-}
+inline uint64_t wid_mask(const stagewise_poly &poly, uint64_t wid) { return wid & poly.all->weights.mask(); }
 
 inline uint64_t wid_mask_un_shifted(const stagewise_poly &poly, uint64_t wid)
 {
   return stride_un_shift(poly, wid & poly.all->weights.mask());
 }
 
-inline uint64_t constant_feat(const stagewise_poly &poly)
-{
-  return stride_shift(poly, constant * poly.all->wpp);
-}
+inline uint64_t constant_feat(const stagewise_poly &poly) { return stride_shift(poly, constant * poly.all->wpp); }
 
-inline uint64_t constant_feat_masked(const stagewise_poly &poly)
-{
-  return wid_mask(poly, constant_feat(poly));
-}
+inline uint64_t constant_feat_masked(const stagewise_poly &poly) { return wid_mask(poly, constant_feat(poly)); }
 
-inline size_t depthsbits_sizeof(const stagewise_poly &poly)
-{
-  return (2 * poly.all->length() * sizeof(uint8_t));
-}
+inline size_t depthsbits_sizeof(const stagewise_poly &poly) { return (2 * poly.all->length() * sizeof(uint8_t)); }
 
 void depthsbits_create(stagewise_poly &poly)
 {
@@ -136,10 +124,7 @@ void depthsbits_create(stagewise_poly &poly)
   }
 }
 
-void depthsbits_destroy(stagewise_poly &poly)
-{
-  free(poly.depthsbits);
-}
+void depthsbits_destroy(stagewise_poly &poly) { free(poly.depthsbits); }
 
 inline bool parent_get(const stagewise_poly &poly, uint64_t wid)
 {
@@ -262,10 +247,7 @@ void sort_data_ensure_sz(stagewise_poly &poly, size_t len)
   assert(len <= poly.sd_len);
 }
 
-void sort_data_destroy(stagewise_poly &poly)
-{
-  free(poly.sd);
-}
+void sort_data_destroy(stagewise_poly &poly) { free(poly.sd); }
 
 #ifdef DEBUG
 int sort_data_compar(const void *a_v, const void *b_v)
@@ -274,10 +256,7 @@ int sort_data_compar(const void *a_v, const void *b_v)
 }
 #endif  // DEBUG
 
-int sort_data_compar_heap(sort_data &a_v, sort_data &b_v)
-{
-  return (a_v.weightsal > b_v.weightsal);
-}
+int sort_data_compar_heap(sort_data &a_v, sort_data &b_v) { return (a_v.weightsal > b_v.weightsal); }
 
 /*
  * Performance note.

@@ -66,10 +66,7 @@ static void predict_or_learn(classweights &cweights, LEARNER::single_learner &ba
     base.predict(ec);
 }
 
-void finish(classweights &data)
-{
-  data.weights.~unordered_map();
-}
+void finish(classweights &data) { data.weights.~unordered_map(); }
 }  // namespace CLASSWEIGHTS
 
 using namespace CLASSWEIGHTS;

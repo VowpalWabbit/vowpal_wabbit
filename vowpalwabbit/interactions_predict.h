@@ -67,10 +67,7 @@ struct feature_gen_data
 // synthetic (interaction) features' values are calculated, e.g.,
 // fabs(value1-value2) or even value1>value2?1.0:-1.0
 // Beware - its result must be non-zero.
-inline float INTERACTION_VALUE(float value1, float value2)
-{
-  return value1 * value2;
-}
+inline float INTERACTION_VALUE(float value1, float value2) { return value1 * value2; }
 
 // uncomment line below to disable usage of inner 'for' loops for pair and
 // triple interactions

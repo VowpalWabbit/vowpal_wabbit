@@ -30,10 +30,7 @@ bool valid_int(const char *s)
   return (*s != '\0' && *endptr == '\0');
 }
 
-inline bool cheesyrbit(uint64_t &seed)
-{
-  return merand48(seed) > 0.5;
-}
+inline bool cheesyrbit(uint64_t &seed) { return merand48(seed) > 0.5; }
 
 inline float cheesyrand(uint64_t x)
 {
@@ -42,10 +39,7 @@ inline float cheesyrand(uint64_t x)
   return merand48(seed);
 }
 
-inline bool example_is_test(example &ec)
-{
-  return ec.l.simple.label == FLT_MAX;
-}
+inline bool example_is_test(example &ec) { return ec.l.simple.label == FLT_MAX; }
 
 void reset_seed(LRQstate &lrq)
 {
@@ -163,10 +157,7 @@ void predict_or_learn(LRQstate &lrq, single_learner &base, example &ec)
   }
 }
 
-void finish(LRQstate &lrq)
-{
-  lrq.lrpairs.~set<string>();
-}
+void finish(LRQstate &lrq) { lrq.lrpairs.~set<string>(); }
 
 base_learner *lrq_setup(options_i &options, vw &all)
 {

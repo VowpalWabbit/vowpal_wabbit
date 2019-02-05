@@ -91,10 +91,7 @@ struct pred_offset
   uint64_t offset;
 };
 
-void offset_add(pred_offset &res, const float fx, float &fw)
-{
-  res.p += (&fw)[res.offset] * fx;
-}
+void offset_add(pred_offset &res, const float fx, float &fw) { res.p += (&fw)[res.offset] * fx; }
 
 template <class T>
 float mf_predict(gdmf &d, example &ec, T &weights)
@@ -320,10 +317,7 @@ void end_pass(gdmf &d)
   }
 }
 
-void predict(gdmf &d, single_learner &, example &ec)
-{
-  mf_predict(d, ec);
-}
+void predict(gdmf &d, single_learner &, example &ec) { mf_predict(d, ec); }
 
 void learn(gdmf &d, single_learner &, example &ec)
 {
@@ -334,10 +328,7 @@ void learn(gdmf &d, single_learner &, example &ec)
     mf_train(d, ec);
 }
 
-void finish(gdmf &d)
-{
-  d.scalars.delete_v();
-}
+void finish(gdmf &d) { d.scalars.delete_v(); }
 
 base_learner *gd_mf_setup(options_i &options, vw &all)
 {

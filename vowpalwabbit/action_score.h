@@ -40,15 +40,9 @@ class score_iterator : public virtual std::iterator<std::random_access_iterator_
   float &operator*() { return _p->score; }
 };
 
-inline score_iterator begin_scores(action_scores &a_s)
-{
-  return score_iterator(a_s.begin());
-}
+inline score_iterator begin_scores(action_scores &a_s) { return score_iterator(a_s.begin()); }
 
-inline score_iterator end_scores(action_scores &a_s)
-{
-  return score_iterator(a_s.end());
-}
+inline score_iterator end_scores(action_scores &a_s) { return score_iterator(a_s.end()); }
 
 inline int cmp(size_t a, size_t b)
 {
@@ -77,10 +71,7 @@ inline int score_comp(const void *p1, const void *p2)
     return 1;
 }
 
-inline int reverse_order(const void *p1, const void *p2)
-{
-  return score_comp(p2, p1);
-}
+inline int reverse_order(const void *p1, const void *p2) { return score_comp(p2, p1); }
 
 void print_action_score(int f, v_array<action_score> &a_s, v_array<char> &);
 

@@ -27,10 +27,7 @@ int daemon(int a, int b)
   exit(0);
   return 0;
 }
-int getpid()
-{
-  return (int)::GetCurrentProcessId();
-}
+int getpid() { return (int)::GetCurrentProcessId(); }
 #else
 #include <netdb.h>
 #endif
@@ -59,10 +56,7 @@ using namespace std;
 // This should not? matter in a library mode.
 bool got_sigterm;
 
-void handle_sigterm(int)
-{
-  got_sigterm = true;
-}
+void handle_sigterm(int) { got_sigterm = true; }
 
 bool is_test_only(uint32_t counter,
     uint32_t period,
@@ -827,10 +821,7 @@ example *read_example(vw &all, char *example_line)
   return ret;
 }
 
-example *read_example(vw &all, string example_line)
-{
-  return read_example(all, (char *)example_line.c_str());
-}
+example *read_example(vw &all, string example_line) { return read_example(all, (char *)example_line.c_str()); }
 
 void add_constant_feature(vw &vw, example *ec)
 {
@@ -975,10 +966,7 @@ void thread_dispatch(vw &all, v_array<example *> examples)
   all.p->example_available.notify_all();
 }
 
-void main_parse_loop(vw *all)
-{
-  parse_dispatch(*all, thread_dispatch);
-}
+void main_parse_loop(vw *all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
@@ -1010,40 +998,19 @@ example *get_example(parser *p)
   }
 }
 
-float get_topic_prediction(example *ec, size_t i)
-{
-  return ec->pred.scalars[i];
-}
+float get_topic_prediction(example *ec, size_t i) { return ec->pred.scalars[i]; }
 
-float get_label(example *ec)
-{
-  return ec->l.simple.label;
-}
+float get_label(example *ec) { return ec->l.simple.label; }
 
-float get_importance(example *ec)
-{
-  return ec->weight;
-}
+float get_importance(example *ec) { return ec->weight; }
 
-float get_initial(example *ec)
-{
-  return ec->l.simple.initial;
-}
+float get_initial(example *ec) { return ec->l.simple.initial; }
 
-float get_prediction(example *ec)
-{
-  return ec->pred.scalar;
-}
+float get_prediction(example *ec) { return ec->pred.scalar; }
 
-float get_cost_sensitive_prediction(example *ec)
-{
-  return (float)ec->pred.multiclass;
-}
+float get_cost_sensitive_prediction(example *ec) { return (float)ec->pred.multiclass; }
 
-v_array<float> &get_cost_sensitive_prediction_confidence_scores(example *ec)
-{
-  return ec->pred.scalars;
-}
+v_array<float> &get_cost_sensitive_prediction_confidence_scores(example *ec) { return ec->pred.scalars; }
 
 uint32_t *get_multilabel_predictions(example *ec, size_t &len)
 {
@@ -1066,30 +1033,15 @@ float get_action_score(example *ec, size_t i)
   }
 }
 
-size_t get_action_score_length(example *ec)
-{
-  return ec->pred.a_s.size();
-}
+size_t get_action_score_length(example *ec) { return ec->pred.a_s.size(); }
 
-size_t get_tag_length(example *ec)
-{
-  return ec->tag.size();
-}
+size_t get_tag_length(example *ec) { return ec->tag.size(); }
 
-const char *get_tag(example *ec)
-{
-  return ec->tag.begin();
-}
+const char *get_tag(example *ec) { return ec->tag.begin(); }
 
-size_t get_feature_number(example *ec)
-{
-  return ec->num_features;
-}
+size_t get_feature_number(example *ec) { return ec->num_features; }
 
-float get_confidence(example *ec)
-{
-  return ec->confidence;
-}
+float get_confidence(example *ec) { return ec->confidence; }
 }  // namespace VW
 
 void initialize_examples(vw &all)
@@ -1108,22 +1060,13 @@ void initialize_examples(vw &all)
   }
 }
 
-void adjust_used_index(vw &all)
-{
-  all.p->used_index = all.p->begin_parsed_examples;
-}
+void adjust_used_index(vw &all) { all.p->used_index = all.p->begin_parsed_examples; }
 
-void initialize_parser_datastructures(vw &all)
-{
-  initialize_examples(all);
-}
+void initialize_parser_datastructures(vw &all) { initialize_examples(all); }
 
 namespace VW
 {
-void start_parser(vw &all)
-{
-  all.parse_thread = std::thread(main_parse_loop, &all);
-}
+void start_parser(vw &all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 void free_parser(vw &all)
 {
@@ -1154,13 +1097,7 @@ void free_parser(vw &all)
 
 namespace VW
 {
-void end_parser(vw &all)
-{
-  all.parse_thread.join();
-}
+void end_parser(vw &all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw &all, example *ae)
-{
-  return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size;
-}
+bool is_ring_example(vw &all, example *ae) { return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size; }
 }  // namespace VW

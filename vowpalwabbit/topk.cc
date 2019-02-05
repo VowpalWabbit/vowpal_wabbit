@@ -97,10 +97,7 @@ void finish_example(vw &all, topk &d, example &ec)
   VW::finish_example(all, ec);
 }
 
-void finish(topk &d)
-{
-  d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>();
-}
+void finish(topk &d) { d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>(); }
 
 LEARNER::base_learner *topk_setup(options_i &options, vw &all)
 {

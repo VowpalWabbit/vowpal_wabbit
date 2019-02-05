@@ -305,14 +305,8 @@ struct search_private
                                                          // for LEARN
 };
 
-search::search()
-{
-  priv = &calloc_or_throw<search_private>();
-}
-search::~search()
-{
-  free(priv);
-}
+search::search() { priv = &calloc_or_throw<search_private>(); }
+search::~search() { free(priv); }
 
 string audit_feature_space("conditional");
 uint64_t conditional_constant = 8290743;
@@ -733,10 +727,7 @@ void cerr_print_array(string str, v_array<T> &A)
   std::cerr << " ]" << endl;
 }
 
-size_t random(uint64_t &v, size_t max)
-{
-  return (size_t)(merand48(v) * (float)max);
-}
+size_t random(uint64_t &v, size_t max) { return (size_t)(merand48(v) * (float)max); }
 template <class T>
 bool array_contains(T target, const T *A, size_t n)
 {
@@ -856,10 +847,7 @@ void del_example_conditioning(search_private &priv, example &ec)
     del_features_in_top_namespace(priv, ec, conditioning_namespace);
 }
 
-inline size_t cs_get_costs_size(bool isCB, polylabel &ld)
-{
-  return isCB ? ld.cb.costs.size() : ld.cs.costs.size();
-}
+inline size_t cs_get_costs_size(bool isCB, polylabel &ld) { return isCB ? ld.cb.costs.size() : ld.cs.costs.size(); }
 
 inline uint32_t cs_get_cost_index(bool isCB, polylabel &ld, size_t k)
 {
@@ -1445,10 +1433,7 @@ bool cached_item_equivalent(unsigned char *const &A, unsigned char *const &B)
   return memcmp(A, B, sz_A) == 0;
 }
 
-void free_key(unsigned char *mem, scored_action)
-{
-  free(mem);
-}  // sa.repr.delete_v(); }
+void free_key(unsigned char *mem, scored_action) { free(mem); }  // sa.repr.delete_v(); }
 void clear_cache_hash_map(search_private &priv)
 {
   priv.cache_hash_map.iter(free_key);
@@ -1999,19 +1984,13 @@ action search_predict(search_private &priv,
   THROW("error: predict called in unknown state");
 }
 
-inline bool cmp_size_t(const size_t a, const size_t b)
-{
-  return a < b;
-}
+inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
 inline bool cmp_size_t_pair(const pair<size_t, size_t> &a, const pair<size_t, size_t> &b)
 {
   return ((a.first == b.first) && (a.second < b.second)) || (a.first < b.first);
 }
 
-inline size_t absdiff(size_t a, size_t b)
-{
-  return (a < b) ? (b - a) : (a - b);
-}
+inline size_t absdiff(size_t a, size_t b) { return (a < b) ? (b - a) : (a - b); }
 
 void hoopla_permute(size_t *B, size_t *end)
 {
@@ -2570,10 +2549,7 @@ void end_examples(search &sch)
   }
 }
 
-bool mc_label_is_test(polylabel &lab)
-{
-  return MC::mc_label.test_label(&lab.multi);
-}
+bool mc_label_is_test(polylabel &lab) { return MC::mc_label.test_label(&lab.multi); }
 
 void search_initialize(vw *all, search &sch)
 {
@@ -3151,10 +3127,7 @@ float action_cost_loss(action a, const action *act, const float *costs, size_t s
 }
 
 // the interface:
-bool search::is_ldf()
-{
-  return priv->is_ldf;
-}
+bool search::is_ldf() { return priv->is_ldf; }
 
 action search::predict(example &ec,
     ptag mytag,
@@ -3236,15 +3209,9 @@ action search::predictLDF(example *ecs,
   return a;
 }
 
-void search::loss(float loss)
-{
-  search_declare_loss(*this->priv, loss);
-}
+void search::loss(float loss) { search_declare_loss(*this->priv, loss); }
 
-bool search::predictNeedsExample()
-{
-  return search_predictNeedsExample(*this->priv);
-}
+bool search::predictNeedsExample() { return search_predictNeedsExample(*this->priv); }
 
 stringstream &search::output()
 {
@@ -3301,23 +3268,11 @@ void search::get_test_action_sequence(vector<action> &V)
   for (size_t i = 0; i < this->priv->test_action_sequence.size(); i++) V.push_back(this->priv->test_action_sequence[i]);
 }
 
-void search::set_num_learners(size_t num_learners)
-{
-  this->priv->num_learners = num_learners;
-}
+void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
 
-uint64_t search::get_mask()
-{
-  return this->priv->all->weights.mask();
-}
-size_t search::get_stride_shift()
-{
-  return this->priv->all->weights.stride_shift();
-}
-uint32_t search::get_history_length()
-{
-  return (uint32_t)this->priv->history_length;
-}
+uint64_t search::get_mask() { return this->priv->all->weights.mask(); }
+size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
+uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
 
 string search::pretty_label(action a)
 {
@@ -3334,14 +3289,8 @@ string search::pretty_label(action a)
   }
 }
 
-vw &search::get_vw_pointer_unsafe()
-{
-  return *this->priv->all;
-}
-void search::set_force_oracle(bool force)
-{
-  this->priv->force_oracle = force;
-}
+vw &search::get_vw_pointer_unsafe() { return *this->priv->all; }
+void search::set_force_oracle(bool force) { this->priv->force_oracle = force; }
 
 // predictor implementation
 predictor::predictor(search &sch, ptag my_tag)
@@ -3529,10 +3478,7 @@ predictor &predictor::erase_oracles()
     oracle_actions.clear();
   return *this;
 }
-predictor &predictor::add_oracle(action a)
-{
-  return add_to(oracle_actions, oracle_is_pointer, a, false);
-}
+predictor &predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
 predictor &predictor::add_oracle(action *a, size_t action_count)
 {
   return add_to(oracle_actions, oracle_is_pointer, a, action_count, false);
@@ -3542,10 +3488,7 @@ predictor &predictor::add_oracle(v_array<action> &a)
   return add_to(oracle_actions, oracle_is_pointer, a.begin(), a.size(), false);
 }
 
-predictor &predictor::set_oracle(action a)
-{
-  return add_to(oracle_actions, oracle_is_pointer, a, true);
-}
+predictor &predictor::set_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, true); }
 predictor &predictor::set_oracle(action *a, size_t action_count)
 {
   return add_to(oracle_actions, oracle_is_pointer, a, action_count, true);
@@ -3573,10 +3516,7 @@ predictor &predictor::erase_alloweds()
     allowed_actions_cost.clear();
   return *this;
 }
-predictor &predictor::add_allowed(action a)
-{
-  return add_to(allowed_actions, allowed_is_pointer, a, false);
-}
+predictor &predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
 predictor &predictor::add_allowed(action *a, size_t action_count)
 {
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, false);
@@ -3586,10 +3526,7 @@ predictor &predictor::add_allowed(v_array<action> &a)
   return add_to(allowed_actions, allowed_is_pointer, a.begin(), a.size(), false);
 }
 
-predictor &predictor::set_allowed(action a)
-{
-  return add_to(allowed_actions, allowed_is_pointer, a, true);
-}
+predictor &predictor::set_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, true); }
 predictor &predictor::set_allowed(action *a, size_t action_count)
 {
   return add_to(allowed_actions, allowed_is_pointer, a, action_count, true);

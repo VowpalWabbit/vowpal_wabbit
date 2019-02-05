@@ -117,15 +117,9 @@ void predict_or_learn(csoaa &c, single_learner &base, example &ec)
   ec.l.cs = ld;
 }
 
-void finish_example(vw &all, csoaa &, example &ec)
-{
-  COST_SENSITIVE::finish_example(all, ec);
-}
+void finish_example(vw &all, csoaa &, example &ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-void finish(csoaa &c)
-{
-  free(c.pred);
-}
+void finish(csoaa &c) { free(c.pred); }
 
 base_learner *csoaa_setup(options_i &options, vw &all)
 {
@@ -201,10 +195,7 @@ bool ec_seq_has_label_definition(multi_ex &ec_seq)
   return std::any_of(ec_seq.cbegin(), ec_seq.cend(), [](example *ec) { return ec_is_label_definition(*ec); });
 }
 
-inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass *a, const COST_SENSITIVE::wclass *b)
-{
-  return a->x < b->x;
-}
+inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass *a, const COST_SENSITIVE::wclass *b) { return a->x < b->x; }
 
 void compute_wap_values(vector<COST_SENSITIVE::wclass *> costs)
 {
@@ -774,10 +765,7 @@ void output_example_seq(vw &all, ldf &data, multi_ex &ec_seq)
   }
 }
 
-void end_pass(ldf &data)
-{
-  data.first_pass = false;
-}
+void end_pass(ldf &data) { data.first_pass = false; }
 
 void finish_multiline_example(vw &all, ldf &data, multi_ex &ec_seq)
 {

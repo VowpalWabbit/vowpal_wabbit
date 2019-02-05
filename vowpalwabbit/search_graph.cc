@@ -92,10 +92,7 @@ struct task_data
   float true_counts_total;
 };
 
-inline bool example_is_test(polylabel& l)
-{
-  return l.cs.costs.size() == 0;
-}
+inline bool example_is_test(polylabel& l) { return l.cs.costs.size() == 0; }
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
@@ -146,10 +143,7 @@ void finish(Search::search& sch)
   delete D;
 }
 
-inline bool example_is_edge(example* e)
-{
-  return e->l.cs.costs.size() > 1;
-}
+inline bool example_is_edge(example* e) { return e->l.cs.costs.size() > 1; }
 
 void run_bfs(task_data& D, multi_ex& ec)
 {

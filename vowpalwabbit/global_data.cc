@@ -262,10 +262,7 @@ vw_ostream::vw_ostream() : std::ostream(&buf), buf(*this), trace_context(nullptr
   trace_listener = trace_listener_cerr;
 }
 
-vw::vw(const vw &)
-{
-  THROW("Copy constructor not supported");
-}
+vw::vw(const vw &) { THROW("Copy constructor not supported"); }
 
 vw::vw()
 {

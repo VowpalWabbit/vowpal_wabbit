@@ -69,10 +69,7 @@ void predict_or_learn(cb &data, single_learner &base, example &ec)
   }
 }
 
-void predict_eval(cb &, single_learner &, example &)
-{
-  THROW("can not use a test label for evaluation");
-}
+void predict_eval(cb &, single_learner &, example &) { THROW("can not use a test label for evaluation"); }
 
 void learn_eval(cb &data, single_learner &, example &ec)
 {

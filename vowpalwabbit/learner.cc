@@ -93,10 +93,7 @@ bool ec_is_example_header(example& ec)
 }
 
 /* is this just a newline */
-inline bool example_is_newline_not_header(example& ec)
-{
-  return (example_is_newline(ec) && !ec_is_example_header(ec));
-}
+inline bool example_is_newline_not_header(example& ec) { return (example_is_newline(ec) && !ec_is_example_header(ec)); }
 
 /* Adds an example to multiline collection
  * Returns: true if complete and false if incomplete example */
@@ -242,9 +239,6 @@ void generic_driver_onethread(vw& all)
   all.l->end_examples();
 }
 
-float recur_sensitivity(void*, base_learner& base, example& ec)
-{
-  return base.sensitivity(ec);
-}
+float recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 
 }  // namespace LEARNER

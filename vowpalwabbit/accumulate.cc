@@ -17,10 +17,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 
 using namespace std;
 
-void add_float(float &c1, const float &c2)
-{
-  c1 += c2;
-}
+void add_float(float &c1, const float &c2) { c1 += c2; }
 
 void accumulate(vw &all, parameters &weights, size_t offset)
 {

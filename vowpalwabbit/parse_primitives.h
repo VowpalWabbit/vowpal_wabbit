@@ -35,10 +35,7 @@ inline char *safe_index(char *start, char v, char *max)
   return start;
 }
 
-inline void print_substring(substring s)
-{
-  std::cout.write(s.begin, s.end - s.begin);
-}
+inline void print_substring(substring s) { std::cout.write(s.begin, s.end - s.begin); }
 
 // can't type as it forces C++/CLI part to include rapidjson, which leads to
 // name clashes...
@@ -117,14 +114,8 @@ inline float parseFloat(char *p, char **end, char *endLine = nullptr)
     return (float)strtod(start, end);
 }
 
-inline bool nanpattern(float value)
-{
-  return (float_to_bits(value) & 0x7fC00000) == 0x7fC00000;
-}
-inline bool infpattern(float value)
-{
-  return (float_to_bits(value) & 0x7fC00000) == 0x7f800000;
-}
+inline bool nanpattern(float value) { return (float_to_bits(value) & 0x7fC00000) == 0x7fC00000; }
+inline bool infpattern(float value) { return (float_to_bits(value) & 0x7fC00000) == 0x7f800000; }
 
 inline float float_of_substring(substring s)
 {

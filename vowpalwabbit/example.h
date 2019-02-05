@@ -117,10 +117,7 @@ inline int example_is_newline(example &ec)
   return ((ec.indices.size() == 0) || ((ec.indices.size() == 1) && (ec.indices.last() == constant_namespace)));
 }
 
-inline bool valid_ns(char c)
-{
-  return !(c == '|' || c == ':');
-}
+inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example &ec, uint64_t magic, uint64_t i, float x)
 {

@@ -155,10 +155,7 @@ void print_update_with_probability(vw& all, example& ec, uint32_t pred)
 {
   print_update<print_probability>(all, ec, pred);
 }
-void print_update_with_score(vw& all, example& ec, uint32_t pred)
-{
-  print_update<print_score>(all, ec, pred);
-}
+void print_update_with_score(vw& all, example& ec, uint32_t pred) { print_update<print_score>(all, ec, pred); }
 
 void finish_example(vw& all, example& ec)
 {

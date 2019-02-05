@@ -150,10 +150,7 @@ void predict_or_learn(interact& in, LEARNER::single_learner& base, example& ec)
   ec.num_features = in.num_features;
 }
 
-void finish(interact& in)
-{
-  in.feat_store.delete_v();
-}
+void finish(interact& in) { in.feat_store.delete_v(); }
 
 LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {

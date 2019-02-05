@@ -108,10 +108,7 @@ void initialize(Search::search &sch, size_t & /*num_actions*/, options_i &option
   sch.set_metatask_data(d);
 }
 
-void finish(Search::search &sch)
-{
-  delete sch.get_metatask_data<task_data>();
-}
+void finish(Search::search &sch) { delete sch.get_metatask_data<task_data>(); }
 
 void run(Search::search &sch, multi_ex &ec)
 {
