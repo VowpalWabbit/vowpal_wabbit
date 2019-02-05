@@ -43,40 +43,34 @@ struct nn
   polyprediction* hidden_units_pred;
   polyprediction* hiddenbias_pred;
 
-  vw* all;//many things
+  vw* all;  // many things
 };
 
 #define cast_uint32_t static_cast<uint32_t>
 
-static inline float
-fastpow2 (float p)
+static inline float fastpow2(float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
   float clipp = (p < -126) ? -126.0f : p;
   int w = (int)clipp;
   float z = clipp - w + offset;
-  union { uint32_t i; float f; } v = { cast_uint32_t ( (1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) ) };
+  union {
+    uint32_t i;
+    float f;
+  } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
 
   return v.f;
 }
 
-static inline float
-fastexp (float p)
-{
-  return fastpow2 (1.442695040f * p);
-}
+static inline float fastexp(float p) { return fastpow2(1.442695040f * p); }
 
-static inline float
-fasttanh (float p)
-{
-  return -1.0f + 2.0f / (1.0f + fastexp (-2.0f * p));
-}
+static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2.0f * p)); }
 
-void finish_setup (nn& n, vw& all)
+void finish_setup(nn& n, vw& all)
 {
   // TODO: output_layer audit
 
-  memset (&n.output_layer, 0, sizeof (n.output_layer));
+  memset(&n.output_layer, 0, sizeof(n.output_layer));
   n.output_layer.indices.push_back(nn_output_namespace);
   uint64_t nn_index = nn_constant << all.weights.stride_shift();
 
@@ -94,30 +88,35 @@ void finish_setup (nn& n, vw& all)
   }
   n.output_layer.num_features += n.k;
 
-  if (! n.inpass)
+  if (!n.inpass)
   {
-    fs.push_back(1.,nn_index);
-    if (all.audit || all.hash_inv) fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
+    fs.push_back(1., nn_index);
+    if (all.audit || all.hash_inv)
+      fs.space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputLayerConst")));
     ++n.output_layer.num_features;
   }
 
   n.output_layer.in_use = true;
 
   // TODO: not correct if --noconstant
-  memset (&n.hiddenbias, 0, sizeof (n.hiddenbias));
+  memset(&n.hiddenbias, 0, sizeof(n.hiddenbias));
   n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1,(uint64_t)constant);
-  if (all.audit || all.hash_inv) n.hiddenbias.feature_space[constant_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "HiddenBias")));
+  n.hiddenbias.feature_space[constant_namespace].push_back(1, (uint64_t)constant);
+  if (all.audit || all.hash_inv)
+    n.hiddenbias.feature_space[constant_namespace].space_names.push_back(
+        audit_strings_ptr(new audit_strings("", "HiddenBias")));
   n.hiddenbias.total_sum_feat_sq++;
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
   n.hiddenbias.in_use = true;
 
-  memset (&n.outputweight, 0, sizeof (n.outputweight));
+  memset(&n.outputweight, 0, sizeof(n.outputweight));
   n.outputweight.indices.push_back(nn_output_namespace);
   features& outfs = n.output_layer.feature_space[nn_output_namespace];
-  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0],outfs.indicies[0]);
-  if (all.audit || all.hash_inv) n.outputweight.feature_space[nn_output_namespace].space_names.push_back(audit_strings_ptr(new audit_strings("", "OutputWeight")));
+  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indicies[0]);
+  if (all.audit || all.hash_inv)
+    n.outputweight.feature_space[nn_output_namespace].space_names.push_back(
+        audit_strings_ptr(new audit_strings("", "OutputWeight")));
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.total_sum_feat_sq++;
   n.outputweight.l.simple.label = FLT_MAX;
@@ -133,19 +132,19 @@ void end_pass(nn& n)
     n.xsubi = n.save_xsubi;
 }
 
-template<bool is_learn, bool recompute_hidden>
+template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
 {
   bool shouldOutput = n.all->raw_prediction > 0;
-  if (! n.finished_setup)
-    finish_setup (n, *(n.all));
+  if (!n.finished_setup)
+    finish_setup(n, *(n.all));
   shared_data sd;
-  memcpy (&sd, n.all->sd, sizeof(shared_data));
+  memcpy(&sd, n.all->sd, sizeof(shared_data));
   shared_data* save_sd = n.all->sd;
   n.all->sd = &sd;
 
   label_data ld = ec.l.simple;
-  void (*save_set_minmax) (shared_data*, float) = n.all->set_minmax;
+  void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
   float save_min_label;
   float save_max_label;
   float dropscale = n.dropout ? 2.0f : 1.0f;
@@ -179,29 +178,30 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
       // avoid saddle point at 0
       if (hiddenbias_pred[i].scalar == 0)
       {
-        n.hiddenbias.l.simple.label = (float) (merand48(n.all->random_state) - 0.5);
+        n.hiddenbias.l.simple.label = (float)(merand48(n.all->random_state) - 0.5);
         base.learn(n.hiddenbias, i);
         n.hiddenbias.l.simple.label = FLT_MAX;
       }
 
     base.multipredict(ec, 0, n.k, hidden_units, true);
 
-    for (unsigned int i = 0; i < n.k; ++i )
-      dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
+    for (unsigned int i = 0; i < n.k; ++i) dropped_out[i] = (n.dropout && merand48(n.xsubi) < 0.5);
 
     if (ec.passthrough)
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        add_passthrough_feature(ec, i*2,   hiddenbias_pred[i].scalar);
-        add_passthrough_feature(ec, i*2+1, hidden_units[i].scalar);
+        add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar);
+        add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar);
       }
   }
 
   if (shouldOutput)
-    for (unsigned int i = 0; i < n.k; ++i )
+    for (unsigned int i = 0; i < n.k; ++i)
     {
-      if (i > 0) outputStringStream << ' ';
-      outputStringStream << i << ':' << hidden_units[i].scalar << ',' << fasttanh (hidden_units[i].scalar); // TODO: huh, what was going on here?
+      if (i > 0)
+        outputStringStream << ' ';
+      outputStringStream << i << ':' << hidden_units[i].scalar << ','
+                         << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
     }
 
   n.all->loss = save_loss;
@@ -215,7 +215,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, example& ec)
   float save_final_prediction = 0;
   float save_ec_loss = 0;
 
-CONVERSE: // That's right, I'm using goto.  So sue me.
+CONVERSE:  // That's right, I'm using goto.  So sue me.
 
   n.output_layer.total_sum_feat_sq = 1;
   n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
@@ -231,8 +231,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   for (unsigned int i = 0; i < n.k; ++i)
   {
-    float sigmah =
-      (dropped_out[i]) ? 0.0f : dropscale * fasttanh (hidden_units[i].scalar);
+    float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
     features& out_fs = n.output_layer.feature_space[nn_output_namespace];
     out_fs.values[i] = sigmah;
 
@@ -246,8 +245,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     // avoid saddle point at 0
     if (wf == 0)
     {
-      float sqrtk = sqrt ((float)n.k);
-      n.outputweight.l.simple.label = (float) (merand48(n.all->random_state) - 0.5) / sqrtk;
+      float sqrtk = sqrt((float)n.k);
+      n.outputweight.l.simple.label = (float)(merand48(n.all->random_state) - 0.5) / sqrtk;
       base.update(n.outputweight, n.k);
       n.outputweight.l.simple.label = FLT_MAX;
     }
@@ -263,7 +262,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     // TODO: this is not correct if there is something in the
     // nn_output_namespace but at least it will not leak memory
     // in that case
-    ec.indices.push_back (nn_output_namespace);
+    ec.indices.push_back(nn_output_namespace);
     features save_nn_output_namespace = ec.feature_space[nn_output_namespace];
     ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
     ec.total_sum_feat_sq += n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
@@ -276,7 +275,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.total_sum_feat_sq -= n.output_layer.feature_space[nn_output_namespace].sum_feat_sq;
     ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
     ec.feature_space[nn_output_namespace] = save_nn_output_namespace;
-    ec.indices.pop ();
+    ec.indices.pop();
   }
   else
   {
@@ -291,7 +290,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.l = n.output_layer.l;
   }
 
-  n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
+  n.prediction = GD::finalize_prediction(n.all->sd, n.output_layer.partial_prediction);
 
   if (shouldOutput)
   {
@@ -301,11 +300,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   if (is_learn && n.all->training && ld.label != FLT_MAX)
   {
-    float gradient = n.all->loss->first_derivative(n.all->sd,
-                     n.prediction,
-                     ld.label);
+    float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
 
-    if (fabs (gradient) > 0)
+    if (fabs(gradient) > 0)
     {
       n.all->loss = n.squared_loss;
       n.all->set_minmax = noop_mm;
@@ -320,18 +317,17 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (! dropped_out[i])
+        if (!dropped_out[i])
         {
-          float sigmah =
-            n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
+          float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
           float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
           n.outputweight.feature_space[nn_output_namespace].indicies[0] =
-            n.output_layer.feature_space[nn_output_namespace].indicies[i];
+              n.output_layer.feature_space[nn_output_namespace].indicies[i];
           base.predict(n.outputweight, n.k);
           float nu = n.outputweight.pred.scalar;
           float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-          ec.l.simple.label = GD::finalize_prediction (n.all->sd, hidden_units[i].scalar - gradhw);
+          ec.l.simple.label = GD::finalize_prediction(n.all->sd, hidden_units[i].scalar - gradhw);
           ec.pred.scalar = hidden_units[i].scalar;
           if (ec.l.simple.label != hidden_units[i].scalar)
             base.update(ec, i);
@@ -348,18 +344,18 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   ec.l.simple.label = ld.label;
 
-  if (! converse)
+  if (!converse)
   {
     save_partial_prediction = n.output_layer.partial_prediction;
     save_final_prediction = n.prediction;
     save_ec_loss = n.output_layer.loss;
   }
 
-  if (n.dropout && ! converse)
+  if (n.dropout && !converse)
   {
     for (unsigned int i = 0; i < n.k; ++i)
     {
-      dropped_out[i] = ! dropped_out[i];
+      dropped_out[i] = !dropped_out[i];
     }
 
     converse = true;
@@ -371,23 +367,26 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   ec.loss = save_ec_loss;
 
   n.all->sd = save_sd;
-  n.all->set_minmax (n.all->sd, sd.min_label);
-  n.all->set_minmax (n.all->sd, sd.max_label);
+  n.all->set_minmax(n.all->sd, sd.min_label);
+  n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction*pred, bool finalize_predictions)
+void multipredict(nn& n, single_learner& base, example& ec, size_t count, size_t step, polyprediction* pred,
+    bool finalize_predictions)
 {
-  for (size_t c=0; c<count; c++)
+  for (size_t c = 0; c < count; c++)
   {
     if (c == 0)
-      predict_or_learn_multi<false,true>(n, base, ec);
+      predict_or_learn_multi<false, true>(n, base, ec);
     else
-      predict_or_learn_multi<false,false>(n, base, ec);
-    if (finalize_predictions) pred[c] = ec.pred;
-    else pred[c].scalar = ec.partial_prediction;
+      predict_or_learn_multi<false, false>(n, base, ec);
+    if (finalize_predictions)
+      pred[c] = ec.pred;
+    else
+      pred[c].scalar = ec.partial_prediction;
     ec.ft_offset += (uint64_t)step;
   }
-  ec.ft_offset -= (uint64_t)(step*count);
+  ec.ft_offset -= (uint64_t)(step * count);
 }
 
 void finish_example(vw& all, nn&, example& ec)
@@ -415,12 +414,13 @@ base_learner* nn_setup(options_i& options, vw& all)
   auto n = scoped_calloc_or_throw<nn>();
   bool meanfield = false;
   option_group_definition new_options("Neural Network");
-  new_options
-    .add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
-    .add(make_option("inpass", n->inpass).keep().help("Train or test sigmoidal feedforward network with input passthrough."))
-    .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
-    .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
-    .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
+  new_options.add(make_option("nn", n->k).keep().help("Sigmoidal feedforward network with <k> hidden units"))
+      .add(make_option("inpass", n->inpass)
+               .keep()
+               .help("Train or test sigmoidal feedforward network with input passthrough."))
+      .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks."))
+      .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout."))
+      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field."));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("nn"))
@@ -428,29 +428,21 @@ base_learner* nn_setup(options_i& options, vw& all)
 
   n->all = &all;
 
-  if (n->multitask && ! all.quiet)
-    std::cerr << "using multitask sharing for neural network "
-              << (all.training ? "training" : "testing")
-              << std::endl;
+  if (n->multitask && !all.quiet)
+    std::cerr << "using multitask sharing for neural network " << (all.training ? "training" : "testing") << std::endl;
 
-  if ( options.was_supplied("meanfield") )
+  if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    if (! all.quiet)
-      std::cerr << "using mean field for neural network "
-                << (all.training ? "training" : "testing")
-                << std::endl;
+    if (!all.quiet)
+      std::cerr << "using mean field for neural network " << (all.training ? "training" : "testing") << std::endl;
   }
 
   if (n->dropout && !all.quiet)
-      std::cerr << "using dropout for neural network "
-                << (all.training ? "training" : "testing")
-                << std::endl;
+    std::cerr << "using dropout for neural network " << (all.training ? "training" : "testing") << std::endl;
 
   if (n->inpass && !all.quiet)
-    std::cerr << "using input passthrough for neural network "
-              << (all.training ? "training" : "testing")
-              << std::endl;
+    std::cerr << "using input passthrough for neural network " << (all.training ? "training" : "testing") << std::endl;
 
   n->finished_setup = false;
   n->squared_loss = getLossFunction(all, "squared", 0);
@@ -465,12 +457,10 @@ base_learner* nn_setup(options_i& options, vw& all)
   n->hiddenbias_pred = calloc_or_throw<polyprediction>(n->k);
 
   auto base = as_singleline(setup_base(options, all));
-  n->increment = base->increment;//Indexing of output layer is odd.
+  n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
-  learner<nn,example>&l = init_learner(n, base,
-                               predict_or_learn_multi<true,true>,
-                               predict_or_learn_multi<false,true>,
-                               n->k+1);
+  learner<nn, example>& l =
+      init_learner(n, base, predict_or_learn_multi<true, true>, predict_or_learn_multi<false, true>, n->k + 1);
   if (nv.multitask)
     l.set_multipredict(multipredict);
   l.set_finish(finish);
@@ -482,8 +472,8 @@ base_learner* nn_setup(options_i& options, vw& all)
 
 /*
 
-  train: ./vw -k -c -d mnist8v9.gz --passes 24 -b 25 --nn 64 -l 0.1 --invariant --adaptive --holdout_off --random_seed 19 --nnmultipredict -f mnist64
-predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
+  train: ./vw -k -c -d mnist8v9.gz --passes 24 -b 25 --nn 64 -l 0.1 --invariant --adaptive --holdout_off --random_seed
+19 --nnmultipredict -f mnist64 predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
 
                      default   multipredict
   nn  64 train         9.1s         8.1s
@@ -493,7 +483,7 @@ predict: ./vw -t -d mnist8v9.gz -i mnist64 --nnmultipredict
 
 with oaa:
 
-  train: ./vw --oaa 10 -b 25 --adaptive --invariant --holdout_off -l 0.1 --nn 64 --passes 24 -k -c -d mnist-all.gz --random_seed 19 --nnmultipredict -f mnist-all64
-predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
+  train: ./vw --oaa 10 -b 25 --adaptive --invariant --holdout_off -l 0.1 --nn 64 --passes 24 -k -c -d mnist-all.gz
+--random_seed 19 --nnmultipredict -f mnist-all64 predict: ./vw -t -d mnist-all.gz -i mnist-all64 --nnmultipredict
 
 */

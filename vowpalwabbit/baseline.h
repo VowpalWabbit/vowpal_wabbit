@@ -13,4 +13,4 @@ namespace BASELINE
 void set_baseline_enabled(example* ec);
 void reset_baseline_disabled(example* ec);
 bool baseline_enabled(example* ec);
-}
+}  // namespace BASELINE

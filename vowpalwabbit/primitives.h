@@ -2,9 +2,9 @@
 
 #include <immintrin.h>
 
-//typedef float(*sum_of_squares_func)(float*, float*);
+// typedef float(*sum_of_squares_func)(float*, float*);
 //
-//sum_of_squares_func get_sum_of_squares();
+// sum_of_squares_func get_sum_of_squares();
 
 float sum_of_squares(float* begin, float* end);
 

@@ -13,9 +13,9 @@ using namespace VW::config;
 
 struct interact
 {
-  unsigned char n1, n2;  //namespaces to interact
+  unsigned char n1, n2;  // namespaces to interact
   features feat_store;
-  vw *all;
+  vw* all;
   float n1_feat_sq;
   float total_sum_feat_sq;
   size_t num_features;
@@ -51,12 +51,12 @@ void multiply(features& f_dest, features& f_src2, interact& in)
   uint64_t base_id1 = f_src1.indicies[0] & weight_mask;
   uint64_t base_id2 = f_src2.indicies[0] & weight_mask;
 
-  f_dest.push_back(f_src1.values[0]*f_src2.values[0], f_src1.indicies[0]);
+  f_dest.push_back(f_src1.values[0] * f_src2.values[0], f_src1.indicies[0]);
 
   uint64_t prev_id1 = 0;
   uint64_t prev_id2 = 0;
 
-  for(size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
+  for (size_t i1 = 1, i2 = 1; i1 < f_src1.size() && i2 < f_src2.size();)
   {
     // calculating the relative offset from the namespace offset used to match features
     uint64_t cur_id1 = (uint64_t)(((f_src1.indicies[i1] & weight_mask) - base_id1) & weight_mask);
@@ -75,9 +75,9 @@ void multiply(features& f_dest, features& f_src2, interact& in)
       return;
     }
 
-    if(cur_id1 == cur_id2)
+    if (cur_id1 == cur_id2)
     {
-      f_dest.push_back(f_src1.values[i1]*f_src2.values[i2], f_src1.indicies[i1]);
+      f_dest.push_back(f_src1.values[i1] * f_src2.values[i2], f_src1.indicies[i1]);
       i1++;
       i2++;
     }
@@ -156,29 +156,30 @@ LEARNER::base_learner* interact_setup(options_i& options, vw& all)
 {
   string s;
   option_group_definition new_options("Interact via elementwise multiplication");
-  new_options
-    .add(make_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
+  new_options.add(
+      make_option("interact", s).keep().help("Put weights on feature products from namespaces <n1> and <n2>"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("interact"))
     return nullptr;
 
-  if(s.length() != 2)
+  if (s.length() != 2)
   {
-    cerr<<"Need two namespace arguments to interact: " << s << " won't do EXITING\n";
+    cerr << "Need two namespace arguments to interact: " << s << " won't do EXITING\n";
     return nullptr;
   }
 
   auto data = scoped_calloc_or_throw<interact>();
 
-  data->n1 = (unsigned char) s[0];
-  data->n2 = (unsigned char) s[1];
+  data->n1 = (unsigned char)s[0];
+  data->n2 = (unsigned char)s[1];
   if (!all.quiet)
-    cerr <<"Interacting namespaces "<<data->n1<<" and "<<data->n2<<endl;
+    cerr << "Interacting namespaces " << data->n1 << " and " << data->n2 << endl;
   data->all = &all;
 
-  LEARNER::learner<interact,example>* l;
-  l = &LEARNER::init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
+  LEARNER::learner<interact, example>* l;
+  l = &LEARNER::init_learner(
+      data, as_singleline(setup_base(options, all)), predict_or_learn<true, true>, predict_or_learn<false, true>, 1);
 
   l->set_finish(finish);
   return make_base(*l);

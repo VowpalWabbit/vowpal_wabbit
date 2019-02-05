@@ -18,14 +18,14 @@ license as described in the file LICENSE.
 
 bool substring_equal(const substring& a, const substring& b)
 {
-  return (a.end - a.begin == b.end - b.begin) // same length
-         && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
+  return (a.end - a.begin == b.end - b.begin)  // same length
+      && (strncmp(a.begin, b.begin, a.end - a.begin) == 0);
 }
 
 void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
   ret.clear();
-  char *last = s.begin;
+  char* last = s.begin;
   for (; s.begin != s.end; s.begin++)
   {
     if (*s.begin == delim)
@@ -35,7 +35,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty
         substring temp = {last, s.begin};
         ret.push_back(temp);
       }
-      last = s.begin+1;
+      last = s.begin + 1;
     }
   }
   if (allow_empty || (s.begin != last))
@@ -45,32 +45,33 @@ void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty
   }
 }
 
-uint64_t hashstring (substring s, uint64_t h)
+uint64_t hashstring(substring s, uint64_t h)
 {
-  //trim leading whitespace but not UTF-8
-  for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin)>= 0; s.begin++);
-  //trim trailing white space but not UTF-8
-  for(; s.end > s.begin && *(s.end-1) <= 0x20 && (int)*(s.end-1) >=0; s.end--);
+  // trim leading whitespace but not UTF-8
+  for (; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++)
+    ;
+  // trim trailing white space but not UTF-8
+  for (; s.end > s.begin && *(s.end - 1) <= 0x20 && (int)*(s.end - 1) >= 0; s.end--)
+    ;
 
   size_t ret = 0;
-  char *p = s.begin;
+  char* p = s.begin;
   while (p != s.end)
     if (*p >= '0' && *p <= '9')
-      ret = 10*ret + *(p++) - '0';
+      ret = 10 * ret + *(p++) - '0';
     else
-      return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
+      return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h);
 
   return ret + h;
 }
 
-uint64_t hashall (substring s, uint64_t h)
-{ return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h); }
+uint64_t hashall(substring s, uint64_t h) { return uniform_hash((unsigned char*)s.begin, s.end - s.begin, h); }
 
 hash_func_t getHasher(const std::string& s)
 {
-  if (s=="strings")
+  if (s == "strings")
     return hashstring;
-  else if(s=="all")
+  else if (s == "all")
     return hashall;
   else
     THROW("Unknown hash function: " << s);
@@ -78,7 +79,7 @@ hash_func_t getHasher(const std::string& s)
 
 std::ostream& operator<<(std::ostream& os, const substring& ss)
 {
-  std::string s(ss.begin, ss.end-ss.begin);
+  std::string s(ss.begin, ss.end - ss.begin);
   return os << s;
 }
 

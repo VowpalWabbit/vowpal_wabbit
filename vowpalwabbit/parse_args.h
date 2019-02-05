@@ -8,7 +8,8 @@ license as described in the file LICENSE.
 #include "options.h"
 
 // Used in parse_source
-struct input_options {
+struct input_options
+{
   bool daemon;
   bool foreground;
   size_t port;

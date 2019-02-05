@@ -54,7 +54,8 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   parameters& weights = dat.all->weights;
   if (weights[ft_idx] != 0)
     ++dat.values_audited;
-  else return;
+  else
+    return;
 
   string ns_pre;
   for (vector<string>::const_iterator s = dat.ns_pre->begin(); s != dat.ns_pre->end(); ++s) ns_pre += *s;
@@ -63,12 +64,12 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   tempstream << ':' << ((ft_idx & weights.mask()) >> weights.stride_shift()) << ':' << weights[ft_idx];
 
   string temp = ns_pre + tempstream.str() + '\n';
-  if (dat.total_class_cnt > 1) // add class prefix for multiclass problems
+  if (dat.total_class_cnt > 1)  // add class prefix for multiclass problems
     temp = to_string(dat.cur_class) + ':' + temp;
 
   dat.out_file->bin_write_fixed(temp.c_str(), (uint32_t)temp.size());
 
-  weights[ft_idx] = 0.; //mark value audited
+  weights[ft_idx] = 0.;  // mark value audited
 }
 
 void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* base */, example& ec)
@@ -82,7 +83,8 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
     features& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
-      tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':' << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
+      tempstream << '\t' << fs.space_names[j].get()->first << '^' << fs.space_names[j].get()->second << ':'
+                 << ((fs.indicies[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
         weight& w = weights[(fs.indicies[j] + k)];
@@ -96,10 +98,8 @@ void audit_regressor_lda(audit_regressor_data& rd, LEARNER::single_learner& /* b
   rd.out_file->bin_write_fixed(tempstream.str().c_str(), (uint32_t)tempstream.str().size());
 }
 
-
-
 // This is a learner which does nothing with examples.
-//void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, LEARNER::base_learner&, example&) {}
 
 void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, example& ec)
 {
@@ -109,13 +109,11 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, ex
     audit_regressor_lda(rd, base, ec);
   else
   {
-
     rd.cur_class = 0;
     uint64_t old_offset = ec.ft_offset;
 
-    while ( rd.cur_class < rd.total_class_cnt )
+    while (rd.cur_class < rd.total_class_cnt)
     {
-
       for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); ++i)
       {
         features& fs = ec.feature_space[(size_t)*i];
@@ -132,45 +130,44 @@ void audit_regressor(audit_regressor_data& rd, LEARNER::single_learner& base, ex
       }
 
       if (rd.all->weights.sparse)
-        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true, audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.sparse_weights);
+        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
+            audit_regressor_interaction, sparse_parameters>(
+            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.sparse_weights);
       else
-        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true, audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights);
+        INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
+            audit_regressor_interaction, dense_parameters>(
+            rd.all->interactions, rd.all->permutations, ec, rd, rd.all->weights.dense_weights);
 
       ec.ft_offset += rd.increment;
       ++rd.cur_class;
     }
 
-    ec.ft_offset = old_offset; // make sure example is not changed.
+    ec.ft_offset = old_offset;  // make sure example is not changed.
   }
 }
 void end_examples(audit_regressor_data& d)
 {
-  d.out_file->flush(); // close_file() should do this for me ...
+  d.out_file->flush();  // close_file() should do this for me ...
   d.out_file->close_file();
   delete (d.out_file);
   d.out_file = NULL;
   delete d.ns_pre;
-  d.ns_pre =  NULL;
+  d.ns_pre = NULL;
 }
 
 inline void print_ex(vw& all, size_t ex_processed, size_t vals_found, size_t progress)
 {
-  all.trace_message << std::left
-                                << std::setw(shared_data::col_example_counter) << ex_processed
-                                << " " << std::right
-                                << std::setw(9) << vals_found
-                                << " "  << std::right
-                                << std::setw(12) << progress << '%'
-                                << std::endl;
+  all.trace_message << std::left << std::setw(shared_data::col_example_counter) << ex_processed << " " << std::right
+                    << std::setw(9) << vals_found << " " << std::right << std::setw(12) << progress << '%' << std::endl;
 }
 
 void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 {
   bool printed = false;
-  if (ec.example_counter+1 >= all.sd->dump_interval && !all.quiet)
+  if (ec.example_counter + 1 >= all.sd->dump_interval && !all.quiet)
   {
-    print_ex(all, ec.example_counter+1, dd.values_audited, dd.values_audited*100/dd.loaded_regressor_values);
-    all.sd->weighted_unlabeled_examples = (double)(ec.example_counter+1); //used in update_dump_interval
+    print_ex(all, ec.example_counter + 1, dd.values_audited, dd.values_audited * 100 / dd.loaded_regressor_values);
+    all.sd->weighted_unlabeled_examples = (double)(ec.example_counter + 1);  // used in update_dump_interval
     all.sd->update_dump_interval(all.progress_add, all.progress_arg);
     printed = true;
   }
@@ -179,7 +176,7 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
   {
     // all regressor values were audited
     if (!printed)
-      print_ex(all, ec.example_counter+1, dd.values_audited, 100);
+      print_ex(all, ec.example_counter + 1, dd.values_audited, 100);
     set_done(all);
   }
 
@@ -189,30 +186,31 @@ void finish_example(vw& all, audit_regressor_data& dd, example& ec)
 void finish(audit_regressor_data& dat)
 {
   if (dat.values_audited < dat.loaded_regressor_values)
-    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset (" <<
-      dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
+    dat.all->trace_message << "Note: for some reason audit couldn't find all regressor values in dataset ("
+                           << dat.values_audited << " of " << dat.loaded_regressor_values << " found)." << endl;
 }
 
-template<class T>
+template <class T>
 void regressor_values(audit_regressor_data& dat, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-    if (*iter != 0) dat.loaded_regressor_values++;
+    if (*iter != 0)
+      dat.loaded_regressor_values++;
 }
 
 void init_driver(audit_regressor_data& dat)
 {
   // checks a few settings that might be applied after audit_regressor_setup() is called
-  if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache"))
-    && !dat.all->options->was_supplied("kill_cache"))
+  if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache")) &&
+      !dat.all->options->was_supplied("kill_cache"))
   {
     THROW("audit_regressor is incompatible with a cache file.  Use it in single pass mode only.");
   }
 
-  dat.all->sd->dump_interval = 1.; // regressor could initialize these if saved with --save_resume
+  dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved with --save_resume
   dat.all->sd->example_number = 0;
 
-  dat.increment = dat.all->l->increment/dat.all->l->weights;
+  dat.increment = dat.all->l->increment / dat.all->l->weights;
   dat.total_class_cnt = dat.all->l->weights;
 
   if (dat.all->options->was_supplied("csoaa"))
@@ -221,7 +219,7 @@ void init_driver(audit_regressor_data& dat)
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;
-      dat.increment = dat.all->l->increment/n;
+      dat.increment = dat.all->l->increment / n;
     }
   }
 
@@ -237,33 +235,24 @@ void init_driver(audit_regressor_data& dat)
   if (!dat.all->quiet)
   {
     dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    dat.all->trace_message << std::left
-                           << std::setw(shared_data::col_example_counter) << "example"
-                           << " "
-                           << std::setw(shared_data::col_example_weight) << "values"
-                           << " "
-                           << std::setw(shared_data::col_current_label) << "total"
-                           << std::endl;
-    dat.all->trace_message << std::left
-                           << std::setw(shared_data::col_example_counter) << "counter"
-                           << " "
-                           << std::setw(shared_data::col_example_weight) << "audited"
-                           << " "
-                           << std::setw(shared_data::col_current_label) << "progress"
-                           << std::endl;
+    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "example"
+                           << " " << std::setw(shared_data::col_example_weight) << "values"
+                           << " " << std::setw(shared_data::col_current_label) << "total" << std::endl;
+    dat.all->trace_message << std::left << std::setw(shared_data::col_example_counter) << "counter"
+                           << " " << std::setw(shared_data::col_example_weight) << "audited"
+                           << " " << std::setw(shared_data::col_current_label) << "progress" << std::endl;
   }
-
 }
-
-
 
 LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 {
   string out_file;
 
   option_group_definition new_options("Audit Regressor");
-  new_options
-    .add(make_option("audit_regressor", out_file).keep().help("stores feature names and their regressor values. Same dataset must be used for both regressor training and this mode."));
+  new_options.add(make_option("audit_regressor", out_file)
+                      .keep()
+                      .help("stores feature names and their regressor values. Same dataset must be used for both "
+                            "regressor training and this mode."));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("audit_regressor"))
@@ -279,11 +268,12 @@ LEARNER::base_learner* audit_regressor_setup(options_i& options, vw& all)
 
   auto dat = scoped_calloc_or_throw<audit_regressor_data>();
   dat->all = &all;
-  dat->ns_pre = new vector<string>(); // explicitly invoking vector's constructor
+  dat->ns_pre = new vector<string>();  // explicitly invoking vector's constructor
   dat->out_file = new io_buf();
-  dat->out_file->open_file( out_file.c_str(), all.stdin_off, io_buf::WRITE );
+  dat->out_file->open_file(out_file.c_str(), all.stdin_off, io_buf::WRITE);
 
-  LEARNER::learner<audit_regressor_data,example>& ret = LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
+  LEARNER::learner<audit_regressor_data, example>& ret =
+      LEARNER::init_learner(dat, as_singleline(setup_base(options, all)), audit_regressor, audit_regressor, 1);
   ret.set_end_examples(end_examples);
   ret.set_finish_example(finish_example);
   ret.set_finish(finish);

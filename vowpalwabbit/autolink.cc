@@ -6,7 +6,7 @@ const int autoconstant = 524267083;
 
 struct autolink
 {
-  uint32_t d; // degree of the polynomial
+  uint32_t d;  // degree of the polynomial
   uint32_t stride_shift;
 };
 
@@ -40,8 +40,7 @@ LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 {
   free_ptr<autolink> data = scoped_calloc_or_throw<autolink>();
   option_group_definition new_options("Autolink");
-  new_options
-    .add(make_option("autolink", data->d).keep().help("create link function with polynomial d"));
+  new_options.add(make_option("autolink", data->d).keep().help("create link function with polynomial d"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("autolink"))
@@ -49,8 +48,8 @@ LEARNER::base_learner* autolink_setup(options_i& options, vw& all)
 
   data->stride_shift = all.weights.stride_shift();
 
-  LEARNER::learner<autolink,example>& ret =
-    init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
+  LEARNER::learner<autolink, example>& ret =
+      init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
 
   return make_base(ret);
 }
