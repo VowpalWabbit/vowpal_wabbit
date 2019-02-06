@@ -457,9 +457,9 @@ base_learner* cbifyldf_setup(options_i& options, vw& all)
 
   option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
   new_options
-    .add(make_option("cbify_ldf", cbify_ldf_option).keep().help("Convert csoaa_ldf into a contextual bandit problem"))
-    .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
-    .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+      .add(make_option("cbify_ldf", cbify_ldf_option).keep().help("Convert csoaa_ldf into a contextual bandit problem"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("cbify_ldf"))
