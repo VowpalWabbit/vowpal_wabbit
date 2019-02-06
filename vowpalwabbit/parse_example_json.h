@@ -17,7 +17,7 @@ license as described in the file LICENSE.
 // - pragma documentation: https://docs.microsoft.com/en-us/cpp/preprocessor/managed-unmanaged?view=vs-2017
 // - /clr compilation detection: https://docs.microsoft.com/en-us/cpp/dotnet/how-to-detect-clr-compilation?view=vs-2017
 #if (_MANAGED == 1) || (_M_CEE == 1)
-#pragma managed(push,off)
+#pragma managed(push, off)
 #endif
 
 #include <rapidjson/reader.h>
@@ -41,13 +41,13 @@ using namespace rapidjson;
 
 struct vw;
 
-template<bool audit>
+template <bool audit>
 struct BaseState;
 
-template<bool audit>
+template <bool audit>
 struct Context;
 
-template<bool audit>
+template <bool audit>
 struct Namespace
 {
   char feature_group;
@@ -72,9 +72,7 @@ struct Namespace
 
   void AddFeature(vw* all, const char* str)
   {
-    ftrs->push_back(
-      1.,
-      VW::hash_feature(*all, str, namespace_hash));
+    ftrs->push_back(1., VW::hash_feature(*all, str, namespace_hash));
     feature_count++;
 
     if (audit)
@@ -82,13 +80,12 @@ struct Namespace
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct BaseState
 {
   const char* name;
 
-  BaseState(const char* pname) : name(pname)
-  { }
+  BaseState(const char* pname) : name(pname) {}
 
   virtual BaseState<audit>* Null(Context<audit>& ctx)
   {
@@ -151,25 +148,23 @@ struct BaseState
   }
 };
 
-template<bool audit>
+template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
-private:
+ private:
   BaseState<audit>* return_state;
   CB::cb_class cb_label;
   bool found;
   bool found_cb;
 
-public:
-  LabelObjectState() : BaseState<audit>("LabelObject")
-  {
-  }
+ public:
+  LabelObjectState() : BaseState<audit>("LabelObject") {}
 
   void init(vw* /* all */)
   {
     found = found_cb = false;
 
-    cb_label = { 0.,0,0.,0. };
+    cb_label = {0., 0, 0., 0.};
   }
 
   BaseState<audit>* StartObject(Context<audit>& ctx)
@@ -239,10 +234,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v)
-  {
-    return Float(ctx, (float)v);
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) { return Float(ctx, (float)v); }
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType)
   {
@@ -252,7 +244,7 @@ public:
       ld->costs.push_back(cb_label);
 
       found_cb = false;
-      cb_label = { 0.,0,0.,0. };
+      cb_label = {0., 0, 0., 0.};
     }
     else if (found)
     {
@@ -266,11 +258,10 @@ public:
 };
 
 // "_label_*":
-template<bool audit>
+template <bool audit>
 struct LabelSinglePropertyState : BaseState<audit>
 {
-  LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty")
-  { }
+  LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
   // forward _label
   BaseState<audit>* Float(Context<audit>& ctx, float v)
@@ -298,13 +289,12 @@ struct LabelSinglePropertyState : BaseState<audit>
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct LabelIndexState : BaseState<audit>
 {
   int index;
 
-  LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1)
-  { }
+  LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1) {}
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned int v)
   {
@@ -315,16 +305,12 @@ struct LabelIndexState : BaseState<audit>
 
 // "_label":"1"
 // Note: doesn't support labelIndex
-template<bool audit>
+template <bool audit>
 struct LabelState : BaseState<audit>
 {
-  LabelState() : BaseState<audit>("Label")
-  { }
+  LabelState() : BaseState<audit>("Label") {}
 
-  BaseState<audit>* StartObject(Context<audit>& ctx)
-  {
-    return ctx.label_object_state.StartObject(ctx);
-  }
+  BaseState<audit>* StartObject(Context<audit>& ctx) { return ctx.label_object_state.StartObject(ctx); }
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType /* len */, bool copy)
   {
@@ -351,11 +337,10 @@ struct LabelState : BaseState<audit>
 };
 
 // "_text":"a b c"
-template<bool audit>
+template <bool audit>
 struct TextState : BaseState<audit>
 {
-  TextState() : BaseState<audit>("text")
-  { }
+  TextState() : BaseState<audit>("text") {}
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool copy)
   {
@@ -367,24 +352,24 @@ struct TextState : BaseState<audit>
     // split into individual features
     const char* start = str;
     const char* end = str + length;
-    for (char* p = (char*)str;p != end;p++)
+    for (char* p = (char*)str; p != end; p++)
     {
       switch (*p)
       {
-        // split on space and tab
-      case ' ':
-      case '\t':
-        *p = '\0';
-        if (p - start > 0)
-          ns.AddFeature(ctx.all, start);
+          // split on space and tab
+        case ' ':
+        case '\t':
+          *p = '\0';
+          if (p - start > 0)
+            ns.AddFeature(ctx.all, start);
 
-        start = p + 1;
-        break;
-        // escape chars
-      case ':':
-      case '|':
-        *p = '_';
-        break;
+          start = p + 1;
+          break;
+          // escape chars
+        case ':':
+        case '|':
+          *p = '_';
+          break;
       }
     }
 
@@ -395,12 +380,11 @@ struct TextState : BaseState<audit>
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct TagState : BaseState<audit>
 {
   // "_tag":"abc"
-  TagState() : BaseState<audit>("tag")
-  { }
+  TagState() : BaseState<audit>("tag") {}
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, SizeType length, bool copy)
   {
@@ -413,27 +397,26 @@ struct TagState : BaseState<audit>
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct MultiState : BaseState<audit>
 {
-  MultiState() : BaseState<audit>("Multi")
-  { }
+  MultiState() : BaseState<audit>("Multi") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx)
   {
     // mark shared example
     if (ctx.all->label_type == label_type::cb)
-      {
-        CB::label* ld = &ctx.ex->l.cb;
-        CB::cb_class f;
+    {
+      CB::label* ld = &ctx.ex->l.cb;
+      CB::cb_class f;
 
-        f.partial_prediction = 0.;
-        f.action = (uint32_t)uniform_hash("shared", 6, 0);
-        f.cost = FLT_MAX;
-        f.probability = -1.f;
+      f.partial_prediction = 0.;
+      f.action = (uint32_t)uniform_hash("shared", 6, 0);
+      f.cost = FLT_MAX;
+      f.probability = -1.f;
 
-        ld->costs.push_back(f);
-      }
+      ld->costs.push_back(f);
+    }
     else
       THROW("label type is not CB")
 
@@ -463,14 +446,13 @@ struct MultiState : BaseState<audit>
 };
 
 // "...":[Numbers only]
-template<bool audit>
+template <bool audit>
 class ArrayState : public BaseState<audit>
 {
   feature_index array_hash;
 
-public:
-  ArrayState() : BaseState<audit>("Array")
-  { }
+ public:
+  ArrayState() : BaseState<audit>("Array") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx)
   {
@@ -503,10 +485,7 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f)
-  {
-    return Float(ctx, (float)f);
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) { return Float(ctx, (float)f); }
 
   BaseState<audit>* Null(Context<audit>& /* ctx */)
   {
@@ -522,31 +501,23 @@ public:
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */)
-  {
-    return ctx.PopNamespace();
-  }
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */) { return ctx.PopNamespace(); }
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
-template<bool audit>
+template <bool audit>
 struct IgnoreState : BaseState<audit>
 {
-  IgnoreState() : BaseState<audit>("Ignore")
-  { }
+  IgnoreState() : BaseState<audit>("Ignore") {}
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned)
-  {
-    return ctx.previous_state;
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned) { return ctx.previous_state; }
 };
 
-template<bool audit>
+template <bool audit>
 class DefaultState : public BaseState<audit>
 {
-public:
-  DefaultState() : BaseState<audit>("Default")
-  { }
+ public:
+  DefaultState() : BaseState<audit>("Default") {}
 
   BaseState<audit>* Ignore(Context<audit>& ctx, rapidjson::SizeType length)
   {
@@ -568,53 +539,53 @@ public:
     {
       switch (*head)
       {
-      case '\0':
-        ctx.error() << "Found EOF";
-        return nullptr;
-      case '"':
-      {
-        // skip strings
-        bool stopInner = false;
-        while (!stopInner)
+        case '\0':
+          ctx.error() << "Found EOF";
+          return nullptr;
+        case '"':
         {
-          head++;
-          switch (*head)
+          // skip strings
+          bool stopInner = false;
+          while (!stopInner)
           {
-          case '\0':
-            ctx.error() << "Found EOF";
-            return nullptr;
-          case '\\':
             head++;
-            break;
-          case '"':
-            stopInner = true;
-            break;
+            switch (*head)
+            {
+              case '\0':
+                ctx.error() << "Found EOF";
+                return nullptr;
+              case '\\':
+                head++;
+                break;
+              case '"':
+                stopInner = true;
+                break;
+            }
           }
+          break;
         }
-        break;
-      }
-      case '{':
-        depth++;
-        break;
-      case '}':
-        if (depth == 0 && sq_depth == 0)
-          stop = true;
-        else
-          depth--;
-        break;
-      case '[':
-        sq_depth++;
-        break;
-      case ']':
-        if (depth == 0 && sq_depth == 0)
-          stop = true;
-        else
-          sq_depth--;
-        break;
-      case ',':
-        if (depth == 0 && sq_depth == 0)
-          stop = true;
-        break;
+        case '{':
+          depth++;
+          break;
+        case '}':
+          if (depth == 0 && sq_depth == 0)
+            stop = true;
+          else
+            depth--;
+          break;
+        case '[':
+          sq_depth++;
+          break;
+        case ']':
+          if (depth == 0 && sq_depth == 0)
+            stop = true;
+          else
+            sq_depth--;
+          break;
+        case ',':
+          if (depth == 0 && sq_depth == 0)
+            stop = true;
+          break;
       }
       head++;
     }
@@ -682,15 +653,15 @@ public:
 
     // string escape
     const char* end = str + length;
-    for (char* p = (char*)str;p != end;p++)
+    for (char* p = (char*)str; p != end; p++)
     {
       switch (*p)
       {
-      case ' ':
-      case '\t':
-      case '|':
-      case ':':
-        *p = '_';
+        case ' ':
+        case '\t':
+        case '|':
+        case ':':
+          *p = '_';
       }
     }
 
@@ -730,7 +701,8 @@ public:
         label_index++;
         if (label_index >= (int)ctx.examples->size())
         {
-          ctx.error() << "Out of bounds error: _labelIndex must be smaller than number of actions! _labelIndex=" << (label_index - 1) << " Number of actions=" << ctx.examples->size() - 1 << " ";
+          ctx.error() << "Out of bounds error: _labelIndex must be smaller than number of actions! _labelIndex="
+                      << (label_index - 1) << " Number of actions=" << ctx.examples->size() - 1 << " ";
           return nullptr;
         }
 
@@ -757,23 +729,16 @@ public:
     return this;
   }
 
-  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f)
-  {
-    return Float(ctx, (float)f);
-  }
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned f) { return Float(ctx, (float)f); }
 
-  BaseState<audit>* StartArray(Context<audit>& ctx)
-  {
-    return ctx.array_state.StartArray(ctx);
-  }
+  BaseState<audit>* StartArray(Context<audit>& ctx) { return ctx.array_state.StartArray(ctx); }
 };
 
-template<bool audit, typename T>
+template <bool audit, typename T>
 class ArrayToVectorState : public BaseState<audit>
 {
-public:
-  ArrayToVectorState() : BaseState<audit>("ArrayToVectorState")
-  { }
+ public:
+  ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
   std::vector<T>* output_array;
 
@@ -813,12 +778,11 @@ public:
   }
 };
 
-template<bool audit>
+template <bool audit>
 class StringToStringState : public BaseState<audit>
 {
-public:
-  StringToStringState() : BaseState<audit>("StringToStringState")
-  { }
+ public:
+  StringToStringState() : BaseState<audit>("StringToStringState") {}
 
   std::string* output_string;
 
@@ -838,12 +802,11 @@ public:
   }
 };
 
-template<bool audit>
+template <bool audit>
 class FloatToFloatState : public BaseState<audit>
 {
-public:
-  FloatToFloatState() : BaseState<audit>("FloatToFloatState")
-  { }
+ public:
+  FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
   float* output_float;
 
@@ -864,12 +827,11 @@ public:
   }
 };
 
-template<bool audit>
+template <bool audit>
 class BoolToBoolState : public BaseState<audit>
 {
-public:
-  BoolToBoolState() : BaseState<audit>("BoolToBoolState")
-  { }
+ public:
+  BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
   bool* output_bool;
 
@@ -893,19 +855,16 @@ struct DecisionServiceInteraction
 
   float probabilityOfDrop;
 
-  bool skipLearn { false } ;
+  bool skipLearn{false};
 
-  DecisionServiceInteraction() : probabilityOfDrop(0.f)
-  { }
+  DecisionServiceInteraction() : probabilityOfDrop(0.f) {}
 };
 
-template<bool audit>
+template <bool audit>
 class DecisionServiceState : public BaseState<audit>
 {
-
-public:
-  DecisionServiceState() : BaseState<audit>("DecisionService")
-  { }
+ public:
+  DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
   DecisionServiceInteraction* data;
 
@@ -927,16 +886,16 @@ public:
     {
       switch (str[0])
       {
-      case 'a':
-        ctx.array_uint_state.output_array = &data->actions;
-        return &ctx.array_uint_state;
-      case 'p':
-        ctx.array_float_state.output_array = &data->probabilities;
-        return &ctx.array_float_state;
-      case 'c':
-        ctx.key = " ";
-        ctx.key_length = 1;
-        return &ctx.default_state;
+        case 'a':
+          ctx.array_uint_state.output_array = &data->actions;
+          return &ctx.array_uint_state;
+        case 'p':
+          ctx.array_float_state.output_array = &data->probabilities;
+          return &ctx.array_float_state;
+        case 'c':
+          ctx.key = " ";
+          ctx.key_length = 1;
+          return &ctx.default_state;
       }
     }
     else if (length == 5 && !strcmp(str, "pdrop"))
@@ -944,40 +903,41 @@ public:
       ctx.float_state.output_float = &data->probabilityOfDrop;
       return &ctx.float_state;
     }
-    else if(length == 7 && !strcmp(str, "EventId"))
+    else if (length == 7 && !strcmp(str, "EventId"))
     {
       ctx.string_state.output_string = &data->eventId;
       return &ctx.string_state;
     }
-  else if (length > 0 && str[0] == '_')
-  {
-    // match _label*
-    if (length >= 6 && !strncmp(str, "_label", 6))
+    else if (length > 0 && str[0] == '_')
     {
-      ctx.key = str;
-      ctx.key_length = length;
-      if (length >= 7 && ctx.key[6] == '_')
-        return &ctx.label_single_property_state;
-      else if (length == 6)
-        return &ctx.label_state;
-      else if (length == 11 && !_stricmp(str, "_labelIndex"))
-        return &ctx.label_index_state;
+      // match _label*
+      if (length >= 6 && !strncmp(str, "_label", 6))
+      {
+        ctx.key = str;
+        ctx.key_length = length;
+        if (length >= 7 && ctx.key[6] == '_')
+          return &ctx.label_single_property_state;
+        else if (length == 6)
+          return &ctx.label_state;
+        else if (length == 11 && !_stricmp(str, "_labelIndex"))
+          return &ctx.label_index_state;
+      }
+      else if (length == 10 && !strncmp(str, "_skipLearn", 10))
+      {
+        ctx.bool_state.output_bool = &data->skipLearn;
+        return &ctx.bool_state;
+      }
     }
-    else if (length == 10 && !strncmp(str, "_skipLearn", 10))
-    {
-      ctx.bool_state.output_bool = &data->skipLearn;
-      return &ctx.bool_state;
-    }
-  }
 
-  // ignore unknown properties
-  return ctx.default_state.Ignore(ctx, length);
+    // ignore unknown properties
+    return ctx.default_state.Ignore(ctx, length);
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct Context
-{ vw* all;
+{
+  vw* all;
   std::stringstream* error_ptr;
 
   // last "<key>": encountered
@@ -1010,13 +970,13 @@ struct Context
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
 
-    // DecisionServiceState
-    DecisionServiceState<audit> decision_service_state;
-    ArrayToVectorState<audit, float> array_float_state;
-    ArrayToVectorState<audit, unsigned> array_uint_state;
-    StringToStringState<audit> string_state;
-    FloatToFloatState<audit> float_state;
-    BoolToBoolState<audit> bool_state;
+  // DecisionServiceState
+  DecisionServiceState<audit> decision_service_state;
+  ArrayToVectorState<audit, float> array_float_state;
+  ArrayToVectorState<audit, unsigned> array_uint_state;
+  StringToStringState<audit> string_state;
+  FloatToFloatState<audit> float_state;
+  BoolToBoolState<audit> bool_state;
 
   BaseState<audit>* root_state;
 
@@ -1044,18 +1004,19 @@ struct Context
     error_ptr = nullptr;
   }
 
-  std::stringstream& error() {
+  std::stringstream& error()
+  {
     if (!error_ptr)
       error_ptr = new std::stringstream;
 
     return *error_ptr;
   }
 
-    void SetStartStateToDecisionService(DecisionServiceInteraction* data)
-    {
+  void SetStartStateToDecisionService(DecisionServiceInteraction* data)
+  {
     decision_service_state.data = data;
     current_state = root_state = &decision_service_state;
-    }
+  }
 
   void PushNamespace(const char* ns, BaseState<audit>* return_state)
   {
@@ -1089,10 +1050,7 @@ struct Context
     return namespace_path.pop().return_state;
   }
 
-  Namespace<audit>& CurrentNamespace()
-  {
-    return *(namespace_path._end - 1);
-  }
+  Namespace<audit>& CurrentNamespace() { return *(namespace_path._end - 1); }
 
   bool TransitionState(BaseState<audit>* next_state)
   {
@@ -1106,12 +1064,13 @@ struct Context
   }
 };
 
-template<bool audit>
+template <bool audit>
 struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
 {
   Context<audit> ctx;
 
-  void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end, VW::example_factory_t example_factory, void* example_factory_context)
+  void init(vw* all, v_array<example*>* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
+      VW::example_factory_t example_factory, void* example_factory_context)
   {
     ctx.init(all);
     ctx.examples = examples;
@@ -1131,9 +1090,15 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   bool Int64(int64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
   bool Uint64(uint64_t v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
   bool Double(double v) { return ctx.TransitionState(ctx.current_state->Float(ctx, (float)v)); }
-  bool String(const char* str, SizeType len, bool copy) { return ctx.TransitionState(ctx.current_state->String(ctx, str, len, copy)); }
+  bool String(const char* str, SizeType len, bool copy)
+  {
+    return ctx.TransitionState(ctx.current_state->String(ctx, str, len, copy));
+  }
   bool StartObject() { return ctx.TransitionState(ctx.current_state->StartObject(ctx)); }
-  bool Key(const char* str, SizeType len, bool copy) { return ctx.TransitionState(ctx.current_state->Key(ctx, str, len, copy)); }
+  bool Key(const char* str, SizeType len, bool copy)
+  {
+    return ctx.TransitionState(ctx.current_state->Key(ctx, str, len, copy));
+  }
   bool EndObject(SizeType count) { return ctx.TransitionState(ctx.current_state->EndObject(ctx, count)); }
   bool StartArray() { return ctx.TransitionState(ctx.current_state->StartArray(ctx)); }
   bool EndArray(SizeType count) { return ctx.TransitionState(ctx.current_state->EndArray(ctx, count)); }
@@ -1150,7 +1115,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   BaseState<audit>* current_state() { return ctx.current_state; }
 };
 
-template<bool audit>
+template <bool audit>
 struct json_parser
 {
   rapidjson::Reader reader;
@@ -1159,60 +1124,68 @@ struct json_parser
 
 namespace VW
 {
-  template<bool audit>
-  void read_line_json(vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
-  {
-    // string line_copy(line);
-    // destructive parsing
-    InsituStringStream ss(line);
-    json_parser<audit>* parser = (json_parser<audit>*)all.p->jsonp;
+template <bool audit>
+void read_line_json(
+    vw& all, v_array<example*>& examples, char* line, example_factory_t example_factory, void* ex_factory_context)
+{
+  // string line_copy(line);
+  // destructive parsing
+  InsituStringStream ss(line);
+  json_parser<audit>* parser = (json_parser<audit>*)all.p->jsonp;
 
-    VWReaderHandler<audit>& handler = parser->handler;
-    handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
+  VWReaderHandler<audit>& handler = parser->handler;
+  handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
 
-    ParseResult result = parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-    if (!result.IsError())
-      return;
+  ParseResult result =
+      parser->reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+  if (!result.IsError())
+    return;
 
-    BaseState<audit>* current_state = handler.current_state();
+  BaseState<audit>* current_state = handler.current_state();
 
-    THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code()) << ". "
-      "Handler: " << handler.error().str() <<
-      "State: " << (current_state ? current_state->name : "null")); // <<
-      // "Line: '"<< line_copy << "'");
-  }
-
-  template<bool audit>
-  void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
-  {
-    std::vector<char> line_vec;
-    if (copy_line)
-    {
-      line_vec.insert(line_vec.end(), line, line + length);
-        line = &line_vec.front();
-      }
-
-      InsituStringStream ss(line);
-      json_parser<audit> parser;
-
-      VWReaderHandler<audit>& handler = parser.handler;
-      handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
-      handler.ctx.SetStartStateToDecisionService(data);
-
-      ParseResult result = parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
-
-      if (!result.IsError())
-        return;
-
-      BaseState<audit>* current_state = handler.current_state();
-
-      THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code()) << ". "
-        "Handler: " << handler.error().str() <<
-        "State: " << (current_state ? current_state->name : "null"));
-    }
+  THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
+                                << ". "
+                                   "Handler: "
+                                << handler.error().str()
+                                << "State: " << (current_state ? current_state->name : "null"));  // <<
+  // "Line: '"<< line_copy << "'");
 }
 
-template<bool audit>
+template <bool audit>
+void read_line_decision_service_json(vw& all, v_array<example*>& examples, char* line, size_t length, bool copy_line,
+    example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+{
+  std::vector<char> line_vec;
+  if (copy_line)
+  {
+    line_vec.insert(line_vec.end(), line, line + length);
+    line = &line_vec.front();
+  }
+
+  InsituStringStream ss(line);
+  json_parser<audit> parser;
+
+  VWReaderHandler<audit>& handler = parser.handler;
+  handler.init(&all, &examples, &ss, line + length, example_factory, ex_factory_context);
+  handler.ctx.SetStartStateToDecisionService(data);
+
+  ParseResult result =
+      parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
+
+  if (!result.IsError())
+    return;
+
+  BaseState<audit>* current_state = handler.current_state();
+
+  THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
+                                << ". "
+                                   "Handler: "
+                                << handler.error().str()
+                                << "State: " << (current_state ? current_state->name : "null"));
+}
+}  // namespace VW
+
+template <bool audit>
 int read_features_json(vw* all, v_array<example*>& examples)
 {
   bool reread;
@@ -1237,9 +1210,11 @@ int read_features_json(vw* all, v_array<example*>& examples)
       }
 
       DecisionServiceInteraction interaction;
-      VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+      VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
+          reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
-      if (interaction.skipLearn) {
+      if (interaction.skipLearn)
+      {
         VW::return_multiple_example(*all, examples);
         examples.push_back(&VW::get_unused_example(all));
         reread = true;
@@ -1250,19 +1225,20 @@ int read_features_json(vw* all, v_array<example*>& examples)
         reread = true;
     }
     else
-      VW::template read_line_json<audit>(*all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+      VW::template read_line_json<audit>(
+          *all, examples, line, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
   } while (reread);
 
   // note: the json parser does single pass parsing and cannot determine if a shared example is needed.
-  // since the communication between the parsing thread the main learner expects examples to be requested in order (as they're layed out in memory)
-  // there is no way to determine upfront if a shared example exists
-  // thus even if there are no features for the shared example, still an empty example is returned.
+  // since the communication between the parsing thread the main learner expects examples to be requested in order (as
+  // they're layed out in memory) there is no way to determine upfront if a shared example exists thus even if there are
+  // no features for the shared example, still an empty example is returned.
 
   if (examples.size() > 1)
-  { // insert new line example at the end
+  {  // insert new line example at the end
     example& ae = VW::get_unused_example(all);
     char empty = '\0';
-    substring example = { &empty, &empty };
+    substring example = {&empty, &empty};
     substring_to_example(all, &ae, example);
 
     examples.push_back(&ae);

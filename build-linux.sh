@@ -4,6 +4,11 @@ set -x
 
 export PATH="$HOME/miniconda/bin:$PATH"
 
+# Check if any clang-formatting necessary
+
+cd /vw
+./utl/clang-format check
+
 sudo apt remove --yes --force-yes cmake
 
 # Upgrade CMake
@@ -47,3 +52,4 @@ make vw-bin -j ${NUM_PROCESSORS}
 cd ..
 cd test
 export PATH=../build/vowpalwabbit/:$PATH && ./RunTests -d -fe -E 0.001
+cd ..

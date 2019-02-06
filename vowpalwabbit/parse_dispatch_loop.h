@@ -11,13 +11,14 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
 
   try
   {
-    while(!all.p->done)
+    while (!all.p->done)
     {
-      examples.push_back(&VW::get_unused_example(&all)); // need at least 1 example
-      if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number && all.p->reader(&all, examples) > 0)
+      examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
+      if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
+          all.p->reader(&all, examples) > 0)
       {
         VW::setup_examples(all, examples);
-        example_number+=examples.size();
+        example_number += examples.size();
         dispatch(all, examples);
       }
       else
@@ -26,7 +27,7 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         all.do_reset_source = false;
         all.passes_complete++;
 
-        //setup an end_pass example
+        // setup an end_pass example
         all.p->lp.default_label(&examples[0]->l);
         examples[0]->end_pass = true;
         all.p->in_pass_counter = 0;
@@ -34,9 +35,9 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
         if (all.passes_complete == all.numpasses && example_number == all.pass_length)
         {
           all.passes_complete = 0;
-          all.pass_length = all.pass_length*2+1;
+          all.pass_length = all.pass_length * 2 + 1;
         }
-        dispatch(all, examples);//must be called before lock_done or race condition exists.
+        dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
           lock_done(*all.p);
         example_number = 0;
@@ -47,7 +48,8 @@ inline void parse_dispatch(vw& all, dispatch_fptr dispatch)
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+    std::cerr << "vw example #" << example_number << "(" << e.Filename() << ":" << e.LineNumber() << "): " << e.what()
+              << std::endl;
   }
   catch (std::exception& e)
   {

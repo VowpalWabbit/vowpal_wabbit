@@ -6,9 +6,9 @@
 #include "rand48.h"
 #include "gen_cs_example.h"
 
-//Do evaluation of nonstationary policies.
-//input = contextual bandit label
-//output = chosen ranking
+// Do evaluation of nonstationary policies.
+// input = contextual bandit label
+// output = chosen ranking
 
 using namespace LEARNER;
 using namespace CB_ALGS;
@@ -17,7 +17,6 @@ using namespace VW::config;
 
 namespace EXPLORE_EVAL
 {
-
 struct explore_eval
 {
   CB::cb_class known_cost;
@@ -46,13 +45,14 @@ void finish(explore_eval& data)
   }
 }
 
-//Semantics: Currently we compute the IPS loss no matter what flags
-//are specified. We print the first action and probability, based on
-//ordering by scores in the final output.
+// Semantics: Currently we compute the IPS loss no matter what flags
+// are specified. We print the first action and probability, based on
+// ordering by scores in the final output.
 
 void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 {
-  if (example_is_newline_not_header(ec)) return;
+  if (example_is_newline_not_header(ec))
+    return;
 
   size_t num_features = 0;
 
@@ -69,20 +69,18 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
     for (uint32_t i = 0; i < preds.size(); i++)
     {
       float l = get_unbiased_cost(&c.known_cost, preds[i].action);
-      loss += l*preds[i].score;
+      loss += l * preds[i].score;
     }
   }
   else
     labeled_example = false;
 
   bool holdout_example = labeled_example;
-  for (size_t i = 0; i < ec_seq->size(); i++)
-    holdout_example &= (*ec_seq)[i]->test_only;
+  for (size_t i = 0; i < ec_seq->size(); i++) holdout_example &= (*ec_seq)[i]->test_only;
 
-  all.sd->update( holdout_example, labeled_example, loss, ec.weight, num_features);
+  all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (int sink : all.final_prediction_sink)
-    print_action_score(sink, ec.pred.a_s, ec.tag);
+  for (int sink : all.final_prediction_sink) print_action_score(sink, ec.pred.a_s, ec.tag);
 
   if (all.raw_prediction > 0)
   {
@@ -92,7 +90,8 @@ void output_example(vw& all, explore_eval& c, example& ec, multi_ex* ec_seq)
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0)
+        outputStringStream << ' ';
       outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
     }
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
@@ -121,18 +120,19 @@ void finish_multiline_example(vw& all, explore_eval& data, multi_ex& ec_seq)
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
-template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
+template <bool is_learn>
+void do_actual_learning(explore_eval& data, multi_learner& base, multi_ex& ec_seq)
 {
-  example* label_example=CB_EXPLORE_ADF::test_adf_sequence(ec_seq);
+  example* label_example = CB_EXPLORE_ADF::test_adf_sequence(ec_seq);
 
-  if (label_example != nullptr)//extract label
+  if (label_example != nullptr)  // extract label
   {
     data.action_label = label_example->l.cb;
     label_example->l.cb = data.empty_label;
   }
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
-  if (label_example != nullptr)	//restore label
+  if (label_example != nullptr)  // restore label
     label_example->l.cb = data.action_label;
 
   data.known_cost = CB_ADF::get_observed_cost(ec_seq);
@@ -141,14 +141,14 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
     ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
-    for (size_t i =0 ; i < a_s.size(); i++)
+    for (size_t i = 0; i < a_s.size(); i++)
       if (data.known_cost.action == a_s[i].action)
         action_probability = a_s[i].score;
 
     float threshold = action_probability / data.known_cost.probability;
 
     if (!data.fixed_multiplier)
-      data.multiplier = min(data.multiplier, 1/threshold);
+      data.multiplier = min(data.multiplier, 1 / threshold);
     else
       threshold *= data.multiplier;
 
@@ -160,9 +160,7 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
       example* ec_found = nullptr;
       for (example*& ec : ec_seq)
       {
-        if (ec->l.cb.costs.size() == 1 &&
-            ec->l.cb.costs[0].cost != FLT_MAX &&
-            ec->l.cb.costs[0].probability > 0)
+        if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
           ec_found = ec;
         if (threshold > 1)
           ec->weight *= threshold;
@@ -174,15 +172,14 @@ template <bool is_learn> void do_actual_learning(explore_eval& data, multi_learn
       if (threshold > 1)
       {
         float inv_threshold = 1.f / threshold;
-        for (auto& ec : ec_seq)
-          ec->weight *= inv_threshold;
+        for (auto& ec : ec_seq) ec->weight *= inv_threshold;
       }
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
       data.update_count++;
     }
   }
 }
-}
+}  // namespace EXPLORE_EVAL
 
 using namespace EXPLORE_EVAL;
 
@@ -191,9 +188,9 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<explore_eval>();
   bool explore_eval_option = false;
   option_group_definition new_options("Explore evaluation");
-  new_options
-    .add(make_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"))
-    .add(make_option("multiplier", data->multiplier).help("Multiplier used to make all rejection sample probabilities <= 1"));
+  new_options.add(make_option("explore_eval", explore_eval_option).keep().help("Evaluate explore_eval adf policies"))
+      .add(make_option("multiplier", data->multiplier)
+               .help("Multiplier used to make all rejection sample probabilities <= 1"));
   options.add_and_parse(new_options);
 
   if (!explore_eval_option)
@@ -215,9 +212,8 @@ base_learner* explore_eval_setup(options_i& options, vw& all)
   all.p->lp = CB::cb_label;
   all.label_type = label_type::cb;
 
-  learner<explore_eval,multi_ex>& l = init_learner(data, base,
-    do_actual_learning<true>, do_actual_learning<false>,
-    1, prediction_type::action_probs);
+  learner<explore_eval, multi_ex>& l =
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::action_probs);
 
   l.set_finish_example(finish_multiline_example);
   l.set_finish(finish);

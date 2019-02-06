@@ -10,4 +10,4 @@ namespace MWT
 {
 void delete_scalars(void* v);
 void print_scalars(int f, v_array<float>& scalars, v_array<char>& tag);
-}
+}  // namespace MWT

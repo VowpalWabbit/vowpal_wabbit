@@ -25,19 +25,19 @@ char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 
 size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 {
-  label_data* ld = (label_data*) v;
-  char *c;
-  size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->initial);
+  label_data* ld = (label_data*)v;
+  char* c;
+  size_t total = sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial);
   if (cache.buf_read(c, total) < total)
     return 0;
-  bufread_simple_label(sd, ld,c);
+  bufread_simple_label(sd, ld, c);
 
   return total;
 }
 
 float get_weight(void* v)
 {
-  label_data* ld = (label_data*) v;
+  label_data* ld = (label_data*)v;
   return ld->weight;
 }
 
@@ -54,15 +54,15 @@ char* bufcache_simple_label(label_data* ld, char* c)
 
 void cache_simple_label(void* v, io_buf& cache)
 {
-  char *c;
-  label_data* ld = (label_data*) v;
-  cache.buf_write(c, sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->initial));
-  bufcache_simple_label(ld,c);
+  char* c;
+  label_data* ld = (label_data*)v;
+  cache.buf_write(c, sizeof(ld->label) + sizeof(ld->weight) + sizeof(ld->initial));
+  bufcache_simple_label(ld, c);
 }
 
 void default_simple_label(void* v)
 {
-  label_data* ld = (label_data*) v;
+  label_data* ld = (label_data*)v;
   ld->label = FLT_MAX;
   ld->weight = 1.;
   ld->initial = 0.;
@@ -80,45 +80,40 @@ void parse_simple_label(parser*, shared_data* sd, void* v, v_array<substring>& w
 {
   label_data* ld = (label_data*)v;
 
-  switch(words.size())
+  switch (words.size())
   {
-  case 0:
-    break;
-  case 1:
-    ld->label = float_of_substring(words[0]);
-    break;
-  case 2:
-    ld->label = float_of_substring(words[0]);
-    ld->weight = float_of_substring(words[1]);
-    break;
-  case 3:
-    ld->label = float_of_substring(words[0]);
-    ld->weight = float_of_substring(words[1]);
-    ld->initial = float_of_substring(words[2]);
-    break;
-  default:
-    cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
-    for(unsigned int i=0; i<words.size(); ++i)
-      print_substring(words[i]);
-    cout << endl;
+    case 0:
+      break;
+    case 1:
+      ld->label = float_of_substring(words[0]);
+      break;
+    case 2:
+      ld->label = float_of_substring(words[0]);
+      ld->weight = float_of_substring(words[1]);
+      break;
+    case 3:
+      ld->label = float_of_substring(words[0]);
+      ld->weight = float_of_substring(words[1]);
+      ld->initial = float_of_substring(words[2]);
+      break;
+    default:
+      cout << "Error: " << words.size() << " is too many tokens for a simple label: ";
+      for (unsigned int i = 0; i < words.size(); ++i) print_substring(words[i]);
+      cout << endl;
   }
   count_label(sd, ld->label);
 }
 
-label_parser simple_label = {default_simple_label, parse_simple_label,
-                             cache_simple_label, read_cached_simple_label,
-                             delete_simple_label, get_weight,
-                             nullptr,
-                             test_label,
-                             sizeof(label_data)
-                            };
+label_parser simple_label = {default_simple_label, parse_simple_label, cache_simple_label, read_cached_simple_label,
+    delete_simple_label, get_weight, nullptr, test_label, sizeof(label_data)};
 
 void print_update(vw& all, example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
+      !all.bfgs)
   {
-    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-                         ec.num_features, all.progress_add, all.progress_arg);
+    all.sd->print_update(all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar, ec.num_features,
+        all.progress_add, all.progress_arg);
   }
 }
 
@@ -131,7 +126,7 @@ void output_and_account_example(vw& all, example& ec)
     all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
   all.print(all.raw_prediction, ec.partial_prediction, -1, ec.tag);
-  for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
+  for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
   {
     int f = (int)all.final_prediction_sink[i];
     all.print(f, ec.pred.scalar, 0, ec.tag);
@@ -143,12 +138,14 @@ void output_and_account_example(vw& all, example& ec)
 void return_simple_example(vw& all, void*, example& ec)
 {
   output_and_account_example(all, ec);
-  VW::finish_example(all,ec);
+  VW::finish_example(all, ec);
 }
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
-  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX * 0.5f;
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
+      ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
+      : FLT_MAX * 0.5f;
   if (all.all_reduce != nullptr)
     thisLoss = accumulate_scalar(all, thisLoss);
 
@@ -163,7 +160,9 @@ bool summarize_holdout_set(vw& all, size_t& no_win_counter)
     return true;
   }
 
-  if ((thisLoss != FLT_MAX) || (isfinite(all.sd->holdout_best_loss))) // it's only a loss if we're not infinite when the previous one wasn't infinite
+  if ((thisLoss != FLT_MAX) ||
+      (isfinite(
+          all.sd->holdout_best_loss)))  // it's only a loss if we're not infinite when the previous one wasn't infinite
     no_win_counter++;
   return false;
 }

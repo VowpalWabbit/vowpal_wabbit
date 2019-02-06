@@ -5,7 +5,7 @@
 
 using namespace std;
 
-//sum_of_squares_func get_sum_of_squares()
+// sum_of_squares_func get_sum_of_squares()
 //{
 //  std::array<int, 4> cpui;
 //
@@ -28,8 +28,7 @@ float sum_of_squares(float* begin, float* end)
 {
   float sum = 0;
 
-  for (; begin != end; begin++)
-    sum += *begin * *begin;
+  for (; begin != end; begin++) sum += *begin * *begin;
 
   return sum;
 }

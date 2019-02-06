@@ -6,43 +6,42 @@
 using namespace std;
 namespace COST_SENSITIVE
 {
-
-void name_value(substring &s, v_array<substring>& name, float &v)
+void name_value(substring& s, v_array<substring>& name, float& v)
 {
   tokenize(':', s, name);
 
   switch (name.size())
   {
-  case 0:
-  case 1:
-    v = 1.;
-    break;
-  case 2:
-    v = float_of_substring(name[1]);
-    if (nanpattern(v))
-      THROW("error NaN value for: " << name[0]);
-    break;
-  default:
-    cerr << "example with a wierd name.  What is '";
-    cerr.write(s.begin, s.end - s.begin);
-    cerr << "'?\n";
+    case 0:
+    case 1:
+      v = 1.;
+      break;
+    case 2:
+      v = float_of_substring(name[1]);
+      if (nanpattern(v))
+        THROW("error NaN value for: " << name[0]);
+      break;
+    default:
+      cerr << "example with a wierd name.  What is '";
+      cerr.write(s.begin, s.end - s.begin);
+      cerr << "'?\n";
   }
 }
 
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
-  size_t num = *(size_t *)c;
+  size_t num = *(size_t*)c;
   ld->costs.clear();
   c += sizeof(size_t);
-  size_t total = sizeof(wclass)*num;
+  size_t total = sizeof(wclass) * num;
   if (cache.buf_read(c, (int)total) < total)
   {
     cout << "error in demarshal of cost data" << endl;
     return c;
   }
-  for (size_t i = 0; i<num; i++)
+  for (size_t i = 0; i < num; i++)
   {
-    wclass temp = *(wclass *)c;
+    wclass temp = *(wclass*)c;
     c += sizeof(wclass);
     ld->costs.push_back(temp);
   }
@@ -52,29 +51,26 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 
 size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
-  label* ld = (label*) v;
+  label* ld = (label*)v;
   ld->costs.clear();
-  char *c;
+  char* c;
   size_t total = sizeof(size_t);
   if (cache.buf_read(c, (int)total) < total)
     return 0;
-  bufread_label(ld,c, cache);
+  bufread_label(ld, c, cache);
 
   return total;
 }
 
-float weight(void*)
-{
-  return 1.;
-}
+float weight(void*) { return 1.; }
 
 char* bufcache_label(label* ld, char* c)
 {
-  *(size_t *)c = ld->costs.size();
+  *(size_t*)c = ld->costs.size();
   c += sizeof(size_t);
-  for (unsigned int i = 0; i< ld->costs.size(); i++)
+  for (unsigned int i = 0; i < ld->costs.size(); i++)
   {
-    *(wclass *)c = ld->costs[i];
+    *(wclass*)c = ld->costs[i];
     c += sizeof(wclass);
   }
   return c;
@@ -82,36 +78,37 @@ char* bufcache_label(label* ld, char* c)
 
 void cache_label(void* v, io_buf& cache)
 {
-  char *c;
-  label* ld = (label*) v;
-  cache.buf_write(c, sizeof(size_t)+sizeof(wclass)*ld->costs.size());
-  bufcache_label(ld,c);
+  char* c;
+  label* ld = (label*)v;
+  cache.buf_write(c, sizeof(size_t) + sizeof(wclass) * ld->costs.size());
+  bufcache_label(ld, c);
 }
 
 void default_label(void* v)
 {
-  label* ld = (label*) v;
+  label* ld = (label*)v;
   ld->costs.clear();
 }
 
 bool test_label(void* v)
 {
-  label* ld = (label*) v;
+  label* ld = (label*)v;
   if (ld->costs.size() == 0)
     return true;
-  for (unsigned int i=0; i<ld->costs.size(); i++)
+  for (unsigned int i = 0; i < ld->costs.size(); i++)
     if (FLT_MAX != ld->costs[i].x)
       return false;
   return true;
 }
 
-  void delete_label(void* v)
+void delete_label(void* v)
 {
   label* ld = (label*)v;
-  if (ld) ld->costs.delete_v();
+  if (ld)
+    ld->costs.delete_v();
 }
 
-void copy_label(void*dst, void*src)
+void copy_label(void* dst, void* src)
 {
   if (dst && src)
   {
@@ -123,13 +120,14 @@ void copy_label(void*dst, void*src)
 
 bool substring_eq(substring ss, const char* str)
 {
-  size_t len_ss  = ss.end - ss.begin;
+  size_t len_ss = ss.end - ss.begin;
   size_t len_str = strlen(str);
-  if (len_ss != len_str) return false;
+  if (len_ss != len_str)
+    return false;
   return (strncmp(ss.begin, str, len_ss) == 0);
 }
 
-void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -140,29 +138,31 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
     float fx;
     name_value(words[0], p->parse_name, fx);
     bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
-    bool eq_label  = substring_eq(p->parse_name[0], "***label***");
-    if (! sd->ldict)
+    bool eq_label = substring_eq(p->parse_name[0], "***label***");
+    if (!sd->ldict)
     {
       eq_shared |= substring_eq(p->parse_name[0], "shared");
-      eq_label  |= substring_eq(p->parse_name[0], "label");
+      eq_label |= substring_eq(p->parse_name[0], "label");
     }
     if (eq_shared || eq_label)
     {
       if (eq_shared)
       {
-        if (p->parse_name.size() != 1) cerr << "shared feature vectors should not have costs on: " << words[0] << endl;
+        if (p->parse_name.size() != 1)
+          cerr << "shared feature vectors should not have costs on: " << words[0] << endl;
         else
         {
-          wclass f = { -FLT_MAX, 0, 0., 0.};
+          wclass f = {-FLT_MAX, 0, 0., 0.};
           ld->costs.push_back(f);
         }
       }
       if (eq_label)
       {
-        if (p->parse_name.size() != 2) cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
+        if (p->parse_name.size() != 2)
+          cerr << "label feature vectors should have exactly one cost on: " << words[0] << endl;
         else
         {
-          wclass f = { float_of_substring(p->parse_name[1]), 0, 0., 0.};
+          wclass f = {float_of_substring(p->parse_name[1]), 0, 0., 0.};
           ld->costs.push_back(f);
         }
       }
@@ -173,7 +173,7 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   // otherwise this is a "real" example
   for (unsigned int i = 0; i < words.size(); i++)
   {
-    wclass f = {0.,0,0.,0.};
+    wclass f = {0., 0, 0., 0.};
     name_value(words[i], p->parse_name, f.x);
 
     if (p->parse_name.size() == 0)
@@ -181,7 +181,8 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
 
     if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3)
     {
-      f.class_index = sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
+      f.class_index =
+          sd->ldict ? (uint32_t)sd->ldict->get(p->parse_name[0]) : (uint32_t)hashstring(p->parse_name[0], 0);
       if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
     }
@@ -192,13 +193,8 @@ void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
   }
 }
 
-label_parser cs_label = {default_label, parse_label,
-                         cache_label, read_cached_label,
-                         delete_label, weight,
-                         copy_label,
-                         test_label,
-                         sizeof(label)
-                        };
+label_parser cs_label = {default_label, parse_label, cache_label, read_cached_label, delete_label, weight, copy_label,
+    test_label, sizeof(label)};
 
 void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores, uint32_t prediction)
 {
@@ -217,10 +213,10 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       const example& first_ex = *(*ec_seq)[0];
 
       v_array<COST_SENSITIVE::wclass> costs = first_ex.l.cs.costs;
-      if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0) ecc++;
+      if (costs.size() == 1 && costs[0].class_index == 0 && costs[0].x < 0)
+        ecc++;
 
-      for (; ecc!=&(*ec_seq->cend()); ecc++)
-        num_current_features += (*ecc)->num_features;
+      for (; ecc != &(*ec_seq->cend()); ecc++) num_current_features += (*ecc)->num_features;
     }
 
     std::string label_buf;
@@ -236,17 +232,22 @@ void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool act
       pred_buf << std::setw(all.sd->col_current_predict) << std::right << std::setfill(' ');
       if (all.sd->ldict)
       {
-        if (action_scores) pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
-        else            pred_buf << all.sd->ldict->get(prediction);
+        if (action_scores)
+          pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action);
+        else
+          pred_buf << all.sd->ldict->get(prediction);
       }
-      else            pred_buf << ec.pred.a_s[0].action;
-      if (action_scores) pred_buf <<".....";
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-                           num_current_features, all.progress_add, all.progress_arg);;
+      else
+        pred_buf << ec.pred.a_s[0].action;
+      if (action_scores)
+        pred_buf << ".....";
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features,
+          all.progress_add, all.progress_arg);
+      ;
     }
     else
-      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction,
-                           num_current_features, all.progress_add, all.progress_arg);
+      all.sd->print_update(all.holdout_set_off, all.current_pass, label_buf, prediction, num_current_features,
+          all.progress_add, all.progress_arg);
   }
 }
 
@@ -256,31 +257,31 @@ void output_example(vw& all, example& ec)
 
   float loss = 0.;
   if (!test_label(&ld))
+  {
+    // need to compute exact loss
+    size_t pred = (size_t)ec.pred.multiclass;
+
+    float chosen_loss = FLT_MAX;
+    float min = FLT_MAX;
+    for (auto& cl : ld.costs)
     {
-      //need to compute exact loss
-      size_t pred = (size_t)ec.pred.multiclass;
-
-      float chosen_loss = FLT_MAX;
-      float min = FLT_MAX;
-      for (auto& cl : ld.costs)
-        {
-          if (cl.class_index == pred)
-            chosen_loss = cl.x;
-          if (cl.x < min)
-            min = cl.x;
-        }
-      if (chosen_loss == FLT_MAX)
-        cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
-
-      loss = chosen_loss - min;
-      // TODO(alberto): add option somewhere to allow using absolute loss instead?
-      // loss = chosen_loss;
+      if (cl.class_index == pred)
+        chosen_loss = cl.x;
+      if (cl.x < min)
+        min = cl.x;
     }
+    if (chosen_loss == FLT_MAX)
+      cerr << "warning: csoaa predicted an invalid class. Are all multi-class labels in the {1..k} range?" << endl;
+
+    loss = chosen_loss - min;
+    // TODO(alberto): add option somewhere to allow using absolute loss instead?
+    // loss = chosen_loss;
+  }
 
   all.sd->update(ec.test_only, !test_label(&ld), loss, 1.f, ec.num_features);
 
   for (int sink : all.final_prediction_sink)
-    if (! all.sd->ldict)
+    if (!all.sd->ldict)
       all.print(sink, (float)ec.pred.multiclass, 0, ec.tag);
     else
     {
@@ -294,7 +295,8 @@ void output_example(vw& all, example& ec)
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       wclass cl = ld.costs[i];
-      if (i > 0) outputStringStream << ' ';
+      if (i > 0)
+        outputStringStream << ' ';
       outputStringStream << cl.class_index << ':' << cl.partial_prediction;
     }
     all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
@@ -312,18 +314,23 @@ void finish_example(vw& all, example& ec)
 bool example_is_test(example& ec)
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() == 0) return true;
-  for (size_t j=0; j<costs.size(); j++)
-    if (costs[j].x != FLT_MAX) return false;
+  if (costs.size() == 0)
+    return true;
+  for (size_t j = 0; j < costs.size(); j++)
+    if (costs[j].x != FLT_MAX)
+      return false;
   return true;
 }
 
 bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
 {
   v_array<COST_SENSITIVE::wclass> costs = ec.l.cs.costs;
-  if (costs.size() != 1) return false;
-  if (costs[0].class_index != 0) return false;
-  if (costs[0].x != -FLT_MAX) return false;
+  if (costs.size() != 1)
+    return false;
+  if (costs[0].class_index != 0)
+    return false;
+  if (costs[0].x != -FLT_MAX)
+    return false;
   return true;
 }
-}
+}  // namespace COST_SENSITIVE
