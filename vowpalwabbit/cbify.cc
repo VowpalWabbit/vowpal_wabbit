@@ -436,43 +436,45 @@ base_learner* cbify_setup(options_i& options, vw& all)
   return make_base(*l);
 }
 
-base_learner* cbifyldf_setup(arguments& arg)
+base_learner* cbifyldf_setup(options_i& options, vw& all)
 {
   auto data = scoped_calloc_or_throw<cbify>();
+  bool cbify_ldf_option = false;
 
-  if (arg.new_options("Make csoaa_ldf into Contextual Bandit")
-      .critical("cbify_ldf", "Convert csoaa_ldf into a contextual bandit problem")
-      ("loss0", data->loss0, 0.f, "loss for correct label")
-      ("loss1", data->loss1, 1.f, "loss for incorrect label").missing())
+  option_group_definition new_options("Make csoaa_ldf into Contextual Bandit");
+  new_options
+    .add(make_option("cbify_ldf", cbify_ldf_option).keep().help("Convert csoaa_ldf into a contextual bandit problem"))
+    .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+    .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("cbify_ldf"))
     return nullptr;
 
   data->app_seed = uniform_hash("vw", 2, 0);
-  data->all = arg.all;
+  data->all = &all;
 
-  if (count(arg.args.begin(), arg.args.end(),"--cb_explore_adf") == 0)
+  if (!options.was_supplied("cb_explore_adf"))
   {
-    arg.args.push_back("--cb_explore_adf");
+    options.insert("cb_explore_adf", "");
   }
-  arg.args.push_back("--cb_min_cost");
-  arg.args.push_back(to_string(data->loss0));
-  arg.args.push_back("--cb_max_cost");
-  arg.args.push_back(to_string(data->loss1));
+  options.insert("cb_min_cost", to_string(data->loss0));
+  options.insert("cb_max_cost", to_string(data->loss1));
 
-  if (count(arg.args.begin(), arg.args.end(), "--baseline"))
+  if (options.was_supplied("baseline"))
   {
-    arg.args.push_back("--lr_multiplier");
     stringstream ss;
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
-    arg.args.push_back(ss.str());
+    options.insert("lr_multiplier", ss.str());
   }
 
-  multi_learner* base = as_multiline(setup_base(arg));
+  multi_learner* base = as_multiline(setup_base(options, all));
   learner<cbify,multi_ex>& l = init_learner(data, base, do_actual_learning_ldf<true>, do_actual_learning_ldf<false>, 1, prediction_type::multiclass);
 
   l.set_finish(finish);
   l.set_finish_example(finish_multiline_example);
-  arg.all->p->lp = COST_SENSITIVE::cs_label;
-  arg.all->delete_prediction = nullptr;
+  all.p->lp = COST_SENSITIVE::cs_label;
+  all.delete_prediction = nullptr;
 
   return make_base(l);
 }
