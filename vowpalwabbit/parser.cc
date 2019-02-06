@@ -75,11 +75,9 @@ parser* new_parser()
   auto& ret = *(new parser());
   ret.input = new io_buf;
   ret.output = new io_buf;
-  ret.local_example_number = 0;
   ret.in_pass_counter = 0;
   ret.ring_size = 1 << 8;
   ret.done = false;
-  ret.used_index = 0;
 
   return &ret;
 }
@@ -174,7 +172,7 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->local_example_number == all.p->end_parsed_examples; });
+        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples->size() == 0; });
       }
 
       // close socket, erase final prediction sink and socket
@@ -578,10 +576,9 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
 void lock_done(parser& p)
 {
-  std::lock_guard<std::mutex> lock(p.examples_lock);
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
-  p.example_available.notify_all();
+  p.ready_parsed_examples->set_done();
 }
 
 void set_done(vw& all)
@@ -673,18 +670,11 @@ namespace VW
 example& get_unused_example(vw* all)
 {
   parser* p = all->p;
-  while (true)
-  {
-    std::unique_lock<std::mutex> lock(p->examples_lock);
-    if (p->examples[p->begin_parsed_examples % p->ring_size].in_use == false)
-    {
-      example& ret = p->examples[p->begin_parsed_examples++ % p->ring_size];
-      ret.in_use = true;
-      return ret;
-    }
-    else
-      p->example_unused.wait(lock);
-  }
+  std::unique_lock<std::mutex> lock(p->pool_lock);
+  auto ex = p->example_pool->get_object();
+  ex->in_use = true;
+  p->begin_parsed_examples++;
+  return *ex;
 }
 
 void setup_examples(vw& all, v_array<example*>& examples)
@@ -889,12 +879,10 @@ void clean_example(vw& all, example& ec, bool rewind)
   empty_example(all, ec);
 
   {
-    std::lock_guard<std::mutex> lock(all.p->examples_lock);
+    std::lock_guard<std::mutex> lock(all.p->pool_lock);
     assert(ec.in_use);
     ec.in_use = false;
-    all.p->example_unused.notify_one();
-    if (all.p->done)
-      all.p->example_available.notify_all();
+    all.p->example_pool->return_object(&ec);
   }
 }
 
@@ -912,7 +900,6 @@ void finish_example(vw& all, example& ec)
 
   {
     std::lock_guard<std::mutex> lock(all.p->output_lock);
-    all.p->local_example_number++;
     all.p->output_done.notify_one();
   }
 
@@ -922,42 +909,18 @@ void finish_example(vw& all, example& ec)
 
 void thread_dispatch(vw& all, v_array<example*> examples)
 {
-  std::lock_guard<std::mutex> lock(all.p->examples_lock);
   all.p->end_parsed_examples += examples.size();
-  all.p->example_available.notify_all();
+  for (auto example : examples)
+  {
+    all.p->ready_parsed_examples->push(example);
+  }
 }
 
 void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(parser* p)
-{
-  std::unique_lock<std::mutex> lock(p->examples_lock);
-  while (true)
-  {
-    if (p->end_parsed_examples != p->used_index)
-    {
-      size_t ring_index = p->used_index++ % p->ring_size;
-      if (!(p->examples + ring_index)->in_use)
-        cout << "error: example should be in_use " << p->used_index << " " << p->end_parsed_examples << " "
-             << ring_index << endl;
-      assert((p->examples + ring_index)->in_use);
-      return p->examples + ring_index;
-    }
-    else
-    {
-      if (!p->done)
-      {
-        p->example_available.wait(lock);
-      }
-      else
-      {
-        return nullptr;
-      }
-    }
-  }
-}
+example* get_example(parser* p) { return p->ready_parsed_examples->pop(); }
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
@@ -1007,21 +970,16 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 void initialize_examples(vw& all)
 {
-  all.p->used_index = 0;
   all.p->begin_parsed_examples = 0;
   all.p->end_parsed_examples = 0;
   all.p->done = false;
-
-  all.p->examples = calloc_or_throw<example>(all.p->ring_size);
-
-  for (size_t i = 0; i < all.p->ring_size; i++)
-  {
-    memset(&all.p->examples[i].l, 0, sizeof(polylabel));
-    all.p->examples[i].in_use = false;
-  }
+  all.p->ready_parsed_examples.reset(new VW::ptr_queue<example>(all.p->ring_size));
+  // Note: using a pool without an initial size like this causes issues as reductions don't always
+  // behave nicely with being able to reuse examples.
+  all.p->example_pool.reset(new VW::unbounded_object_pool<example, example_factory>(all.p->ring_size));
 }
 
-void adjust_used_index(vw& all) { all.p->used_index = all.p->begin_parsed_examples; }
+void adjust_used_index(vw& all) { /* no longer used */ }
 
 void initialize_parser_datastructures(vw& all) { initialize_examples(all); }
 
@@ -1038,14 +996,6 @@ void free_parser(vw& all)
   if (all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
 
-  if (all.p->examples != nullptr)
-  {
-    for (size_t i = 0; i < all.p->ring_size; i++)
-      VW::dealloc_example(all.p->lp.delete_label, all.p->examples[i], all.delete_prediction);
-
-    free(all.p->examples);
-  }
-
   io_buf* output = all.p->output;
   if (output != nullptr)
   {
@@ -1060,5 +1010,5 @@ namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.p->examples <= ae && ae < all.p->examples + all.p->ring_size; }
+bool is_ring_example(vw& all, example* ae) { return all.p->example_pool->is_from_pool(ae); }
 }  // namespace VW

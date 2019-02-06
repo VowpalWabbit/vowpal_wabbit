@@ -23,15 +23,32 @@ license as described in the file LICENSE.
 #endif
 
 #include <memory>
+#include "queue.h"
+#include "object_pool.h"
 
 struct vw;
 struct input_options;
+
+struct example_factory
+{
+  example* operator()()
+  {
+    auto new_example = new example{};
+    memset(&new_example->l, 0, sizeof(polylabel));
+    new_example->in_use = false;
+    return new_example;
+  }
+};
 
 struct parser
 {
   v_array<substring> channels;  // helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
+
+  std::mutex pool_lock;
+  std::unique_ptr<VW::unbounded_object_pool<example, example_factory>> example_pool;
+  std::unique_ptr<VW::ptr_queue<example>> ready_parsed_examples;
 
   io_buf* input;  // Input source(s)
   int (*reader)(vw*, v_array<example*>& examples);
@@ -45,18 +62,9 @@ struct parser
   size_t ring_size;
   uint64_t begin_parsed_examples;  // The index of the beginning parsed example.
   uint64_t end_parsed_examples;    // The index of the fully parsed example.
-  uint64_t local_example_number;
   uint32_t in_pass_counter;
-  example* examples;
-  uint64_t used_index;
   bool emptylines_separate_examples;  // true if you want to have holdout computed on a per-block basis rather than a
                                       // per-line basis
-
-  // Both example condition_variables use the same mutex.
-  // examples_lock protects: p->done, ec.in_use, p->begin_parsed_examples, p->end_parse_examples, and p->used_index.
-  std::mutex examples_lock;
-  std::condition_variable example_available;
-  std::condition_variable example_unused;
 
   std::mutex output_lock;
   std::condition_variable output_done;
@@ -88,6 +96,8 @@ bool examples_to_finish();
 
 // only call these from the library form:
 void initialize_parser_datastructures(vw& all);
+
+/* [[deprecated]] */
 void adjust_used_index(vw& all);
 
 // parser control
