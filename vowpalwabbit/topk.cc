@@ -94,16 +94,13 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
 
 void finish_example(vw& all, topk& d, multi_ex& ec_seq)
 {
-  for (int sink : all.final_prediction_sink) print_result(sink, d.pr_queue);
+  for (int sink : all.final_prediction_sink)
+    print_result(sink, d.pr_queue);
 
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
-void finish(topk& d)
-{
-  // Explicitly call destructor of priority queue as the struct will be freed and not deleted.
-  d.pr_queue.~priority_queue<scored_example, vector<scored_example>, compare_scored_examples>();
-}
+void finish(topk& d) { d.pr_queue = priority_queue<scored_example, vector<scored_example>, compare_scored_examples>(); }
 
 LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 {
