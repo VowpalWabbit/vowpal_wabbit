@@ -269,12 +269,9 @@ void predict_or_learn_first(cb_explore_adf& data, multi_learner& base, multi_ex&
 template <bool is_learn>
 void predict_or_learn_greedy(cb_explore_adf& data, multi_learner& base, multi_ex& examples)
 {
-<<<<<<< HEAD
 	data.offset = examples[0]->ft_offset;
   //Explore uniform random an epsilon fraction of the time.
-=======
-  // Explore uniform random an epsilon fraction of the time.
->>>>>>> c9110426d9e8585e8410403d12f0194d5e6673fa
+
   if (is_learn && test_adf_sequence(examples) != nullptr)
     multiline_learn_or_predict<true>(base, examples, data.offset);
   else

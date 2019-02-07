@@ -13,6 +13,7 @@ using namespace LEARNER;
 using namespace exploration;
 using namespace ACTION_SCORE;
 using namespace std;
+using namespace VW::config;
 
 #define WARM_START 1
 #define INTERACTION 2
@@ -631,74 +632,78 @@ void init_adf_data(warm_cb& data, const size_t num_actions)
 	data.cumu_var = 0.f;
 }
 
-base_learner* warm_cb_setup(arguments& arg)
+base_learner* warm_cb_setup(options_i& options, vw& all)
 {
   uint32_t num_actions=0;
   auto data = scoped_calloc_or_throw<warm_cb>();
   bool use_cs;
 
-  if (arg.new_options("Make Multiclass into Contextual Bandit")
-      .critical("warm_cb", num_actions, "Convert multiclass on <k> classes into a contextual bandit problem")
-      (use_cs, "warm_cb_cs", "consume cost-sensitive classification examples instead of multiclass")
-      ("loss0", data->loss0, 0.f, "loss for correct label")
-      ("loss1", data->loss1, 1.f, "loss for incorrect label")
-			("warm_start", data->ws_period, 0U, "number of training examples for warm start phase")
-			("interaction", data->inter_period, UINT32_MAX, "number of examples for the interactive contextual bandit learning phase")
-			("warm_start_update", data->upd_ws, true, "indicator of warm start updates")
-			("interaction_update", data->upd_inter, true, "indicator of interaction updates")
-			("corrupt_type_warm_start", data->cor_type_ws, UAR, "type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)")
-			("corrupt_prob_warm_start", data->cor_prob_ws, 0.f, "probability of label corruption in the warm start phase")
-			("corrupt_type_interaction", data->cor_type_inter, UAR, "type of label corruption in the interaction phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)")
-			("corrupt_prob_interaction", data->cor_prob_inter, 0.f, "probability of label corruption in the interaction phase")
-		  ("choices_lambda", data->choices_lambda, 1U, "the number of candidate lambdas to aggregate (lambda is the importance weight parameter between the two sources) ")
-			("lambda_scheme", data->lambda_scheme, ABS_CENTRAL, "The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(#actions+epsilon), 4: center lambda=epsilon/(#actions+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme")
-			("weighting_scheme", data->wt_scheme, INSTANCE_WT, "weighting scheme (1: per instance weighting, where for every lambda, each contextual bandit example have weight lambda/(1-lambda) times that of each warm start example, 2: per dataset weighting, where for every lambda, the contextual bandit dataset has total weight lambda/(1-lambda) times that of the warm start dataset)")
-			("validation_method", data->vali_method, INTER_VALI, "lambda selection criterion (1: using contextual bandit examples with progressive validation, 2: using warm start examples, with fresh validation examples at each epoch, 3: using warm start examples, with a single validation set throughout)")
-			("overwrite_label", data->overwrite_label, 1U, "the label used by type 3 corruptions (overwriting)")
-			("warm_start_type", data->ws_type, SUPERVISED_WS, "update method of utilizing warm start examples (1: using supervised updates, 2: using contextual bandit updates)").missing())
-    return nullptr;
+  option_group_definition new_options("Make Multiclass into Warm-starting Contextual Bandit");
+
+  new_options
+      .add(make_option("warm_cb", num_actions)
+               .keep()
+               .help("Convert multiclass on <k> classes into a contextual bandit problem"))
+      .add(make_option("warm_cb_cs", use_cs).help("consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("loss0", data->loss0).default_value(0.f).help("loss for correct label"))
+      .add(make_option("loss1", data->loss1).default_value(1.f).help("loss for incorrect label"))
+      .add(make_option("warm_start", data->ws_period).default_value(0U).help("number of training examples for warm start phase"))
+      .add(make_option("interaction", data->inter_period).default_value(UINT32_MAX).help("number of examples for the interactive contextual bandit learning phase"))
+      .add(make_option("warm_start_update", data->upd_ws).default_value(true).help("indicator of warm start updates"))
+      .add(make_option("interaction_update", data->upd_inter).default_value(true).help("indicator of interaction updates"))
+      .add(make_option("corrupt_type_warm_start", data->cor_type_ws).default_value(UAR).help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)"))
+      .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws).default_value(0.f).help("probability of label corruption in the warm start phase"))
+      .add(make_option("corrupt_type_interaction", data->cor_type_inter).default_value(UAR).help("type of label corruption in the interaction phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)"))
+      .add(make_option("corrupt_prob_interaction", data->cor_prob_inter).default_value(0.f).help("probability of label corruption in the interaction phase"))
+      .add(make_option("choices_lambda", data->choices_lambda).default_value(1U).help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between the two sources)"))
+      .add(make_option("lambda_scheme", data->lambda_scheme).default_value(ABS_CENTRAL).help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(#actions+epsilon), 4: center lambda=epsilon/(#actions+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme"))
+      .add(make_option("weighting_scheme", data->wt_scheme).default_value(INSTANCE_WT).help("weighting scheme (1: per instance weighting, where for every lambda, each contextual bandit example have weight lambda/(1-lambda) times that of each warm start example, 2: per dataset weighting, where for every lambda, the contextual bandit dataset has total weight lambda/(1-lambda) times that of the warm start dataset)"))
+      .add(make_option("validation_method", data->vali_method).default_value(INTER_VALI).help("lambda selection criterion (1: using contextual bandit examples with progressive validation, 2: using warm start examples, with fresh validation examples at each epoch, 3: using warm start examples, with a single validation set throughout)"))
+      .add(make_option("overwrite_label", data->overwrite_label).default_value(1U).help("the label used by type 3 corruptions (overwriting)"))
+      .add(make_option("warm_start_type", data->ws_type).default_value(SUPERVISED_WS).help("update method of utilizing warm start examples (1: using supervised updates, 2: using contextual bandit updates)"));
+
+  options.add_and_parse(new_options);
 
   data->app_seed = uniform_hash("vw", 2, 0);
   data->a_s = v_init<action_score>();
-  data->all = arg.all;
+  data->all = &all;
 	data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);
 
-  arg.args.push_back("--cb_min_cost");
-  arg.args.push_back(to_string(data->loss0));
-  arg.args.push_back("--cb_max_cost");
-  arg.args.push_back(to_string(data->loss1));
+  options.insert("cb_min_cost", to_string(data->loss0));
+  options.insert("cb_max_cost", to_string(data->loss1));
 
-  if (count(arg.args.begin(), arg.args.end(), "--baseline"))
+  if (options.was_supplied("baseline"))
   {
-    arg.args.push_back("--lr_multiplier");
     stringstream ss;
     ss << max<float>(abs(data->loss0), abs(data->loss1)) / (data->loss1 - data->loss0);
-    arg.args.push_back(ss.str());
+    options.insert("lr_multiplier", ss.str());
   }
 
   learner<warm_cb,example>* l;
 
-  multi_learner* base = as_multiline(setup_base(arg));
+  multi_learner* base = as_multiline(setup_base(options, all));
 	// Note: the current version of warm start CB can only support epsilon-greedy exploration
 	// We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one
-  if (arg.vm.count("epsilon") == 0)
+
+
+  if (!options.was_supplied("epsilon"))
   {
     cerr<<"Warning: no epsilon (greedy parameter) specified; resetting to 0.05"<<endl;
     data->epsilon = 0.05f;
   }
   else
-    data->epsilon = arg.vm["epsilon"].as<float>();
+    data->epsilon = *options.get_option("epsilon");
 
   if (use_cs)
-    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, arg.all->p, data->choices_lambda);
+    l = &init_cost_sensitive_learner(data, base, predict_or_learn_adf<true, true>, predict_or_learn_adf<false, true>, all.p, data->choices_lambda);
   else
-    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, arg.all->p, data->choices_lambda);
+    l = &init_multiclass_learner(data, base, predict_or_learn_adf<true, false>, predict_or_learn_adf<false, false>, all.p, data->choices_lambda);
 
   l->set_finish(finish);
-  arg.all->delete_prediction = nullptr;
+  all.delete_prediction = nullptr;
 
   return make_base(*l);
 }
