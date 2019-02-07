@@ -4,7 +4,6 @@
 using namespace std;
 namespace ACTION_SCORE
 {
-
 void print_action_score(int f, v_array<action_score>& a_s, v_array<char>&)
 {
   if (f >= 0)
@@ -31,4 +30,4 @@ void delete_action_scores(void* v)
   cs->delete_v();
 }
 
-}
+}  // namespace ACTION_SCORE

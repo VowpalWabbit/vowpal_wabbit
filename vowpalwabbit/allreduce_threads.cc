@@ -53,12 +53,12 @@ void AllReduceSync::waitForSynchronization()
 }
 
 AllReduceThreads::AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode)
-  : AllReduce(ptotal, pnode), m_sync(root->m_sync), m_syncOwner(false)
+    : AllReduce(ptotal, pnode), m_sync(root->m_sync), m_syncOwner(false)
 {
 }
 
 AllReduceThreads::AllReduceThreads(const size_t ptotal, const size_t pnode)
-  : AllReduce(ptotal, pnode), m_sync(new AllReduceSync(ptotal)), m_syncOwner(true)
+    : AllReduce(ptotal, pnode), m_sync(new AllReduceSync(ptotal)), m_syncOwner(true)
 {
 }
 

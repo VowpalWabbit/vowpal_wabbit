@@ -10,8 +10,8 @@ next_print = 1
 error = 0
 expected = None
 
-for counter in xrange(1, count + 1):
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+for counter in range(1, count + 1):
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     out, err = p.communicate('')
     out += err or ''
     if expected is None:

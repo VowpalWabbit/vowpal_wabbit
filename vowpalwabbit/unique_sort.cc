@@ -35,5 +35,5 @@ void unique_sort_features(uint64_t parse_mask, example* ae)
     if (fs.sort(parse_mask))
       unique_features(fs);
 
-  ae->sorted=true;
+  ae->sorted = true;
 }

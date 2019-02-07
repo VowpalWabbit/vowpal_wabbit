@@ -18,9 +18,9 @@ typedef SOCKET socket_t;
 namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
-template<typename T>
+template <typename T>
 class future;
-}
+}  // namespace std
 #else
 #include <unistd.h>
 #include <sys/socket.h>
@@ -41,7 +41,7 @@ namespace VW
 {
 class SpanningTree
 {
-private:
+ private:
   bool m_stop;
   socket_t sock;
   short unsigned int port;
@@ -50,7 +50,7 @@ private:
   // Need a pointer since C++/CLI doesn't like futures yet
   std::future<void>* m_future;
 
-public:
+ public:
   SpanningTree();
   ~SpanningTree();
 
@@ -58,4 +58,4 @@ public:
   void Run();
   void Stop();
 };
-}
+}  // namespace VW
