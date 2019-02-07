@@ -22,7 +22,7 @@ struct compare_scored_examples
 
 struct topk
 {
-  uint32_t B;  // rec number
+  uint32_t K;  // rec number
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples> pr_queue;
   vw* all;
 };
@@ -80,7 +80,7 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
     else
       base.predict(ec);
 
-    if (d.pr_queue.size() < d.B)
+    if (d.pr_queue.size() < d.K)
       d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
     else if (d.pr_queue.top().first < ec.pred.scalar)
     {
@@ -110,7 +110,7 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
   auto data = scoped_calloc_or_throw<topk>();
 
   option_group_definition new_options("Top K");
-  new_options.add(make_option("top", data->B).keep().help("top k recommendation"));
+  new_options.add(make_option("top", data->K).keep().help("top k recommendation"));
   options.add_and_parse(new_options);
 
   if (!options.was_supplied("top"))
