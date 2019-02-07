@@ -1638,5 +1638,5 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
     train-sets/ref/no_shared_features.stderr
 
 # Test 176: cbify ldf, regcbopt
-{VW} -k -c -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
     train-sets/ref/cbify_ldf_regcbopt.stderr
