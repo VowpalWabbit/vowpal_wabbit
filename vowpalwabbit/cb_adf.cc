@@ -111,15 +111,8 @@ void learn_MTR(cb_adf& mydata, multi_learner& base, multi_ex& examples)
   gen_cs_example_mtr(mydata.gen_cs, examples, mydata.cs_labels);
   uint32_t nf = (uint32_t)examples[mydata.gen_cs.mtr_example]->num_features;
   float old_weight = examples[mydata.gen_cs.mtr_example]->weight;
-<<<<<<< HEAD
   examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability * ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum) * (1.f / (float)examples.size());
   GEN_CS::call_cs_ldf<true>(base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
-=======
-  examples[mydata.gen_cs.mtr_example]->weight *= 1.f / examples[mydata.gen_cs.mtr_example]->l.cb.costs[0].probability *
-      ((float)mydata.gen_cs.event_sum / (float)mydata.gen_cs.action_sum);
-  GEN_CS::call_cs_ldf<true>(
-      base, mydata.gen_cs.mtr_ec_seq, mydata.cb_labels, mydata.cs_labels, mydata.prepped_cs_labels, mydata.offset);
->>>>>>> c9110426d9e8585e8410403d12f0194d5e6673fa
   examples[mydata.gen_cs.mtr_example]->num_features = nf;
   examples[mydata.gen_cs.mtr_example]->weight = old_weight;
   swap(examples[0]->pred.a_s, mydata.a_s);

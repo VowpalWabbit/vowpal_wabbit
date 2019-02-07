@@ -406,19 +406,9 @@ learner<T, E>& init_learner(free_ptr<T>& dat, L* base, void (*learn)(T&, L&, E&)
 {
   auto ret = &learner<T, E>::init_learner(dat.get(), base, learn, predict, 1, base->pred_type);
 
-<<<<<<< HEAD
-  template<bool is_learn>
-  void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
-  { std::vector<uint64_t> saved_offsets;
-    for (auto ec : examples)
-    { saved_offsets.push_back(ec->ft_offset);
-      ec->ft_offset = offset;
-    }
-=======
   dat.release();
   return *ret;
 }
->>>>>>> c9110426d9e8585e8410403d12f0194d5e6673fa
 
 // Reduction with no data.
 template <class T, class E, class L>
