@@ -2,8 +2,11 @@
 
 #include "example.h"
 #include "global_data.h"
+#include "cache.h"
 
 #include <numeric>
+
+using namespace VW;
 
 bool CCB::ec_is_example_header(example& ec)
 {
@@ -14,16 +17,6 @@ void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, boo
 {
   // TODO: Implement for CCB
   throw std::runtime_error("CCB:print_update not implemented");
-}
-
-template <typename T>
-T read_object(io_buf& cache)
-{
-  char* c;
-  size_t next_read_size = sizeof(T);
-  if (cache.buf_read(c, next_read_size) < next_read_size)
-    THROW("Failed to read CCB label cache");
-  return *reinterpret_cast<T*>(c);
 }
 
 namespace CCB {
@@ -45,8 +38,8 @@ namespace CCB {
 
       ld->outcome->cost = read_object<float>(cache);
       read_count += sizeof(float);
-      auto size_probs = read_object<size_t>(cache);
-      read_count += sizeof(size_t);
+      auto size_probs = read_object<uint32_t>(cache);
+      read_count += sizeof(uint32_t);
 
       for(auto i = 0; i < size_probs; i++)
       {
@@ -55,8 +48,8 @@ namespace CCB {
       }
     }
 
-    auto size_includes = read_object<size_t>(cache);
-    read_count += sizeof(size_t);
+    auto size_includes = read_object<uint32_t>(cache);
+    read_count += sizeof(uint32_t);
 
     for (auto i = 0; i < size_includes; i++)
     {
@@ -79,11 +72,10 @@ namespace CCB {
     size_t size =
       sizeof(uint8_t) // type
       + sizeof(bool) // outcome exists?
-      + (ld->outcome == nullptr ? 0 :
-        sizeof(float) // cost
-        + sizeof(size_t) // probabilities size
+      + (ld->outcome == nullptr ? 0 : sizeof(ld->outcome->cost) // cost
+        + sizeof(uint32_t) // probabilities size
         + sizeof(ACTION_SCORE::action_score) * ld->outcome->probabilities.size()) //probabilities
-      + sizeof(size_t) // explicit_included_actions size
+        + sizeof(uint32_t)  // explicit_included_actions size
       + sizeof(uint32_t) * ld->explicit_included_actions.size();
 
     cache.buf_write(c, size);
@@ -99,8 +91,8 @@ namespace CCB {
       *(float*)c = ld->outcome->cost;
       c += sizeof(float);
 
-      *(size_t*)c = ld->outcome->probabilities.size();
-      c += sizeof(size_t);
+      *(uint32_t*)c = convert(ld->outcome->probabilities.size());
+      c += sizeof(uint32_t);
 
       for (const auto& score : ld->outcome->probabilities)
       {
@@ -109,8 +101,8 @@ namespace CCB {
       }
     }
 
-    *(size_t*)c = ld->explicit_included_actions.size();
-    c += sizeof(size_t);
+    *(uint32_t*)c = convert(ld->explicit_included_actions.size());
+    c += sizeof(uint32_t);
 
     for (const auto& included_action : ld->explicit_included_actions)
     {
@@ -185,23 +177,38 @@ namespace CCB {
   }
 
   //<action>:<probability>:<cost>,<action>:<probability,<action>:<probability>,…
-  CCB::conditional_contexual_bandit_outcome* parse_outcome(v_array<substring>& split_outcome)
+  CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
   {
     auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
+
+    auto split_commas = v_init<substring>();
+    tokenize(',', outcome, split_commas);
+
+    auto split_colons = v_init<substring>();
+    tokenize(':', split_commas[0], split_colons);
+
+    if (split_colons.size() != 3)
+      THROW("Malformed ccb label");
+
     ccb_outcome.probabilities = v_init<ACTION_SCORE::action_score>();
-    ccb_outcome.probabilities.push_back(convert_to_score(split_outcome[0], split_outcome[1]));
+    ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
 
-    ccb_outcome.cost = float_of_substring(split_outcome[2]);
+    ccb_outcome.cost = float_of_substring(split_colons[2]);
     if (nanpattern(ccb_outcome.cost))
-      THROW("error NaN cost: " << split_outcome[2]);
+      THROW("error NaN cost: " << split_colons[2]);
 
-    auto action_scores = v_init<substring>();
-    for (int i = 3; i < split_outcome.size(); i++)
+    split_colons.clear();
+    
+    for (int i = 1; i < split_commas.size(); i++)
     {
-      tokenize(',', split_outcome[i], action_scores);
-      if (action_scores.size() != 2) THROW("Must be action probability pairs");
-      ccb_outcome.probabilities.push_back(convert_to_score(action_scores[0], action_scores[1]));
+      tokenize(':', split_commas[i], split_colons);
+      if (split_colons.size() != 2)
+        THROW("Must be action probability pairs");
+      ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[1]));
     }
+
+    split_colons.delete_v();
+    split_commas.delete_v();
 
     return &ccb_outcome;
   }
@@ -240,18 +247,18 @@ namespace CCB {
       if (words.size() > 4) THROW("ccb decision label can only have a type cost and exclude list");
       ld->type = CCB::example_type::decision;
 
-      // Skip the first word as that is the type.
+      // Skip the first two words "ccb <type>"
       for (auto i = 2; i < words.size(); i++)
       {
-        tokenize(':', words[i], p->parse_name);
-        if (p->parse_name.size() > 1)
+        auto is_outcome = std::find(words[i].begin, words[i].end, ':');
+        if (is_outcome != words[i].end)
         {
           if (ld->outcome != nullptr)
           {
             THROW("There may be only 1 outcome associated with a decision.")
           }
 
-          ld->outcome = parse_outcome(p->parse_name);
+          ld->outcome = parse_outcome(words[i]);
         }
         else
         {
