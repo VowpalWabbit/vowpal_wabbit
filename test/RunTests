@@ -764,6 +764,7 @@ exit $ErrorCount;
 #   You may break very long lines using \ at EOL.
 #
 #   # -------------------------------------
+#   # Test <test_id>: ...
 #   shell command which may include {VW} ...
 #       reference/file1
 #       reference/file2
@@ -793,7 +794,7 @@ exit $ErrorCount;
 # For example:
 #
 #   #-------------------------------------------------------
-#   # Test 237
+#   # Test 237: readable_model
 #   {VW} ... -p test75.predict --readable_model test75.rmodel
 #       test/train-sets/ref/test75.stderr
 #       test/pred-sets/ref/test75.predict
