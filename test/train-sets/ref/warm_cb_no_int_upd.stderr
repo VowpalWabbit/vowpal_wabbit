@@ -7,13 +7,16 @@ Reading datafile = train-sets/multiclass
 num sources = 1
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
-1.000000 1.000000            4            1.0        4        5        2
-1.000000 1.000000            5            2.0        5        9        2
-0.750000 0.500000            7            4.0        7        7        2
+1.000000 1.000000            4            1.0        4        3        2
+1.000000 1.000000            5            2.0        5        3        2
+1.000000 1.000000            7            4.0        7        3        2
 
 finished run
 number of examples = 10
 weighted example sum = 7.000000
 weighted label sum = 0.000000
-average loss = 0.714286
+average loss = 1.000000
 total feature number = 20
+average variance estimate = 1.000000
+theoretical average variance = inf
+last lambda chosen = 0.000000 among lambdas ranging from 0.000000 to 0.000000
