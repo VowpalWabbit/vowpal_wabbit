@@ -24,6 +24,7 @@ struct topk
 {
   uint32_t K;  // rec number
   priority_queue<scored_example, vector<scored_example>, compare_scored_examples> pr_queue;
+  vw* all;
 };
 
 void print_result(int f, priority_queue<scored_example, vector<scored_example>, compare_scored_examples>& pr_queue)
@@ -56,23 +57,15 @@ void print_result(int f, priority_queue<scored_example, vector<scored_example>, 
   }
 }
 
-void output_example(vw& all, topk& d, multi_ex& ec_seq)
+void output_example(vw& all, example& ec)
 {
-  for (auto example : ec_seq)
-  {
-    auto ec = *example;
+  label_data& ld = ec.l.simple;
 
-    label_data& ld = ec.l.simple;
+  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
+  if (ld.label != FLT_MAX)
+    all.sd->weighted_labels += ((double)ld.label) * ec.weight;
 
-    all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.num_features);
-    if (ld.label != FLT_MAX)
-      all.sd->weighted_labels += ((double)ld.label) * ec.weight;
-
-    print_update(all, ec);
-  }
-
-  for (int sink : all.final_prediction_sink)
-    print_result(sink, d.pr_queue);
+  print_update(all, ec);
 }
 
 template <bool is_learn>
@@ -94,12 +87,16 @@ void predict_or_learn(topk& d, LEARNER::single_learner& base, multi_ex& ec_seq)
       d.pr_queue.pop();
       d.pr_queue.push(make_pair(ec.pred.scalar, ec.tag));
     }
+
+    output_example(*d.all, ec);
   }
 }
 
 void finish_example(vw& all, topk& d, multi_ex& ec_seq)
 {
-  output_example(all, d, ec_seq);
+  for (int sink : all.final_prediction_sink)
+    print_result(sink, d.pr_queue);
+
   VW::clear_seq_and_finish_examples(all, ec_seq);
 }
 
@@ -115,6 +112,8 @@ LEARNER::base_learner* topk_setup(options_i& options, vw& all)
 
   if (!options.was_supplied("top"))
     return nullptr;
+
+  data->all = &all;
 
   LEARNER::learner<topk, multi_ex>& l =
       init_learner(data, as_singleline(setup_base(options, all)), predict_or_learn<true>, predict_or_learn<false>);
