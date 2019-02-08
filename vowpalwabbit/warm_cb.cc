@@ -526,8 +526,6 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 	else
 		ec.l.multi = data.mc_label;
 
-  cout<<ec.weight<<endl;
-
 }
 
 void init_adf_data(warm_cb& data, const size_t num_actions)
