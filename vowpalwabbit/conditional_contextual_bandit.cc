@@ -1,5 +1,5 @@
 #include "conditional_contextual_bandit.h"
-
+#include "reductions.h"
 #include "example.h"
 #include "global_data.h"
 #include "cache.h"
@@ -7,7 +7,9 @@
 #include <numeric>
 #include <algorithm>
 
+using namespace LEARNER;
 using namespace VW;
+using namespace VW::config;
 
 bool CCB::ec_is_example_header(example& ec)
 {
@@ -18,6 +20,47 @@ void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, boo
 {
   // TODO: Implement for CCB
   throw std::runtime_error("CCB:print_update not implemented");
+}
+
+template <bool is_learn>
+void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
+{
+  std::cout << "CCB:do_actual_learning: " << (is_learn ? "train" : "test") << std::endl;
+  if (is_learn)
+    multiline_learn_or_predict<true>(base, examples, (uint64_t)0);
+  else
+    multiline_learn_or_predict<false>(base, examples, (uint64_t)0);
+}
+
+base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
+{
+  free_ptr<ccb> data = scoped_calloc_or_throw<ccb>();
+  bool ccb_explore_adf_option = false;
+  option_group_definition new_options("Conditional Contextual Bandit Exploration with Action Dependent Features");
+  new_options
+    .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
+      .keep()
+      .help("Do Conditional Contextual Bandit learning with multiline action dependent features."));
+  options.add_and_parse(new_options);
+
+  if (!ccb_explore_adf_option)
+    return nullptr;
+
+  if (!options.was_supplied("cb_explore_adf"))
+  {
+    options.insert("cb_explore_adf", "");
+    options.add_and_parse(new_options);
+  }
+
+  multi_learner* base = as_multiline(setup_base(options, all));
+  all.p->lp = CB::cb_label;
+  all.label_type = label_type::cb;
+
+  // Extract from lower level reductions.
+  learner<ccb, multi_ex>& l =
+      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::decision_probs);
+
+  return make_base(l);
 }
 
 namespace CCB {

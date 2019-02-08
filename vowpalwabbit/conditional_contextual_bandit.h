@@ -6,6 +6,13 @@
 #include "label_parser.h"
 #include "v_array.h"
 #include "action_score.h"
+#include "options.h"
+
+
+namespace LEARNER {
+  template<class T, class E> struct learner;
+  using base_learner = learner<char, char>;
+}
 
 struct vw;
 struct example;
@@ -41,6 +48,13 @@ namespace CCB {
     // Outcome may be unset.
     conditional_contexual_bandit_outcome* outcome;
     v_array<uint32_t> explicit_included_actions;
+  };
+
+  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
+
+  struct ccb
+  {
+    //put here the ccb state
   };
 
   extern label_parser ccb_label_parser;
