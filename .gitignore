@@ -16,7 +16,6 @@ libtool
 ltmain.sh
 missing
 vowpalwabbit/Makefile.in
-vowpalwabbit/config.h.in
 config.h
 *.la
 *.lo
@@ -31,6 +30,7 @@ t_*
 bin
 vw
 .*
+!.pipelines
 vw.1
 *.cache
 *.tgz
@@ -128,3 +128,5 @@ index.html
 packages-microsoft-prod.deb
 reinforcement_learning/unit_test/rlclient-test.out
 cs/azure_service/azure_service.ccproj.user
+
+build

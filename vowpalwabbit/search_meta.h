@@ -6,11 +6,14 @@ license as described in the file LICENSE.
 #pragma once
 #include "search.h"
 
-#define DECLARE_METATASK(X)   namespace X { extern Search::search_metatask metatask; }
+#define DECLARE_METATASK(X)                \
+  namespace X                              \
+  {                                        \
+  extern Search::search_metatask metatask; \
+  }
 
-DECLARE_METATASK( DebugMT )
-DECLARE_METATASK( SelectiveBranchingMT )
+DECLARE_METATASK(DebugMT)
+DECLARE_METATASK(SelectiveBranchingMT)
 
-//namespace DebugMT              { extern Search::search_metatask metatask; }
-//namespace SelectiveBranchingMT { extern Search::search_metatask metatask; }
-
+// namespace DebugMT              { extern Search::search_metatask metatask; }
+// namespace SelectiveBranchingMT { extern Search::search_metatask metatask; }

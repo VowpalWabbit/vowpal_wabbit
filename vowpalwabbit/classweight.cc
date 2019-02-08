@@ -1,6 +1,8 @@
 #include <unordered_map>
 #include "reductions.h"
+
 using namespace std;
+using namespace VW::config;
 
 namespace CLASSWEIGHTS
 {
@@ -35,7 +37,7 @@ struct classweights
   float get_class_weight(uint32_t klass)
   {
     auto got = weights.find(klass);
-    if ( got == weights.end() )
+    if (got == weights.end())
       return 1.0f;
     else
       return got->second;
@@ -47,15 +49,15 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
 {
   switch (pred_type)
   {
-  case prediction_type::scalar:
-    ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
-    break;
-  case prediction_type::multiclass:
-    ec.weight *= cweights.get_class_weight(ec.l.multi.label);
-    break;
-  default:
-    // suppress the warning
-    break;
+    case prediction_type::scalar:
+      ec.weight *= cweights.get_class_weight((uint32_t)ec.l.simple.label);
+      break;
+    case prediction_type::multiclass:
+      ec.weight *= cweights.get_class_weight(ec.l.multi.label);
+      break;
+    default:
+      // suppress the warning
+      break;
   }
 
   if (is_learn)
@@ -64,32 +66,36 @@ static void predict_or_learn(classweights& cweights, LEARNER::single_learner& ba
     base.predict(ec);
 }
 
-void finish(classweights& data) { data.weights.~unordered_map();}
-}
+void finish(classweights& data) { data.weights.~unordered_map(); }
+}  // namespace CLASSWEIGHTS
 
 using namespace CLASSWEIGHTS;
 
-LEARNER::base_learner* classweight_setup(arguments& arg)
+LEARNER::base_learner* classweight_setup(options_i& options, vw& all)
 {
   vector<string> classweight_array;
   auto cweights = scoped_calloc_or_throw<classweights>();
-  if (arg.new_options("importance weight classes")
-      .critical_vector<string>("classweight", po::value<vector<string> >(&classweight_array), "importance weight multiplier for class", false).missing())
+  option_group_definition new_options("importance weight classes");
+  new_options.add(make_option("classweight", classweight_array).help("importance weight multiplier for class"));
+  options.add_and_parse(new_options);
+
+  if (!options.was_supplied("classweight"))
     return nullptr;
 
-  for (auto& s : classweight_array)
-    cweights->load_string(s);
+  for (auto& s : classweight_array) cweights->load_string(s);
 
-  if (!arg.all->quiet)
-    arg.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
+  if (!all.quiet)
+    all.trace_message << "parsed " << cweights->weights.size() << " class weights" << endl;
 
-  LEARNER::single_learner* base = as_singleline(setup_base(arg));
+  LEARNER::single_learner* base = as_singleline(setup_base(options, all));
 
-  LEARNER::learner<classweights,example>* ret;
+  LEARNER::learner<classweights, example>* ret;
   if (base->pred_type == prediction_type::scalar)
-    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true,prediction_type::scalar>, predict_or_learn<false,prediction_type::scalar>);
+    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::scalar>,
+        predict_or_learn<false, prediction_type::scalar>);
   else if (base->pred_type == prediction_type::multiclass)
-    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true,prediction_type::multiclass>, predict_or_learn<false,prediction_type::multiclass>);
+    ret = &LEARNER::init_learner<classweights>(cweights, base, predict_or_learn<true, prediction_type::multiclass>,
+        predict_or_learn<false, prediction_type::multiclass>);
   else
     THROW("--classweight not implemented for this type of prediction");
   ret->set_finish(finish);
