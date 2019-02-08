@@ -27,13 +27,6 @@ using namespace VW::config;
 #define CIRCULAR 2
 #define OVERWRITE 3
 
-#define INTER_VALI 1
-#define WS_VALI_SPLIT 2
-#define WS_VALI_NOSPLIT 3
-
-#define INSTANCE_WT 1
-#define DATASET_WT 2
-
 #define ABS_CENTRAL 1
 #define ABS_CENTRAL_ZEROONE 2
 #define MINIMAX_CENTRAL 3
@@ -60,8 +53,6 @@ struct warm_cb
 	bool upd_inter;
 	int cor_type_ws;
 	float cor_prob_ws;
-	int cor_type_inter;
-	float cor_prob_inter;
 	int vali_method;
 	int wt_scheme;
 	int lambda_scheme;
@@ -205,7 +196,7 @@ void copy_example_to_adf(warm_cb& data, example& ec)
   }
 }
 
-float minimax_lambda(float epsilon, size_t num_actions, size_t warm_start_period, size_t interaction_period)
+float minimax_lambda(float epsilon, size_t num_actions)
 {
 	return epsilon / (num_actions + epsilon);
 }
@@ -238,7 +229,7 @@ void setup_lambdas(warm_cb& data)
 	if (data.lambda_scheme == ABS_CENTRAL || data.lambda_scheme == ABS_CENTRAL_ZEROONE)
 		lambdas[mid] = 0.5;
 	else
-		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions, data.ws_period, data.inter_period);
+		lambdas[mid] = minimax_lambda(data.epsilon, data.num_actions);
 
 	for (uint32_t i = mid; i > 0; i--)
 		lambdas[i-1] = lambdas[i] / 2.0;
@@ -276,11 +267,6 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
 		cor_prob = data.cor_prob_ws;
 		cor_type = data.cor_type_ws;
 	}
-	else
-	{
-		cor_prob = data.cor_prob_inter;
-		cor_type = data.cor_type_inter;
-	}
 
 	float randf = merand48(data.all->random_state);
 	if (randf < cor_prob)
@@ -313,20 +299,11 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
 	float total_train_size = ws_train_size + inter_train_size;
 	float total_weight = (1-data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
-	if (data.wt_scheme == INSTANCE_WT)
-	{
-		if (ec_type == WARM_START)
-			weight_multiplier = (1-data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN);
-		else
-			weight_multiplier = data.lambdas[i] * total_train_size / (total_weight + FLT_MIN);
-	}
+	if (ec_type == WARM_START)
+		weight_multiplier = (1-data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN);
 	else
-	{
-		if (ec_type == WARM_START)
-			weight_multiplier = (1-data.lambdas[i]) * total_train_size / ws_train_size;
-		else
-			weight_multiplier = data.lambdas[i] * total_train_size / inter_train_size;
-	}
+		weight_multiplier = data.lambdas[i] * total_train_size / (total_weight + FLT_MIN);
+
 	return weight_multiplier;
 }
 
@@ -351,48 +328,6 @@ void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, example& ec)
 }
 
 template<bool use_cs>
-void accumu_costs_wsv_adf(warm_cb& data, multi_learner& base)
-{
-	uint32_t ws_vali_size = data.ws_vali_size;
-	//only update cumulative costs at the end of every epoch
-	if ( data.inter_iter >= 1 && abs( log2(data.inter_iter+1) - floor(log2(data.inter_iter+1)) ) < 1e-4 )
-	{
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-			data.cumulative_costs[i] = 0;
-
-		uint32_t num_epochs = ceil(log2(data.inter_period));
-		uint32_t epoch = log2(data.inter_iter+1) - 1;
-		float batch_vali_size = ((float) ws_vali_size) / num_epochs;
-		uint32_t lb, ub;
-
-		if (data.vali_method == WS_VALI_SPLIT)
-		{
-			lb = ceil(batch_vali_size * epoch);
-			ub = ceil(batch_vali_size * (epoch + 1));
-		}
-		else
-		{
-			lb = 0;
-			ub = ws_vali_size;
-		}
-
-		for (uint32_t i = 0; i < data.choices_lambda; i++)
-		{
-			for (uint32_t j = lb; j < ub; j++)
-			{
-				example* ec_vali = data.ws_vali[j];
-				uint32_t pred_label = predict_sublearner_adf(data, base, *ec_vali, i);
-
-				if (use_cs)
-					data.cumulative_costs[i] += loss_cs(data, ec_vali->l.cs.costs, pred_label);
-				else
-					data.cumulative_costs[i] += loss(data, ec_vali->l.multi.label, pred_label);
-			}
-		}
-	}
-}
-
-template<bool use_cs>
 void add_to_vali(warm_cb& data, example& ec)
 {
 	//TODO: set the first parameter properly
@@ -413,7 +348,7 @@ uint32_t predict_sup_adf(warm_cb& data, multi_learner& base, example& ec)
 }
 
 template<bool use_cs>
-void learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, int ec_type)
+void learn_sup_adf(warm_cb& data, example& ec, int ec_type)
 {
 	copy_example_to_adf(data, ec);
 	//generate cost-sensitive label (for cost-sensitive learner's temporary use)
@@ -459,7 +394,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, example& ec, i
 	uint32_t action = predict_sup_adf(data, base, ec);
 
 	if (ind_update(data, ec_type))
-		learn_sup_adf<use_cs>(data, base, ec, ec_type);
+		learn_sup_adf<use_cs>(data, ec, ec_type);
 
 	ec.pred.multiclass = action;
 }
@@ -525,14 +460,11 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, example& ec
 	else
 		cl.cost = loss(data, ec.l.multi.label, cl.action);
 
-	if (ec_type == INTERACTION && data.vali_method == INTER_VALI)
+	if (ec_type == INTERACTION)
 		accumu_costs_iv_adf(data, base, ec);
 
 	if (ind_update(data, ec_type))
 		learn_bandit_adf(data, base, ec, ec_type);
-
-	if (ec_type == INTERACTION && (data.vali_method == WS_VALI_SPLIT || data.vali_method == WS_VALI_NOSPLIT))
-		accumu_costs_wsv_adf<use_cs>(data, base);
 
 	ec.pred.multiclass = cl.action;
 }
@@ -560,22 +492,16 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 		data.mc_label = ec.l.multi;
 		if (data.ws_iter < data.ws_period)
 			ec.l.multi.label = corrupt_action(data, data.mc_label.label, WARM_START);
-		else if (data.inter_iter < data.inter_period)
-			ec.l.multi.label = corrupt_action(data, data.mc_label.label, INTERACTION);
 	}
 
 	// Warm start phase
 	if (data.ws_iter < data.ws_period)
 	{
-		if (data.ws_iter < data.ws_train_size)
-		{
 			if (data.ws_type == SUPERVISED_WS)
 				predict_or_learn_sup_adf<use_cs>(data, base, ec, WARM_START);
 			else if (data.ws_type == BANDIT_WS)
 				predict_or_learn_bandit_adf<use_cs>(data, base, ec, WARM_START);
-		}
-		else
-			add_to_vali<use_cs>(data, ec);
+
 		ec.weight = 0;
 		data.ws_iter++;
 	}
@@ -589,13 +515,18 @@ void predict_or_learn_adf(warm_cb& data, multi_learner& base, example& ec)
 	}
 	// Skipping the rest of the examples
 	else
-		ec.weight = 0;
+	{
+    ec.weight = 0;
+    ec.pred.multiclass = 1;
+  }
 
 	// Restore the original labels
 	if (use_cs)
 		ec.l.cs = data.cs_label;
 	else
 		ec.l.multi = data.mc_label;
+
+  cout<<ec.weight<<endl;
 
 }
 
@@ -623,16 +554,9 @@ void init_adf_data(warm_cb& data, const size_t num_actions)
 	}
 	data.cbls = calloc_or_throw<CB::label>(num_actions);
 
-	if (data.vali_method == WS_VALI_SPLIT || data.vali_method == WS_VALI_NOSPLIT)
-	{
-		data.ws_train_size = ceil(data.ws_period / 2.0);
-		data.ws_vali_size = data.ws_period - data.ws_train_size;
-	}
-	else
-	{
-		data.ws_train_size = data.ws_period;
-		data.ws_vali_size = 0;
-	}
+	data.ws_train_size = data.ws_period;
+	data.ws_vali_size = 0;
+
 	data.ws_iter = 0;
 	data.inter_iter = 0;
 
@@ -664,18 +588,14 @@ base_learner* warm_cb_setup(options_i& options, vw& all)
       .add(make_option("interaction_update", data->upd_inter).help("indicator of interaction updates"))
       .add(make_option("corrupt_type_warm_start", data->cor_type_ws).default_value(UAR).help("type of label corruption in the warm start phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)"))
       .add(make_option("corrupt_prob_warm_start", data->cor_prob_ws).default_value(0.f).help("probability of label corruption in the warm start phase"))
-      .add(make_option("corrupt_type_interaction", data->cor_type_inter).default_value(UAR).help("type of label corruption in the interaction phase (1: uniformly at random, 2: circular, 3: replacing with overwriting label)"))
-      .add(make_option("corrupt_prob_interaction", data->cor_prob_inter).default_value(0.f).help("probability of label corruption in the interaction phase"))
       .add(make_option("choices_lambda", data->choices_lambda).default_value(1U).help("the number of candidate lambdas to aggregate (lambda is the importance weight parameter between the two sources)"))
       .add(make_option("lambda_scheme", data->lambda_scheme).default_value(ABS_CENTRAL).help("The scheme for generating candidate lambda set (1: center lambda=0.5, 2: center lambda=0.5, min lambda=0, max lambda=1, 3: center lambda=epsilon/(#actions+epsilon), 4: center lambda=epsilon/(#actions+epsilon), min lambda=0, max lambda=1); the rest of candidate lambda values are generated using a doubling scheme"))
-      .add(make_option("weighting_scheme", data->wt_scheme).default_value(INSTANCE_WT).help("weighting scheme (1: per instance weighting, where for every lambda, each contextual bandit example have weight lambda/(1-lambda) times that of each warm start example, 2: per dataset weighting, where for every lambda, the contextual bandit dataset has total weight lambda/(1-lambda) times that of the warm start dataset)"))
-      .add(make_option("validation_method", data->vali_method).default_value(INTER_VALI).help("lambda selection criterion (1: using contextual bandit examples with progressive validation, 2: using warm start examples, with fresh validation examples at each epoch, 3: using warm start examples, with a single validation set throughout)"))
       .add(make_option("overwrite_label", data->overwrite_label).default_value(1U).help("the label used by type 3 corruptions (overwriting)"))
       .add(make_option("sim_bandit", data->sim_bandit).help("simulate contextual bandit updates on warm start examples"));
 
   options.add_and_parse(new_options);
 
-  if(use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start") || options.was_supplied("corrupt_type_interaction") || options.was_supplied("corrupt_prob_interaction") ))
+  if( use_cs && ( options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start") ) )
   {
     THROW("label corruption on cost-sensitive examples not currently supported");
   }
