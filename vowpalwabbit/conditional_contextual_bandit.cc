@@ -5,6 +5,7 @@
 #include "cache.h"
 
 #include <numeric>
+#include <algorithm>
 
 using namespace VW;
 
@@ -198,7 +199,7 @@ namespace CCB {
       THROW("error NaN cost: " << split_colons[2]);
 
     split_colons.clear();
-    
+
     for (int i = 1; i < split_commas.size(); i++)
     {
       tokenize(':', split_commas[i], split_colons);
