@@ -41,8 +41,13 @@ option(LTO "Enable Link Time optimization (Requires Release build, only works wi
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
 # Add -ffast-math for speed, remove for testability.
-set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
 set(linux_debug_config -g -O0)
+
+if((NOT PROFILE) AND (NOT GCOV))
+  set(linux_release_config ${linux_release_config} -fomit-frame-pointer)
+endif()
+
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
 set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
 
