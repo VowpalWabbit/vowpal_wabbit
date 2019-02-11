@@ -31,7 +31,13 @@ license as described in the file LICENSE.
 #endif
 
 #else
+
+#ifdef VWDLL_EXPORTS
+#define VW_DLL_MEMBER __attribute__ ((__visibility__ ("default")))
+#else
 #define VW_DLL_MEMBER
+#endif
+
 #endif
 
 #ifdef __cplusplus
