@@ -104,10 +104,15 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+set(LINK_THREADS Threads::Threads)
+if(STATIC_LINK_VW)
+  set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
-find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
 add_subdirectory(cluster)
