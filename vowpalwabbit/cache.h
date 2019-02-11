@@ -16,3 +16,18 @@ void cache_tag(io_buf& cache, v_array<char> tag);
 void cache_features(io_buf& cache, example* ae, uint64_t mask);
 void output_byte(io_buf& cache, unsigned char s);
 void output_features(io_buf& cache, unsigned char index, features& fs, uint64_t mask);
+
+namespace VW
+{
+  template <typename T>
+  T read_object(io_buf& cache)
+  {
+    char* c;
+    size_t next_read_size = sizeof(T);
+    if (cache.buf_read(c, next_read_size) < next_read_size)
+      THROW("Failed to read CCB label cache");
+    return *reinterpret_cast<T*>(c);
+  }
+
+  uint32_t convert(size_t number);
+}

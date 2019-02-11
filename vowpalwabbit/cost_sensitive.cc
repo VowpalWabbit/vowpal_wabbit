@@ -118,16 +118,7 @@ void copy_label(void* dst, void* src)
   }
 }
 
-bool substring_eq(substring ss, const char* str)
-{
-  size_t len_ss = ss.end - ss.begin;
-  size_t len_str = strlen(str);
-  if (len_ss != len_str)
-    return false;
-  return (strncmp(ss.begin, str, len_ss) == 0);
-}
-
-void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+void parse_label(parser* p, shared_data*sd, void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
   ld->costs.clear();
@@ -137,12 +128,12 @@ void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     float fx;
     name_value(words[0], p->parse_name, fx);
-    bool eq_shared = substring_eq(p->parse_name[0], "***shared***");
-    bool eq_label = substring_eq(p->parse_name[0], "***label***");
+    bool eq_shared = substring_equal(p->parse_name[0], "***shared***");
+    bool eq_label = substring_equal(p->parse_name[0], "***label***");
     if (!sd->ldict)
     {
-      eq_shared |= substring_eq(p->parse_name[0], "shared");
-      eq_label |= substring_eq(p->parse_name[0], "label");
+      eq_shared |= substring_equal(p->parse_name[0], "shared");
+      eq_label |= substring_equal(p->parse_name[0], "label");
     }
     if (eq_shared || eq_label)
     {
