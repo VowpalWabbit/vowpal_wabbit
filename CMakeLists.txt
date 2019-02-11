@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 # Only allow Release and Debug configurations
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 project(vowpal_wabbit C CXX)
