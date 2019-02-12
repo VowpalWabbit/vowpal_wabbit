@@ -80,7 +80,6 @@ parser* new_parser()
   ret.ring_size = 1 << 8;
   ret.done = false;
   ret.used_index = 0;
-  ret.jsonp = nullptr;
 
   return &ret;
 }
@@ -240,14 +239,6 @@ void finalize_source(parser* p)
   delete p->input;
   p->output->close_files();
   delete p->output;
-  if (p->jsonp)
-  {
-    if (p->audit)
-      delete (json_parser<true>*)p->jsonp;
-    else
-      delete (json_parser<false>*)p->jsonp;
-    p->jsonp = nullptr;
-  }
 }
 
 void make_write_cache(vw& all, string& newname, bool quiet)
@@ -563,21 +554,28 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
-        // TODO: change to class with virtual method
-        // --invert_hash requires the audit parser version to save the extra information.
-        if (all.audit || all.hash_inv)
+        // json_reader_override allows for reductions to override the json parser used.
+        if(all.p->json_reader_override)
         {
-          all.p->reader = &read_features_json<true>;
-          all.p->audit = true;
-          all.p->jsonp = new json_parser<true>;
+          all.p->reader = all.p->json_reader_override;
         }
         else
         {
-          all.p->reader = &read_features_json<false>;
-          all.p->audit = false;
-          all.p->jsonp = new json_parser<false>;
+          // TODO: change to class with virtual method
+          // --invert_hash requires the audit parser version to save the extra information.
+          if (all.audit || all.hash_inv)
+          {
+            all.p->reader = &read_features_json<true>;
+            all.p->json_parser_context = std::make_shared<json_parser<true>>();
+          }
+          else
+          {
+            all.p->reader = &read_features_json<false>;
+            all.p->json_parser_context = std::make_shared<json_parser<false>>();
+          }
         }
 
+        all.p->audit = (all.audit || all.hash_inv);
         all.p->decision_service_json = input_options.dsjson;
       }
       else

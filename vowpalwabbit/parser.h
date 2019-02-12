@@ -22,8 +22,12 @@ license as described in the file LICENSE.
 #include <condition_variable>
 #endif
 
+#include <memory>
+
 struct vw;
 struct input_options;
+
+using reader_fn_t = int (*)(vw*, v_array<example*>& examples);
 
 struct parser
 {
@@ -32,7 +36,11 @@ struct parser
   v_array<substring> name;
 
   io_buf* input;  // Input source(s)
-  int (*reader)(vw*, v_array<example*>& examples);
+
+  reader_fn_t reader;
+
+  reader_fn_t json_reader_override;
+
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf* output;   // Where to output the cache.
@@ -75,7 +83,7 @@ struct parser
 
   bool audit;
   bool decision_service_json;
-  void* jsonp;  // either a json_parser<true> or a json_parser<false>
+  std::shared_ptr<void> json_parser_context;
 };
 
 parser* new_parser();
