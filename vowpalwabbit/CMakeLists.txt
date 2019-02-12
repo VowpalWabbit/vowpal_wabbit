@@ -63,7 +63,7 @@ source_group(explore FILES ${explore_all_headers})
 
 add_library(vw ${vw_all_sources} ${vw_all_headers} ${explore_all_headers})
 
-target_link_libraries(vw PUBLIC rapidjson Boost::program_options Threads::Threads ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
+target_link_libraries(vw PUBLIC rapidjson Boost::program_options ${LINK_THREADS} ZLIB::ZLIB allreduce ${CMAKE_DL_LIBS})
 
 if(GCOV)
   target_link_libraries(vw PUBLIC gcov)
