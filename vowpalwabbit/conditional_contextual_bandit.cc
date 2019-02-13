@@ -11,11 +11,6 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-bool CCB::ec_is_example_header(example& ec)
-{
-  return ec.l.conditional_contextual_bandit.type == example_type::shared;
-}
-
 void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
 {
   // TODO: Implement for CCB
@@ -23,13 +18,93 @@ void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, boo
 }
 
 template <bool is_learn>
-void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
-{
+void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
+
   std::cout << "CCB:do_actual_learning: " << (is_learn ? "train" : "test") << std::endl;
-  if (is_learn)
-    multiline_learn_or_predict<true>(base, examples, (uint64_t)0);
-  else
-    multiline_learn_or_predict<false>(base, examples, (uint64_t)0);
+
+  //save CB output
+  CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
+
+  //get decisions, actions and shared parts of the multiline example
+  std::vector<example*> decisions, actions;
+  example* shared;
+  for (auto ex : examples) {
+    switch (ex->l.conditional_contextual_bandit.type) {
+      case CCB::example_type::shared:
+        shared = ex;
+        break;
+      case CCB::example_type::action:
+        actions.push_back(ex);
+        break;
+      case CCB::example_type::decision:
+        decisions.push_back(ex);
+        break;
+      default:
+        break;
+    }
+  }
+
+  //TODO inject decisions into shared (share := shared + decision features)
+
+  //move CCB label to CB labels
+
+  //shared label: set the proba to -1 and the cost to float_max (convention for CB to identify shared data)
+  CB::cb_class f;
+  f.probability = -1.f;
+  f.cost = FLT_MAX;
+
+  shared->l.cb.costs = v_init<CB::cb_class>();
+  shared->l.cb.costs.push_back(f);
+
+  std::set<uint32_t> excluded_action_ids;
+
+  //for each decision, attach the possible label to the chosen action and perform a CB call
+  for (auto decision : decisions) {
+
+    //create a multiline example for successive CB calls
+    multi_ex cb_examples;
+    cb_examples.push_back(shared);
+
+    //sanity check
+    if (decision->l.conditional_contextual_bandit.outcome == nullptr)
+      THROW("ccb_adf_explore: badly formatted example - missing decision label - null outcome");
+    if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      THROW("ccb_adf_explore: badly formatted example - missing decision label");
+
+    //read the ccb label
+    f.cost = decision->l.conditional_contextual_bandit.outcome->cost;
+    f.probability = decision->l.conditional_contextual_bandit.outcome->probabilities[0].score;
+    f.action = decision->l.conditional_contextual_bandit.outcome->probabilities[0].action;
+
+    for (auto action : actions) {
+      action->l.cb.costs = v_init<CB::cb_class>();//default (valid) cb label
+      if (f.action == action->example_counter) {//set the label for the chosen action
+        action->l.cb.costs.push_back(f);
+      }
+
+      //filter actions already chosen
+      if (excluded_action_ids.find(action->example_counter) == excluded_action_ids.end())
+        cb_examples.push_back(action);
+    }
+
+    //call cb_explore_adf
+    multiline_learn_or_predict<true>(base, cb_examples, (uint64_t)0);
+
+    //save the predicted action/scores
+    auto copy = v_init<ACTION_SCORE::action_score>();
+    copy_array(copy, cb_examples[0]->pred.a_s);
+    decision_scores.push_back(copy);
+
+    //update excluded actions
+    excluded_action_ids.insert(f.action);
+  }
+
+  //save the prediction type
+  examples[0]->pred.decision_scores = decision_scores;
+
+  //clean polylabel objects. If the polylabel is changed, it breaks the label release in delete_label
+  shared->l.cb.costs.delete_v();
+  for (auto action : actions) action->l.cb.costs.delete_v();
 }
 
 base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
@@ -53,12 +128,14 @@ base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
   }
 
   multi_learner* base = as_multiline(setup_base(options, all));
-  all.p->lp = CB::cb_label;
-  all.label_type = label_type::cb;
+  all.p->lp = CCB::ccb_label_parser;
+  all.label_type = label_type::ccb;
 
   // Extract from lower level reductions.
   learner<ccb, multi_ex>& l =
       init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::decision_probs);
+
+  //l.set_finish_example(CB_ADF::finish_multiline_example);
 
   return make_base(l);
 }
