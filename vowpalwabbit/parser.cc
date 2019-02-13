@@ -554,28 +554,21 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
 
       if (input_options.json || input_options.dsjson)
       {
-        // json_reader_override allows for reductions to override the json parser used.
-        if(all.p->json_reader_override)
+        // TODO: change to class with virtual method
+        // --invert_hash requires the audit parser version to save the extra information.
+        if (all.audit || all.hash_inv)
         {
-          all.p->reader = all.p->json_reader_override;
+          all.p->reader = &read_features_json<true>;
+          all.p->audit = true;
+          all.p->json_parser_context = std::make_shared<json_parser<true>>();
         }
         else
         {
-          // TODO: change to class with virtual method
-          // --invert_hash requires the audit parser version to save the extra information.
-          if (all.audit || all.hash_inv)
-          {
-            all.p->reader = &read_features_json<true>;
-            all.p->json_parser_context = std::make_shared<json_parser<true>>();
-          }
-          else
-          {
-            all.p->reader = &read_features_json<false>;
-            all.p->json_parser_context = std::make_shared<json_parser<false>>();
-          }
+          all.p->reader = &read_features_json<false>;
+          all.p->audit = false;
+          all.p->json_parser_context = std::make_shared<json_parser<false>>();
         }
 
-        all.p->audit = (all.audit || all.hash_inv);
         all.p->decision_service_json = input_options.dsjson;
       }
       else
