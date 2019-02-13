@@ -77,7 +77,7 @@ struct parser
 
   bool audit;
   bool decision_service_json;
-  std::shared_ptr<void> json_parser_context;
+  std::shared_ptr<void> jsonp;
 };
 
 parser* new_parser();
