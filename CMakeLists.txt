@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 # Only allow Release and Debug configurations
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+endif()
 
 project(vowpal_wabbit C CXX)
 set(CMAKE_CXX_STANDARD 11)
@@ -21,7 +24,6 @@ ProcessorCount(NumProcessors)
 message(STATUS "Number of processors: ${NumProcessors}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nprocs.txt ${NumProcessors})
 
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
 
 option(PROFILE "Turn on flags required for profiling" OFF)
 option(VALGRIND_PROFILE "Turn on flags required for profiling with valgrind" OFF)
@@ -34,11 +36,33 @@ option(BUILD_TESTS "Build and enable tests." ON)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
 option(BUILD_DOCS "Add documentation targets." Off)
+option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
+
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CONFIG)
 
 # Add -ffast-math for speed, remove for testability.
-set(linux_release_config -O3 -fomit-frame-pointer -fno-strict-aliasing -msse2 -mfpmath=sse)
+set(linux_release_config -O3 -fno-strict-aliasing -msse2 -mfpmath=sse)
 set(linux_debug_config -g -O0)
-set(linux_flags $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+
+if((NOT PROFILE) AND (NOT GCOV))
+  set(linux_release_config ${linux_release_config} -fomit-frame-pointer)
+endif()
+
+#Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
+set(linux_flags -fvisibility=hidden $<$<CONFIG:DEBUG>:${linux_debug_config}> $<$<CONFIG:RELEASE>:${linux_release_config}>)
+
+if(LTO)
+	if(NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		message(FATAL_ERROR "LTO requires Clang")
+	endif()
+	if("${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "8.0.0")
+		message(FATAL_ERROR "LTO requires Clang 8.0 (llvm 3.9) or later")
+	endif()
+	If("${CONFIG}" STREQUAL "DEBUG")
+		message(FATAL_ERROR "LTO only works with Release builds")
+	endif()
+  set(linux_flags ${linux_flags} -flto=thin)
+endif()
 
 # for profiling -- note that it needs to be gcc
 if(PROFILE)
@@ -80,10 +104,15 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+set(LINK_THREADS Threads::Threads)
+if(STATIC_LINK_VW)
+  set(LINK_THREADS -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+endif()
 
 # Align and foreach are also required, for some reason they can't be specified as components though.
 find_package(Boost REQUIRED COMPONENTS program_options system thread unit_test_framework)
-find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
 add_subdirectory(cluster)
