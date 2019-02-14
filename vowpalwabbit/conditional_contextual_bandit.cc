@@ -11,19 +11,8 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-void CCB::print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores)
-{
-  // TODO: Implement for CCB
-  throw std::runtime_error("CCB:print_update not implemented");
-}
-
 template <bool is_learn>
 void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
-
-  std::cout << "CCB:do_actual_learning: " << (is_learn ? "train" : "test") << std::endl;
-
-  //save CB output
-  CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
 
   //get decisions, actions and shared parts of the multiline example
   std::vector<example*> decisions, actions;
@@ -40,63 +29,80 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
         decisions.push_back(ex);
         break;
       default:
-        break;
+        THROW("ccb_adf_explore: badly formatted example - invalid example type");
     }
   }
 
+  //sanity check
+  if (decisions.size() > actions.size())
+    THROW("ccb_adf_explore: badly formatted example - number of actions " << actions.size() << " must be greater than the number of decisions " << decisions.size());
+
   //TODO inject decisions into shared (share := shared + decision features)
+  //TODO add tests and UT
 
-  //move CCB label to CB labels
-
-  //shared label: set the proba to -1 and the cost to float_max (convention for CB to identify shared data)
+  //set the CB label in the shared example
+  //set the proba to -1 and the cost to float_max (convention for CB to identify shared data)
   CB::cb_class f;
   f.probability = -1.f;
   f.cost = FLT_MAX;
-
   shared->l.cb.costs = v_init<CB::cb_class>();
   shared->l.cb.costs.push_back(f);
 
-  std::set<uint32_t> excluded_action_ids;
+  std::set<uint32_t> blacklist_actions, whitelist_actions;
+  CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
 
-  //for each decision, attach the possible label to the chosen action and perform a CB call
+  //for each decision, attach the label to the chosen action and perform a CB call
   for (auto decision : decisions) {
-
-    //create a multiline example for successive CB calls
-    multi_ex cb_examples;
+    multi_ex cb_examples;//multiline example for the cb_explore_adf call
     cb_examples.push_back(shared);
 
     //sanity check
-    if (decision->l.conditional_contextual_bandit.outcome == nullptr)
-      THROW("ccb_adf_explore: badly formatted example - missing decision label - null outcome");
-    if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
-      THROW("ccb_adf_explore: badly formatted example - missing decision label");
+    if (is_learn) {
+      if (decision->l.conditional_contextual_bandit.outcome == nullptr)
+        THROW("ccb_adf_explore: badly formatted example - missing label");
+      if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+        THROW("ccb_adf_explore: badly formatted example - missing label probability");
+    }
 
     //read the ccb label
-    f.cost = decision->l.conditional_contextual_bandit.outcome->cost;
-    f.probability = decision->l.conditional_contextual_bandit.outcome->probabilities[0].score;
-    f.action = decision->l.conditional_contextual_bandit.outcome->probabilities[0].action;
+    if (is_learn) {
+      f.cost = decision->l.conditional_contextual_bandit.outcome->cost;
+      f.probability = decision->l.conditional_contextual_bandit.outcome->probabilities[0].score;
+      f.action = decision->l.conditional_contextual_bandit.outcome->probabilities[0].action;
+    }
+    whitelist_actions.clear();
+    for (uint32_t a : decision->l.conditional_contextual_bandit.explicit_included_actions) whitelist_actions.insert(a);
 
     for (auto action : actions) {
-      action->l.cb.costs = v_init<CB::cb_class>();//default (valid) cb label
-      if (f.action == action->example_counter) {//set the label for the chosen action
+      action->l.cb.costs = v_init<CB::cb_class>();//set a default (valid) cb label
+      if (is_learn && f.action == action->example_counter) //set the label for the chosen action
         action->l.cb.costs.push_back(f);
-      }
 
-      //filter actions already chosen
-      if (excluded_action_ids.find(action->example_counter) == excluded_action_ids.end())
-        cb_examples.push_back(action);
+      //filter actions using the white list (if it was provided)
+      if (!whitelist_actions.empty() && whitelist_actions.find((uint32_t)action->example_counter) == whitelist_actions.end())
+        continue;
+
+      //filter actions already chosen by previous decisions
+      if (blacklist_actions.find((uint32_t)action->example_counter) != blacklist_actions.end())
+        continue;
+
+      cb_examples.push_back(action);
     }
 
     //call cb_explore_adf
     multiline_learn_or_predict<true>(base, cb_examples, (uint64_t)0);
+
+    //correct action ids (because some actions were skipped in cb_examples)
+    for (auto& action_score : cb_examples[0]->pred.a_s)
+      action_score.action = (uint32_t)cb_examples[action_score.action + 1]->example_counter;
 
     //save the predicted action/scores
     auto copy = v_init<ACTION_SCORE::action_score>();
     copy_array(copy, cb_examples[0]->pred.a_s);
     decision_scores.push_back(copy);
 
-    //update excluded actions
-    excluded_action_ids.insert(f.action);
+    //update exclusion list with the chosen action
+    blacklist_actions.insert(copy[0].action);
   }
 
   //save the prediction type
@@ -135,8 +141,6 @@ base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
   learner<ccb, multi_ex>& l =
       init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::decision_probs);
 
-  //l.set_finish_example(CB_ADF::finish_multiline_example);
-
   return make_base(l);
 }
 
@@ -162,7 +166,7 @@ namespace CCB {
       auto size_probs = read_object<uint32_t>(cache);
       read_count += sizeof(uint32_t);
 
-      for(auto i = 0; i < size_probs; i++)
+      for(uint32_t i = 0; i < size_probs; i++)
       {
         ld->outcome->probabilities.push_back(read_object<ACTION_SCORE::action_score>(cache));
         read_count += sizeof(ACTION_SCORE::action_score);
@@ -172,7 +176,7 @@ namespace CCB {
     auto size_includes = read_object<uint32_t>(cache);
     read_count += sizeof(uint32_t);
 
-    for (auto i = 0; i < size_includes; i++)
+    for (uint32_t i = 0; i < size_includes; i++)
     {
       ld->explicit_included_actions.push_back(read_object<uint32_t>(cache));
       read_count += sizeof(uint32_t);

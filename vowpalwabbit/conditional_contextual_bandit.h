@@ -27,9 +27,6 @@ namespace CCB {
     // The cost of this class
     float cost;
 
-    // The index of the decision for this label, should this be implicit?
-    //uint32_t decision_id;
-
     // Either probability for top action or for all actions in action set.
     // Top action is always in first position.
     ACTION_SCORE::action_scores probabilities;
@@ -58,7 +55,4 @@ namespace CCB {
   };
 
   extern label_parser ccb_label_parser;
-
-  bool ec_is_example_header(example& ec);
-  void print_update(vw& all, bool is_test, example& ec, multi_ex* ec_seq, bool action_scores);
 }
