@@ -141,14 +141,6 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-bool member(v_array<int> ids, int id)
-{
-  for (size_t i = 0; i < ids.size(); i++)
-    if (ids[i] == id)
-      return true;
-  return false;
-}
-
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
@@ -170,7 +162,10 @@ void reset_source(vw& all, size_t numbits)
       else
       {
         int fd = input->files.pop();
-        if (!member(all.final_prediction_sink, (size_t)fd))
+        const auto& fps = all.final_prediction_sink;
+
+        // If the current popped file is not in the list of final predictions sinks, close it.
+        if(std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
           io_buf::close_file_or_socket(fd);
       }
     input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
