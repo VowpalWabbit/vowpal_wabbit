@@ -6,6 +6,7 @@
 
 #include <numeric>
 #include <algorithm>
+#include <unordered_set>
 
 using namespace LEARNER;
 using namespace VW;
@@ -53,7 +54,7 @@ void learn_or_predict(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
   shared->l.cb.costs = v_init<CB::cb_class>();
   shared->l.cb.costs.push_back(f);
 
-  std::set<uint32_t> excludelist, includelist;
+  std::unordered_set<uint32_t> excludelist, includelist;
   CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
 
   //for each decision, attach the label to the chosen action and perform a CB call
