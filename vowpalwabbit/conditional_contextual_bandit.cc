@@ -12,13 +12,10 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace CCB {
-  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
-  struct ccb {};
-}
+struct ccb {};
 
 template <bool is_learn>
-void learn_or_predict(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
+void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples) {
 
   //get decisions, actions and shared parts of the multiline example
   std::vector<example*> decisions, actions;
