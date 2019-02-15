@@ -296,7 +296,6 @@
     <ClCompile Include="lrq.cc" />
     <ClCompile Include="lrqfa.cc" />
     <ClCompile Include="log_multi.cc" />
-    <ClCompile Include="parse_example_json.cc" />
     <ClCompile Include="recall_tree.cc" />
     <ClCompile Include="best_constant.cc" />
     <ClCompile Include="global_data.cc" />

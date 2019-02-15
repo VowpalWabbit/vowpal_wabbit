@@ -29,7 +29,9 @@ license as described in the file LICENSE.
 
 #include "cb.h"
 #include "best_constant.h"
-#include <boost/algorithm/string.hpp>
+
+#include <algorithm>
+#include <vector>
 
 // portability fun
 #ifndef _WIN32
@@ -848,16 +850,10 @@ class BoolToBoolState : public BaseState<audit>
 struct DecisionServiceInteraction
 {
   std::string eventId;
-
   std::vector<unsigned> actions;
-
   std::vector<float> probabilities;
-
-  float probabilityOfDrop;
-
+  float probabilityOfDrop = 0.f;
   bool skipLearn{false};
-
-  DecisionServiceInteraction() : probabilityOfDrop(0.f) {}
 };
 
 template <bool audit>
@@ -937,8 +933,11 @@ class DecisionServiceState : public BaseState<audit>
 template <bool audit>
 struct Context
 {
+private:
+  std::unique_ptr<std::stringstream> error_ptr;
+
+public:
   vw* all;
-  std::stringstream* error_ptr;
 
   // last "<key>": encountered
   const char* key;
@@ -948,7 +947,7 @@ struct Context
   BaseState<audit>* previous_state;
 
   // the path of namespaces
-  v_array<Namespace<audit>> namespace_path;
+  std::vector<Namespace<audit>> namespace_path;
 
   v_array<example*>* examples;
   example* ex;
@@ -980,18 +979,10 @@ struct Context
 
   BaseState<audit>* root_state;
 
-  Context() : error_ptr(nullptr)
+  Context()
   {
-    namespace_path = v_init<Namespace<audit>>();
-    current_state = root_state = &default_state;
-  }
-
-  ~Context()
-  {
-    namespace_path.delete_v();
-
-    if (error_ptr)
-      delete error_ptr;
+    current_state = &default_state;
+    root_state = &default_state;
   }
 
   void init(vw* pall)
@@ -1001,13 +992,12 @@ struct Context
     key_length = 1;
     previous_state = nullptr;
     label_object_state.init(pall);
-    error_ptr = nullptr;
   }
 
   std::stringstream& error()
   {
     if (!error_ptr)
-      error_ptr = new std::stringstream;
+      error_ptr.reset(new std::stringstream{});
 
     return *error_ptr;
   }
@@ -1038,19 +1028,19 @@ struct Context
     if (ns.feature_count > 0)
     {
       auto feature_group = ns.feature_group;
-      // avoid duplicate insertion
-      for (unsigned char ns_char : ex->indices)
-        if (ns_char == feature_group)
-          goto done;
-
-      ex->indices.push_back(feature_group);
+      // Do not insert feature_group if it already exists.
+      if(std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
+      {
+        ex->indices.push_back(feature_group);
+      }
     }
 
-  done:
-    return namespace_path.pop().return_state;
+    auto return_state = namespace_path.back().return_state;
+    namespace_path.pop_back();
+    return return_state;
   }
 
-  Namespace<audit>& CurrentNamespace() { return *(namespace_path._end - 1); }
+  Namespace<audit>& CurrentNamespace() { return namespace_path.back(); }
 
   bool TransitionState(BaseState<audit>* next_state)
   {
@@ -1131,7 +1121,7 @@ void read_line_json(
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
-  json_parser<audit>* parser = (json_parser<audit>*)all.p->jsonp;
+  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
 
   VWReaderHandler<audit>& handler = parser->handler;
   handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
