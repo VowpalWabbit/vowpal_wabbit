@@ -22,6 +22,8 @@ license as described in the file LICENSE.
 #include <condition_variable>
 #endif
 
+#include <memory>
+
 struct vw;
 struct input_options;
 
@@ -75,7 +77,7 @@ struct parser
 
   bool audit;
   bool decision_service_json;
-  void* jsonp;  // either a json_parser<true> or a json_parser<false>
+  std::shared_ptr<void> jsonp;
 };
 
 parser* new_parser();
