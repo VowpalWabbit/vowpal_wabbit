@@ -1131,7 +1131,7 @@ void read_line_json(
   // string line_copy(line);
   // destructive parsing
   InsituStringStream ss(line);
-  json_parser<audit>* parser = (json_parser<audit>*)all.p->jsonp;
+  json_parser<audit>* parser = static_cast<json_parser<audit>*>(all.p->jsonp.get());
 
   VWReaderHandler<audit>& handler = parser->handler;
   handler.init(&all, &examples, &ss, line + strlen(line), example_factory, ex_factory_context);
