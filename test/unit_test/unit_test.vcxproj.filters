@@ -36,6 +36,12 @@
     <ClCompile Include="ccb_parser_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="json_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dsjson_parser_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
