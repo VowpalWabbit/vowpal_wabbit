@@ -89,20 +89,26 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
       cb_examples.push_back(action);
     }
 
-    //call cb_explore_adf
-    multiline_learn_or_predict<true>(base, cb_examples, (uint64_t)0);
+    if (cb_examples.size() > 1) {//at least 1 action was set in the example
+      //call cb_explore_adf
+      multiline_learn_or_predict<true>(base, cb_examples, (uint64_t)0);
 
-    //correct action ids (because some actions were skipped in cb_examples)
-    for (auto& action_score : cb_examples[0]->pred.a_s)
-      action_score.action = (uint32_t)cb_examples[action_score.action + 1]->example_counter;
+      //correct action ids (because some actions were skipped in cb_examples)
+      for (auto& action_score : cb_examples[0]->pred.a_s)
+        action_score.action = (uint32_t)cb_examples[action_score.action + 1]->example_counter;
 
-    //save the predicted action/scores
-    auto copy = v_init<ACTION_SCORE::action_score>();
-    copy_array(copy, cb_examples[0]->pred.a_s);
-    decision_scores.push_back(copy);
+      //save the predicted action/scores
+      auto copy = v_init<ACTION_SCORE::action_score>();
+      copy_array(copy, cb_examples[0]->pred.a_s);
+      decision_scores.push_back(copy);
 
-    //update exclusion list with the chosen action
-    blacklist_actions.insert(copy[0].action);
+      //update exclusion list with the chosen action
+      blacklist_actions.insert(copy[0].action);
+    }
+    else {
+      //no actions were provided, it was impossible to decide
+      decision_scores.push_back(v_init<ACTION_SCORE::action_score>());
+    }
   }
 
   //save the prediction type
