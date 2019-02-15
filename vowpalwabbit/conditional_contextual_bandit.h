@@ -47,12 +47,5 @@ namespace CCB {
     v_array<uint32_t> explicit_included_actions;
   };
 
-  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
-
-  struct ccb
-  {
-    //put here the ccb state
-  };
-
   extern label_parser ccb_label_parser;
 }

@@ -11,8 +11,13 @@ using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
+namespace CCB {
+  LEARNER::base_learner* ccb_explore_adf_setup(VW::config::options_i& options, vw& all);
+  struct ccb {};
+}
+
 template <bool is_learn>
-void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
+void learn_or_predict(CCB::ccb& data, multi_learner& base, multi_ex& examples) {
 
   //get decisions, actions and shared parts of the multiline example
   std::vector<example*> decisions, actions;
@@ -48,12 +53,13 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
   shared->l.cb.costs = v_init<CB::cb_class>();
   shared->l.cb.costs.push_back(f);
 
-  std::set<uint32_t> blacklist_actions, whitelist_actions;
+  std::set<uint32_t> excludelist, includelist;
   CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
 
   //for each decision, attach the label to the chosen action and perform a CB call
   for (auto decision : decisions) {
-    multi_ex cb_examples;//multiline example for the cb_explore_adf call
+    //multiline example for the cb_explore_adf call
+    multi_ex cb_examples;
     cb_examples.push_back(shared);
 
     //sanity check
@@ -70,8 +76,8 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
       f.probability = decision->l.conditional_contextual_bandit.outcome->probabilities[0].score;
       f.action = decision->l.conditional_contextual_bandit.outcome->probabilities[0].action;
     }
-    whitelist_actions.clear();
-    for (uint32_t a : decision->l.conditional_contextual_bandit.explicit_included_actions) whitelist_actions.insert(a);
+    includelist.clear();
+    for (uint32_t a : decision->l.conditional_contextual_bandit.explicit_included_actions) includelist.insert(a);
 
     for (auto action : actions) {
       action->l.cb.costs = v_init<CB::cb_class>();//set a default (valid) cb label
@@ -79,11 +85,11 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
         action->l.cb.costs.push_back(f);
 
       //filter actions using the white list (if it was provided)
-      if (!whitelist_actions.empty() && whitelist_actions.find((uint32_t)action->example_counter) == whitelist_actions.end())
+      if (!includelist.empty() && includelist.find((uint32_t)action->example_counter) == includelist.end())
         continue;
 
       //filter actions already chosen by previous decisions
-      if (blacklist_actions.find((uint32_t)action->example_counter) != blacklist_actions.end())
+      if (excludelist.find((uint32_t)action->example_counter) != excludelist.end())
         continue;
 
       cb_examples.push_back(action);
@@ -91,7 +97,7 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
 
     if (cb_examples.size() > 1) {//at least 1 action was set in the example
       //call cb_explore_adf
-      multiline_learn_or_predict<true>(base, cb_examples, (uint64_t)0);
+      multiline_learn_or_predict<true>(base, cb_examples, examples[0]->ft_offset);
 
       //correct action ids (because some actions were skipped in cb_examples)
       for (auto& action_score : cb_examples[0]->pred.a_s)
@@ -103,7 +109,7 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
       decision_scores.push_back(copy);
 
       //update exclusion list with the chosen action
-      blacklist_actions.insert(copy[0].action);
+      excludelist.insert(copy[0].action);
     }
     else {
       //no actions were provided, it was impossible to decide
@@ -121,7 +127,7 @@ void do_actual_learning(CCB::ccb& data, multi_learner& base, multi_ex& examples)
 
 base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
 {
-  free_ptr<ccb> data = scoped_calloc_or_throw<ccb>();
+  auto data = scoped_calloc_or_throw<ccb>();
   bool ccb_explore_adf_option = false;
   option_group_definition new_options("Conditional Contextual Bandit Exploration with Action Dependent Features");
   new_options
@@ -139,13 +145,13 @@ base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
     options.add_and_parse(new_options);
   }
 
-  multi_learner* base = as_multiline(setup_base(options, all));
+  auto base = as_multiline(setup_base(options, all));
   all.p->lp = CCB::ccb_label_parser;
   all.label_type = label_type::ccb;
 
   // Extract from lower level reductions.
   learner<ccb, multi_ex>& l =
-      init_learner(data, base, do_actual_learning<true>, do_actual_learning<false>, 1, prediction_type::decision_probs);
+      init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
   return make_base(l);
 }
