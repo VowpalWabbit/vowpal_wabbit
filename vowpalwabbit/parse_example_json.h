@@ -246,12 +246,29 @@ class LabelObjectState : public BaseState<audit>
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp);
+    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
     if (jsonp->mode == json_parser_mode::ccb)
     {
+      auto ld = (CCB::label*)&ctx.ex->l;
+
+      for (auto id : inc)
+      {
+        ld->explicit_included_actions.push_back(id);
+      }
+
       auto outcome = new CCB::conditional_contexual_bandit_outcome();
       outcome->cost = cb_label.cost;
-      //. TODO complete
+      if (actions.size() != probs.size())
+      {
+        THROW("Actions and probabilties must be the same length.");
+      }
+
+      for (size_t i = 0; i < this->actions.size(); i++)
+      {
+        outcome->probabilities.push_back({actions[i], probs[i]});
+      }
+
+      ld->outcome = outcome;
     }
     else if (found_cb)
     {
@@ -419,7 +436,7 @@ struct MultiState : BaseState<audit>
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp);
+    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
 
     // mark shared example
     if (jsonp->mode == json_parser_mode::cb)
@@ -450,7 +467,7 @@ struct MultiState : BaseState<audit>
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx.all->p->lp.default_label(&ctx.ex->l);
-    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp);
+    auto jsonp = static_cast<json_parser<audit>*>(ctx.all->p->jsonp.get());
     if (jsonp->mode == json_parser_mode::ccb)
     {
       ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action;
@@ -478,8 +495,15 @@ template <bool audit>
 struct DfState : BaseState<audit>
 {
   DfState() : BaseState<audit>("Df") {}
+  BaseState<audit>* saved;
 
-  BaseState<audit>* StartArray(Context<audit>& ctx) override { return this; }
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  {
+    // drain existing added namespace
+    // todo check bounds
+    saved = ctx.PopNamespace();
+    return this;
+  }
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
@@ -489,6 +513,9 @@ struct DfState : BaseState<audit>
     ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::decision;
 
     ctx.examples->push_back(ctx.ex);
+
+    // The end object logic assumes shared example so we need to take an extra one here. 
+    ctx.label_index_state.index = ctx.examples->size() - 2;
 
     // setup default namespace
     ctx.PushNamespace(" ", this);
@@ -500,6 +527,9 @@ struct DfState : BaseState<audit>
   {
     // return to shared example
     ctx.ex = (*ctx.examples)[0];
+
+    ctx.PushNamespace(" ", saved);
+
 
     return &ctx.default_state;
   }
@@ -711,14 +741,14 @@ class DefaultState : public BaseState<audit>
         return &ctx.array_uint_state;
       }
 
-      if (ctx.key_length == 2 && str[0] == 'a')
+      if (ctx.key_length == 2 && str[1] == 'a')
       {
         ctx.array_uint_state.output_array = &ctx.label_object_state.actions;
         ctx.array_uint_state.return_state = this;
         return &ctx.array_uint_state;
       }
 
-      if (ctx.key_length == 2 && str[0] == 'p')
+      if (ctx.key_length == 2 && str[1] == 'p')
       {
         ctx.array_float_state.output_array = &ctx.label_object_state.probs;
         ctx.array_float_state.return_state = this;
@@ -957,72 +987,84 @@ struct DecisionServiceInteraction
 template <bool audit>
 class DecisionListState : public BaseState<audit>
 {
-  size_t object_counter = 0;
-  bool object_started = false;
+  size_t decision_object_index = 0;
 
   std::vector<uint32_t> actions;
   std::vector<float> probs;
   float cost;
 
+  BaseState<audit>* old_root;
+
  public:
   DecisionListState() : BaseState<audit>("DecisionList") {}
 
-  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
-  {
-    if (length == 2 && str[0] == '_')
-    {
-      switch (str[1])
-      {
-        case 'a':
-          ctx.array_uint_state.output_array = &this->actions;
-          ctx.array_uint_state.return_state = this;
-          return &ctx.array_uint_state;
-        case 'p':
-          ctx.array_float_state.output_array = &this->probs;
-          ctx.array_float_state.return_state = this;
-          return &ctx.array_float_state;
-      }
-    }
-    else if (length == 11 && !strcmp(str, "_label_cost"))
-    {
-      ctx.float_state.output_float = &this->cost;
-      ctx.float_state.return_state = this;
-    }
+  //BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
+  //{
+  //  if (length == 2 && str[0] == '_')
+  //  {
+  //    switch (str[1])
+  //    {
+  //      case 'a':
+  //        ctx.array_uint_state.output_array = &this->actions;
+  //        ctx.array_uint_state.return_state = this;
+  //        return &ctx.array_uint_state;
+  //      case 'p':
+  //        ctx.array_float_state.output_array = &this->probs;
+  //        ctx.array_float_state.return_state = this;
+  //        return &ctx.array_float_state;
+  //    }
+  //  }
+  //  else if (length == 11 && !strcmp(str, "_label_cost"))
+  //  {
+  //    ctx.float_state.output_float = &this->cost;
+  //    ctx.float_state.return_state = this;
+  //  }
 
-    // ignore unknown properties
-    return ctx.default_state.Ignore(ctx, length);
-  }
+  //  // ignore unknown properties
+  //  return ctx.default_state.Ignore(ctx, length);
+  //}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
-    object_counter = 0;
+    decision_object_index = 0;
+
+    // Find start index of decision objects by iterating until we find the first decision example.
+    for (auto ex : *ctx.examples)
+    {
+      if (ex->l.conditional_contextual_bandit.type != CCB::example_type::decision)
+      {
+        decision_object_index++;
+      }
+    }
+    old_root = ctx.root_state;
+    ctx.root_state = this;
+
+    if (decision_object_index == 0)
+    {
+      THROW("Badly formed ccb example. Shared example is required.")
+    }
+
     return this;
   }
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
-    if (object_started)
-    {
-      THROW("Can't nest objects in _decisions");
-    }
+    // Set current example so that default state correctly sets the label.
+    ctx.ex = (*ctx.examples)[decision_object_index];
+    // The end object logic assumes shared example so we need to take one here.
+    ctx.label_index_state.index = decision_object_index - 1;
 
-    object_counter++;
-    object_started = true;
+    decision_object_index++;
 
-    // TODO clear objects
+     // Push a namespace so that default state can get back here when it reaches the end of the object.
+    ctx.PushNamespace(" ", this);
 
-    return this;
+    return &ctx.default_state;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType /* memberCount */) override
-  {
-    object_started = false;
-    auto ex = ctx.examples->operator[](object_counter - 1);
-    // ex->l.
-    return this;
-  }
-
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override { return &ctx.decision_service_state; }
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override {
+    ctx.root_state = old_root;
+    return &ctx.decision_service_state; }
 };
 
 template <bool audit>

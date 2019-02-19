@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
 {
   auto vw = VW::initialize("--dsjson --cb_adf --no_stdin", nullptr, false, nullptr, nullptr);
   // Remove once ccb is available.
-  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp);
+  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp.get());
   jsonp->mode = json_parser_mode::cb;
   std::string text = R"({
   "_label_cost": -1,
@@ -89,40 +89,29 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
 )";
 
   auto examples = parse_dsjson(*vw, text);
-  BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::decision);
+  BOOST_CHECK_EQUAL(examples.size(), 4);
+  // Shared example
+  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, -1.f, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].cost, FLT_MAX, FLOAT_TOL);
 
-  auto label1 = examples[3]->l.conditional_contextual_bandit;
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions[0], 1);
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions[1], 2);
-  BOOST_CHECK_CLOSE(label1.outcome->cost, 2.f, .0001f);
-  BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
-  BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .25f, .0001f);
+  // Action examples
+  BOOST_CHECK_EQUAL(examples[1]->l.cb.costs.size(), 0);
+  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs.size(), 1);
+  BOOST_CHECK_EQUAL(examples[3]->l.cb.costs.size(), 0);
 
-  auto label2 = examples[4]->l.conditional_contextual_bandit;
-  BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
-  BOOST_CHECK_CLOSE(label2.outcome->cost, 4.f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 2);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .75f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .25f, .0001f);
-
+  BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].probability, 0.8166667, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].cost, -1.0, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
+  
   // TODO: Make unit test dig out and verify features.
 }
 
-
 BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
-  auto vw = VW::initialize("--dsjson --no_stdin", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize("--ccb_explore_adf --dsjson --no_stdin", nullptr, false, nullptr, nullptr);
   // Remove once ccb is available.
-  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp);
+  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp.get());
   jsonp->mode = json_parser_mode::ccb;
   std::string text = R"({
     "Timestamp":"timestamp_utc",
@@ -194,8 +183,8 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 2);
   BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .75f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .25f, .0001f);
+  BOOST_CHECK_EQUAL(label2.outcome->probabilities[1].action, 1);
+  BOOST_CHECK_CLOSE(label2.outcome->probabilities[1].score, .25f, .0001f);
 
   // TODO: Make unit test dig out and verify features.
 }
