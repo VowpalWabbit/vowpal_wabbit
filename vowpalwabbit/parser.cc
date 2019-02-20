@@ -93,44 +93,30 @@ void set_compressed(parser* par)
 
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
-  v_array<char> t = v_init<char>();
 
-  try
+  size_t v_length;
+  buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  if (v_length > 61)
+    THROW("cache version too long, cache file is probably invalid");
+
+  if (v_length == 0)
+    THROW("cache version too short, cache file is probably invalid");
+
+  std::vector<char> t(v_length);
+  buf->read_file(filepointer, t.data(), v_length);
+  version_struct v_tmp(t.data());
+  if (v_tmp != version)
   {
-    size_t v_length;
-    buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
-    if (v_length > 61)
-      THROW("cache version too long, cache file is probably invalid");
-
-    if (v_length == 0)
-      THROW("cache version too short, cache file is probably invalid");
-
-    t.clear();
-    if (t.size() < v_length)
-      t.resize(v_length);
-
-    buf->read_file(filepointer, t.begin(), v_length);
-    version_struct v_tmp(t.begin());
-    if (v_tmp != version)
-    {
-      //      cout << "cache has possibly incompatible version, rebuilding" << endl;
-      t.delete_v();
-      return 0;
-    }
-
-    char temp;
-    if (buf->read_file(filepointer, &temp, 1) < 1)
-      THROW("failed to read");
-
-    if (temp != 'c')
-      THROW("data file is not a cache file");
-  }
-  catch (...)
-  {
-    t.delete_v();
+    //      cout << "cache has possibly incompatible version, rebuilding" << endl;
+    return 0;
   }
 
-  t.delete_v();
+  char temp;
+  if (buf->read_file(filepointer, &temp, 1) < 1)
+    THROW("failed to read");
+
+  if (temp != 'c')
+    THROW("data file is not a cache file");
 
   uint32_t cache_numbits;
   if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits))

@@ -24,8 +24,30 @@ struct substring
 std::ostream& operator<<(std::ostream& os, const substring& ss);
 std::ostream& operator<<(std::ostream& os, const v_array<substring>& ss);
 
-// chop up the string into a v_array of substring.
-void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty = false);
+// chop up the string into a v_array or any compatible container of substring.
+template <typename ContainerT>
+void tokenize(char delim, substring s, ContainerT& ret, bool allow_empty = false)
+{
+  ret.clear();
+  char* last = s.begin;
+  for (; s.begin != s.end; s.begin++)
+  {
+    if (*s.begin == delim)
+    {
+      if (allow_empty || (s.begin != last))
+      {
+        substring temp = {last, s.begin};
+        ret.push_back(temp);
+      }
+      last = s.begin + 1;
+    }
+  }
+  if (allow_empty || (s.begin != last))
+  {
+    substring final_substring = {last, s.begin};
+    ret.push_back(final_substring);
+  }
+}
 
 bool substring_equal(const substring& a, const substring& b);
 
