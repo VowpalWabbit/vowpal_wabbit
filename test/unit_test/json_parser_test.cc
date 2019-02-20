@@ -51,10 +51,6 @@ BOOST_AUTO_TEST_CASE(parse_json_cb) {
   auto examples = parse_json(*vw, "{}");
 
 }
-
-
-
-
 BOOST_AUTO_TEST_CASE(parse_json_simple) {
   auto vw = VW::initialize("--json --no_stdin", nullptr, false, nullptr, nullptr);
 
@@ -67,7 +63,7 @@ BOOST_AUTO_TEST_CASE(parse_json_simple) {
   }
 })";
 
-  auto examples = parse_json(*vw, "{}");
+  auto examples = parse_json(*vw, example);
 
 }
 

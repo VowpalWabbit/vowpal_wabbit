@@ -255,6 +255,7 @@ class LabelObjectState : public BaseState<audit>
       {
         ld->explicit_included_actions.push_back(id);
       }
+      inc.clear();
 
       auto outcome = new CCB::conditional_contexual_bandit_outcome();
       outcome->cost = cb_label.cost;
@@ -267,6 +268,8 @@ class LabelObjectState : public BaseState<audit>
       {
         outcome->probabilities.push_back({actions[i], probs[i]});
       }
+      actions.clear();
+      probs.clear();
 
       ld->outcome = outcome;
     }
@@ -496,12 +499,15 @@ struct DfState : BaseState<audit>
 {
   DfState() : BaseState<audit>("Df") {}
   BaseState<audit>* saved;
+  BaseState<audit>* saved_root_state;
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // drain existing added namespace
     // todo check bounds
     saved = ctx.PopNamespace();
+    saved_root_state = ctx.root_state;
+    ctx.root_state = this;
     return this;
   }
 
@@ -514,7 +520,7 @@ struct DfState : BaseState<audit>
 
     ctx.examples->push_back(ctx.ex);
 
-    // The end object logic assumes shared example so we need to take an extra one here. 
+    // The end object logic assumes shared example so we need to take an extra one here.
     ctx.label_index_state.index = ctx.examples->size() - 2;
 
     // setup default namespace
@@ -529,7 +535,7 @@ struct DfState : BaseState<audit>
     ctx.ex = (*ctx.examples)[0];
 
     ctx.PushNamespace(" ", saved);
-
+    ctx.root_state = saved_root_state;
 
     return &ctx.default_state;
   }
@@ -591,7 +597,10 @@ class ArrayState : public BaseState<audit>
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */) override { return ctx.PopNamespace(); }
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType /* elementCount */) override
+  {
+    return ctx.PopNamespace();
+  }
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
@@ -998,7 +1007,7 @@ class DecisionListState : public BaseState<audit>
  public:
   DecisionListState() : BaseState<audit>("DecisionList") {}
 
-  //BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
+  // BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
   //{
   //  if (length == 2 && str[0] == '_')
   //  {
@@ -1056,15 +1065,17 @@ class DecisionListState : public BaseState<audit>
 
     decision_object_index++;
 
-     // Push a namespace so that default state can get back here when it reaches the end of the object.
+    // Push a namespace so that default state can get back here when it reaches the end of the object.
     ctx.PushNamespace(" ", this);
 
     return &ctx.default_state;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override {
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
     ctx.root_state = old_root;
-    return &ctx.decision_service_state; }
+    return &ctx.decision_service_state;
+  }
 };
 
 template <bool audit>
