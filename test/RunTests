@@ -262,9 +262,15 @@ sub ref_file($) {
 
 sub next_paragraph {
     my $paragraph = '';
+    my $testid = '<unknown id>';
 
     while ($line = <DATA>) {
-        next if $line =~ /^\s*#/;       # skip comment lines
+        if ($line =~ /^\s*#/) {       # skip comment lines
+          if ($line =~ /^# Test (\d+)/) {
+            $testid = $1;
+          }
+          next;
+        }
         if ($line =~ /\\$/) {           # support line continuation
             $line =~ s/\\\n/ /;
         }
@@ -274,7 +280,7 @@ sub next_paragraph {
             # end of paragraph
             chomp $paragraph;
             $paragraph = trim_spaces($paragraph);
-            return $paragraph;
+            return ($testid, $paragraph);
         }
     }
     return;
@@ -283,8 +289,8 @@ sub next_paragraph {
 sub next_test() {
     my ($cmd, $out_ref, $err_ref, @other_ref);
 
-    $TestNo++;
-    my $paragraph = next_paragraph();
+    my $paragraph = '';
+    ($TestNo, $paragraph) = next_paragraph();
     return (undef, undef, undef, undef) if !defined $paragraph;
     my @lines = split("\n", $paragraph);
 
@@ -758,6 +764,7 @@ exit $ErrorCount;
 #   You may break very long lines using \ at EOL.
 #
 #   # -------------------------------------
+#   # Test <test_id>: ...
 #   shell command which may include {VW} ...
 #       reference/file1
 #       reference/file2
@@ -787,7 +794,7 @@ exit $ErrorCount;
 # For example:
 #
 #   #-------------------------------------------------------
-#   # Test 237
+#   # Test 237: readable_model
 #   {VW} ... -p test75.predict --readable_model test75.rmodel
 #       test/train-sets/ref/test75.stderr
 #       test/pred-sets/ref/test75.predict
@@ -1262,7 +1269,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
-#Test 93:  check cb_adf with doubly robust option
+# Test 93:  check cb_adf with doubly robust option
 {VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
     train-sets/ref/cb_adf_dr.stderr
     pred-sets/ref/cb_adf_dr.predict
