@@ -155,6 +155,8 @@
   <ItemGroup>
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
+    <ClInclude Include="offset_tree.h" />
+    <ClInclude Include="offset_tree_internal.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />
@@ -256,6 +258,8 @@
   <ItemGroup>
     <ClCompile Include="active_cover.cc" />
     <ClCompile Include="action_score.cc" />
+    <ClCompile Include="offset_tree.cc" />
+    <ClCompile Include="offset_tree_internal.cc" />
     <ClCompile Include="options_boost_po.cc" />
     <ClCompile Include="options_serializer_boost_po.cc" />
     <ClCompile Include="autolink.cc" />
