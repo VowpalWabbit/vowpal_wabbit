@@ -87,7 +87,7 @@ struct example : public example_predict  // core example datatype.
   bool in_use;    // in use or not (for the parser)
 
   // Interactions can be overriden on a per example basis by setting this pointer.
-  std::vector<std::string>* interactions;
+  std::vector<std::string>* override_interactions;
 };
 
 struct vw;
