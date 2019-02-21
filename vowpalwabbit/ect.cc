@@ -217,14 +217,6 @@ uint32_t ect_predict(ect& e, single_learner& base, example& ec)
   return id + 1;
 }
 
-bool member(size_t t, v_array<size_t> ar)
-{
-  for (size_t i = 0; i < ar.size(); i++)
-    if (ar[i] == t)
-      return true;
-  return false;
-}
-
 void ect_train(ect& e, single_learner& base, example& ec)
 {
   if (e.k == 1)  // nothing to do
