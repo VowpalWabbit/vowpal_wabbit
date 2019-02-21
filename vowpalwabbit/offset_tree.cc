@@ -17,7 +17,7 @@ void predict(ot::offset_tree& ot, single_learner& base, example& ec)
   // get predictions for all internal nodes in binary tree.
   ec.pred.a_s.clear();
   auto scores = ot.predict(base, ec);
-  for (size_t idx = 0; idx < scores.size(); ++idx){
+  for (uint32_t idx = 0; idx < scores.size(); ++idx){
     ec.pred.a_s.push_back({idx,scores[idx]});
   }
 }
