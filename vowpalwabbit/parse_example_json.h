@@ -52,6 +52,16 @@ template <bool audit>
 struct Context;
 
 template <bool audit>
+struct json_parser;
+
+enum json_parser_mode
+{
+  standard,
+  cb,
+  ccb
+};
+
+template <bool audit>
 struct Namespace
 {
   char feature_group;
@@ -257,21 +267,25 @@ class LabelObjectState : public BaseState<audit>
       }
       inc.clear();
 
-      auto outcome = new CCB::conditional_contexual_bandit_outcome();
-      outcome->cost = cb_label.cost;
-      if (actions.size() != probs.size())
+      if ((actions.size() != 0) && (probs.size() != 0) && (cb_label.cost != 0.f))
       {
-        THROW("Actions and probabilties must be the same length.");
-      }
+        auto outcome = new CCB::conditional_contexual_bandit_outcome();
+        outcome->cost = cb_label.cost;
+        if (actions.size() != probs.size())
+        {
+          THROW("Actions and probabilties must be the same length.");
+        }
 
-      for (size_t i = 0; i < this->actions.size(); i++)
-      {
-        outcome->probabilities.push_back({actions[i], probs[i]});
-      }
-      actions.clear();
-      probs.clear();
+        for (size_t i = 0; i < this->actions.size(); i++)
+        {
+          outcome->probabilities.push_back({actions[i], probs[i]});
+        }
+        actions.clear();
+        probs.clear();
 
-      ld->outcome = outcome;
+        ld->outcome = outcome;
+        cb_label = {0., 0, 0., 0.};
+      }
     }
     else if (found_cb)
     {
@@ -920,7 +934,7 @@ class ArrayToVectorState : public BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  BaseState<audit>* EndArray(Context<audit>& /*ctx*/, rapidjson::SizeType /*length*/) override
   {
     has_seen_array_start = false;
     return return_state;
@@ -936,13 +950,13 @@ class StringToStringState : public BaseState<audit>
   std::string* output_string;
   BaseState<audit>* return_state;
 
-  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
+  BaseState<audit>* String(Context<audit>& /*ctx*/, const char* str, rapidjson::SizeType length, bool /* copy */) override
   {
     output_string->assign(str, str + length);
     return return_state;
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx) override { return return_state; }
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override { return return_state; }
 };
 
 template <bool audit>
@@ -954,13 +968,13 @@ class FloatToFloatState : public BaseState<audit>
   float* output_float;
   BaseState<audit>* return_state;
 
-  BaseState<audit>* Float(Context<audit>& ctx, float f) override
+  BaseState<audit>* Float(Context<audit>& /*ctx*/, float f) override
   {
     *output_float = f;
     return return_state;
   }
 
-  BaseState<audit>* Null(Context<audit>& ctx) override
+  BaseState<audit>* Null(Context<audit>& /*ctx*/) override
   {
     *output_float = 0.f;
     return return_state;
@@ -976,7 +990,7 @@ class BoolToBoolState : public BaseState<audit>
   bool* output_bool;
   BaseState<audit>* return_state;
 
-  BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
+  BaseState<audit>* Bool(Context<audit>& /*ctx*/, bool b) override
   {
     *output_bool = b;
     return return_state;
@@ -996,7 +1010,7 @@ struct DecisionServiceInteraction
 template <bool audit>
 class DecisionListState : public BaseState<audit>
 {
-  size_t decision_object_index = 0;
+  int decision_object_index = 0;
 
   std::vector<uint32_t> actions;
   std::vector<float> probs;
@@ -1006,32 +1020,6 @@ class DecisionListState : public BaseState<audit>
 
  public:
   DecisionListState() : BaseState<audit>("DecisionList") {}
-
-  // BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
-  //{
-  //  if (length == 2 && str[0] == '_')
-  //  {
-  //    switch (str[1])
-  //    {
-  //      case 'a':
-  //        ctx.array_uint_state.output_array = &this->actions;
-  //        ctx.array_uint_state.return_state = this;
-  //        return &ctx.array_uint_state;
-  //      case 'p':
-  //        ctx.array_float_state.output_array = &this->probs;
-  //        ctx.array_float_state.return_state = this;
-  //        return &ctx.array_float_state;
-  //    }
-  //  }
-  //  else if (length == 11 && !strcmp(str, "_label_cost"))
-  //  {
-  //    ctx.float_state.output_float = &this->cost;
-  //    ctx.float_state.return_state = this;
-  //  }
-
-  //  // ignore unknown properties
-  //  return ctx.default_state.Ignore(ctx, length);
-  //}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
@@ -1336,13 +1324,6 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
   std::stringstream& error() { return ctx.error(); }
 
   BaseState<audit>* current_state() { return ctx.current_state; }
-};
-
-enum json_parser_mode
-{
-  standard,
-  cb,
-  ccb
 };
 
 template <bool audit>

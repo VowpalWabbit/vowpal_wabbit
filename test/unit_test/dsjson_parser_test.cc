@@ -11,7 +11,7 @@
 
 v_array<example*> parse_dsjson(vw& all, std::string line)
 {
-  v_array<example*> examples = v_init<example*>();
+  auto examples = v_init<example*>();
   examples.push_back(&VW::get_unused_example(&all));
   DecisionServiceInteraction interaction;
 
@@ -21,13 +21,11 @@ v_array<example*> parse_dsjson(vw& all, std::string line)
   return examples;
 }
 
+// TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
 {
-  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin", nullptr, false, nullptr, nullptr);
-  // Remove once ccb is available.
-  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp.get());
-  jsonp->mode = json_parser_mode::cb;
-  std::string text = R"({
+  std::string json_text = R"(
+{
   "_label_cost": -1,
   "_label_probability": 0.8166667,
   "_label_Action": 2,
@@ -87,9 +85,11 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
   }
 }
 )";
+  auto vw = VW::initialize("--dsjson --cb_adf --no_stdin", nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
 
-  auto examples = parse_dsjson(*vw, text);
   BOOST_CHECK_EQUAL(examples.size(), 4);
+
   // Shared example
   BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, -1.f, FLOAT_TOL);
@@ -103,64 +103,62 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
   BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].probability, 0.8166667, FLOAT_TOL);
   BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].cost, -1.0, FLOAT_TOL);
   BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
-  
-  // TODO: Make unit test dig out and verify features.
 }
 
+// TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 {
-  auto vw = VW::initialize("--ccb_explore_adf --dsjson --no_stdin", nullptr, false, nullptr, nullptr);
-  // Remove once ccb is available.
-  auto jsonp = static_cast<json_parser<false>*>(vw->p->jsonp.get());
-  jsonp->mode = json_parser_mode::ccb;
-  std::string text = R"({
-    "Timestamp":"timestamp_utc",
-    "Version": "1",
-    "c":{
-        "_multi": [
+  std::string json_text = R"(
+{
+  "Timestamp":"timestamp_utc",
+  "Version": "1",
+  "c":{
+      "_multi": [
+        {
+          "b_": "1",
+          "c_": "1",
+          "d_": "1"
+        },
+        {
+          "b_": "2",
+          "c_": "2",
+          "d_": "2"
+        }
+      ],
+      "_df":[
           {
-            "b_": "1",
-            "c_": "1",
-            "d_": "1"
+              "_id": "00eef1eb-2205-4f47",
+              "_inc": [1,2],
+              "test": 4
           },
           {
-            "b_": "2",
-            "c_": "2",
-            "d_": "2"
+              "_id": "set_id",
+              "other": 6
           }
-        ],
-        "_df":[
-            {
-                "_id": "00eef1eb-2205-4f47",
-                "_inc": [1,2],
-                "test": 4
-            },
-            {
-                "_id": "set_id",
-                "other": 6
-            }
-        ]
+      ]
+  },
+  "_decisions":[{
+      "_label_cost": 2,
+      "_o": [],
+      "_a": 1,
+      "_p": 0.25
     },
-    "_decisions":[{
-        "_label_cost": 2,
-        "_o": [],
-        "_a": 1,
-        "_p": 0.25
-      },
-      {
-        "_label_cost": 4,
-        "_o":[],
-        "_a": [2, 1],
-        "_p": [0.75, 0.25]
-      }
-    ],
-    "VWState": {
-      "m": "096200c6c41e42bbb879c12830247637/0639c12bea464192828b250ffc389657"
+    {
+      "_label_cost": 4,
+      "_o":[],
+      "_a": [2, 1],
+      "_p": [0.75, 0.25]
     }
+  ],
+  "VWState": {
+    "m": "096200c6c41e42bbb879c12830247637/0639c12bea464192828b250ffc389657"
+  }
 }
 )";
 
-  auto examples = parse_dsjson(*vw, text);
+  auto vw = VW::initialize("--ccb_explore_adf --dsjson --no_stdin", nullptr, false, nullptr, nullptr);
+  auto examples = parse_dsjson(*vw, json_text);
+
   BOOST_CHECK_EQUAL(examples.size(), 5);
   BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
   BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
@@ -185,6 +183,4 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .75f, .0001f);
   BOOST_CHECK_EQUAL(label2.outcome->probabilities[1].action, 1);
   BOOST_CHECK_CLOSE(label2.outcome->probabilities[1].score, .25f, .0001f);
-
-  // TODO: Make unit test dig out and verify features.
 }
