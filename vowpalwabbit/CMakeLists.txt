@@ -49,8 +49,8 @@ set(vw_all_sources
   cbify.cc explore_eval.cc topk.cc stagewise_poly.cc log_multi.cc recall_tree.cc active.cc
   active_cover.cc cs_active.cc kernel_svm.cc best_constant.cc ftrl.cc svrg.cc lrqfa.cc interact.cc
   comp_io.cc interactions.cc vw_validate.cc audit_regressor.cc gen_cs_example.cc cb_explore.cc
-  action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc offset_tree.cc offset_tree_internal.cc
-  vw_exception.cc no_label.cc
+  action_score.cc cb_explore_adf.cc OjaNewton.cc baseline.cc classweight.cc
+  offset_tree.cc offset_tree_internal.cc vw_exception.cc no_label.cc
 )
 
 set(explore_all_headers
