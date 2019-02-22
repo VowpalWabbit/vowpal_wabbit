@@ -31,7 +31,7 @@ namespace offset_tree
 
   struct offset_tree {
     void init(uint32_t num_actions);
-    inline int32_t learner_count() const;
+    int32_t learner_count() const;
     const std::vector<float>& predict(LEARNER::single_learner& base, example& ec);
   private:
     min_depth_binary_tree binary_tree;
