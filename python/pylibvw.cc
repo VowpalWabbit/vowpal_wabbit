@@ -1,4 +1,5 @@
 #include "../vowpalwabbit/vw.h"
+
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
@@ -14,6 +15,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+
+//Brings VW_DLL_MEMBER to help control exports
+#define VWDLL_EXPORTS
+#include "../vowpalwabbit/vwdll.h"
 
 using namespace std;
 namespace py=boost::python;
@@ -678,6 +683,8 @@ void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { 
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
 void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
 
+//We need to forward declare this here to be able to add VW_DLL_MEMBER as BOOST_PYTHON_MODULE doesn't help
+extern "C" VW_DLL_MEMBER void initpylibvw();
 
 BOOST_PYTHON_MODULE(pylibvw)
 { // This will enable user-defined docstrings and python signatures,

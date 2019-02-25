@@ -80,7 +80,6 @@ parser* new_parser()
   ret.ring_size = 1 << 8;
   ret.done = false;
   ret.used_index = 0;
-  ret.jsonp = nullptr;
 
   return &ret;
 }
@@ -142,14 +141,6 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-bool member(v_array<int> ids, int id)
-{
-  for (size_t i = 0; i < ids.size(); i++)
-    if (ids[i] == id)
-      return true;
-  return false;
-}
-
 void reset_source(vw& all, size_t numbits)
 {
   io_buf* input = all.p->input;
@@ -171,7 +162,10 @@ void reset_source(vw& all, size_t numbits)
       else
       {
         int fd = input->files.pop();
-        if (!member(all.final_prediction_sink, (size_t)fd))
+        const auto& fps = all.final_prediction_sink;
+
+        // If the current popped file is not in the list of final predictions sinks, close it.
+        if(std::find(fps.cbegin(), fps.cend(), fd) == fps.cend())
           io_buf::close_file_or_socket(fd);
       }
     input->open_file(all.p->output->finalname.begin(), all.stdin_off, io_buf::READ);  // pushing is merged into
@@ -240,14 +234,6 @@ void finalize_source(parser* p)
   delete p->input;
   p->output->close_files();
   delete p->output;
-  if (p->jsonp)
-  {
-    if (p->audit)
-      delete (json_parser<true>*)p->jsonp;
-    else
-      delete (json_parser<false>*)p->jsonp;
-    p->jsonp = nullptr;
-  }
 }
 
 void make_write_cache(vw& all, string& newname, bool quiet)
@@ -569,13 +555,13 @@ void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_opt
         {
           all.p->reader = &read_features_json<true>;
           all.p->audit = true;
-          all.p->jsonp = new json_parser<true>;
+          all.p->jsonp = std::make_shared<json_parser<true>>();
         }
         else
         {
           all.p->reader = &read_features_json<false>;
           all.p->audit = false;
-          all.p->jsonp = new json_parser<false>;
+          all.p->jsonp = std::make_shared<json_parser<false>>();
         }
 
         all.p->decision_service_json = input_options.dsjson;
