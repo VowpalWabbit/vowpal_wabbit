@@ -121,6 +121,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   }
   catch (...)
   {
+    // TODO fix this exception bubbling behavior: https://github.com/VowpalWabbit/vowpal_wabbit/issues/1774
     // Prior to using a std::vector, a v_array was used and the catch statement was used to delete it.
     // This caused any exception to be ignored. Bubbling up this exception causes tests to fail so
     // I am going to swallow it to maintain previous behavior.
