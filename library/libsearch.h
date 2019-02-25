@@ -26,6 +26,9 @@ public:
     VW::read_line(vw_obj, blank_line, (char*)"");
     VW::setup_example(vw_obj, blank_line);
 
+    trigger.push_back(bogus_example);
+    trigger.push_back(blank_line);
+
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     d->run_f = _search_run_fn;
     d->run_setup_f = _search_setup_fn;
@@ -35,7 +38,8 @@ public:
     d->extra_data2 = NULL;
   }
   virtual ~SearchTask()
-  { VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
+  { trigger.clear(); // the individual examples get cleaned up below
+    VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
     VW::dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
   }
 
@@ -52,13 +56,15 @@ protected:
 
 private:
   example* bogus_example, *blank_line;
+  multi_ex trigger;
 
   void call_vw(INPUT& input_example, OUTPUT& output)
   { HookTask::task_data* d = sch.template get_task_data<HookTask::task_data> (); // ugly calling convention :(
     d->extra_data  = (void*)&input_example;
     d->extra_data2 = (void*)&output;
-    vw_obj.learn(*bogus_example);
-    vw_obj.learn(*blank_line);   // this will cause our search_run_fn hook to get called
+    vw_obj.learn(trigger);
+    //vw_obj.learn(*bogus_example);
+    //vw_obj.learn(*blank_line);   // this will cause our search_run_fn hook to get called
   }
 
   static void _search_run_fn(Search::search&sch)
