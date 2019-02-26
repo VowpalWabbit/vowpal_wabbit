@@ -2912,7 +2912,7 @@ base_learner* setup(options_i& options, vw& all)
   if (!priv.allow_current_policy)  // if we're not dagger
     all.check_holdout_every_n_passes = priv.passes_per_policy;
 
-  all.searchstr = &sch;
+  all.searchstr = sch.get();
 
   priv.start_clock_time = clock();
 
