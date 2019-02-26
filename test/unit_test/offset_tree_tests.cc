@@ -2,17 +2,16 @@
 
 #include <boost/test/unit_test.hpp>
 #include <utility>
-#include "offset_tree_internal.h"
-namespace ot = offset_tree;
+#include "offset_tree.h"
 using namespace LEARNER;
 using namespace std;
 
-namespace offset_tree {
+namespace VW{ namespace offset_tree {
   std::ostream& operator<<(std::ostream& os, const tree_node& node) {
     os << "{" << node.id << "," << node.left_id << "," << node.right_id << ", " << (node.is_leaf ? "true" : "false") << "}";
     return os;
   }
-}
+}}
 
 struct reduction_test_harness {
   reduction_test_harness():
@@ -27,8 +26,8 @@ struct reduction_test_harness {
     ec.pred.a_s.push_back(ACTION_SCORE::action_score{ 1,curr_pred.second});
   }
 
-  void test_learn(single_learner& base, example& ec) {
-    
+  void test_learn(single_learner& base, example& ec) { 
+    throw "Not yet implemented";
   }
 
   static void predict(reduction_test_harness& test_reduction, single_learner& base, example& ec) {
@@ -75,9 +74,9 @@ BOOST_AUTO_TEST_CASE(offset_tree_predict) {
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_11) {
-  ot::min_depth_binary_tree tree;
+  VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(11);
-  std::vector<ot::tree_node> expected = {
+  std::vector<VW::offset_tree::tree_node> expected = {
       { 0,0,0,true},
       { 1,0,0,true},
       { 2,0,0,true},
@@ -104,9 +103,9 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_11) {
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_4) {
-  ot::min_depth_binary_tree tree;
+  VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(4);
-  std::vector<ot::tree_node> expected = {
+  std::vector<VW::offset_tree::tree_node> expected = {
       { 0,0,0,true},
       { 1,0,0,true},
       { 2,0,0,true},
@@ -119,9 +118,9 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_4) {
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_3) {
-  ot::min_depth_binary_tree tree;
+  VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(3);
-  std::vector<ot::tree_node> expected = {
+  std::vector<VW::offset_tree::tree_node> expected = {
       { 0,0,0,true},
       { 1,0,0,true},
       { 2,0,0,true},
@@ -132,16 +131,16 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_3) {
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_1) {
-  ot::min_depth_binary_tree tree;
+  VW::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(1);
-  std::vector<ot::tree_node> expected = {
+  std::vector<VW::offset_tree::tree_node> expected = {
       { 0,0,0,true}
   };
   BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_CASE(build_min_depth_tree_too_big) {
-  ot::min_depth_binary_tree tree;
+  VW::offset_tree::min_depth_binary_tree tree;
   // Throws vw_exception when unable to allocate enough memory to build tree
   BOOST_CHECK_THROW(tree.build_tree(INT_MAX),VW::vw_exception);
 }
@@ -161,7 +160,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
 
 void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores) {
   const auto test_base = get_test_harness_reduction(base_reduction_predictions);
-  ot::offset_tree tree;
+  VW::offset_tree::offset_tree tree;
   tree.init(expected_scores.size());
   example ec;
   ec.pred.a_s = v_init<ACTION_SCORE::action_score>();
