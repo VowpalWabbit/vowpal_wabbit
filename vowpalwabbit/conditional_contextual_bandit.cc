@@ -7,154 +7,223 @@
 #include <numeric>
 #include <algorithm>
 #include <unordered_set>
+#include <unordered_map>
 
 using namespace LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-struct ccb {};
-
-template <bool is_learn>
-void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples) {
-
-  //get decisions, actions and shared parts of the multiline example
-  std::vector<example*> decisions, actions;
+struct ccb {
   example* shared;
-  for (auto ex : examples) {
-    switch (ex->l.conditional_contextual_bandit.type) {
+  std::vector<example*> actions, decisions;
+  uint32_t chosen_action_index;
+  std::unordered_map<uint32_t, uint32_t> origin_index;
+  CB::cb_class cb_label, default_cb_label;
+  std::unordered_set<uint32_t> excludelist, includelist;
+  CCB::decision_scores_t decision_scores;
+};
+
+namespace CCB {
+  void clear_all(ccb& data)
+  {
+    data.shared = nullptr;
+    data.actions.clear();
+    data.decisions.clear();
+    data.chosen_action_index = 0;
+    data.origin_index.clear();
+    data.excludelist.clear();
+    data.includelist.clear();
+    data.decision_scores.clear();
+  }
+
+  // split the decisions, the actions and the shared example from the multiline example
+  void split_multi_example(const multi_ex & examples, ccb & data)
+  {
+    for (auto ex : examples) {
+      switch (ex->l.conditional_contextual_bandit.type) {
       case CCB::example_type::shared:
-        shared = ex;
+        data.shared = ex;
         break;
       case CCB::example_type::action:
-        actions.push_back(ex);
+        data.actions.push_back(ex);
         break;
       case CCB::example_type::decision:
-        decisions.push_back(ex);
+        data.decisions.push_back(ex);
         break;
       default:
         THROW("ccb_adf_explore: badly formatted example - invalid example type");
+      }
     }
   }
 
-  //sanity check
-  if (decisions.size() > actions.size())
-    THROW("ccb_adf_explore: badly formatted example - number of actions " << actions.size() << " must be greater than the number of decisions " << decisions.size());
-
-  //TODO inject decisions into shared (share := shared + decision features)
-  //TODO add tests and UT
-
-  //set the CB label in the shared example
-  //set the proba to -1 and the cost to float_max (convention for CB to identify shared data)
-  CB::cb_class f;
-  f.probability = -1.f;
-  f.cost = FLT_MAX;
-  shared->l.cb.costs = v_init<CB::cb_class>();
-  shared->l.cb.costs.push_back(f);
-
-  std::unordered_set<uint32_t> excludelist, includelist;
-  CCB::decision_scores_t decision_scores = v_init< ACTION_SCORE::action_scores>();
-
-  //for each decision, attach the label to the chosen action and perform a CB call
-  for (auto decision : decisions) {
-    //multiline example for the cb_explore_adf call
-    multi_ex cb_examples;
-    cb_examples.push_back(shared);
-
-    //sanity check
-    if (is_learn) {
-      if (decision->l.conditional_contextual_bandit.outcome == nullptr)
-        THROW("ccb_adf_explore: badly formatted example - missing label");
-      if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
-        THROW("ccb_adf_explore: badly formatted example - missing label probability");
-    }
-
-    //read the ccb label
-    if (is_learn) {
-      f.cost = decision->l.conditional_contextual_bandit.outcome->cost;
-      f.probability = decision->l.conditional_contextual_bandit.outcome->probabilities[0].score;
-      f.action = decision->l.conditional_contextual_bandit.outcome->probabilities[0].action;
-    }
-    includelist.clear();
-    for (uint32_t a : decision->l.conditional_contextual_bandit.explicit_included_actions) includelist.insert(a);
-
-    for (auto action : actions) {
-      action->l.cb.costs = v_init<CB::cb_class>();//set a default (valid) cb label
-      if (is_learn && f.action == action->example_counter) //set the label for the chosen action
-        action->l.cb.costs.push_back(f);
-
-      //filter actions using the white list (if it was provided)
-      if (!includelist.empty() && includelist.find((uint32_t)action->example_counter) == includelist.end())
-        continue;
-
-      //filter actions already chosen by previous decisions
-      if (excludelist.find((uint32_t)action->example_counter) != excludelist.end())
-        continue;
-
-      cb_examples.push_back(action);
-    }
-
-    if (cb_examples.size() > 1) {//at least 1 action was set in the example
-      //call cb_explore_adf
-      multiline_learn_or_predict<true>(base, cb_examples, examples[0]->ft_offset);
-
-      //correct action ids (because some actions were skipped in cb_examples)
-      for (auto& action_score : cb_examples[0]->pred.a_s)
-        action_score.action = (uint32_t)cb_examples[action_score.action + 1]->example_counter;
-
-      //save the predicted action/scores
-      auto copy = v_init<ACTION_SCORE::action_score>();
-      copy_array(copy, cb_examples[0]->pred.a_s);
-      decision_scores.push_back(copy);
-
-      //update exclusion list with the chosen action
-      excludelist.insert(copy[0].action);
-    }
-    else {
-      //no actions were provided, it was impossible to decide
-      decision_scores.push_back(v_init<ACTION_SCORE::action_score>());
-    }
-  }
-
-  //save the prediction type
-  examples[0]->pred.decision_scores = decision_scores;
-
-  //clean polylabel objects. If the polylabel is changed, it breaks the label release in delete_label
-  shared->l.cb.costs.delete_v();
-  for (auto action : actions) action->l.cb.costs.delete_v();
-}
-
-base_learner* CCB::ccb_explore_adf_setup(options_i& options, vw& all)
-{
-  auto data = scoped_calloc_or_throw<ccb>();
-  bool ccb_explore_adf_option = false;
-  option_group_definition new_options("Conditional Contextual Bandit Exploration with Action Dependent Features");
-  new_options
-    .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
-      .keep()
-      .help("Do Conditional Contextual Bandit learning with multiline action dependent features."));
-  options.add_and_parse(new_options);
-
-  if (!ccb_explore_adf_option)
-    return nullptr;
-
-  if (!options.was_supplied("cb_explore_adf"))
+  template<bool is_learn>
+  void sanity_checks(ccb & data)
   {
-    options.insert("cb_explore_adf", "");
-    options.add_and_parse(new_options);
+    if (data.decisions.size() > data.actions.size())
+      THROW("ccb_adf_explore: badly formatted example - number of actions " << data.actions.size() << " must be greater than the number of decisions " << data.decisions.size());
+
+    if (is_learn) {
+      for (auto decision : data.decisions) {
+        if (decision->l.conditional_contextual_bandit.outcome == nullptr)
+          THROW("ccb_adf_explore: badly formatted example - missing label");
+        if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+          THROW("ccb_adf_explore: badly formatted example - missing label probability");
+      }
+    }
   }
 
-  auto base = as_multiline(setup_base(options, all));
-  all.p->lp = CCB::ccb_label_parser;
-  all.label_type = label_type::ccb;
+  //create empty/default cb labels
+  void create_cb_labels(ccb & data)
+  {
+    data.shared->l.cb.costs = v_init<CB::cb_class>();
+    data.shared->l.cb.costs.push_back(data.default_cb_label);
+    for (example* action : data.actions) action->l.cb.costs = v_init<CB::cb_class>();
+  }
 
-  // Extract from lower level reductions.
-  learner<ccb, multi_ex>& l =
+  //the polylabel (union) must be manually cleaned up
+  void delete_cb_labels(ccb& data)
+  {
+    data.shared->l.cb.costs.delete_v();
+    for (example* action : data.actions) action->l.cb.costs.delete_v();
+  }
+
+  //extract the ccb label from the decision, convert it to a cb label, then attach it to the chosen action
+  void attach_label_to_first_action(conditional_contexual_bandit_outcome* outcome, ccb& data)
+  {
+    //save the cb label
+    data.cb_label.action = data.chosen_action_index;
+    data.cb_label.probability = outcome->probabilities[0].score;
+    data.cb_label.cost = outcome->cost;
+
+    data.actions[0]->l.cb.costs.push_back(data.cb_label);
+  }
+
+  template<bool is_learn>
+  void save_action_scores(ccb& data, const ACTION_SCORE::action_scores& a_s)
+  {
+    //save a copy of action scores
+    auto copy = v_init<ACTION_SCORE::action_score>();
+    copy_array(copy, a_s);
+    data.decision_scores.push_back(copy);
+
+    //correct indices: we want index from the original multi-example
+    for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
+
+    //update the action index blacklist, adding the chosen action
+    if (is_learn)
+      data.excludelist.insert(data.chosen_action_index);
+    else
+      data.excludelist.insert(copy[0].action);
+  }
+
+  void clear_pred_and_label(ccb& data, multi_ex& cb_ex)
+  {
+    data.shared->pred.a_s.clear();
+    cb_ex[1]->l.cb.costs.clear();
+  }
+
+  template<bool is_learn>
+  void build_cb_example(multi_ex& cb_ex, example* decision, ccb & data)
+  {
+    //set the shared example in the cb multi-example
+    cb_ex.push_back(data.shared);
+
+    // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
+    data.includelist.clear();
+    for (uint32_t included_action_id : decision->l.conditional_contextual_bandit.explicit_included_actions)
+      data.includelist.insert(included_action_id);
+
+    // set the available actions in the cb multi-example
+    uint32_t index = 0;
+    data.origin_index.clear();
+    for (uint32_t i = 0; i < data.actions.size(); i++)
+    {
+      // filter actions that are not explicitely included
+      if (!data.includelist.empty() && data.includelist.find(i + 1) == data.includelist.end())
+        continue;
+
+      // filter actions chosen by previous decisions
+      if (data.excludelist.find(i + 1) != data.excludelist.end())
+        continue;
+
+      // select the action
+      cb_ex.push_back(data.actions[i]);
+
+      // save the original index from the root multi-example
+      data.origin_index[index++] = i + 1;
+
+      // save the index of the chosen action
+      if (is_learn) {
+        if (i + 1 == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action) //this is the chosen action
+          data.chosen_action_index = i + 1;
+      }
+    }
+
+    if (is_learn && cb_ex.size()>1)
+      attach_label_to_first_action(decision->l.conditional_contextual_bandit.outcome, data);
+  }
+
+  //iterate over decisions contained in the multi-example, and for each decision, build a cb example and perform a cb_explore_adf call.
+  template <bool is_learn>
+  void learn_or_predict(ccb& data, multi_learner& base, multi_ex& examples)
+  {
+    clear_all(data);
+    split_multi_example(examples, data);// split shared, actions and decisions
+    sanity_checks<is_learn>(data);
+    create_cb_labels(data);
+
+    // for each decision, re-build the cb example and call cb_explore_adf
+    for (example* decision : data.decisions)
+    {
+      multi_ex cb_ex;
+      build_cb_example<is_learn>(cb_ex, decision, data);
+      multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
+      save_action_scores<is_learn>(data, cb_ex[0]->pred.a_s);
+      clear_pred_and_label(data, cb_ex);
+    }
+
+    delete_cb_labels(data);
+
+    //save the predictions
+    //TODO fix console print: this rewrite the polylabel and thus break the print stdout happening in cb.cc
+    examples[0]->pred.decision_scores = data.decision_scores;
+  }
+
+  base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
+  {
+    auto data = scoped_calloc_or_throw<ccb>();
+    bool ccb_explore_adf_option = false;
+    option_group_definition new_options("Conditional Contextual Bandit Exploration with Action Dependent Features");
+    new_options
+      .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
+        .keep()
+        .help("Do Conditional Contextual Bandit learning with multiline action dependent features."));
+    options.add_and_parse(new_options);
+
+    if (!ccb_explore_adf_option)
+      return nullptr;
+
+    if (!options.was_supplied("cb_explore_adf"))
+    {
+      options.insert("cb_explore_adf", "");
+      options.add_and_parse(new_options);
+    }
+
+    auto base = as_multiline(setup_base(options, all));
+    all.p->lp = CCB::ccb_label_parser;
+    all.label_type = label_type::ccb;
+
+    // Extract from lower level reductions
+    data->decision_scores = v_init< ACTION_SCORE::action_scores>();
+    data->default_cb_label = { FLT_MAX, 0, -1.f, 0.f};
+    data->shared = nullptr;
+
+    learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
-  return make_base(l);
-}
+    return make_base(l);
+  }
 
-namespace CCB {
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
     CCB::label* ld = static_cast<CCB::label*>(v);
@@ -311,7 +380,7 @@ namespace CCB {
     return { action_id , probability };
   }
 
-  //<action>:<probability>:<cost>,<action>:<probability,<action>:<probability>,…
+  //<action>:<probability>:<cost>,<action>:<probability>,<action>:<probability>,…
   CCB::conditional_contexual_bandit_outcome* parse_outcome(substring& outcome)
   {
     auto& ccb_outcome = *(new CCB::conditional_contexual_bandit_outcome());
