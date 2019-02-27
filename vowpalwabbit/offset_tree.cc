@@ -89,6 +89,30 @@ namespace VW { namespace offset_tree {
 
   int32_t offset_tree::learner_count() const { return binary_tree.internal_node_count(); }
 
+  // Helper to deal with collections that don't start with an index of 0
+  template<typename T>
+  struct offset_helper
+  {
+    // typedef verbose prediction buffer type
+    offset_helper(T& b, uint32_t index_offset) 
+    : start_index_offset{index_offset}, collection(b) {}
+    
+    // intercept index operator to adjust the offset before
+    // passing to underlying collection
+    typename T::const_reference operator[](size_t idx) const 
+    { 
+      return collection[idx - start_index_offset];
+    }
+
+    typename T::reference operator[](size_t idx) {
+      return collection[idx - start_index_offset];
+    }
+
+  private:
+    uint32_t start_index_offset = 0;
+    T& collection;
+  };
+
   const std::vector<float>& offset_tree::predict(LEARNER::single_learner& base, example& ec)
   {
     // - pair<float,float> stores the scores for left and right nodes
@@ -96,7 +120,8 @@ namespace VW { namespace offset_tree {
     //   of the predict() call
     // - static thread_local ensures only one copy per calling thread.  This is to reduce
     //   memory allocations in steady state.
-    static thread_local std::vector<std::pair<float, float>> prediction_buffer(learner_count());
+    using predict_buffer_t = std::vector<std::pair<float, float>>;
+    static thread_local predict_buffer_t prediction_buffer(learner_count());
     static thread_local std::vector<float> scores(binary_tree.leaf_node_count());
 
     auto& t = binary_tree;
@@ -120,8 +145,10 @@ namespace VW { namespace offset_tree {
       prediction_buffer.emplace_back(ec.pred.a_s[0].score, ec.pred.a_s[1].score);
     }
 
+    // use a offset helper to deal with start index offset
+    offset_helper<predict_buffer_t> buffer_helper(prediction_buffer, t.leaf_node_count());
+
     // Compute action scores
-    const auto lrnr_strt_offset = t.leaf_node_count();
     for (auto rit = t.nodes.rbegin(); rit != t.nodes.rend(); ++rit)
     {
       // done processing all internal nodes
@@ -129,31 +156,31 @@ namespace VW { namespace offset_tree {
         break;
 
       // update probabilities for left node
-      const float left_p = prediction_buffer[rit->id - lrnr_strt_offset].first;
+      const float left_p = buffer_helper[rit->id].first;
       if (t.nodes[rit->left_id].is_leaf)
       {
         scores[rit->left_id] = left_p;
       }
       else
       {
-        const auto left_left_p = prediction_buffer[rit->left_id - lrnr_strt_offset].first;
-        prediction_buffer[rit->left_id - lrnr_strt_offset].first = left_left_p * left_p;
-        const auto left_right_p = prediction_buffer[rit->left_id - lrnr_strt_offset].second;
-        prediction_buffer[rit->left_id - lrnr_strt_offset].second = left_right_p * left_p;
+        const auto left_left_p = buffer_helper[rit->left_id].first;
+        buffer_helper[rit->left_id].first = left_left_p * left_p;
+        const auto left_right_p = buffer_helper[rit->left_id].second;
+        buffer_helper[rit->left_id].second = left_right_p * left_p;
       }
 
       // update probabilities for right node
-      const float right_p = prediction_buffer[rit->id - lrnr_strt_offset].second;
+      const float right_p = buffer_helper[rit->id].second;
       if (t.nodes[rit->right_id].is_leaf)
       {
         scores[rit->right_id] = right_p;
       }
       else
       {
-        const auto right_left_p = prediction_buffer[rit->right_id - lrnr_strt_offset].first;
-        prediction_buffer[rit->right_id - lrnr_strt_offset].first = right_left_p * right_p;
-        const auto right_right_p = prediction_buffer[rit->right_id - lrnr_strt_offset].second;
-        prediction_buffer[rit->right_id - lrnr_strt_offset].second = right_right_p * right_p;
+        const auto right_left_p = buffer_helper[rit->right_id].first;
+        buffer_helper[rit->right_id].first = right_left_p * right_p;
+        const auto right_right_p = buffer_helper[rit->right_id].second;
+        buffer_helper[rit->right_id].second = right_right_p * right_p;
       }
     }
 
