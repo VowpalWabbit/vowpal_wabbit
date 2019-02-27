@@ -156,7 +156,6 @@
     <ClInclude Include="active_cover.h" />
     <ClInclude Include="action_score.h" />
     <ClInclude Include="offset_tree.h" />
-    <ClInclude Include="min_depth_tree.h" />
     <ClInclude Include="options_serializer_boost_po.h" />
     <ClInclude Include="array_parameters.h" />
     <ClInclude Include="autolink.h" />

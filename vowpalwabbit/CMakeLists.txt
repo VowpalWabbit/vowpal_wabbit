@@ -34,7 +34,7 @@ set(vw_all_headers
   gen_cs_example.h parse_args.h topk.h cb_explore_adf.h parse_dispatch_loop.h unique_sort.h
   interact.h interactions.h parse_example_json.h cbify.h interactions_predict.h vw_allreduce.h
   classweight.h parse_regressor.h kernel_svm.h confidence.h label_dictionary.h
-  config.h.in primitives.h lda_core.h print.h vw_versions.h offset_tree.h min_depth_tree.h
+  config.h.in primitives.h lda_core.h print.h vw_versions.h offset_tree.h
 )
 
 set(vw_all_sources
