@@ -1,4 +1,5 @@
 #include "../vowpalwabbit/vw.h"
+
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
@@ -6,6 +7,7 @@
 #include "../vowpalwabbit/search_hooktask.h"
 #include "../vowpalwabbit/parse_example.h"
 #include "../vowpalwabbit/gd.h"
+#include "../vowpalwabbit/options_serializer_boost_po.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_STATIC_LIB
@@ -13,6 +15,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+
+//Brings VW_DLL_MEMBER to help control exports
+#define VWDLL_EXPORTS
+#include "../vowpalwabbit/vwdll.h"
 
 using namespace std;
 namespace py=boost::python;
@@ -42,7 +48,9 @@ const size_t pMULTICLASSPROBS = 7;
 void dont_delete_me(void*arg) { }
 
 vw_ptr my_initialize(string args)
-{ vw*foo = VW::initialize(args);
+{ if (args.find_first_of("--no_stdin") == string::npos)
+    args += " --no_stdin";
+  vw*foo = VW::initialize(args);
   return boost::shared_ptr<vw>(foo, dont_delete_me);
 }
 
@@ -70,14 +78,14 @@ const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 
 string get_arguments(vw_ptr all)
 {
-	string args;
-	for (auto& s : all->opts_n_args.args)
-	{
-		args.append(s);
-		args.append(" ");
-	}
+  VW::config::options_serializer_boost_po serializer;
+  for (auto const& option : all->options->get_all_options())
+  {
+    if (all->options->was_supplied(option->m_name))
+      serializer.add(*option);
+  }
 
-	return args;
+  return serializer.str();
 }
 
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
@@ -262,7 +270,7 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 { // warning: assumes namespace exists!
   char ns_str[2] = { (char)ns, 0 };
-  uint32_t ns_hash = VW::hash_space(*vw, ns_str);
+  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0; float sum_sq = 0.;
   for (ssize_t i=0; i<len(a); i++)
   { feature f = { 1., 0 };
@@ -614,34 +622,34 @@ void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
 bool po_exists(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return d->arg->vm.count(arg) > 0;
+  return d->arg->was_supplied(arg);
 }
 
 string po_get_string(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  return d->arg->vm[arg].as<string>();
+  return d->arg->get_typed_option<string>(arg).value();
 }
 
 int32_t po_get_int(search_ptr sch, string arg)
 { HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
-  try { return d->arg->vm[arg].as<int>(); }
+  try { return d->arg->get_typed_option<int>(arg).value(); }
   catch (...) {}
-  try { return (int32_t)d->arg->vm[arg].as<size_t>(); }
+  try { return (int32_t)d->arg->get_typed_option<size_t>(arg).value(); }
   catch (...) {}
-  try { return (int32_t)d->arg->vm[arg].as<uint32_t>(); }
+  try { return (int32_t)d->arg->get_typed_option<uint32_t>(arg).value(); }
   catch (...) {}
-  try { return (int32_t)d->arg->vm[arg].as<uint64_t>(); }
+  try { return (int32_t)d->arg->get_typed_option<uint64_t>(arg).value(); }
   catch (...) {}
-  try { return d->arg->vm[arg].as<uint16_t>(); }
+  try { return d->arg->get_typed_option<uint16_t>(arg).value(); }
   catch (...) {}
-  try { return d->arg->vm[arg].as<int32_t>(); }
+  try { return d->arg->get_typed_option<int32_t>(arg).value(); }
   catch (...) {}
-  try { return (int32_t)d->arg->vm[arg].as<int64_t>(); }
+  try { return (int32_t)d->arg->get_typed_option<int64_t>(arg).value(); }
   catch (...) {}
-  try { return (int32_t)d->arg->vm[arg].as<int16_t>(); }
+  try { return (int32_t)d->arg->get_typed_option<int16_t>(arg).value(); }
   catch (...) {}
   // we know this'll fail but do it anyway to get the exception
-  return d->arg->vm[arg].as<int>();
+  return d->arg->get_typed_option<int>(arg).value();
 }
 
 PyObject* po_get(search_ptr sch, string arg)
@@ -675,6 +683,8 @@ void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { 
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
 void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
 
+//We need to forward declare this here to be able to add VW_DLL_MEMBER as BOOST_PYTHON_MODULE doesn't help
+extern "C" VW_DLL_MEMBER void initpylibvw();
 
 BOOST_PYTHON_MODULE(pylibvw)
 { // This will enable user-defined docstrings and python signatures,

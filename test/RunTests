@@ -262,9 +262,15 @@ sub ref_file($) {
 
 sub next_paragraph {
     my $paragraph = '';
+    my $testid = '<unknown id>';
 
     while ($line = <DATA>) {
-        next if $line =~ /^\s*#/;       # skip comment lines
+        if ($line =~ /^\s*#/) {       # skip comment lines
+          if ($line =~ /^# Test (\d+)/) {
+            $testid = $1;
+          }
+          next;
+        }
         if ($line =~ /\\$/) {           # support line continuation
             $line =~ s/\\\n/ /;
         }
@@ -274,7 +280,7 @@ sub next_paragraph {
             # end of paragraph
             chomp $paragraph;
             $paragraph = trim_spaces($paragraph);
-            return $paragraph;
+            return ($testid, $paragraph);
         }
     }
     return;
@@ -283,8 +289,8 @@ sub next_paragraph {
 sub next_test() {
     my ($cmd, $out_ref, $err_ref, @other_ref);
 
-    $TestNo++;
-    my $paragraph = next_paragraph();
+    my $paragraph = '';
+    ($TestNo, $paragraph) = next_paragraph();
     return (undef, undef, undef, undef) if !defined $paragraph;
     my @lines = split("\n", $paragraph);
 
@@ -758,6 +764,7 @@ exit $ErrorCount;
 #   You may break very long lines using \ at EOL.
 #
 #   # -------------------------------------
+#   # Test <test_id>: ...
 #   shell command which may include {VW} ...
 #       reference/file1
 #       reference/file2
@@ -787,7 +794,7 @@ exit $ErrorCount;
 # For example:
 #
 #   #-------------------------------------------------------
-#   # Test 237
+#   # Test 237: readable_model
 #   {VW} ... -p test75.predict --readable_model test75.rmodel
 #       test/train-sets/ref/test75.stderr
 #       test/pred-sets/ref/test75.predict
@@ -1102,6 +1109,10 @@ __DATA__
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
 
+# Test 59: cb_adf, sharedfeatures
+{VW}  --dsjson --cb_adf -d train-sets/no_shared_features.json
+    train-sets/ref/no_shared_features.stderr
+
 # Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 echo "" | {VW}
@@ -1258,7 +1269,7 @@ printf '3 |f a b c |e x y z\n2 |f a y c |e x\n' | \
     train-sets/ref/inv_hash.stderr
     pred-sets/ref/inv_hash.cmp
 
-#Test 93:  check cb_adf with doubly robust option
+# Test 93:  check cb_adf with doubly robust option
 {VW} --cb_adf --rank_all -d train-sets/cb_test.ldf -p cb_adf_dr.predict --cb_type dr
     train-sets/ref/cb_adf_dr.stderr
     pred-sets/ref/cb_adf_dr.predict
@@ -1613,22 +1624,26 @@ echo "1 | feature:1" | {VW} -a --initial_weight 0.1 --initial_t 0.3
 {VW} -d train-sets/rcv1_multiclass.dat --cbify 2 --epsilon 0.05
     train-sets/ref/rcv1_multiclass.stderr
 
-# Test 170 cbify adf, epsilon-greedy
+# Test 170: cbify adf, epsilon-greedy
 {VW} --cbify 10 --cb_explore_adf --epsilon 0.05 -d train-sets/multiclass
     train-sets/ref/cbify_epsilon_adf.stderr
 
-# Test 171 cbify cs, epsilon-greedy
+# Test 171: cbify cs, epsilon-greedy
 {VW} --cbify 3 --cbify_cs --epsilon 0.05 -d train-sets/cs_cb
     train-sets/ref/cbify_epsilon_cs.stderr
 
-# Test 172 cbify adf cs, epsilon-greedy
+# Test 172: cbify adf cs, epsilon-greedy
 {VW} --cbify 3 --cbify_cs --cb_explore_adf --epsilon 0.05 -d train-sets/cs_cb
     train-sets/ref/cbify_epsilon_cs_adf.stderr
 
-# Test 173 cbify adf, regcb
+# Test 173: cbify adf, regcb
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcb --mellowness 0.01 -d train-sets/multiclass
     train-sets/ref/cbify_regcb.stderr
 
-# Test 174 cbify adf, regcbopt
+# Test 174: cbify adf, regcbopt
 {VW} --cbify 10 --cb_explore_adf --cb_type mtr --regcbopt --mellowness 0.01 -d train-sets/multiclass
     train-sets/ref/cbify_regcbopt.stderr
+
+# Test 175: cbify ldf, regcbopt
+{VW} -d train-sets/cs_test.ldf --cbify_ldf --cb_type mtr --regcbopt --mellowness 0.01
+    train-sets/ref/cbify_ldf_regcbopt.stderr

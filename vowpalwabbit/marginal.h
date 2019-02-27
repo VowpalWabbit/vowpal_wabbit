@@ -1,1 +1,1 @@
-LEARNER::base_learner* marginal_setup(arguments& arg);
+LEARNER::base_learner* marginal_setup(VW::config::options_i& options, vw& all);

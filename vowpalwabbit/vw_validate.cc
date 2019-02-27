@@ -34,4 +34,4 @@ void validate_num_bits(vw& all)
   if (all.num_bits > sizeof(size_t) * 8 - 3)
     THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
 }
-}
+}  // namespace VW

@@ -25,23 +25,23 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include"vw_exception.h"
+#include "vw_exception.h"
 
 using namespace std;
 
 int open_socket(const char* host)
 {
 #ifdef _WIN32
-  const char* colon = strchr(host,':');
+  const char* colon = strchr(host, ':');
 #else
-  const char* colon = index(host,':');
+  const char* colon = index(host, ':');
 #endif
   short unsigned int port = 26542;
   hostent* he;
   if (colon != nullptr)
   {
-    port = atoi(colon+1);
-    string hostname(host,colon-host);
+    port = atoi(colon + 1);
+    string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }
   else
@@ -58,16 +58,16 @@ int open_socket(const char* host)
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
   far_end.sin_addr = *(in_addr*)(he->h_addr);
-  memset(&far_end.sin_zero, '\0',8);
-  if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
+  memset(&far_end.sin_zero, '\0', 8);
+  if (connect(sd, (sockaddr*)&far_end, sizeof(far_end)) == -1)
     THROWERRNO("connect(" << host << ':' << port << ")");
 
   char id = '\0';
   if (
 #ifdef _WIN32
-    _write(sd, &id, sizeof(id)) < (int)sizeof(id)
+      _write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #else
-    write(sd, &id, sizeof(id)) < (int)sizeof(id)
+      write(sd, &id, sizeof(id)) < (int)sizeof(id)
 #endif
   )
     cerr << "write failed!" << endl;
