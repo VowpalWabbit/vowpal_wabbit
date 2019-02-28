@@ -100,6 +100,10 @@ void options_boost_po::add_and_parse(const option_group_definition& group)
   {
     THROW(ex.what());
   }
+  catch (boost::program_options::ambiguous_option &ex)
+  {
+    THROW(ex.what());
+  }
 }
 
 bool options_boost_po::was_supplied(const std::string& key)
