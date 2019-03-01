@@ -100,15 +100,17 @@ namespace CCB {
   template<bool is_learn>
   void save_action_scores(ccb& data)
   {
-    //save a copy
+    //create a copy
     auto copy = v_init<ACTION_SCORE::action_score>();
     copy_array(copy, data.shared->pred.a_s);
-    data.decision_scores.push_back(copy);
 
-    //correct indices: we want index from the  original multi-example
+    //correct indices: we want index relative to the original multi-example
     for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
 
-    //update the action index blacklist, adding the chosen action
+    //save the copy
+    data.decision_scores.push_back(copy);
+
+    //update the action index blacklist
     if (is_learn)
       data.excludelist.insert(data.chosen_action_index);
     else
@@ -188,6 +190,17 @@ namespace CCB {
     examples[0]->pred.decision_scores = data.decision_scores;
   }
 
+  void finish(ccb& data)
+  {
+    data.actions.~vector<example*>();
+    data.decisions.~vector<example*>();
+    data.origin_index.~unordered_map<uint32_t, uint32_t>();
+    data.excludelist.~unordered_set<uint32_t>();
+    data.includelist.~unordered_set<uint32_t>();
+    data.cb_label.~cb_class();
+    data.default_cb_label.~cb_class();
+  }
+
   base_learner* ccb_explore_adf_setup(options_i& options, vw& all)
   {
     auto data = scoped_calloc_or_throw<ccb>();
@@ -220,6 +233,7 @@ namespace CCB {
     learner<ccb, multi_ex>& l =
       init_learner(data, base, learn_or_predict<true>, learn_or_predict<false>, 1, prediction_type::decision_probs);
 
+    l.set_finish(CCB::finish);
     return make_base(l);
   }
 
