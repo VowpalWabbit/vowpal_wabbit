@@ -140,24 +140,22 @@ namespace CCB {
     for (uint32_t i = 0; i < data.actions.size(); i++)
     {
       // filter actions that are not explicitely included
-      if (!data.includelist.empty() && data.includelist.find(i + 1) == data.includelist.end())
+      if (!data.includelist.empty() && data.includelist.find(i) == data.includelist.end())
         continue;
 
       // filter actions chosen by previous decisions
-      if (data.excludelist.find(i + 1) != data.excludelist.end())
+      if (data.excludelist.find(i) != data.excludelist.end())
         continue;
 
       // select the action
       cb_ex.push_back(data.actions[i]);
 
       // save the original index from the root multi-example
-      data.origin_index[index++] = i + 1;
+      data.origin_index[index++] = i;
 
       // save the index of the chosen action
-      if (is_learn) {
-        if (i + 1 == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action) //this is the chosen action
-          data.chosen_action_index = i + 1;
-      }
+      if (is_learn && i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action) //this is the chosen action
+          data.chosen_action_index = i;
     }
 
     if (is_learn && cb_ex.size()>1)
