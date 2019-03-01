@@ -87,7 +87,6 @@ namespace CCB {
     for (example* action : data.actions) action->l.cb.costs.delete_v();
   }
 
-  //extract the ccb label from the decision, convert it to a cb label, then attach it to the chosen action
   void attach_label_to_first_action(conditional_contexual_bandit_outcome* outcome, ccb& data)
   {
     //save the cb label
@@ -99,14 +98,14 @@ namespace CCB {
   }
 
   template<bool is_learn>
-  void save_action_scores(ccb& data, const ACTION_SCORE::action_scores& a_s)
+  void save_action_scores(ccb& data)
   {
-    //save a copy of action scores
+    //save a copy
     auto copy = v_init<ACTION_SCORE::action_score>();
-    copy_array(copy, a_s);
+    copy_array(copy, data.shared->pred.a_s);
     data.decision_scores.push_back(copy);
 
-    //correct indices: we want index from the original multi-example
+    //correct indices: we want index from the  original multi-example
     for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
 
     //update the action index blacklist, adding the chosen action
@@ -116,10 +115,10 @@ namespace CCB {
       data.excludelist.insert(copy[0].action);
   }
 
-  void clear_pred_and_label(ccb& data, multi_ex& cb_ex)
+  void clear_pred_and_label(ccb& data)
   {
     data.shared->pred.a_s.clear();
-    cb_ex[1]->l.cb.costs.clear();
+    data.actions[0]->l.cb.costs.clear();
   }
 
   template<bool is_learn>
@@ -178,8 +177,8 @@ namespace CCB {
       multi_ex cb_ex;
       build_cb_example<is_learn>(cb_ex, decision, data);
       multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
-      save_action_scores<is_learn>(data, cb_ex[0]->pred.a_s);
-      clear_pred_and_label(data, cb_ex);
+      save_action_scores<is_learn>(data);
+      clear_pred_and_label(data);
     }
 
     delete_cb_labels(data);
