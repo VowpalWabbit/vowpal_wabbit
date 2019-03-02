@@ -7,9 +7,9 @@ from IPython import embed
 available_shots = {'three':3, "one":1}
 available_shots = {'three':3}
 
-for shot in available_shots.iterkeys():
+for shot,shots in available_shots.items():
     print("## perform experiments on {}-shot wikipara-10K ##".format(shot))
-    shots = available_shots[shot]
+    #shots = available_shots[shot]
     num_of_classes = 10000
     leaf_example_multiplier = 10 #2
     lr = 0.1
