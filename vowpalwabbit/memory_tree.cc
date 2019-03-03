@@ -760,6 +760,7 @@ namespace memory_tree_ns
             }
             v_array<uint32_t> selected_labs = v_init<uint32_t>();
             ec.loss = compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs);
+            test_ec.loss = ec.loss;
             b.hamming_loss += ec.loss;
         }
 
