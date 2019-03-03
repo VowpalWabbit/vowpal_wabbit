@@ -37,10 +37,16 @@ namespace memory_tree_ns
         return;
     }
 
-    void copy_example_data(example* dst, example* src, bool no_feat = false)
+    void copy_example_data(example* dst, example* src, int oas = false, bool no_feat = false)
     { 
-        dst->l = src->l;
-        dst->l.multi.label = src->l.multi.label;
+        if (oas == false){
+            dst->l = src->l;
+            dst->l.multi.label = src->l.multi.label;
+        }
+        else{
+            dst->l.multilabels.label_v.delete_v();
+            copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+        }
 
         copy_array(dst->tag, src->tag);
         dst->example_counter = src->example_counter;
@@ -161,65 +167,14 @@ namespace memory_tree_ns
         }
     }
 
-    void diag_kronecker_product_test(example& ec1, example& ec2, example& ec)
+    void diag_kronecker_product_test(example& ec1, example& ec2, example& ec, int oas = false)
     {
-        copy_example_data(&ec, &ec1);
+        copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
         ec.total_sum_feat_sq = 0.0;
         for(namespace_index c1 : ec1.indices){
             for(namespace_index c2 : ec2.indices){
                 if (c1 == c2)
                     diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1], ec.total_sum_feat_sq, ec1.total_sum_feat_sq, ec2.total_sum_feat_sq);
-            }
-        }
-    }
-
-
-    void kronecker_product_f(features& f1, features& f2, features& f, float& total_sq, size_t& num_feat, uint64_t mask, size_t ss)
-    {
-        for (size_t i = 0; i < f1.indicies.size(); i++){
-            size_t j = 0;
-            for (j = 0; j < f2.indicies.size(); j++){
-                if (f1.indicies[i] == f2.indicies[j]){    // != 0
-                    f.push_back(f1.values[i]*f2.values[j], ((f1.indicies[i]+f2.indicies[j])<<ss) & mask);
-                    total_sq += pow(f1.values[i]*f2.values[j], 2);
-                    num_feat ++;
-                    break;
-                }
-            }
-        }
-    }
-
-
-    void kronecker_product(example& ec1, example& ec2, example& ec)
-    {
-        copy_example_data(&ec, &ec1, true); 
-        ec.indices.delete_v();
-        //ec.indices.push_back(conditioning_namespace); //134, x86
-        //ec.indices.push_back(dictionary_namespace); //135 x87
-        unsigned char namespace_1 = 'x';
-        unsigned char namespace_2 = 'y';
-        ec.indices.push_back(namespace_1); //134, x86
-        ec.indices.push_back(namespace_2); //135 x87
-        ec.num_features = 0;
-        ec.total_sum_feat_sq = 0.0;
-
-        //to do: figure out how to set the indicies correctly (different namespaces may have same index)
-        for (auto nc : ec1.indices)
-        {
-            for (size_t i = 0; i < ec1.feature_space[nc].indicies.size(); i++){
-                //ec.feature_space[conditioning_namespace].push_back(ec1.feature_space[nc].values[i], ec1.feature_space[nc].indicies[i]);
-                ec.feature_space[namespace_1].push_back(ec1.feature_space[nc].values[i], ec1.feature_space[nc].indicies[i]);
-                ec.num_features++;
-                ec.total_sum_feat_sq+=pow(ec1.feature_space[nc].values[i],2);
-            }
-        }
-        for (auto nc : ec2.indices)
-        {
-            for (size_t i = 0; i < ec2.feature_space[nc].indicies.size(); i++){
-                //ec.feature_space[dictionary_namespace].push_back(ec2.feature_space[nc].values[i], ec2.feature_space[nc].indicies[i]);
-                ec.feature_space[namespace_2].push_back(ec2.feature_space[nc].values[i], ec2.feature_space[nc].indicies[i]);
-                ec.num_features++;
-                ec.total_sum_feat_sq+=pow(ec2.feature_space[nc].values[i],2);
             }
         }
     }
@@ -409,8 +364,7 @@ namespace memory_tree_ns
             <<"learn at leaf: "<<b.learn_at_leaf<<endl
             <<"num of dream operations per example: "<<b.dream_repeats<<endl
             <<"current_pass: "<<b.current_pass<<endl
-            <<"oas: "<<b.oas<<endl
-            <<"top_K: "<<b.top_K<<endl;
+            <<"oas: "<<b.oas<<endl;
     }
 
 
@@ -490,7 +444,7 @@ namespace memory_tree_ns
         ec.l.simple = {1.f, 1.f, 0.};
         base.predict(ec, b.nodes[cn].base_router);
         float prediction = ec.pred.scalar; 
-	//float imp_weight = 1.f; //no importance weight.
+	    //float imp_weight = 1.f; //no importance weight.
         
         float weighted_value = (1.-b.alpha)*log(b.nodes[cn].nl/(b.nodes[cn].nr+1e-1))/log(2.)+b.alpha*prediction;
         float route_label = weighted_value < 0.f ? -1.f : 1.f;
@@ -601,38 +555,7 @@ namespace memory_tree_ns
             //cout<<b.max_ex_in_leaf<<endl;
         }
     }
-    
-    //add path feature:
-    void add_node_id_feature (memory_tree& b, uint32_t cn, example& ec)
-    {
-        vw* all = b.all;
-        uint64_t mask = all->weights.mask();
-        size_t ss = all->weights.stride_shift();
 
-        ec.indices.push_back (node_id_namespace);
-        features& fs = ec.feature_space[node_id_namespace];
-
-        while (cn > 0)
-        { 
-            fs.push_back (1., ((868771 * cn) << ss) & mask);
-            cn = b.nodes[cn].parent;
-        }
-    }
-
-    int32_t arg_max_on_varray(const v_array<float>& scores){
-        if (scores.size() == 0)
-            return -1;
-
-        float max_score = scores[0]; //score is bonded in [-1,1]
-        int32_t max_score_pos = 0;
-        for (size_t i = 1; i < scores.size(); i++){
-            if (scores[i] >= max_score){
-                max_score = scores[i];
-                max_score_pos = i;
-            }
-        }
-        return max_score_pos;
-    }
 
     template<typename T> 
     inline bool in_v_array(const v_array<T>& array, const T& item, uint32_t& pos){
@@ -661,7 +584,7 @@ namespace memory_tree_ns
     template<typename T>
     inline uint32_t hamming_loss(const v_array<T>& array_1, const v_array<T>& array_2){
     	uint32_t overlap = over_lap(array_1, array_2);
-	return array_1.size() + array_2.size() - 2*overlap;
+	    return array_1.size() + array_2.size() - 2*overlap;
     }
 
     void collect_labels_from_leaf(memory_tree& b, const uint32_t cn, v_array<uint32_t>& leaf_labs){
@@ -740,7 +663,7 @@ namespace memory_tree_ns
                 if (b.learn_at_leaf == true && b.current_pass >= 1){ 
                     float tmp_s = normalized_linear_prod(b, &ec, b.examples[loc]);
                     example* kprod_ec = &calloc_or_throw<example>();
-                    diag_kronecker_product_test(ec, *b.examples[loc], *kprod_ec);
+                    diag_kronecker_product_test(ec, *b.examples[loc], *kprod_ec, b.oas);
                     kprod_ec->l.simple = {FLT_MAX, 0., tmp_s};
                     base.predict(*kprod_ec, b.max_routers);
                     score = kprod_ec->partial_prediction;
@@ -781,7 +704,7 @@ namespace memory_tree_ns
     void predict(memory_tree& b, single_learner& base, example& test_ec)
     {
         example& ec = calloc_or_throw<example>();
-        copy_example_data(&ec, &test_ec);
+        copy_example_data(&ec, &test_ec, b.oas);
         remove_repeat_features_in_ec(ec);
 	//example& ec = test_ec;
         
@@ -891,7 +814,7 @@ namespace memory_tree_ns
         if (b.learn_at_leaf == true && closest_ec != -1){
         	float score = normalized_linear_prod(b, &ec, b.examples[closest_ec]);
         	example* kprod_ec = &calloc_or_throw<example>();
-        	diag_kronecker_product_test(ec, *b.examples[closest_ec], *kprod_ec);
+        	diag_kronecker_product_test(ec, *b.examples[closest_ec], *kprod_ec, b.oas);
          	kprod_ec->l.simple = {reward, 1.f, -score};
 	    	kprod_ec->weight = weight;
             base.learn(*kprod_ec, b.max_routers);
@@ -917,7 +840,7 @@ namespace memory_tree_ns
                 reward = 1.f;             
             float score = normalized_linear_prod(b, &ec, b.examples[ec_id]);
         	example* kprod_ec = &calloc_or_throw<example>();
-        	diag_kronecker_product_test(ec, *b.examples[ec_id], *kprod_ec);
+        	diag_kronecker_product_test(ec, *b.examples[ec_id], *kprod_ec, b.oas);
          	kprod_ec->l.simple = {reward, 1.f, -score};
 	    	kprod_ec->weight = weight; //* b.nodes[leaf_id].examples_index.size();
             base.learn(*kprod_ec, b.max_routers);
@@ -1115,7 +1038,7 @@ namespace memory_tree_ns
         
             if (b.current_pass < 1){ //in the first pass, we need to store the memory:
                 example* new_ec = &calloc_or_throw<example>();
-                copy_example_data(new_ec, &ec);
+                copy_example_data(new_ec, &ec, b.oas);
                 remove_repeat_features_in_ec(*new_ec); ////sort unique.
                 b.examples.push_back(new_ec);   
                 
