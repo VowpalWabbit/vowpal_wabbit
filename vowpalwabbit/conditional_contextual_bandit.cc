@@ -19,7 +19,7 @@ struct ccb {
   uint32_t chosen_action_index;
   std::unordered_map<uint32_t, uint32_t> origin_index;
   CB::cb_class cb_label, default_cb_label;
-  std::unordered_set<uint32_t> excludelist, includelist;
+  std::unordered_set<uint32_t> exclude_list, include_list;
   CCB::decision_scores_t decision_scores;
 };
 
@@ -31,8 +31,8 @@ namespace CCB {
     data.decisions.clear();
     data.chosen_action_index = 0;
     data.origin_index.clear();
-    data.excludelist.clear();
-    data.includelist.clear();
+    data.exclude_list.clear();
+    data.include_list.clear();
     data.decision_scores.clear();
   }
 
@@ -110,9 +110,9 @@ namespace CCB {
 
     //exclude the chosen action from next decisions
     if (!is_learn)
-      data.excludelist.insert(copy[0].action);
+      data.exclude_list.insert(copy[0].action);
     else
-      data.excludelist.insert(data.chosen_action_index);
+      data.exclude_list.insert(data.chosen_action_index);
   }
 
   void clear_pred_and_label(ccb& data)
@@ -144,9 +144,9 @@ namespace CCB {
     cb_ex.push_back(data.shared);
 
     // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
-    data.includelist.clear();
+    data.include_list.clear();
     for (uint32_t included_action_id : decision->l.conditional_contextual_bandit.explicit_included_actions)
-      data.includelist.insert(included_action_id);
+      data.include_list.insert(included_action_id);
 
     // set the available actions in the cb multi-example
     uint32_t index = 0;
@@ -154,11 +154,11 @@ namespace CCB {
     for (uint32_t i = 0; i < data.actions.size(); i++)
     {
       // filter actions that are not explicitely included
-      if (!data.includelist.empty() && data.includelist.find(i) == data.includelist.end())
+      if (!data.include_list.empty() && data.include_list.find(i) == data.include_list.end())
         continue;
 
       // filter actions chosen by previous decisions
-      if (data.excludelist.find(i) != data.excludelist.end())
+      if (data.exclude_list.find(i) != data.exclude_list.end())
         continue;
 
       // select the action
@@ -216,8 +216,8 @@ namespace CCB {
     data.actions.~vector<example*>();
     data.decisions.~vector<example*>();
     data.origin_index.~unordered_map<uint32_t, uint32_t>();
-    data.excludelist.~unordered_set<uint32_t>();
-    data.includelist.~unordered_set<uint32_t>();
+    data.exclude_list.~unordered_set<uint32_t>();
+    data.include_list.~unordered_set<uint32_t>();
     data.cb_label.~cb_class();
     data.default_cb_label.~cb_class();
   }
