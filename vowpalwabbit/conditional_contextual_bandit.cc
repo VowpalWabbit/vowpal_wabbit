@@ -63,10 +63,10 @@ namespace CCB {
       THROW("ccb_adf_explore: badly formatted example - number of actions " << data.actions.size() << " must be greater than the number of decisions " << data.decisions.size());
 
     if (is_learn) {
-      for (auto decision : data.decisions) {
-        if (decision->l.conditional_contextual_bandit.outcome == nullptr)
-          THROW("ccb_adf_explore: badly formatted example - missing label");
-        if (decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
+      for (auto decision : data.decisions)
+      {
+        if (decision->l.conditional_contextual_bandit.outcome != nullptr &&
+            decision->l.conditional_contextual_bandit.outcome->probabilities.size() == 0)
           THROW("ccb_adf_explore: badly formatted example - missing label probability");
       }
     }
@@ -100,21 +100,19 @@ namespace CCB {
   template<bool is_learn>
   void save_action_scores(ccb& data)
   {
-    //create a copy
+    //save a copy
     auto copy = v_init<ACTION_SCORE::action_score>();
     copy_array(copy, data.shared->pred.a_s);
-
-    //correct indices: we want index relative to the original multi-example
-    for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
-
-    //save the copy
     data.decision_scores.push_back(copy);
 
-    //update the action index blacklist
-    if (is_learn)
-      data.excludelist.insert(data.chosen_action_index);
-    else
+    //correct indices: we want index relative to the original ccb multi-example, with no actions filtered
+    for (auto& action_score : copy) action_score.action = data.origin_index[action_score.action];
+
+    //exclude the chosen action from next decisions
+    if (!is_learn)
       data.excludelist.insert(copy[0].action);
+    else
+      data.excludelist.insert(data.chosen_action_index);
   }
 
   void clear_pred_and_label(ccb& data)
@@ -123,10 +121,26 @@ namespace CCB {
     data.actions[0]->l.cb.costs.clear();
   }
 
+  //true if there exists at least 1 action in the cb multi-example
+  bool has_action(multi_ex& cb_ex)
+  {
+      return cb_ex.size() > 1;
+  }
+
+  //shared + decision features are grouped in the same example
+  void merge_decision_in_shared(example* shared, example* decision)
+  {
+
+  }
+
+  //build a cb example from the ccb example
   template<bool is_learn>
   void build_cb_example(multi_ex& cb_ex, example* decision, ccb & data)
   {
+    bool decision_has_label = decision->l.conditional_contextual_bandit.outcome != nullptr;
+
     //set the shared example in the cb multi-example
+    merge_decision_in_shared(data.shared, decision);
     cb_ex.push_back(data.shared);
 
     // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
@@ -153,12 +167,12 @@ namespace CCB {
       // save the original index from the root multi-example
       data.origin_index[index++] = i;
 
-      // save the index of the chosen action
-      if (is_learn && i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action) //this is the chosen action
+      // remember the index of the chosen action
+      if (is_learn && decision_has_label && i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action)
           data.chosen_action_index = i;
     }
 
-    if (is_learn && cb_ex.size()>1)
+    if (is_learn && decision_has_label && has_action(cb_ex))
       attach_label_to_first_action(decision->l.conditional_contextual_bandit.outcome, data);
   }
 
@@ -176,9 +190,18 @@ namespace CCB {
     {
       multi_ex cb_ex;
       build_cb_example<is_learn>(cb_ex, decision, data);
-      multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
-      save_action_scores<is_learn>(data);
-      clear_pred_and_label(data);
+
+      if (has_action(cb_ex))
+      { //the cb example contains at least 1 action
+        multiline_learn_or_predict<is_learn>(base, cb_ex, examples[0]->ft_offset);
+        save_action_scores<is_learn>(data);
+        clear_pred_and_label(data);
+      }
+      else
+      { //the cb example contains no action => cannot decide
+        auto empty_action_scores = v_init<ACTION_SCORE::action_score>();
+        data.decision_scores.push_back(empty_action_scores);
+      }
     }
 
     delete_cb_labels(data);
