@@ -93,8 +93,6 @@ void set_compressed(parser* par)
 
 uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
-  v_array<char> t = v_init<char>();
-
   try
   {
     size_t v_length;
@@ -105,16 +103,12 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
     if (v_length == 0)
       THROW("cache version too short, cache file is probably invalid");
 
-    t.clear();
-    if (t.size() < v_length)
-      t.resize(v_length);
-
-    buf->read_file(filepointer, t.begin(), v_length);
-    version_struct v_tmp(t.begin());
+    std::vector<char> t(v_length);
+    buf->read_file(filepointer, t.data(), v_length);
+    version_struct v_tmp(t.data());
     if (v_tmp != version)
     {
       //      cout << "cache has possibly incompatible version, rebuilding" << endl;
-      t.delete_v();
       return 0;
     }
 
@@ -127,10 +121,11 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   }
   catch (...)
   {
-    t.delete_v();
+    // TODO fix this exception bubbling behavior: https://github.com/VowpalWabbit/vowpal_wabbit/issues/1774
+    // Prior to using a std::vector, a v_array was used and the catch statement was used to delete it.
+    // This caused any exception to be ignored. Bubbling up this exception causes tests to fail so
+    // I am going to swallow it to maintain previous behavior.
   }
-
-  t.delete_v();
 
   uint32_t cache_numbits;
   if (buf->read_file(filepointer, &cache_numbits, sizeof(cache_numbits)) < (int)sizeof(cache_numbits))
