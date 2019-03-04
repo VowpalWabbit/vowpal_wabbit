@@ -151,26 +151,26 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   // set the available actions in the cb multi-example
   uint32_t index = 0;
   data.origin_index.clear();
-  for (uint32_t i = 0; i < data.actions.size(); i++)
+  for (size_t i = 0; i < data.actions.size(); i++)
   {
     // filter actions that are not explicitely included
-    if (!data.include_list.empty() && data.include_list.find(i) == data.include_list.end())
+    if (!data.include_list.empty() && data.include_list.find((uint32_t)i) == data.include_list.end())
       continue;
 
     // filter actions chosen by previous decisions
-    if (data.exclude_list.find(i) != data.exclude_list.end())
+    if (data.exclude_list.find((uint32_t)i) != data.exclude_list.end())
       continue;
 
     // select the action
     cb_ex.push_back(data.actions[i]);
 
     // save the original index from the root multi-example
-    data.origin_index[index++] = i;
+    data.origin_index[index++] = (uint32_t)i;
 
     // remember the index of the chosen action
     if (is_learn && decision_has_label &&
         i == decision->l.conditional_contextual_bandit.outcome->probabilities[0].action)
-      data.chosen_action_index = i;
+      data.chosen_action_index = (uint32_t)i;
   }
 
   if (is_learn && decision_has_label && has_action(cb_ex))
