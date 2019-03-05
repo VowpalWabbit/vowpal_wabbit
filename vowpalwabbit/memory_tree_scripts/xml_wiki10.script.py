@@ -8,7 +8,7 @@ leaf_example_multiplier = 2  #2
 lr = 0.1
 bits = 30
 alpha = 0.1 #0.3
-passes = 4 #4
+passes = 1 #4 #4
 learn_at_leaf = 1
 #num_queries = 1  #does not really use
 #hal_version = 1 #does not really use
@@ -42,12 +42,12 @@ os.system("../../build/vowpalwabbit/vw {} --memory_tree {} --learn_at_leaf {} --
                 leaf_example_multiplier, 
                 alpha, lr, bits,
                 passes, loss,
-                train_data, saved_model))
+                saved_model))
 train_time = time.time() - start
 
 print("## Testing...")
 start = time.time()
-os.system("../../build/vowpalwabbit/vw {} -i {}".format(test_data, saved_model))
+os.system("../../build/vowpalwabbit/vw {} --oas {} -i {}".format(test_data, use_oas, saved_model))
 test_time = time.time() - start
 print("## train time {}, and test time {}".format(train_time, test_time))
 

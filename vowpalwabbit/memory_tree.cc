@@ -46,6 +46,7 @@ namespace memory_tree_ns
         else{
             dst->l.multilabels.label_v.delete_v();
             copy_array(dst->l.multilabels.label_v, src->l.multilabels.label_v);
+	    //cout<<dst->l.multilabels.label_v.size()<<endl;
         }
 
         copy_array(dst->tag, src->tag);
@@ -707,7 +708,8 @@ namespace memory_tree_ns
         copy_example_data(&ec, &test_ec, b.oas);
         remove_repeat_features_in_ec(ec);
 	//example& ec = test_ec;
-        
+     
+
         MULTICLASS::label_t mc;
         uint32_t save_multi_pred;
         MULTILABEL::labels multilabels;
@@ -763,7 +765,7 @@ namespace memory_tree_ns
             test_ec.loss = ec.loss;
             b.hamming_loss += ec.loss;
         }
-
+	free_example(&ec);
     }
 
 
@@ -1042,7 +1044,6 @@ namespace memory_tree_ns
                 copy_example_data(new_ec, &ec, b.oas);
                 remove_repeat_features_in_ec(*new_ec); ////sort unique.
                 b.examples.push_back(new_ec);   
-                
                 if(b.online == true)
                     insert_example_hal(b, base, b.examples.size() - 1,*b.examples[b.examples.size()-1]); //query and learn
                 
@@ -1125,26 +1126,35 @@ namespace memory_tree_ns
     void save_load_example(example* ec, io_buf& model_file, bool& read, bool& text, stringstream& msg, int& oas)
     {   //deal with tag
         //deal with labels:
+	writeit(ec->num_features, "num_features");
+	writeit(ec->total_sum_feat_sq, "total_sum_features");
+	writeit(ec->weight, "example_weight");
+	writeit(ec->loss, "loss");
+	writeit(ec->ft_offset, "ft_offset");
         if(oas == false){ //multi-class
             writeit(ec->l.multi.label, "multiclass_label");
             writeit(ec->l.multi.weight, "multiclass_weight");
         }
         else{ //multi-label
+	    //cout<<"start "<<oas<<endl;
             writeitvar(ec->l.multilabels.label_v.size(), "label_size", label_size);
+	    //cout<<"label_size: "<<label_size<<endl;
             if (read){
-            ec->l.multilabels.label_v.delete_v();
-            for (uint32_t i = 0; i < label_size; i++)
-                ec->l.multilabels.label_v.push_back(0);
+            	ec->l.multilabels.label_v.clear();
+            	for (uint32_t i = 0; i < label_size; i++)
+                	ec->l.multilabels.label_v.push_back(0);
             }
+	    //cout<<"done reading"<<endl;
             for (uint32_t i = 0; i < label_size; i++)
                 writeit(ec->l.multilabels.label_v[i], "ec_label");
+	    //cout<<"done"<<endl;
         }
 
-        writeit(ec->num_features, "num_features");
-        writeit(ec->total_sum_feat_sq, "total_sum_features");
-        writeit(ec->weight, "example_weight");
-        writeit(ec->loss, "loss");
-        writeit(ec->ft_offset, "ft_offset");
+	//writeit(ec->num_features, "num_features");
+        //writeit(ec->total_sum_feat_sq, "total_sum_features");
+        //writeit(ec->weight, "example_weight");
+        //writeit(ec->loss, "loss");
+        //writeit(ec->ft_offset, "ft_offset");
 
         writeitvar(ec->tag.size(), "tags", tag_number);
         if (read){
@@ -1226,9 +1236,10 @@ namespace memory_tree_ns
             
             writeit(b.max_nodes, "max_nodes");
             writeit(b.learn_at_leaf, "learn_at_leaf");
-            writeit(b.oas, "oas")
+            writeit(b.oas, "oas");
+	    //writeit(b.leaf_example_multiplier, "leaf_example_multiplier")
             writeitvar(b.nodes.size(), "nodes", n_nodes); 
-            writeit(b.max_num_labels, "max_number_of_labels")
+            writeit(b.max_num_labels, "max_number_of_labels");
 
             if (read){
                 b.nodes.clear();
@@ -1251,6 +1262,7 @@ namespace memory_tree_ns
             }
             for (uint32_t i = 0; i < n_examples; i++)
                 save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
+	    //cout<<"done loading...."<<endl;
             
             
         }
@@ -1322,13 +1334,18 @@ base_learner* memory_tree_setup(options_i& options, vw& all)
                 num_learners,
                 prediction_type::multilabels);
 
-        all.p->lp = MULTILABEL::multilabel;
-        all.label_type = label_type::multi;
-        all.delete_prediction = MULTILABEL::multilabel.delete_label;
+	//all.p->lp = MULTILABEL::multilabel;
+        //all.label_type = label_type::multi;
+        //all.delete_prediction = MULTILABEL::multilabel.delete_label;
          //srand(time(0));
+	l.set_end_pass(end_pass);
         l.set_save_load(save_load_memory_tree);
-        l.set_end_pass(end_pass);
+        //l.set_end_pass(end_pass);
         l.set_finish(finish);
+
+	all.p->lp = MULTILABEL::multilabel;
+	all.label_type = label_type::multi;
+	all.delete_prediction = MULTILABEL::multilabel.delete_label;
 
         return make_base (l);
     }
