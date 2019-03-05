@@ -1,6 +1,6 @@
 add_executable(vw-unit-test.out
   main.cc options_test.cc options_boost_po_test.cc cb_explore_adf_test.cc explore_test.cc
-  stable_unique_tests.cc test_common.h
+  stable_unique_tests.cc test_common.h offset_tree_tests.cc
 )
 
 # Add the include directories from vw target for testing

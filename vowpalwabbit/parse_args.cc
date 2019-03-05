@@ -78,6 +78,7 @@ license as described in the file LICENSE.
 #include "options.h"
 #include "options_boost_po.h"
 #include "options_serializer_boost_po.h"
+#include "offset_tree.h"
 
 using namespace std;
 using namespace VW::config;
@@ -1270,6 +1271,7 @@ void parse_reductions(options_i& options, vw& all)
   all.reduction_stack.push_back(cb_explore_adf_setup);
   all.reduction_stack.push_back(cbify_setup);
   all.reduction_stack.push_back(cbifyldf_setup);
+  all.reduction_stack.push_back(VW::offset_tree::offset_tree_setup);
   all.reduction_stack.push_back(explore_eval_setup);
   all.reduction_stack.push_back(ExpReplay::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
   all.reduction_stack.push_back(Search::setup);
