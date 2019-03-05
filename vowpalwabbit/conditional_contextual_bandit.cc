@@ -3,6 +3,7 @@
 #include "example.h"
 #include "global_data.h"
 #include "cache.h"
+#include "vw.h"
 
 #include <numeric>
 #include <algorithm>
@@ -130,9 +131,6 @@ void clear_pred_and_label(ccb& data)
 // true if there exists at least 1 action in the cb multi-example
 bool has_action(multi_ex& cb_ex) { return cb_ex.size() > 1; }
 
-// shared + decision features are grouped in the same example
-void merge_decision_in_shared(example* shared, example* decision) {}
-
 // build a cb example from the ccb example
 template <bool is_learn>
 void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
@@ -140,7 +138,7 @@ void build_cb_example(multi_ex& cb_ex, example* decision, ccb& data)
   bool decision_has_label = decision->l.conditional_contextual_bandit.outcome != nullptr;
 
   // set the shared example in the cb multi-example
-  merge_decision_in_shared(data.shared, decision);
+  //TODO merge decision features in shared feature + activate interactions
   cb_ex.push_back(data.shared);
 
   // retrieve the action index whitelist (if the list is empty, then all actions are white-listed)
