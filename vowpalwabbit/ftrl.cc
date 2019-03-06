@@ -16,6 +16,7 @@ using namespace VW::config;
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
 #define W_G2 2  // accumulated gradient information
 #define W_MX 3  // maximum absolute value
+#define W_WE 4  // Wealth
 
 struct update_data
 {
@@ -160,6 +161,49 @@ void inner_update_pistol_post(update_data& d, float x, float& wref)
   w[W_G2] += fabs(gradient);
 }
 
+
+// Coin betting vectors
+// W_XT 0  current parameter
+// W_ZT 1  sum negative gradients
+// W_G2 2  time
+// W_MX 3  maximum absolute value
+// W_WE 4  Wealth
+
+void inner_update_kt_state_and_predict(update_data& d, float x, float& wref)
+{
+  float* w = &wref;
+
+  float fabs_x = fabs(x);
+  if (fabs_x > w[W_MX])
+    w[W_MX] = fabs_x;
+
+  w[W_XT] = (1+w[W_WE]) * w[W_ZT]/(w[W_MX]*w[W_MX]*(1+w[W_G2]));
+
+  d.predict += w[W_XT] * x;
+}
+
+void inner_update_kt_post(update_data& d, float x, float& wref)
+{
+  float* w = &wref;
+  float gradient = d.update * x;
+
+  w[W_ZT] += -gradient;
+  w[W_G2] += 1;
+  w[W_WE] += (-gradient*w[W_XT]);
+}
+
+void update_state_and_predict_kt(ftrl& b, single_learner&, example& ec)
+{
+  b.data.predict = 0;
+
+  GD::foreach_feature<update_data, inner_update_kt_state_and_predict>(*b.all, ec, b.data);
+  ec.partial_prediction = b.data.predict;
+  ec.pred.scalar = GD::finalize_prediction(b.all->sd, ec.partial_prediction);
+}
+
+
+
+
 void update_state_and_predict_pistol(ftrl& b, single_learner&, example& ec)
 {
   b.data.predict = 0;
@@ -183,6 +227,16 @@ void update_after_prediction_pistol(ftrl& b, example& ec)
   GD::foreach_feature<update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
+
+void update_after_prediction_kt(ftrl& b, example& ec)
+{
+  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+
+  GD::foreach_feature<update_data, inner_update_kt_post>(*b.all, ec, b.data);
+}
+
+
+
 template <bool audit>
 void learn_proximal(ftrl& a, single_learner& base, example& ec)
 {
@@ -205,6 +259,18 @@ void learn_pistol(ftrl& a, single_learner& base, example& ec)
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
+
+void learn_kt(ftrl& a, single_learner& base, example& ec)
+{
+  assert(ec.in_use);
+
+  // update state based on the example and predict
+  update_state_and_predict_kt(a, base, ec);
+
+  // update state based on the prediction
+  update_after_prediction_kt(a, ec);
+}
+
 
 void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
 {
@@ -245,15 +311,17 @@ base_learner* ftrl_setup(options_i& options, vw& all)
   auto b = scoped_calloc_or_throw<ftrl>();
   bool ftrl_option = false;
   bool pistol = false;
+  bool kt = false;
 
   option_group_definition new_options("Follow the Regularized Leader");
   new_options.add(make_option("ftrl", ftrl_option).keep().help("FTRL: Follow the Proximal Regularized Leader"))
-      .add(make_option("pistol", pistol).keep().help("FTRL beta parameter"))
+      .add(make_option("kt", kt).keep().help("KT-based optimizer"))
+      .add(make_option("pistol", pistol).keep().help("PiSTOL: Parameter-free STOchastic Learning"))
       .add(make_option("ftrl_alpha", b->ftrl_alpha).help("Learning rate for FTRL optimization"))
       .add(make_option("ftrl_beta", b->ftrl_beta).help("Learning rate for FTRL optimization"));
   options.add_and_parse(new_options);
 
-  if (!ftrl_option && !pistol)
+  if (!ftrl_option && !pistol && !kt)
   {
     return nullptr;
   }
@@ -283,18 +351,25 @@ base_learner* ftrl_setup(options_i& options, vw& all)
       learn_ptr = learn_proximal<true>;
     else
       learn_ptr = learn_proximal<false>;
+      all.weights.stride_shift(2);  // NOTE: for more parameter storage
   }
   else if (pistol)
   {
     algorithm_name = "PiSTOL";
     learn_ptr = learn_pistol;
+    all.weights.stride_shift(2);  // NOTE: for more parameter storage
   }
+  else if (kt)
+  {
+    algorithm_name = "KT";
+    learn_ptr = learn_kt;
+    all.weights.stride_shift(3);  // NOTE: for more parameter storage
+  }
+
   b->data.ftrl_alpha = b->ftrl_alpha;
   b->data.ftrl_beta = b->ftrl_beta;
   b->data.l1_lambda = b->all->l1_lambda;
   b->data.l2_lambda = b->all->l2_lambda;
-
-  all.weights.stride_shift(2);  // NOTE: for more parameter storage
 
   if (!all.quiet)
   {
