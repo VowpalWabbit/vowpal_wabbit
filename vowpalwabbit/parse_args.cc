@@ -1302,6 +1302,7 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
     options.add_and_parse(vw_args);
 
     all.p = new parser{ring_size};
+    initialize_parser_datastructures(all);
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))
@@ -1635,7 +1636,6 @@ vw* initialize(
       exit(0);
     }
 
-    initialize_parser_datastructures(all);
     all.l->init_driver();
 
     return &all;

@@ -50,7 +50,9 @@ struct parser
     this->lp = simple_label;
   }
 
-  v_array<substring> channels;  // helper(s) for text parsing
+  // TODO implement and migrate finalization to destructor
+
+  // helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
 
@@ -58,14 +60,14 @@ struct parser
   VW::unbounded_object_pool<example, example_factory> example_pool;
   VW::ptr_queue<example> ready_parsed_examples;
 
-  io_buf* input;  // Input source(s)
+  io_buf* input = nullptr;  // Input source(s)
   int (*reader)(vw*, v_array<example*>& examples);
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
-  io_buf* output;   // Where to output the cache.
-  bool write_cache;
-  bool sort_features;
-  bool sorted_cache;
+  io_buf* output = nullptr;   // Where to output the cache.
+  bool write_cache = false;
+  bool sort_features = false;
+  bool sorted_cache = false;
 
   const size_t ring_size;
   uint64_t begin_parsed_examples = 0;  // The index of the beginning parsed example.
@@ -83,16 +85,16 @@ struct parser
   v_array<size_t> ids;     // unique ids for sources
   v_array<size_t> counts;  // partial examples received from sources
   size_t finished_count;   // the number of finished examples;
-  int label_sock;
-  int bound_sock;
-  int max_fd;
+  int label_sock = 0;
+  int bound_sock = 0;
+  int max_fd = 0;
 
   v_array<substring> parse_name;
 
   label_parser lp;  // moved from vw
 
-  bool audit;
-  bool decision_service_json;
+  bool audit = false;
+  bool decision_service_json = false;
   std::shared_ptr<void> jsonp;
 };
 

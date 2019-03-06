@@ -958,13 +958,12 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 void initialize_examples(vw& all)
 {
-  // all.p->begin_parsed_examples = 0;
-  // all.p->end_parsed_examples = 0;
-  // all.p->done = false;
-  // all.p->ready_parsed_examples.reset(new VW::ptr_queue<example>(all.p->ring_size));
-  // // Note: using a pool without an initial size like this causes issues as reductions don't always
-  // // behave nicely with being able to reuse examples.
-  // all.p->example_pool.reset(new VW::unbounded_object_pool<example, example_factory>(all.p->ring_size));
+  all.p->words = v_init<substring>();
+  all.p->name = v_init<substring>();
+  all.p->parse_name = v_init<substring>();
+  all.p->gram_mask = v_init<size_t>();
+  all.p->ids = v_init<size_t>();
+  all.p->counts = v_init<size_t>();
 }
 
 void adjust_used_index(vw& all) { /* no longer used */ }
@@ -977,7 +976,6 @@ void start_parser(vw& all) { all.parse_thread = std::thread(main_parse_loop, &al
 }  // namespace VW
 void free_parser(vw& all)
 {
-  all.p->channels.delete_v();
   all.p->words.delete_v();
   all.p->name.delete_v();
 
