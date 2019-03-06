@@ -1296,9 +1296,12 @@ vw& parse_args(options_i& options, trace_message_t trace_listener, void* trace_c
   {
     time(&all.init_time);
 
+    size_t ring_size;
     option_group_definition vw_args("VW options");
-    vw_args.add(make_option("ring_size", all.p->ring_size).help("size of example ring"));
+    vw_args.add(make_option("ring_size", ring_size).default_value(256).help("size of example ring"));
     options.add_and_parse(vw_args);
+
+    all.p = new parser{ring_size};
 
     option_group_definition update_args("Update options");
     update_args.add(make_option("learning_rate", all.eta).help("Set learning rate").short_name("l"))

@@ -70,18 +70,6 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
     return (counter >= after);
 }
 
-parser* new_parser()
-{
-  auto& ret = *(new parser());
-  ret.input = new io_buf;
-  ret.output = new io_buf;
-  ret.in_pass_counter = 0;
-  ret.ring_size = 1 << 8;
-  ret.done = false;
-
-  return &ret;
-}
-
 void set_compressed(parser* par)
 {
   finalize_source(par);
@@ -172,7 +160,7 @@ void reset_source(vw& all, size_t numbits)
       // wait for all predictions to be sent back to client
       {
         std::unique_lock<std::mutex> lock(all.p->output_lock);
-        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples->size() == 0; });
+        all.p->output_done.wait(lock, [&] { return all.p->ready_parsed_examples.size() == 0; });
       }
 
       // close socket, erase final prediction sink and socket
@@ -578,7 +566,7 @@ void lock_done(parser& p)
 {
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
-  p.ready_parsed_examples->set_done();
+  p.ready_parsed_examples.set_done();
 }
 
 void set_done(vw& all)
@@ -671,7 +659,7 @@ example& get_unused_example(vw* all)
 {
   parser* p = all->p;
   std::unique_lock<std::mutex> lock(p->pool_lock);
-  auto ex = p->example_pool->get_object();
+  auto ex = p->example_pool.get_object();
   ex->in_use = true;
   p->begin_parsed_examples++;
   return *ex;
@@ -882,7 +870,7 @@ void clean_example(vw& all, example& ec, bool rewind)
     std::lock_guard<std::mutex> lock(all.p->pool_lock);
     assert(ec.in_use);
     ec.in_use = false;
-    all.p->example_pool->return_object(&ec);
+    all.p->example_pool.return_object(&ec);
   }
 }
 
@@ -912,7 +900,7 @@ void thread_dispatch(vw& all, v_array<example*> examples)
   all.p->end_parsed_examples += examples.size();
   for (auto example : examples)
   {
-    all.p->ready_parsed_examples->push(example);
+    all.p->ready_parsed_examples.push(example);
   }
 }
 
@@ -920,7 +908,7 @@ void main_parse_loop(vw* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(parser* p) { return p->ready_parsed_examples->pop(); }
+example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
@@ -970,13 +958,13 @@ float get_confidence(example* ec) { return ec->confidence; }
 
 void initialize_examples(vw& all)
 {
-  all.p->begin_parsed_examples = 0;
-  all.p->end_parsed_examples = 0;
-  all.p->done = false;
-  all.p->ready_parsed_examples.reset(new VW::ptr_queue<example>(all.p->ring_size));
-  // Note: using a pool without an initial size like this causes issues as reductions don't always
-  // behave nicely with being able to reuse examples.
-  all.p->example_pool.reset(new VW::unbounded_object_pool<example, example_factory>(all.p->ring_size));
+  // all.p->begin_parsed_examples = 0;
+  // all.p->end_parsed_examples = 0;
+  // all.p->done = false;
+  // all.p->ready_parsed_examples.reset(new VW::ptr_queue<example>(all.p->ring_size));
+  // // Note: using a pool without an initial size like this causes issues as reductions don't always
+  // // behave nicely with being able to reuse examples.
+  // all.p->example_pool.reset(new VW::unbounded_object_pool<example, example_factory>(all.p->ring_size));
 }
 
 void adjust_used_index(vw& all) { /* no longer used */ }
@@ -1010,5 +998,5 @@ namespace VW
 {
 void end_parser(vw& all) { all.parse_thread.join(); }
 
-bool is_ring_example(vw& all, example* ae) { return all.p->example_pool->is_from_pool(ae); }
+bool is_ring_example(vw& all, example* ae) { return all.p->example_pool.is_from_pool(ae); }
 }  // namespace VW

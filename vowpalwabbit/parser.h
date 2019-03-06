@@ -42,13 +42,21 @@ struct example_factory
 
 struct parser
 {
+  parser(size_t ring_size)
+   : example_pool{ring_size}, ready_parsed_examples{ring_size}, ring_size{ring_size}
+  {
+    this->input = new io_buf{};
+    this->output = new io_buf{};
+    this->lp = simple_label;
+  }
+
   v_array<substring> channels;  // helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
 
   std::mutex pool_lock;
-  std::unique_ptr<VW::unbounded_object_pool<example, example_factory>> example_pool;
-  std::unique_ptr<VW::ptr_queue<example>> ready_parsed_examples;
+  VW::unbounded_object_pool<example, example_factory> example_pool;
+  VW::ptr_queue<example> ready_parsed_examples;
 
   io_buf* input;  // Input source(s)
   int (*reader)(vw*, v_array<example*>& examples);
@@ -59,17 +67,17 @@ struct parser
   bool sort_features;
   bool sorted_cache;
 
-  size_t ring_size;
-  uint64_t begin_parsed_examples;  // The index of the beginning parsed example.
-  uint64_t end_parsed_examples;    // The index of the fully parsed example.
-  uint32_t in_pass_counter;
-  bool emptylines_separate_examples;  // true if you want to have holdout computed on a per-block basis rather than a
+  const size_t ring_size;
+  uint64_t begin_parsed_examples = 0;  // The index of the beginning parsed example.
+  uint64_t end_parsed_examples = 0;    // The index of the fully parsed example.
+  uint32_t in_pass_counter = 0;
+  bool emptylines_separate_examples = false;  // true if you want to have holdout computed on a per-block basis rather than a
                                       // per-line basis
 
   std::mutex output_lock;
   std::condition_variable output_done;
 
-  bool done;
+  bool done = false;
   v_array<size_t> gram_mask;
 
   v_array<size_t> ids;     // unique ids for sources
@@ -88,7 +96,7 @@ struct parser
   std::shared_ptr<void> jsonp;
 };
 
-parser* new_parser();
+// parser* new_parser();
 
 void enable_sources(vw& all, bool quiet, size_t passes, input_options& input_options);
 
