@@ -1823,6 +1823,7 @@ void finish(vw& all, bool delete_all)
   if (all.should_delete_options)
     delete all.options;
 
+  // TODO: migrate all finalization into parser destructor
   free_parser(all);
   finalize_source(all.p);
   all.p->parse_name.clear();
