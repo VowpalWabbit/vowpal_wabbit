@@ -50,7 +50,11 @@ struct parser
     this->lp = simple_label;
   }
 
-  // TODO implement and migrate finalization to destructor
+  ~parser()
+  {
+    delete input;
+    delete output;
+  }
 
   // helper(s) for text parsing
   v_array<substring> words;

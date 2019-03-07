@@ -73,7 +73,9 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 void set_compressed(parser* par)
 {
   finalize_source(par);
+  delete par->input;
   par->input = new comp_io_buf;
+  delete par->output;
   par->output = new comp_io_buf;
 }
 
@@ -213,8 +215,10 @@ void finalize_source(parser* p)
   p->input->close_files();
 
   delete p->input;
+  p->input = nullptr;
   p->output->close_files();
   delete p->output;
+  p->output = nullptr;
 }
 
 void make_write_cache(vw& all, string& newname, bool quiet)
