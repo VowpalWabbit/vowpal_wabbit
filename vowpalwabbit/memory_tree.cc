@@ -784,7 +784,7 @@ namespace memory_tree_ns
             multilabels = ec.l.multilabels;
             preds = ec.pred.multilabels;
         }
-
+	ec.l.simple = {FLT_MAX, 1., 0.0};
         while(b.nodes[cn].internal != -1){
             base.predict(ec, b.nodes[cn].base_router);
             float prediction = ec.pred.scalar;
@@ -869,6 +869,7 @@ namespace memory_tree_ns
         }
 
         path.clear();
+	ec.l.simple = {FLT_MAX, 1.0, 0.0};
 		while(b.nodes[cn].internal != -1){
 			path.push_back(cn);  //path stores node id from the root to the leaf
 			base.predict(ec, b.nodes[cn].base_router);
